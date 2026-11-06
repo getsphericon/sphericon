@@ -10,7 +10,6 @@ import (
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	site "github.com/getsphericon/sphericon/gen/site"
-	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
@@ -33,38 +32,39 @@ import (
 	signup "github.com/getsphericon/sphericon/internal/signup"
 	signupsurvey "github.com/getsphericon/sphericon/internal/signupsurvey"
 	templates "github.com/getsphericon/sphericon/internal/templates"
+	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
 
 type InputsImpl struct{}
 
-func (c *InputsImpl) AnalyticsRevenueWindow(source site.SiteAnalyticsRevenueRange) analytics.Window {
-	var analyticsWindow analytics.Window
+func (c *InputsImpl) AnalyticsRevenueWindow(source site.SiteAnalyticsRevenueRange) analyticsreport.Window {
+	var analyticsreportWindow analyticsreport.Window
 	switch source {
 	case site.SiteAnalyticsRevenueRange30d:
-		analyticsWindow = analytics.Window30Days
+		analyticsreportWindow = analyticsreport.Window30Days
 	case site.SiteAnalyticsRevenueRange7d:
-		analyticsWindow = analytics.Window7Days
+		analyticsreportWindow = analyticsreport.Window7Days
 	case site.SiteAnalyticsRevenueRange90d:
-		analyticsWindow = analytics.Window90Days
+		analyticsreportWindow = analyticsreport.Window90Days
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return analyticsWindow
+	return analyticsreportWindow
 }
-func (c *InputsImpl) AnalyticsWindow(source site.SiteAnalyticsRange) analytics.Window {
-	var analyticsWindow analytics.Window
+func (c *InputsImpl) AnalyticsWindow(source site.SiteAnalyticsRange) analyticsreport.Window {
+	var analyticsreportWindow analyticsreport.Window
 	switch source {
 	case site.SiteAnalyticsRange30d:
-		analyticsWindow = analytics.Window30Days
+		analyticsreportWindow = analyticsreport.Window30Days
 	case site.SiteAnalyticsRange7d:
-		analyticsWindow = analytics.Window7Days
+		analyticsreportWindow = analyticsreport.Window7Days
 	case site.SiteAnalyticsRange90d:
-		analyticsWindow = analytics.Window90Days
+		analyticsreportWindow = analyticsreport.Window90Days
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return analyticsWindow
+	return analyticsreportWindow
 }
 func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) automations.CreateInput {
 	var automationsCreateInput automations.CreateInput

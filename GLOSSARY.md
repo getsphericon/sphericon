@@ -110,6 +110,13 @@ conditions know it by its action (`email.opened`). A customer's own Event is sho
 as it was tracked.
 _Avoid_: Predefined event, built-in event, reserved event
 
+**Event log**:
+A Workspace's Events as they are recorded and read: a customer's Events enter it through the API,
+attached to an existing Contact by stable identity (never creating one), and the app and the API
+list it, filter it and name its distinct actions. Append-only like the Events it holds.
+Not the **Audit log**, which records changes to the Workspace.
+_Avoid_: Event stream, activity feed
+
 **Import**:
 Bringing records from a Workspace's earlier system into the Workspace, repeatably: sending the
 same record again changes nothing. Contacts and Events are imported differently; Events are a
@@ -792,6 +799,13 @@ the same ones that suppress and that mailbox providers penalize — count in the
 the metric measures list hygiene, not temporary blips. One hard bounce is thus used two
 coherent ways: it suppresses (Suppression) and it is the Bounce-rate numerator.
 _Avoid_: Delivery-failure rate (that would fold in soft bounces)
+
+**Analytics report**:
+A read-only figure of a Workspace over a chosen window of **Report days**, read live from the rows
+that hold the facts and never stored: the Overview (Contacts, sends, **Engagement rates**,
+Automations and the daily series) and the reports beside it (Events, deliverability, subscribed
+and new people, clicks by link, opens by hour, Revenue).
+_Avoid_: Dashboard (that is the page), metrics, Telemetry report (that is the Instance's)
 
 **Engagement rates**:
 The open, click and click-to-open ratios of the analytics reports over a chosen window (7, 30 or 90 **Report days**).

@@ -12,11 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accountlink"
-	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
-	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/bindings"
@@ -25,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
@@ -52,10 +49,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
@@ -93,7 +93,7 @@ type Handlers struct {
 	appURL          string
 	outbound        *outbound.Module
 	segments        *segments.Module
-	eventlog        *eventlog.Module
+	eventlog        *eventlog.UseCase
 	contacts        *contacts.Module
 	erasure         *contacterasure.UseCase
 	tags            *tags.Module
@@ -110,10 +110,10 @@ type Handlers struct {
 	rules                 *rules.Module
 	oauth                 *oauthserver.Service
 	audit                 AuditLog
-	attention             *attention.Module
+	attention             *needsattention.UseCase
 	setupChecklist        *setupchecklist.Module
 	supportEmail          string
-	analytics             *analytics.Module
+	analytics             *analyticsreport.UseCase
 	sessions              *auth.Sessions
 	secondFactor          *secondfactor.Module
 	passkeys              *secondfactor.Passkeys
@@ -195,7 +195,7 @@ type Deps struct {
 	Webhooks    *webhooks.Module
 	Outbound    *outbound.Module
 	Segments    *segments.Module
-	EventLog    *eventlog.Module
+	EventLog    *eventlog.UseCase
 	Contacts    *contacts.Module
 	Erasure     *contacterasure.UseCase
 	Tags        *tags.Module
@@ -225,14 +225,14 @@ type Deps struct {
 	AppURL           string
 	Audit            AuditLog
 	// Attention reads what in a Workspace needs a member's action now.
-	Attention *attention.Module
+	Attention *needsattention.UseCase
 	// SetupChecklist reads the Setup checklist and stamps its first completion.
 	SetupChecklist *setupchecklist.Module
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// Origins are the public origins a Workspace's pages point at besides the app's own.
 	Origins   Origins
-	Analytics *analytics.Module
+	Analytics *analyticsreport.UseCase
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions

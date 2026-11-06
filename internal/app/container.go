@@ -26,12 +26,10 @@ import (
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/accountlink"
-	"github.com/getsphericon/sphericon/internal/analytics"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
-	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
@@ -39,7 +37,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -49,7 +46,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/invitations"
@@ -87,16 +83,20 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/upgrade"
+	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
+	"github.com/getsphericon/sphericon/internal/usecase/ingesthook"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
+	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
@@ -439,7 +439,7 @@ var editionPackage = do.Package(
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
 		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
 		// A provider's bounce or complaint counts on the send-outcome counter once it is stored.
-		bus.OnStored(ingest.RecordOutcome)
+		bus.OnStored(ingesthook.RecordOutcome)
 		return bus, nil
 	}),
 )
@@ -717,8 +717,8 @@ var contentPackage = do.Package(
 		return customfieldretyping.New(), nil
 	}),
 	// The transactional send surface of /api: a Template sent through Outbound send.
-	do.Lazy(func(i do.Injector) (*transactional.Module, error) {
-		return transactional.New(do.MustInvoke[*templates.Module](i), do.MustInvoke[*outbound.Module](i)), nil
+	do.Lazy(func(i do.Injector) (*transactionalsend.UseCase, error) {
+		return transactionalsend.New(do.MustInvoke[*templates.Module](i), do.MustInvoke[*outbound.Module](i)), nil
 	}),
 	// Webhooks: the audit.entry rule asks the Edition whether the license is active.
 	do.Lazy(func(i do.Injector) (*webhooks.Module, error) {
@@ -733,19 +733,19 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
 		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*eventlog.Module, error) {
+	do.Lazy(func(i do.Injector) (*eventlog.UseCase, error) {
 		policy := eventlog.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}
 		return eventlog.New(do.MustInvoke[*events.Bus](i), policy), nil
 	}),
 	do.Lazy(func(i do.Injector) (*setupchecklist.Module, error) {
 		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*attention.Module, error) {
+	do.Lazy(func(i do.Injector) (*needsattention.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
-		return attention.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outbound.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
+		return needsattention.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outbound.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*analytics.Module, error) {
-		return analytics.New().WithClock(do.MustInvoke[Clock](i)).WithRetention(do.MustInvoke[*config.Config](i).EventsRetention), nil
+	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
+		return analyticsreport.New().WithClock(do.MustInvoke[Clock](i)).WithRetention(do.MustInvoke[*config.Config](i).EventsRetention), nil
 	}),
 	do.Lazy(func(do.Injector) (*reputation.Module, error) {
 		return reputation.New(), nil
@@ -878,14 +878,14 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Webhooks:              do.MustInvoke[*webhooks.Module](i),
 		Outbound:              do.MustInvoke[*outbound.Module](i),
 		Segments:              do.MustInvoke[*segments.Module](i),
-		EventLog:              do.MustInvoke[*eventlog.Module](i),
+		EventLog:              do.MustInvoke[*eventlog.UseCase](i),
 		Contacts:              do.MustInvoke[*contacts.Module](i),
 		Erasure:               do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                  do.MustInvoke[*tags.Module](i),
 		TagDeletion:           do.MustInvoke[*tagdeletion.UseCase](i),
 		Bindings:              do.MustInvoke[*bindings.Module](i),
 		Templates:             do.MustInvoke[*templates.Module](i),
-		Transactional:         do.MustInvoke[*transactional.Module](i),
+		Transactional:         do.MustInvoke[*transactionalsend.UseCase](i),
 		BrandKit:              do.MustInvoke[*brandkit.Module](i),
 		Automations:           do.MustInvoke[*automations.Module](i),
 		Rules:                 do.MustInvoke[*rules.Module](i),
@@ -926,7 +926,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Deletion:                 do.MustInvoke[*workspacedeletion.Module](i),
 		AccountLink:              accountLink,
 		Holds:                    do.MustInvoke[*holds.Holds](i),
-		Attention:                do.MustInvoke[*attention.Module](i),
+		Attention:                do.MustInvoke[*needsattention.UseCase](i),
 		SetupChecklist:           do.MustInvoke[*setupchecklist.Module](i),
 		SupportEmail:             cfg.SupportEmail,
 		Origins:                  apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
@@ -941,7 +941,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Webhooks:                 do.MustInvoke[*webhooks.Module](i),
 		Outbound:                 do.MustInvoke[*outbound.Module](i),
 		Segments:                 do.MustInvoke[*segments.Module](i),
-		EventLog:                 do.MustInvoke[*eventlog.Module](i),
+		EventLog:                 do.MustInvoke[*eventlog.UseCase](i),
 		Contacts:                 do.MustInvoke[*contacts.Module](i),
 		Erasure:                  do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                     do.MustInvoke[*tags.Module](i),
@@ -969,7 +969,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Audit:                    edition.Audit,
 		SecondFactor:             do.MustInvoke[*secondfactor.Module](i),
 		Passkeys:                 do.MustInvoke[*secondfactor.Passkeys](i),
-		Analytics:                do.MustInvoke[*analytics.Module](i),
+		Analytics:                do.MustInvoke[*analyticsreport.UseCase](i),
 		Clock:                    do.MustInvoke[Clock](i),
 		RequireEmailVerification: cfg.RequireEmailVerification,
 		Signin:                   do.MustInvoke[*signin.Providers](i),

@@ -349,7 +349,7 @@ rules:
     may_depend_on: [core, core-raw, identity-base, usecase]
     forbid_external: *no-container
     forbid_symbol: *raw-driver-forbids
-    because: the job runner calls the core, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
+    because: the job runner calls the core and the use cases, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
   infra:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]

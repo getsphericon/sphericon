@@ -108,7 +108,7 @@ coding standards in `CODING_STANDARDS.md`.
   which stays at the root). Every component may import it, and easement fails its import of
   anything of ours but the kernel and the generated ent client: the bus knows no consumer (the
   wiring registers them; the suppression consumer is a job in `internal/jobs`, and the send-outcome
-  counter of a bounce or a complaint is `ingest.RecordOutcome`, registered with `Bus.OnStored`), and
+  counter of a bounce or a complaint is `ingesthook.RecordOutcome`, registered with `Bus.OnStored`), and
   the database package installs no ent hook (`internal/app/entclient` builds every client). No core
   tier (kernel, infrastructure, domain) imports an API surface's generated package (component
   `gen-surfaces`): what the core shares with a contract is generated into the kernel, as the scope
@@ -151,6 +151,13 @@ coding standards in `CODING_STANDARDS.md`.
   the Telemetry report (`internal/usecase/releasecheck`, `internal/usecase/telemetryreport`) take
   the Instance state module (`internal/instancestates`), whose functions make the Instance-wide
   reads on its raw client, and hold no client themselves.
+  A use case need not guard a removal: an operation that writes no table itself but reads or
+  changes several modules' rows is one too. The Ingest hook's reading of a provider's callbacks
+  (`ingesthook`) opens the request's transaction and changes Outbound messages, Suppressions,
+  Unsubscribes, Confirmations and Bindings through their modules; the Transactional send
+  (`transactionalsend`) hands its request to the Outbound send module; the Event log (`eventlog`)
+  publishes a customer's Events on the bus and reads them back; the Analytics reports (`analyticsreport`) and what Needs
+  attention (`needsattention`) only read.
   One unchecked removal is called from a domain module until its use case exists:
   `memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its deletion window
   leave, serves User deletion in `internal/users` (core-raw). It is forbidden like the others everywhere

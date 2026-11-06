@@ -55,7 +55,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/transactional"
+	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 )
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
@@ -494,7 +494,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	TrackingReasonToResource(source trackingdomain.Reason) externalapi.TrackingReason
 	// goverter:enum:transform value
-	TransactionalSendStatusToResource(source transactional.Status) externalapi.TransactionalSendStatus
+	TransactionalSendStatusToResource(source transactionalsend.Status) externalapi.TransactionalSendStatus
 	// goverter:enum:transform value
 	TrackingStateToResource(source trackingdomain.State) externalapi.TrackingState
 	// goverter:enum:transform value

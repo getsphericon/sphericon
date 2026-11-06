@@ -45,7 +45,7 @@ import (
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
-	transactional "github.com/getsphericon/sphericon/internal/transactional"
+	transactionalsend "github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	jx "github.com/go-faster/jx"
 )
 
@@ -1625,12 +1625,12 @@ func (c *ConverterImpl) TrackingStateToResource(source trackingdomain.State) ext
 	}
 	return externalapiTrackingState
 }
-func (c *ConverterImpl) TransactionalSendStatusToResource(source transactional.Status) external.TransactionalSendStatus {
+func (c *ConverterImpl) TransactionalSendStatusToResource(source transactionalsend.Status) external.TransactionalSendStatus {
 	var externalapiTransactionalSendStatus external.TransactionalSendStatus
 	switch source {
-	case transactional.Sent:
+	case transactionalsend.Sent:
 		externalapiTransactionalSendStatus = external.TransactionalSendStatusSent
-	case transactional.Suppressed:
+	case transactionalsend.Suppressed:
 		externalapiTransactionalSendStatus = external.TransactionalSendStatusSuppressed
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

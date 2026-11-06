@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -27,13 +26,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspaces"
@@ -48,7 +48,7 @@ var inputs = &resources.InputsImpl{}
 type Handlers struct {
 	workspaces      *workspaces.Module
 	bus             *events.Bus
-	eventlog        *eventlog.Module
+	eventlog        *eventlog.UseCase
 	outbound        *outbound.Module
 	segments        *segments.Module
 	webhooks        *webhooks.Module
@@ -69,7 +69,7 @@ type Handlers struct {
 	domainVerification    *domainverification.UseCase
 	bindings              *bindings.Module
 	templates             *templates.Module
-	transactional         *transactional.Module
+	transactional         *transactionalsend.UseCase
 	brandKit              *brandkit.Module
 	automations           *automations.Module
 	rules                 *rules.Module
@@ -113,7 +113,7 @@ type Deps struct {
 	TrackingDomains  *trackingdomains.Module
 	Outbound         *outbound.Module
 	Segments         *segments.Module
-	EventLog         *eventlog.Module
+	EventLog         *eventlog.UseCase
 	Contacts         *contacts.Module
 	Erasure          *contacterasure.UseCase
 	Tags             *tags.Module
@@ -125,7 +125,7 @@ type Deps struct {
 	DomainVerification    *domainverification.UseCase
 	Bindings              *bindings.Module
 	Templates             *templates.Module
-	Transactional         *transactional.Module
+	Transactional         *transactionalsend.UseCase
 	BrandKit              *brandkit.Module
 	Automations           *automations.Module
 	Rules                 *rules.Module

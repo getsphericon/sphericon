@@ -21,10 +21,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
-	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/ingesthook"
 )
 
 // Opting out and back in on Telegram (ADR 0077): every way of stopping is the person's Channel-wide
@@ -212,7 +212,7 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 		{ID: "1", Destination: strconv.Itoa(optOutUser), Reachable: false, Reason: preset.Deactivated},
 	}}
 
-	err := ingest.New(env.Bus, nil).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), row, "telegram", res, time.Now())
+	err := ingesthook.New(env.Bus, nil).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), row, "telegram", res, time.Now())
 
 	require.NoError(t, err)
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.Destination(strconv.Itoa(optOutUser))).CountX(t.Context()))

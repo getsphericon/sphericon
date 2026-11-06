@@ -10,10 +10,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
-	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/usecase/ingesthook"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -26,16 +26,16 @@ import (
 //
 // The Integration's Preset verifies the request (a bad signature or wrong source is 4xx)
 // and turns the payload into facts (Delivery notices, Inbound messages, Reachability
-// changes), which the core interprets by the Integration's Channel (internal/ingest) in one
-// transaction before the 2xx; our own failure is 5xx so the provider retries; a valid
-// request the Preset does not handle is 2xx with nothing recorded.
+// changes), which the Ingest hook use case (internal/usecase/ingesthook) interprets by the
+// Integration's Channel in one transaction before the 2xx; our own failure is 5xx so the
+// provider retries; a valid request the Preset does not handle is 2xx with nothing recorded.
 func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Module, now func() time.Time) http.Handler {
 	if now == nil {
 		now = time.Now
 	}
 	h := &hook{
 		ent:    client,
-		ingest: ingest.New(bus, integ),
+		ingest: ingesthook.New(bus, integ),
 		integ:  integ,
 		now:    now,
 	}
@@ -46,7 +46,7 @@ func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Modul
 
 type hook struct {
 	ent    *ent.Client
-	ingest *ingest.Module
+	ingest *ingesthook.UseCase
 	integ  *integrations.Module
 	now    func() time.Time
 }

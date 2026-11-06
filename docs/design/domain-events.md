@@ -63,7 +63,7 @@ does the rest:
 - **After the commit**: what must happen once for a newly stored Event, outside any transaction, is
   registered on the bus with `OnStored` and runs after the commit, so neither a repeat nor a
   rolled-back Event reaches it: the send-outcome counter of a provider's bounce or complaint
-  (`ingest.RecordOutcome`). The bus knows no domain module: the names it catalogs (`email.bounced`,
+  (`ingesthook.RecordOutcome`). The bus knows no domain module: the names it catalogs (`email.bounced`,
   `email.complained`) are its own, and `suppression` refers to them.
 
 Every event job carries the whole envelope (`events.EventJob`, embedded by each consumer's args), so a

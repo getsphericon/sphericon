@@ -29,8 +29,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
-	"github.com/getsphericon/sphericon/internal/analytics"
-	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
@@ -49,6 +47,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 
 	"github.com/go-faster/jx"
@@ -233,41 +233,41 @@ type Converter interface {
 	// attached by the handler.
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
-	AnalyticsOverviewToResource(source *analytics.Overview) *siteapi.SiteAnalyticsOverview
+	AnalyticsOverviewToResource(source *analyticsreport.Overview) *siteapi.SiteAnalyticsOverview
 	// goverter:map Window WindowHours | windowHours
 	// goverter:useEmptyOnNil:slice
-	AnalyticsDeliverabilityToResource(source analytics.Deliverability) siteapi.SiteAnalyticsDeliverability
+	AnalyticsDeliverabilityToResource(source analyticsreport.Deliverability) siteapi.SiteAnalyticsDeliverability
 	// goverter:map SendingDomainID SendingDomainId
 	// goverter:map Complaint ComplaintRate
 	// goverter:map Bounce BounceRate
-	AnalyticsDomainRatesToResource(source analytics.DomainRates) siteapi.SiteSendingDomainRates
+	AnalyticsDomainRatesToResource(source analyticsreport.DomainRates) siteapi.SiteSendingDomainRates
 	AnalyticsRateToResource(source reputation.Rate) siteapi.SiteRate
-	AnalyticsContactsToResource(source analytics.Contacts) siteapi.SiteAnalyticsContacts
-	AnalyticsPeriodToResource(source analytics.Period) siteapi.SiteAnalyticsPeriod
+	AnalyticsContactsToResource(source analyticsreport.Contacts) siteapi.SiteAnalyticsContacts
+	AnalyticsPeriodToResource(source analyticsreport.Period) siteapi.SiteAnalyticsPeriod
 	// goverter:map Sent SentCount
 	// goverter:map Opened OpenedCount
 	// goverter:map Clicked ClickedCount
-	AnalyticsEmailToResource(source analytics.Email) siteapi.SiteAnalyticsEmail
+	AnalyticsEmailToResource(source analyticsreport.Email) siteapi.SiteAnalyticsEmail
 	// The Events and Clicks by link reports are lists, which goverter cannot map onto their
 	// envelopes: the handler builds those, of one list each.
 	// goverter:useEmptyOnNil:slice
-	AnalyticsEventActionsToResources(source []analytics.EventAction) []siteapi.SiteAnalyticsEventAction
+	AnalyticsEventActionsToResources(source []analyticsreport.EventAction) []siteapi.SiteAnalyticsEventAction
 	// goverter:useEmptyOnNil:slice
-	AnalyticsSubscribedPeopleToResource(source *analytics.SubscribedPeople) *siteapi.SiteAnalyticsSubscribedPeople
+	AnalyticsSubscribedPeopleToResource(source *analyticsreport.SubscribedPeople) *siteapi.SiteAnalyticsSubscribedPeople
 	// goverter:useEmptyOnNil:slice
-	AnalyticsLinksToResources(source []analytics.LinkClicks) []siteapi.SiteAnalyticsLink
+	AnalyticsLinksToResources(source []analyticsreport.LinkClicks) []siteapi.SiteAnalyticsLink
 	// goverter:useEmptyOnNil:slice
-	AnalyticsOpensByHourToResource(source *analytics.OpensByHour) *siteapi.SiteAnalyticsOpensByHour
+	AnalyticsOpensByHourToResource(source *analyticsreport.OpensByHour) *siteapi.SiteAnalyticsOpensByHour
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
-	AnalyticsNewPeopleToResource(source *analytics.NewPeople) *siteapi.SiteNewPeopleReport
+	AnalyticsNewPeopleToResource(source *analyticsreport.NewPeople) *siteapi.SiteNewPeopleReport
 	AbuseWarningToResource(source abusewatch.Warning) siteapi.SiteAbuseWarning
 
 	// What needs attention maps whole from the module's items; an absent subject, start, hold
 	// reason or rate is left out.
 	// goverter:useEmptyOnNil:slice
-	AttentionItemsToResources(source []attention.Item) []siteapi.SiteAttentionItem
-	AttentionSubjectToResource(source attention.Subject) siteapi.SiteAttentionSubject
+	AttentionItemsToResources(source []needsattention.Item) []siteapi.SiteAttentionItem
+	AttentionSubjectToResource(source needsattention.Subject) siteapi.SiteAttentionSubject
 
 	// The email's subject is not on the Event: the handler reads it from the Outbound message.
 	// goverter:ignore EmailSubject
@@ -673,9 +673,9 @@ type Converter interface {
 	// goverter:enum:transform value
 	AbuseMetricToResource(source abusewatch.Metric) siteapi.SiteAbuseMetric
 	// goverter:enum:transform value
-	AttentionKindToResource(source attention.Kind) siteapi.SiteAttentionKind
+	AttentionKindToResource(source needsattention.Kind) siteapi.SiteAttentionKind
 	// goverter:enum:transform value
-	AttentionSeverityToResource(source attention.Severity) siteapi.SiteAttentionSeverity
+	AttentionSeverityToResource(source needsattention.Severity) siteapi.SiteAttentionSeverity
 	// goverter:enum:transform value
 	AnalyticsOwnerKindToResource(source linkclicks.OwnerKind) siteapi.SiteAnalyticsOwnerKind
 	// goverter:enum:transform value
@@ -1263,7 +1263,7 @@ func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperato
 }
 
 // optAttentionSubject is the object an attention item is about, absent for the Workspace's own.
-func optAttentionSubject(c Converter, v *attention.Subject) siteapi.OptNilSiteAttentionSubject {
+func optAttentionSubject(c Converter, v *needsattention.Subject) siteapi.OptNilSiteAttentionSubject {
 	return convert.OptVia[siteapi.OptNilSiteAttentionSubject](v, c.AttentionSubjectToResource)
 }
 

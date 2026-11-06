@@ -12,7 +12,6 @@ import (
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consent "github.com/getsphericon/sphericon/internal/consent"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
-	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
 	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -22,6 +21,7 @@ import (
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	templates "github.com/getsphericon/sphericon/internal/templates"
+	eventlog "github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
 
