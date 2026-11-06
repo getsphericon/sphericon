@@ -9,7 +9,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
 // publishFieldChanges records contact.field_changed for each Custom field whose value differs

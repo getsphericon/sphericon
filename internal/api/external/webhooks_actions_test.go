@@ -12,10 +12,10 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T) {

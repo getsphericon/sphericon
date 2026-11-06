@@ -31,7 +31,7 @@ import (
 const module = "github.com/getsphericon/sphericon/"
 
 // eventsPath is the package of the events bus, whose Within… methods open a transaction.
-const eventsPath = module + "internal/events"
+const eventsPath = module + "internal/infra/events"
 
 // entryPoints are the packages that receive input from outside (an API surface, MCP, a queue, the
 // ingest hooks) and hand it to a domain module.

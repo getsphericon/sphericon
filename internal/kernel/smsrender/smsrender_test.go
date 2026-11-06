@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
+	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
-	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 )
 
 // partsCase is one row of the table both counters read (testdata/parts.json): a text given as

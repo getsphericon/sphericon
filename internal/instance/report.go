@@ -17,9 +17,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/postgres"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 

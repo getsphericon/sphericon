@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // ConfirmSubscription performs a Preset's confirm action: it fetches the URL the

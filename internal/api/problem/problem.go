@@ -28,12 +28,12 @@ import (
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/api/problem/mapping"
-	dbpkg "github.com/getsphericon/sphericon/internal/db"
+	dbpkg "github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
-	"github.com/getsphericon/sphericon/internal/logging"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
 // RenderRetryAfter is the Retry-After (seconds) of a 503 for a document render that could not run.

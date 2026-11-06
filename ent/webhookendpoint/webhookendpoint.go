@@ -8,7 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 const (

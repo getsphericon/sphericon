@@ -87,27 +87,41 @@ coding standards in `CODING_STANDARDS.md`.
   assemble them; only they import `ee/`. Inside `ee/`, the Enterprise surfaces (`ee/api/**`,
   component `ee-api`) call their domain module in `ee/` and hold neither the raw client nor the
   container, and only the Edition (`ee/ee.go`, component `ee-edition`) builds them: no Enterprise
-  module imports a handler. The job runner (`internal/jobs`, component `runner`) is a driver too: only
-  the wiring imports it, and a package with jobs of its own (the Edition, the Instance) hands them
-  in as a `jobextension.Extension`. A new wiring package is added to the `wiring` component, never to a
+  module imports a handler. The drivers (ADR 0102) are the API surfaces, their shared security
+  handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), MCP and the job runner
+  (`internal/jobs`, component `runner`): each receives input, calls a domain module and returns or
+  records the result (review rule 5), and no core tier imports one. Only the wiring imports the
+  runner, and a package with jobs of its own (the Edition, the Instance) hands them in as a
+  `jobextension.Extension`. A new wiring package is added to the `wiring` component, never to a
   baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
   packages that import none of ours, such as the vocabulary every tier shares (`channels`,
   `providers`, `holdreason`, `tokenscope`, `jobkind`) and the helpers that know no domain module
   (`i18n`, `validation`, `pagination`, `patch`, `secrets`, `credentials`, the renderers `emaildoc`,
   `emailrender`, `smsrender` and `telegramrender`). Every component may import it, and easement fails
   its import of any package of ours outside `internal/kernel`, the generated `ent` and `gen` trees
-  included (components `ent` and `gen`, open to every other component); a package that needs one is
-  not kernel.
+  included; a package that needs one is not kernel. The infrastructure (`internal/infra`, components
+  `infra` and `infra-raw`, ADR 0102) sits above it: the bus (`events`), the database connection and
+  migrations (`db`, `devdb`, `postgres`), the message providers (`messaging` and its providers, with
+  `dkimstate`, the one definition of a verified Sending domain that the DKIM signer reads), the
+  outbound HTTP calls (`httpcall`, `webhook`), the request throttle (`ratelimit`), `logging`,
+  OpenTelemetry (`telemetry`, served by `sidelistener`) and the process's configuration (`config`,
+  which stays at the root). Every component may import it, and easement fails its import of
+  anything of ours but the kernel and the generated ent client: the bus knows no consumer (the
+  wiring registers them; the suppression consumer is a job in `internal/jobs`, and the send-outcome
+  counter of a bounce or a complaint is `ingest.RecordOutcome`, registered with `Bus.OnStored`), and
+  the database package installs no ent hook (`internal/app/entclient` builds every client). No core
+  tier (kernel, infrastructure, domain) imports an API surface's generated package (component
+  `gen-surfaces`): what the core shares with a contract is generated into the kernel, as the scope
+  vocabulary is into `internal/kernel/tokenscope`. The one exception is the Telemetry contract's
+  client (`gen/telemetry`, component `gen-telemetry`), which the Instance uses. The drivers, the
+  wiring and the Enterprise Edition may import the surfaces' packages; the ban leaves the Enterprise
+  Edition's boundary with the core as it is (`ee/staff` reads its service surface's `ServiceScope`).
   The check is strict: a new Go package under `internal/kernel/` is covered by the `kernel`
-  component, any other under `internal/` by the `core` component, one under `ee/api/` by `ee-api` and
-  any other under `ee/` by `ee`, and a new top-level
+  component, one under `internal/infra/` by `infra`, any other under `internal/` by the `core`
+  component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
   tree must be assigned a component or listed as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
-  `*ent.Client` list (`core-raw`, see "Workspace scoping") and the `samber/do` ban. The event bus
-  (`internal/events`) is the `bus` component: every component may publish through it, and it
-  imports no domain module (easement fails its import of `internal/suppression` or
-  `internal/messaging`; the suppression consumer is a job in `internal/jobs`, and the send-outcome
-  counter of a bounce or a complaint is `ingest.RecordOutcome`, registered with `Bus.OnStored`).
+  `*ent.Client` list (`core-raw` and `infra-raw`, see "Workspace scoping") and the `samber/do` ban.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
@@ -248,7 +262,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
   the Owners' deleted ones, which have no scope yet, opens a transaction per erase step (one per
   Workspace-owned table, the Send cap's bucket `send_cap_limiters` among them), scopes to the
-  one Workspace being erased inside it, and writes the row the cycle moves), `internal/events`
+  one Workspace being erased inside it, and writes the row the cycle moves), `internal/infra/events`
   (the bus, the Event rows it writes and the event consumers' work), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition, and the Instance-wide Tracking host
   index, ADR 0038: the host gate `trackingHostGate` / `verifiedTrackingHost` in `trackinghost.go`,
@@ -265,12 +279,12 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   through the scopes of list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives
   a Workspace the next feed position when it is created or an owner is added, removed,
   transferred or changes email or verification: it must reach the Workspace a User or
-  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/userfeed` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/staff` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/trackinghostlog` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/staff` serves it in `Module.TrackingHostFeed`), `internal/db` (the guard's read of the schema state row, on a client of its own before the application's exists) and the composition roots
+  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/userfeed` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/staff` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/trackinghostlog` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/staff` serves it in `Module.TrackingHostFeed`), `internal/infra/db` (the guard's read of the schema state row, on a client of its own before the application's exists) and the composition roots
   (`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`. easement holds the core
   packages of the list as the `core-raw` component of `easement.yml` (the job runner as its own
-  `runner` component, which does not forbid the client either, and the bus, `internal/events`, as
-  the `bus` component) and fails a use of
+  `runner` component, which does not forbid the client either, and the bus and the database package,
+  `internal/infra/events` and `internal/infra/db`, as the `infra-raw` component) and fails a use of
   `ent.Client` anywhere else in `internal/` (and in a surface package), so a new package goes into
   both lists.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes
@@ -361,7 +375,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   takes the Workspace's transaction-scoped advisory lock, so a check never passes on work that
   becomes live before the removal commits. The lock comes before any row lock. A hot path (a Rule
   firing, an Enrollment, a send) never takes it: it locks the row it acts on and checks it again
-  under that lock. Email via `internal/messaging`
+  under that lock. Email via `internal/infra/messaging`
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
   bytes for SES v2 `SendEmail` (raw content).

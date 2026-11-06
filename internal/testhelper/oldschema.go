@@ -12,15 +12,15 @@ import (
 
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // SchemaBefore is the input of a migration under test: a database of the test's own, migrated
 // with every committed migration older than the one whose file name ends in "_<name>.sql" (the Go
-// ones of internal/db included), and
+// ones of internal/infra/db included), and
 // loaded with the fixture files of dir, rows in the shape of that older schema (review rule 10:
 // the shared fixtures hold today's shape only). The test runs db.Migrate on it to apply the
 // migration and the ones after it, then reads the result. It is dropped with the test.

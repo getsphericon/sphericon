@@ -11,8 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/api/problem"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
 // ServiceSurface is the service endpoints of the Staff surface (ADR 0026): what a

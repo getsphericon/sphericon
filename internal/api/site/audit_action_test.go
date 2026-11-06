@@ -9,7 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
 // The contract's AuditAction is exactly what the server records in a Workspace's Audit log: every

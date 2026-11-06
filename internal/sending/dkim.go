@@ -1,7 +1,7 @@
 // Package sending owns the workspace Sending-domain authentication primitives
 // (ADR 0010): per-domain DKIM keypair generation, the DNS records a user
 // publishes, and DKIM DNS verification. It is transport-independent on purpose —
-// no mail is sent here; the send path (internal/messaging) consumes the keys in
+// no mail is sent here; the send path (internal/infra/messaging) consumes the keys in
 // a later slice.
 package sending
 

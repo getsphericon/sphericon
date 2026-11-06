@@ -25,7 +25,7 @@ paths = [
 ]
 
 [[allowlists]]
-description = "Standard Webhooks spec test vector used in internal/webhook tests"
+description = "Standard Webhooks spec test vector used in internal/infra/webhook tests"
 regexes = ['''whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw''']
 
 [[allowlists]]

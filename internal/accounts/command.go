@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 )
 
 // ReportOwnerCreated reports `sphericon user create-owner` (ADR 0042): the Owner, its first

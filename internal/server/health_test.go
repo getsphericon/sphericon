@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/telemetry"
+	"github.com/getsphericon/sphericon/internal/infra/telemetry"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 )

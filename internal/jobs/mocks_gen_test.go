@@ -6,7 +6,7 @@ package jobs_test
 import (
 	"context"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"sync"
 )

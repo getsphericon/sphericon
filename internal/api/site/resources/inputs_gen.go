@@ -20,7 +20,7 @@ import (
 	consent "github.com/getsphericon/sphericon/internal/consent"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
-	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
+	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"

@@ -367,7 +367,7 @@ linters:
         text: G124
       # G703: tools and the OTEL_CONFIG_FILE setting read the file the operator names, and tests
       # read and rewrite this repository's own files and temp directories.
-      - path: ^(cmd/upgradecheck/main\.go|internal/telemetry/telemetry\.go|.*_test\.go)$
+      - path: ^(cmd/upgradecheck/main\.go|internal/infra/telemetry/telemetry\.go|.*_test\.go)$
         linters:
           - gosec
         text: G703

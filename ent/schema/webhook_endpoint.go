@@ -7,7 +7,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 // WebhookEndpoint is a workspace-scoped HTTP destination that receives domain

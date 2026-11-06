@@ -1,0 +1,131 @@
+package db_test
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
+	"github.com/riverqueue/river/rivermigrate"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+)
+
+func emptyConfig(t *testing.T, autoMigrate bool) *config.Config {
+	t.Helper()
+	return &config.Config{
+		DatabaseURL: testhelper.EmptyDBURL(t),
+		AutoMigrate: autoMigrate,
+		DBPool:      config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, RiverMaxConns: 2},
+	}
+}
+
+func statusText(t *testing.T, url string) string {
+	t.Helper()
+	var out bytes.Buffer
+	require.NoError(t, db.WriteStatus(t.Context(), url, &out))
+	return out.String()
+}
+
+// On an empty database ApplyMigrations creates the app schema and river's tables, and is safe to
+// run again.
+func TestApplyMigrationsCreatesRiverSchemaOnEmptyDatabase(t *testing.T) {
+	cfg := emptyConfig(t, false)
+
+	_, err := db.ApplyMigrations(t.Context(), cfg.DatabaseURL)
+	require.NoError(t, err)
+	_, err = db.ApplyMigrations(t.Context(), cfg.DatabaseURL)
+	require.NoError(t, err)
+
+	pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(pool, "pool") })
+	migrator, err := rivermigrate.New(riverdatabasesql.New(pool), nil)
+	require.NoError(t, err)
+	res, err := migrator.Validate(t.Context(), nil)
+	require.NoError(t, err)
+	require.True(t, res.OK, "river migrations pending: %v", res.Messages)
+}
+
+// Without auto-migrate the start refuses a database that has not run the binary's migrations;
+// with it, the start migrates, and the next start without it goes ahead.
+func TestPrepareStartMigratesOnlyWhenAutoMigrateIsOn(t *testing.T) {
+	guarded := emptyConfig(t, false)
+
+	err := db.PrepareStart(t.Context(), guarded)
+
+	var refusal *db.RefusalError
+	require.ErrorAs(t, err, &refusal)
+	refused := statusText(t, guarded.DatabaseURL)
+	assert.NotContains(t, refused, "pending: none", "the guard changes nothing")
+
+	migrating := &config.Config{DatabaseURL: guarded.DatabaseURL, AutoMigrate: true}
+	err = db.PrepareStart(t.Context(), migrating)
+	require.NoError(t, err)
+	migrated := statusText(t, guarded.DatabaseURL)
+	assert.Contains(t, migrated, "pending: none")
+	err = db.PrepareStart(t.Context(), guarded)
+	require.NoError(t, err)
+}
+
+// A development build starts on a database that has not run its migrations, and changes nothing:
+// the error page runs them.
+func TestPrepareStartOfADevelopmentBuildStartsOnADatabaseThatIsBehind(t *testing.T) {
+	cfg := emptyConfig(t, false)
+	cfg.IsDev = true
+
+	require.NoError(t, db.PrepareStart(t.Context(), cfg))
+	assert.NotContains(t, statusText(t, cfg.DatabaseURL), "pending: none")
+}
+
+// The error page's button migrates even when its request is gone, and the next request sees the
+// schema current at once instead of the verdict the watch cached.
+func TestPageMigrationsRunThroughACancelledRequestAndRefreshTheWatch(t *testing.T) {
+	url := testhelper.EmptyDBURL(t)
+	asked := 0
+	watch := db.WatchSchema(func(context.Context) (int, error) {
+		asked++
+		return 0, nil
+	}, time.Now)
+	_, err := watch.Pending(t.Context())
+	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	applied, err := db.NewPageMigrations(url, time.Minute, watch).Apply(ctx)
+
+	require.NoError(t, err)
+	assert.Positive(t, applied)
+	assert.Contains(t, statusText(t, url), "pending: none")
+	_, err = watch.Pending(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 2, asked, "the watch asks the database again")
+}
+
+// `migrate --status` prints the schema's state and the pending migrations and changes nothing.
+func TestWriteStatusListsPendingAndChangesNothing(t *testing.T) {
+	cfg := emptyConfig(t, false)
+
+	before := statusText(t, cfg.DatabaseURL)
+	require.Contains(t, before, "schema:  empty")
+	require.Contains(t, before, "pending: ")
+	require.NotContains(t, before, "pending: none")
+	require.Contains(t, before, "_init.sql")
+
+	again := statusText(t, cfg.DatabaseURL)
+	require.Equal(t, before, again)
+
+	_, err := db.ApplyMigrations(t.Context(), cfg.DatabaseURL)
+	require.NoError(t, err)
+	after := statusText(t, cfg.DatabaseURL)
+	require.Contains(t, after, "pending: none")
+	last := db.Majors[len(db.Majors)-1]
+	require.Contains(t, after, fmt.Sprintf("state:   Major %d, oldest release that runs: %s (this binary: Major %d)", last.Major, last.Floor, last.Major))
+}

@@ -13,7 +13,7 @@ import (
 	consent "github.com/getsphericon/sphericon/internal/consent"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
-	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
+	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"

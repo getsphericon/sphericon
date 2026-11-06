@@ -17,7 +17,7 @@ import (
 
 // Boundaries is what `sphericon migrate --status --json` prints and the walk reads: the
 // database's schema state and the binary's table of Majors, oldest first, where the Floor of
-// entry N+1 is the last release of Major N (internal/db.Majors).
+// entry N+1 is the last release of Major N (internal/infra/db.Majors).
 type Boundaries struct {
 	State  MajorFloor   `json:"state"`
 	Majors []MajorFloor `json:"majors"`

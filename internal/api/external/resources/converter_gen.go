@@ -28,6 +28,8 @@ import (
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consent "github.com/getsphericon/sphericon/internal/consent"
+	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
+	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -37,7 +39,6 @@ import (
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
-	messaging "github.com/getsphericon/sphericon/internal/messaging"
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
@@ -45,7 +46,6 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	transactional "github.com/getsphericon/sphericon/internal/transactional"
-	webhook "github.com/getsphericon/sphericon/internal/webhook"
 	jx "github.com/go-faster/jx"
 )
 

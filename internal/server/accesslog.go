@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/logging"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/go-chi/chi/v5/middleware"
 )
 

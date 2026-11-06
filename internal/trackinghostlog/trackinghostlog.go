@@ -27,7 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
-	"github.com/getsphericon/sphericon/internal/postgres"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 )
 
 // lockKey is the advisory lock that makes log ids commit in the order they are taken:

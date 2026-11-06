@@ -11,8 +11,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
 // SiteAuthLogin is the one route that starts a session (ADR 0020). It consults the

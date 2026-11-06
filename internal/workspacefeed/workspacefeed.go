@@ -25,7 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts/roles"
-	"github.com/getsphericon/sphericon/internal/postgres"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 )
 
 // LockKey is the advisory lock that makes positions commit in the order they are taken:

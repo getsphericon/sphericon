@@ -7,8 +7,8 @@ import (
 
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
-	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
 // SendMemberInviteWorker sends the invite email via the system (platform) sender.

@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/infra/telemetry"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
-	"github.com/getsphericon/sphericon/internal/logging"
-	"github.com/getsphericon/sphericon/internal/telemetry"
 )
 
 // stopTimeout bounds the shutdown of the app and the flush of the telemetry.

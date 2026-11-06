@@ -34,8 +34,9 @@ or `AGENTS.md`.
 
 ## Layers and boundaries
 
-5. **Business logic is a layer of its own.** Handlers of every surface, MCP, jobs and event subscribers
-   only receive input, call a domain module and return the result; they hold no logic.
+5. **Business logic is a layer of its own.** The drivers (handlers of every surface, MCP, jobs and
+   event subscribers) only receive input, call a domain module and return the result; they hold no
+   logic.
 6. **Knowledge has one place.** A rule or a shape is stated once; no second copy of it elsewhere. For
    the API that place is TypeSpec, and none of the following is declared anywhere else: operations
    (path, method, name), request and response shapes, value constraints (length, range, format,

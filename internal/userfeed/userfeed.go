@@ -33,7 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/usertombstone"
-	"github.com/getsphericon/sphericon/internal/postgres"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/workspacefeed"
 )
 

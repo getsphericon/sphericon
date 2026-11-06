@@ -32,8 +32,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/drafts"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -90,7 +90,7 @@ type Action struct {
 	// AutomationID is the Automation enroll_automation enrolls the Contact in.
 	AutomationID int64 `json:"automation_id,omitempty"`
 
-	// An http Action (ADR 0039 shape, shared through internal/httpcall) has ID, URL, Headers, Body
+	// An http Action (ADR 0039 shape, shared through internal/infra/httpcall) has ID, URL, Headers, Body
 	// (a Liquid JSON template that sees the Contact and the `event`) and Secret. Stored, URL,
 	// header values and Secret are ciphertext, sealed per field; in an Action being saved, an
 	// empty one keeps the stored value of the Action of the same ID, and ClearSecret drops the

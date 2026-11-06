@@ -7,10 +7,10 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // RunHTTPStepWorker establishes Workspace scope and translates HTTP Step execution decisions

@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
 // Definition is what one kind of Versioned definition supplies to the lifecycle: O is its row, V

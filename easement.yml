@@ -8,21 +8,11 @@ x-no-raw-client: &no-raw-client
   forbid_symbol:
     - name: github.com/getsphericon/sphericon/ent.Client
       because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
-# The scope vocabulary of the credentials a User gives is generated into internal/kernel/tokenscope;
-# its copy in the /site surface's generated package is the surface's own.
-x-scope-because: &scope-because the core reads the scope vocabulary from internal/kernel/tokenscope, generated from the same TypeSpec enums, never from a surface's generated package (ADR 0102)
-x-no-surface-scope-1: &no-surface-scope-1
-  name: github.com/getsphericon/sphericon/gen/site.GrantableScope
-  because: *scope-because
-x-no-surface-scope-2: &no-surface-scope-2
-  name: github.com/getsphericon/sphericon/gen/site.SendScope
-  because: *scope-because
-x-no-surface-scope-3: &no-surface-scope-3
-  name: github.com/getsphericon/sphericon/gen/site.SetupScope
-  because: *scope-because
-x-no-surface-scope-4: &no-surface-scope-4
-  name: github.com/getsphericon/sphericon/gen/site.PersonalScope
-  because: *scope-because
+# No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
+# shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
+x-no-surface-gen: &no-surface-gen
+  name: gen-surfaces
+  because: no core tier imports an API surface's generated package (ADR 0102); a vocabulary the core shares with a contract is generated into the kernel, as the scope vocabulary is into internal/kernel/tokenscope
 x-no-container: &no-container
   - name: github.com/samber/do
     because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture.md, Backend architecture)
@@ -96,13 +86,14 @@ components:
   # The files directly under src/: router, guards, theme, instance, i18n, entry points.
   web-app: { in: 'src/*' }
 
-  # The job runner is a driver, like the API surfaces (review rule 5): it receives a job, calls a
-  # domain module and records the result. Only the wiring builds it; a package with jobs of its own
-  # hands them in as a jobextension.Extension.
+  # The drivers (ADR 0102) are the API surfaces above, MCP (in the wiring) and the job runner: each
+  # receives input, calls a domain module and returns or records the result (review rule 5), and no
+  # core tier imports one. Only the wiring builds the runner; a package with jobs of its own hands
+  # them in as a jobextension.Extension.
   runner:
     in: internal/jobs
     allow_importers: [wiring]
-    because: the job runner is a driver that only the wiring builds; a package with jobs of its own hands them in as a jobextension.Extension, never importing the runner
+    because: the job runner is a driver (ADR 0102) that only the wiring builds; no domain module imports it, and a package with jobs of its own hands them in as a jobextension.Extension
 
   # The core packages that may hold the raw *ent.Client: the closed list "The raw *ent.Client is
   # allowed only in" of docs/architecture.md (Workspace scoping), kept in step with it. A package
@@ -118,7 +109,6 @@ components:
         internal/capturedmessages,
         internal/consent,
         internal/consentrecords,
-        internal/db,
         internal/domainverify,
         internal/instance,
         internal/instanceaudit,
@@ -140,30 +130,33 @@ components:
     # The Role definitions take no client at all.
     except: [internal/accounts/roles]
 
-  # The domain-event bus (docs/design/domain-events.md): it stores an Event and queues the jobs of
-  # its consumers, which the wiring registers on it. It holds the raw client like core-raw (the
-  # closed list of docs/architecture.md, Workspace scoping) and knows no domain module (ADR 0102).
-  bus: { in: internal/events }
-  # Two domain modules the bus must not know (bus: must_not_depend_on). They are components of
-  # their own only so the bus can name them; to everyone else they are core (common, core's rules).
-  suppression: { in: internal/suppression }
-  messaging: { in: internal/messaging }
+  # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
+  # providers, the outbound HTTP calls, the throttles, logging and OpenTelemetry, and the process's
+  # configuration (`config`, read by them). It imports only the kernel and never a domain module.
+  infra: { in: [internal/infra, config] }
+  # The two infrastructure packages that hold the raw client (the closed list of docs/architecture.md,
+  # Workspace scoping): the bus (docs/design/domain-events.md), which stores an Event and queues the
+  # jobs of the consumers the wiring registers on it, and the database package's schema guard.
+  infra-raw: { in: [internal/infra/events, internal/infra/db] }
 
   # The kernel (ADR 0102): the packages that import none of ours. The vocabulary every tier shares
   # (Channels, providers, Hold reasons, the token scopes, job kinds) and the helpers that know no
   # domain module (i18n, validation, pagination, the renderers, the secrets, the credentials).
   kernel: { in: internal/kernel }
-  # The generated ent client and the generated ogen packages, components only so the kernel can
-  # name them (kernel: must_not_depend_on); to everyone else they stay open (common).
+  # The generated ent client: a component so the kernel can name it (kernel: must_not_depend_on); to
+  # everyone else it stays open (common).
   ent: { in: ent }
-  gen: { in: gen }
+  # The generated ogen packages of the API surfaces, which only the drivers, the wiring and the
+  # Enterprise Edition import, and the Telemetry contract's client, which the Instance uses.
+  gen-surfaces: { in: gen }
+  gen-telemetry: { in: gen/telemetry }
 
   # Everything else under internal/ is the core domain.
-  core: { in: ['internal/**', config] }
+  core: { in: 'internal/**' }
 
-# Every component may publish through the bus, reach suppression and messaging as it reaches the
-# rest of the core, use the kernel and import the generated ent and ogen packages.
-common: [bus, suppression, messaging, kernel, ent, gen]
+# Every component may use the infrastructure (publish through the bus, among others) and the kernel,
+# and import the generated ent client.
+common: [infra, infra-raw, kernel, ent]
 
 # Files that are not part of a component's own layer (tests drive whole programs).
 exclude: ['**/*_test.go', '**/*.test.ts', '**/*.test.tsx', 'src/test/**', '**/testdata/**']
@@ -175,126 +168,115 @@ target_only: ['src/generated/**', '**/*.gen.ts', '**/*_gen.go']
 rules:
   api-site:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw]
+    may_depend_on: [api-auth, api-problem, core, core-raw, gen-surfaces]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-external:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw]
+    may_depend_on: [api-auth, api-problem, core, core-raw, gen-surfaces]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw]
+    may_depend_on: [api-auth, api-problem, core, core-raw, gen-surfaces]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
     <<: *no-raw-client
-    may_depend_on: [api-problem, core, core-raw]
+    may_depend_on: [api-problem, core, core-raw, gen-surfaces]
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-auth:
-    may_depend_on: [core, core-raw]
+    may_depend_on: [core, core-raw, gen-surfaces]
     forbid_external: *no-container
     because: the security handlers sit below every surface
   api-problem:
     <<: *no-raw-client
-    may_depend_on: [core, core-raw]
+    may_depend_on: [core, core-raw, gen-surfaces]
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   core:
     may_depend_on: [core-raw]
-    forbid_symbol: &core-forbids
+    must_not_depend_on: [*no-surface-gen]
+    forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client
         because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in `core-raw` here, never a field of a module
-      - *no-surface-scope-1
-      - *no-surface-scope-2
-      - *no-surface-scope-3
-      - *no-surface-scope-4
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
-    may_depend_on: [core]
+    # The Instance is the client of the Telemetry contract (ADR 0102).
+    may_depend_on: [core, gen-telemetry]
+    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: &raw-holder-forbids
-      - *no-surface-scope-1
-      - *no-surface-scope-2
-      - *no-surface-scope-3
-      - *no-surface-scope-4
       - name: github.com/getsphericon/sphericon/internal/emailcase.Hook
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
       - name: github.com/getsphericon/sphericon/internal/workspacefeed.Hook
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
       - name: github.com/getsphericon/sphericon/internal/workspacefeed.Guard
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
       - name: github.com/getsphericon/sphericon/internal/userfeed.Hook
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
       - name: github.com/getsphericon/sphericon/internal/userfeed.Guard
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
       - name: github.com/getsphericon/sphericon/internal/trackinghostlog.Hook
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
       - name: github.com/getsphericon/sphericon/internal/trackinghostlog.Guard
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
       - name: github.com/getsphericon/sphericon/internal/upgrade.Boundaries
-        because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); the database package knows no upgrade type
+        because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
       - name: github.com/getsphericon/sphericon/internal/upgrade.MajorFloor
-        because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); the database package knows no upgrade type
+        because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   runner:
     may_depend_on: [core, core-raw]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
     because: the job runner calls the core, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
-  bus:
-    may_depend_on: [core]
-    must_not_depend_on:
-      - name: suppression
-        because: the suppression consumer is a job of the runner (internal/jobs), and suppression refers to the bus's names, never the reverse
-      - name: messaging
-        because: the send-outcome counter of a bounce or a complaint is recorded by the ingest module, which the wiring registers on the bus (OnStored)
+  infra:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
+    forbid_symbol:
+      - name: github.com/getsphericon/sphericon/ent.Client
+        because: of the infrastructure only the bus and the database package hold the raw client (`infra-raw`, the closed list of docs/architecture.md, Workspace scoping)
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
-    because: the bus is infrastructure (ADR 0102); a consumer, a module or the wiring reaches it, it reaches no domain module
-  suppression:
-    may_depend_on: [core]
-    forbid_symbol: *core-forbids
+    because: infrastructure imports only the kernel and never a domain module (ADR 0102); a domain module, a use case, a driver or the wiring reaches it. The bus's consumers are registered by the wiring, and the ent client's hooks are installed there (internal/app/entclient)
+  infra-raw:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
-  messaging:
-    may_depend_on: [core]
-    forbid_symbol: *core-forbids
-    forbid_external: *no-container
-    because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
+    because: infrastructure imports only the kernel and never a domain module (ADR 0102); a domain module, a use case, a driver or the wiring reaches it. The bus's consumers are registered by the wiring, and the ent client's hooks are installed there (internal/app/entclient)
   kernel:
     may_depend_on: []
     must_not_depend_on:
-      - name: bus
-        because: the kernel sits below the bus; a package that publishes an Event is infrastructure or a domain module, not the kernel (ADR 0102)
-      - name: suppression
-        because: the kernel imports no domain module (ADR 0102)
-      - name: messaging
-        because: the kernel imports no domain module (ADR 0102)
+      - name: infra
+        because: the kernel sits below the infrastructure; a package that publishes an Event, reads the configuration or calls out is infrastructure or a domain module, not the kernel (ADR 0102)
+      - name: infra-raw
+        because: the kernel sits below the infrastructure; a package that publishes an Event, reads the configuration or calls out is infrastructure or a domain module, not the kernel (ADR 0102)
       - name: ent
         because: the kernel knows no table; a package that queries through ent is infrastructure or a domain module (ADR 0102)
-      - name: gen
-        because: the kernel knows no API surface; the scope vocabulary it needs is generated into internal/kernel/tokenscope (ADR 0102)
+      - *no-surface-gen
     # internal/kernel/cleanup reads the container for its shutdown report, the one exception the doc names.
     forbid_external: *no-container
     because: the kernel is the bottom tier (ADR 0102); it imports nothing of ours outside internal/kernel, so every tier can use it
   ent:
-    may_depend_on: [core]
-    because: the ent schema reads its Go types from the kernel, and the endpoint URL rule of a Webhook endpoint from internal/webhook; it knows no other package of ours
+    may_depend_on: []
+    because: the ent schema reads its Go types from the kernel, and the endpoint URL rule of a Webhook endpoint from internal/infra/webhook; it knows no domain module
   ee-api:
     <<: *no-raw-client
-    may_depend_on: [api-problem, core, core-raw, ee]
+    may_depend_on: [api-problem, core, core-raw, ee, gen-surfaces]
     forbid_external: *no-container
     because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
   ee-edition:
-    may_depend_on: [core, core-raw, ee, ee-api]
+    may_depend_on: [core, core-raw, ee, ee-api, gen-surfaces]
     forbid_external: *no-container
     because: the Edition builds the Enterprise modules and their surfaces on the core, never on the open surfaces' handlers
   ee:
-    may_depend_on: [core, core-raw]
+    may_depend_on:
+      - core
+      - core-raw
+      - name: gen-surfaces
+        because: the ban on a surface's generated package binds the core tiers; the Enterprise Edition's boundary with the core is unchanged (spec #1120), and ee/staff reads its service surface's ServiceScope until the Edition takes the same tiers
     forbid_external: *no-container
     because: the Enterprise Edition builds on the core and never on a surface's handlers; the Edition (ee-edition) builds its own surfaces
   wiring:
@@ -311,6 +293,7 @@ rules:
         api-auth,
         api-problem,
         runner,
+        gen-surfaces,
       ]
     because: wiring is where the program is assembled
 

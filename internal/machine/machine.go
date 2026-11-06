@@ -27,7 +27,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
-	"github.com/getsphericon/sphericon/internal/logging"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
 )
 
 // RangesURL is where Apple publishes the Private Relay egress ranges, one CSV row per range

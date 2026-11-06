@@ -7,7 +7,7 @@ import (
 	"slices"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
 // DryRunOutcome is whether a stored Event would fire a Rule, and if not, why.

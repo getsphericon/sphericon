@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 

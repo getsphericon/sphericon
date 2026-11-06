@@ -10,9 +10,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
-	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // The Enrollment's lifecycle (ADR 0046): it starts `active` and leaves it exactly once, for

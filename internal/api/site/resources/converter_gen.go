@@ -36,6 +36,8 @@ import (
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consent "github.com/getsphericon/sphericon/internal/consent"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
+	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
+	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
 	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -47,7 +49,6 @@ import (
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
-	messaging "github.com/getsphericon/sphericon/internal/messaging"
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
@@ -57,7 +58,6 @@ import (
 	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
-	webhook "github.com/getsphericon/sphericon/internal/webhook"
 	"time"
 )
 

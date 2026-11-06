@@ -20,8 +20,8 @@ import (
 	"unicode"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/joho/godotenv"
 )
 
@@ -243,7 +243,7 @@ type Config struct {
 
 	// OtelServiceName is the service.name reported on OTel traces/metrics. The
 	// export destinations come from the declarative config file OTEL_CONFIG_FILE
-	// names (read by otelconf in internal/telemetry).
+	// names (read by otelconf in internal/infra/telemetry).
 	OtelServiceName string
 
 	// MetricsAddr (host:port) is where the opt-in Prometheus listener binds. Empty

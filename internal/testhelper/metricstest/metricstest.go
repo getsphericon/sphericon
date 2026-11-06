@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/telemetry"
+	"github.com/getsphericon/sphericon/internal/infra/telemetry"
 )
 
 // Scrape is one Prometheus exposition body taken from the real /metrics handler.

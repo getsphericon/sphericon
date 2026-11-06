@@ -9,7 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
-	appdb "github.com/getsphericon/sphericon/internal/db"
+	appdb "github.com/getsphericon/sphericon/internal/infra/db"
 )
 
 // migrateCommand is `sphericon migrate`: it applies the pending migrations with no time limit

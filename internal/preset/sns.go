@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/maypok86/otter/v2"
 )
 
