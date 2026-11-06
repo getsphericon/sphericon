@@ -54,6 +54,9 @@ Other parts of the core are misplaced too:
   or another module reads it, and changes it only through its owner's functions. The `entrywrite` analyzer,
   which forbids handlers to write through ent, holds an ownership map: each ent entity names its owning
   module, and a write to it from any other package fails.
+  An infrastructure package owns the few tables that belong to no domain, with the same rule: the bus
+  owns the Events (`Event`), the Login throttle its attempts (`AuthAttempt`) and the database package
+  the schema state the migrations keep (`SchemaState`).
 - **The contexts are ordered:** identity → contacts → content → sending → orchestration → insights →
   instance. A module that targets or uses another sits above it. A Broadcast targets Contacts and uses a
   Template and an Integration, so orchestration sits above contacts, content and sending.
