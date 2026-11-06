@@ -4,14 +4,14 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.
 func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMembershipsListParams) ([]siteapi.SiteMembershipResource, error) {
 	s := workspaceScope(ctx)
 
-	members, err := accounts.Members(ctx, s)
+	members, err := memberships.Members(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 
 	id := int64(params.ID)
 
-	updated, err := h.accounts.ChangeMembershipRole(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id, inputs.MembershipRole(req.Role))
+	updated, err := h.memberships.ChangeRole(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id, inputs.MembershipRole(req.Role))
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 
-	err := h.accounts.RemoveMembership(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id)
+	err := h.memberships.Remove(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	if err != nil {
 		return err
 	}
-	target, err := accounts.SecondFactorResetTarget(ctx, s, callerID, callerMembership(ctx).Role, id)
+	target, err := memberships.SecondFactorResetTarget(ctx, s, callerID, callerMembership(ctx).Role, id)
 	if err != nil {
 		return err
 	}

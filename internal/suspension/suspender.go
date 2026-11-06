@@ -7,7 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // ErrNoticeNotSent means a Workspace was suspended but its owners could not be told: the
@@ -19,13 +19,13 @@ var ErrNoticeNotSent = errors.New("workspace suspended, but the owner notice cou
 type Suspender struct {
 	bus     *events.Bus
 	client  *ent.Client
-	notify  ownernotice.Notify
+	notify  memberships.Notify
 	support string
 }
 
 // NewSuspender is the Suspender that suspends through bus and tells the owners through notify
 // (the platform's system sender, nil for none), giving supportEmail as where they appeal.
-func NewSuspender(bus *events.Bus, client *ent.Client, notify ownernotice.Notify, supportEmail string) *Suspender {
+func NewSuspender(bus *events.Bus, client *ent.Client, notify memberships.Notify, supportEmail string) *Suspender {
 	return &Suspender{bus: bus, client: client, notify: notify, support: supportEmail}
 }
 

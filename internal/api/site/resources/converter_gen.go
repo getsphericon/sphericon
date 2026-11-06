@@ -25,7 +25,6 @@ import (
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
-	accounts "github.com/getsphericon/sphericon/internal/accounts"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	attention "github.com/getsphericon/sphericon/internal/attention"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
@@ -49,6 +48,7 @@ import (
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	memberships "github.com/getsphericon/sphericon/internal/memberships"
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
@@ -1642,61 +1642,61 @@ func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site
 	}
 	return pSiteapiSitePendingSignup
 }
-func (c *ConverterImpl) PermissionToResource(source accounts.Permission) site.Permission {
+func (c *ConverterImpl) PermissionToResource(source memberships.Permission) site.Permission {
 	var siteapiPermission site.Permission
 	switch source {
-	case accounts.PermAccountLinkOpen:
+	case memberships.PermAccountLinkOpen:
 		siteapiPermission = site.PermissionAccountLinkOpen
-	case accounts.PermAuditConfigure:
+	case memberships.PermAuditConfigure:
 		siteapiPermission = site.PermissionAuditConfigure
-	case accounts.PermAuditRead:
+	case memberships.PermAuditRead:
 		siteapiPermission = site.PermissionAuditRead
-	case accounts.PermBrandKitManage:
+	case memberships.PermBrandKitManage:
 		siteapiPermission = site.PermissionBrandKitManage
-	case accounts.PermContactsErase:
+	case memberships.PermContactsErase:
 		siteapiPermission = site.PermissionContactsErase
-	case accounts.PermContactsExport:
+	case memberships.PermContactsExport:
 		siteapiPermission = site.PermissionContactsExport
-	case accounts.PermCustomFieldsManage:
+	case memberships.PermCustomFieldsManage:
 		siteapiPermission = site.PermissionCustomFieldsManage
-	case accounts.PermHoldsResolve:
+	case memberships.PermHoldsResolve:
 		siteapiPermission = site.PermissionHoldsResolve
-	case accounts.PermIntegrationsManage:
+	case memberships.PermIntegrationsManage:
 		siteapiPermission = site.PermissionIntegrationsManage
-	case accounts.PermJoinDomainsManage:
+	case memberships.PermJoinDomainsManage:
 		siteapiPermission = site.PermissionJoinDomainsManage
-	case accounts.PermMembersManage:
+	case memberships.PermMembersManage:
 		siteapiPermission = site.PermissionMembersManage
-	case accounts.PermOwnersManage:
+	case memberships.PermOwnersManage:
 		siteapiPermission = site.PermissionOwnersManage
-	case accounts.PermReleaseRead:
+	case memberships.PermReleaseRead:
 		siteapiPermission = site.PermissionReleaseRead
-	case accounts.PermRevenueConfigure:
+	case memberships.PermRevenueConfigure:
 		siteapiPermission = site.PermissionRevenueConfigure
-	case accounts.PermSecondFactorManage:
+	case memberships.PermSecondFactorManage:
 		siteapiPermission = site.PermissionSecondFactorManage
-	case accounts.PermSendingDomainsManage:
+	case memberships.PermSendingDomainsManage:
 		siteapiPermission = site.PermissionSendingDomainsManage
-	case accounts.PermSuppressionsManage:
+	case memberships.PermSuppressionsManage:
 		siteapiPermission = site.PermissionSuppressionsManage
-	case accounts.PermTokensManage:
+	case memberships.PermTokensManage:
 		siteapiPermission = site.PermissionTokensManage
-	case accounts.PermTrackingDomainsManage:
+	case memberships.PermTrackingDomainsManage:
 		siteapiPermission = site.PermissionTrackingDomainsManage
-	case accounts.PermWebhooksManage:
+	case memberships.PermWebhooksManage:
 		siteapiPermission = site.PermissionWebhooksManage
-	case accounts.PermWorkspaceDelete:
+	case memberships.PermWorkspaceDelete:
 		siteapiPermission = site.PermissionWorkspaceDelete
-	case accounts.PermWorkspaceTimezone:
+	case memberships.PermWorkspaceTimezone:
 		siteapiPermission = site.PermissionWorkspaceTimezone
-	case accounts.PermWorkspaceUpdate:
+	case memberships.PermWorkspaceUpdate:
 		siteapiPermission = site.PermissionWorkspaceUpdate
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiPermission
 }
-func (c *ConverterImpl) PermissionsToResources(source []accounts.Permission) []site.Permission {
+func (c *ConverterImpl) PermissionsToResources(source []memberships.Permission) []site.Permission {
 	var siteapiPermissionList []site.Permission
 	siteapiPermissionList = make([]site.Permission, len(source))
 	for i := 0; i < len(source); i++ {
@@ -1871,7 +1871,7 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 	}
 	return siteapiSiteProviderLimitWarning
 }
-func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]accounts.Permission) site.SiteOAuthAuthorizationRequestRequiredPermissions {
+func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]memberships.Permission) site.SiteOAuthAuthorizationRequestRequiredPermissions {
 	var siteapiSiteOAuthAuthorizationRequestRequiredPermissions site.SiteOAuthAuthorizationRequestRequiredPermissions
 	siteapiSiteOAuthAuthorizationRequestRequiredPermissions = make(site.SiteOAuthAuthorizationRequestRequiredPermissions, len(source))
 	for key, value := range source {

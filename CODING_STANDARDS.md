@@ -115,7 +115,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
   `detail`, an `*inuse.Error` with 409 and `usedBy`, an `*accounts.DeletionRefusedError` with 422
   and the Workspaces the User solely owns, content `emailrender` cannot render with 422, and
-  `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is not a member of) with
+  `workspaces.ErrNotFound` (an unknown Workspace or one the caller is not a member of) with
   a 404. A sentinel one context answers differently from another is two sentinels of the module,
   one per context, never a mapping in the handler.
 - **Rule 15, `no-hand-written-problem-in-handlers` (ast-grep).** A handler in `internal/api/**`
@@ -133,9 +133,10 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   a Role: in Go, `==`/`!=` or a `case` with `RoleOwner`/`RoleAdmin`/`RoleMember` of any package
   (`membership`, `entmembership`, `invitation`), and `RoleEQ`/`RoleNEQ`/`RoleIn`/`RoleNotIn` of a
   Membership or an Invitation in a query; in TypeScript, a `role` or `.role`
-  compared with `'owner'`/`'admin'`/`'member'`. Access asks `accounts.Allows`/`Require`/`HoldersOf`
-  or `can(workspace, …)`; a Role fact that is not access calls `internal/accounts/roles`. Only that
-  package and the Permission table (`internal/accounts/permissions.go`) are not read, with tests and
+  compared with `'owner'`/`'admin'`/`'member'`. Access asks `memberships.Allows`/`Require`/`HoldersOf`
+  or `can(workspace, …)`; a Role fact that is not access calls the Role functions of
+  `internal/memberships/role.go`. Only that file and the Permission table
+  (`internal/memberships/permissions.go`) are not read, with tests and
   generated code. Setting a Role is not a comparison.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per

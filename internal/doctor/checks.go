@@ -16,11 +16,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	appdb "github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 const upgradeGuide = "https://getsphericon.com/docs/operations/upgrading"
@@ -222,7 +222,7 @@ func checkDKIM(ctx context.Context, r *Report, in Input) {
 		return
 	}
 	domains, err := in.Ent.SendingDomain.Query().
-		Where(sendingdomain.DiscardedAtIsNil(), sendingdomain.HasWorkspaceWith(accounts.Live())).
+		Where(sendingdomain.DiscardedAtIsNil(), sendingdomain.HasWorkspaceWith(workspaces.Live())).
 		Order(ent.Asc(sendingdomain.FieldID)).
 		All(ctx)
 	if err != nil {
@@ -264,7 +264,7 @@ func checkMailOrigin(ctx context.Context, r *Report, in Input) {
 	}
 	origins, err := in.Ent.OutboundMessage.Query().
 		Where(outboundmessage.AppOriginNotNil(), outboundmessage.StatusEQ(outboundmessage.StatusSent),
-			outboundmessage.HasWorkspaceWith(accounts.Live())).
+			outboundmessage.HasWorkspaceWith(workspaces.Live())).
 		Order(ent.Desc(outboundmessage.FieldID)).
 		Limit(recentMail).
 		Select(outboundmessage.FieldAppOrigin).

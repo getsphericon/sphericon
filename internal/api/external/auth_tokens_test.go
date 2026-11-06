@@ -14,12 +14,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/external"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 func TestExternalAuthMeDescribesTheCallingToken(t *testing.T) {
@@ -161,7 +161,7 @@ func TestExternalAuthTokensDeleteCannotTouchAnotherWorkspace(t *testing.T) {
 func TestExternalAuthTokensBootstrap(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	h := external.NewHandlers(external.Deps{Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords), BootstrapToken: "bootstrap-secret"})
+	h := external.NewHandlers(external.Deps{Workspaces: workspaces.New(env.DB, env.Bus), BootstrapToken: "bootstrap-secret"})
 	in := &externalapi.CreateApiTokenInput{Name: "first", Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeTokensWrite}}
 
 	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "nope"})
@@ -181,7 +181,7 @@ func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T
 	in := &externalapi.CreateApiTokenInput{Name: "first"}
 
 	// Unconfigured: an empty header must not match the empty secret.
-	h := external.NewHandlers(external.Deps{Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
+	h := external.NewHandlers(external.Deps{Workspaces: workspaces.New(env.DB, env.Bus)})
 	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: ""})
 	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
 	// Through the real server too.

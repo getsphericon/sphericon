@@ -29,7 +29,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/auditapi"
@@ -46,9 +45,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -74,7 +75,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the
@@ -655,9 +655,9 @@ type Converter interface {
 
 	// The Permissions a Role holds, and the one each requested OAuth scope needs.
 	// goverter:useEmptyOnNil:slice
-	PermissionsToResources(source []accounts.Permission) []siteapi.Permission
+	PermissionsToResources(source []memberships.Permission) []siteapi.Permission
 	// goverter:useEmptyOnNil:map
-	RequiredPermissionsToResource(source map[string]accounts.Permission) siteapi.SiteOAuthAuthorizationRequestRequiredPermissions
+	RequiredPermissionsToResource(source map[string]memberships.Permission) siteapi.SiteOAuthAuthorizationRequestRequiredPermissions
 	// The scopes a User whose Role it is may give a Personal token.
 	// goverter:useEmptyOnNil:slice
 	PersonalScopesToResources(source []tokenscope.PersonalScope) []siteapi.PersonalScope
@@ -715,7 +715,7 @@ type Converter interface {
 	// goverter:enum:map DecisionShown @panic
 	OptionalConsentDecisionToResource(source consentrecord.Decision) siteapi.SiteOptionalConsentDecision
 	// goverter:enum:transform value
-	PermissionToResource(source accounts.Permission) siteapi.Permission
+	PermissionToResource(source memberships.Permission) siteapi.Permission
 	// goverter:enum:transform value
 	PersonalScopeToResource(source tokenscope.PersonalScope) siteapi.PersonalScope
 	// goverter:enum:transform value
@@ -1079,7 +1079,7 @@ func eraseAt(discardedAt *time.Time) siteapi.Timestamp {
 	if discardedAt == nil {
 		return siteapi.Timestamp{}
 	}
-	return siteapi.Timestamp(workspacedeletion.EraseDate(*discardedAt))
+	return siteapi.Timestamp(workspaces.EraseDate(*discardedAt))
 }
 
 // inviterEmail is the inviting User's address when the inviter edge is loaded.

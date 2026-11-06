@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/templates"
 )
 
@@ -38,8 +39,9 @@ type Env struct {
 	mailpit *Mailpit
 	hooks   *Hooks
 
-	accounts *accounts.Accounts
-	bus      *events.Bus
+	accounts    *accounts.Accounts
+	memberships *memberships.Module
+	bus         *events.Bus
 	// brandKit is the product's own module, for the arrange step the public API leaves to a
 	// person: saving the Brand kit, which makes the starter Templates.
 	brandKit *brandkit.Module
@@ -127,13 +129,19 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 		return nil, nil, fmt.Errorf("start application: %w", err)
 	}
-	// The arrange step goes through the product's own Accounts module, taken from the
+	// The arrange step goes through the product's own Accounts and Memberships modules, taken from the
 	// application's container (no second pool).
 	acc, err := a.Accounts()
 	if err != nil {
 		cleanup.Report("close the application", a.Close(ctx))
 		stopMailpit()
 		return nil, nil, fmt.Errorf("resolve accounts: %w", err)
+	}
+	ms, err := a.Memberships()
+	if err != nil {
+		cleanup.Report("close the application", a.Close(ctx))
+		stopMailpit()
+		return nil, nil, fmt.Errorf("resolve memberships: %w", err)
 	}
 	bus, err := a.Bus()
 	if err != nil {
@@ -154,11 +162,12 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 	}
 	return &Env{
-		BaseURL:  a.Config.AppURL,
-		mailpit:  mp,
-		hooks:    hooks,
-		accounts: acc,
-		bus:      bus,
+		BaseURL:     a.Config.AppURL,
+		mailpit:     mp,
+		hooks:       hooks,
+		accounts:    acc,
+		memberships: ms,
+		bus:         bus,
 
 		brandKit: brandkit.New(bus, templates.New(emaildoc.New())),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil, a.Config.JWTVerifySecrets()...),

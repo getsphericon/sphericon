@@ -41,9 +41,9 @@ func TestGenerateEmitsTheAccessOfEverySiteOperation(t *testing.T) {
 	require.NoError(t, err)
 
 	out := string(src)
-	require.Regexp(t, `SiteAuditListOperation:\s+\{workspace: true, permissions: \[\]accounts.Permission\{accounts.PermAuditRead\}\},`, out)
+	require.Regexp(t, `SiteAuditListOperation:\s+\{workspace: true, permissions: \[\]memberships.Permission\{memberships.PermAuditRead\}\},`, out)
 	require.Regexp(t, `SiteTagsListOperation:\s+\{workspace: true\},`, out)
-	require.Regexp(t, `SiteWorkspacesLiftSecondFactorRequirementOperation:\s+\{workspace: true, permissions: \[\]accounts.Permission\{accounts.PermSecondFactorManage\}, whileWithheld: true\},`, out)
+	require.Regexp(t, `SiteWorkspacesLiftSecondFactorRequirementOperation:\s+\{workspace: true, permissions: \[\]memberships.Permission\{memberships.PermSecondFactorManage\}, whileWithheld: true\},`, out)
 	require.Regexp(t, `SiteAuthLoginOperation:\s+\{\},`, out)
 }
 

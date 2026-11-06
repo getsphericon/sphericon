@@ -1,4 +1,4 @@
-package accounts
+package memberships
 
 import (
 	"slices"
@@ -29,7 +29,7 @@ var (
 
 // row is the grant of p to roles, refused with the message key.
 func row(p Permission, key i18n.ID, roles []membership.Role) grant {
-	return grant{permission: p, roles: roles, refusal: validation.Forbidden("accounts: the role lacks the permission "+string(p), key)}
+	return grant{permission: p, roles: roles, refusal: validation.Forbidden("memberships: the role lacks the permission "+string(p), key)}
 }
 
 // grants is the one table from Role to Permissions (the Gate of ADR 0061): a Role is the set of
@@ -125,7 +125,7 @@ func MayGrant(role membership.Role, scopes []string) error {
 }
 
 // errPermissionUnknown refuses a Permission outside the table, which no Role holds.
-var errPermissionUnknown = validation.Forbidden("accounts: the permission is unknown", i18n.ErrorsPermissionUnknown)
+var errPermissionUnknown = validation.Forbidden("memberships: the permission is unknown", i18n.ErrorsPermissionUnknown)
 
 // grantOf is the row of the Permission p, false when the table has none.
 func grantOf(p Permission) (grant, bool) {

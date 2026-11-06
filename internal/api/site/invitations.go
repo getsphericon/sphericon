@@ -56,7 +56,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 
 	// Send the invite email best-effort: the copy-link above already delivered
 	// the invite, so self-hosted instances without SMTP still work.
-	wsEnt, err := h.accounts.Workspace(ctx, s)
+	wsEnt, err := h.workspaces.Get(ctx, s)
 	if err != nil {
 		return nil, err
 	}

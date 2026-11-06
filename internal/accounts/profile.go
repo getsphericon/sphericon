@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // ProfileChange is what a User asks to change on their own profile. A nil Name keeps the name;
@@ -113,7 +114,7 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 		w.Name = &trimmed
 	}
 	if c.Timezone != nil {
-		if err := checkZone(*c.Timezone); err != nil {
+		if err := workspaces.CheckZone(*c.Timezone); err != nil {
 			return ProfileChanged{}, err
 		}
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -25,7 +26,7 @@ var (
 func admission(t *testing.T, env *testhelper.TestEnv, userID int64, publicID string) (*accounts.Accounts, *ent.Membership) {
 	t.Helper()
 	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
-	_, m, err := acc.Scope(t.Context(), userID, publicID)
+	_, m, err := memberships.New(env.DB, env.Bus).Scope(t.Context(), userID, publicID)
 	require.NoError(t, err)
 	return acc, m
 }

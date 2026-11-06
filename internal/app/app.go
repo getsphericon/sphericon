@@ -30,11 +30,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 type App struct {
@@ -381,7 +383,7 @@ func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspensi
 	if err != nil {
 		return false, err
 	}
-	id, err := accounts.WorkspaceIDByPublicID(ctx, client, publicID)
+	id, err := workspaces.IDByPublicID(ctx, client, publicID)
 	if err != nil {
 		return false, err
 	}
@@ -398,7 +400,7 @@ func (a *App) UnsuspendWorkspace(ctx context.Context, publicID string, by suspen
 	if err != nil {
 		return false, err
 	}
-	id, err := accounts.WorkspaceIDByPublicID(ctx, client, publicID)
+	id, err := workspaces.IDByPublicID(ctx, client, publicID)
 	if err != nil {
 		return false, err
 	}
@@ -509,6 +511,12 @@ func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.Servi
 // (the end-to-end suite), so they open no second connection pool.
 func (a *App) Accounts() (*accounts.Accounts, error) {
 	return do.Invoke[*accounts.Accounts](a.injector)
+}
+
+// Memberships is the product's Memberships module from the DI container, for the same harnesses:
+// they scope to a Workspace and change its Roles through it.
+func (a *App) Memberships() (*memberships.Module, error) {
+	return do.Invoke[*memberships.Module](a.injector)
 }
 
 // Bus is the event bus from the DI container, for harnesses that must change data

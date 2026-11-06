@@ -31,7 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // Domain errors. Callers match with errors.Is.
@@ -77,13 +77,13 @@ type Module struct {
 	cipher *secrets.Cipher
 	lic    Licensing
 	client webhook.Doer
-	notify ownernotice.Notify
+	notify memberships.Notify
 }
 
 // New builds the module. lic may be nil (unlicensed). client is the one hardened
 // outbound client, used by TestSend. notify mails the Owners when an endpoint disables
 // itself; nil sends nothing.
-func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify ownernotice.Notify) *Module {
+func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify memberships.Notify) *Module {
 	return &Module{bus: bus, cipher: cipher, lic: lic, client: client, notify: notify}
 }
 

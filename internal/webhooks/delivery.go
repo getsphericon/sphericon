@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // An endpoint disables itself (ADR 0039) on a 410, or when a run of consecutive failures has
@@ -117,7 +117,7 @@ func (m *Module) notifyOwners(ctx context.Context, s *ent.Scoped, e *ent.Webhook
 		"Window":    DisableWindow.String(),
 	}
 	data["Reason"] = i18n.T(disabledReasons[reason], data)
-	m.notify.TellBestEffort(ctx, ws.ID, ownernotice.Notice{Subject: i18n.EmailWebhookDisabledSubject, Body: i18n.EmailWebhookDisabledBody}, data, "endpoint_id", e.ID)
+	m.notify.TellBestEffort(ctx, ws.ID, memberships.Notice{Subject: i18n.EmailWebhookDisabledSubject, Body: i18n.EmailWebhookDisabledBody}, data, "endpoint_id", e.ID)
 }
 
 // disabledReasons words why the delivery disabled an endpoint, in the notice to the Owners. An

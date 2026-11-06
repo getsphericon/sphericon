@@ -24,7 +24,7 @@ type Module struct {
 }
 
 // CurrencyAdopter makes a currency the Workspace's Reporting currency when it has none yet and
-// records that in the Audit log (the Workspace's own writes live in the accounts package).
+// records that in the Audit log (the Workspace's own writes live in internal/workspaces).
 type CurrencyAdopter interface {
 	AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, code string) error
 }

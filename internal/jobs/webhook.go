@@ -9,12 +9,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -48,7 +48,7 @@ func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer we
 		cipher: cipher,
 		client: doer,
 		now:    now,
-		mod:    webhooks.New(bus, cipher, nil, nil, accounts.OwnerNotifier(client, sender)),
+		mod:    webhooks.New(bus, cipher, nil, nil, memberships.OwnerNotifier(client, sender)),
 	}
 }
 

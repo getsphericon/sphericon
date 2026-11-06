@@ -8,17 +8,23 @@ version: 1
 # anchored item here, aliased into the forbid_symbol list of every component but `usecase` that
 # may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api),
 # `raw-holder-forbids` (the runner, core-raw), `core`; api-auth, ee, ee-edition and wiring take this
-# list whole. Its definition is not a use; a call even inside its own module fails, and tests are
+# list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
+# serves User deletion, which still lives in `accounts` (core-raw): core-raw alone may call it, so
+# it is not in `raw-holder-forbids` but in `raw-driver-forbids` (the runner, identity-base). Its definition is not a use; a call even inside its own module fails, and tests are
 # excluded. Name the function as `<import path>.<Name>`: a bare import path matches nothing.
 x-unchecked-removals: &unchecked-removals
   - &tags-delete-in
     name: github.com/getsphericon/sphericon/internal/tags.DeleteIn
     because: deleting a Tag is the use case internal/usecase/tagdeletion, which checks the Tag's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
+  - &leave-doomed-workspace-in
+    name: github.com/getsphericon/sphericon/internal/memberships.LeaveDoomedWorkspaceIn
+    because: it lets the only Owner leave, which only User deletion may do, after it has refused a User who solely owns a live Workspace (ADR 0050); call memberships.Module.Leave or LeaveIn
 x-no-raw-client: &no-raw-client
   forbid_symbol:
     - name: github.com/getsphericon/sphericon/ent.Client
       because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
     - *tags-delete-in
+    - *leave-doomed-workspace-in
 # No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
 # shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
 x-no-surface-gen: &no-surface-gen
@@ -148,8 +154,12 @@ components:
         internal/workspacedeletion,
         internal/workspacefeed,
       ]
-    # The Role definitions take no client at all.
-    except: [internal/accounts/roles]
+
+  # The bottom of identity (ADR 0102): the Workspace with its settings and its deletion window, and
+  # the Memberships with the Permissions, the Owners and the notices to them. Every module may read
+  # a Workspace, ask a Permission or tell the Owners something, so these two import no domain
+  # module; both hold the raw client (the closed list of docs/architecture.md, Workspace scoping).
+  identity-base: { in: [internal/workspaces, internal/memberships] }
 
   # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
   # providers, the outbound HTTP calls, the throttles, logging and OpenTelemetry, and the process's
@@ -189,12 +199,12 @@ target_only: ['src/generated/**', '**/*.gen.ts', '**/*_gen.go']
 rules:
   api-site:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw, gen-surfaces, usecase]
+    may_depend_on: [api-auth, api-problem, core, core-raw, identity-base, gen-surfaces, usecase]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-external:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw, gen-surfaces, usecase]
+    may_depend_on: [api-auth, api-problem, core, core-raw, identity-base, gen-surfaces, usecase]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
@@ -208,47 +218,57 @@ rules:
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-auth:
-    may_depend_on: [core, core-raw, gen-surfaces]
+    may_depend_on: [core, core-raw, identity-base, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the security handlers sit below every surface
   api-problem:
     <<: *no-raw-client
-    may_depend_on: [core, core-raw, gen-surfaces]
+    may_depend_on: [core, core-raw, identity-base, gen-surfaces]
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   core:
-    may_depend_on: [core-raw]
+    may_depend_on: [core-raw, identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client
         because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in `core-raw` here, never a field of a module
       - *tags-delete-in
+      - *leave-doomed-workspace-in
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
     # The Instance is the client of the Telemetry contract (ADR 0102).
-    may_depend_on: [core, gen-telemetry]
+    may_depend_on: [core, identity-base, gen-telemetry]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: &raw-holder-forbids
-      - name: github.com/getsphericon/sphericon/internal/emailcase.Hook
+      - &emailcase-hook
+        name: github.com/getsphericon/sphericon/internal/emailcase.Hook
         because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - name: github.com/getsphericon/sphericon/internal/workspacefeed.Hook
+      - &workspacefeed-hook
+        name: github.com/getsphericon/sphericon/internal/workspacefeed.Hook
         because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - name: github.com/getsphericon/sphericon/internal/workspacefeed.Guard
+      - &workspacefeed-guard
+        name: github.com/getsphericon/sphericon/internal/workspacefeed.Guard
         because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - name: github.com/getsphericon/sphericon/internal/userfeed.Hook
+      - &userfeed-hook
+        name: github.com/getsphericon/sphericon/internal/userfeed.Hook
         because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - name: github.com/getsphericon/sphericon/internal/userfeed.Guard
+      - &userfeed-guard
+        name: github.com/getsphericon/sphericon/internal/userfeed.Guard
         because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - name: github.com/getsphericon/sphericon/internal/trackinghostlog.Hook
+      - &trackinghostlog-hook
+        name: github.com/getsphericon/sphericon/internal/trackinghostlog.Hook
         because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - name: github.com/getsphericon/sphericon/internal/trackinghostlog.Guard
+      - &trackinghostlog-guard
+        name: github.com/getsphericon/sphericon/internal/trackinghostlog.Guard
         because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - name: github.com/getsphericon/sphericon/internal/upgrade.Boundaries
+      - &upgrade-boundaries
+        name: github.com/getsphericon/sphericon/internal/upgrade.Boundaries
         because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
-      - name: github.com/getsphericon/sphericon/internal/upgrade.MajorFloor
+      - &upgrade-major-floor
+        name: github.com/getsphericon/sphericon/internal/upgrade.MajorFloor
         because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
       - *tags-delete-in
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
@@ -260,10 +280,27 @@ rules:
         because: a use case takes the *ent.Scoped its driver built and hands it to the domain modules it calls; it holds no raw client
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)
-  runner:
-    may_depend_on: [core, core-raw]
+  identity-base:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
+    forbid_symbol: &raw-driver-forbids
+      - *emailcase-hook
+      - *workspacefeed-hook
+      - *workspacefeed-guard
+      - *userfeed-hook
+      - *userfeed-guard
+      - *trackinghostlog-hook
+      - *trackinghostlog-guard
+      - *upgrade-boundaries
+      - *upgrade-major-floor
+      - *tags-delete-in
+      - *leave-doomed-workspace-in
+    because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
+  runner:
+    may_depend_on: [core, core-raw, identity-base]
+    forbid_external: *no-container
+    forbid_symbol: *raw-driver-forbids
     because: the job runner calls the core, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
   infra:
     may_depend_on: []
@@ -300,7 +337,7 @@ rules:
     forbid_external: *no-container
     because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
   ee-edition:
-    may_depend_on: [core, core-raw, ee, ee-api, gen-surfaces]
+    may_depend_on: [core, core-raw, identity-base, ee, ee-api, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the Edition builds the Enterprise modules and their surfaces on the core, never on the open surfaces' handlers
@@ -308,6 +345,7 @@ rules:
     may_depend_on:
       - core
       - core-raw
+      - identity-base
       - name: gen-surfaces
         because: the ban on a surface's generated package binds the core tiers; the Enterprise Edition's boundary with the core is unchanged (spec #1120), and ee/staff reads its service surface's ServiceScope until the Edition takes the same tiers
     forbid_symbol: *unchecked-removals
@@ -318,6 +356,7 @@ rules:
       [
         core,
         core-raw,
+        identity-base,
         ee,
         ee-edition,
         api-site,

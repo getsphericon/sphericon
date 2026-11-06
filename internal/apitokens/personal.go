@@ -9,10 +9,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // ErrPersonalTokenNotFound refuses a Personal token that is not in the Workspace, is already
@@ -30,15 +30,15 @@ type PersonalInput struct {
 }
 
 // GrantableScopes is the scopes a User whose Role is role may give a Personal token, in the
-// contract's order: each PersonalScope accounts.MayGrant allows the Role (ADR 0061).
+// contract's order: each PersonalScope memberships.MayGrant allows the Role (ADR 0061).
 func GrantableScopes(role membership.Role) []tokenscope.PersonalScope {
 	return lo.Filter(tokenscope.PersonalScopes, func(scope tokenscope.PersonalScope, _ int) bool {
-		return accounts.MayGrant(role, []string{string(scope)}) == nil
+		return memberships.MayGrant(role, []string{string(scope)}) == nil
 	})
 }
 
 // MintPersonal mints a Personal token of caller, the User's Membership of the Workspace s: a
-// Connection without the application (ADR 0061). Its scopes are bounded by accounts.MayGrant, as a
+// Connection without the application (ADR 0061). Its scopes are bounded by memberships.MayGrant, as a
 // Connection's are on the consent screen: the first one beyond caller's Role refuses the whole
 // token. It is returned with its Membership and that Membership's User, and its secret, shown once.
 func MintPersonal(ctx context.Context, s *ent.Scoped, caller *ent.Membership, in PersonalInput) (Minted, error) {
@@ -47,7 +47,7 @@ func MintPersonal(ctx context.Context, s *ent.Scoped, caller *ent.Membership, in
 	if err != nil {
 		return Minted{}, err
 	}
-	if err := accounts.MayGrant(caller.Role, scopes); err != nil {
+	if err := memberships.MayGrant(caller.Role, scopes); err != nil {
 		return Minted{}, err
 	}
 	minted, err := mint(ctx, s, name, scopes, in.ExpiresAt, &caller.ID)

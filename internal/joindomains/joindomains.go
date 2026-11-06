@@ -30,7 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // RecordLabel is the label the TXT record sits under: _sphericon-join.<domain>.
@@ -68,13 +68,13 @@ type Module struct {
 	bus    *events.Bus
 	lookup domainname.TXTLookup
 	now    func() time.Time
-	notify ownernotice.Notify
+	notify memberships.Notify
 }
 
 // New builds the module. lookup is the injectable TXT resolver Sending domain
 // verification uses; now is the clock the check times are stamped with; notify mails a
 // Workspace's Owners when it loses a verified domain.
-func New(client *ent.Client, bus *events.Bus, lookup domainname.TXTLookup, now func() time.Time, notify ownernotice.Notify) *Module {
+func New(client *ent.Client, bus *events.Bus, lookup domainname.TXTLookup, now func() time.Time, notify memberships.Notify) *Module {
 	return &Module{client: client, bus: bus, lookup: lookup, now: now, notify: notify}
 }
 
@@ -250,7 +250,7 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 // failure is logged, never returned.
 func (m *Module) notifyLost(ctx context.Context, row *ent.JoinDomain) {
 	data := map[string]any{"Domain": row.Domain, "Record": RecordOf(row).Host}
-	m.notify.TellBestEffort(ctx, row.WorkspaceID, ownernotice.Notice{Subject: i18n.EmailJoinDomainUnverifiedSubject, Body: i18n.EmailJoinDomainUnverifiedBody}, data, "join_domain_id", row.ID)
+	m.notify.TellBestEffort(ctx, row.WorkspaceID, memberships.Notice{Subject: i18n.EmailJoinDomainUnverifiedSubject, Body: i18n.EmailJoinDomainUnverifiedBody}, data, "join_domain_id", row.ID)
 }
 
 // Holder returns the Join domain row that has the domain verified, across every

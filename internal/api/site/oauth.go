@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // SiteOAuthDescribe validates an OAuth authorization request for the consent
@@ -42,9 +43,9 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDecisionInput) (*siteapi.SiteOAuthDecisionResult, error) {
 	session := auth.GetSiteAuth(ctx)
 	if session == nil {
-		return nil, accounts.ErrWorkspaceNotFound
+		return nil, workspaces.ErrNotFound
 	}
-	_, m, err := h.accounts.Scope(ctx, session.UserID, string(req.WorkspaceId))
+	_, m, err := h.memberships.Scope(ctx, session.UserID, string(req.WorkspaceId))
 	if err != nil {
 		return nil, err
 	}

@@ -20,12 +20,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/membership"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/instanceaudit"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // stateID is the id of the one Instance state row.
@@ -191,13 +192,13 @@ func (m *Module) Report(ctx context.Context) (telemetryapi.TelemetryReport, erro
 // Workspace's business: they are the Staff console's (ADR 0063).
 func (m *Module) ReleaseFor(ctx context.Context, userID int64) (Release, error) {
 	held, err := m.ent.Membership.Query().
-		Where(membership.UserID(userID), accounts.HoldersOf(accounts.PermReleaseRead), membership.HasWorkspaceWith(accounts.Live())).
+		Where(membership.UserID(userID), memberships.HoldersOf(memberships.PermReleaseRead), membership.HasWorkspaceWith(workspaces.Live())).
 		Exist(ctx)
 	if err != nil {
 		return Release{}, err
 	}
 	if !held {
-		return Release{}, accounts.Refusal(accounts.PermReleaseRead)
+		return Release{}, memberships.Refusal(memberships.PermReleaseRead)
 	}
 	latest, err := m.LatestRelease(ctx)
 	if err != nil {

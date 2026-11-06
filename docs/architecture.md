@@ -143,6 +143,11 @@ coding standards in `CODING_STANDARDS.md`.
   checked). The tests of the operation live in the use case's own `_test` package
   (`internal/usecase/tagdeletion`), through its exports; the domain module keeps the tests of its own
   rows.
+  One unchecked removal is called from a domain module until its use case exists:
+  `memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its deletion window
+  leave, serves User deletion in `accounts` (core-raw). It is forbidden like the others everywhere
+  but core-raw, through `raw-driver-forbids` (the runner, identity-base) in place of
+  `raw-holder-forbids`.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
@@ -181,7 +186,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and never call
   `client.Scoped(<int64>)`. Tests use `env.DB.Scoped(fixtures.AcmeID)`.
 - **`*ent.Scoped` is built only in a closed list of places:**
-  1. site: `accounts.Accounts.Scope`, behind the ogen middleware `Handlers.Access`
+  1. site: `memberships.Module.Scope`, behind the ogen middleware `Handlers.Access`
      (`internal/api/site/access.go`, ADR 0061), from the user's Membership of the Workspace an
      operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership with
      `callerMembership(ctx)`). On every operation that carries a session, the middleware then
@@ -196,7 +201,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      ADR 0020) unless the operation is marked `@allowedWhileWithheld` (only lifting the
      requirement), and last applies the Permissions the operation declares in TypeSpec
      (`@requiresPermissions`, generated into `operationAccess`). Two operations name their
-     Workspace elsewhere and call `accounts.Accounts.Scope` themselves: `SiteOAuthDecide` (in its
+     Workspace elsewhere and call `memberships.Module.Scope` themselves: `SiteOAuthDecide` (in its
      body, then `accounts.Accounts.Admit` as the middleware does) and `SiteWorkspacesCreate` /
      `SiteWorkspacesRestore` (a Workspace that was not live before);
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
@@ -205,7 +210,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      Personal token, which names none; `internal/apitokens/kinds.go` tells them apart) is looked up
      with its Membership: the scope acts as its User, the acceptance gate and the Two-factor
      requirement apply (`accounts.Accounts.Admit`, as on /site: 403 `acceptance_pending` or
-     `second_factor_required`), and the Role bounds its scopes on every request (`accounts.MayGrant`,
+     `second_factor_required`), and the Role bounds its scopes on every request (`memberships.MayGrant`,
      the bound the OAuth consent and the minting of a Personal token apply too); the Workspace's API
      token meets neither;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
@@ -243,7 +248,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      with the raw client and scoped to its Workspace, and the short link `GET /c/{token}` there,
      whose token names a `tracked_links` row that is read with the raw client for the message and
      the Workspace it belongs to; signed unsubscribe/confirm tokens
-     (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
+     (`internal/consent`), and `workspaces.Module.BootstrapScope` (the bootstrap token);
   7. the platform Staff member (ADR 0026): `ee/staff` scopes over the one Workspace the console
      is looking at, in three reads, each after the Workspace row is loaded and each through
      the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
@@ -262,10 +267,14 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      holds hosts and states, no Workspace data, so it scopes over nothing; and the contacts peak
      of `ee/usage` (`raise`, run by its ent hook), which scopes over each
      Workspace id it is given only after loading that Workspace's row and finding it live.
-- **The raw `*ent.Client` is allowed only in:** `internal/bindings` (only `PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/accounts` (User, Membership,
-  Workspace incl. Workspace id resolution, invitation by token, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
+- **The raw `*ent.Client` is allowed only in:** `internal/bindings` (only `PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/accounts` (User,
+  the creation of a Workspace with its Owner Membership, invitation by token, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
   or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
-  transaction; the prune river job only calls it), `internal/api/auth` (credentials, token and key lookup),
+  transaction; the prune river job only calls it), `internal/workspaces` (the Workspace row, ADR 0043, ADR 0102: it is the
+  tenant, not a tenant-owned entity, so the scoped client has no wrapper for it; a setting is written on the Workspace a
+  scope names, and the command line resolves a Workspace id), `internal/memberships` (the Memberships, ADR 0061, ADR 0102:
+  the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
+  several Workspaces, and the notice to the Owners of a Workspace it is given by id), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
@@ -304,7 +313,9 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   (`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`. easement holds the core
   packages of the list as the `core-raw` component of `easement.yml` (the job runner as its own
-  `runner` component, which does not forbid the client either, and the bus and the database package,
+  `runner` component, which does not forbid the client either, the bottom of identity,
+  `internal/workspaces` and `internal/memberships`, as the `identity-base` component, which imports no
+  domain module, and the bus and the database package,
   `internal/infra/events` and `internal/infra/db`, as the `infra-raw` component) and fails a use of
   `ent.Client` anywhere else in `internal/` (and in a surface package), so a new package goes into
   both lists.
@@ -351,13 +362,13 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   per handler.
   Note `ee/licensekey`, not `ee/license`: the path is case-insensitive on macOS and would
   collide with `ee/LICENSE`.
-- **Owners and suspension are defined once.** `internal/accounts/owners.go` owns "Owner of a
-  Workspace": `Owners`, `OwnersOf`, `LockOwners`, `OwnerMembership`, `IsOwner`, and the one notice to
+- **Owners and suspension are defined once.** `internal/memberships` owns "Owner of a
+  Workspace": `Owners`, `OwnersOf`, `LockOwners`, `IsOwner`, `OwnerRole`, and the one notice to
   them (`NotifyOwners`, the `Notify` seam, `OwnerNotifier`); `internal/suspension` owns "suspended"
   (`Is`, `Suspended`, `NotSuspended`, `BySystem`) and the suspension notice (`NotifyOwners`). A
   Workspace is suspended through the container's one `suspension.Suspender`, which also tells its
   Owners (the command line, the Staff console and the abuse detector), and Owners are told through
-  its one `ownernotice.Notify`. Call them; do not test `suspended_at` or the owner Role, or mail
+  its one `memberships.Notify`. Call them; do not test `suspended_at` or the owner Role, or mail
   Owners, anywhere else.
 - **Refused removals (ADR 0049)**: a row that live work still uses is not removed. `internal/inuse`
   is the one shape of that refusal (`*inuse.Error`: the removed `Subject` and the `Users` that hold it,
@@ -376,9 +387,9 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   preparation for writing (normalization, HTML sanitization, validation and secret sealing), masked
   API views and the version lifecycle. The shared reader neither queries nor executes Steps.
 - **Owner notices**: a module that tells the Owners of a Workspace something (Join domains, Sending domains,
-  webhooks, suspension, the abuse detector) takes an `ownernotice.Notify` (`internal/ownernotice`, a leaf, so
-  that modules `accounts` imports can share it) and calls `Tell` or `TellBestEffort`; `accounts.OwnerNotifier`
-  builds the one that mails the Owners through the system sender.
+  webhooks, suspension, the abuse detector) takes a `memberships.Notify` (`internal/memberships`, beside the
+  Owners, at the bottom of identity, so that every module can take it) and calls `Tell` or `TellBestEffort`;
+  `memberships.OwnerNotifier` builds the one that mails the Owners through the system sender.
 - **Async**: one queue, river, for jobs and domain events alike (ADR 0101,
   `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of
   the state change: it writes the Event row (a repeated `source_id` publishes nothing) and

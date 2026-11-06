@@ -10,10 +10,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // ErrInvalidFeedCursor refuses a cursor the feed never handed out.
@@ -58,7 +58,7 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (p
 	for i, w := range page.Items {
 		ids[i] = w.ID
 	}
-	owners, err := accounts.OwnersOf(ctx, m.ent, ids...)
+	owners, err := memberships.OwnersOf(ctx, m.ent, ids...)
 	if err != nil {
 		return pagination.CursorPage[FeedEntry]{}, err
 	}

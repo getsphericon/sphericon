@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -58,8 +58,8 @@ func TestSomeoneWhoOwnsNoWorkspaceIsRefusedTheRelease(t *testing.T) {
 	_, mary := mod.ReleaseFor(t.Context(), fixtures.MemberMaryID)
 	_, oscar := mod.ReleaseFor(t.Context(), fixtures.OutsiderOscarID)
 
-	require.ErrorIs(t, mary, accounts.Refusal(accounts.PermReleaseRead))
-	require.ErrorIs(t, oscar, accounts.Refusal(accounts.PermReleaseRead))
+	require.ErrorIs(t, mary, memberships.Refusal(memberships.PermReleaseRead))
+	require.ErrorIs(t, oscar, memberships.Refusal(memberships.PermReleaseRead))
 }
 
 // An owner whose only Workspace is deleted (in its deletion window) owns no live one any more.
@@ -70,5 +70,5 @@ func TestAnOwnerOfADeletedWorkspaceOnlyIsRefusedTheRelease(t *testing.T) {
 
 	_, err := mod.ReleaseFor(t.Context(), fixtures.OwnerJohnID)
 
-	require.ErrorIs(t, err, accounts.Refusal(accounts.PermReleaseRead))
+	require.ErrorIs(t, err, memberships.Refusal(memberships.PermReleaseRead))
 }

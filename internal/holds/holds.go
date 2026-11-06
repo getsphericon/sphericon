@@ -16,7 +16,7 @@ import (
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // The Workspace-level reasons a send is Held. They describe the Workspace, not one send, so
@@ -100,7 +100,7 @@ func standingOf(ws *ent.Workspace, staff []*ent.Hold, staffHonoured bool) Standi
 			Message:    Message(ReasonPendingDeletion),
 			SetBy:      "system",
 			CreatedAt:  *ws.DiscardedAt,
-			ExpiresAt:  workspacedeletion.EraseDate(*ws.DiscardedAt),
+			ExpiresAt:  workspaces.EraseDate(*ws.DiscardedAt),
 		}
 	}
 	if staffHonoured {

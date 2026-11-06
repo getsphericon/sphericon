@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // Two owners changed at the same moment: without the row lock both would count two
@@ -47,7 +47,7 @@ func assertOneRefused(t *testing.T, w *Workspace, errs []error) {
 	for _, err := range errs {
 		if err != nil {
 			// Whichever change came second is refused, as a demotion or as a removal.
-			lastOwner := errors.Is(err, accounts.ErrDemoteLastOwner) || errors.Is(err, accounts.ErrRemoveLastOwner)
+			lastOwner := errors.Is(err, memberships.ErrDemoteLastOwner) || errors.Is(err, memberships.ErrRemoveLastOwner)
 			require.Truef(t, lastOwner, "refused for another reason: %v", err)
 			failed++
 		}

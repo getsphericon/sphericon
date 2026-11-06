@@ -19,7 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // Interval is how often the prune job runs; the window is in days, so hourly is ample.
@@ -65,15 +65,15 @@ func Prune(ctx context.Context, client *ent.Client, lic *licensekey.License, now
 	if !lic.Has(licensekey.FeatureRetention) {
 		return 0, nil
 	}
-	workspaces, err := client.Workspace.Query().
-		Where(workspace.RetentionDaysNotNil(), accounts.Live()).
+	live, err := client.Workspace.Query().
+		Where(workspace.RetentionDaysNotNil(), workspaces.Live()).
 		Select(workspace.FieldID, workspace.FieldRetentionDays).
 		All(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("list workspaces with a retention window: %w", err)
 	}
 	var total int
-	for _, ws := range workspaces {
+	for _, ws := range live {
 		cutoff := now.AddDate(0, 0, -*ws.RetentionDays)
 		n, err := client.Scoped(ws.ID).AuditEntry().Delete().
 			Where(auditentry.OccurredAtLT(cutoff)).

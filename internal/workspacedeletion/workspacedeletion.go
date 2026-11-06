@@ -1,6 +1,6 @@
 // Package workspacedeletion owns the Workspace deletion cycle (ADR 0043): deleting a
-// Workspace, restoring it inside its window, the window and erase date, and the move to
-// erased. The cycle is a lifecycle table (ADR 0046): active, pending_deletion, erased.
+// Workspace, restoring it inside its window, and the move to erased. The window and the erase
+// date are the Workspace's own (workspaces.workspaces.DeletionWindow, workspaces.EraseDate). The cycle is a lifecycle table (ADR 0046): active, pending_deletion, erased.
 //
 // The state is derived from two columns, so no column is added: active is a Workspace with no
 // discarded_at, pending_deletion has discarded_at and no erased_at, erased has erased_at. The
@@ -11,7 +11,7 @@
 // deleted Workspaces, the ones whose window has passed), opens a transaction per erase step
 // and writes the row the cycle moves.
 // It imports neither the holds package nor the outbound package (ent's outboundmessage entity
-// is only a row the erase removes); holds and the site read the window from here.
+// is only a row the erase removes).
 package workspacedeletion
 
 import (
@@ -28,21 +28,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
-
-// DeletionWindow is how long a deleted Workspace stays restorable before its data is
-// erased (ADR 0043). A constant, not configuration.
-const DeletionWindow = 30 * 24 * time.Hour
-
-// EraseDate is when the data of a Workspace deleted at discardedAt is erased.
-func EraseDate(discardedAt time.Time) time.Time { return discardedAt.Add(DeletionWindow) }
 
 // ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
 var ErrNameMismatch = validation.RefuseField("name", "workspacedeletion: the typed name does not match the workspace name", i18n.ErrorsWorkspaceNameMismatch)
@@ -88,13 +81,13 @@ func pendingDeletion() predicate.Workspace {
 
 // insideWindow is a Workspace in its deletion window at now: pending and not past it.
 func insideWindow(now time.Time) predicate.Workspace {
-	return workspace.And(workspace.DiscardedAtGT(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil())
+	return workspace.And(workspace.DiscardedAtGT(now.Add(-workspaces.DeletionWindow)), workspace.ErasedAtIsNil())
 }
 
 // Due lists the Workspaces whose window has passed at now and that are not erased yet.
 func (m *Module) Due(ctx context.Context, now time.Time) ([]int64, error) {
 	return m.client.Workspace.Query().
-		Where(workspace.DiscardedAtLTE(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil()).
+		Where(workspace.DiscardedAtLTE(now.Add(-workspaces.DeletionWindow)), workspace.ErasedAtIsNil()).
 		Order(workspace.ByID()).
 		IDs(ctx)
 }
@@ -115,7 +108,7 @@ func stateOf(ws *ent.Workspace) State {
 func inState(state State) predicate.Workspace {
 	switch state {
 	case StateActive:
-		return accounts.Live()
+		return workspaces.Live()
 	case StatePendingDeletion:
 		return pendingDeletion()
 	default:
@@ -210,7 +203,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 // Workspace loaded.
 func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*ent.Membership, error) {
 	return m.client.Membership.Query().
-		Where(membership.UserID(userID), accounts.HoldersOf(accounts.PermWorkspaceDelete),
+		Where(membership.UserID(userID), memberships.HoldersOf(memberships.PermWorkspaceDelete),
 			membership.HasWorkspaceWith(insideWindow(now), workspace.DiscardedAtNotNil())).
 		WithWorkspace().
 		Order(membership.ByWorkspaceField(workspace.FieldDiscardedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
@@ -221,7 +214,7 @@ func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*e
 // Workspaces a User owns, it names the ones that have no other Owner to restore them.
 func (m *Module) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int64]bool, error) {
 	owners, err := m.client.Membership.Query().
-		Where(membership.WorkspaceIDIn(workspaceIDs...), roles.Owners()).
+		Where(membership.WorkspaceIDIn(workspaceIDs...), memberships.OwnerRole()).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -233,7 +226,7 @@ func (m *Module) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int64
 // Restore ends the deletion of the Workspace publicID for a User: it clears discarded_at, which
 // lifts only the pending-deletion Hold (a suspension or Staff hold stays). A Workspace whose
 // User's Role does not hold workspace:delete (ADR 0061), or one that is not deleted, is
-// accounts.ErrWorkspaceNotFound: a deleted Workspace is not exposed to anyone else. A Workspace past its window or
+// workspaces.ErrNotFound: a deleted Workspace is not exposed to anyone else. A Workspace past its window or
 // already erased is ErrNotRestorable (a lifecycle.ErrInvalidTransition). Recorded as `workspace.restore` in the
 // same transaction. It returns the restored Workspace.
 func (m *Module) Restore(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Workspace, error) {
@@ -242,10 +235,10 @@ func (m *Module) Restore(ctx context.Context, userID int64, publicID string, act
 	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the table.
 	workspaceID, err := m.client.Workspace.Query().
 		Where(workspace.PublicID(publicID), workspace.DiscardedAtNotNil(),
-			workspace.HasMembershipsWith(membership.UserID(userID), accounts.HoldersOf(accounts.PermWorkspaceDelete))).
+			workspace.HasMembershipsWith(membership.UserID(userID), memberships.HoldersOf(memberships.PermWorkspaceDelete))).
 		OnlyID(ctx)
 	if ent.IsNotFound(err) {
-		return nil, accounts.ErrWorkspaceNotFound
+		return nil, workspaces.ErrNotFound
 	}
 	if err != nil {
 		return nil, err

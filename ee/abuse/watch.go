@@ -8,9 +8,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // Watch reads a Workspace's standing with the detector, without acting on it: the
@@ -76,16 +76,16 @@ const (
 )
 
 // Predicate is the Workspace filter a review state names. Every list but the deleted one hides
-// the deleted Workspaces (accounts.Live).
+// the deleted Workspaces (workspaces.Live).
 func (r Review) Predicate() predicate.Workspace {
 	switch r {
 	case ReviewDeleted:
-		return accounts.Deleted()
+		return workspaces.Deleted()
 	case ReviewWarned:
-		return workspace.And(accounts.Live(), workspace.AbuseWarningNotifiedAtNotNil(), suspension.NotSuspended(), workspace.AbuseExempt(false))
+		return workspace.And(workspaces.Live(), workspace.AbuseWarningNotifiedAtNotNil(), suspension.NotSuspended(), workspace.AbuseExempt(false))
 	case ReviewSystemFrozen:
-		return workspace.And(accounts.Live(), suspension.BySystem())
+		return workspace.And(workspaces.Live(), suspension.BySystem())
 	default:
-		return accounts.Live()
+		return workspaces.Live()
 	}
 }

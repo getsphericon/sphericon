@@ -12,10 +12,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // The rules that refuse a User deletion (ADR 0050). A deletion answers each as a
@@ -111,12 +112,12 @@ func (a *Accounts) DeleteUser(ctx context.Context, userID int64, proof *DeletePr
 		if err != nil {
 			return err
 		}
-		memberships, owners, err := membershipsUnderOwnerLocks(ctx, tx, userID)
+		held, owners, err := membershipsUnderOwnerLocks(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
-		soleOwned := soleOwnedWorkspaces(memberships, owners)
-		live, err := tx.Workspace.Query().Where(workspace.IDIn(soleOwned...), Live()).Order(ent.Asc(workspace.FieldID)).All(ctx)
+		soleOwned := soleOwnedWorkspaces(held, owners)
+		live, err := tx.Workspace.Query().Where(workspace.IDIn(soleOwned...), workspaces.Live()).Order(ent.Asc(workspace.FieldID)).All(ctx)
 		if err != nil {
 			return err
 		}
@@ -133,13 +134,13 @@ func (a *Accounts) DeleteUser(ctx context.Context, userID int64, proof *DeletePr
 				}
 			}
 		}
-		for _, m := range memberships {
+		for _, m := range held {
 			ts := tx.Scoped(m.WorkspaceID)
 			// Only a sole-owned Workspace still standing here is in its deletion window.
 			if slices.Contains(soleOwned, m.WorkspaceID) {
-				err = leaveDoomedWorkspaceIn(ctx, ts, pub, userID)
+				err = memberships.LeaveDoomedWorkspaceIn(ctx, ts, pub, userID)
 			} else {
-				err = LeaveIn(ctx, ts, pub, userID)
+				err = memberships.LeaveIn(ctx, ts, pub, userID)
 			}
 			if err != nil {
 				return err
@@ -169,12 +170,12 @@ func membershipsUnderOwnerLocks(ctx context.Context, tx *ent.Client, userID int6
 			All(ctx)
 	}
 	owners := map[int64][]int64{}
-	lock := func(memberships []*ent.Membership) error {
-		for _, m := range memberships {
+	lock := func(held []*ent.Membership) error {
+		for _, m := range held {
 			if _, locked := owners[m.WorkspaceID]; locked {
 				continue
 			}
-			ids, err := LockOwners(ctx, tx.Scoped(m.WorkspaceID))
+			ids, err := memberships.LockOwners(ctx, tx.Scoped(m.WorkspaceID))
 			if err != nil {
 				return err
 			}
@@ -190,22 +191,22 @@ func membershipsUnderOwnerLocks(ctx context.Context, tx *ent.Client, userID int6
 	if err := lock(first); err != nil {
 		return nil, nil, err
 	}
-	memberships, err := read()
+	held, err := read()
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := lock(memberships); err != nil {
+	if err := lock(held); err != nil {
 		return nil, nil, err
 	}
-	return memberships, owners, nil
+	return held, owners, nil
 }
 
 // soleOwnedWorkspaces returns the ids of the Workspaces whose only Owner is the Membership's
 // own.
-func soleOwnedWorkspaces(memberships []*ent.Membership, owners map[int64][]int64) []int64 {
+func soleOwnedWorkspaces(held []*ent.Membership, owners map[int64][]int64) []int64 {
 	var sole []int64
-	for _, m := range memberships {
-		if roles.IsOwner(m.Role) && len(owners[m.WorkspaceID]) == 1 {
+	for _, m := range held {
+		if memberships.IsOwner(m.Role) && len(owners[m.WorkspaceID]) == 1 {
 			sole = append(sole, m.WorkspaceID)
 		}
 	}

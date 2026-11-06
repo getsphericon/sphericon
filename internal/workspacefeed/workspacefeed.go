@@ -24,8 +24,8 @@ import (
 	entclient "github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // LockKey is the advisory lock that makes positions commit in the order they are taken:
@@ -60,7 +60,7 @@ func changesFeed(m ent.Mutation) bool {
 	case *entclient.MembershipMutation:
 		if mu.Op().Is(ent.OpCreate) {
 			role, ok := mu.Role()
-			return ok && roles.IsOwner(role)
+			return ok && memberships.IsOwner(role)
 		}
 		if mu.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
 			_, changesRole := mu.Role()
@@ -136,7 +136,7 @@ func mutateMembership(ctx context.Context, next ent.Mutator, m *entclient.Member
 		if err != nil {
 			return v, err
 		}
-		if role, ok := m.Role(); ok && roles.IsOwner(role) {
+		if role, ok := m.Role(); ok && memberships.IsOwner(role) {
 			if ws, ok := m.WorkspaceID(); ok {
 				err = touch(ctx, c, ws)
 			}
@@ -149,7 +149,7 @@ func mutateMembership(ctx context.Context, next ent.Mutator, m *entclient.Member
 			return nil, err
 		}
 		affected, err = workspacesOf(ctx, c.Membership.Query().
-			Where(membership.IDIn(ids...), roles.Owners()))
+			Where(membership.IDIn(ids...), memberships.OwnerRole()))
 		if err != nil {
 			return nil, err
 		}
@@ -193,7 +193,7 @@ func mutateUser(ctx context.Context, next ent.Mutator, m *entclient.UserMutation
 		return v, err
 	}
 	owned, err := workspacesOf(ctx, c.Membership.Query().
-		Where(membership.UserIDIn(ids...), roles.Owners()))
+		Where(membership.UserIDIn(ids...), memberships.OwnerRole()))
 	if err != nil || len(owned) == 0 {
 		return v, err
 	}

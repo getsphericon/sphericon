@@ -16,11 +16,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/upgrade"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // schemaVersion is the version of the Telemetry report schema the builder implements
@@ -90,11 +90,11 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 	}
 	since := now.Add(-reportWindow)
 	var q reportQueries
-	workspaces := q.count(client.Workspace.Query().Where(accounts.Live()).Count(ctx))
+	live := q.count(client.Workspace.Query().Where(workspaces.Live()).Count(ctx))
 	// Erasure deletes the Contact row (GLOSSARY: there is no softer delete), so an erased
 	// Contact is already gone, and those of a Workspace in its deletion window are left out; anonymous tracker Contacts have no email and are left out.
 	contacts := q.count(client.Contact.Query().
-		Where(contact.EmailNotNil(), contact.EmailNEQ(""), contact.HasWorkspaceWith(accounts.Live())).Count(ctx))
+		Where(contact.EmailNotNil(), contact.EmailNEQ(""), contact.HasWorkspaceWith(workspaces.Live())).Count(ctx))
 	emails := q.count(client.OutboundMessage.Query().
 		Where(outboundmessage.StatusEQ(outboundmessage.StatusSent), outboundmessage.SentAtGTE(since)).Count(ctx))
 	broadcasts := q.exists(client.Broadcast.Query().
@@ -142,7 +142,7 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 		PostgresMajor:      narrow.Int32(major),
 		Locale:             host.Locale,
 		InstanceAgeDays:    max(0, narrow.Int32(now.Sub(row.CreatedAt)/(24*time.Hour))),
-		Workspaces:         bucket(workspaces),
+		Workspaces:         bucket(live),
 		Contacts:           bucket(contacts),
 		EmailsSent30d:      bucket(emails),
 		UsedBroadcasts30d:  broadcasts,

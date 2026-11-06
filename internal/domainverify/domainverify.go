@@ -24,7 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/sending"
 )
 
@@ -32,10 +32,10 @@ import (
 type Module struct {
 	client *ent.Client
 	lookup domainname.TXTLookup
-	notify ownernotice.Notify
+	notify memberships.Notify
 }
 
-func New(client *ent.Client, lookup domainname.TXTLookup, notify ownernotice.Notify) *Module {
+func New(client *ent.Client, lookup domainname.TXTLookup, notify memberships.Notify) *Module {
 	return &Module{client: client, lookup: lookup, notify: notify}
 }
 
@@ -150,7 +150,7 @@ func (m *Module) verifyDKIM(ctx context.Context, dom *ent.SendingDomain) (verifi
 
 func (m *Module) notifyUnverified(ctx context.Context, dom *ent.SendingDomain) {
 	data := map[string]any{"Domain": dom.Domain, "Record": dom.DkimSelector + "._domainkey." + dom.Domain}
-	m.notify.TellBestEffort(ctx, dom.WorkspaceID, ownernotice.Notice{Subject: i18n.EmailSendingDomainUnverifiedSubject, Body: i18n.EmailSendingDomainUnverifiedBody}, data, "sending_domain_id", dom.ID)
+	m.notify.TellBestEffort(ctx, dom.WorkspaceID, memberships.Notice{Subject: i18n.EmailSendingDomainUnverifiedSubject, Body: i18n.EmailSendingDomainUnverifiedBody}, data, "sending_domain_id", dom.ID)
 }
 
 // Due returns up to limit ids of the Sending domains whose DKIM is to be re-checked,

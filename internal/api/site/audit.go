@@ -113,7 +113,7 @@ func (h *Handlers) SiteAuditGetRetention(ctx context.Context, _ siteapi.SiteAudi
 	if h.audit == nil || !h.audit.RetentionLicensed() {
 		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "audit retention needs an Enterprise license"}
 	}
-	ws, err := h.accounts.Workspace(ctx, s)
+	ws, err := h.workspaces.Get(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteA
 		d := int(req.RetentionDays.Value)
 		days = &d
 	}
-	if err := h.accounts.SetAuditRetention(ctx, s, h.actor(ctx), days); err != nil {
+	if err := h.workspaces.SetAuditRetention(ctx, s, h.actor(ctx), days); err != nil {
 		return nil, err
 	}
 	return retentionResource(days), nil

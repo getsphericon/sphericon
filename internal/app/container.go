@@ -66,10 +66,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reputation"
@@ -93,6 +93,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -326,8 +327,8 @@ var messagingPackage = do.Package(
 	}),
 	// How a Workspace's owners are told something: by mail through the platform's own sender,
 	// never the Workspace's Integration, which a hold may freeze.
-	do.Lazy(func(i do.Injector) (ownernotice.Notify, error) {
-		return accounts.OwnerNotifier(do.MustInvoke[*ent.Client](i), do.MustInvoke[SystemSender](i).EmailSender), nil
+	do.Lazy(func(i do.Injector) (memberships.Notify, error) {
+		return memberships.OwnerNotifier(do.MustInvoke[*ent.Client](i), do.MustInvoke[SystemSender](i).EmailSender), nil
 	}),
 	// The DKIM DNS resolver of Sending domain and Join domain verification (ADR 0010): published
 	// DNS records on every Instance; a development stack points the resolver at its own DNS
@@ -392,7 +393,7 @@ var editionPackage = do.Package(
 			Bus:           do.MustInvoke[*events.Bus](i),
 			License:       do.MustInvoke[*licensekey.License](i),
 			StaffSessions: members.Sessions(),
-			Notify:        do.MustInvoke[ownernotice.Notify](i),
+			Notify:        do.MustInvoke[memberships.Notify](i),
 			Suspender:     do.MustInvoke[*suspension.Suspender](i),
 			Reputation:    do.MustInvoke[*reputation.Module](i),
 		}, staff.Config{
@@ -411,11 +412,11 @@ var editionPackage = do.Package(
 	// The one sequence that suspends a Workspace and tells its owners (ADR 0007): the command
 	// line, the Staff console and the abuse detector all suspend through it.
 	do.Lazy(func(i do.Injector) (*suspension.Suspender, error) {
-		return suspension.NewSuspender(do.MustInvoke[*events.Bus](i), do.MustInvoke[*ent.Client](i), do.MustInvoke[ownernotice.Notify](i),
+		return suspension.NewSuspender(do.MustInvoke[*events.Bus](i), do.MustInvoke[*ent.Client](i), do.MustInvoke[memberships.Notify](i),
 			do.MustInvoke[*config.Config](i).SupportEmail), nil
 	}),
 	do.Lazy(func(i do.Injector) (*orders.Module, error) {
-		return orders.New(do.MustInvoke[*accounts.Accounts](i)), nil
+		return orders.New(do.MustInvoke[*workspaces.Module](i)), nil
 	}),
 	// The domain-event bus over the main pool: a publish stores the Event and queues its jobs.
 	do.Lazy(func(i do.Injector) (*events.Bus, error) {
@@ -485,7 +486,7 @@ var jobsPackage = do.Package(
 				Secret: cfg.JWTSecret,
 			}
 		}
-		return trackingdomains.New(client, do.MustInvoke[*events.Bus](i), do.MustInvoke[ownernotice.Notify](i), trackingdomains.Config{
+		return trackingdomains.New(client, do.MustInvoke[*events.Bus](i), do.MustInvoke[memberships.Notify](i), trackingdomains.Config{
 			Checker:  checker,
 			OwnHosts: []string{urlHost(cfg.AppURL), urlHost(cfg.TrackerURL)},
 			Now:      do.MustInvoke[Clock](i),
@@ -527,7 +528,7 @@ var jobsPackage = do.Package(
 	}),
 	// The Sending domain checks a person waits for (the Verify button, ADR 0010).
 	do.Lazy(func(i do.Injector) (*domainverify.Module, error) {
-		return domainverify.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[ownernotice.Notify](i)), nil
+		return domainverify.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[memberships.Notify](i)), nil
 	}),
 	// The enqueue side implements every enqueue seam: the platform mails, the Integration quota
 	// refresh and Sending domain verification. It inserts over the main pool, like the bus, and
@@ -586,13 +587,23 @@ var deliveryPackage = do.Package(
 	}),
 )
 
-// accountsPackage provides Accounts, the Workspace and Instance modules and the second factor.
+// accountsPackage provides Accounts, the Workspace, Membership and Instance modules and the second
+// factor.
 var accountsPackage = do.Package(
 	// One password hasher for every password a User or a Staff member sets.
 	do.Lazy(func(do.Injector) (*credentials.Hasher, error) {
 		return credentials.NewHasher(), nil
 	}),
-	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
+	// The Workspace with its settings (ADR 0102), over the raw client: the tenant row has no scoped
+	// wrapper.
+	do.Lazy(func(i do.Injector) (*workspaces.Module, error) {
+		return workspaces.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
+	}),
+	// The Memberships (ADR 0102): the lookup of a Workspace's scope and the changes of a Role.
+	do.Lazy(func(i do.Injector) (*memberships.Module, error) {
+		return memberships.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
+	}),
+	// Accounts is the raw-client home of Users, Invitations and the creation of a Workspace.
 	// On an Instance that has Send caps (ADR 0067) a new Workspace starts with the Instance's
 	// default; elsewhere it has none.
 	do.Lazy(func(i do.Injector) (*accounts.Accounts, error) {
@@ -657,7 +668,7 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*joindomains.Module, error) {
 		return joindomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i),
-			do.MustInvoke[ownernotice.Notify](i)), nil
+			do.MustInvoke[memberships.Notify](i)), nil
 	}),
 )
 
@@ -701,7 +712,7 @@ var contentPackage = do.Package(
 		return eventlog.New(do.MustInvoke[*events.Bus](i), policy), nil
 	}),
 	do.Lazy(func(i do.Injector) (*setupchecklist.Module, error) {
-		return setupchecklist.New(do.MustInvoke[*accounts.Accounts](i)).WithClock(do.MustInvoke[Clock](i)), nil
+		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*attention.Module, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
@@ -835,6 +846,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	return apiexternal.Deps{
 		Clock:            do.MustInvoke[Clock](i),
 		Accounts:         do.MustInvoke[*accounts.Accounts](i),
+		Workspaces:       do.MustInvoke[*workspaces.Module](i),
 		Bus:              do.MustInvoke[*events.Bus](i),
 		Webhooks:         do.MustInvoke[*webhooks.Module](i),
 		Outbound:         do.MustInvoke[*outbound.Module](i),
@@ -887,6 +899,8 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		SupportEmail:             cfg.SupportEmail,
 		Origins:                  apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
 		Accounts:                 do.MustInvoke[*accounts.Accounts](i),
+		Workspaces:               do.MustInvoke[*workspaces.Module](i),
+		Memberships:              do.MustInvoke[*memberships.Module](i),
 		Passwords:                do.MustInvoke[*credentials.Hasher](i),
 		Attempts:                 do.MustInvoke[*accounts.Attempts](i),
 		OAuth:                    do.MustInvoke[*oauthserver.Service](i),

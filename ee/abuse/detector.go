@@ -12,10 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // Interval is how often the detector runs.
@@ -34,7 +34,7 @@ type Detector struct {
 	*Watch
 
 	client  *ent.Client
-	notify  ownernotice.Notify
+	notify  memberships.Notify
 	suspend *suspension.Suspender
 	support string
 }
@@ -42,7 +42,7 @@ type Detector struct {
 // New builds the Detector. notify tells the owners through the platform's (system) sender, nil
 // for none: the notices never go through a Workspace's own Integration, which a freeze holds. A
 // freeze suspends through suspender, which tells the owners the same way.
-func New(client *ent.Client, lic *licensekey.License, notify ownernotice.Notify, suspender *suspension.Suspender, cfg Config) *Detector {
+func New(client *ent.Client, lic *licensekey.License, notify memberships.Notify, suspender *suspension.Suspender, cfg Config) *Detector {
 	return &Detector{Watch: NewWatch(lic, cfg.Limits), client: client, notify: notify, suspend: suspender, support: cfg.SupportEmail}
 }
 
@@ -74,7 +74,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 		errs = append(errs, fmt.Errorf("end the warning episodes of suspended and exempt workspaces: %w", err))
 	}
 	candidates, err := d.client.Workspace.Query().
-		Where(suspension.NotSuspended(), workspace.AbuseExempt(false), accounts.Live()).
+		Where(suspension.NotSuspended(), workspace.AbuseExempt(false), workspaces.Live()).
 		All(ctx)
 	if err != nil {
 		return sum, errors.Join(append(errs, fmt.Errorf("list workspaces for the abuse detector: %w", err))...)
@@ -144,7 +144,7 @@ func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now ti
 		"Rate": Percent(b.Rate()), "Count": b.Numerator, "Total": b.Denominator,
 		"Limit": Percent(float64(b.LimitBP) / 10000), "Support": d.support,
 	}
-	if err := d.notify.Tell(ctx, ws.ID, ownernotice.Notice{Subject: i18n.EmailAbuseWarningSubject, Body: i18n.EmailAbuseWarningBody}, data); err != nil {
+	if err := d.notify.Tell(ctx, ws.ID, memberships.Notice{Subject: i18n.EmailAbuseWarningSubject, Body: i18n.EmailAbuseWarningBody}, data); err != nil {
 		return false, fmt.Errorf("warn workspace %d: %w", ws.ID, err)
 	}
 	if err := d.client.Workspace.UpdateOneID(ws.ID).SetAbuseWarningNotifiedAt(now).Exec(ctx); err != nil {

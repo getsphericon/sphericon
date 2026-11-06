@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // The refusals every surface answers alike (review rule 15): a handler returns the module's error
@@ -27,7 +28,7 @@ import (
 // refusal is the status and the problem err is answered with, or false when err is not one of the
 // refusals a module decides.
 func refusal(err error) (int, *siteapi.ProblemDetails, bool) {
-	if errors.Is(err, accounts.ErrWorkspaceNotFound) {
+	if errors.Is(err, workspaces.ErrNotFound) {
 		// An unknown Workspace and one the caller is not a member of read the same.
 		return http.StatusNotFound, Body(http.StatusNotFound, "workspace not found"), true
 	}

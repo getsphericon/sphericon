@@ -16,11 +16,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 )
@@ -68,7 +68,7 @@ func atEdge(hosts ...string) map[string]mockdns.Zone {
 // module builds the module over the system mailbox, the way the composition root does.
 func module(t *testing.T, env *testhelper.TestEnv, zones map[string]mockdns.Zone, probe trackingdomains.Doer) *trackingdomains.Module {
 	t.Helper()
-	return trackingdomains.New(env.DB, env.Bus, accounts.OwnerNotifier(env.DB, env.SystemMail), trackingdomains.Config{
+	return trackingdomains.New(env.DB, env.Bus, memberships.OwnerNotifier(env.DB, env.SystemMail), trackingdomains.Config{
 		Checker: &trackingdomains.Checker{
 			Lookup: dnstest.Resolver(t, zones).LookupCNAME,
 			Target: edge,

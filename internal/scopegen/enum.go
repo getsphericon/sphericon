@@ -49,12 +49,12 @@ func (e Enum) Decls(doc Document) (string, error) {
 	return b.String(), nil
 }
 
-// Permissions is the Permission vocabulary in accounts (ADR 0061): the type a Role's table and
+// Permissions is the Permission vocabulary in memberships (ADR 0061): the type a Role's table and
 // every generated access table name, from the contract's Permission enum.
 var Permissions = Table{
 	Spec:    "openapi/site.openapi.json",
-	Out:     "internal/accounts/permissions_gen.go",
-	Package: "accounts",
+	Out:     "internal/memberships/permissions_gen.go",
+	Package: "memberships",
 	Decls: Enum{
 		Schema: "Permission",
 		Doc: []string{

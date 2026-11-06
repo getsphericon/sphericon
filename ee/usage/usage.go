@@ -29,8 +29,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // Interval is how often the job closes elapsed periods and refreshes Live usage.
@@ -108,8 +108,8 @@ func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, n
 	if !lic.Has(licensekey.FeatureStaff) {
 		return nil
 	}
-	workspaces, err := client.Workspace.Query().
-		Where(accounts.Live()).
+	live, err := client.Workspace.Query().
+		Where(workspaces.Live()).
 		Select(workspace.FieldID, workspace.FieldCreatedAt).
 		Order(ent.Asc(workspace.FieldID)).
 		All(ctx)
@@ -118,7 +118,7 @@ func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, n
 	}
 	current := PeriodOf(now)
 	var errs []error
-	for _, ws := range workspaces {
+	for _, ws := range live {
 		if err := ctx.Err(); err != nil {
 			return errors.Join(append(errs, err)...)
 		}

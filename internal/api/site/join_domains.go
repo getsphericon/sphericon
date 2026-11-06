@@ -57,7 +57,7 @@ func (h *Handlers) SiteJoinDomainsRemove(ctx context.Context, params siteapi.Sit
 func (h *Handlers) SiteDomainJoinGet(ctx context.Context, _ siteapi.SiteDomainJoinGetParams) (*siteapi.SiteDomainJoinResource, error) {
 	s := workspaceScope(ctx)
 
-	enabled, err := h.accounts.DomainJoinEnabled(ctx, s)
+	enabled, err := h.workspaces.DomainJoinEnabled(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (h *Handlers) SiteDomainJoinGet(ctx context.Context, _ siteapi.SiteDomainJo
 func (h *Handlers) SiteDomainJoinSet(ctx context.Context, req *siteapi.SiteSetDomainJoinInput, _ siteapi.SiteDomainJoinSetParams) (*siteapi.SiteDomainJoinResource, error) {
 	s := workspaceScope(ctx)
 
-	w, err := h.accounts.SetDomainJoin(ctx, s, h.actor(ctx), req.Enabled)
+	w, err := h.workspaces.SetDomainJoin(ctx, s, h.actor(ctx), req.Enabled)
 	if err != nil {
 		return nil, err
 	}

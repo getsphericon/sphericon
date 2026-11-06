@@ -1,4 +1,4 @@
-package accounts
+package memberships
 
 import (
 	"context"
@@ -7,9 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
 )
 
 // The Owners of a Workspace (GLOSSARY "Role") are defined here and nowhere else: every
@@ -18,7 +16,7 @@ import (
 // Owners loads the owner Memberships of the Workspace s with their Users, oldest first.
 func Owners(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 	return s.Membership().Query().
-		Where(roles.Owners()).
+		Where(OwnerRole()).
 		WithUser().
 		Order(ent.Asc(membership.FieldID)).
 		All(ctx)
@@ -29,7 +27,7 @@ func Owners(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 // many Workspaces).
 func OwnersOf(ctx context.Context, client *ent.Client, workspaceIDs ...int64) ([]*ent.Membership, error) {
 	return client.Membership.Query().
-		Where(membership.WorkspaceIDIn(workspaceIDs...), roles.Owners()).
+		Where(membership.WorkspaceIDIn(workspaceIDs...), OwnerRole()).
 		WithUser().
 		Order(ent.Asc(membership.FieldID)).
 		All(ctx)
@@ -39,7 +37,7 @@ func OwnersOf(ctx context.Context, client *ent.Client, workspaceIDs ...int64) ([
 // their ids. Locking first serializes concurrent Owner changes: the second waits, then reads
 // the committed outcome of the first.
 func LockOwners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
-	return s.Membership().Query().Where(roles.Owners()).ForUpdate().IDs(ctx)
+	return s.Membership().Query().Where(OwnerRole()).ForUpdate().IDs(ctx)
 }
 
 // NotifyOwners sends one platform email to every Owner of the Workspace through the system
@@ -63,10 +61,10 @@ func NotifyOwners(ctx context.Context, client *ent.Client, sender messaging.Emai
 	return errors.Join(errs...)
 }
 
-// OwnerNotifier is the ownernotice.Notify that mails a Workspace's Owners through the system sender
+// OwnerNotifier is the Notify that mails a Workspace's Owners through the system sender
 // (a nil sender gives a nil Notify, which sends nothing). It is the one seam of the modules that
 // tell Owners something (Join domains, Sending domains, webhooks, suspension).
-func OwnerNotifier(client *ent.Client, sender messaging.EmailSender) ownernotice.Notify {
+func OwnerNotifier(client *ent.Client, sender messaging.EmailSender) Notify {
 	if sender == nil {
 		return nil
 	}

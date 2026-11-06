@@ -17,10 +17,10 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // tokenScopes are everything the scenario steps need; a test's token carries them all.
@@ -101,7 +101,7 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	require.NoError(tb, err)
 	ws, err := e.accounts.CreateWorkspace(ctx, user.ID, "e2e "+id)
 	require.NoError(tb, err)
-	scoped, _, err := e.accounts.Scope(ctx, user.ID, ws.PublicID)
+	scoped, _, err := e.memberships.Scope(ctx, user.ID, ws.PublicID)
 	require.NoError(tb, err)
 	minted, err := apitokens.Mint(ctx, scoped, apitokens.Input{Name: "e2e", Scopes: tokenScopes})
 	require.NoError(tb, err)
@@ -176,7 +176,7 @@ func (w *Workspace) AddOwner() []int64 {
 func (w *Workspace) OwnerMembershipIDs() []int64 {
 	w.t.Helper()
 	ids, err := w.scoped.Membership().Query().
-		Where(roles.Owners()).
+		Where(memberships.OwnerRole()).
 		Order(ent.Asc(membership.FieldID)).
 		IDs(w.t.Context())
 	require.NoError(w.t, err)
@@ -188,7 +188,7 @@ func (w *Workspace) OwnerMembershipIDs() []int64 {
 func (w *Workspace) DemoteConcurrently(ids ...int64) []error {
 	w.t.Helper()
 	return w.concurrently(len(ids), func(i int) error {
-		_, err := w.env.accounts.ChangeMembershipRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
+		_, err := w.env.memberships.ChangeRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
 			membership.RoleOwner, ids[i], membership.RoleMember)
 		return err
 	})
@@ -199,7 +199,7 @@ func (w *Workspace) DemoteConcurrently(ids ...int64) []error {
 func (w *Workspace) RemoveConcurrently(ids ...int64) []error {
 	w.t.Helper()
 	return w.concurrently(len(ids), func(i int) error {
-		return w.env.accounts.RemoveMembership(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, ids[i])
+		return w.env.memberships.Remove(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, ids[i])
 	})
 }
 
@@ -209,11 +209,11 @@ func (w *Workspace) DemoteAndRemoveConcurrently(demote, remove int64) []error {
 	w.t.Helper()
 	return w.concurrently(2, func(i int) error {
 		if i == 0 {
-			_, err := w.env.accounts.ChangeMembershipRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
+			_, err := w.env.memberships.ChangeRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
 				membership.RoleOwner, demote, membership.RoleMember)
 			return err
 		}
-		return w.env.accounts.RemoveMembership(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, remove)
+		return w.env.memberships.Remove(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, remove)
 	})
 }
 

@@ -11,12 +11,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 var now = time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
@@ -48,7 +48,7 @@ func restore(t *testing.T, m *workspacedeletion.Module) error {
 
 func TestRestoreInsideTheWindowBringsTheWorkspaceBack(t *testing.T) {
 	env, m := setup(t)
-	deletedAgo(t, env, workspacedeletion.DeletionWindow-time.Hour)
+	deletedAgo(t, env, workspaces.DeletionWindow-time.Hour)
 
 	require.NoError(t, restore(t, m))
 
@@ -57,7 +57,7 @@ func TestRestoreInsideTheWindowBringsTheWorkspaceBack(t *testing.T) {
 
 func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 	env, m := setup(t)
-	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
+	deletedAgo(t, env, workspaces.DeletionWindow+time.Hour)
 
 	require.ErrorIs(t, restore(t, m), lifecycle.ErrInvalidTransition)
 
@@ -68,13 +68,13 @@ func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 // answers 404, as for any Workspace the caller cannot see.
 func TestRestoreAfterErasureFindsNoOwner(t *testing.T) {
 	env, m := setup(t)
-	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
+	deletedAgo(t, env, workspaces.DeletionWindow+time.Hour)
 	_, err := m.EraseDue(t.Context(), now)
 	require.NoError(t, err)
 
 	err = restore(t, m)
 
-	require.ErrorIs(t, err, accounts.ErrWorkspaceNotFound)
+	require.ErrorIs(t, err, workspaces.ErrNotFound)
 	assert.NotNil(t, initech(t, env).ErasedAt)
 }
 
@@ -165,7 +165,7 @@ func TestARestoreThatLosesToAnEraseIsRefused(t *testing.T) {
 // stale move is finished, not an error, and no tombstone is written.
 func TestAnEraseThatLosesToARestoreIsFinishedWithoutATombstone(t *testing.T) {
 	env, m := setup(t)
-	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
+	deletedAgo(t, env, workspaces.DeletionWindow+time.Hour)
 	name := initech(t, env).Name
 	env.Bus.Use(hook.If(restoredJustBefore, tombstoneWrite))
 

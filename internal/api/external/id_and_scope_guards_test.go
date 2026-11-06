@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
+
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/samber/lo"
 )
 
 // guardCase is one id-addressed operation; every guard refuses it with the same status: a

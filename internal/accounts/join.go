@@ -2,12 +2,10 @@ package accounts
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -86,45 +84,4 @@ func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 		return nil, err
 	}
 	return ws, nil
-}
-
-// SetDomainJoin switches the scoped Workspace's domain join on or off (ADR 0051). Switching
-// it on adds nobody: only an address proven afterwards joins. A change is recorded as a
-// `workspace.update` Audit entry in the same transaction; the Workspace is not an Audited
-// entity, so this is an explicit path like SetSecondFactorRequirement. The caller has
-// checked the role.
-func (a *Accounts) SetDomainJoin(ctx context.Context, s *ent.Scoped, actor events.Actor, enabled bool) (*ent.Workspace, error) {
-	var updated *ent.Workspace
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		updated = before
-		if before.DomainJoinEnabled == enabled {
-			return nil
-		}
-		if updated, err = tx.Workspace.UpdateOneID(before.ID).SetDomainJoinEnabled(enabled).Save(ctx); err != nil {
-			return err
-		}
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
-			WorkspaceID: before.ID,
-			Actor:       actor,
-			Action:      events.ActionWorkspaceUpdate,
-			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
-			TargetName:  before.Name,
-			Diff:        map[string]any{"domain_join_enabled": events.Change(before.DomainJoinEnabled, enabled)},
-		})
-	})
-	return updated, err
-}
-
-// DomainJoinEnabled reports whether the scoped Workspace admits Users by Join domain.
-func (a *Accounts) DomainJoinEnabled(ctx context.Context, s *ent.Scoped) (bool, error) {
-	w, err := a.ent.Workspace.Get(ctx, s.WorkspaceID())
-	if err != nil {
-		return false, err
-	}
-	return w.DomainJoinEnabled, nil
 }

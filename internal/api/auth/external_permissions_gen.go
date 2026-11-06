@@ -4,13 +4,13 @@ package auth
 
 import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // ExternalOperationPermissions names the Permissions a Connection's User must hold in their
 // current Role to call an operation of the external API, as the contract declares them (ADR
 // 0061). An API token of the Workspace has no User and skips them; an operation with no entry
 // needs none beyond its scopes.
-var ExternalOperationPermissions = map[externalapi.OperationName][]accounts.Permission{
-	externalapi.ContactsExportOperation: {accounts.PermContactsErase},
+var ExternalOperationPermissions = map[externalapi.OperationName][]memberships.Permission{
+	externalapi.ContactsExportOperation: {memberships.PermContactsErase},
 }

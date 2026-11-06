@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -22,7 +22,7 @@ func TestNotifyOwnersEmailsOwners(t *testing.T) {
 	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaint rate above 0.3%")
 	require.NoError(t, err)
 
-	require.NoError(t, suspension.NotifyOwners(ctx, env.DB, accounts.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID))
+	require.NoError(t, suspension.NotifyOwners(ctx, env.DB, memberships.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID))
 
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1)
@@ -42,7 +42,7 @@ func TestNotifyOwnersShowsStaffForStaffAndCLI(t *testing.T) {
 			_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, by, "abuse report")
 			require.NoError(t, err)
 
-			require.NoError(t, suspension.NotifyOwners(ctx, env.DB, accounts.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID))
+			require.NoError(t, suspension.NotifyOwners(ctx, env.DB, memberships.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID))
 
 			msgs := env.SystemMail.Messages()
 			require.Len(t, msgs, 1)
@@ -54,5 +54,5 @@ func TestNotifyOwnersShowsStaffForStaffAndCLI(t *testing.T) {
 
 func TestNotifyOwnersNilSenderIsNoop(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, suspension.NotifyOwners(context.Background(), env.DB, accounts.OwnerNotifier(env.DB, nil), "", fixtures.AcmeID))
+	require.NoError(t, suspension.NotifyOwners(context.Background(), env.DB, memberships.OwnerNotifier(env.DB, nil), "", fixtures.AcmeID))
 }

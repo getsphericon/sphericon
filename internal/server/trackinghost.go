@@ -10,10 +10,10 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 type trackingHostKey struct{}
@@ -153,7 +153,7 @@ func verifiedTrackingHost(ctx context.Context, client *ent.Client, host string) 
 		return 0, false, nil
 	}
 	row, err := client.TrackingDomain.Query().
-		Where(trackingdomain.Host(host), trackinghostlog.Serving(), trackingdomain.HasWorkspaceWith(accounts.Live())).
+		Where(trackingdomain.Host(host), trackinghostlog.Serving(), trackingdomain.HasWorkspaceWith(workspaces.Live())).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return 0, false, nil

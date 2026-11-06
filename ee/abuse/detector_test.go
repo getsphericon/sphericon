@@ -13,9 +13,9 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -40,7 +40,7 @@ func detector(t *testing.T, env *testhelper.TestEnv) *abuse.Detector {
 
 // newDetector is the detector over the env's bus and platform sender, as the Edition builds it.
 func newDetector(env *testhelper.TestEnv, lic *licensekey.License, cfg abuse.Config) *abuse.Detector {
-	notify := accounts.OwnerNotifier(env.DB, env.SystemMail)
+	notify := memberships.OwnerNotifier(env.DB, env.SystemMail)
 	return abuse.New(env.DB, lic, notify, suspension.NewSuspender(env.Bus, env.DB, notify, cfg.SupportEmail), cfg)
 }
 

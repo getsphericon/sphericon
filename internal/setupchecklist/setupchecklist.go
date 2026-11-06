@@ -44,7 +44,7 @@ func (s Steps) allDone() bool {
 }
 
 // Recorder stamps the moment a Workspace's checklist is first found complete, once, and returns the
-// moment the Workspace holds (internal/accounts).
+// moment the Workspace holds (internal/workspaces).
 type Recorder interface {
 	MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error)
 }

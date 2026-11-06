@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // Is is the one meaning of "suspended": a Workspace whose suspended_at is set (ADR 0007).
@@ -27,11 +27,11 @@ func BySystem() predicate.Workspace {
 }
 
 // NotifyOwners tells the Workspace's Owners that outbound sending is frozen, why, and who set
-// it (ADR 0007). notify is the ownernotice.Notify seam: the platform's system sender, not the
+// it (ADR 0007). notify is the memberships.Notify seam: the platform's system sender, not the
 // Workspace's own Integration, because the Workspace cannot send while suspended (ADR 0015).
 // supportEmail, when set, is where the Owner appeals. A nil notify or a Workspace that is not
 // suspended is a no-op. It stamps the abuse freeze notice marker once the notice went.
-func NotifyOwners(ctx context.Context, client *ent.Client, notify ownernotice.Notify, supportEmail string, workspaceID int64) error {
+func NotifyOwners(ctx context.Context, client *ent.Client, notify memberships.Notify, supportEmail string, workspaceID int64) error {
 	if notify == nil {
 		return nil
 	}
@@ -52,7 +52,7 @@ func NotifyOwners(ctx context.Context, client *ent.Client, notify ownernotice.No
 		actorKey = i18n.EmailWorkspaceSuspendedActorSystem
 	}
 	data := map[string]any{"Workspace": ws.Name, "Reason": reason, "Actor": i18n.T(actorKey, nil), "Support": supportEmail}
-	if err := notify.Tell(ctx, ws.ID, ownernotice.Notice{Subject: i18n.EmailWorkspaceSuspendedSubject, Body: i18n.EmailWorkspaceSuspendedBody}, data); err != nil {
+	if err := notify.Tell(ctx, ws.ID, memberships.Notice{Subject: i18n.EmailWorkspaceSuspendedSubject, Body: i18n.EmailWorkspaceSuspendedBody}, data); err != nil {
 		return err
 	}
 	return client.Workspace.UpdateOneID(ws.ID).SetAbuseFreezeNotifiedAt(time.Now()).Exec(ctx)

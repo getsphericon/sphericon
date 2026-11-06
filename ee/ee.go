@@ -30,7 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
@@ -51,7 +51,7 @@ type Edition struct {
 	Staff *staff.Module
 
 	staffSessions *staffmembers.Sessions
-	notify        ownernotice.Notify
+	notify        memberships.Notify
 	suspend       *suspension.Suspender
 	abuseCfg      abuse.Config
 	now           func() time.Time
@@ -70,7 +70,7 @@ type Deps struct {
 	// StaffSessions are the core Staff member's sessions, nil while its sign-in is off.
 	StaffSessions *staffmembers.Sessions
 	// Notify tells a Workspace's owners through the platform's (system) sender, nil for none.
-	Notify ownernotice.Notify
+	Notify memberships.Notify
 	// Suspender suspends a Workspace and tells its owners (ADR 0007).
 	Suspender *suspension.Suspender
 	// Reputation computes a Workspace's rates, which the console shows.

@@ -21,10 +21,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 var (
@@ -72,8 +72,8 @@ type Request struct {
 	SendScopes  []string
 	SetupScopes []string
 	// RequiredPermissions names, for each requested scope that needs one, the Permission a User
-	// must hold to grant it (accounts.GrantPermissions, ADR 0061).
-	RequiredPermissions map[string]accounts.Permission
+	// must hold to grant it (memberships.GrantPermissions, ADR 0061).
+	RequiredPermissions map[string]memberships.Permission
 }
 
 // Decision is the signed-in user's answer to an authorization request. Membership is the
@@ -104,7 +104,7 @@ func (s *Service) Describe(ctx context.Context, clientID, redirectURI, scope str
 	return &Request{
 		ClientName: client.Name, ClientHost: ClientHost(clientID), LocalRedirect: isLoopback(redirectURI),
 		RedirectURI: redirectURI, Scopes: granted, SendScopes: send, SetupScopes: setup,
-		RequiredPermissions: accounts.GrantRequires(slices.Concat(granted, send, setup)),
+		RequiredPermissions: memberships.GrantRequires(slices.Concat(granted, send, setup)),
 	}, nil
 }
 
@@ -133,7 +133,7 @@ func (s *Service) Decide(ctx context.Context, d Decision) (string, error) {
 	}
 	// Any member may approve, but only the scopes their Role may grant (ADR 0061): the consent
 	// screen offers no other, and the first one beyond the Role refuses the whole decision.
-	if err := accounts.MayGrant(d.Membership.Role, granted); err != nil {
+	if err := memberships.MayGrant(d.Membership.Role, granted); err != nil {
 		return "", err
 	}
 

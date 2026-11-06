@@ -8,13 +8,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // hooksHandler serves inbound provider callbacks (ADR 0037): POST /hooks/{key}. The key
@@ -54,7 +54,7 @@ type hook struct {
 func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	row, err := h.ent.Integration.Query().
-		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(accounts.Live())).
+		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(workspaces.Live())).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		http.NotFound(w, r)

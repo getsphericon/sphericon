@@ -1,10 +1,9 @@
-// Package accounts is the raw-client home for what the scoped client cannot
-// express (ADR 0017): actors whose Workspace is not known up front. It owns the
-// User (identity, credentials), the Membership lookup that turns a /w/{id} into
-// a Workspace scope, the Workspace itself (it is the tenant, not a tenant-owned
-// entity, so the scoped client has no wrapper for it), and the pending-Invitation
-// lookup by token (the token is the only handle). The site handlers use it
-// instead of holding a raw *ent.Client.
+// Package accounts is the raw-client home of the User (identity, credentials), the
+// pending-Invitation lookup by token (the token is the only handle) and the creation of a
+// Workspace with its Owner Membership: actors whose Workspace is not known up front (ADR 0017).
+// The Workspace with its settings is internal/workspaces, the Memberships with the Permissions
+// and the Owners internal/memberships (ADR 0102). The site handlers use it instead of holding a
+// raw *ent.Client.
 package accounts
 
 import (
@@ -18,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/text/currency"
 	"golang.org/x/text/language"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -27,26 +25,20 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
-	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/signup"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
-// ErrWorkspaceNotFound is the refusal of a Workspace that does not exist, is not live, or that
-// the User is not a member of. The cases are one refusal, so the answer does not tell a caller
-// which Workspace ids exist. Every surface answers it alike (review rule 15).
-var ErrWorkspaceNotFound = errors.New("accounts: workspace not found")
-
-// Accounts reads and writes Users, Workspaces and Memberships over the raw client.
+// Accounts reads and writes Users and Invitations over the raw client, and creates Workspaces.
 type Accounts struct {
 	ent         *ent.Client
 	bus         *events.Bus
@@ -98,67 +90,6 @@ func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, con
 	return a
 }
 
-// Scope resolves the Workspace addressed by a /w/{id} path segment for a User and
-// returns its scoped client with the User's Membership (its User and Workspace
-// loaded, for the Role and the Two-factor requirement). It is the site's construction
-// point of the scoped client: access is "does this User have a Membership on this
-// Workspace?". ErrWorkspaceNotFound means the Workspace id does not exist or the User is
-// not a member.
-func (a *Accounts) Scope(ctx context.Context, userID int64, publicID string) (*ent.Scoped, *ent.Membership, error) {
-	m, err := a.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.PublicID(publicID), Live())).
-		WithUser().
-		WithWorkspace().
-		Only(ctx)
-	if ent.IsNotFound(err) {
-		return nil, nil, ErrWorkspaceNotFound
-	}
-	if err != nil {
-		return nil, nil, err
-	}
-	return a.ScopeOf(m), m, nil
-}
-
-// ScopeOf is the scoped client of a loaded Membership's Workspace, acting as its User
-// (the User edge, when loaded, names the actor). It is Scope without the lookup, for a
-// caller that already holds the Membership.
-func (a *Accounts) ScopeOf(m *ent.Membership) *ent.Scoped {
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(m.UserID, 10)}
-	if u := m.Edges.User; u != nil {
-		actor.Name = u.Name
-	}
-	return a.bus.Act(a.ent.Scoped(m.WorkspaceID), actor)
-}
-
-// BootstrapScope is the scoped client of the oldest Workspace, for the bootstrap
-// token (no caller token exists yet to say which Workspace is meant).
-func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
-	id, err := a.ent.Workspace.Query().Where(Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return events.Ingest(a.ent.Scoped(id)), nil
-}
-
-// MembershipsOf lists a User's Memberships with their User and Workspace loaded, oldest
-// Workspace first.
-func (a *Accounts) MembershipsOf(ctx context.Context, userID int64) ([]*ent.Membership, error) {
-	return a.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.HasWorkspaceWith(Live())).
-		WithUser().
-		WithWorkspace().
-		Order(ent.Asc(membership.FieldWorkspaceID)).
-		All(ctx)
-}
-
-// Members lists the Memberships of the Workspace s with their Users, oldest first.
-func Members(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
-	return s.Membership().Query().
-		WithUser().
-		Order(ent.Asc(membership.FieldID)).
-		All(ctx)
-}
-
 // PendingInvitations lists the unaccepted Invitations of the Workspace s with their inviters,
 // oldest first.
 func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, error) {
@@ -168,152 +99,6 @@ func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, 
 		Order(ent.Asc(invitation.FieldID)).
 		All(ctx)
 }
-
-// ErrResetOwnSecondFactor refuses a caller resetting their own Second factor as a member's: they
-// disable it in their account, which takes a password and a code.
-var ErrResetOwnSecondFactor = validation.RefuseField("member", "accounts: cannot reset your own second factor", i18n.ErrorsSecondFactorResetSelf)
-
-// SecondFactorResetTarget loads the Membership targetID of the Workspace s as the target of a
-// Second factor reset by the User callerID holding callerRole: resetting an Owner's needs
-// owners:manage, refused as Require refuses it, and nobody resets their own
-// (ErrResetOwnSecondFactor). A target outside the Workspace is ErrMemberNotFound.
-func SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, callerID int64, callerRole membership.Role, targetID int64) (*ent.Membership, error) {
-	target, err := s.Membership().Get(ctx, targetID)
-	if err != nil {
-		return nil, memberTarget(err)
-	}
-	if roles.IsOwner(target.Role) {
-		if err := Require(callerRole, PermOwnersManage); err != nil {
-			return nil, err
-		}
-	}
-	if target.UserID == callerID {
-		return nil, ErrResetOwnSecondFactor
-	}
-	return target, nil
-}
-
-// UpdateWorkspace renames the scoped Workspace and, when postalAddress is non-nil,
-// sets (or clears, with "") its postal address. A change is recorded as a
-// `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is
-// the tenant root and has no scoped wrapper, so this is an explicit path.
-// The name is trimmed; an empty one is ErrWorkspaceNameEmpty.
-func (a *Accounts) UpdateWorkspace(ctx context.Context, s *ent.Scoped, actor events.Actor, name string, postalAddress *string) (*ent.Workspace, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return nil, ErrWorkspaceNameEmpty
-	}
-	var updated *ent.Workspace
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		upd := tx.Workspace.UpdateOneID(s.WorkspaceID()).SetName(name)
-		if postalAddress != nil {
-			upd = upd.SetPostalAddress(*postalAddress)
-		}
-		updated, err = upd.Save(ctx)
-		if err != nil {
-			return err
-		}
-		diff := map[string]any{}
-		if before.Name != updated.Name {
-			diff["name"] = events.Change(before.Name, updated.Name)
-		}
-		if before.PostalAddress != updated.PostalAddress {
-			diff["postal_address"] = events.Change(before.PostalAddress, updated.PostalAddress)
-		}
-		if len(diff) == 0 {
-			return nil
-		}
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
-			WorkspaceID: s.WorkspaceID(),
-			Actor:       actor,
-			Action:      events.ActionWorkspaceUpdate,
-			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(updated.ID, 10),
-			TargetName:  updated.Name,
-			Diff:        diff,
-		})
-	})
-	return updated, err
-}
-
-// SetAuditRetention sets (or, with nil, clears) the number of days the Audit log is
-// kept (the EE advanced-retention window, ADR 0014) and records the change as a
-// `workspace.update` Audit entry in the same transaction. The caller has checked the
-// license and the role.
-func (a *Accounts) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor events.Actor, days *int) error {
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		upd := tx.Workspace.UpdateOneID(s.WorkspaceID())
-		if days == nil {
-			upd = upd.ClearRetentionDays()
-		} else {
-			upd = upd.SetRetentionDays(*days)
-		}
-		if _, err := upd.Save(ctx); err != nil {
-			return err
-		}
-		if ptrEqual(before.RetentionDays, days) {
-			return nil
-		}
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
-			WorkspaceID: s.WorkspaceID(),
-			Actor:       actor,
-			Action:      events.ActionWorkspaceUpdate,
-			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
-			TargetName:  before.Name,
-			Diff:        map[string]any{"retention_days": events.Change(before.RetentionDays, days)},
-		})
-	})
-}
-
-// SetTimezone sets the Workspace time zone (ADR 0057) and records the change as a
-// `workspace.update` Audit entry in the same transaction. A name the zone database does not
-// know is refused with ErrUnknownZone. The caller has checked the role.
-func (a *Accounts) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.Actor, name string) (*ent.Workspace, error) {
-	if err := checkZone(name); err != nil {
-		return nil, err
-	}
-	var updated *ent.Workspace
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		updated, err = tx.Workspace.UpdateOneID(s.WorkspaceID()).SetTimezone(name).Save(ctx)
-		if err != nil {
-			return err
-		}
-		from, to := reportday.Name(before.Timezone), reportday.Name(updated.Timezone)
-		if from == to {
-			return nil
-		}
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
-			WorkspaceID: s.WorkspaceID(),
-			Actor:       actor,
-			Action:      events.ActionWorkspaceUpdate,
-			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
-			TargetName:  before.Name,
-			Diff:        map[string]any{workspace.FieldTimezone: events.Change(from, to)},
-		})
-	})
-	return updated, err
-}
-
-// ErrUnknownCurrency refuses a Reporting currency code that is not in ISO 4217.
-var ErrUnknownCurrency = validation.RefuseField("reportingCurrency", "accounts: unknown currency code", i18n.ErrorsCurrencyUnknown)
-
-// ErrUnknownZone refuses a Workspace or a User time zone the zone database does not know. It
-// wraps reportday.ErrUnknownZone.
-var ErrUnknownZone = validation.RefuseField("timezone", "accounts: unknown time zone", i18n.ErrorsTimezoneUnknown)
 
 // ErrMalformedRegionalFormat refuses a Regional format that is not a well-formed BCP 47 tag.
 var ErrMalformedRegionalFormat = validation.RefuseField("regionalFormat", "accounts: malformed regional format", i18n.ErrorsRegionalFormatMalformed)
@@ -334,158 +119,6 @@ func canonicalRegionalFormat(typed string) (string, error) {
 	return parsed.String(), nil
 }
 
-// checkZone refuses with ErrUnknownZone an IANA name the zone database does not know.
-func checkZone(name string) error {
-	if _, err := reportday.Load(name); err != nil {
-		if errors.Is(err, reportday.ErrUnknownZone) {
-			return fmt.Errorf("%w: %w", ErrUnknownZone, err)
-		}
-		return err
-	}
-	return nil
-}
-
-// SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
-// as it is) and records each real change in one `workspace.update` Audit entry in the same
-// transaction (ADR 0064). A code outside ISO 4217 is refused with ErrUnknownCurrency; the bounds of
-// the window are the contract's. The caller has checked the role.
-func (a *Accounts) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor events.Actor, code *string, windowDays *int) (*ent.Workspace, error) {
-	if code != nil {
-		unit, err := currency.ParseISO(*code)
-		if err != nil {
-			return nil, ErrUnknownCurrency
-		}
-		canonical := unit.String()
-		code = &canonical
-	}
-	var updated *ent.Workspace
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		diff := map[string]any{}
-		upd := tx.Workspace.UpdateOneID(s.WorkspaceID())
-		if code != nil && (before.ReportingCurrency == nil || *before.ReportingCurrency != *code) {
-			upd = upd.SetReportingCurrency(*code)
-			diff[workspace.FieldReportingCurrency] = events.Change(before.ReportingCurrency, *code)
-		}
-		if windowDays != nil && before.AttributionWindowDays != *windowDays {
-			upd = upd.SetAttributionWindowDays(*windowDays)
-			diff[workspace.FieldAttributionWindowDays] = events.Change(before.AttributionWindowDays, *windowDays)
-		}
-		if len(diff) == 0 {
-			updated = before
-			return nil
-		}
-		updated, err = upd.Save(ctx)
-		if err != nil {
-			return err
-		}
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
-			WorkspaceID: s.WorkspaceID(),
-			Actor:       actor,
-			Action:      events.ActionWorkspaceUpdate,
-			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
-			TargetName:  before.Name,
-			Diff:        diff,
-		})
-	})
-	return updated, err
-}
-
-// AdoptReportingCurrency makes code the Reporting currency of the scoped Workspace when it has
-// none yet (ADR 0064): the currency of the first Order Completed the Workspace sends. It changes
-// nothing once one is set, by an Owner or Admin or by an earlier Order. The change is a
-// `workspace.update` Audit entry by the system, in a transaction of its own (the orders
-// subscriber calls it before it opens the Event's), and the conditional write makes the first of
-// two Orders read at once win. code is a currency the order Event check has accepted.
-func (a *Accounts) AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, code string) error {
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := tx.Workspace.Update().
-			Where(workspace.ID(s.WorkspaceID()), workspace.ReportingCurrencyIsNil()).
-			SetReportingCurrency(code).
-			Save(ctx)
-		if err != nil || n == 0 {
-			return err
-		}
-		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		diff := map[string]any{workspace.FieldReportingCurrency: events.Became(code)}
-		return events.RecordAudit(ctx, pub,
-			events.WorkspaceAudit(ws, events.Actor{Kind: events.ActorSystem}, events.ActionWorkspaceUpdate, diff))
-	})
-}
-
-// MarkSetupComplete stamps the scoped Workspace's Setup checklist complete at now, once: a
-// Workspace already stamped keeps its first moment. It returns the moment the Workspace holds.
-// Nothing a member chose changes, so no Audit entry is written.
-func (a *Accounts) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error) {
-	err := a.ent.Workspace.Update().
-		Where(workspace.ID(s.WorkspaceID()), workspace.SetupCompletedAtIsNil()).
-		SetSetupCompletedAt(now).
-		Exec(ctx)
-	if err != nil {
-		return time.Time{}, err
-	}
-	ws, err := a.ent.Workspace.Get(ctx, s.WorkspaceID())
-	if err != nil {
-		return time.Time{}, err
-	}
-	return *ws.SetupCompletedAt, nil
-}
-
-// SetSecondFactorRequirement switches the scoped Workspace's Two-factor requirement
-// (ADR 0020) on, starting at now, or off. Switching it on while it is on keeps the
-// original start, so no member's grace restarts. A change is recorded as a
-// `workspace.update` Audit entry in the same transaction. The caller has checked the
-// role. switchedOn reports that this call turned the requirement on.
-func (a *Accounts) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, actor events.Actor, required bool, now time.Time) (updated *ent.Workspace, switchedOn bool, err error) {
-	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		updated = before
-		if (before.SecondFactorRequiredAt != nil) == required {
-			return nil
-		}
-		upd := tx.Workspace.UpdateOneID(s.WorkspaceID())
-		if required {
-			upd = upd.SetSecondFactorRequiredAt(now)
-		} else {
-			upd = upd.ClearSecondFactorRequiredAt()
-		}
-		if updated, err = upd.Save(ctx); err != nil {
-			return err
-		}
-		switchedOn = required
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
-			WorkspaceID: s.WorkspaceID(),
-			Actor:       actor,
-			Action:      events.ActionWorkspaceUpdate,
-			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
-			TargetName:  before.Name,
-			Diff:        map[string]any{"second_factor_required_at": events.Change(before.SecondFactorRequiredAt, updated.SecondFactorRequiredAt)},
-		})
-	})
-	return updated, switchedOn, err
-}
-
-func ptrEqual(a, b *int) bool {
-	if a == nil || b == nil {
-		return a == b
-	}
-	return *a == *b
-}
-
-// ErrWorkspaceNameEmpty refuses a Workspace name that is empty once trimmed.
-var ErrWorkspaceNameEmpty = validation.RefuseField("name", "accounts: workspace name is empty", i18n.ErrorsNameEmpty)
-
 // ErrEmailNotVerified refuses a User whose email is not proven yet (ADR 0030): creating a
 // Workspace, so sign-up verification is not bypassed by creating Workspaces first, and the
 // verification gate of the password login.
@@ -496,11 +129,11 @@ var ErrEmailNotVerified = validation.Unverified("accounts: the email is not veri
 // Membership and the `workspace.create` Audit entry are written atomically: a Workspace is
 // reached through Memberships, so one without its owner row would be inaccessible. An
 // Unverified User gets ErrEmailNotVerified.
-// The name is trimmed; an empty one is ErrWorkspaceNameEmpty, refused before the User is read.
+// The name is trimmed; an empty one is workspaces.ErrNameEmpty, refused before the User is read.
 func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name string) (*ent.Workspace, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil, ErrWorkspaceNameEmpty
+		return nil, workspaces.ErrNameEmpty
 	}
 	for {
 		var ws *ent.Workspace
@@ -922,12 +555,12 @@ func RecordUserAction(ctx context.Context, tx *ent.Client, pub events.Publisher,
 // Workspace u holds a Membership in (a staff member acting on a User), and none
 // anywhere else.
 func RecordActionOnUser(ctx context.Context, tx *ent.Client, pub events.Publisher, actor events.Actor, u *ent.User, action string, diff map[string]any) error {
-	memberships, err := tx.Membership.Query().Where(membership.UserID(u.ID)).All(ctx)
+	held, err := tx.Membership.Query().Where(membership.UserID(u.ID)).All(ctx)
 	if err != nil {
 		return err
 	}
-	ids := make([]int64, len(memberships))
-	for i, m := range memberships {
+	ids := make([]int64, len(held))
+	for i, m := range held {
 		ids[i] = m.WorkspaceID
 	}
 	return RecordActionOnUserIn(ctx, pub, actor, u, action, diff, ids...)
@@ -1051,7 +684,7 @@ func (a *Accounts) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub e
 	if err != nil {
 		return err
 	}
-	if existing != nil && roles.IsMember(existing.Role) && roles.IsAdmin(role) {
+	if existing != nil && memberships.IsMember(existing.Role) && memberships.IsAdmin(role) {
 		// An explicit Invitation raises a member to admin; it never lowers a Role.
 		if err := raiseToAdmin(ctx, ts, pub, inv, actor, u, existing); err != nil {
 			return err
@@ -1308,26 +941,3 @@ func (a *Accounts) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor ev
 		})
 	})
 }
-
-// Workspace is the scoped Workspace's own row.
-func (a *Accounts) Workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, error) {
-	return s.Workspace(ctx)
-}
-
-// WorkspaceIDByPublicID resolves a Workspace id (ADR 0043) to the internal key; command-line
-// tooling addresses Workspaces by their id.
-func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
-	id, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).OnlyID(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("workspace %q: %w", publicID, err)
-	}
-	return id, nil
-}
-
-// Live is a Workspace that is not deleted (ADR 0043): every lookup that must not reach a
-// deleted Workspace (its Members' scope, the lists, the Instance-wide readers) uses it, so
-// "live" is stated once.
-func Live() predicate.Workspace { return workspace.DiscardedAtIsNil() }
-
-// Deleted is a Workspace in its deletion window or erased (ADR 0043): the complement of Live.
-func Deleted() predicate.Workspace { return workspace.DiscardedAtNotNil() }

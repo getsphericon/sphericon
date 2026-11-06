@@ -39,7 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 )
 
@@ -92,13 +92,13 @@ type Config struct {
 type Module struct {
 	client   *ent.Client
 	bus      *events.Bus
-	notify   ownernotice.Notify
+	notify   memberships.Notify
 	check    *Checker
 	ownHosts []string
 	now      func() time.Time
 }
 
-func New(client *ent.Client, bus *events.Bus, notify ownernotice.Notify, cfg Config) *Module {
+func New(client *ent.Client, bus *events.Bus, notify memberships.Notify, cfg Config) *Module {
 	now := cfg.Now
 	if now == nil {
 		now = time.Now
@@ -410,7 +410,7 @@ func (m *Module) checkRow(ctx context.Context, s *ent.Scoped, row *ent.TrackingD
 		m.notifyReplaced(ctx, promoted, replaced)
 	} else if row.Role == trackingdomain.RoleCurrent && stateRank(next) < stateRank(row.State) {
 		m.notify.TellBestEffort(ctx, row.WorkspaceID,
-			ownernotice.Notice{Subject: i18n.EmailTrackingDomainRegressedSubject, Body: i18n.EmailTrackingDomainRegressedBody},
+			memberships.Notice{Subject: i18n.EmailTrackingDomainRegressedSubject, Body: i18n.EmailTrackingDomainRegressedBody},
 			map[string]any{"Host": row.Host, "From": row.State, "To": next, "Target": m.check.Target},
 			"tracking_domain_id", row.ID)
 	}
@@ -439,7 +439,7 @@ func (m *Module) checkRetired(ctx context.Context, s *ent.Scoped, row *ent.Track
 		return err
 	}
 	m.notify.TellBestEffort(ctx, row.WorkspaceID,
-		ownernotice.Notice{Subject: i18n.EmailTrackingDomainRetiredGoneSubject, Body: i18n.EmailTrackingDomainRetiredGoneBody},
+		memberships.Notice{Subject: i18n.EmailTrackingDomainRetiredGoneSubject, Body: i18n.EmailTrackingDomainRetiredGoneBody},
 		map[string]any{"Host": row.Host, "Target": m.check.Target}, "tracking_domain_id", row.ID)
 	return nil
 }
@@ -457,7 +457,7 @@ func (m *Module) notifyReplaced(ctx context.Context, now, old *ent.TrackingDomai
 		return
 	}
 	m.notify.TellBestEffort(ctx, now.WorkspaceID,
-		ownernotice.Notice{Subject: i18n.EmailTrackingDomainReplacedSubject, Body: i18n.EmailTrackingDomainReplacedBody},
+		memberships.Notice{Subject: i18n.EmailTrackingDomainReplacedSubject, Body: i18n.EmailTrackingDomainReplacedBody},
 		map[string]any{"Host": now.Host, "Old": old.Host, "Target": m.check.Target}, "tracking_domain_id", now.ID)
 }
 

@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-faster/jx"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/go-faster/jx"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // collectedRow is a queued event decoded back into its CollectedEvent.

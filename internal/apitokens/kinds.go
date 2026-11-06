@@ -4,7 +4,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // An api_tokens row is one of three credentials (ADR 0061), told apart here and nowhere else:
@@ -30,7 +30,7 @@ func isPersonalToken() predicate.ApiToken {
 // revoke: the caller's own, or every member's when the Role holds members:manage. It is the Policy
 // of both, so every surface that lists or revokes them gets it.
 func visibleTo(caller *ent.Membership) predicate.ApiToken {
-	if accounts.Allows(caller.Role, accounts.PermMembersManage) {
+	if memberships.Allows(caller.Role, memberships.PermMembersManage) {
 		return apitoken.MembershipIDNotNil()
 	}
 	return apitoken.MembershipID(caller.ID)

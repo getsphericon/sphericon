@@ -46,7 +46,7 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 	}
 
 	// Bootstrap has no caller token: the first token goes to the oldest workspace.
-	s, err := h.accounts.BootstrapScope(ctx)
+	s, err := h.workspaces.BootstrapScope(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("bootstrap scope: %w", err)
 	}

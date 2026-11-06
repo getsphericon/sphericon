@@ -14,7 +14,7 @@ func TestGeneratePermissionsDeclaresTheTypeAndAConstantPerValue(t *testing.T) {
 	require.NoError(t, err)
 
 	out := string(src)
-	require.Contains(t, out, "package accounts")
+	require.Contains(t, out, "package memberships")
 	require.Contains(t, out, "type Permission string")
 	require.Regexp(t, `PermMembersManage\s+Permission = "members:manage"`, out)
 	require.Regexp(t, `PermSendingDomainsManage\s+Permission = "sending_domains:manage"`, out)

@@ -10,6 +10,10 @@ import (
 	"strings"
 	"time"
 
+	gptoken "github.com/go-pkgz/auth/v2/token"
+	"github.com/ogen-go/ogen/ogenerrors"
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -21,9 +25,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
-	gptoken "github.com/go-pkgz/auth/v2/token"
-	"github.com/ogen-go/ogen/ogenerrors"
-	"github.com/samber/lo"
+	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // ErrUnauthorized is returned by security handlers when a request is not authorized.
@@ -112,7 +115,7 @@ var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
 // when it carries every scope the contract declares for op (ExternalOperationScopes, ADR 0061)
 // and, for a User's own token (a Connection or a Personal token), when its User's current Role
 // holds the Permission granting each of
-// those scopes needs (accounts.MayGrant) and each Permission op itself declares
+// those scopes needs (memberships.MayGrant) and each Permission op itself declares
 // (ExternalOperationPermissions). An operation absent from the scope table is refused to every
 // token. A token that is missing, invalid, revoked or expired is ErrUnauthorized (401);
 // a valid token without a scope of op is refused with 403, and a User's own token whose User's
@@ -153,7 +156,7 @@ func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalap
 
 // permitted reports, as a refusal, whether the token may call op: the contract must declare op,
 // the token must carry each of its scopes, and the User of a Connection or a Personal token must
-// hold, in their current Role, the Permission granting each scope needs (accounts.MayGrant) and
+// hold, in their current Role, the Permission granting each scope needs (memberships.MayGrant) and
 // each Permission op declares, so the token does no more than its User may on /site: a demotion
 // takes effect on the next request.
 func permitted(op externalapi.OperationName, auth *TokenAuth) error {
@@ -168,11 +171,11 @@ func permitted(op externalapi.OperationName, auth *TokenAuth) error {
 	if auth.Membership == nil {
 		return nil
 	}
-	if err := accounts.MayGrant(auth.Membership.Role, lo.Map(required, func(s apitokens.Scope, _ int) string { return string(s) })); err != nil {
+	if err := memberships.MayGrant(auth.Membership.Role, lo.Map(required, func(s apitokens.Scope, _ int) string { return string(s) })); err != nil {
 		return err
 	}
 	for _, p := range ExternalOperationPermissions[op] {
-		if err := accounts.Require(auth.Membership.Role, p); err != nil {
+		if err := memberships.Require(auth.Membership.Role, p); err != nil {
 			return err
 		}
 	}
@@ -236,7 +239,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 	}
 
 	token, err := h.ent.ApiToken.Query().
-		Where(apitoken.Prefix(parsed.Prefix), apitoken.HasWorkspaceWith(accounts.Live())).
+		Where(apitoken.Prefix(parsed.Prefix), apitoken.HasWorkspaceWith(workspaces.Live())).
 		WithMembership(func(q *ent.MembershipQuery) { q.WithUser().WithWorkspace() }).
 		First(ctx)
 	if ent.IsNotFound(err) {
@@ -349,7 +352,7 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 	if key == "" {
 		return nil, ErrUnauthorized
 	}
-	ws, err := h.ent.Workspace.Query().Where(workspace.CollectKey(key), accounts.Live()).Only(ctx)
+	ws, err := h.ent.Workspace.Query().Where(workspace.CollectKey(key), workspaces.Live()).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrUnauthorized
 	}

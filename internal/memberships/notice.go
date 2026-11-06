@@ -1,8 +1,4 @@
-// Package ownernotice is the one seam of the modules that tell the Owners of a Workspace something
-// (Join domains, Sending domains, webhooks, suspension): a Notify delivers a rendered notice, and
-// Tell and TellBestEffort render one from its Notice and data. It is a leaf, so the modules that
-// accounts itself imports can share it; accounts.OwnerNotifier is the Notify that mails the Owners.
-package ownernotice
+package memberships
 
 import (
 	"context"
@@ -10,6 +6,11 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
+
+// The notices to the Owners of a Workspace: the one seam of the modules that tell them something
+// (Join domains, Sending domains, webhooks, suspension, the abuse detector). A Notify delivers a
+// rendered notice, and Tell and TellBestEffort render one from its Notice and data; OwnerNotifier
+// is the Notify that mails the Owners.
 
 // Notify mails the Owners of a Workspace through the system sender. A nil Notify sends nothing
 // (no platform sender is configured).

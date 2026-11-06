@@ -66,7 +66,7 @@ var ExternalPermissions = Table{
 	Package: "auth",
 	Imports: []string{
 		`externalapi "github.com/getsphericon/sphericon/gen/external"`,
-		`"github.com/getsphericon/sphericon/internal/accounts"`,
+		`"github.com/getsphericon/sphericon/internal/memberships"`,
 	},
 	Doc: []string{
 		"ExternalOperationPermissions names the Permissions a Connection's User must hold in their",
@@ -75,7 +75,7 @@ var ExternalPermissions = Table{
 		"needs none beyond its scopes.",
 	},
 	Var:  "ExternalOperationPermissions",
-	Type: "map[externalapi.OperationName][]accounts.Permission",
+	Type: "map[externalapi.OperationName][]memberships.Permission",
 	Rows: externalPermissionRows,
 }
 
@@ -101,7 +101,7 @@ func externalPermissionRows(doc Document) ([]string, error) {
 			}
 		}
 		if len(perms) > 0 {
-			rows = append(rows, fmt.Sprintf("externalapi.%sOperation: %s", op.Name(), names("accounts.Perm", perms)))
+			rows = append(rows, fmt.Sprintf("externalapi.%sOperation: %s", op.Name(), names("memberships.Perm", perms)))
 		}
 	}
 	return rows, nil
