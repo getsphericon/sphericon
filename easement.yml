@@ -1525,8 +1525,9 @@ strict: true
 
 # Files behind a build tag are indexed only with that tag; a file and its `!tag` twin cannot both
 # be read, so the twin not read is accepted below. `race` stays off (`race_off.go` is read).
-go:
-  tags: [e2e, embed_spa, embed_changelog]
+indexers:
+  go:
+    tags: [e2e, embed_spa, embed_changelog]
 uncovered_ok:
   - name: '**/race_on.go'
     because: the race-detector twin of race_off.go, built only under -race
