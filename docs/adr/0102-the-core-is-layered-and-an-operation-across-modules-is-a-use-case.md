@@ -26,6 +26,12 @@ status: accepted
 > its subject, and is a use case only when that owner would call a module above it or no single
 > module can own it. The examples of a use case and the use case names below that it moves
 > (`eventrecording`, `releasecheck`, `transactionalsend`, `telemetryreport`) no longer hold.
+>
+> Amended by [[0112-an-opt-out-is-an-event-on-every-channel-and-the-broadcast-counts-it-from-the-event]]: the
+> rejected option "Domain events between modules" no longer holds for a counter. Since ADR 0101 an
+> event consumer's job is inserted in the producer's transaction, so a count made from the event
+> commits with the change: a Broadcast counts every opt-out that way. A cascade that must take
+> effect with the change, such as leaving an Automation, stays synchronous.
 
 ## Context
 

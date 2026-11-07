@@ -18,6 +18,11 @@ status: accepted
 > from a number no Contact has lifts its opt-out and records its `keyword` Confirmation, keyed by
 > the number, without creating a Contact. An opt-out keeps how the person stopped (`via`) for the
 > Contact card.
+>
+> **Amended by [[0112-an-opt-out-is-an-event-on-every-channel-and-the-broadcast-counts-it-from-the-event]]:** every new SMS opt-out,
+> whatever its source (a STOP keyword, the link of a text, a send the provider refused, one recorded
+> by hand), is recorded with an `sms.unsubscribed` Event, as a Telegram one is with
+> `telegram.unsubscribed`; the Broadcast of the text it was made from counts it.
 
 Send-eligibility (ADR 0013) has four layers keyed by (Channel, Destination): Suppression, an
 `everything` Unsubscribe, a source Unsubscribe, and a Confirmation that only a Workspace requiring
