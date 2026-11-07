@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -75,12 +76,19 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if err := w.mod.RecordDelivery(ctx, w.ent.Scoped(e.WorkspaceID), e, sendErr, w.now()); err != nil {
 		return err
 	}
-	if verdict, limited := webhook.DecideRateLimited(sendErr, job.CreatedAt, w.now()); limited {
-		if verdict.GiveUp {
-			return river.JobCancel(sendErr) // a receiver that never lets up ends the delivery too
-		}
-		return river.JobSnooze(verdict.Wait)
+	if sendErr == nil {
+		return nil
 	}
+	decision := httpcall.Subscription.Decide(sendErr, httpcall.Attempt{
+		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt,
+	}, w.now())
+	switch {
+	case decision.Outcome == httpcall.Wait:
+		return river.JobSnooze(decision.Wait)
+	case decision.Outcome == httpcall.GiveUp && decision.Reason != httpcall.AttemptsExhausted:
+		return river.JobCancel(sendErr) // a receiver that never lets up ends the delivery too
+	}
+	// A retry, or the last attempt, which river ends as exhausted.
 	return sendErr
 }
 

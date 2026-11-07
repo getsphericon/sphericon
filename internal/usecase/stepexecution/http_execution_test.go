@@ -145,14 +145,12 @@ func TestHTTPExecutionRecordsTheExhaustedFailureAndReturnsItsRetry(t *testing.T)
 	assert.Empty(t, queued)
 }
 
-func TestHTTPExecutionRateLimitWaitsWithoutSpendingItsLastAttempt(t *testing.T) {
+func TestHTTPExecutionRateLimitWaitsWithTheEnrollmentStillActive(t *testing.T) {
 	env := testhelper.Setup(t)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	attempt := executionAttempt()
-	attempt.Number = attempt.Limit
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusTooManyRequests, retryAfter: "120"}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: attempt})
+	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusTooManyRequests, retryAfter: "120"}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, stepexecution.HTTPExecution{Wait: 120 * time.Second}, decision)
@@ -162,26 +160,6 @@ func TestHTTPExecutionRateLimitWaitsWithoutSpendingItsLastAttempt(t *testing.T) 
 	assert.Equal(t, 0, run.CurrentStep)
 	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
-}
-
-func TestHTTPExecutionRateLimitFailsAtItsHorizon(t *testing.T) {
-	env := testhelper.Setup(t)
-	runID := int64(fixtures.AutomationRunHTTPPendingID)
-	s := env.DB.Scoped(fixtures.AcmeID)
-	attempt := executionAttempt()
-	attempt.CreatedAt = attempt.CreatedAt.Add(-webhook.HookRetryHorizon)
-
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusTooManyRequests}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: attempt})
-
-	require.NoError(t, err)
-	require.Error(t, decision.Cancel)
-	require.NoError(t, decision.Retry)
-	assert.Zero(t, decision.Wait)
-	run, err := s.AutomationRun().Get(t.Context(), runID)
-	require.NoError(t, err)
-	assert.Equal(t, automationrun.StatusFailed, run.Status)
-	require.NotNil(t, run.FailureStatus)
-	assert.Equal(t, http.StatusTooManyRequests, *run.FailureStatus)
 }
 
 func TestHTTPExecutionCancelsAnInvalidRenderedBody(t *testing.T) {

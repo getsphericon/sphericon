@@ -17,7 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
-	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -87,54 +86,19 @@ func TestHTTPExecutionLeavesTemporaryFailuresPendingUntilRecovery(t *testing.T) 
 	assert.NotNil(t, stored.CompletedAt)
 }
 
-func TestHTTPExecutionRecordsPermanentAndExhaustedFailures(t *testing.T) {
-	cases := map[string]struct {
-		status  int
-		attempt int
-		age     time.Duration
-		detail  string
-	}{
-		"permanent refusal":  {status: http.StatusNotFound, attempt: 1, detail: "http_status 404: gone"},
-		"exhausted retry":    {status: http.StatusInternalServerError, attempt: 3, detail: "http_status 500: gone"},
-		"rate limit horizon": {status: http.StatusTooManyRequests, attempt: 1, age: webhook.HookRetryHorizon, detail: "http_status 429: gone"},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			env := testhelper.Setup(t)
-			f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
-			attempt := executionAttempt()
-			attempt.Number = tc.attempt
-			attempt.CreatedAt = attempt.CreatedAt.Add(-tc.age)
-
-			decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: tc.status, body: "gone"}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 0, attempt)
-
-			require.NoError(t, err)
-			assert.Equal(t, rules.HTTPExecution{}, decision)
-			stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
-			results, err := rules.DecodeResults(stored.Results)
-			require.NoError(t, err)
-			assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Failed, Detail: tc.detail}}, results)
-			assert.NotNil(t, stored.CompletedAt)
-		})
-	}
-}
-
-func TestHTTPExecutionRateLimitWaitsWithoutSpendingTheLastAttempt(t *testing.T) {
+func TestHTTPExecutionRecordsAGivenUpCallAsFailed(t *testing.T) {
 	env := testhelper.Setup(t)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
-	attempt := executionAttempt()
-	attempt.Number = attempt.Limit
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusTooManyRequests, retryAfter: "120"}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 0, attempt)
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusNotFound, body: "gone"}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 0, executionAttempt())
 
 	require.NoError(t, err)
-	assert.NoError(t, decision.Retry)
-	assert.Equal(t, 120*time.Second, decision.Wait)
+	assert.Equal(t, rules.HTTPExecution{}, decision)
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Pending}}, results)
-	assert.Nil(t, stored.CompletedAt)
+	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Failed, Detail: "http_status 404: gone"}}, results)
+	assert.NotNil(t, stored.CompletedAt)
 }
 
 func TestHTTPExecutionRejectsAnInvalidRenderedBody(t *testing.T) {

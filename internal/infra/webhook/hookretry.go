@@ -2,10 +2,11 @@ package webhook
 
 import "time"
 
-// The retry policy of an outbound call to a third-party hook (ADR 0039): a Webhook delivery
-// and, through the same functions, an HTTP step. A receiver that is down for a weekend
-// still gets the event: retries run for HookRetryHorizon, not river's default of about
-// four hours. The wait doubles from HookRetryFirstDelay up to HookRetryMaxDelay.
+// The retry schedule of an outbound call to a third-party hook (ADR 0039): a Webhook delivery,
+// an HTTP step and a Rule's HTTP Action. A receiver that is down for a weekend still gets the
+// event: retries run for HookRetryHorizon, not river's default of about four hours. The wait
+// doubles from HookRetryFirstDelay up to HookRetryMaxDelay. Whether a failed call is retried at
+// all is httpcall.Policy.Decide, built on these values, Retryable and RateLimited.
 const (
 	HookRetryHorizon    = 72 * time.Hour
 	HookRetryFirstDelay = 30 * time.Second
@@ -53,28 +54,4 @@ func HookSnooze(retryAfter string, now time.Time) time.Duration {
 		return HookSnoozeDefault
 	}
 	return min(wait, HookSnoozeMax)
-}
-
-// RateLimitVerdict is what to do with a delivery whose receiver answered 429: end it, or wait.
-// It is a decision, not a queue error: each worker performs its own side effect (an HTTP step
-// records its Enrollment's failure before it gives up; a Webhook delivery touches nothing).
-type RateLimitVerdict struct {
-	// GiveUp is set for a receiver that never let up in HookRetryHorizon.
-	GiveUp bool
-	// Wait is how long to snooze the job otherwise.
-	Wait time.Duration
-}
-
-// DecideRateLimited returns the verdict for a delivery that failed with sendErr, and whether it
-// was rate limited at all: a job created at createdAt gives up once HookRetryHorizon has passed,
-// otherwise it waits as long as the receiver asked (HookSnooze).
-func DecideRateLimited(sendErr error, createdAt, now time.Time) (RateLimitVerdict, bool) {
-	limited := RateLimited(sendErr)
-	if limited == nil {
-		return RateLimitVerdict{}, false
-	}
-	if now.Sub(createdAt) >= HookRetryHorizon {
-		return RateLimitVerdict{GiveUp: true}, true
-	}
-	return RateLimitVerdict{Wait: HookSnooze(limited.RetryAfter, now)}, true
 }

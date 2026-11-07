@@ -71,17 +71,15 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64,
 	if sendErr == nil {
 		return record(Result{Status: Succeeded})
 	}
-	failed := Result{Status: Failed, Detail: failureDetail(sendErr)}
-	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, m.now()); limited {
-		if verdict.GiveUp {
-			return record(failed)
-		}
-		return HTTPExecution{Wait: verdict.Wait}, nil
+	decision := httpcall.OneOff.Decide(sendErr, attempt, m.now())
+	if decision.Outcome == httpcall.Wait {
+		return HTTPExecution{Wait: decision.Wait}, nil
 	}
-	if !webhook.Retryable(sendErr) || attempt.Number >= attempt.Limit {
-		return record(failed)
+	if decision.Outcome == httpcall.Retry {
+		return HTTPExecution{Retry: sendErr}, nil
 	}
-	return HTTPExecution{Retry: sendErr}, nil
+	// Whatever the reason a call is given up for, its Action is Failed and the job ends.
+	return record(Result{Status: Failed, Detail: failureDetail(sendErr)})
 }
 
 // failureDetail is what the Firing records of a failed call: the closed kind, the status and the

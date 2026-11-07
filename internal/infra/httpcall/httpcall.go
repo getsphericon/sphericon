@@ -2,7 +2,9 @@
 // Rule's HTTP Action (ADR 0054) describe: a URL, request headers, a Liquid JSON body and an
 // optional signing secret. It validates a call as written, seals its URL, header values and
 // secret per field for storage, opens them for the executor and renders the body. It holds no
-// client and no Workspace: the owner of the call decides when to make it (webhook.Post).
+// client and no Workspace: the owner of the call decides when to make it (webhook.Post). What
+// to do after a failed attempt is decided here, for these calls and for a Webhook delivery
+// alike (Policy.Decide).
 package httpcall
 
 import (
