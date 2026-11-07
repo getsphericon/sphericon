@@ -36,13 +36,13 @@ func (h *Handlers) StaffInstanceListAuditEntries(ctx context.Context, params sta
 	if err != nil {
 		return nil, err
 	}
-	rows, next, err := h.instance.AuditEntries(ctx, cursor, int(params.Limit.Value))
+	page, err := h.instance.AuditEntries(ctx, cursor, int(params.Limit.Value))
 	if err != nil {
 		return nil, err
 	}
-	out := &staffapi.StaffInstanceAuditEntryList{Items: mapper.InstanceAuditEntriesToResources(rows)}
-	if next > 0 {
-		out.NextCursor = staffapi.NewOptNilString(auditlog.NextCursor(next))
+	out := &staffapi.StaffInstanceAuditEntryList{Items: mapper.InstanceAuditEntriesToResources(page.Items)}
+	if page.Next > 0 {
+		out.NextCursor = staffapi.NewOptNilString(auditlog.NextCursor(page.Next))
 	}
 	return out, nil
 }

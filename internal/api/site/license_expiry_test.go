@@ -86,7 +86,7 @@ func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	require.NoError(t, err)
 	log := auditentries.NewLog(renewed, env.Bus)
 	require.True(t, log.Licensed())
-	entries, _, err := log.Entries(t.Context(), acme, events.AuditFilter{}, 0, rows+1)
+	page, err := log.Entries(t.Context(), acme, events.AuditFilter{}, 0, rows+1)
 	require.NoError(t, err)
-	assert.Len(t, entries, rows, "nothing was deleted or altered while lapsed")
+	assert.Len(t, page.Items, rows, "nothing was deleted or altered while lapsed")
 }

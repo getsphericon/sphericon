@@ -5,6 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // AuditEntries is one page of a Workspace's Audit log, newest first, and the cursor of
@@ -19,24 +20,13 @@ import (
 // the Audit log is one of its cards (ADR 0026). The separate `audit` license decides
 // whether entries are recorded at all (the audit consumer discards them without it), so an
 // instance with `staff` but no `audit` simply shows an empty log.
-func (m *Module) AuditEntries(ctx context.Context, workspaceID string, cursor int64, limit int) (*AuditPage, error) {
+func (m *Module) AuditEntries(ctx context.Context, workspaceID string, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error) {
 	if err := m.licensed(); err != nil {
-		return nil, err
+		return pagination.IDPage[*ent.AuditEntry]{}, err
 	}
 	s, err := m.scopeOver(ctx, workspaceID)
 	if err != nil {
-		return nil, err
+		return pagination.IDPage[*ent.AuditEntry]{}, err
 	}
-	rows, next, err := m.audit.Entries(ctx, s, events.AuditFilter{}, cursor, limit)
-	if err != nil {
-		return nil, err
-	}
-	return &AuditPage{Entries: rows, Next: next}, nil
-}
-
-// AuditPage is a page of a Workspace's Audit log, newest first: its entries and the cursor of the
-// next page, 0 on the last one.
-type AuditPage struct {
-	Entries []*ent.AuditEntry
-	Next    int64
+	return m.audit.Entries(ctx, s, events.AuditFilter{}, cursor, limit)
 }

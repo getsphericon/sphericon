@@ -53,6 +53,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
@@ -157,7 +158,7 @@ type AuditLog interface {
 	Licensed() bool
 	// Entries returns up to limit entries matching the filter, newest first, preceding
 	// the cursor entry id (0 = from the newest), and the next page's cursor (0 = last page).
-	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) ([]*ent.AuditEntry, int64, error)
+	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error)
 	// Export records the export as an Audit entry of the scope's actor, then returns the
 	// function that writes the entries matching the filter, newest first, as CSV.
 	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error)

@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -287,7 +288,7 @@ func defaultSendCapIn(ctx context.Context, tx *ent.Client) (*int, error) {
 }
 
 // AuditEntries is a page of the Instance audit log, newest first (see instanceauditentries.Entries).
-func (m *Module) AuditEntries(ctx context.Context, cursor int64, limit int) ([]*ent.InstanceAuditEntry, int64, error) {
+func (m *Module) AuditEntries(ctx context.Context, cursor int64, limit int) (pagination.IDPage[*ent.InstanceAuditEntry], error) {
 	return instanceauditentries.Entries(ctx, m.ent, cursor, limit)
 }
 
