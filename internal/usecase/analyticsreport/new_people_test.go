@@ -15,7 +15,7 @@ import (
 
 func newPeopleAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window, now time.Time) *analyticsreport.NewPeople {
 	t.Helper()
-	m := analyticsreport.New().WithClock(func() time.Time { return now })
+	m := analyticsreport.New(func() time.Time { return now }, 0)
 	report, err := m.NewPeople(context.Background(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return report

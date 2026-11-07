@@ -3,6 +3,7 @@ package analyticsreport_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ import (
 
 func eventActions(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window) []analyticsreport.EventAction {
 	t.Helper()
-	rows, err := analyticsreport.New().Events(context.Background(), env.DB.Scoped(ws), w)
+	rows, err := analyticsreport.New(time.Now, 0).Events(context.Background(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return rows
 }

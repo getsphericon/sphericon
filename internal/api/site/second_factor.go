@@ -53,15 +53,15 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 	if err != nil {
 		return nil, err
 	}
-	u, codes, err := h.secondFactor.ConfirmEnrollment(ctx, userID, req.Code)
+	issued, err := h.secondFactor.ConfirmEnrollment(ctx, userID, req.Code)
 	if err != nil {
 		return nil, err
 	}
-	cookie, err := h.sessions.Issue(u, currentSession(ctx))
+	cookie, err := h.sessions.Issue(issued.User, currentSession(ctx))
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteRecoveryCodesHeaders{SetCookie: cookie.String(), Response: siteapi.SiteRecoveryCodes{Codes: codes}}, nil
+	return &siteapi.SiteRecoveryCodesHeaders{SetCookie: cookie.String(), Response: siteapi.SiteRecoveryCodes{Codes: issued.RecoveryCodes}}, nil
 }
 
 // SiteSecondFactorRegenerateRecoveryCodes replaces the Recovery codes after the
@@ -71,15 +71,15 @@ func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	u, codes, err := h.secondFactor.RegenerateRecoveryCodes(ctx, userID)
+	issued, err := h.secondFactor.RegenerateRecoveryCodes(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	cookie, err := h.sessions.Issue(u, currentSession(ctx))
+	cookie, err := h.sessions.Issue(issued.User, currentSession(ctx))
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteRecoveryCodesHeaders{SetCookie: cookie.String(), Response: siteapi.SiteRecoveryCodes{Codes: codes}}, nil
+	return &siteapi.SiteRecoveryCodesHeaders{SetCookie: cookie.String(), Response: siteapi.SiteRecoveryCodes{Codes: issued.RecoveryCodes}}, nil
 }
 
 // SiteSecondFactorDisable removes the Second factor after the password and a

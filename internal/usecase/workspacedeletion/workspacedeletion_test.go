@@ -26,7 +26,7 @@ var actor = events.Actor{Kind: events.ActorUser}
 func setup(t *testing.T) (*testhelper.TestEnv, *workspacedeletion.UseCase) {
 	t.Helper()
 	env := testhelper.Setup(t)
-	return env, workspacedeletion.New(env.DB, env.Bus, testhelper.EditionTables())
+	return env, workspacedeletion.New(env.DB, env.Bus, testhelper.EditionTables(), func() time.Time { return now })
 }
 
 // deletedAgo puts Initech into deletion, deleted ago before now.
@@ -42,7 +42,7 @@ func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {
 
 func restore(t *testing.T, m *workspacedeletion.UseCase) error {
 	t.Helper()
-	_, err := m.Restore(t.Context(), fixtures.InitechOwnerOlgaID, fixtures.InitechPublicID, actor, now)
+	_, err := m.Restore(t.Context(), workspacedeletion.RestoreInput{UserID: fixtures.InitechOwnerOlgaID, PublicID: fixtures.InitechPublicID, Actor: actor})
 	return err
 }
 
@@ -69,7 +69,7 @@ func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 func TestRestoreAfterErasureFindsNoOwner(t *testing.T) {
 	env, m := setup(t)
 	deletedAgo(t, env, workspaces.DeletionWindow+time.Hour)
-	_, err := m.EraseDue(t.Context(), now)
+	_, err := m.EraseDue(t.Context())
 	require.NoError(t, err)
 
 	err = restore(t, m)
@@ -83,7 +83,7 @@ func TestEraseDueLeavesALiveWorkspace(t *testing.T) {
 	env, m := setup(t)
 	before := initech(t, env)
 
-	_, err := m.EraseDue(t.Context(), now)
+	_, err := m.EraseDue(t.Context())
 
 	require.NoError(t, err)
 	got := initech(t, env)
@@ -93,13 +93,16 @@ func TestEraseDueLeavesALiveWorkspace(t *testing.T) {
 }
 
 func TestDeletingTwiceKeepsTheFirstDeletionTime(t *testing.T) {
-	env, m := setup(t)
+	env := testhelper.Setup(t)
+	at := now
+	m := workspacedeletion.New(env.DB, env.Bus, testhelper.EditionTables(), func() time.Time { return at })
 	s := env.DB.Scoped(fixtures.InitechID)
 	name := initech(t, env).Name
 
-	first, err := m.Delete(t.Context(), s, actor, name, now)
+	first, err := m.Delete(t.Context(), s, actor, name)
 	require.NoError(t, err)
-	second, err := m.Delete(t.Context(), s, actor, name, now.Add(24*time.Hour))
+	at = now.Add(24 * time.Hour)
+	second, err := m.Delete(t.Context(), s, actor, name)
 	require.NoError(t, err)
 
 	require.NotNil(t, first.DiscardedAt)
@@ -110,7 +113,7 @@ func TestDeletingTwiceKeepsTheFirstDeletionTime(t *testing.T) {
 func TestDeleteRefusesAWrongName(t *testing.T) {
 	env, m := setup(t)
 
-	_, err := m.Delete(t.Context(), env.DB.Scoped(fixtures.InitechID), actor, "not the name", now)
+	_, err := m.Delete(t.Context(), env.DB.Scoped(fixtures.InitechID), actor, "not the name")
 
 	require.ErrorIs(t, err, workspacedeletion.ErrNameMismatch)
 	assert.Nil(t, initech(t, env).DiscardedAt)
@@ -169,7 +172,7 @@ func TestAnEraseThatLosesToARestoreIsFinishedWithoutATombstone(t *testing.T) {
 	name := initech(t, env).Name
 	env.Bus.Use(hook.If(restoredJustBefore, tombstoneWrite))
 
-	erased, err := m.EraseDue(t.Context(), now)
+	erased, err := m.EraseDue(t.Context())
 
 	require.NoError(t, err)
 	assert.Zero(t, erased)

@@ -20,22 +20,21 @@ type EraseWorkspacesArgs struct{}
 
 func (EraseWorkspacesArgs) Kind() string { return "workspace_erasure" }
 
-// EraseWorkspacesWorker triggers the Workspace deletion module's erase with the clock.
+// EraseWorkspacesWorker triggers the Workspace deletion use case's erase.
 type EraseWorkspacesWorker struct {
 	river.WorkerDefaults[EraseWorkspacesArgs]
 
 	deletion *workspacedeletion.UseCase
-	now      func() time.Time
 }
 
 // NewEraseWorkspacesWorker builds the worker that erases the Workspaces whose deletion window has
-// passed by the clock now.
-func NewEraseWorkspacesWorker(deletion *workspacedeletion.UseCase, now func() time.Time) *EraseWorkspacesWorker {
-	return &EraseWorkspacesWorker{deletion: deletion, now: now}
+// passed by the use case's clock.
+func NewEraseWorkspacesWorker(deletion *workspacedeletion.UseCase) *EraseWorkspacesWorker {
+	return &EraseWorkspacesWorker{deletion: deletion}
 }
 
 func (w *EraseWorkspacesWorker) Work(ctx context.Context, _ *river.Job[EraseWorkspacesArgs]) error {
-	n, err := w.deletion.EraseDue(ctx, w.now())
+	n, err := w.deletion.EraseDue(ctx)
 	if n > 0 {
 		slog.InfoContext(ctx, "workspaces erased", "count", n)
 	}

@@ -47,7 +47,7 @@ const eraseBatch = 500
 // what the one before it caused, so it settles in a few.
 const maxErasePasses = 10
 
-// EraseDue erases every Workspace whose deletion window has passed at now and returns how
+// EraseDue erases every Workspace whose deletion window has passed and returns how
 // many it finished. Each Workspace's rows go in batches, each batch in a transaction of its
 // own through the event bus, so the ent hooks run (the tracking host change log records the
 // released hosts, the workspace feed advances) and a crash resumes on the rows that are
@@ -55,8 +55,9 @@ const maxErasePasses = 10
 // tombstone (workspaces.TombstoneIn). A Workspace that fails does not stop the others; the
 // errors are joined. The scope of each step is built here, after the
 // Workspace's row is listed; it has no actor, so the deletes are not audited.
-func (m *UseCase) EraseDue(ctx context.Context, now time.Time) (int, error) {
-	ids, err := m.Due(ctx, now)
+func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
+	now := m.now()
+	ids, err := m.due(ctx, now)
 	if err != nil {
 		return 0, err
 	}

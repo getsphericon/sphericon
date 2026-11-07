@@ -151,7 +151,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, now))
 	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))
 	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
-	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion, now))
+	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
 	// calls for queue it through the client itself, which exists once the workers are registered.
 	river.AddWorker(workers, NewSuppressEventWorker(entClient))

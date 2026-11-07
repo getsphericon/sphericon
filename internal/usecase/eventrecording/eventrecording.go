@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/batch"
 )
 
 // UseCase records a customer's Events.
@@ -134,12 +135,10 @@ func (m *UseCase) Record(ctx context.Context, s *ent.Scoped, inputs []Input) err
 }
 
 // RecordEach records each Event in its own transaction, so an invalid or failing item
-// does not affect the others (Record, by contrast, is all-or-nothing). The returned
-// errors are parallel to inputs; nil means the Event was accepted.
-func (m *UseCase) RecordEach(ctx context.Context, s *ent.Scoped, inputs []Input) []error {
-	errs := make([]error, len(inputs))
-	for i, in := range inputs {
-		errs[i] = m.Record(ctx, s, []Input{in})
-	}
-	return errs
+// does not affect the others (Record, by contrast, is all-or-nothing). The outcomes are in the
+// order of inputs; an outcome without an error is an accepted Event.
+func (m *UseCase) RecordEach(ctx context.Context, s *ent.Scoped, inputs []Input) batch.Result[struct{}] {
+	return batch.Each(inputs, func(in Input) (struct{}, error) {
+		return struct{}{}, m.Record(ctx, s, []Input{in})
+	})
 }

@@ -122,7 +122,7 @@ type Item struct {
 	EstimatedCompletionAt *time.Time
 }
 
-// UseCase reads the items. Its clock is time.Now.
+// UseCase reads the items.
 type UseCase struct {
 	now      func() time.Time
 	watch    abusewarning.Watch
@@ -131,17 +131,10 @@ type UseCase struct {
 }
 
 // New is the use case: watch is the abuse detector's warning tier, nil where the detector does not
-// run, sendCaps says whether the Instance has Send caps (ADR 0067), and out is the send path, whose
-// Preflight says whether an Automation's email step could send now.
-func New(watch abusewarning.Watch, sendCaps providerlimit.SendCaps, out *outboundmessages.Module) *UseCase {
-	return &UseCase{now: time.Now, watch: watch, sendCaps: sendCaps, out: out}
-}
-
-// WithClock returns the use case reading now from the given clock.
-func (m *UseCase) WithClock(now func() time.Time) *UseCase {
-	c := *m
-	c.now = now
-	return &c
+// run, sendCaps says whether the Instance has Send caps (ADR 0067), out is the send path, whose
+// Preflight says whether an Automation's email step could send now, and now is the Instance clock.
+func New(watch abusewarning.Watch, sendCaps providerlimit.SendCaps, out *outboundmessages.Module, now func() time.Time) *UseCase {
+	return &UseCase{now: now, watch: watch, sendCaps: sendCaps, out: out}
 }
 
 // Items is what needs attention in the Workspace behind s, most urgent first and, within a

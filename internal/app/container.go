@@ -661,7 +661,7 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*workspacedeletion.UseCase, error) {
 		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspacedeletion.EditionTables{
 			AuditEntries: auditentries.EraseAuditEntriesIn, Erasures: erasures.EraseErasuresIn, Usage: usages.EraseUsageIn,
-		}), nil
+		}, do.MustInvoke[Clock](i)), nil
 	}),
 	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
 	// client.
@@ -794,10 +794,10 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*needsattentionreport.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
-		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
+		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
-		return analyticsreport.New().WithClock(do.MustInvoke[Clock](i)).WithRetention(do.MustInvoke[*config.Config](i).EventsRetention), nil
+		return analyticsreport.New(do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil
 	}),
 	do.Lazy(func(do.Injector) (*reputation.Module, error) {
 		return reputation.New(), nil

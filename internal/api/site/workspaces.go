@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
 // SiteWorkspacesList returns the workspaces the authenticated user is a member of.
@@ -219,7 +220,7 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 	if a == nil {
 		return []siteapi.SiteDeletedWorkspaceResource{}, nil
 	}
-	items, err := h.deletion.Deleted(ctx, a.UserID, h.now())
+	items, err := h.deletion.Deleted(ctx, a.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +236,7 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 // SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
 func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, _ siteapi.SiteWorkspacesDeleteParams) (*siteapi.SiteDeletedWorkspaceResource, error) {
 	s := workspaceScope(ctx)
-	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name, h.now())
+	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +267,7 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	if a == nil {
 		return nil, workspaces.ErrNotFound
 	}
-	if _, err := h.deletion.Restore(ctx, a.UserID, string(params.ID), h.actor(ctx), h.now()); err != nil {
+	if _, err := h.deletion.Restore(ctx, workspacedeletion.RestoreInput{UserID: a.UserID, PublicID: string(params.ID), Actor: h.actor(ctx)}); err != nil {
 		return nil, err
 	}
 	// The Workspace is live again, so the caller's Owner Membership resolves like any other.
