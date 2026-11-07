@@ -162,8 +162,8 @@ func checkResults(pass *analysis.Pass, fn *ast.FuncDecl, sig *types.Signature) {
 	case res.Len() > 0 && res.At(0).Name() != "":
 		report(pass, fn, name+" has named results", "drop the names; "+fix)
 	}
-	for i := range res.Len() {
-		if s, ok := res.At(i).Type().(*types.Slice); ok && isError(s.Elem()) {
+	for v := range res.Variables() {
+		if s, ok := v.Type().(*types.Slice); ok && isError(s.Elem()) {
 			report(pass, fn, name+" returns []error",
 				"return what became of each item as batch.Result (internal/kernel/batch)")
 		}
@@ -199,8 +199,8 @@ func receiverName(t types.Type) string {
 }
 
 func takesContext(sig *types.Signature) bool {
-	for i := range sig.Params().Len() {
-		if isNamed(sig.Params().At(i).Type(), "context", "Context") {
+	for p := range sig.Params().Variables() {
+		if isNamed(p.Type(), "context", "Context") {
 			return true
 		}
 	}
