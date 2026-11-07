@@ -3,6 +3,7 @@ package outboundmessages_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,8 +31,13 @@ func (k *keepingSender) Send(_ context.Context, msg messaging.EmailMessage) (mes
 func (*keepingSender) DeliversOutside() bool { return false }
 
 func moduleThrough(env *testhelper.TestEnv, sender messaging.EmailSender) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, env.Holds, senders{sender: sender},
-		messagetoken.New("test-secret", "http://local"))
+	return outboundmessages.New(
+		env.Bus,
+		env.Holds,
+		senders{sender: sender},
+		messagetoken.New("test-secret", "http://local", time.Now),
+		time.Now,
+	)
 }
 
 func TestSenderThatDeliversNowhereIsSentThroughWithoutAVerifiedSendingDomain(t *testing.T) {

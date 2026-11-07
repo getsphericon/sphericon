@@ -61,10 +61,10 @@ type Module struct {
 	now func() time.Time
 }
 
-// New builds the module over the raw client; a nil clock is time.Now.
+// New builds the module over the raw client, on the Instance clock, which is required.
 func New(client *ent.Client, lic *licensekey.License, clock func() time.Time) *Module {
 	if clock == nil {
-		clock = time.Now
+		panic("servicecredentials: the module needs the Instance clock")
 	}
 	return &Module{ent: client, lic: lic, now: clock}
 }

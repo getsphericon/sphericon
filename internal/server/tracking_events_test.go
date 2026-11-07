@@ -114,7 +114,7 @@ func TestUniqueFiguresSurviveTheExpiryOfTheEvents(t *testing.T) {
 	trackingGet(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID))
 	require.Equal(t, map[string]int32{linkA: 1}, linkClicks(t, env))
 
-	n, err := events.PruneEvents(ctx, env.DB, time.Nanosecond, 100)
+	n, err := events.PruneEvents(ctx, env.DB, time.Nanosecond, 100, time.Now())
 	require.NoError(t, err)
 	require.Positive(t, n, "the engagement Events are analytical and expire")
 

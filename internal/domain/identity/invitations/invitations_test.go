@@ -17,7 +17,7 @@ import (
 
 func TestInviteOwnsTokenHashAndExpiry(t *testing.T) {
 	env := testhelper.Setup(t)
-	invites := invitations.New(env.DB, env.Bus)
+	invites := invitations.New(env.DB, env.Bus, time.Now)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	actor := events.Actor{Kind: events.ActorUser}

@@ -15,12 +15,12 @@ import (
 // are their writes; each runs on the client or transaction it is given.
 
 // SuspendIn suspends the Workspace id inside tx while it is not suspended: it sets suspended_at to
-// now with who did it (kind, and byID for a Staff member) and why. It returns how many rows it
+// `at` with who did it (kind, and byID for a Staff member) and why. It returns how many rows it
 // changed: 0 when the Workspace was already suspended, whose first actor and reason stand.
-func SuspendIn(ctx context.Context, tx *ent.Client, id int64, kind workspace.SuspendedByKind, byID *string, reason string) (int, error) {
+func SuspendIn(ctx context.Context, tx *ent.Client, id int64, kind workspace.SuspendedByKind, byID *string, reason string, at time.Time) (int, error) {
 	return tx.Workspace.Update().
 		Where(workspace.ID(id), workspace.SuspendedAtIsNil()).
-		SetSuspendedAt(time.Now()).
+		SetSuspendedAt(at).
 		SetSuspendedByKind(kind).
 		SetNillableSuspendedByID(byID).
 		SetSuspensionReason(reason).
@@ -28,16 +28,16 @@ func SuspendIn(ctx context.Context, tx *ent.Client, id int64, kind workspace.Sus
 }
 
 // UnsuspendIn lifts the suspension of the Workspace id inside tx while it is suspended: it clears
-// the suspension and its attribution and stamps cleared_at with now. It returns how many rows it
+// the suspension and its attribution and stamps cleared_at with `at`. It returns how many rows it
 // changed: 0 when the Workspace was not suspended.
-func UnsuspendIn(ctx context.Context, tx *ent.Client, id int64) (int, error) {
+func UnsuspendIn(ctx context.Context, tx *ent.Client, id int64, at time.Time) (int, error) {
 	return tx.Workspace.Update().
 		Where(workspace.ID(id), workspace.SuspendedAtNotNil()).
 		ClearSuspendedAt().
 		ClearSuspendedByKind().
 		ClearSuspendedByID().
 		ClearSuspensionReason().
-		SetClearedAt(time.Now()).
+		SetClearedAt(at).
 		Save(ctx)
 }
 
@@ -61,10 +61,10 @@ func SetSendCapIn(ctx context.Context, tx *ent.Client, id int64, sendCap *int) e
 	return upd.Exec(ctx)
 }
 
-// MarkAbuseFreezeNotified stamps, with now, that the Owners of the Workspace id were told of its
+// MarkAbuseFreezeNotified stamps, at `at`, that the Owners of the Workspace id were told of its
 // suspension.
-func MarkAbuseFreezeNotified(ctx context.Context, client *ent.Client, id int64) error {
-	return client.Workspace.UpdateOneID(id).SetAbuseFreezeNotifiedAt(time.Now()).Exec(ctx)
+func MarkAbuseFreezeNotified(ctx context.Context, client *ent.Client, id int64, at time.Time) error {
+	return client.Workspace.UpdateOneID(id).SetAbuseFreezeNotifiedAt(at).Exec(ctx)
 }
 
 // MarkAbuseWarned records, at, that the Owners of the Workspace id were warned of a breach.

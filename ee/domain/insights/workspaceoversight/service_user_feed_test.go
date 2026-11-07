@@ -71,7 +71,7 @@ func userEntry(t *testing.T, entries []serviceapi.ServiceUserResource, id int64)
 func markMailings(t *testing.T, h *harness) {
 	t.Helper()
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.OperatorNewsID)
-	_, err := signupitems.New(h.env.DB, h.env.Bus, nil).Update(t.Context(), fixtures.OperatorNewsID, signupitems.UpdateInput{MailingsConsent: new(true)})
+	_, err := signupitems.New(h.env.DB, h.env.Bus, time.Now).Update(t.Context(), fixtures.OperatorNewsID, signupitems.UpdateInput{MailingsConsent: new(true)})
 	require.NoError(t, err)
 }
 
@@ -122,7 +122,7 @@ func TestReplayingAUserFeedCursorReturnsTheSamePage(t *testing.T) {
 func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
+	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now)
 	_, saved := usersFrom(t, c, "")
 
 	created, err := h.env.SignUp.SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
@@ -148,7 +148,7 @@ func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 func TestEndingTheSessionsIsNotAnEntry(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
+	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now)
 	_, saved := usersFrom(t, c, "")
 
 	require.NoError(t, acc.EndSessions(t.Context(), fixtures.OwnerJohnID))
@@ -220,7 +220,7 @@ func TestMarkingOrUnmarkingTheMailingsItemPutsItsAnswerersBackInTheFeed(t *testi
 	h := newHarness(t)
 	c := controlPlane(t, h)
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.OperatorNewsID)
-	items := signupitems.New(h.env.DB, h.env.Bus, nil)
+	items := signupitems.New(h.env.DB, h.env.Bus, time.Now)
 	_, saved := usersFrom(t, c, "")
 
 	// MemberMary declined OperatorNews at sign-up: once it stands for the mailings consent, that
@@ -244,7 +244,7 @@ func TestADeletedUserIsATombstone(t *testing.T) {
 	c := controlPlane(t, h)
 	_, saved := usersFrom(t, c, "")
 
-	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).DeleteUser(t.Context(), fixtures.MemberMaryID, nil)
+	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now).DeleteUser(t.Context(), fixtures.MemberMaryID, nil)
 	require.NoError(t, err)
 
 	got, saved := usersFrom(t, c, saved)
@@ -265,7 +265,7 @@ func TestADeletedUserIsATombstone(t *testing.T) {
 func TestTheFeedPagesFromATombstoneOnToTheUsersChangedAfterIt(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
+	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now)
 	_, saved := usersFrom(t, c, "")
 	_, err := acc.DeleteUser(t.Context(), fixtures.MemberMaryID, nil)
 	require.NoError(t, err)
@@ -291,7 +291,7 @@ func TestAPrunedUnverifiedUserIsATombstone(t *testing.T) {
 	c := controlPlane(t, h)
 	_, saved := usersFrom(t, c, "")
 
-	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).PruneUnverified(t.Context(), 7*24*time.Hour, 10)
+	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now).PruneUnverified(t.Context(), 7*24*time.Hour, 10)
 	require.NoError(t, err)
 
 	got, _ := usersFrom(t, c, saved)

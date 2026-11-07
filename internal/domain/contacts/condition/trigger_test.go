@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ import (
 // Contact.
 func triggerMatches(t require.TestingT, s *ent.Scoped, g condition.Group, props map[string]any, id int64) bool {
 	ctx := context.Background()
-	p, err := condition.RulePredicate(ctx, s, encode(t, g), props)
+	p, err := condition.RulePredicate(ctx, s, encode(t, g), props, time.Now())
 	require.NoError(t, err)
 	ok, err := s.Contact().Query().Where(contact.ID(id), p).Exist(ctx)
 	require.NoError(t, err)
@@ -117,20 +118,20 @@ func TestTriggerLeafIsValidOnlyInARule(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	g := opsGroup(rule("trigger:amount", "eq", "10"))
 
-	_, err := condition.Compile(ctx, s, g)
+	_, err := condition.Compile(ctx, s, g, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "only in a Rule")
 	require.Error(t, validate(t, env, encode(t, g)))
 
 	// Any key is valid on save: nothing says which properties an Event will carry.
-	_, err = condition.RulePredicate(ctx, s, encode(t, g), nil)
+	_, err = condition.RulePredicate(ctx, s, encode(t, g), nil, time.Now())
 	require.NoError(t, err)
 
 	for name, bad := range map[string]condition.Leaf{
 		"no key":           rule("trigger:", "eq", "x"),
 		"unknown operator": rule("trigger:k", "atLeast", "x"),
 	} {
-		_, err = condition.RulePredicate(ctx, s, encode(t, opsGroup(bad)), nil)
+		_, err = condition.RulePredicate(ctx, s, encode(t, opsGroup(bad)), nil, time.Now())
 		require.Error(t, err, name)
 	}
 }

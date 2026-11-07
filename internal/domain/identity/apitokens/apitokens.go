@@ -163,10 +163,10 @@ func Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.ApiToken, error) {
 // Revoke retires an active API token (it stays listed with revoked_at). A token that is unknown,
 // belongs to another Workspace, is a User's (a Connection or a Personal token) or is already
 // revoked is ErrNotFound.
-func Revoke(ctx context.Context, s *ent.Scoped, id int64) error {
+func Revoke(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 	n, err := s.ApiToken().Update().
 		Where(apitoken.ID(id), isWorkspaceToken(), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(time.Now()).
+		SetRevokedAt(at).
 		Save(ctx)
 	if err != nil {
 		return err

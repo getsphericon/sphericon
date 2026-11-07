@@ -63,12 +63,14 @@ type Module struct {
 	ent *ent.Client
 	// fetcher downloads Client ID Metadata Documents; it must be an SSRF-hardened client.
 	fetcher webhook.Doer
+	// now is the Instance clock a code and a cached metadata document expire by.
+	now func() time.Time
 }
 
 // New builds the module over the ent client; fetcher downloads Client ID Metadata Documents and
-// must come from webhook.NewClient or NewClientAllowing.
-func New(client *ent.Client, fetcher webhook.Doer) *Module {
-	return &Module{ent: client, fetcher: fetcher}
+// must come from webhook.NewClient or NewClientAllowing; now is the Instance clock.
+func New(client *ent.Client, fetcher webhook.Doer, now func() time.Time) *Module {
+	return &Module{ent: client, fetcher: fetcher, now: now}
 }
 
 // Request is a validated authorization request, ready for the consent screen.
@@ -160,7 +162,7 @@ func (s *Module) Decide(ctx context.Context, d Decision) (string, error) {
 		SetRedirectURI(d.RedirectURI).
 		SetCodeChallenge(d.CodeChallenge).
 		SetScopes(granted).
-		SetExpiresAt(time.Now().Add(codeTTL)).
+		SetExpiresAt(s.now().Add(codeTTL)).
 		Save(ctx)
 	if err != nil {
 		return "", err

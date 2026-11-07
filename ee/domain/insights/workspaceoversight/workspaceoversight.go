@@ -48,7 +48,7 @@ var ErrNotLicensed = servicecredentials.ErrNotLicensed
 
 // Config is what the Enterprise sections need from the instance.
 type Config struct {
-	// Clock is the clock of hold expiries and the console's rate windows; nil is time.Now.
+	// Clock is the Instance clock of hold expiries and the console's rate windows. Required.
 	Clock func() time.Time
 	// Abuse are the abuse detector's limits (ADR 0026); the console shows rates under
 	// the same volume floor the detector judges by. Zero is abusedetector.DefaultLimits.
@@ -83,7 +83,7 @@ type Module struct {
 func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, suspender *suspension.Suspender, rates *reputation.Module, cfg Config) *Module {
 	now := cfg.Clock
 	if now == nil {
-		now = time.Now
+		panic("workspaceoversight: Config.Clock is required: the module reads the Instance clock")
 	}
 	holdMax := cfg.HoldMaxExpiry
 	if holdMax <= 0 {

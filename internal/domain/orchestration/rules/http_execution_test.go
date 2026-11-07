@@ -46,7 +46,7 @@ func executionAttempt() httpcall.Attempt {
 
 func TestHTTPExecutionRecordsSuccessOnItsFiring(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 
 	decision, err := m.ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 0, executionAttempt(), httpResponse{status: http.StatusOK}, executionNow)
@@ -62,7 +62,7 @@ func TestHTTPExecutionRecordsSuccessOnItsFiring(t *testing.T) {
 
 func TestHTTPExecutionLeavesTemporaryFailuresPendingUntilRecovery(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
@@ -103,7 +103,7 @@ func TestHTTPExecutionRecordsPermanentAndExhaustedFailures(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			m := rules.New(env.Cipher, env.Bus)
+			m := rules.New(env.Cipher, env.Bus, time.Now)
 			f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 			attempt := executionAttempt()
 			attempt.Number = tc.attempt
@@ -124,7 +124,7 @@ func TestHTTPExecutionRecordsPermanentAndExhaustedFailures(t *testing.T) {
 
 func TestHTTPExecutionRateLimitWaitsWithoutSpendingTheLastAttempt(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	attempt := executionAttempt()
 	attempt.Number = attempt.Limit
@@ -143,7 +143,7 @@ func TestHTTPExecutionRateLimitWaitsWithoutSpendingTheLastAttempt(t *testing.T) 
 
 func TestHTTPExecutionRejectsAnInvalidRenderedBody(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	version := env.DB.RuleVersion.GetX(t.Context(), fixtures.RuleHTTPExecutionVersionID)
 	actions, err := rules.DecodeActions(version.Actions)
@@ -168,7 +168,7 @@ func TestHTTPExecutionRejectsAnInvalidRenderedBody(t *testing.T) {
 
 func TestHTTPExecutionDoesNotRepeatADecidedAction(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	_, err := m.ExecuteHTTP(context.Background(), s, f.ID, 0, executionAttempt(), httpResponse{status: http.StatusOK}, executionNow)
@@ -186,7 +186,7 @@ func TestHTTPExecutionDoesNotRepeatADecidedAction(t *testing.T) {
 
 func TestHTTPExecutionOfAnErasedFiringDoesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	err := rules.EraseFirings(context.Background(), s, fixtures.ContactBobID)
@@ -203,7 +203,7 @@ func TestHTTPExecutionOfAnErasedFiringDoesNothing(t *testing.T) {
 
 func TestHTTPExecutionRecordsAMissingContactAsFailed(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	env.DB.Contact.Intercept(ent.InterceptFunc(func(ent.Querier) ent.Querier {
 		return ent.QuerierFunc(func(context.Context, ent.Query) (ent.Value, error) {
@@ -224,7 +224,7 @@ func TestHTTPExecutionRecordsAMissingContactAsFailed(t *testing.T) {
 
 func TestHTTPExecutionDecidesOnlyTheSelectedPendingAction(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringTwoHTTPPendingID)
 
 	decision, err := m.ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 1, executionAttempt(), httpResponse{status: http.StatusOK}, executionNow)
@@ -243,7 +243,7 @@ func TestHTTPExecutionDecidesOnlyTheSelectedPendingAction(t *testing.T) {
 
 func TestHTTPExecutionWaitsUntilRetryAfterFromTheResponseTime(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	now := executionNow()
 	response := httpResponse{

@@ -90,17 +90,23 @@ type RemindSecondFactorArgs struct{}
 
 func (RemindSecondFactorArgs) Kind() string { return "second_factor_remind" }
 
-// RemindSecondFactorWorker runs the reminder sweep on the wall clock.
+// RemindSecondFactorWorker runs the reminder sweep on the Instance clock.
 type RemindSecondFactorWorker struct {
 	river.WorkerDefaults[RemindSecondFactorArgs]
 
 	ent    *ent.Client
 	sender messaging.EmailSender
 	appURL string
+	now    func() time.Time
+}
+
+// NewRemindSecondFactorWorker builds the reminder sweep on the Instance clock now.
+func NewRemindSecondFactorWorker(client *ent.Client, sender messaging.EmailSender, appURL string, now func() time.Time) *RemindSecondFactorWorker {
+	return &RemindSecondFactorWorker{ent: client, sender: sender, appURL: appURL, now: now}
 }
 
 func (w *RemindSecondFactorWorker) Work(ctx context.Context, _ *river.Job[RemindSecondFactorArgs]) error {
-	return RemindSecondFactorDeadlines(ctx, w.ent, w.sender, w.appURL, time.Now())
+	return RemindSecondFactorDeadlines(ctx, w.ent, w.sender, w.appURL, w.now())
 }
 
 // RemindSecondFactorDeadlines mails the reminder of every Membership the second-factor

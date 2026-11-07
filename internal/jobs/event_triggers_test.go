@@ -166,7 +166,7 @@ func TestARetriedRuleJobFiresTheRuleOnce(t *testing.T) {
 
 	evaluations := queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind)
 	require.Len(t, evaluations, 1)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	for _, args := range []jobs.EvaluateRulesArgs{evaluations[0], evaluations[0]} {
 		_, err := m.Evaluate(ctx, env.DB.Scoped(fixtures.AcmeID), rules.Event{
 			ContactID: args.ContactID, Action: args.Action, SourceID: args.SourceID, RecordedAt: args.RecordedAt, Properties: args.Properties,

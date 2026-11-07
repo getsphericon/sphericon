@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,7 @@ import (
 // validate compiles a condition for the Acme Workspace.
 func validate(t *testing.T, env *testhelper.TestEnv, def string) error {
 	t.Helper()
-	_, err := condition.ContactPredicate(context.Background(), env.DB.Scoped(fixtures.AcmeID), def)
+	_, err := condition.ContactPredicate(context.Background(), env.DB.Scoped(fixtures.AcmeID), def, time.Now())
 	return err
 }
 
@@ -30,7 +31,7 @@ func emailsIn(t *testing.T, env *testhelper.TestEnv, ws int64, g condition.Group
 	t.Helper()
 	ctx := context.Background()
 	s := env.DB.Scoped(ws)
-	p, err := condition.Compile(ctx, s, g)
+	p, err := condition.Compile(ctx, s, g, time.Now())
 	require.NoError(t, err)
 	emails, err := s.Contact().Query().Where(p).Order(contact.ByEmail()).Select(contact.FieldEmail).Strings(ctx)
 	require.NoError(t, err)
@@ -145,7 +146,7 @@ func TestTagConditions(t *testing.T) {
 
 	// The anchor contacts 1-3 are the only ones the fixtures tag.
 	count := func(g condition.Group) int {
-		p, err := condition.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
+		p, err := condition.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g, time.Now())
 		require.NoError(t, err)
 		n, err := env.DB.Contact.Query().
 			Where(contact.WorkspaceID(fixtures.AcmeID), contact.IDIn(fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID), p).
@@ -211,7 +212,7 @@ func TestTelegramConditions(t *testing.T) {
 
 	matching := func(op string) []int64 {
 		g := condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("telegram", op, ""))}
-		p, err := condition.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
+		p, err := condition.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g, time.Now())
 		require.NoError(t, err)
 		ids, err := env.DB.Contact.Query().
 			Where(contact.WorkspaceID(fixtures.AcmeID), contact.IDIn(liam, emma, alice), p).
@@ -246,7 +247,7 @@ func TestSMSConditions(t *testing.T) {
 		t.Helper()
 		g := condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("sms", op, ""))}
 		s := env.DB.Scoped(ws)
-		p, err := condition.Compile(ctx, s, g)
+		p, err := condition.Compile(ctx, s, g, time.Now())
 		require.NoError(t, err)
 		ids, err := s.Contact().Query().Where(p).IDs(ctx)
 		require.NoError(t, err)

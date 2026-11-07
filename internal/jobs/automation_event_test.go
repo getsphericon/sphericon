@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func TestAnAutomationEmailRendersTheTriggeringEventsProperties(t *testing.T) {
 // An Enrollment no Event began renders every `event` tag empty.
 func TestAnAutomationEmailOfAnEnrollmentNoEventBeganRendersTheEventEmpty(t *testing.T) {
 	env := testhelper.Setup(t)
-	runID, enrolled, err := automations.Enroll(t.Context(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
+	runID, enrolled, err := automations.Enroll(t.Context(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID, time.Now())
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	queueStep(t, env, runID)

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -58,7 +59,7 @@ func TestConfirmEndpoint(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)
@@ -128,7 +129,7 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
 	post := func(path string) {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
@@ -169,7 +170,7 @@ func TestTrackingEndpoints(t *testing.T) {
 
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
 	// A recipient in fixture workspace Acme. Alice is not already
 	// unsubscribed from broadcasts (bob is, in the fixtures).
@@ -267,7 +268,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	target := linktarget.Unsubscribe{
 		Channel: channels.Email, Source: eligibility.SourceBroadcasts, Destination: *c.Email,
@@ -295,7 +296,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
 	post := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
@@ -337,7 +338,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)

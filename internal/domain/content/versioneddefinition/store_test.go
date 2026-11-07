@@ -2,6 +2,7 @@ package versioneddefinition_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +20,7 @@ func TestAnArchivableVersionedStoreArchivesAndNeverDiscards(t *testing.T) {
 	id := int64(fixtures.AutomationWinBackID)
 	var store ent.VersionedStore[ent.Automation, ent.AutomationVersion] = acme(env).Automation().Pointers()
 
-	require.NoError(t, store.Archive(ctx, id))
+	require.NoError(t, store.Archive(ctx, id, time.Now()))
 	archived, err := store.Lock(ctx, id)
 	require.NoError(t, err)
 	require.NoError(t, store.Unarchive(ctx, id))
@@ -29,5 +30,5 @@ func TestAnArchivableVersionedStoreArchivesAndNeverDiscards(t *testing.T) {
 	assert.True(t, archived.Archived)
 	assert.False(t, archived.Discarded)
 	assert.False(t, kept.Archived)
-	require.ErrorIs(t, store.Discard(ctx, id), ent.ErrNotDiscardable)
+	require.ErrorIs(t, store.Discard(ctx, id, time.Now()), ent.ErrNotDiscardable)
 }

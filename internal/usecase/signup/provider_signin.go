@@ -117,7 +117,7 @@ func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pr
 // provider proved the address, so no mail is sent. Its email is proven now.
 func (u *UseCase) createFromProvider(ctx context.Context, in users.ProviderLogin) (*ent.User, error) {
 	created, _, err := u.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.CreateProviderUserIn(ctx, tx, in)
+		return users.CreateProviderUserIn(ctx, tx, in, u.now())
 	})
 	return created, err
 }
@@ -129,7 +129,7 @@ func (u *UseCase) createFromProvider(ctx context.Context, in users.ProviderLogin
 // User is no longer Unverified.
 func (u *UseCase) takeOver(ctx context.Context, holderID int64, in users.ProviderLogin) (*ent.User, error) {
 	taken, _, err := u.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.TakeOverIn(ctx, tx, holderID, in)
+		return users.TakeOverIn(ctx, tx, holderID, in, u.now())
 	})
 	return taken, err
 }

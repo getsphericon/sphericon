@@ -5,6 +5,7 @@ import (
 	"maps"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -110,7 +111,7 @@ func TestTheAnswersToADeletedItemStay(t *testing.T) {
 	_, err := r.signUpAnswering(t, "grace@example.com", termsAccepted, newsUnticked)
 	require.NoError(t, err)
 
-	err = signupitems.New(r.db, r.env.Bus, nil).Delete(t.Context(), fixtures.OperatorNewsID)
+	err = signupitems.New(r.db, r.env.Bus, time.Now).Delete(t.Context(), fixtures.OperatorNewsID)
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{termsAcceptedRecord, newsDeclinedRecord, noticeShownRecord}, r.decided(t, "grace@example.com"))

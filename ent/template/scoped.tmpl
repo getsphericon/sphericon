@@ -148,11 +148,11 @@ func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
 	return t.Query{{ if $D }}WithDiscarded{{ end }}{{ if $R }}WithArchived{{ end }}().Where({{ $P }}.ID(id)).Only(ctx)
 }
 {{ if $R }}
-// Archive stamps archived_at on the kept {{ $N }} with the id (ps fence it further); a row of
+// Archive stamps archived_at, at `at`, on the kept {{ $N }} with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
-func (t *{{ $N }}Scoped) Archive(ctx context.Context, id int64, ps ...predicate.{{ $N }}) error {
+func (t *{{ $N }}Scoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.{{ $N }}) error {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.ArchivedAtIsNil()}, ps...)
-	return t.setArchived(ctx, id, where, "archive", func(u *{{ $N }}UpdateOne) { u.SetArchivedAt(time.Now()) })
+	return t.setArchived(ctx, id, where, "archive", func(u *{{ $N }}UpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the {{ $N }} with the id. Unarchiving a kept row changes
@@ -194,13 +194,13 @@ func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []pred
 	return err
 }
 {{ end }}{{ if $D }}
-// Discard stamps discarded_at on the kept {{ $N }} with the id (ps fence it further); a row of
+// Discard stamps discarded_at, at `at`, on the kept {{ $N }} with the id (ps fence it further); a row of
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
-func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, ps ...predicate.{{ $N }}) error {
+func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.{{ $N }}) error {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*{{ $N }}, error) {
-		return c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(time.Now()).Save(ctx)
+		return c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
 	}
 	{{- if $A }}
 	if t.s.auditing() {

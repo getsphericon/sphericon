@@ -7,6 +7,7 @@ package visitoridentification
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -33,10 +34,11 @@ type Input struct {
 // the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
 	bus *events.Bus
+	now func() time.Time
 }
 
-// New builds the Identify use case.
-func New(bus *events.Bus) *UseCase { return &UseCase{bus: bus} }
+// New builds the Identify use case; now is the Instance clock a Visitor is seen by.
+func New(bus *events.Bus, now func() time.Time) *UseCase { return &UseCase{bus: bus, now: now} }
 
 // ErrVisitorIDRequired refuses an identify that names no visitor: there is no device to bind. An
 // identify that names no alias key of the Contact is contacts.ErrIdentityRequired.
@@ -70,11 +72,11 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 		}
 		c := res.Contact
 
-		vis, err := visitors.SeeIn(ctx, ts, visitorID)
+		vis, err := visitors.SeeIn(ctx, ts, visitorID, u.now())
 		if err != nil {
 			return err
 		}
-		if err := visitors.BindIn(ctx, ts, vis.ID, c.ID); err != nil {
+		if err := visitors.BindIn(ctx, ts, vis.ID, c.ID, u.now()); err != nil {
 			return err
 		}
 		// The chats the Visitor started a bot with now reach the Contact: announce them.

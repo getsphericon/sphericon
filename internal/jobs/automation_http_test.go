@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -140,7 +141,7 @@ func (h *httpStepHarness) stepper() *stepexecution.UseCase {
 }
 
 func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorker {
-	steps := stepexecution.New(h.Bus, newMod(h.TestEnv, resolvingTo(h.sender)), noFence, h.cipher,
+	steps := stepexecution.New(h.Bus, newMod(h.TestEnv, resolvingTo(h.sender), time.Now), noFence, h.cipher,
 		h.rcv.routed(webhook.NewClientAllowing(2*time.Second, allow)), func() time.Time { return h.clock })
 	return jobs.NewRunHTTPStepWorker(h.DB, steps)
 }
@@ -178,7 +179,9 @@ func TestHTTPStepContinuesAfterA2xxSigned(t *testing.T) {
 	assert.Equal(t, "Bearer slack-demo-token", calls[0].header.Get("Authorization"))
 	wh, err := standardwebhooks.NewWebhook(webhookSecret)
 	require.NoError(t, err)
-	assert.NoError(t, wh.Verify([]byte(calls[0].body), calls[0].header), "a step with a secret is signed")
+	assert.NoError(t, wh.VerifyIgnoringTimestamp([]byte(calls[0].body), calls[0].header), "a step with a secret is signed")
+	signedAt := strconv.FormatInt(h.clock.Unix(), 10)
+	assert.Equal(t, signedAt, calls[0].header.Get("Webhook-Timestamp"), "dated by the Instance clock")
 
 	r := h.run(runID)
 	assert.Equal(t, automationrun.StatusActive, r.status)

@@ -15,14 +15,13 @@ import (
 // the survey (the caller passes signupsurveyresponses.Module.Enabled); a User who is admitted by an
 // Invitation or a Join domain is not a public sign-up and has it cleared by clearSurveyDue.
 
-// surveyDueAt is the marker a public sign-up sets: now when the Instance asks the Sign-up survey,
+// surveyDueAt is the marker a public sign-up sets: `at` when the Instance asks the Sign-up survey,
 // nil when it does not.
-func surveyDueAt(due bool) *time.Time {
+func surveyDueAt(due bool, at time.Time) *time.Time {
 	if !due {
 		return nil
 	}
-	now := time.Now()
-	return &now
+	return &at
 }
 
 // clearSurveyDue removes the marker of a User who is admitted rather than signed up in public.

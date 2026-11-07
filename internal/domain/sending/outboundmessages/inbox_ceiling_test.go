@@ -31,8 +31,14 @@ func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock, opts .
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
-	return outboundmessages.New(env.Bus, env.Holds, senders{sender: sender}, messagetoken.New("test-secret", "http://local"),
-		append([]outboundmessages.Option{outboundmessages.WithClock(c.now)}, opts...)...)
+	return outboundmessages.New(
+		env.Bus,
+		env.Holds,
+		senders{sender: sender},
+		messagetoken.New("test-secret", "http://local", time.Now),
+		c.now,
+		opts...,
+	)
 }
 
 // sendToReader sends a marketing message to Pinewood's Contact.

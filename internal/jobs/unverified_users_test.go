@@ -22,7 +22,7 @@ const unverifiedRetention = 7 * 24 * time.Hour
 
 func pruneUnverified(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
-	w := jobs.NewPruneUnverifiedUsersWorker(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords), retention)
+	w := jobs.NewPruneUnverifiedUsersWorker(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now), retention)
 	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneUnverifiedUsersArgs]{JobRow: &rivertype.JobRow{}}))
 }
 
@@ -67,7 +67,7 @@ func TestPruneUnverifiedUsersDisabledByZeroRetention(t *testing.T) {
 
 func TestPrunedAddressKeepsItsInvitationAndTheInviteeCanAcceptIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 
 	pruneUnverified(t, env, unverifiedRetention)
 
@@ -82,7 +82,7 @@ func TestPrunedAddressKeepsItsInvitationAndTheInviteeCanAcceptIt(t *testing.T) {
 
 func TestAddressCanSignUpOnlyAfterItsStaleUserIsPruned(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 	taken, err := acc.EmailTaken(t.Context(), fixtures.StaleUnverifiedUserEmail)
 	require.NoError(t, err)
 	require.True(t, taken, "the address is held until pruned")

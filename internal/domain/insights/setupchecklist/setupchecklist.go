@@ -49,19 +49,15 @@ type Recorder interface {
 	MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error)
 }
 
-// Module reads checklists. Its clock is time.Now.
+// Module reads checklists on the Instance clock.
 type Module struct {
 	now      func() time.Time
 	recorder Recorder
 }
 
-func New(recorder Recorder) *Module { return &Module{now: time.Now, recorder: recorder} }
-
-// WithClock returns the module reading now from the given clock.
-func (m *Module) WithClock(now func() time.Time) *Module {
-	c := *m
-	c.now = now
-	return &c
+// New builds the module; now is the Instance clock.
+func New(recorder Recorder, now func() time.Time) *Module {
+	return &Module{now: now, recorder: recorder}
 }
 
 // Read computes the checklist of the Workspace behind s. The read that first finds every step

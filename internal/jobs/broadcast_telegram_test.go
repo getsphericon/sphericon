@@ -174,7 +174,7 @@ func TestATelegramBroadcastReachesAContactThroughItsVisitorsBinding(t *testing.T
 	s := env.DB.Scoped(fixtures.AcmeID)
 	b := env.DB.Broadcast.UpdateOneID(fixtures.BroadcastTelegramDraftID).SetIntegrationID(fixtures.IntegrationAcmeTelegramID).SaveX(ctx)
 
-	size, err := broadcasts.AudienceSize(ctx, s, b)
+	size, err := broadcasts.AudienceSize(ctx, s, b, time.Now())
 
 	require.NoError(t, err)
 	assert.Equal(t, 2, size, "Liam by his own Binding, Emma by her phone's")

@@ -27,7 +27,7 @@ func signer(t *testing.T) *authtoken.Signer {
 	t.Helper()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	return authtoken.New(cfg.JWTSecret)
+	return authtoken.New(cfg.JWTSecret, time.Now)
 }
 
 // Verifying an address creates a Workspace named "Personal" for each User: the name is not

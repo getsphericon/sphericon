@@ -297,7 +297,7 @@ var storagePackage = do.Package(
 	// The development schema guard's view of the migrations the database has not run (ADR 0033):
 	// one per process, so a migration run from the error page clears what SchemaGuard cached.
 	do.Lazy(func(i do.Injector) (*db.SchemaWatch, error) {
-		return db.NewSchemaWatch(do.MustInvoke[Database](i).DB), nil
+		return db.NewSchemaWatch(do.MustInvoke[Database](i).DB, do.MustInvoke[Clock](i)), nil
 	}),
 )
 
@@ -423,7 +423,7 @@ var editionPackage = do.Package(
 	// line, the Staff console and the abuse detector all suspend through it.
 	do.Lazy(func(i do.Injector) (*suspension.Suspender, error) {
 		return suspension.NewSuspender(do.MustInvoke[*events.Bus](i), do.MustInvoke[*ent.Client](i), do.MustInvoke[memberships.Notify](i),
-			do.MustInvoke[*config.Config](i).SupportEmail), nil
+			do.MustInvoke[*config.Config](i).SupportEmail, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*orders.Module, error) {
 		return orders.New(do.MustInvoke[*workspaces.Module](i)), nil
@@ -431,7 +431,7 @@ var editionPackage = do.Package(
 	// The domain-event bus over the main pool: a publish stores the Event and queues its jobs.
 	do.Lazy(func(i do.Injector) (*events.Bus, error) {
 		database := do.MustInvoke[Database](i)
-		bus := events.New(database.DB, entclient.NewTx)
+		bus := events.New(database.DB, entclient.NewTx, do.MustInvoke[Clock](i))
 		// The Edition's ent hooks on every transaction the bus opens; the Edition itself
 		// is built after the bus, which its Audit log records through.
 		bus.Use(ee.Hooks(do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i))...)
@@ -565,7 +565,7 @@ var deliveryPackage = do.Package(
 	// one instance, so every surface mints and verifies with the same secret.
 	do.Lazy(func(i do.Injector) (*messagetoken.Tracker, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return messagetoken.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...), nil
+		return messagetoken.New(cfg.JWTSecret, cfg.AppURL, do.MustInvoke[Clock](i), cfg.JWTVerifySecrets()...), nil
 	}),
 	// Apple's published Private Relay list, which the refresh job reads.
 	do.Lazy(func(do.Injector) (privaterelayranges.Source, error) {
@@ -574,7 +574,7 @@ var deliveryPackage = do.Package(
 	// Machine engagement (ADR 0053): the detector tracking judges hits by and the refresh job
 	// keeps current.
 	do.Lazy(func(i do.Injector) (*privaterelayranges.Detector, error) {
-		return privaterelayranges.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[privaterelayranges.Source](i)), nil
+		return privaterelayranges.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[privaterelayranges.Source](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// Whether the Instance has Send caps (ADR 0067): the saas Mode has them. It is decided here,
 	// once, and every module that enforces, shows or sets a Send cap takes this one value.
@@ -596,7 +596,6 @@ var deliveryPackage = do.Package(
 			outboundmessages.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outboundmessages.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
 			outboundmessages.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[*integrations.Module](i)),
-			outboundmessages.WithClock(do.MustInvoke[Clock](i)),
 		}
 		if cfg.SystemMailConfigured() {
 			opts = append(opts, outboundmessages.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))
@@ -604,7 +603,7 @@ var deliveryPackage = do.Package(
 		if cfg.TrackingCNAMETarget != "" {
 			opts = append(opts, outboundmessages.WithTrackingDomains(do.MustInvoke[*trackingdomains.Module](i)))
 		}
-		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*messagetoken.Tracker](i), opts...), nil
+		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*messagetoken.Tracker](i), do.MustInvoke[Clock](i), opts...), nil
 	}),
 )
 
@@ -626,7 +625,7 @@ var identityPackage = do.Package(
 	}),
 	// The Users (ADR 0102), over the raw client.
 	do.Lazy(func(i do.Injector) (*users.Module, error) {
-		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i)), nil
+		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The creation of a Verified User's Workspace (a use case, ADR 0102). On an Instance that has
 	// Send caps (ADR 0067) a new Workspace starts with the Instance's default; elsewhere it has none.
@@ -659,7 +658,7 @@ var identityPackage = do.Package(
 	}),
 	// The Invitations (ADR 0102): their lookup by token takes the raw client.
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
-		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
+		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; the
 	// Enterprise Edition's tables go through their owners' removals.
@@ -680,7 +679,7 @@ var identityPackage = do.Package(
 	// The Login throttle and the mail budgets of an address (ADR 0025), over the raw client.
 	do.Lazy(func(i do.Injector) (*throttle.Attempts, error) {
 		return throttle.NewAttempts(do.MustInvoke[*ent.Client](i),
-			throttle.WithClock(do.MustInvoke[Clock](i)),
+			do.MustInvoke[Clock](i),
 			throttle.WithRateLimits(do.MustInvoke[*config.Config](i).RateLimits)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*secondfactorcheck.UseCase, error) {
@@ -697,13 +696,13 @@ var identityPackage = do.Package(
 // is constructed.
 var audiencePackage = do.Package(
 	do.Lazy(func(i do.Injector) (*segments.Module, error) {
-		return segments.New(do.MustInvoke[*events.Bus](i)), nil
+		return segments.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
-		return contacterasure.New(do.MustInvoke[*events.Bus](i)), nil
+		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -711,16 +710,16 @@ var audiencePackage = do.Package(
 			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrationdeletion.UseCase, error) {
-		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*integrations.Module](i)), nil
+		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*bindings.Module, error) {
 		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
-		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i)), nil
+		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomaindeletion.UseCase, error) {
-		return sendingdomaindeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[*messaging.Resolver](i)), nil
+		return sendingdomaindeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Sending domain checks: the Verify button a person waits for and the re-check jobs (ADR 0010).
 	do.Lazy(func(i do.Injector) (*sendingdomainverification.UseCase, error) {
@@ -767,14 +766,14 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*webhookendpoints.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		client := webhook.NewClientAllowing(webhookendpoints.TestSendTimeout, cfg.OutboundAllow)
-		return webhookendpoints.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*ee.Edition](i).Audit, client, nil), nil
+		return webhookendpoints.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*ee.Edition](i).Audit, client, nil, do.MustInvoke[Clock](i)), nil
 	}),
 	// Publish asks the Send route of Outbound send whether the email steps can send.
 	do.Lazy(func(i do.Injector) (*automations.Module, error) {
-		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
+		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
-		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i)), nil
+		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// `sphericon encryption-key reencrypt`: each owner's columns of stored secrets, swept on the raw
 	// client in this order.
@@ -796,7 +795,7 @@ var contentPackage = do.Package(
 		return eventrecording.New(do.MustInvoke[*events.Bus](i), policy), nil
 	}),
 	do.Lazy(func(i do.Injector) (*setupchecklist.Module, error) {
-		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
+		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*needsattentionreport.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
@@ -818,7 +817,7 @@ var contentPackage = do.Package(
 // surfacesPackage provides the API surfaces, their Deps and the handlers they are mounted on.
 var surfacesPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*authtoken.Signer, error) {
-		return authtoken.New(do.MustInvoke[*config.Config](i).JWTSecret).WithClock(do.MustInvoke[Clock](i)), nil
+		return authtoken.New(do.MustInvoke[*config.Config](i).JWTSecret, do.MustInvoke[Clock](i)), nil
 	}),
 	// The site session cookie's issuer (ADR 0020): the login operation is the one route that
 	// mints a session.
@@ -831,7 +830,7 @@ var surfacesPackage = do.Package(
 	}),
 	// OAuth 2.1 for MCP connectors (ADR 0016).
 	do.Lazy(func(i do.Injector) (*oauthclients.Module, error) {
-		return oauthclients.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer), nil
+		return oauthclients.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer, do.MustInvoke[Clock](i)), nil
 	}),
 	// The Sign-in providers the Instance enabled (ADR 0048).
 	do.Lazy(func(i do.Injector) (*signinprovider.Providers, error) {

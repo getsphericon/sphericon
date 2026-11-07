@@ -75,9 +75,9 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	ctx := context.Background()
 	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
 	s, bus := race.Scope, race.Bus
-	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local"))
+	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
-	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, nil, ""))
+	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, nil, ""), time.Now)
 
 	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)

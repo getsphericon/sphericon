@@ -52,8 +52,7 @@ type Window struct {
 }
 
 // Trailing is the window of the given length ending now.
-func Trailing(d time.Duration) Window {
-	now := time.Now()
+func Trailing(d time.Duration, now time.Time) Window {
 	return Window{Since: now.Add(-d), Until: now}
 }
 

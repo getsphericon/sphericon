@@ -6,6 +6,7 @@ import (
 	"maps"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,7 +45,7 @@ type profileRig struct {
 func newProfileRig(t *testing.T) profileRig {
 	t.Helper()
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 	john, err := acc.User(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	return profileRig{acc: acc, john: john}

@@ -118,12 +118,12 @@ type Sessions struct {
 }
 
 // NewSessions builds the issuer. secure sets the cookie's Secure attribute (the
-// instance is served over HTTPS); now is the clock of the token's expiry, nil
-// meaning time.Now. A session is signed with jwtSecret and verified against it and then
+// instance is served over HTTPS); now is the Instance clock of the token's expiry,
+// which is required. A session is signed with jwtSecret and verified against it and then
 // against each of verifyWith, the secondary key of a JWT secret rotation.
 func NewSessions(jwtSecret string, ttl time.Duration, secure bool, now func() time.Time, verifyWith ...string) *Sessions {
 	if now == nil {
-		now = time.Now
+		panic("auth: the sessions need the Instance clock")
 	}
 	return &Sessions{
 		verifier: newVerifier(jwtSecret, verifyWith),

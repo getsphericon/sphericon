@@ -18,7 +18,7 @@ func (a *Module) PruneUnverified(ctx context.Context, retention time.Duration, b
 	if retention <= 0 {
 		return 0, nil
 	}
-	cutoff := time.Now().Add(-retention)
+	cutoff := a.now().Add(-retention)
 	stale := func(extra predicate.User) []predicate.User {
 		return []predicate.User{user.EmailVerifiedAtIsNil(), user.Not(user.HasMemberships()), extra}
 	}

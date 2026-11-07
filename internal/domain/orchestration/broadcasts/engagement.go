@@ -15,16 +15,16 @@ import (
 
 // RecordUnsubscribe marks the Contact's recipient row of the Broadcast as having unsubscribed
 // from it. A Contact that was never a recipient of it (a link to an erased row) matches nothing.
-func RecordUnsubscribe(ctx context.Context, s *ent.Scoped, broadcastID, contactID int64) (bool, error) {
+func RecordUnsubscribe(ctx context.Context, s *ent.Scoped, broadcastID, contactID int64, at time.Time) (bool, error) {
 	return setOnce(ctx, s,
 		broadcastrecipient.And(broadcastrecipient.BroadcastID(broadcastID), broadcastrecipient.ContactID(contactID)),
 		broadcastrecipient.UnsubscribedAtIsNil(),
-		func(u *ent.BroadcastRecipientScopedUpdate, at time.Time) { u.SetUnsubscribedAt(at) })
+		func(u *ent.BroadcastRecipientScopedUpdate, at time.Time) { u.SetUnsubscribedAt(at) }, at)
 }
 
-func setOnce(ctx context.Context, s *ent.Scoped, which, unset predicate.BroadcastRecipient, set func(*ent.BroadcastRecipientScopedUpdate, time.Time)) (bool, error) {
+func setOnce(ctx context.Context, s *ent.Scoped, which, unset predicate.BroadcastRecipient, set func(*ent.BroadcastRecipientScopedUpdate, time.Time), at time.Time) (bool, error) {
 	u := s.BroadcastRecipient().Update().Where(which, unset)
-	set(u, time.Now())
+	set(u, at)
 	n, err := u.Save(ctx)
 	return n > 0, err
 }

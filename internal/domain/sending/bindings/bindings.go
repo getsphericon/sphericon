@@ -87,7 +87,7 @@ func (m *Module) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID in
 // The chat that starts with it binds to the Visitor and reaches its Contact once Identify resolves
 // it (ADR 0076). ErrNoIntegration and ErrBotOff when there is no bot to link to.
 func (m *Module) IssueVisitorStartLink(ctx context.Context, s *ent.Scoped, visitorID string) (StartLink, error) {
-	vis, err := visitors.EnsureIn(ctx, s, visitorID)
+	vis, err := visitors.EnsureIn(ctx, s, visitorID, m.now())
 	if err != nil {
 		return StartLink{}, err
 	}

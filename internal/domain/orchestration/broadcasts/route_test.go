@@ -39,7 +39,7 @@ func TestScheduleIsRefusedWhileTheBroadcastsIntegrationCannotSend(t *testing.T) 
 // A Broadcast whose Integration is disabled after it was scheduled is held by the plan, never sent
 // through the default in its place: the plan records the same reason a send would.
 func TestPlanHoldsABroadcastWhoseNamedIntegrationCannotSend(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetIntegrationID(fixtures.IntegrationAcmeSesID).ExecX(d.t.Context())
 
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
@@ -57,7 +57,7 @@ func TestPlanHoldsABroadcastWhoseNamedIntegrationCannotSend(t *testing.T) {
 // The pace and the hold agree: a Broadcast whose Send route cannot send is not paced at once (as
 // an unlimited one would be) but held with the reason a send through that route gets.
 func TestPaceHoldsABroadcastWhoseRouteCannotSend(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetIntegrationID(fixtures.IntegrationAcmeSesID).ExecX(d.t.Context())
 
 	times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, 3), fixedNow)
@@ -75,7 +75,7 @@ func TestPaceHoldsABroadcastWhoseRouteCannotSend(t *testing.T) {
 
 // A sending Broadcast whose route cannot send has no estimate: it is blocked, not busy.
 func TestProgressHasNoEstimateWhileTheRouteCannotSend(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetMaxPerSecond(2).ExecX(d.t.Context())
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeSesID).ExecX(d.t.Context())
 	d.recipient(fixtures.ContactAliceID)

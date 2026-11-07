@@ -62,10 +62,13 @@ var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.
 type Module struct {
 	bus    *events.Bus
 	cipher *secrets.Cipher
+	// now is the Instance clock a lost verification is stamped by.
+	now func() time.Time
 }
 
-func New(bus *events.Bus, cipher *secrets.Cipher) *Module {
-	return &Module{bus: bus, cipher: cipher}
+// New builds the module; now is the Instance clock.
+func New(bus *events.Bus, cipher *secrets.Cipher, now func() time.Time) *Module {
+	return &Module{bus: bus, cipher: cipher, now: now}
 }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
@@ -153,7 +156,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			// loss lands only while the domain is still verified; a miss means a check moved
 			// it meanwhile, and the plain edit below stands.
 			row, err = ts.SendingDomain().UpdateOneID(id).Where(dkimstate.Verified(), sendingdomain.DiscardedAtIsNil()).
-				SetDkimSelector(selector).SetVerificationLostAt(time.Now()).Save(ctx)
+				SetDkimSelector(selector).SetVerificationLostAt(m.now()).Save(ctx)
 			if !ent.IsNotFound(err) {
 				return err
 			}
@@ -173,8 +176,8 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // deletion use case (internal/usecase/sendingdomaindeletion), which checks its Live use under the
 // Workspace lock first and is the only caller easement allows. The record of mail sent from it
 // stays.
-func DeleteIn(ctx context.Context, ts *ent.Scoped, id int64) error {
-	return ts.SendingDomain().Discard(ctx, id)
+func DeleteIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
+	return ts.SendingDomain().Discard(ctx, id, at)
 }
 
 // Record is one DNS TXT record to publish.

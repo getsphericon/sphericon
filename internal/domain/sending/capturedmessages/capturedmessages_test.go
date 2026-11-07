@@ -85,7 +85,7 @@ func TestPurgeDeletesMessagesPastTheRetentionWindowAcrossWorkspaces(t *testing.T
 	ctx := t.Context()
 	before := env.DB.CapturedMessage.Query().CountX(ctx)
 
-	deleted, err := capturedmessages.Purge(ctx, env.DB, 7*24*time.Hour, 1)
+	deleted, err := capturedmessages.Purge(ctx, env.DB, 7*24*time.Hour, 1, time.Now())
 
 	require.NoError(t, err)
 	assert.EqualValues(t, 2, deleted, "in batches of one, every expired message still goes")
@@ -101,7 +101,7 @@ func TestPurgeFollowsTheWindowItIsGiven(t *testing.T) {
 	older := env.DB.CapturedMessage.Query().Where(capturedmessage.CreatedAtLT(time.Now().Add(-window))).CountX(t.Context())
 	require.Greater(t, older, 4, "the fixtures hold messages of more than two days old")
 
-	deleted, err := capturedmessages.Purge(t.Context(), env.DB, window, 100)
+	deleted, err := capturedmessages.Purge(t.Context(), env.DB, window, 100, time.Now())
 
 	require.NoError(t, err)
 	assert.EqualValues(t, older, deleted, "every message older than the window goes; the newer ones stay")
@@ -112,7 +112,7 @@ func TestPurgeWithAZeroWindowDeletesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	before := env.DB.CapturedMessage.Query().CountX(t.Context())
 
-	deleted, err := capturedmessages.Purge(t.Context(), env.DB, 0, 10)
+	deleted, err := capturedmessages.Purge(t.Context(), env.DB, 0, 10, time.Now())
 
 	require.NoError(t, err)
 	assert.Zero(t, deleted)

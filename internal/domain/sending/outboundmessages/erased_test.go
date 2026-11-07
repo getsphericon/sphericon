@@ -3,6 +3,7 @@ package outboundmessages_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,11 +25,11 @@ func TestSendToAnErasedContactIsDroppedAtTheChokepoint(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	req := marketing(t, env, "bc:erased", fixtures.ContactAliceID)
 
-	require.NoError(t, contacterasure.New(env.Bus).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
+	require.NoError(t, contacterasure.New(env.Bus, time.Now).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
 		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
-	res, err := newModule(env).Send(ctx, s, req)
+	res, err := newModule(env, time.Now).Send(ctx, s, req)
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Skipped, res.Outcome)
 	assert.Equal(t, outboundmessages.SkipContactErased, res.Reason)
@@ -46,13 +47,13 @@ func TestSendToAnErasedContactIdIsRefusedAtTheClaim(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, contacterasure.New(env.Bus).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
+	require.NoError(t, contacterasure.New(env.Bus, time.Now).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
 		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
 	req := transactional("tx:erased-id", "alice@example.com")
 	req.ContactID = fixtures.ContactAliceID
-	_, err := newModule(env).Send(ctx, s, req)
+	_, err := newModule(env, time.Now).Send(ctx, s, req)
 
 	require.ErrorIs(t, err, ent.ErrNotInWorkspace)
 	assert.Len(t, env.CustomerMail.Messages(), before, "nothing reached the provider")

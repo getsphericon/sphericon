@@ -105,7 +105,7 @@ func newRig(t *testing.T, budget int, opts ...option) rig {
 func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
-	return build(t, sqlDB, entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx), 5, func(acc *users.Module, cfg *signup.SignUpConfig) {
+	return build(t, sqlDB, entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx, time.Now), 5, func(acc *users.Module, cfg *signup.SignUpConfig) {
 		looked := false
 		cfg.Lookup = func(ctx context.Context, email string) (*ent.User, bool, error) {
 			if !looked {
@@ -126,8 +126,8 @@ func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, bud
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	consents := testhelper.ConsentRecords(client, bus)
-	acc := users.New(client, bus, testhelper.Passwords(), consents)
-	attempts := throttle.NewAttempts(client, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
+	acc := users.New(client, bus, testhelper.Passwords(), consents, time.Now)
+	attempts := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
 	q := queue{rc: inserter}
 	cfg := signup.SignUpConfig{
 		Budget: attempts.For(throttle.KindSignUp), Mail: inserter, Mint: mint, Consents: consents,

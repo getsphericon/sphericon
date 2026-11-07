@@ -223,7 +223,7 @@ type Module struct {
 	renderer *emaildoc.Renderer
 	out      *outboundmessages.Module
 	life     *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
-	// now is the clock a report's period ends by.
+	// now is the Instance clock a report's period ends by and an activation is dated by.
 	now func() time.Time
 }
 
@@ -231,24 +231,16 @@ type Module struct {
 // Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets; the bus
 // opens the transaction of each move of the definition (internal/domain/content/versioneddefinition); the
 // renderer builds an email step's body from its document; out is Outbound send, whose Send route
-// Publish asks whether the Automation's email steps can send.
-func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module) *Module {
-	m := &Module{cipher: cipher, renderer: renderer, out: out, now: time.Now}
+// Publish asks whether the Automation's email steps can send; now is the Instance clock.
+func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, now func() time.Time) *Module {
+	m := &Module{cipher: cipher, renderer: renderer, out: out, now: now}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,
 		NothingToPublish: ErrNothingToPublish,
 		NothingToRevert:  ErrNothingToRevert,
-	})
+	}, now)
 	return m
-}
-
-// WithClock returns the module reading now from the given clock: a report's period ends on
-// today by it.
-func (m *Module) WithClock(now func() time.Time) *Module {
-	c := *m
-	c.now = now
-	return &c
 }
 
 // build renders every email step that holds a document to its body, in the same save (ADR 0040,

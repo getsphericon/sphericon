@@ -185,7 +185,7 @@ func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 	refused := testhelper.SiteRefusal(t, del(), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianWelcomeName}}, usedBy(refused))
 
-	require.NoError(t, meridian.Automation().Archive(t.Context(), fixtures.AutomationMeridianWelcomeID))
+	require.NoError(t, meridian.Automation().Archive(t.Context(), fixtures.AutomationMeridianWelcomeID, time.Now()))
 
 	assert.NoError(t, del())
 }

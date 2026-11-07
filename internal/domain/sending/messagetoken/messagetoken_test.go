@@ -17,7 +17,7 @@ import (
 )
 
 func TestTokenRoundTrip(t *testing.T) {
-	tr := messagetoken.New("secret", "https://app.test")
+	tr := messagetoken.New("secret", "https://app.test", time.Now)
 	tok, err := tr.Token(42)
 	require.NoError(t, err)
 
@@ -27,17 +27,17 @@ func TestTokenRoundTrip(t *testing.T) {
 }
 
 func TestDecodeRejectsWrongSecret(t *testing.T) {
-	tok, err := messagetoken.New("secret", "https://app.test").Token(1)
+	tok, err := messagetoken.New("secret", "https://app.test", time.Now).Token(1)
 	require.NoError(t, err)
 
-	_, err = messagetoken.New("other-secret", "https://app.test").Decode(tok)
+	_, err = messagetoken.New("other-secret", "https://app.test", time.Now).Decode(tok)
 	assert.Error(t, err)
 }
 
 // unsubToken↔DecodeUnsub round-trips every field, including a large int64 id that
 // would lose precision if stored as a JSON number (float64) instead of a string.
 func TestUnsubTokenRoundTrip(t *testing.T) {
-	tr := messagetoken.New("secret", "https://app.test")
+	tr := messagetoken.New("secret", "https://app.test", time.Now)
 	target := linktarget.Unsubscribe{
 		Channel:     channels.Email,
 		Source:      "automation:7",
@@ -59,7 +59,7 @@ func TestUnsubTokenRoundTrip(t *testing.T) {
 // confirmToken↔DecodeConfirm round-trips every field, including a large int64 id
 // that would lose precision as a JSON number (float64) instead of a string.
 func TestConfirmTokenRoundTrip(t *testing.T) {
-	tr := messagetoken.New("secret", "https://app.test")
+	tr := messagetoken.New("secret", "https://app.test", time.Now)
 	target := linktarget.Confirmation{
 		Destination: "person@example.com",
 		WorkspaceID: fixtures.AcmeID,
@@ -78,7 +78,7 @@ func TestConfirmTokenRoundTrip(t *testing.T) {
 // A confirmation link expires (ADR 0013): DecodeConfirm rejects a token whose exp
 // has passed, so a stale link cannot confirm.
 func TestDecodeConfirmRejectsExpired(t *testing.T) {
-	tr := messagetoken.New("secret", "https://app.test")
+	tr := messagetoken.New("secret", "https://app.test", time.Now)
 	// Hand-mint a token with the confirm claim shape but an exp in the past.
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"dest": "person@example.com",
@@ -99,7 +99,7 @@ func TestDecodeConfirmRejectsExpired(t *testing.T) {
 }
 
 func TestRewriteWrapsLinksAndAddsPixelAndFooter(t *testing.T) {
-	tr := messagetoken.New("secret", "https://app.test")
+	tr := messagetoken.New("secret", "https://app.test", time.Now)
 	body := `<p>Hello <a href="https://dest.test/path?x=1">click</a> or <a href="mailto:a@b.test">mail</a></p>`
 
 	out, err := tr.Rewrite(body, 7, linktarget.Unsubscribe{
@@ -128,7 +128,7 @@ func TestRewriteWrapsLinksAndAddsPixelAndFooter(t *testing.T) {
 }
 
 func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
-	tr := messagetoken.New("secret", "https://app.test")
+	tr := messagetoken.New("secret", "https://app.test", time.Now)
 
 	recipient, err := tr.Token(7)
 	require.NoError(t, err)
@@ -150,7 +150,7 @@ func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
 	link, err = tr.ClickURL(7, "https://dest.test/")
 	require.NoError(t, err)
 	_, good, _ := strings.Cut(link, "/e/c/")
-	_, _, err = messagetoken.New("other", "https://app.test").DecodeClick(good)
+	_, _, err = messagetoken.New("other", "https://app.test", time.Now).DecodeClick(good)
 	require.Error(t, err, "a token signed with another secret is refused")
 
 	_, err = tr.Decode(good)
@@ -158,7 +158,7 @@ func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
 }
 
 func TestUnsubscribeFooterPostalAddress(t *testing.T) {
-	tr := messagetoken.New("secret", "https://app.test")
+	tr := messagetoken.New("secret", "https://app.test", time.Now)
 	target := linktarget.Unsubscribe{Channel: channels.Email, Source: "broadcasts", Destination: "x@y.test", WorkspaceID: fixtures.AcmeID}
 
 	// Empty address: the footer renders the unsubscribe line only (non-gating).
@@ -175,13 +175,13 @@ func TestUnsubscribeFooterPostalAddress(t *testing.T) {
 // A JWT secret rotation: a link mailed before it still verifies while the old secret is the
 // secondary one, and new links are signed with the primary.
 func TestDecodeAcceptsTheSecondarySecretButSignsWithThePrimary(t *testing.T) {
-	old := messagetoken.New("old-secret", "https://app.test")
+	old := messagetoken.New("old-secret", "https://app.test", time.Now)
 	mailed, err := old.Token(5)
 	require.NoError(t, err)
 	unsub, err := old.UnsubscribeURL(linktarget.Unsubscribe{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.test", WorkspaceID: 2})
 	require.NoError(t, err)
 
-	rotated := messagetoken.New("new-secret", "https://app.test", "old-secret")
+	rotated := messagetoken.New("new-secret", "https://app.test", time.Now, "old-secret")
 	rid, err := rotated.Decode(mailed)
 	require.NoError(t, err)
 	assert.EqualValues(t, 5, rid)
@@ -190,11 +190,11 @@ func TestDecodeAcceptsTheSecondarySecretButSignsWithThePrimary(t *testing.T) {
 
 	fresh, err := rotated.Token(6)
 	require.NoError(t, err)
-	_, err = messagetoken.New("new-secret", "https://app.test").Decode(fresh)
+	_, err = messagetoken.New("new-secret", "https://app.test", time.Now).Decode(fresh)
 	require.NoError(t, err, "a new link verifies without the secondary secret")
 	_, err = old.Decode(fresh)
 	require.Error(t, err)
 
-	_, err = messagetoken.New("new-secret", "https://app.test").Decode(mailed)
+	_, err = messagetoken.New("new-secret", "https://app.test", time.Now).Decode(mailed)
 	assert.Error(t, err, "once the secondary secret is removed, the old link no longer verifies")
 }

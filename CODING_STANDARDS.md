@@ -199,6 +199,13 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   needs a run of events is a small pure type fed those events. A test that must move time inside a
   `testing/synctest` bubble calls `testhelper.Elapse(d)`, which advances the bubble's fake clock
   and returns at once. `forbidigo` rejects `time.Sleep` everywhere.
+- **The Instance reads one clock, `app.Clock`.** A module, use case, handler or worker that reads
+  the time takes the clock as a required argument (no "nil is `time.Now`" fallback, which lets a
+  forgotten wiring read the wall clock unseen), and a package function takes the time from its
+  caller. `forbidigo` rejects `time.Now`, `time.Since` and `time.Until` outside tests, the harness,
+  the fixtures, `e2e`, `cmd/seed` and `ent/schema`. The few files that keep the wall clock (the
+  container that provides `app.Clock`, a measured duration, httprate's reset header, the doctor and
+  the CLI's defaults) are excluded by path in `.golangci.yml`, each with its reason.
 - **Pure logic gets property tests.** A function or small type that decides something from its
   inputs alone (a delay, a normalization, a counter of polls) is tested with `pgregory.net/rapid`:
   state the property that must hold for every input (bounds, idempotence, monotonicity, agreement

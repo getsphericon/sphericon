@@ -24,12 +24,13 @@ type Handlers struct {
 	bus      *events.Bus
 	bindings *bindings.Module
 	identify *visitoridentification.UseCase
+	now      func() time.Time
 }
 
 // NewHandlers builds the collect handlers. Payload size caps (batch, per event) are
-// enforced before decoding, in internal/server.
-func NewHandlers(bus *events.Bus, telegram *bindings.Module, identification *visitoridentification.UseCase) *Handlers {
-	return &Handlers{bus: bus, bindings: telegram, identify: identification}
+// enforced before decoding, in internal/server. now is the Instance clock a Visitor is seen by.
+func NewHandlers(bus *events.Bus, telegram *bindings.Module, identification *visitoridentification.UseCase, now func() time.Time) *Handlers {
+	return &Handlers{bus: bus, bindings: telegram, identify: identification, now: now}
 }
 
 // rawMap decodes an ogen map[string]jx.Raw into map[string]any using
@@ -89,7 +90,7 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 		return evt
 	})
 
-	return visitors.Collect(ctx, h.bus, auth.CollectScoped(ctx), evts)
+	return visitors.Collect(ctx, h.bus, auth.CollectScoped(ctx), evts, h.now())
 }
 
 func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.CollectIdentifyInput) (*collectapi.CollectOkResponse, error) {

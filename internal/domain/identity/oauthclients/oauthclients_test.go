@@ -136,5 +136,5 @@ func TestDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 
 // newModule is the OAuth clients module with the production metadata fetcher.
 func newModule(client *ent.Client) *oauthclients.Module {
-	return oauthclients.New(client, oauthclients.NewFetcher(webhook.Allowlist{}))
+	return oauthclients.New(client, oauthclients.NewFetcher(webhook.Allowlist{}), time.Now)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,7 +45,7 @@ func TestRequestConstructorsDeduplicateTheSameLogicalSend(t *testing.T) {
 	}
 	for name, build := range builders {
 		t.Run(name, func(t *testing.T) {
-			m := newModule(env)
+			m := newModule(env, time.Now)
 			before := len(env.CustomerMail.Messages())
 			first, err := m.Send(ctx, s, build())
 			require.NoError(t, err)
@@ -67,9 +68,9 @@ func TestTransactionalWithoutClientKeyIsAlwaysANewSend(t *testing.T) {
 	msg := outboundmessages.TransactionalMessage{Destination: "a@example.com",
 		Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"}}
 
-	first, err := newModule(env).Send(ctx, s, outboundmessages.Transactional(msg))
+	first, err := newModule(env, time.Now).Send(ctx, s, outboundmessages.Transactional(msg))
 	require.NoError(t, err)
-	second, err := newModule(env).Send(ctx, s, outboundmessages.Transactional(msg))
+	second, err := newModule(env, time.Now).Send(ctx, s, outboundmessages.Transactional(msg))
 	require.NoError(t, err)
 
 	assert.False(t, second.Replayed)
@@ -96,7 +97,7 @@ func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 		"automation:1000:2":                 outboundmessages.AutomationStep(automation, run, 2, nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"}),
 		"transactional:k1":                  outboundmessages.Transactional(outboundmessages.TransactionalMessage{ClientKey: "k1", Destination: "a@example.com"}),
 	} {
-		res, err := newModule(env).Send(ctx, s, req)
+		res, err := newModule(env, time.Now).Send(ctx, s, req)
 		require.NoError(t, err)
 		require.NotZero(t, res.MessageID, want)
 		assert.Equal(t, want, env.DB.OutboundMessage.GetX(ctx, res.MessageID).IdempotencyKey)

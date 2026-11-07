@@ -3,6 +3,7 @@ package automations_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -71,7 +72,7 @@ func versionOfRun(t *testing.T, env *testhelper.TestEnv, runID int64) int {
 // draft in place.
 func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	before, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
@@ -91,7 +92,7 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	assert.Equal(t, "hold_demo_edited", draft.TriggerEvent, "the second edit keeps the draft's Trigger")
 	assert.Equal(t, []int{1, 2}, versionsOf(t, env, fixtures.AutomationHoldDemoID), "one draft, rewritten in place")
 
-	runID, enrolled, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
+	runID, enrolled, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, time.Now())
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	assert.Equal(t, 1, versionOfRun(t, env, runID), "the Enrollment begins on the live version")
@@ -100,7 +101,7 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 // Saving the live steps again creates no draft: steps compare in the form a version stores them.
 func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	before, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
@@ -118,10 +119,10 @@ func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 // stays on the version it began on, and the old live version stays as history.
 func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	first, _, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
+	first, _, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, time.Now())
 	require.NoError(t, err)
 	edited := []automationstep.Step{{Type: automationstep.Wait, Seconds: 99}}
 	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &edited})
@@ -134,7 +135,7 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 	_, draft := automations.LiveAndDraft(published)
 	assert.Nil(t, draft, "the draft became live")
 
-	second, _, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactBobID)
+	second, _, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactBobID, time.Now())
 	require.NoError(t, err)
 	assert.Equal(t, 2, versionOfRun(t, env, second), "the next Enrollment follows the new version")
 	assert.Equal(t, 1, versionOfRun(t, env, first), "the Enrollment in flight stays on its version")
@@ -144,20 +145,20 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 // A never-published Automation enrolls nobody: it has no live version.
 func TestANeverPublishedAutomationEnrollsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, _, err := automations.Enroll(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationWinBackID, fixtures.ContactAliceID)
+	_, _, err := automations.Enroll(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationWinBackID, fixtures.ContactAliceID, time.Now())
 	require.ErrorIs(t, err, automations.ErrNoVersion)
 }
 
 // Publish refuses a draft whose Integration was archived after it was saved, and changes nothing.
 func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
 	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{emailVia(&mailgun)}})
 	require.NoError(t, err)
-	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID))
+	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID, time.Now()))
 
 	_, err = m.Publish(ctx, acme, fixtures.AutomationHoldDemoID)
 	require.ErrorIs(t, err, automations.ErrIntegrationNotFound)

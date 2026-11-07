@@ -22,7 +22,7 @@ import (
 
 func TestProviderTooFastIsADeferralThenSentExactlyOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := newModule(env)
+	m := newModule(env, time.Now)
 
 	env.CustomerMail.SetErr(messaging.ErrBusy)
 	res := send(t, m, env, "bc:fast")
@@ -47,7 +47,7 @@ func TestProviderTooFastIsADeferralThenSentExactlyOnce(t *testing.T) {
 
 func TestProviderDailyQuotaIsADeferralWithALongerBackoff(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := newModule(env)
+	m := newModule(env, time.Now)
 
 	env.CustomerMail.SetErr(messaging.ErrQuotaExceeded)
 	res := send(t, m, env, "bc:quota")
@@ -58,7 +58,7 @@ func TestProviderDailyQuotaIsADeferralWithALongerBackoff(t *testing.T) {
 
 func TestWrappedBusyReplyIsStillADeferral(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := newModule(env)
+	m := newModule(env, time.Now)
 
 	env.CustomerMail.SetErr(errors.Join(errors.New("ses: send"), messaging.ErrBusy))
 	assert.Equal(t, outboundmessages.Deferral, send(t, m, env, "bc:wrapped").Outcome)
@@ -68,7 +68,7 @@ func TestWrappedBusyReplyIsStillADeferral(t *testing.T) {
 // a retryable error and the claim is released, so the caller's retry starts clean.
 func TestTransactionalBusyReplyIsARetryableErrorNotADeferral(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := newModule(env)
+	m := newModule(env, time.Now)
 	ctx := context.Background()
 
 	env.CustomerMail.SetErr(messaging.ErrBusy)
@@ -86,7 +86,7 @@ func TestTransactionalBusyReplyIsARetryableErrorNotADeferral(t *testing.T) {
 func TestGenuineProviderFailureStillFailsTheMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, outboundmessages.WithLease(time.Nanosecond), outboundmessages.WithClock(c.now))
+	m := newModule(env, c.now, outboundmessages.WithLease(time.Nanosecond))
 	ctx := context.Background()
 
 	env.CustomerMail.SetErr(errors.New("554 mailbox does not exist"))

@@ -3,6 +3,7 @@ package versioneddefinition_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -26,9 +27,11 @@ func TestNewRefusesAKindThatNamesNotEveryRefusal(t *testing.T) {
 	} {
 		t.Run(missing.name, func(t *testing.T) {
 			assert.Panics(t, func() {
-				versioneddefinition.New[ent.Automation, ent.AutomationVersion, any, any](nil, nil, missing.errs)
+				versioneddefinition.New[ent.Automation, ent.AutomationVersion, any, any](nil, nil, missing.errs, time.Now)
 			})
 		})
 	}
-	assert.NotPanics(t, func() { versioneddefinition.New[ent.Automation, ent.AutomationVersion, any, any](nil, nil, every) })
+	assert.NotPanics(t, func() {
+		versioneddefinition.New[ent.Automation, ent.AutomationVersion, any, any](nil, nil, every, time.Now)
+	})
 }

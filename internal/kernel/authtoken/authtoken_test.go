@@ -17,7 +17,7 @@ func constBinding(v string) func(int64) (string, error) {
 }
 
 func TestMintParseRoundTrip(t *testing.T) {
-	s := authtoken.New(secret)
+	s := authtoken.New(secret, time.Now)
 	tok, err := s.Mint(authtoken.PurposeEmailChange, 42, "old@example.com", time.Hour, map[string]string{"new": "fresh@example.com"})
 	require.NoError(t, err)
 
@@ -28,7 +28,7 @@ func TestMintParseRoundTrip(t *testing.T) {
 }
 
 func TestParseRejectsWrongPurpose(t *testing.T) {
-	s := authtoken.New(secret)
+	s := authtoken.New(secret, time.Now)
 	tok, err := s.Mint(authtoken.PurposeEmailVerify, 7, "", time.Hour, nil)
 	require.NoError(t, err)
 
@@ -37,7 +37,7 @@ func TestParseRejectsWrongPurpose(t *testing.T) {
 }
 
 func TestParseRejectsChangedBinding(t *testing.T) {
-	s := authtoken.New(secret)
+	s := authtoken.New(secret, time.Now)
 	// reset token bound to the current password hash
 	tok, err := s.Mint(authtoken.PurposePasswordReset, 1, "hash-v1", time.Hour, nil)
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestParseRejectsChangedBinding(t *testing.T) {
 }
 
 func TestParseRejectsEmptyBindingTampered(t *testing.T) {
-	s := authtoken.New(secret)
+	s := authtoken.New(secret, time.Now)
 	// empty binding (e.g. a user with no password hash yet) still round-trips
 	tok, err := s.Mint(authtoken.PurposePasswordReset, 1, "", time.Hour, nil)
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestParseRejectsEmptyBindingTampered(t *testing.T) {
 }
 
 func TestParseRejectsExpired(t *testing.T) {
-	s := authtoken.New(secret)
+	s := authtoken.New(secret, time.Now)
 	tok, err := s.Mint(authtoken.PurposeEmailVerify, 1, "", -time.Minute, nil)
 	require.NoError(t, err)
 	_, _, err = s.Parse(tok, authtoken.PurposeEmailVerify, constBinding(""))
@@ -69,7 +69,7 @@ func TestParseRejectsExpired(t *testing.T) {
 }
 
 func TestParsePropagatesBindingError(t *testing.T) {
-	s := authtoken.New(secret)
+	s := authtoken.New(secret, time.Now)
 	tok, err := s.Mint(authtoken.PurposePasswordReset, 1, "hash", time.Hour, nil)
 	require.NoError(t, err)
 
@@ -79,8 +79,8 @@ func TestParsePropagatesBindingError(t *testing.T) {
 }
 
 func TestParseRejectsWrongSecret(t *testing.T) {
-	tok, err := authtoken.New(secret).Mint(authtoken.PurposeEmailVerify, 1, "", time.Hour, nil)
+	tok, err := authtoken.New(secret, time.Now).Mint(authtoken.PurposeEmailVerify, 1, "", time.Hour, nil)
 	require.NoError(t, err)
-	_, _, err = authtoken.New("other-secret").Parse(tok, authtoken.PurposeEmailVerify, constBinding(""))
+	_, _, err = authtoken.New("other-secret", time.Now).Parse(tok, authtoken.PurposeEmailVerify, constBinding(""))
 	assert.Error(t, err)
 }

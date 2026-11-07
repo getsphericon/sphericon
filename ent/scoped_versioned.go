@@ -62,13 +62,13 @@ type VersionedStore[O, V any] interface {
 	Newest(ctx context.Context, id int64) (int, error)
 	// DeleteVersion removes a version of the row (a dropped draft, which nothing stands on).
 	DeleteVersion(ctx context.Context, id, versionID int64) error
-	// Archive puts the row aside and Unarchive brings it back (an archivable kind, ADR 0100); a
+	// Archive puts the row aside at `at` and Unarchive brings it back (an archivable kind, ADR 0100); a
 	// discardable kind answers ErrNotArchivable.
-	Archive(ctx context.Context, id int64) error
+	Archive(ctx context.Context, id int64, at time.Time) error
 	Unarchive(ctx context.Context, id int64) error
-	// Discard removes the row for good, kept for what refers to it (a discardable kind, ADR
+	// Discard removes the row for good at `at`, kept for what refers to it (a discardable kind, ADR
 	// 0100); an archivable kind answers ErrNotDiscardable.
-	Discard(ctx context.Context, id int64) error
+	Discard(ctx context.Context, id int64, at time.Time) error
 }
 
 var _ VersionedStore[Automation, AutomationVersion] = (*AutomationPointers)(nil)
@@ -172,8 +172,8 @@ func (p *AutomationPointers) DeleteVersion(ctx context.Context, id, versionID in
 }
 
 // Archive puts the Automation aside.
-func (p *AutomationPointers) Archive(ctx context.Context, id int64) error {
-	return p.t.Archive(ctx, id)
+func (p *AutomationPointers) Archive(ctx context.Context, id int64, at time.Time) error {
+	return p.t.Archive(ctx, id, at)
 }
 
 // Unarchive brings the archived Automation back.
@@ -182,7 +182,7 @@ func (p *AutomationPointers) Unarchive(ctx context.Context, id int64) error {
 }
 
 // Discard answers ErrNotDiscardable: a Automation is archived, never discarded.
-func (p *AutomationPointers) Discard(context.Context, int64) error {
+func (p *AutomationPointers) Discard(context.Context, int64, time.Time) error {
 	return ErrNotDiscardable
 }
 
@@ -287,7 +287,7 @@ func (p *RulePointers) DeleteVersion(ctx context.Context, id, versionID int64) e
 }
 
 // Archive answers ErrNotArchivable: a Rule is discarded, never archived.
-func (p *RulePointers) Archive(context.Context, int64) error {
+func (p *RulePointers) Archive(context.Context, int64, time.Time) error {
 	return ErrNotArchivable
 }
 
@@ -297,6 +297,6 @@ func (p *RulePointers) Unarchive(context.Context, int64) error {
 }
 
 // Discard removes the Rule for good: it leaves the lists and is still read by id.
-func (p *RulePointers) Discard(ctx context.Context, id int64) error {
-	return p.t.Discard(ctx, id)
+func (p *RulePointers) Discard(ctx context.Context, id int64, at time.Time) error {
+	return p.t.Discard(ctx, id, at)
 }

@@ -86,7 +86,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := int64(fixtures.AutomationRunJobsPendingID)
 		queueStep(t, env, id)
-		_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "complaints")
+		_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "complaints", time.Now())
 		require.NoError(t, err)
 		fs := &fakeSender{}
 		require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(fs))))
@@ -122,11 +122,11 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 func TestOwnerNotificationsSurfaceSenderErrors(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaints")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaints", time.Now())
 	require.NoError(t, err)
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
-	require.Error(t, suspension.NotifyOwners(ctx, env.DB, memberships.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID))
+	require.Error(t, suspension.NotifyOwners(ctx, env.DB, memberships.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID, time.Now()))
 }
 
 // A re-check that flips a domain to unverified notifies the owner, and a failed
@@ -135,7 +135,7 @@ func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now))
 
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)

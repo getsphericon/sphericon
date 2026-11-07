@@ -80,7 +80,7 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTP
 	// the call returns. Release it before the lifecycle move, which takes the row's write lock.
 	sendErr := m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		return webhook.Post(ctx, m.client, webhook.Call{
-			URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body),
+			URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body), At: m.now(),
 			ID: fmt.Sprintf("automation_%d_%d", run.ID, step),
 		})
 	})

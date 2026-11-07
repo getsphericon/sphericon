@@ -44,7 +44,7 @@ func TestContactChangeEventsExpireByAge(t *testing.T) {
 	}
 	before := stored()
 
-	_, err := events.PruneEvents(ctx, env.DB, time.Nanosecond, 100)
+	_, err := events.PruneEvents(ctx, env.DB, time.Nanosecond, 100, time.Now())
 	require.NoError(t, err)
 	after := stored()
 

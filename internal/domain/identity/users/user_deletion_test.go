@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ import (
 // User stays, and the second-factor code is not spent.
 func TestDeleteUserRefusesAProofThatNoLongerFitsTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 	ctx := context.Background()
 	u, err := env.DB.User.Get(ctx, fixtures.MemberMaryID)
 	require.NoError(t, err)
@@ -44,7 +45,7 @@ func TestDeleteUserRefusesAProofThatNoLongerFitsTheUser(t *testing.T) {
 // A proof that still fits the User spends its code inside the transaction and the User goes.
 func TestDeleteUserSpendsTheCodeOfAProofThatStillFits(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 	ctx := context.Background()
 	u, err := env.DB.User.Get(ctx, fixtures.MemberMaryID)
 	require.NoError(t, err)
@@ -69,8 +70,8 @@ func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
 	client := entclient.New(sqlDB)
-	bus := events.New(sqlDB, entclient.NewTx)
-	acc := users.New(client, bus, testhelper.Passwords(), testhelper.ConsentRecords(client, bus))
+	bus := events.New(sqlDB, entclient.NewTx, time.Now)
+	acc := users.New(client, bus, testhelper.Passwords(), testhelper.ConsentRecords(client, bus), time.Now)
 
 	errs := make([]error, 2)
 	var wg sync.WaitGroup

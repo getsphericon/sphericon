@@ -78,10 +78,10 @@ func PersonalTokens(ctx context.Context, s *ent.Scoped, caller *ent.Membership) 
 // RevokePersonal retires the active Personal token id of the Workspace s on behalf of caller: the
 // caller's own, or anyone's when the Role holds members:manage. One the caller may not see is
 // ErrPersonalTokenNotFound, as an unknown one is.
-func RevokePersonal(ctx context.Context, s *ent.Scoped, caller *ent.Membership, id int64) error {
+func RevokePersonal(ctx context.Context, s *ent.Scoped, caller *ent.Membership, id int64, at time.Time) error {
 	n, err := s.ApiToken().Update().
 		Where(apitoken.ID(id), isPersonalToken(), visibleTo(caller), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(time.Now()).
+		SetRevokedAt(at).
 		Save(ctx)
 	if err != nil {
 		return err

@@ -97,14 +97,14 @@ type Module struct {
 // served on an IP address gets a module that is not Available (a relying party id must be a
 // domain), so booting never fails over it. secret is
 // the Instance's JWT secret, from which the ceremony cookie's key is derived. now is the
-// clock the cookie's expiry is checked against (nil means time.Now).
+// Instance clock the cookie's expiry is checked against, which is required.
 func New(client *ent.Client, bus *events.Bus, appURL, secret string, now func() time.Time) (*Module, error) {
 	u, err := url.Parse(appURL)
 	if err != nil || u.Hostname() == "" {
 		return nil, fmt.Errorf("passkeys: the app URL %q has no host", appURL)
 	}
 	if now == nil {
-		now = time.Now
+		return nil, errors.New("passkeys: the module needs the Instance clock")
 	}
 	if net.ParseIP(u.Hostname()) != nil {
 		return &Module{ent: client, bus: bus, now: now}, nil

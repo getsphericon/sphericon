@@ -19,11 +19,11 @@ import (
 // growth follows; an Event backfilled with an old occurred_at is kept until its
 // row itself ages out. A retention of zero or less disables the prune. The job is
 // idempotent: a rerun finds nothing left to delete.
-func PruneEvents(ctx context.Context, client *ent.Client, retention time.Duration, batchSize int) (int64, error) {
+func PruneEvents(ctx context.Context, client *ent.Client, retention time.Duration, batchSize int, now time.Time) (int64, error) {
 	if retention <= 0 {
 		return 0, nil
 	}
-	cutoff := time.Now().Add(-retention)
+	cutoff := now.Add(-retention)
 	var total int64
 	for {
 		ids, err := client.Event.Query().

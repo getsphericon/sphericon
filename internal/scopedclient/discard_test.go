@@ -3,6 +3,7 @@ package scopedclient_test
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func TestDiscardHidesFromListsAndKeepsByIDReads(t *testing.T) {
 	s := env.DB.Scoped(acme)
 	id := int64(fixtures.IntegrationAcmeGenericAID)
 
-	require.NoError(t, s.Integration().Discard(ctx, id))
+	require.NoError(t, s.Integration().Discard(ctx, id, time.Now()))
 
 	listed, err := s.Integration().Query().Where(integration.ID(id)).Exist(ctx)
 	require.NoError(t, err)
@@ -62,10 +63,10 @@ func TestDiscardIsFencedByStateAndWorkspace(t *testing.T) {
 	s := env.DB.Scoped(acme)
 	id := int64(fixtures.IntegrationAcmeGenericAID)
 
-	require.NoError(t, s.Integration().Discard(ctx, id))
-	twice := s.Integration().Discard(ctx, id)
+	require.NoError(t, s.Integration().Discard(ctx, id, time.Now()))
+	twice := s.Integration().Discard(ctx, id, time.Now())
 	assert.True(t, ent.IsNotFound(twice), "already discarded")
 
-	foreign := s.Integration().Discard(ctx, int64(fixtures.IntegrationGlobexID))
+	foreign := s.Integration().Discard(ctx, int64(fixtures.IntegrationGlobexID), time.Now())
 	assert.True(t, ent.IsNotFound(foreign))
 }

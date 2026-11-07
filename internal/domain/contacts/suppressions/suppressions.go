@@ -177,7 +177,7 @@ func query(s *ent.Scoped, lifted bool) *ent.SuppressionQuery {
 // ErrNotFound. On sms a number suppressed again after its Contact's Erasure also has the
 // Suppression the Erasure keyed by its hash (EraseContact), which refuses the number as much:
 // lifting the number's lifts that twin too, so the number can be texted again.
-func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
+func Remove(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 	row, err := s.Suppression().Query().Where(entsuppression.ID(id), entsuppression.LiftedAtIsNil()).Only(ctx)
 	if ent.IsNotFound(err) {
 		return ErrNotFound
@@ -192,7 +192,7 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 	}
 	_, err = s.Suppression().Update().
 		Where(lifted, entsuppression.LiftedAtIsNil()).
-		SetLiftedAt(time.Now()).
+		SetLiftedAt(at).
 		Save(ctx)
 	return err
 }

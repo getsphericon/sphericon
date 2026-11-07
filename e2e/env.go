@@ -179,7 +179,7 @@ func Boot() (*Env, func(), error) {
 		bus:         bus,
 
 		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New())),
-		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil, a.Config.JWTVerifySecrets()...),
+		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), time.Now, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }
 

@@ -107,7 +107,7 @@ func (a *Module) CompletePendingSignupIn(ctx context.Context, tx *ent.Client, pu
 	u, err := completeProviderSignup(ctx, tx, ProviderLogin{
 		Provider: p.Provider, Subject: p.Subject, Email: p.Email, Name: p.Name,
 		SurveyDue: surveyDue && inv == nil,
-	})
+	}, now)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -129,16 +129,16 @@ func (a *Module) CompletePendingSignupIn(ctx context.Context, tx *ent.Client, pu
 // Verified User, one an Unverified User holds takes that User over. Anything else (the provider
 // account linked meanwhile, the address verified by the person who signed up with it) is
 // ErrPendingSignupGone.
-func completeProviderSignup(ctx context.Context, tx *ent.Client, in ProviderLogin) (*ent.User, error) {
+func completeProviderSignup(ctx context.Context, tx *ent.Client, in ProviderLogin, now time.Time) (*ent.User, error) {
 	known, holder, err := signinFacts(ctx, tx, in)
 	if err != nil {
 		return nil, err
 	}
 	switch DecideSignin(factsOf(known, holder, in)).Outcome {
 	case SigninCreate:
-		return CreateProviderUserIn(ctx, tx, in)
+		return CreateProviderUserIn(ctx, tx, in, now)
 	case SigninTakeOver:
-		u, err := TakeOverIn(ctx, tx, holder.ID, in)
+		u, err := TakeOverIn(ctx, tx, holder.ID, in, now)
 		if errors.Is(err, ErrAlreadyVerified) {
 			return nil, ErrPendingSignupGone
 		}

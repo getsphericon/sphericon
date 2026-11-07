@@ -164,20 +164,22 @@ type Module struct {
 	cipher *secrets.Cipher
 	bus    *events.Bus
 	life   *versioneddefinition.Lifecycle[ent.Rule, ent.RuleVersion, UpdateInput, definition]
+	// now is the Instance clock a condition's relative date counts back from and a Firing completes by.
+	now func() time.Time
 }
 
 // New builds the Rules module. The cipher seals an http Action's secrets; the bus runs a Firing
 // and the job that executes it in one transaction, and each move of a Rule's definition
-// (internal/domain/content/versioneddefinition).
-func New(cipher *secrets.Cipher, bus *events.Bus) *Module {
-	m := &Module{cipher: cipher, bus: bus}
+// (internal/domain/content/versioneddefinition). now is the Instance clock.
+func New(cipher *secrets.Cipher, bus *events.Bus, now func() time.Time) *Module {
+	m := &Module{cipher: cipher, bus: bus, now: now}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound: ErrNotFound,
 		// A Rule is discarded, never archived (ADR 0100): the lifecycle never finds one archived.
 		Archived:         ErrNotFound,
 		NothingToPublish: ErrNothingToPublish,
 		NothingToRevert:  ErrNothingToRevert,
-	})
+	}, now)
 	return m
 }
 
@@ -581,7 +583,7 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 	if g, err := condition.Parse(*cond); err == nil && g.Size() > MaxConditionNodes {
 		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and rules, this one has %d", MaxConditionNodes, g.Size()))
 	}
-	if _, err := condition.RulePredicate(ctx, s, *cond, nil); err != nil {
+	if _, err := condition.RulePredicate(ctx, s, *cond, nil, m.now()); err != nil {
 		return ErrInvalid.With(err.Error())
 	}
 	return nil
@@ -746,7 +748,7 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.
 func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Event) (bool, error) {
 	match := contact.ID(ev.ContactID)
 	if cond != nil && *cond != "" {
-		pred, err := condition.RulePredicate(ctx, s, *cond, ev.Properties)
+		pred, err := condition.RulePredicate(ctx, s, *cond, ev.Properties, m.now())
 		if errors.Is(err, condition.ErrStorage) {
 			return false, err
 		}
@@ -888,7 +890,7 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, firingID int64, inde
 		}
 		update := ts.RuleFiring().UpdateOneID(f.ID).SetResults(string(encoded))
 		if len(results) == len(actions) && !slices.ContainsFunc(results, func(r Result) bool { return r.Status == Pending }) {
-			update.SetCompletedAt(time.Now())
+			update.SetCompletedAt(m.now())
 		}
 		return update.Exec(ctx)
 	})

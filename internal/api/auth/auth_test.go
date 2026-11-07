@@ -72,7 +72,7 @@ func TestAuthContextsRoundTrip(t *testing.T) {
 
 func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)})
 
 	ctx, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
@@ -94,7 +94,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 
 func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)})
 	ctx := context.Background()
 	valid := credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)
 
@@ -133,7 +133,7 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 // unauthorized credential.
 func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)})
 	reader := externalapi.BearerAuth{Token: env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsRead))}
 
 	ctx, err := h.HandleBearerAuth(t.Context(), externalapi.ContactsListOperation, reader)
@@ -153,7 +153,7 @@ func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 }
 
 func TestBearerAuthStorageFailureIsNotAnUnauthorizedAnswer(t *testing.T) {
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: closedClient(t)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: closedClient(t)})
 	_, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
 	})
@@ -186,7 +186,7 @@ func TestSiteAuthResolvesTheDashboardUserByTheIDInTheToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	h := auth.NewSiteSecurityHandler(cfg.JWTSecret, env.DB, nil)
+	h := auth.NewSiteSecurityHandler(cfg.JWTSecret, env.DB, time.Now)
 
 	ctx, err := h.HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{
 		APIKey: env.SiteToken(t, fixtures.OwnerJohnEmail, nil),
@@ -209,8 +209,8 @@ func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
 	env := testhelper.Setup(t)
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	h := auth.NewSiteSecurityHandler(cfg.JWTSecret, env.DB, nil)
-	other := auth.NewSiteSecurityHandler("a-different-secret", env.DB, nil)
+	h := auth.NewSiteSecurityHandler(cfg.JWTSecret, env.DB, time.Now)
+	other := auth.NewSiteSecurityHandler("a-different-secret", env.DB, time.Now)
 	good := env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
 	edited := func(edit func(*gptoken.Claims)) string { return env.SiteToken(t, fixtures.OwnerJohnEmail, edit) }
 
@@ -235,7 +235,7 @@ func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
 		assert.Nil(t, auth.GetSiteAuth(ctx), name)
 	}
 
-	_, err = auth.NewSiteSecurityHandler(cfg.JWTSecret, closedClient(t), nil).HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{APIKey: good})
+	_, err = auth.NewSiteSecurityHandler(cfg.JWTSecret, closedClient(t), time.Now).HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{APIKey: good})
 	require.Error(t, err)
 	require.NotErrorIs(t, err, auth.ErrUnauthorized)
 }
@@ -257,16 +257,16 @@ func TestSiteAuthAcceptsASessionSignedWithTheSecondarySecretOnlyWhileItIsConfigu
 	old := env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
 	const rotated = "the-new-secret-the-new-secret-0123"
 
-	during := auth.NewSiteSecurityHandler(rotated, env.DB, nil, cfg.JWTSecret)
+	during := auth.NewSiteSecurityHandler(rotated, env.DB, time.Now, cfg.JWTSecret)
 	_, err = during.Verify(context.Background(), old)
 	require.NoError(t, err)
 
-	after := auth.NewSiteSecurityHandler(rotated, env.DB, nil)
+	after := auth.NewSiteSecurityHandler(rotated, env.DB, time.Now)
 	_, err = after.Verify(context.Background(), old)
 	require.ErrorIs(t, err, auth.ErrUnauthorized)
 
 	// New sessions are signed with the primary secret and verify without the secondary one.
-	cookie, err := auth.NewSessions(rotated, time.Hour, false, nil, cfg.JWTSecret).Issue(&ent.User{ID: fixtures.OwnerJohnID}, auth.Session{Method: auth.MethodPassword})
+	cookie, err := auth.NewSessions(rotated, time.Hour, false, time.Now, cfg.JWTSecret).Issue(&ent.User{ID: fixtures.OwnerJohnID}, auth.Session{Method: auth.MethodPassword})
 	require.NoError(t, err)
 	_, err = after.Verify(context.Background(), cookie.Value)
 	require.NoError(t, err)
@@ -274,14 +274,14 @@ func TestSiteAuthAcceptsASessionSignedWithTheSecondarySecretOnlyWhileItIsConfigu
 
 func TestSessionsHolderAcceptsTheSecondarySecret(t *testing.T) {
 	user := &ent.User{ID: 7, SessionEpoch: 3}
-	cookie, err := auth.NewSessions("old-secret-old-secret-old-secret-0", time.Hour, false, nil).Issue(user, auth.Session{Method: auth.MethodPassword})
+	cookie, err := auth.NewSessions("old-secret-old-secret-old-secret-0", time.Hour, false, time.Now).Issue(user, auth.Session{Method: auth.MethodPassword})
 	require.NoError(t, err)
 
-	id, epoch, ok := auth.NewSessions("new-secret-new-secret-new-secret-0", time.Hour, false, nil, "old-secret-old-secret-old-secret-0").Holder(cookie.Value)
+	id, epoch, ok := auth.NewSessions("new-secret-new-secret-new-secret-0", time.Hour, false, time.Now, "old-secret-old-secret-old-secret-0").Holder(cookie.Value)
 	require.True(t, ok)
 	assert.EqualValues(t, 7, id)
 	assert.EqualValues(t, 3, epoch)
 
-	_, _, ok = auth.NewSessions("new-secret-new-secret-new-secret-0", time.Hour, false, nil).Holder(cookie.Value)
+	_, _, ok = auth.NewSessions("new-secret-new-secret-new-secret-0", time.Hour, false, time.Now).Holder(cookie.Value)
 	assert.False(t, ok)
 }

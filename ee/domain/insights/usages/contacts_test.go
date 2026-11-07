@@ -99,7 +99,7 @@ func TestContactsDoesNotCountAnAnonymousContact(t *testing.T) {
 func TestContactsDoesNotCountAnErasedContact(t *testing.T) {
 	now := at(2027, time.February, 10, 12)
 	env, _, base := contactsEnv(t, now)
-	require.NoError(t, contacterasure.New(env.Bus).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
+	require.NoError(t, contacterasure.New(env.Bus, time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		contacterasure.Identifier{ContactID: fixtures.ContactAliceID}, contacterasure.Requester{Kind: contacterasure.RequesterAPIToken, ID: 1}))
 	addContact(t, env, "after-erasure@example.com")
 

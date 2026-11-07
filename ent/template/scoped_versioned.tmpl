@@ -71,13 +71,13 @@ type VersionedStore[O, V any] interface {
 	Newest(ctx context.Context, id int64) (int, error)
 	// DeleteVersion removes a version of the row (a dropped draft, which nothing stands on).
 	DeleteVersion(ctx context.Context, id, versionID int64) error
-	// Archive puts the row aside and Unarchive brings it back (an archivable kind, ADR 0100); a
+	// Archive puts the row aside at `at` and Unarchive brings it back (an archivable kind, ADR 0100); a
 	// discardable kind answers ErrNotArchivable.
-	Archive(ctx context.Context, id int64) error
+	Archive(ctx context.Context, id int64, at time.Time) error
 	Unarchive(ctx context.Context, id int64) error
-	// Discard removes the row for good, kept for what refers to it (a discardable kind, ADR
+	// Discard removes the row for good at `at`, kept for what refers to it (a discardable kind, ADR
 	// 0100); an archivable kind answers ErrNotDiscardable.
-	Discard(ctx context.Context, id int64) error
+	Discard(ctx context.Context, id int64, at time.Time) error
 }
 
 {{ range $n := $nodes }}
@@ -194,8 +194,8 @@ func (p *{{ $N }}Pointers) DeleteVersion(ctx context.Context, id, versionID int6
 
 {{- if $R }}
 // Archive puts the {{ $N }} aside.
-func (p *{{ $N }}Pointers) Archive(ctx context.Context, id int64) error {
-	return p.t.Archive(ctx, id)
+func (p *{{ $N }}Pointers) Archive(ctx context.Context, id int64, at time.Time) error {
+	return p.t.Archive(ctx, id, at)
 }
 
 // Unarchive brings the archived {{ $N }} back.
@@ -204,12 +204,12 @@ func (p *{{ $N }}Pointers) Unarchive(ctx context.Context, id int64) error {
 }
 
 // Discard answers ErrNotDiscardable: a {{ $N }} is archived, never discarded.
-func (p *{{ $N }}Pointers) Discard(context.Context, int64) error {
+func (p *{{ $N }}Pointers) Discard(context.Context, int64, time.Time) error {
 	return ErrNotDiscardable
 }
 {{- else }}
 // Archive answers ErrNotArchivable: a {{ $N }} is discarded, never archived.
-func (p *{{ $N }}Pointers) Archive(context.Context, int64) error {
+func (p *{{ $N }}Pointers) Archive(context.Context, int64, time.Time) error {
 	return ErrNotArchivable
 }
 
@@ -219,8 +219,8 @@ func (p *{{ $N }}Pointers) Unarchive(context.Context, int64) error {
 }
 
 // Discard removes the {{ $N }} for good: it leaves the lists and is still read by id.
-func (p *{{ $N }}Pointers) Discard(ctx context.Context, id int64) error {
-	return p.t.Discard(ctx, id)
+func (p *{{ $N }}Pointers) Discard(ctx context.Context, id int64, at time.Time) error {
+	return p.t.Discard(ctx, id, at)
 }
 {{- end }}
 {{ end }}

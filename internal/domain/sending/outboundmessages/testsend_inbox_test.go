@@ -3,6 +3,7 @@ package outboundmessages_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,8 +17,14 @@ import (
 
 // Globex has no verified Sending domain; Jane is its owner.
 func globexTestSend(env *testhelper.TestEnv, via senders, to string) (outboundmessages.Result, error) {
-	m := outboundmessages.New(env.Bus, env.Holds, via, messagetoken.New("test-secret", "http://local"),
-		outboundmessages.WithSystemSender(env.SystemMail))
+	m := outboundmessages.New(
+		env.Bus,
+		env.Holds,
+		via,
+		messagetoken.New("test-secret", "http://local", time.Now),
+		time.Now,
+		outboundmessages.WithSystemSender(env.SystemMail),
+	)
 	return m.SendTest(context.Background(), env.DB.Scoped(fixtures.GlobexID), outboundmessages.TestRequest{
 		To:      to,
 		Content: outboundmessages.EmailContent{Subject: "[Test] Hi", Body: htmlBody},

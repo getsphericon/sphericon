@@ -3,6 +3,7 @@ package automations_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -69,7 +70,7 @@ func TestAnEnrollmentNoEventBeganKeepsNoCopy(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	runID, _, err := automations.Enroll(ctx, env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
+	runID, _, err := automations.Enroll(ctx, env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID, time.Now())
 	require.NoError(t, err)
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
 	require.NoError(t, err)

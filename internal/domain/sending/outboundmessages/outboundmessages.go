@@ -284,12 +284,7 @@ func WithSystemSender(s messaging.EmailSender) Option { return func(m *Module) {
 // WithTestSendBudget caps the Test sends made from the System sender.
 func WithTestSendBudget(b TestSendBudget) Option { return func(m *Module) { m.testBudget = b } }
 
-// WithClock gives the module the clock it reads for the Provider limit's token buckets, the claim
-// lease and the moment a message is recorded sent. The Instance passes its own clock (app.Clock);
-// without the option the module reads the wall clock. Tests move it instead of waiting.
-func WithClock(now func() time.Time) Option { return func(m *Module) { m.now = now } }
-
-// Now reads the module's clock (WithClock): the moment a Deferral's Wait is measured from, so a
+// Now reads the module's clock (New's now): the moment a Deferral's Wait is measured from, so a
 // caller that records when the deferred send is due uses the same clock.
 func (m *Module) Now() time.Time { return m.now() }
 
@@ -299,9 +294,11 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 	return m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
 }
 
-// New builds the module. tracker may be nil only if no marketing Request is sent.
-func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoken.Tracker, opts ...Option) *Module {
-	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease, now: time.Now}
+// New builds the module. tracker may be nil only if no marketing Request is sent. now is the
+// Instance clock (app.Clock) the module reads for the Provider limit's token buckets, the claim
+// lease and the moment a message is recorded sent; tests move it instead of waiting.
+func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoken.Tracker, now func() time.Time, opts ...Option) *Module {
+	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease, now: now}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	for _, o := range opts {
 		o(m)

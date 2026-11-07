@@ -26,7 +26,9 @@ func signed(t *testing.T, claims jwt.MapClaims) string {
 	return tok
 }
 
-func newTracker() *messagetoken.Tracker { return messagetoken.New(forgeSecret, "https://app.test") }
+func newTracker() *messagetoken.Tracker {
+	return messagetoken.New(forgeSecret, "https://app.test", time.Now)
+}
 
 func TestDecodeRejectsMalformedClaims(t *testing.T) {
 	tr := newTracker()
@@ -121,7 +123,7 @@ func TestDecodeConfirmRejectsMalformedClaims(t *testing.T) {
 }
 
 func TestURLsCarryDecodableTokens(t *testing.T) {
-	tr := messagetoken.New(forgeSecret, "https://app.test/")
+	tr := messagetoken.New(forgeSecret, "https://app.test/", time.Now)
 
 	u, err := tr.UnsubscribeURL(linktarget.Unsubscribe{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1})
 	require.NoError(t, err)

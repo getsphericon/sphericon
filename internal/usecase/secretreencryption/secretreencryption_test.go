@@ -3,6 +3,7 @@ package secretreencryption_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +47,7 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 
 	// An Enrollment stands on the first version of the Slack Automation (fixture), so editing its
 	// steps leaves that version as it was and adds a second: both hold sealed secrets.
-	_, err = automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule()).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &[]automationstep.Step{
+	_, err = automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &[]automationstep.Step{
 		{Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: "whsec_second_version"},
 	}})
 	require.NoError(t, err)
@@ -169,7 +170,7 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	// a draft with a header and a signing secret makes a third version. The Rule has Firings, so
 	// deleting it discards it and keeps every version for them.
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	module := rules.New(env.Cipher, env.Bus)
+	module := rules.New(env.Cipher, env.Bus, time.Now)
 	_, err = module.Update(ctx, acme, fixtures.RuleHTTPExecutionID, rules.UpdateInput{Actions: &[]rules.Action{{
 		Type: rules.ActionHTTP, URL: "https://hooks.example.test/rule", Body: "{}", Secret: "whsec_rule_draft",
 		Headers: []httpcall.Header{{Name: "Authorization", Value: "Bearer rule-draft"}},
@@ -183,7 +184,7 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	require.NoError(t, err)
 	retiredKeyset, err := secrets.Retire(rotatedKeyset)
 	require.NoError(t, err)
-	opener := rules.New(cipherFor(t, retiredKeyset), env.Bus)
+	opener := rules.New(cipherFor(t, retiredKeyset), env.Bus, time.Now)
 
 	versions, err := env.DB.RuleVersion.Query().Where(ruleversion.RuleID(fixtures.RuleHTTPExecutionID)).All(ctx)
 	require.NoError(t, err)

@@ -92,8 +92,9 @@ func (a *Module) AcceptInvitation(ctx context.Context, inv *ent.Invitation, in I
 // sets up the account of an address no Verified User holds; a caller that accepts for a Verified
 // User by its proof of the address (sessionEmail) passes none.
 func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub events.Publisher, inv *ent.Invitation, account newAccount, sessionEmail string) error {
+	at := a.now()
 	role := membership.Role(inv.Role)
-	u, proven, err := invitee(ctx, tx, a.passwords, inv, account, sessionEmail)
+	u, proven, err := invitee(ctx, tx, a.passwords, inv, account, sessionEmail, at)
 	if err != nil {
 		return err
 	}
@@ -120,7 +121,7 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 		}
 	}
 
-	if err := invitations.MarkAcceptedIn(ctx, ts, inv.ID); err != nil {
+	if err := invitations.MarkAcceptedIn(ctx, ts, inv.ID, at); err != nil {
 		return err
 	}
 	if proven.byInvitation {
@@ -160,13 +161,13 @@ type acceptProof struct {
 // invitee resolves the User an Invitation is accepted by: a Verified User by their own session,
 // any other address by the account the link's holder sets up (ADR 0030), with the Consent
 // records of its answers (ADR 0062).
-func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, account newAccount, sessionEmail string) (*ent.User, acceptProof, error) {
+func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, account newAccount, sessionEmail string, at time.Time) (*ent.User, acceptProof, error) {
 	u, err := tx.User.Query().Where(user.EmailEqualFold(inv.Email)).Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, acceptProof{}, err
 	}
 	if err == nil && u.EmailVerifiedAt != nil {
-		now, err := proveByOwnSession(ctx, tx, u, inv.Email, sessionEmail)
+		now, err := proveByOwnSession(ctx, tx, u, inv.Email, sessionEmail, at)
 		return u, acceptProof{now: now}, err
 	}
 	name := strings.TrimSpace(account.name)
@@ -188,11 +189,11 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 			SetName(name).
 			SetEmail(inv.Email).
 			SetPasswordHash(hash).
-			SetEmailVerifiedAt(time.Now()).
-			SetEmailProvenAt(time.Now()).
+			SetEmailVerifiedAt(at).
+			SetEmailProvenAt(at).
 			Save(ctx)
 	} else {
-		u, err = MarkVerifiedIn(ctx, tx, u.ID, name, &hash)
+		u, err = MarkVerifiedIn(ctx, tx, u.ID, name, &hash, at)
 		if err == nil {
 			// The person who signed up is an invitee now, not a public Sign-up.
 			err = clearSurveyDue(ctx, tx, u.ID)
@@ -211,14 +212,14 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 // (ADR 0030). The invitation reached the address, and its owner's session accepted it. Only a
 // stamp from empty is a proof (rows changed): an already proven address triggers nothing about
 // domain join.
-func proveByOwnSession(ctx context.Context, tx *ent.Client, u *ent.User, invitedEmail, sessionEmail string) (bool, error) {
+func proveByOwnSession(ctx context.Context, tx *ent.Client, u *ent.User, invitedEmail, sessionEmail string, at time.Time) (bool, error) {
 	if sessionEmail == "" {
 		return false, ErrSignInRequired
 	}
 	if !strings.EqualFold(sessionEmail, invitedEmail) {
 		return false, ErrWrongAccount
 	}
-	n, err := tx.User.Update().Where(user.ID(u.ID), user.EmailProvenAtIsNil()).SetEmailProvenAt(time.Now()).Save(ctx)
+	n, err := tx.User.Update().Where(user.ID(u.ID), user.EmailProvenAtIsNil()).SetEmailProvenAt(at).Save(ctx)
 	return n > 0, err
 }
 

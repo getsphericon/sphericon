@@ -416,7 +416,11 @@ func (a *App) UnsuspendWorkspace(ctx context.Context, publicID string, by suspen
 	if err != nil {
 		return false, err
 	}
-	return suspension.UnsuspendWorkspace(ctx, bus, id, by)
+	now, err := do.Invoke[Clock](a.injector)
+	if err != nil {
+		return false, err
+	}
+	return suspension.UnsuspendWorkspace(ctx, bus, id, by, now())
 }
 
 // ResetSecondFactor clears the Second factor and Recovery codes of the User with

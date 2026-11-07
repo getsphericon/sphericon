@@ -40,6 +40,8 @@ type Module struct {
 	bus       *events.Bus
 	passwords *credentials.Hasher
 	consents  Consents
+	// now is the Instance clock an address is verified and proven by, and a Sign-up ages by.
+	now func() time.Time
 }
 
 // Consents answers a form's answers against the Sign-up items in effect: the Consent records they
@@ -55,9 +57,9 @@ type Option func(*Module)
 
 // New builds Module over the ent client; the bus opens the transactions that
 // span several writes, passwords hashes the passwords a User sets, and consents answers the
-// Sign-up items an account set up from an Invitation is asked (ADR 0062).
-func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, consents Consents, opts ...Option) *Module {
-	a := &Module{ent: client, bus: bus, passwords: passwords, consents: consents}
+// Sign-up items an account set up from an Invitation is asked (ADR 0062). now is the Instance clock.
+func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, consents Consents, now func() time.Time, opts ...Option) *Module {
+	a := &Module{ent: client, bus: bus, passwords: passwords, consents: consents, now: now}
 	for _, opt := range opts {
 		opt(a)
 	}
@@ -138,7 +140,7 @@ func (a *Module) CreateUnverified(ctx context.Context, n NewUser) (*ent.User, er
 	var created *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		u, err := tx.User.Create().SetName(n.Name).SetEmail(n.Email).SetPasswordHash(n.PasswordHash).
-			SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue)).Save(ctx)
+			SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue, a.now())).Save(ctx)
 		if err != nil {
 			return err
 		}
@@ -180,7 +182,7 @@ func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash strin
 	var u *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		var err error
-		u, err = tx.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
+		u, err = tx.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(a.now()).Save(ctx)
 		return err
 	})
 	return u, err
@@ -191,11 +193,11 @@ func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash strin
 // not nil (nil keeps the stored one) and the name when not empty. The write lands only on a still-Unverified User, so of two
 // racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
 // nothing.
-func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string) (*ent.User, error) {
+func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string, at time.Time) (*ent.User, error) {
 	upd := tx.User.Update().
 		Where(user.ID(id), user.EmailVerifiedAtIsNil()).
-		SetEmailVerifiedAt(time.Now()).
-		SetEmailProvenAt(time.Now()).
+		SetEmailVerifiedAt(at).
+		SetEmailProvenAt(at).
 		AddSessionEpoch(1)
 	if passwordHash != nil {
 		upd = upd.SetPasswordHash(*passwordHash)
@@ -226,13 +228,13 @@ const FirstWorkspaceName = "Personal"
 // checked the name (CheckName) and creates the first Workspace on the same transaction
 // (internal/usecase/workspacecreation). The unique index on the email refuses a taken address
 // (see db.IsUniqueViolation).
-func CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser) (*ent.User, error) {
+func CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser, at time.Time) (*ent.User, error) {
 	u, err := tx.User.Create().
 		SetName(n.Name).
 		SetEmail(n.Email).
 		SetPasswordHash(n.PasswordHash).
-		SetEmailVerifiedAt(time.Now()).
-		SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue)).
+		SetEmailVerifiedAt(at).
+		SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue, at)).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -264,7 +266,7 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 		// so the write is guarded and its rows-changed count says whether it stamped (ADR 0051).
 		stamped := false
 		if proven {
-			n, err := tx.User.Update().Where(user.ID(id), user.EmailProvenAtIsNil()).SetEmailProvenAt(time.Now()).Save(ctx)
+			n, err := tx.User.Update().Where(user.ID(id), user.EmailProvenAtIsNil()).SetEmailProvenAt(a.now()).Save(ctx)
 			if err != nil {
 				return err
 			}
@@ -386,7 +388,7 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 // db.IsUniqueViolation).
 func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) error {
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		now := time.Now()
+		now := a.now()
 		u, err := tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
 		if err != nil {
 			return err

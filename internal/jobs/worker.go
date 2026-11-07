@@ -6,6 +6,7 @@ package jobs
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -86,7 +87,7 @@ type Deps struct {
 	JoinDomains     *joindomains.Module
 	TrackingDomains *trackingdomains.Module
 	Machine         *privaterelayranges.Detector
-	// Clock is the Instance's clock; nil is time.Now.
+	// Clock is the Instance's clock (app.Clock), which every worker reads; NewClient refuses none.
 	Clock func() time.Time
 	// AppURL is the public origin of the links in account emails (reset, verify, change).
 	AppURL string
@@ -111,7 +112,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	entClient, mod, bus, cipher, systemSender, appURL := deps.Ent, deps.Outbound, deps.Bus, deps.Cipher, deps.SystemSender, deps.AppURL
 	now := deps.Clock
 	if now == nil {
-		now = time.Now
+		return nil, errors.New("jobs: Deps.Clock is required: the workers read the Instance clock")
 	}
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
@@ -129,7 +130,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewAuthMailWorker(systemSender, appURL))
 	river.AddWorker(workers, NewMemberInviteWorker(systemSender))
 	river.AddWorker(workers, NewNotifySecondFactorRequiredWorker(entClient, systemSender, appURL))
-	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
+	river.AddWorker(workers, NewRemindSecondFactorWorker(entClient, systemSender, appURL, now))
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomainVerification))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
@@ -139,11 +140,11 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
 	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
-	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, cipher, deps.Catalog))
-	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient))
+	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, cipher, deps.Catalog, now))
+	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
-	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events))
-	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages))
+	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events, now))
+	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages, now))
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, now))
 	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))

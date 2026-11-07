@@ -8,6 +8,7 @@ package integrationdeletion
 
 import (
 	"context"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -24,12 +25,13 @@ import (
 type UseCase struct {
 	bus          *events.Bus
 	integrations *integrations.Module
+	now          func() time.Time
 }
 
 // New builds the Integration deletion use case over the Integrations module, which reads the row
-// and releases a deleted Telegram bot's webhook.
-func New(bus *events.Bus, integs *integrations.Module) *UseCase {
-	return &UseCase{bus: bus, integrations: integs}
+// and releases a deleted Telegram bot's webhook; now is the Instance clock.
+func New(bus *events.Bus, integs *integrations.Module, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, integrations: integs, now: now}
 }
 
 // Delete discards an Integration for good (ADR 0049): it leaves the lists and is never restored,
@@ -59,7 +61,7 @@ func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 			return &liveuse.Error{What: liveuse.SubjectIntegration, Users: users}
 		}
 		released = row
-		return integrations.DeleteIn(ctx, ts, row)
+		return integrations.DeleteIn(ctx, ts, row, u.now())
 	})
 	if err != nil {
 		return err

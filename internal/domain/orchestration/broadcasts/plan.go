@@ -47,8 +47,8 @@ var ErrPlanFailed = errors.New("broadcasts: the plan failed the broadcast")
 
 // failPlan moves the Broadcast to failed and reports cause as ErrPlanFailed. If the move
 // itself fails the error carries no ErrPlanFailed, so the caller retries until it is recorded.
-func failPlan(ctx context.Context, s *ent.Scoped, id int64, cause error) error {
-	if err := fail(ctx, s, id); err != nil {
+func failPlan(ctx context.Context, s *ent.Scoped, id int64, cause error, at time.Time) error {
+	if err := fail(ctx, s, id, at); err != nil {
 		return errors.Join(cause, err)
 	}
 	return fmt.Errorf("%w: %w", ErrPlanFailed, cause)
@@ -167,7 +167,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	// Content that cannot render would fail every recipient: fail the broadcast once, here,
 	// before any recipient row exists (ADR 0015).
 	if verr := renderable(content); verr != nil {
-		return nil, failPlan(ctx, s, b.ID, fmt.Errorf("broadcast %d: content does not render: %w", b.ID, verr))
+		return nil, failPlan(ctx, s, b.ID, fmt.Errorf("broadcast %d: content does not render: %w", b.ID, verr), d.out.Now())
 	}
 
 	// The Broadcast is read again: begin has taken the copy of a draft's Condition. An audience
@@ -176,9 +176,9 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", b.ID, err)
 	}
-	audience, err := audienceOf(ctx, s, armed)
+	audience, err := audienceOf(ctx, s, armed, d.out.Now())
 	if errors.Is(err, ErrNoAudience) {
-		return nil, failPlan(ctx, s, b.ID, err)
+		return nil, failPlan(ctx, s, b.ID, err, d.out.Now())
 	}
 	if err != nil {
 		return nil, err
@@ -217,7 +217,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	}
 
 	if len(ids) == 0 {
-		if err := Finalize(ctx, s, b.ID); err != nil {
+		if err := Finalize(ctx, s, b.ID, d.out.Now()); err != nil {
 			return nil, err
 		}
 	}
@@ -280,12 +280,12 @@ func destinationFor(ctx context.Context, s *ent.Scoped, channel channels.Channel
 // all) a Broadcast on the Channel would take if it ran now, through the Integration it names (nil:
 // the Channel's default): the audience of its plan, so the Contacts with an eligible Destination on
 // that Channel. It is the audience the plan takes, asked before a Broadcast exists.
-func RecipientsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64, cond string) (int, error) {
+func RecipientsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64, cond string, now time.Time) (int, error) {
 	dest, err := destinationFor(ctx, s, channel, integrationID)
 	if err != nil {
 		return 0, err
 	}
-	pred, err := condition.ContactPredicate(ctx, s, cond)
+	pred, err := condition.ContactPredicate(ctx, s, cond, now)
 	if err != nil {
 		return 0, fmt.Errorf("%w: %w", ErrNoAudience, err)
 	}
@@ -299,7 +299,7 @@ func RecipientsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, 
 // unsubscribed from the "broadcasts" source (or from everything) are excluded at the query level.
 // A Contact without a Destination (on Telegram, an eligible Binding on the routed Integration) is left out, so no row is created that could never send and
 // would block finalization forever.
-func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*ent.ContactQuery, error) {
+func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (*ent.ContactQuery, error) {
 	dest, err := destinationOf(ctx, s, b)
 	if err != nil {
 		return nil, err
@@ -311,7 +311,7 @@ func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*ent.Cont
 	if b.Condition == nil {
 		return nil, fmt.Errorf("%w: broadcast %d: the condition of segment %d was not copied", ErrNoAudience, b.ID, *b.SegmentID)
 	}
-	pred, err := condition.ContactPredicate(ctx, s, *b.Condition)
+	pred, err := condition.ContactPredicate(ctx, s, *b.Condition, now)
 	if err != nil {
 		return nil, fmt.Errorf("%w: broadcast %d condition: %w", ErrNoAudience, b.ID, err)
 	}
@@ -319,10 +319,10 @@ func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*ent.Cont
 }
 
 // AudienceSize is how many Contacts the plan of the Broadcast b, which has left draft, would take
-// if it ran now: an estimate for a scheduled Broadcast, whose audience is taken when it starts.
+// if it ran at now: an estimate for a scheduled Broadcast, whose audience is taken when it starts.
 // ErrNoAudience when its plan would fail it instead.
-func AudienceSize(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (int, error) {
-	audience, err := audienceOf(ctx, s, b)
+func AudienceSize(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (int, error) {
+	audience, err := audienceOf(ctx, s, b, now)
 	if err != nil {
 		return 0, err
 	}

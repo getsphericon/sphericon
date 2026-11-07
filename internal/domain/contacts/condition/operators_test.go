@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -79,7 +80,7 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 	} {
 		def, err := json.Marshal(opsGroup(rule("custom:"+key, "eq", "a")))
 		require.NoError(t, err)
-		_, err = condition.ContactPredicate(context.Background(), ws, string(def))
+		_, err = condition.ContactPredicate(context.Background(), ws, string(def), time.Now())
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "unknown custom field", name)
 	}
@@ -110,7 +111,7 @@ func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
 		"json prefix without a key":     {rule("custom:", "eq", "x"), "unknown field"},
 		"plain operator on json column": {rule("custom:plan", "null", ""), "for json field"},
 	} {
-		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule))
+		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule), time.Now())
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
@@ -138,7 +139,7 @@ func TestCompileRefusesAnEventLeafOutOfRange(t *testing.T) {
 		"a zero window":            {zeroWindow, "withinDays must be 1 or more"},
 		"a negative window":        {eventLeaf("signup", "atLeast", 1, -1), "withinDays must be 1 or more"},
 	} {
-		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.leaf))
+		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.leaf), time.Now())
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
@@ -151,33 +152,33 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	// A rules[] entry that is not an object at all.
-	_, err := condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`42`)}})
+	_, err := condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`42`)}}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// A nested group whose own rules are not a list.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// An entry whose kind is missing or unknown is refused, not guessed from its fields.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown rule kind")
 
 	// An unknown combinator is refused, not read as "and".
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "xor"})
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "xor"}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown combinator")
 
 	// An error deep in a nested group is reported with its path.
 	nested := opsGroup(opsGroup(rule("password", "eq", "x")))
-	_, err = condition.Compile(ctx, ws, nested)
+	_, err = condition.Compile(ctx, ws, nested, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rule 0: rule 0: unknown field")
 }
@@ -187,14 +188,14 @@ func TestContactPredicateRefusesInvalidConditions(t *testing.T) {
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := condition.ContactPredicate(ctx, ws, "{not json")
+	_, err := condition.ContactPredicate(ctx, ws, "{not json", time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid condition")
 
-	_, err = condition.ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
+	_, err = condition.ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`, time.Now())
 	require.Error(t, err)
 
-	p, err := condition.ContactPredicate(ctx, ws, "")
+	p, err := condition.ContactPredicate(ctx, ws, "", time.Now())
 	require.NoError(t, err)
 	assert.NotNil(t, p, "a blank definition matches everyone")
 }

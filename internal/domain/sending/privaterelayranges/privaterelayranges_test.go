@@ -26,7 +26,7 @@ func cancelled() context.Context {
 func detector(t *testing.T) *privaterelayranges.Detector {
 	t.Helper()
 	env := testhelper.Setup(t)
-	return privaterelayranges.New(env.DB, env.PrivateRelay)
+	return privaterelayranges.New(env.DB, env.PrivateRelay, time.Now)
 }
 
 // A table that cannot be read again keeps serving the last one that could: a database that hiccups

@@ -57,7 +57,7 @@ func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteToke
 	id := int64(params.ID)
 
 	// An unknown, foreign or already-revoked id is a 404.
-	err := apitokens.Revoke(ctx, scoped, id)
+	err := apitokens.Revoke(ctx, scoped, id, h.now())
 	if err != nil {
 		return err
 	}

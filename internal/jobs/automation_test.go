@@ -36,7 +36,7 @@ func passingClock() func() time.Time {
 
 // stepperOf is the Step execution use case over the sender resolver, its clock passing every wait.
 func stepperOf(env *testhelper.TestEnv, resolver outboundmessages.Senders) *stepexecution.UseCase {
-	return stepperAt(env, newMod(env, resolver), passingClock())
+	return stepperAt(env, newMod(env, resolver, time.Now), passingClock())
 }
 
 // stepperWith is the Step execution use case over mod, on the wall clock.
@@ -167,7 +167,7 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	queueStep(t, env, fixtures.AutomationRunJobsSingleEmailLiamID)
 
 	fs := &fakeSender{}
-	mod := outboundmessages.New(env.Bus, env.Holds, resolvingTo(fs), messagetoken.New("secret", "https://app.test"))
+	mod := outboundmessages.New(env.Bus, env.Holds, resolvingTo(fs), messagetoken.New("secret", "https://app.test", time.Now), time.Now)
 	env.RunQueuedSteps(t, stepperWith(env, mod))
 
 	require.Len(t, fs.sent, 1)
@@ -191,7 +191,7 @@ func TestAutomationWaitParksTheEnrollmentAndQueuesTheNextStepForTheResumeTime(t 
 	runID := enrollVia(t, env, fixtures.AutomationJobsWaitFirstID, fixtures.ContactAliceID)
 
 	fs := &fakeSender{}
-	require.True(t, env.RunNextStep(t, stepperWith(env, newMod(env, resolvingTo(fs)))))
+	require.True(t, env.RunNextStep(t, stepperWith(env, newMod(env, resolvingTo(fs), time.Now))))
 
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	require.NotNil(t, run.ResumeAt)
@@ -224,7 +224,7 @@ func TestAStepRunningBeforeTheResumeTimeQueuesItselfAndDoesNothingElse(t *testin
 	ctx := context.Background()
 	runID := enrollVia(t, env, fixtures.AutomationJobsWaitFirstID, fixtures.ContactAliceID)
 	fs := &fakeSender{}
-	mod := stepperWith(env, newMod(env, resolvingTo(fs)))
+	mod := stepperWith(env, newMod(env, resolvingTo(fs), time.Now))
 
 	require.True(t, env.RunNextStep(t, mod)) // the wait
 	require.True(t, env.RunNextStep(t, mod)) // the email, delivered before the resume time
@@ -406,7 +406,7 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	mod := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	mod := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 
 	early := enrollVia(t, env, fixtures.AutomationJobsEditableID, fixtures.ContactAliceID)
 	// The first step (the wait) runs; the Enrollment now stands on the email step.

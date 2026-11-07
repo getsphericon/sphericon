@@ -60,7 +60,7 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.AuthTokensDeleteParams) error {
 	id := int64(params.ID)
 
-	err := apitokens.Revoke(ctx, auth.TokenScoped(ctx), id)
+	err := apitokens.Revoke(ctx, auth.TokenScoped(ctx), id, h.now())
 	if err != nil {
 		return err
 	}

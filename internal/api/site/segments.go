@@ -112,7 +112,7 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 	// A Broadcast form asks for the recipients its Channel would take: the audience of its plan,
 	// not the Segment's whole match.
 	if channel, ok := req.Channel.Get(); ok {
-		recipients, err := broadcasts.RecipientsOf(ctx, ws, inputs.BroadcastChannel(channel), convert.Int64Ptr(req.IntegrationId), lo.FromPtr(def))
+		recipients, err := broadcasts.RecipientsOf(ctx, ws, inputs.BroadcastChannel(channel), convert.Int64Ptr(req.IntegrationId), lo.FromPtr(def), h.now())
 		if err != nil {
 			return nil, err
 		}

@@ -56,11 +56,8 @@ import (
 // internal listener.
 func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, detector *privaterelayranges.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
-	// The Instance clock of the use cases built here; a Deps without one (a test) reads the wall clock.
+	// The Instance clock of the use cases built here (required, as the site handlers require it).
 	now := site.Clock
-	if now == nil {
-		now = time.Now
-	}
 	mux := http.NewServeMux()
 
 	// Login and logout are /site operations (ADR 0020), and the login operation is
@@ -119,7 +116,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(
-		apicollect.NewHandlers(bus, site.Bindings, visitoridentification.New(bus)),
+		apicollect.NewHandlers(bus, site.Bindings, visitoridentification.New(bus, site.Clock), site.Clock),
 		apiauth.NewCollectSecurityHandler(client),
 		collectapi.WithPathPrefix(collectPrefix),
 		collectapi.WithErrorHandler(problem.ErrorHandler),

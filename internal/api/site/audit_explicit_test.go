@@ -155,9 +155,9 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report", time.Now())
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"))
+	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), time.Now())
 	require.NoError(t, err)
 
 	for _, action := range []string{events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend} {
@@ -177,7 +177,7 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 
 func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.System, "complaint rate")
+	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.System, "complaint rate", time.Now())
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
@@ -187,7 +187,7 @@ func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 
 func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "abuse")
+	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "abuse", time.Now())
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
@@ -200,9 +200,9 @@ func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "first")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "first", time.Now())
 	require.NoError(t, err)
-	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "second")
+	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "second", time.Now())
 	require.NoError(t, err)
 	require.False(t, changed)
 
@@ -267,9 +267,9 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.AcmePublicID}) // workspace.restore
 	require.NoError(t, err)
-	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse") // workspace.suspend
+	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse", time.Now()) // workspace.suspend
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42")) // workspace.unsuspend
+	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), time.Now()) // workspace.unsuspend
 	require.NoError(t, err)
 	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), true) // workspace.abuse_exempt
 	require.NoError(t, err)
@@ -345,7 +345,7 @@ func recordAuditCallSites(t *testing.T) []string {
 func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report", time.Now())
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)

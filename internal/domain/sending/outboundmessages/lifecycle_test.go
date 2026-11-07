@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,7 @@ func TestAFinalMessageIsNeverMarkedFailed(t *testing.T) {
 			Order(ent.Asc(outboundmessage.FieldID)).
 			FirstX(ctx)
 
-		require.NoError(t, newModule(env).MarkFailed(ctx, s, before.IdempotencyKey, errors.New("gave up")))
+		require.NoError(t, newModule(env, time.Now).MarkFailed(ctx, s, before.IdempotencyKey, errors.New("gave up")))
 
 		after := s.OutboundMessage().Query().Where(outboundmessage.ID(before.ID)).OnlyX(ctx)
 		assert.Equal(t, status, after.Status)

@@ -93,13 +93,13 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	mod := outboundmessages.New(env.Bus, env.Holds, nil, messagetoken.New("test-secret", "http://local"))
+	mod := outboundmessages.New(env.Bus, env.Holds, nil, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 	// The runtime's own mail: env.SystemMail works the test's queued mail jobs before a read, and
 	// this queue is the process's committed one.
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
 		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: env.Cipher, SystemSender: mail, Catalog: registry.Default(),
-		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,
+		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})
 	require.NoError(t, err)

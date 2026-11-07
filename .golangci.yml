@@ -167,6 +167,8 @@ linters:
           msg: a Versioned definition's pointers move only through internal/domain/content/versioneddefinition (ADR 0065); call the module's Update, Publish or Revert
         - pattern: ^time\.Sleep$
           msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
+        - pattern: ^time\.(Now|Since|Until)$
+          msg: the Instance reads one clock (app.Clock); take it as a func() time.Time or a time.Time from the caller instead of reading the wall clock
         - pattern: sql\.DB\)?\.(Exec|Query|QueryRow)(Context)?$
           msg: no direct SQL in tests; use ent (env.DB) or a testhelper abstraction (e.g. env.QueuedEnvelopes)
     depguard:
@@ -351,6 +353,20 @@ linters:
         linters:
           - forbidigo
         text: no direct SQL in tests
+      # The clock rule is for the Instance: a test, the harness, the fixtures, the end-to-end
+      # driver, the dev seed and an ent schema's row default read the wall clock (#1172).
+      - path: (_test\.go|^internal/testhelper/.*|^internal/fixtures/.*|^e2e/.*|^cmd/seed/.*|^ent/schema/.*)$
+        linters:
+          - forbidigo
+        text: the Instance reads one clock
+      # The reads of the wall clock the Instance keeps (#1172): the container provides app.Clock
+      # from it; the access log and the document runtime measure a duration on it; httprate's
+      # windows run on it, so its reset header counts from it; the doctor and a CLI command run
+      # outside the container and default to it.
+      - path: ^(internal/app/container\.go|internal/server/accesslog\.go|internal/kernel/emaildoc/emaildoc\.go|internal/infra/ratelimit/ratelimit\.go|internal/doctor/diagnose\.go|cmd/server/(cli|preset)\.go)$
+        linters:
+          - forbidigo
+        text: the Instance reads one clock
       # internal/domain/content/versioneddefinition is the one place the pointers of a Versioned definition move
       # (ADR 0065).
       - path: ^internal/domain/content/versioneddefinition/

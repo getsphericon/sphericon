@@ -3,6 +3,7 @@ package broadcasts_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -19,7 +21,9 @@ import (
 // cancelFor runs CancelPending for a Contact the way Erasure does.
 func cancelFor(t *testing.T, env *testhelper.TestEnv, contactID int64) error {
 	t.Helper()
-	return env.CancelPendingFor(t, contactID, broadcasts.CancelPending)
+	return env.CancelPendingFor(t, contactID, func(ctx context.Context, s *ent.Scoped, id int64, purger events.QueuePurger) error {
+		return broadcasts.CancelPending(ctx, s, id, purger, time.Now())
+	})
 }
 
 func recipientGone(env *testhelper.TestEnv, id int64) bool {

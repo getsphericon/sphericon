@@ -18,7 +18,7 @@ import (
 
 func pruneCaptured(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
-	w := jobs.NewPruneCapturedMessagesWorker(env.DB, retention)
+	w := jobs.NewPruneCapturedMessagesWorker(env.DB, retention, time.Now)
 	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneCapturedMessagesArgs]{JobRow: &rivertype.JobRow{}}))
 }
 

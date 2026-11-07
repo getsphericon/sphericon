@@ -34,7 +34,7 @@ func (h *Handlers) SitePersonalTokensCreate(ctx context.Context, req *siteapi.Si
 // SitePersonalTokensDelete revokes a Personal token: the caller's own, or anyone's with
 // members:manage.
 func (h *Handlers) SitePersonalTokensDelete(ctx context.Context, params siteapi.SitePersonalTokensDeleteParams) error {
-	return apitokens.RevokePersonal(ctx, workspaceScope(ctx), callerMembership(ctx), int64(params.ID))
+	return apitokens.RevokePersonal(ctx, workspaceScope(ctx), callerMembership(ctx), int64(params.ID), h.now())
 }
 
 // SitePersonalTokensGrantableScopes returns the scopes the caller's Role may give a Personal token.

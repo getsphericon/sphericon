@@ -3,6 +3,7 @@ package automations_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +26,7 @@ func telegramVia(id *int64, text string) automationstep.Step {
 func TestPublishIsRefusedForATelegramStepThatCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	email := int64(fixtures.IntegrationAcmeDefaultID)
 	cases := map[string]*int64{
 		"no default Telegram Integration":   nil,
@@ -48,7 +49,7 @@ func TestPublishIsRefusedForATelegramStepThatCannotSend(t *testing.T) {
 func TestPublishIsRefusedForATextOverTheLimitAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
 		Steps: &[]automationstep.Step{telegramVia(nil, strings.Repeat("a", 4097))},
 	})
@@ -63,7 +64,7 @@ func TestPublishIsRefusedForATextOverTheLimitAsWritten(t *testing.T) {
 func TestATelegramStepNeedsATextThatRenders(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	for name, text := range map[string]string{"blank": "  ", "bad Liquid": "{% if %}"} {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
@@ -78,7 +79,7 @@ func TestATelegramStepNeedsATextThatRenders(t *testing.T) {
 func TestTelegramBoundTriggersExitsAndCompletesButTelegramSentDoesNot(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	goal := "telegram.unbound"
 
 	created, err := m.Create(t.Context(), s, automations.CreateInput{
@@ -99,7 +100,7 @@ func TestTelegramBoundTriggersExitsAndCompletesButTelegramSentDoesNot(t *testing
 func TestPublishIsRefusedForACaptionOverTheLimitAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	step := telegramVia(nil, strings.Repeat("a", 1025))
 	step.ImageURL = "https://cdn.example.com/a.png"
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{step}})
@@ -114,7 +115,7 @@ func TestPublishIsRefusedForACaptionOverTheLimitAsWritten(t *testing.T) {
 func TestATelegramStepRefusesABadImageAndBadButtons(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	cases := map[string]func(*automationstep.Step){
 		"an http image": func(st *automationstep.Step) { st.ImageURL = "http://cdn.example.com/a.png" },
 		"a blank label": func(st *automationstep.Step) {

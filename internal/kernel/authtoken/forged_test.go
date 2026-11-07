@@ -2,6 +2,7 @@ package authtoken_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,7 @@ func forge(t *testing.T, claims jwt.MapClaims) string {
 // The binding is looked up from the claimed uid, so a token without a usable uid must
 // be refused before any lookup happens.
 func TestParseRejectsTokensWithoutAUsableUserID(t *testing.T) {
-	s := authtoken.New(secret)
+	s := authtoken.New(secret, time.Now)
 	lookups := 0
 	binding := func(int64) (string, error) { lookups++; return "b", nil }
 	exp := int64(4102444800)
@@ -41,7 +42,7 @@ func TestParseRejectsTokensWithoutAUsableUserID(t *testing.T) {
 }
 
 func TestParseRejectsGarbageAndUnsignedTokens(t *testing.T) {
-	s := authtoken.New(secret)
+	s := authtoken.New(secret, time.Now)
 	_, _, err := s.Parse("not.a.jwt", authtoken.PurposeEmailVerify, constBinding("b"))
 	require.Error(t, err)
 

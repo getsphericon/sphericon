@@ -3,6 +3,7 @@ package segments_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ import (
 
 func TestListPagesTheWorkspaceSegmentsAscendingByID(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
+	m := segments.New(env.Bus, time.Now)
 
 	all, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, false)
 	require.NoError(t, err)

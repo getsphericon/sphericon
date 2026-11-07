@@ -27,11 +27,11 @@ type SchemaWatch struct {
 	until   time.Time
 }
 
-// NewSchemaWatch watches sqlDB against the embedded migrations.
-func NewSchemaWatch(sqlDB *sql.DB) *SchemaWatch {
+// NewSchemaWatch watches sqlDB against the embedded migrations, on the Instance clock now.
+func NewSchemaWatch(sqlDB *sql.DB, now func() time.Time) *SchemaWatch {
 	return WatchSchema(func(ctx context.Context) (int, error) {
 		return pendingMigrations(ctx, sqlDB)
-	}, time.Now)
+	}, now)
 }
 
 // WatchSchema is NewSchemaWatch over any count of pending migrations and any clock.

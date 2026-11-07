@@ -252,9 +252,9 @@ type Deps struct {
 	SignUp *signup.UseCase
 	// Passkeys registers a User's Passkeys (ADR 0052).
 	Passkeys *passkeys.Module
-	// Clock is the time the site session's expiry and a Two-factor requirement's
-	// grace are checked against (ADR 0020); nil means time.Now. Tests inject one to
-	// move past a session's lifetime or a grace period.
+	// Clock is the Instance clock (app.Clock) the handlers read: the site session's expiry and a
+	// Two-factor requirement's grace among others (ADR 0020). Required; tests inject one to move
+	// past a session's lifetime or a grace period.
 	Clock func() time.Time
 	// AccountLink mints the Owner's Account link token; nil when the installation is
 	// not configured for it, which leaves the operation answering 404.
@@ -291,7 +291,7 @@ type Migrations interface {
 func NewHandlers(d *Deps) *Handlers {
 	now := d.Clock
 	if now == nil {
-		now = time.Now
+		panic("site: Deps.Clock is required: the handlers read the Instance clock")
 	}
 	h := &Handlers{
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
@@ -301,7 +301,7 @@ func NewHandlers(d *Deps) *Handlers {
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
-		challenges: d.Tokens.WithClock(d.Clock),
+		challenges: d.Tokens,
 	}
 	h.login = h.newLogin()
 	return h

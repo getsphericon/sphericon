@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,7 +28,7 @@ func logged(t *testing.T, running string, src releasecheck.ReleaseSource) (*rele
 	env := testhelper.Setup(t)
 	buf := &bytes.Buffer{}
 	log := slog.New(slog.NewTextHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	states := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: running}, nil)
+	states := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: running}, time.Now)
 	mod := releasecheck.New(states, src, log)
 	return mod, buf
 }

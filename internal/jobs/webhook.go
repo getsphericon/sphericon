@@ -49,7 +49,7 @@ func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer we
 		cipher: cipher,
 		client: doer,
 		now:    now,
-		mod:    webhookendpoints.New(bus, cipher, nil, nil, memberships.OwnerNotifier(client, sender)),
+		mod:    webhookendpoints.New(bus, cipher, nil, nil, memberships.OwnerNotifier(client, sender), now),
 	}
 }
 
@@ -73,7 +73,7 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if err != nil {
 		return err
 	}
-	sendErr := webhook.Send(ctx, w.client, e.URL, string(secret), job.Args.EventName, job.Args.DeliveryID, job.Args.Body)
+	sendErr := webhook.Send(ctx, w.client, e.URL, string(secret), job.Args.EventName, job.Args.DeliveryID, job.Args.Body, w.now())
 	if err := w.mod.RecordDelivery(ctx, w.ent.Scoped(e.WorkspaceID), e, sendErr, w.now()); err != nil {
 		return err
 	}

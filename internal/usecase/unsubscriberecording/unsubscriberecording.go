@@ -55,12 +55,13 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 	}
 	channel := target.Channel
 	automationID, isAutomation := eligibility.ParseAutomationSource(target.Source)
+	at := u.now()
 
 	// The Workspace comes from the signed unsubscribe token (no membership or api
 	// token here), so this is a scope source outside the site/external/job list.
 	return settled(u.bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
 		if target.Channel == channels.SMS {
-			return recordSMSLink(ctx, sc, target, dest)
+			return recordSMSLink(ctx, sc, target, dest, u.now())
 		}
 		exists, err := unsubscribes.Exists(ctx, sc, channel, dest, target.Source)
 		if err != nil || exists {
@@ -88,7 +89,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 
 		// Broadcast attribution: the triggering Broadcast counts the recipient's unsubscribe.
 		if target.BroadcastID != 0 && target.ContactID != 0 {
-			if _, err := broadcasts.RecordUnsubscribe(ctx, sc, target.BroadcastID, target.ContactID); err != nil {
+			if _, err := broadcasts.RecordUnsubscribe(ctx, sc, target.BroadcastID, target.ContactID, at); err != nil {
 				return err
 			}
 		}
@@ -118,7 +119,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 // number's Channel-wide one (ADR 0077), whatever source the link names, with the same effects as a
 // STOP (channelstop.StopSMS), and the Broadcast the text came from counts it. The Automation's Enrollment
 // goes on: its next text is Skipped like any other, and a step on another Channel still runs.
-func recordSMSLink(ctx context.Context, sc *ent.Scoped, target linktarget.Unsubscribe, number string) error {
+func recordSMSLink(ctx context.Context, sc *ent.Scoped, target linktarget.Unsubscribe, number string, at time.Time) error {
 	before, err := unsubscribes.SMSOptOut(ctx, sc, number)
 	if err != nil || before != nil {
 		return err
@@ -127,7 +128,7 @@ func recordSMSLink(ctx context.Context, sc *ent.Scoped, target linktarget.Unsubs
 		return err
 	}
 	if target.BroadcastID != 0 && target.ContactID != 0 {
-		if _, err := broadcasts.RecordUnsubscribe(ctx, sc, target.BroadcastID, target.ContactID); err != nil {
+		if _, err := broadcasts.RecordUnsubscribe(ctx, sc, target.BroadcastID, target.ContactID, at); err != nil {
 			return err
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func TestRefreshQuotaStoresTheProviderValuesAndFeedsTheCeiling(t *testing.T) {
 	ses := &testhelper.FakeSES{}
 	ses.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.Equal(t, new(14), row.ProviderMaxPerSecond)
@@ -57,7 +58,7 @@ func TestRefreshQuotaFailureKeepsManualOrUnlimitedAndRecordsAWarning(t *testing.
 	require.NoError(t, s.Integration().UpdateOneID(fixtures.IntegrationAcmeSesID).SetMaxPerDay(1000).Exec(t.Context()))
 	logs := captureLogs(t)
 
-	err := providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), reload(t, s, fixtures.IntegrationAcmeSesID))
+	err := providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), reload(t, s, fixtures.IntegrationAcmeSesID), time.Now())
 	require.NoError(t, err, "a failed lookup is recorded, never returned: it must not fail a save or a job")
 	logged := logs.String()
 	assert.Contains(t, logged, "provider send quota unavailable", "the operator sees why the warning is up")
@@ -78,10 +79,10 @@ func TestRefreshQuotaKeepsTheMomentOfTheFirstFailure(t *testing.T) {
 	ses := &testhelper.FakeSES{}
 	ses.SetQuotaErr(errors.New("AccessDenied"))
 	cipher, catalog := env.Cipher, ses.Catalog()
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 	first := reload(t, s, fixtures.IntegrationAcmeSesID)
 
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, first))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, first, time.Now()))
 
 	second := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.Equal(t, first.ProviderQuotaFailedAt, second.ProviderQuotaFailedAt, "a further failure keeps the first moment")
@@ -95,11 +96,11 @@ func TestRefreshQuotaSuccessAfterFailureClearsTheWarning(t *testing.T) {
 	ses.SetQuotaErr(errors.New("AccessDenied"))
 	cipher, catalog := env.Cipher, ses.Catalog()
 
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 	require.NotNil(t, reload(t, s, fixtures.IntegrationAcmeSesID).ProviderQuotaFailedAt)
 
 	ses.SetQuota(messaging.Quota{PerSecond: new(1)})
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.Nil(t, row.ProviderQuotaFailedAt)
@@ -113,10 +114,10 @@ func TestRefreshQuotaFailureKeepsTheLastKnownProviderValues(t *testing.T) {
 	ses := &testhelper.FakeSES{}
 	ses.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	cipher, catalog := env.Cipher, ses.Catalog()
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	ses.SetQuotaErr(errors.New("timeout"))
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.NotNil(t, row.ProviderQuotaFailedAt)
@@ -128,7 +129,7 @@ func TestRefreshQuotaIgnoresProvidersThatCannotReportOne(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ses := &testhelper.FakeSES{}
 
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), reload(t, s, fixtures.IntegrationAcmeDefaultID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), reload(t, s, fixtures.IntegrationAcmeDefaultID), time.Now()))
 
 	row := reload(t, s, fixtures.IntegrationAcmeDefaultID)
 	assert.Nil(t, row.ProviderQuotaFailedAt, "SMTP has no quota to fail")
@@ -141,14 +142,14 @@ func TestRefreshQuotaClearsAProviderValueTheProviderStoppedReporting(t *testing.
 	ses := &testhelper.FakeSES{}
 	cipher, catalog := env.Cipher, ses.Catalog()
 	ses.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	ses.SetQuota(messaging.Quota{PerSecond: new(14)})
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 	withoutDay := reload(t, s, fixtures.IntegrationAcmeSesID)
 
 	ses.SetQuota(messaging.Quota{PerDay: new(50000)})
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 	withoutSecond := reload(t, s, fixtures.IntegrationAcmeSesID)
 
 	assert.Nil(t, withoutDay.ProviderMaxPerDay, "a daily ceiling the provider no longer reports is lifted, not kept")
@@ -165,7 +166,7 @@ func TestRefreshQuotaReturnsAnErrorWhenTheStoredConfigCannotBeRead(t *testing.T)
 	integ := reload(t, s, fixtures.IntegrationAcmeSesID)
 	integ.ConfigEncrypted = "not a ciphertext"
 
-	err := providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), integ)
+	err := providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), integ, time.Now())
 
 	require.ErrorContains(t, err, "decrypt integration")
 	require.ErrorIs(t, err, secrets.ErrCiphertext)
@@ -181,7 +182,7 @@ func TestRefreshQuotaStoresTheAccountStanding(t *testing.T) {
 	cipher, catalog := env.Cipher, ses.Catalog()
 	ses.SetQuota(messaging.Quota{Enforcement: providers.EnforcementProbation, Sandbox: true})
 
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	require.NotNil(t, row.ProviderEnforcement)
@@ -198,10 +199,10 @@ func TestRefreshQuotaClearsTheStandingWhenTheAccountRecovers(t *testing.T) {
 	ses := &testhelper.FakeSES{}
 	cipher, catalog := env.Cipher, ses.Catalog()
 	ses.SetQuota(messaging.Quota{Enforcement: providers.EnforcementShutdown, Sandbox: true})
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	ses.SetQuota(messaging.Quota{})
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.Nil(t, row.ProviderEnforcement)
@@ -214,10 +215,10 @@ func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
 	ses := &testhelper.FakeSES{}
 	cipher, catalog := env.Cipher, ses.Catalog()
 	ses.SetQuota(messaging.Quota{Enforcement: providers.EnforcementShutdown, Sandbox: true})
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	ses.SetQuotaErr(errors.New("timeout"))
-	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now()))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	require.NotNil(t, row.ProviderEnforcement, "a failed read says nothing about the account, so the last answer stands")
@@ -269,7 +270,7 @@ func TestRefreshQuotaReturnsAWriteItCannotMake(t *testing.T) {
 			integ := reload(t, s, fixtures.IntegrationAcmeSesID)
 			failIntegrationWrites(env, tc.op, injected)
 
-			err := providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), integ)
+			err := providerlimit.RefreshQuota(t.Context(), s, env.Cipher, ses.Catalog(), integ, time.Now())
 
 			require.ErrorIs(t, err, injected)
 		})
@@ -287,7 +288,7 @@ func TestRefreshQuotaReturnsAConfigTheProviderCannotBuildFrom(t *testing.T) {
 		Build: func([]byte, messaging.Deps) (any, error) { return nil, unbuildable },
 	})
 
-	err := providerlimit.RefreshQuota(t.Context(), s, env.Cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID))
+	err := providerlimit.RefreshQuota(t.Context(), s, env.Cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID), time.Now())
 
 	require.ErrorIs(t, err, unbuildable)
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)

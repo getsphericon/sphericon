@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -203,7 +204,7 @@ func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
 	client := entclient.New(sqlDB)
-	bus := events.New(sqlDB, entclient.NewTx)
+	bus := events.New(sqlDB, entclient.NewTx, time.Now)
 	ms := memberships.New(client, bus)
 	s := client.Scoped(fixtures.InitechID)
 

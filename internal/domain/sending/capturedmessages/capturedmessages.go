@@ -114,11 +114,11 @@ func (c capturer) trim(ctx context.Context) error {
 // Purge deletes the Captured messages of every Workspace that are older than retention, in batches
 // of batch rows so a large backlog never holds a long lock, and returns how many went. It is
 // Instance-wide, so it takes the raw client; a retention of zero or less deletes nothing.
-func Purge(ctx context.Context, client *ent.Client, retention time.Duration, batch int) (int64, error) {
+func Purge(ctx context.Context, client *ent.Client, retention time.Duration, batch int, now time.Time) (int64, error) {
 	if retention <= 0 {
 		return 0, nil
 	}
-	cutoff := time.Now().Add(-retention)
+	cutoff := now.Add(-retention)
 	var total int64
 	for {
 		ids, err := client.CapturedMessage.Query().
