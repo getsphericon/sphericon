@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
@@ -15,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 )
@@ -38,11 +36,7 @@ func newRetypeRace(t *testing.T) *retypeRace {
 	ctx := context.Background()
 	race := testhelper.NewWorkspaceRace(t, fixtures.DuffID)
 	s, bus := race.Scope, race.Bus
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
-	segs, ruleset, retyping := segments.New(bus), rules.New(cipher, bus), customfieldretyping.New(bus)
+	segs, ruleset, retyping := segments.New(bus), rules.New(testhelper.Cipher(t), bus), customfieldretyping.New(bus)
 	r := &retypeRace{WorkspaceRace: race, savedID: new(int64)}
 	r.retype = testhelper.Writer{Name: "retype", Run: func() error {
 		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Type: patch.Set(string(customfield.TypeString))})

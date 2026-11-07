@@ -30,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -94,14 +93,12 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
 	mod := outboundmessages.New(env.Bus, env.Holds, nil, messagetoken.New("test-secret", "http://local"))
 	// The runtime's own mail: env.SystemMail works the test's queued mail jobs before a read, and
 	// this queue is the process's committed one.
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
-		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: mail, Catalog: registry.Default(),
+		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: env.Cipher, SystemSender: mail, Catalog: registry.Default(),
 		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})

@@ -117,7 +117,7 @@ func TestBuildSignedMIMEPropagatesBuildAndSignerErrors(t *testing.T) {
 
 func TestDKIMSignerEmptyDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	dk, err := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), envCipher(t)).DKIMSigner(context.Background(), "no-at-sign")
+	dk, err := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), env.Cipher).DKIMSigner(context.Background(), "no-at-sign")
 	require.NoError(t, err)
 	assert.Nil(t, dk)
 }
@@ -126,14 +126,14 @@ func TestDKIMSignerQueryError(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), envCipher(t)).DKIMSigner(ctx, "hi@mail.acme.com")
+	_, err := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), env.Cipher).DKIMSigner(ctx, "hi@mail.acme.com")
 	assert.Error(t, err)
 }
 
 func TestDKIMSignerBrokenKeyMaterial(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cipher := envCipher(t)
+	cipher := env.Cipher
 
 	// Ciphertext that does not decrypt under the workspace cipher.
 	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetDkimPrivateKeyEncrypted("not-a-ciphertext").ExecX(ctx)
@@ -172,7 +172,7 @@ func TestHasVerifiedSendingDomain(t *testing.T) {
 func TestResolverErrors(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	resolver := messaging.NewResolver(envCipher(t), registry.Default())
+	resolver := messaging.NewResolver(env.Cipher, registry.Default())
 
 	canceled, cancel := context.WithCancel(ctx)
 	cancel()

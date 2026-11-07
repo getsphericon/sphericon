@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
@@ -25,17 +24,6 @@ func newTestCipher(t *testing.T) *secrets.Cipher {
 	return c
 }
 
-// envCipher builds the cipher over the test environment's SPHERICON_ENCRYPTION_KEY — the
-// same key the fixtures were sealed with — so fixture-stored configs decrypt.
-func envCipher(t *testing.T) *secrets.Cipher {
-	t.Helper()
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	c, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
-	return c
-}
-
 // Resolver loads the workspace's default email integration, decrypts it and
 // builds a live EmailSender via the catalog. Workspace 1 ("acme") is seeded with
 // a default SMTP integration.
@@ -43,7 +31,7 @@ func TestResolverEmailSender(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	resolver := messaging.NewResolver(envCipher(t), registry.Default())
+	resolver := messaging.NewResolver(env.Cipher, registry.Default())
 
 	s := env.DB.Scoped(fixtures.AcmeID)
 	integ, err := messaging.Integration(ctx, s, channels.Email, nil)

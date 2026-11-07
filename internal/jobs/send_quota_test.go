@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -16,20 +15,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-// envCipher is the cipher over the test environment's SPHERICON_ENCRYPTION_KEY, the key the
-// fixtures were sealed with, so a fixture Integration's config decrypts.
-func envCipher(t *testing.T) *secrets.Cipher {
-	t.Helper()
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	c, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
-	return c
-}
 
 func TestRefreshSendQuotasWorkerFansOutOneJobPerSESIntegration(t *testing.T) {
 	e := newRiverEnv(t)
@@ -52,7 +39,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	fake := &testhelper.FakeSES{}
 	fake.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, envCipher(t), fake.Catalog())
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, fake.Catalog())
 	run := func() {
 		require.NoError(t, worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID})))
 	}
@@ -82,7 +69,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 
 func TestRefreshIntegrationQuotaOfADeletedIntegrationIsNothingToDo(t *testing.T) {
 	env := testhelper.Setup(t)
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, envCipher(t), (&testhelper.FakeSES{}).Catalog())
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, (&testhelper.FakeSES{}).Catalog())
 	require.NoError(t, worker.Work(t.Context(), job(integrations.RefreshQuotaArgs{IntegrationID: 424242})))
 }
 
@@ -114,7 +101,7 @@ func TestRefreshIntegrationQuotaOfAnIntegrationDeletedAfterItWasQueuedChangesNot
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetDiscardedAt(time.Now()).ExecX(ctx)
 	fake := &testhelper.FakeSES{}
 	fake.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, envCipher(t), fake.Catalog())
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, fake.Catalog())
 
 	err := worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID}))
 

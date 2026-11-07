@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
@@ -31,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
@@ -188,10 +186,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	e := newRealEnv(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
+	cipher := testhelper.Cipher(t)
 	pool, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
