@@ -12,8 +12,63 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
+
+func TestAcceptanceCannotReplaceAnEarlierAcceptance(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	at := time.Now()
+	require.NoError(t, invitations.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID, at))
+
+	err := invitations.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID, at.Add(time.Hour))
+
+	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
+	stored, err := s.Invitation().Get(t.Context(), fixtures.InvitationAcmePendingID)
+	require.NoError(t, err)
+	require.NotNil(t, stored.AcceptedAt)
+	assert.WithinDuration(t, at, *stored.AcceptedAt, time.Microsecond)
+}
+
+func TestReinvitingAnAcceptedAddressPreservesItsAcceptance(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	at := time.Now()
+	require.NoError(t, invitations.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID, at))
+	invites := invitations.New(env.DB, env.Bus, func() time.Time { return at })
+
+	issued, token, err := invites.Invite(t.Context(), s, events.Actor{Kind: events.ActorUser}, invitations.InviteInput{
+		Email: fixtures.InvitationAcmePendingEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID,
+	})
+
+	require.NoError(t, err)
+	assert.NotEqual(t, int64(fixtures.InvitationAcmePendingID), issued.ID)
+	assert.Nil(t, issued.AcceptedAt)
+	accepted, err := s.Invitation().Get(t.Context(), fixtures.InvitationAcmePendingID)
+	require.NoError(t, err)
+	require.NotNil(t, accepted.AcceptedAt)
+	assert.WithinDuration(t, at, *accepted.AcceptedAt, time.Microsecond)
+	pending, err := invites.PendingInvitation(t.Context(), token)
+	require.NoError(t, err)
+	assert.Equal(t, issued.ID, pending.ID)
+}
+
+func TestAnAcceptedInvitationCannotBeRevoked(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	at := time.Now()
+	require.NoError(t, invitations.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID, at))
+	invites := invitations.New(env.DB, env.Bus, func() time.Time { return at })
+
+	err := invites.RevokeInvitation(t.Context(), s, events.Actor{Kind: events.ActorUser}, fixtures.InvitationAcmePendingID)
+
+	require.ErrorIs(t, err, invitations.ErrInvitationNotFound)
+	accepted, err := s.Invitation().Get(t.Context(), fixtures.InvitationAcmePendingID)
+	require.NoError(t, err)
+	require.NotNil(t, accepted.AcceptedAt)
+	assert.WithinDuration(t, at, *accepted.AcceptedAt, time.Microsecond)
+}
 
 func TestInviteOwnsTokenHashAndExpiry(t *testing.T) {
 	env := testhelper.Setup(t)

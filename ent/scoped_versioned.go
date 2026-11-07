@@ -21,75 +21,63 @@ var ErrNotDiscardable = errors.New("ent: an archivable Versioned definition is a
 // never archived (ADR 0100).
 var ErrNotArchivable = errors.New("ent: a discardable Versioned definition is discarded, never archived")
 
-// VersionState is what the lifecycle reads of a Versioned definition's row: its state, its two
-// pointers and the versions they point at, as loaded on the row's edges (nil when there is none
-// or it was not loaded). Archived is set only for an archivable kind (archived_at), Discarded only
-// for a discardable one (discarded_at).
+// VersionPosition is the state and pointers written together by a Versioned definition's machine.
+// A zero pointer means that there is no version in that position.
+type VersionPosition struct {
+	Active    bool
+	Archived  bool
+	Discarded bool
+	LiveID    int64
+	DraftID   int64
+}
+
+// VersionState is a loaded position and its versions. UpdatedAt fences every write, including
+// an edit that rewrites the same draft, so a stale reader cannot accept an unchanged status.
 type VersionState[O, V any] struct {
+	VersionPosition
 	Row         *O
 	ID          int64
-	Active      bool
+	UpdatedAt   time.Time
 	ActivatedAt *time.Time
-	Archived    bool
-	Discarded   bool
-	LiveID      *int64
-	DraftID     *int64
 	Live        *V
 	Draft       *V
 }
 
-// VersionedStore is the storage half of one Versioned definition, bound to a scope: the
-// generated <N>Pointers. Every write goes through the scoped wrapper, so a change of the
-// pointers or the state is an audited write of the row.
+// VersionedStore is the generated, scoped and audited storage of a Versioned definition.
+// Its one state writer compares the full position and revision before changing anything.
 type VersionedStore[O, V any] interface {
-	// Load returns the row with the id, archived or not, with its live version and draft.
 	Load(ctx context.Context, id int64) (*O, error)
-	// Lock takes the row with the id for the rest of the transaction, archived or not, and
-	// returns its state.
-	Lock(ctx context.Context, id int64) (VersionState[O, V], error)
-	// SetDraft points the row at the version as its draft.
-	SetDraft(ctx context.Context, id, versionID int64) error
-	// ClearDraft leaves the row with no draft.
-	ClearDraft(ctx context.Context, id int64) error
-	// Promote makes the version (the draft) live, clears the draft and makes the row active;
-	// activatedAt, when given, is the moment it moved from inactive to active.
-	Promote(ctx context.Context, id, versionID int64, activatedAt *time.Time) error
-	// Activate makes the row active from the moment at.
-	Activate(ctx context.Context, id int64, at time.Time) error
-	// Deactivate makes the row inactive; activated_at stays.
-	Deactivate(ctx context.Context, id int64) error
-	// Newest returns the number of the row's newest version, 0 when it has none.
+	Read(ctx context.Context, id int64) (VersionState[O, V], error)
+	CompareAndSwap(ctx context.Context, before VersionState[O, V], after VersionPosition, at time.Time) (bool, error)
 	Newest(ctx context.Context, id int64) (int, error)
-	// DeleteVersion removes a version of the row (a dropped draft, which nothing stands on).
 	DeleteVersion(ctx context.Context, id, versionID int64) error
-	// Archive puts the row aside at `at` and Unarchive brings it back (an archivable kind, ADR 0100); a
-	// discardable kind answers ErrNotArchivable.
-	Archive(ctx context.Context, id int64, at time.Time) error
-	Unarchive(ctx context.Context, id int64) error
-	// Discard removes the row for good at `at`, kept for what refers to it (a discardable kind, ADR
-	// 0100); an archivable kind answers ErrNotDiscardable.
-	Discard(ctx context.Context, id int64, at time.Time) error
 }
 
 var _ VersionedStore[Automation, AutomationVersion] = (*AutomationPointers)(nil)
 
 // VersionState returns the Automation's state and the versions loaded on its edges.
 func (_m *Automation) VersionState() VersionState[Automation, AutomationVersion] {
-	return VersionState[Automation, AutomationVersion]{
+	st := VersionState[Automation, AutomationVersion]{
 		Row:         _m,
 		ID:          _m.ID,
-		Active:      _m.Status == automation.StatusActive,
+		UpdatedAt:   _m.UpdatedAt,
 		ActivatedAt: _m.ActivatedAt,
-		Archived:    _m.ArchivedAt != nil,
-		LiveID:      _m.LiveVersionID,
-		DraftID:     _m.DraftVersionID,
 		Live:        _m.Edges.LiveVersion,
 		Draft:       _m.Edges.DraftVersion,
 	}
+	st.Active = _m.Status == automation.StatusActive
+	st.Archived = _m.ArchivedAt != nil
+	if _m.LiveVersionID != nil {
+		st.LiveID = *_m.LiveVersionID
+	}
+	if _m.DraftVersionID != nil {
+		st.DraftID = *_m.DraftVersionID
+	}
+	return st
 }
 
 // AutomationPointers are the operations on the live and draft pointers and the state of the
-// Workspace's Automation rows, a Versioned definition. internal/drafts is their one caller.
+// Workspace's Automation rows, a Versioned definition. internal/domain/content/versioneddefinition is their one caller.
 type AutomationPointers struct {
 	t    *AutomationScoped
 	with []func(*AutomationVersionQuery)
@@ -110,45 +98,70 @@ func (p *AutomationPointers) Load(ctx context.Context, id int64) (*Automation, e
 	return p.query(id).Only(ctx)
 }
 
-// Lock takes the Automation row with the id FOR UPDATE, archived or not, and returns its state.
-func (p *AutomationPointers) Lock(ctx context.Context, id int64) (VersionState[Automation, AutomationVersion], error) {
-	row, err := p.query(id).ForUpdate().Only(ctx)
+// Read loads the position without taking a row lock; CompareAndSwap decides a race.
+func (p *AutomationPointers) Read(ctx context.Context, id int64) (VersionState[Automation, AutomationVersion], error) {
+	row, err := p.Load(ctx, id)
 	if err != nil {
 		return VersionState[Automation, AutomationVersion]{}, err
 	}
 	return row.VersionState(), nil
 }
 
-// SetDraft points the Automation at the version as its draft.
-func (p *AutomationPointers) SetDraft(ctx context.Context, id, versionID int64) error {
-	return p.t.UpdateOneID(id).SetDraftVersionID(versionID).Exec(ctx)
-}
-
-// ClearDraft leaves the Automation with no draft.
-func (p *AutomationPointers) ClearDraft(ctx context.Context, id int64) error {
-	return p.t.UpdateOneID(id).ClearDraftVersionID().Exec(ctx)
-}
-
-// Promote makes the version live, clears the draft and makes the Automation active.
-func (p *AutomationPointers) Promote(ctx context.Context, id, versionID int64, activatedAt *time.Time) error {
-	u := p.t.UpdateOneID(id).
-		SetLiveVersionID(versionID).
-		ClearDraftVersionID().
-		SetStatus(automation.StatusActive)
-	if activatedAt != nil {
-		u.SetActivatedAt(*activatedAt)
+// CompareAndSwap writes status, pointers and deletion markers in one conditional update.
+// Matching UpdatedAt also fences an edit of an existing draft whose pointers do not change.
+func (p *AutomationPointers) CompareAndSwap(ctx context.Context, before VersionState[Automation, AutomationVersion], after VersionPosition, at time.Time) (bool, error) {
+	if after.Discarded {
+		return false, ErrNotDiscardable
 	}
-	return u.Exec(ctx)
-}
-
-// Activate makes the Automation active from the moment at.
-func (p *AutomationPointers) Activate(ctx context.Context, id int64, at time.Time) error {
-	return p.t.UpdateOneID(id).SetStatus(automation.StatusActive).SetActivatedAt(at).Exec(ctx)
-}
-
-// Deactivate makes the Automation inactive.
-func (p *AutomationPointers) Deactivate(ctx context.Context, id int64) error {
-	return p.t.UpdateOneID(id).SetStatus(automation.StatusInactive).Exec(ctx)
+	u := p.t.UpdateOneID(before.ID).Where(automation.UpdatedAtEQ(before.UpdatedAt))
+	if before.Active {
+		u.Where(automation.StatusEQ(automation.StatusActive))
+	} else {
+		u.Where(automation.StatusEQ(automation.StatusInactive))
+	}
+	if before.LiveID == 0 {
+		u.Where(automation.LiveVersionIDIsNil())
+	} else {
+		u.Where(automation.LiveVersionIDEQ(before.LiveID))
+	}
+	if before.DraftID == 0 {
+		u.Where(automation.DraftVersionIDIsNil())
+	} else {
+		u.Where(automation.DraftVersionIDEQ(before.DraftID))
+	}
+	if before.Archived {
+		u.Where(automation.ArchivedAtNotNil())
+	} else {
+		u.Where(automation.ArchivedAtIsNil())
+	}
+	if after.Archived && !before.Archived {
+		u.SetArchivedAt(at)
+	} else if !after.Archived {
+		u.ClearArchivedAt()
+	}
+	if after.Active {
+		u.SetStatus(automation.StatusActive)
+		if !before.Active {
+			u.SetActivatedAt(at)
+		}
+	} else {
+		u.SetStatus(automation.StatusInactive)
+	}
+	if after.LiveID == 0 {
+		u.ClearLiveVersionID()
+	} else {
+		u.SetLiveVersionID(after.LiveID)
+	}
+	if after.DraftID == 0 {
+		u.ClearDraftVersionID()
+	} else {
+		u.SetDraftVersionID(after.DraftID)
+	}
+	err := u.Exec(ctx)
+	if IsNotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // Newest returns the number of the Automation's newest version, 0 when it has none.
@@ -171,40 +184,31 @@ func (p *AutomationPointers) DeleteVersion(ctx context.Context, id, versionID in
 	return p.t.s.AutomationVersion().DeleteOneID(versionID).Where(automationversion.AutomationID(id)).Exec(ctx)
 }
 
-// Archive puts the Automation aside.
-func (p *AutomationPointers) Archive(ctx context.Context, id int64, at time.Time) error {
-	return p.t.Archive(ctx, id, at)
-}
-
-// Unarchive brings the archived Automation back.
-func (p *AutomationPointers) Unarchive(ctx context.Context, id int64) error {
-	return p.t.Unarchive(ctx, id)
-}
-
-// Discard answers ErrNotDiscardable: a Automation is archived, never discarded.
-func (p *AutomationPointers) Discard(context.Context, int64, time.Time) error {
-	return ErrNotDiscardable
-}
-
 var _ VersionedStore[Rule, RuleVersion] = (*RulePointers)(nil)
 
 // VersionState returns the Rule's state and the versions loaded on its edges.
 func (_m *Rule) VersionState() VersionState[Rule, RuleVersion] {
-	return VersionState[Rule, RuleVersion]{
+	st := VersionState[Rule, RuleVersion]{
 		Row:         _m,
 		ID:          _m.ID,
-		Active:      _m.Status == rule.StatusActive,
+		UpdatedAt:   _m.UpdatedAt,
 		ActivatedAt: _m.ActivatedAt,
-		Discarded:   _m.DiscardedAt != nil,
-		LiveID:      _m.LiveVersionID,
-		DraftID:     _m.DraftVersionID,
 		Live:        _m.Edges.LiveVersion,
 		Draft:       _m.Edges.DraftVersion,
 	}
+	st.Active = _m.Status == rule.StatusActive
+	st.Discarded = _m.DiscardedAt != nil
+	if _m.LiveVersionID != nil {
+		st.LiveID = *_m.LiveVersionID
+	}
+	if _m.DraftVersionID != nil {
+		st.DraftID = *_m.DraftVersionID
+	}
+	return st
 }
 
 // RulePointers are the operations on the live and draft pointers and the state of the
-// Workspace's Rule rows, a Versioned definition. internal/drafts is their one caller.
+// Workspace's Rule rows, a Versioned definition. internal/domain/content/versioneddefinition is their one caller.
 type RulePointers struct {
 	t    *RuleScoped
 	with []func(*RuleVersionQuery)
@@ -225,45 +229,68 @@ func (p *RulePointers) Load(ctx context.Context, id int64) (*Rule, error) {
 	return p.query(id).Only(ctx)
 }
 
-// Lock takes the Rule row with the id FOR UPDATE, archived or not, and returns its state.
-func (p *RulePointers) Lock(ctx context.Context, id int64) (VersionState[Rule, RuleVersion], error) {
-	row, err := p.query(id).ForUpdate().Only(ctx)
+// Read loads the position without taking a row lock; CompareAndSwap decides a race.
+func (p *RulePointers) Read(ctx context.Context, id int64) (VersionState[Rule, RuleVersion], error) {
+	row, err := p.Load(ctx, id)
 	if err != nil {
 		return VersionState[Rule, RuleVersion]{}, err
 	}
 	return row.VersionState(), nil
 }
 
-// SetDraft points the Rule at the version as its draft.
-func (p *RulePointers) SetDraft(ctx context.Context, id, versionID int64) error {
-	return p.t.UpdateOneID(id).SetDraftVersionID(versionID).Exec(ctx)
-}
-
-// ClearDraft leaves the Rule with no draft.
-func (p *RulePointers) ClearDraft(ctx context.Context, id int64) error {
-	return p.t.UpdateOneID(id).ClearDraftVersionID().Exec(ctx)
-}
-
-// Promote makes the version live, clears the draft and makes the Rule active.
-func (p *RulePointers) Promote(ctx context.Context, id, versionID int64, activatedAt *time.Time) error {
-	u := p.t.UpdateOneID(id).
-		SetLiveVersionID(versionID).
-		ClearDraftVersionID().
-		SetStatus(rule.StatusActive)
-	if activatedAt != nil {
-		u.SetActivatedAt(*activatedAt)
+// CompareAndSwap writes status, pointers and deletion markers in one conditional update.
+// Matching UpdatedAt also fences an edit of an existing draft whose pointers do not change.
+func (p *RulePointers) CompareAndSwap(ctx context.Context, before VersionState[Rule, RuleVersion], after VersionPosition, at time.Time) (bool, error) {
+	if after.Archived {
+		return false, ErrNotArchivable
 	}
-	return u.Exec(ctx)
-}
-
-// Activate makes the Rule active from the moment at.
-func (p *RulePointers) Activate(ctx context.Context, id int64, at time.Time) error {
-	return p.t.UpdateOneID(id).SetStatus(rule.StatusActive).SetActivatedAt(at).Exec(ctx)
-}
-
-// Deactivate makes the Rule inactive.
-func (p *RulePointers) Deactivate(ctx context.Context, id int64) error {
-	return p.t.UpdateOneID(id).SetStatus(rule.StatusInactive).Exec(ctx)
+	u := p.t.UpdateOneID(before.ID).Where(rule.UpdatedAtEQ(before.UpdatedAt))
+	if before.Active {
+		u.Where(rule.StatusEQ(rule.StatusActive))
+	} else {
+		u.Where(rule.StatusEQ(rule.StatusInactive))
+	}
+	if before.LiveID == 0 {
+		u.Where(rule.LiveVersionIDIsNil())
+	} else {
+		u.Where(rule.LiveVersionIDEQ(before.LiveID))
+	}
+	if before.DraftID == 0 {
+		u.Where(rule.DraftVersionIDIsNil())
+	} else {
+		u.Where(rule.DraftVersionIDEQ(before.DraftID))
+	}
+	if before.Discarded {
+		u.Where(rule.DiscardedAtNotNil())
+	} else {
+		u.Where(rule.DiscardedAtIsNil())
+	}
+	if after.Discarded && !before.Discarded {
+		u.SetDiscardedAt(at)
+	}
+	if after.Active {
+		u.SetStatus(rule.StatusActive)
+		if !before.Active {
+			u.SetActivatedAt(at)
+		}
+	} else {
+		u.SetStatus(rule.StatusInactive)
+	}
+	if after.LiveID == 0 {
+		u.ClearLiveVersionID()
+	} else {
+		u.SetLiveVersionID(after.LiveID)
+	}
+	if after.DraftID == 0 {
+		u.ClearDraftVersionID()
+	} else {
+		u.SetDraftVersionID(after.DraftID)
+	}
+	err := u.Exec(ctx)
+	if IsNotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // Newest returns the number of the Rule's newest version, 0 when it has none.
@@ -284,19 +311,4 @@ func (p *RulePointers) Newest(ctx context.Context, id int64) (int, error) {
 // DeleteVersion removes the Rule's version with the versionID.
 func (p *RulePointers) DeleteVersion(ctx context.Context, id, versionID int64) error {
 	return p.t.s.RuleVersion().DeleteOneID(versionID).Where(ruleversion.RuleID(id)).Exec(ctx)
-}
-
-// Archive answers ErrNotArchivable: a Rule is discarded, never archived.
-func (p *RulePointers) Archive(context.Context, int64, time.Time) error {
-	return ErrNotArchivable
-}
-
-// Unarchive answers ErrNotArchivable: a Rule is discarded, never archived.
-func (p *RulePointers) Unarchive(context.Context, int64) error {
-	return ErrNotArchivable
-}
-
-// Discard removes the Rule for good: it leaves the lists and is still read by id.
-func (p *RulePointers) Discard(ctx context.Context, id int64, at time.Time) error {
-	return p.t.Discard(ctx, id, at)
 }

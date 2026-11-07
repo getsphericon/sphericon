@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -91,7 +92,10 @@ func PendingAt(now time.Time) predicate.Invitation {
 // MarkAcceptedIn marks the Invitation id of the scoped Workspace accepted, on the transaction of
 // the acceptance that made its Membership, at `at`.
 func MarkAcceptedIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
-	return ts.Invitation().UpdateOneID(id).SetAcceptedAt(at).Exec(ctx)
+	return lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := ts.Invitation().Update().Where(invitation.ID(id), PendingAt(at)).SetAcceptedAt(at).Save(ctx)
+		return n == 1, err
+	})
 }
 
 // InviteInput is a new (or reissued) Invitation request. The token, its hash and
@@ -103,12 +107,13 @@ type InviteInput struct {
 }
 
 // Invite creates the Invitation for an email, or reissues the pending one (token,
-// expiry, role; a prior acceptance is cleared), and records `invitation.create` in
+// expiry, role), and records `invitation.create` in
 // the same transaction. It generates the one-time token, stores only its hash, sets
 // the expiry InviteTokenTTL ahead and returns the raw token for the caller's link;
 // the token itself is never logged. It publishes events.InvitationCreated in the same
 // transaction, which mails the invitee their link (ADR 0105). ErrEmailEmpty for a blank email,
 // ErrAlreadyMember when the address already has a Membership in the Workspace.
+// An accepted Invitation stays accepted: inviting its address again creates a new row.
 func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, in InviteInput) (*ent.Invitation, string, error) {
 	email := throttle.NormalizeEmail(in.Email)
 	if email == "" {
@@ -132,7 +137,7 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		if member {
 			return ErrAlreadyMember
 		}
-		existing, err := ts.Invitation().Query().Where(invitation.Email(email)).Only(ctx)
+		existing, err := ts.Invitation().Query().Where(invitation.Email(email), invitation.AcceptedAtIsNil()).Only(ctx)
 		switch {
 		case ent.IsNotFound(err):
 			inv, err = ts.Invitation().Create().
@@ -142,12 +147,15 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		case err != nil:
 		default:
 			inv, err = ts.Invitation().UpdateOneID(existing.ID).
+				Where(invitation.AcceptedAtIsNil()).
 				SetRole(in.Role).SetTokenHash(tokenHash).
 				SetExpiresAt(expiresAt).SetInvitedBy(in.InvitedBy).
-				ClearAcceptedAt().
 				Save(ctx)
 		}
 		if err != nil {
+			if ent.IsNotFound(err) {
+				return lifecycle.ErrInvalidTransition
+			}
 			return err
 		}
 		if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
@@ -175,14 +183,17 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 // ErrInvitationNotFound when the Invitation is not in the scoped Workspace.
 func (m *Module) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor events.Actor, id int64) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		inv, err := ts.Invitation().Query().Where(invitation.ID(id)).Only(ctx)
+		inv, err := ts.Invitation().Query().Where(invitation.ID(id), invitation.AcceptedAtIsNil()).Only(ctx)
 		if ent.IsNotFound(err) {
 			return ErrInvitationNotFound
 		}
 		if err != nil {
 			return err
 		}
-		if err := ts.Invitation().DeleteOneID(id).Exec(ctx); err != nil {
+		if err := ts.Invitation().DeleteOneID(id).Where(invitation.AcceptedAtIsNil()).Exec(ctx); err != nil {
+			if ent.IsNotFound(err) {
+				return lifecycle.ErrInvalidTransition
+			}
 			return err
 		}
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{

@@ -1214,9 +1214,12 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "invitation_workspace_id_email",
+				Name:    "invitations_pending_workspace_email",
 				Unique:  true,
 				Columns: []*schema.Column{InvitationsColumns[9], InvitationsColumns[3]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "accepted_at IS NULL",
+				},
 			},
 			{
 				Name:    "invitation_invited_by",

@@ -81,7 +81,7 @@ func (*Scoped) Segment() *SegmentScoped { return &SegmentScoped{} }
 
 type AutomationPointers struct{}
 
-func (*AutomationPointers) SetDraft(context.Context, int64, int64) error { return nil }
+func (*AutomationPointers) CompareAndSwap(context.Context, int64, int64) error { return nil }
 
 type AutomationScoped struct{}
 
@@ -91,7 +91,7 @@ func (*Scoped) Automation() *AutomationScoped { return &AutomationScoped{} }
 
 // VersionedStore is what the owner of a Versioned definition binds its pointers to.
 type VersionedStore[O, V any] interface {
-	SetDraft(ctx context.Context, id, versionID int64) error
+	CompareAndSwap(ctx context.Context, id, versionID int64) error
 }
 
 type GhostCreate struct{}

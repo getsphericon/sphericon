@@ -68,9 +68,12 @@ func (Invitation) Edges() []ent.Edge {
 
 func (Invitation) Indexes() []ent.Index {
 	return []ent.Index{
-		// One live invite per (workspace, email); re-invite updates the row.
+		// One unaccepted invite per address. Accepted Invitations are immutable facts;
+		// inviting that address again creates a new Invitation (ADR 0109).
 		index.Fields("workspace_id", "email").
-			Unique(),
+			Unique().
+			StorageKey("invitations_pending_workspace_email").
+			Annotations(entsql.IndexWhere("accepted_at IS NULL")),
 		index.Fields("invited_by"),
 	}
 }

@@ -376,8 +376,13 @@ like any other, and the isolation test lists it in `singletonEntities`. `Scoped.
 tenant row itself (the Workspace is the tenant root, so it has no wrapper). A Versioned definition
 (`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)
 also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedStore`), the moves of its
-live and draft pointers and its status; `internal/domain/content/versioneddefinition` is the one lifecycle over them and the
-only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `Archive`, `Unarchive`,
+live and draft pointers and its status. `internal/domain/content/versioneddefinition` declares their
+transition table with `lifecycle`; the generated `CompareAndSwap` is its one state writer
+(`forbidigo`). It compares the status, both pointers, deletion markers and `updated_at`, and writes
+the new position in one conditional update. This also fences an edit of an existing draft before
+its body is rewritten: a stale edit cannot rewrite a version that another move published. There is
+no separate `FOR UPDATE` read; the Workspace lock remains where reference checks and Live use need
+it (ADR 0109). An entity with `ArchiveMixin` gets `Archive`, `Unarchive`,
 `QueryArchived`, `QueryWithArchived` and `Purge` in place of `Delete`, one with `DiscardMixin`
 `Discard` and `Purge` (ADR 0100); `internal/scopedclient` tests them on the production entities.
 

@@ -158,8 +158,7 @@ var starters = map[string]bool{
 	// The soft-delete mixins (ADR 0100).
 	"Archive": true, "Unarchive": true, "Discard": true, "Purge": true, "PurgeOneID": true,
 	// A Versioned definition's pointers (ADR 0065): the handle and its moves.
-	"Pointers": true, "SetDraft": true, "ClearDraft": true, "Promote": true,
-	"Activate": true, "Deactivate": true, "DeleteVersion": true,
+	"Pointers": true, "CompareAndSwap": true, "DeleteVersion": true,
 }
 
 // builders are the suffixes of an ent write builder's type after its entity: a generic function
@@ -322,7 +321,7 @@ func opensTx(info *types.Info, sel *ast.SelectorExpr) bool {
 }
 
 // chainStartsWrite reports whether the receiver chain already holds a call that starts a write, so
-// that `Create().OnConflict...` and `Pointers().SetDraft(...)` are one finding each, and an upsert on
+// that `Create().OnConflict...` and `Pointers().CompareAndSwap(...)` are one finding each, and an upsert on
 // a builder variable is another.
 func chainStartsWrite(e ast.Expr) bool {
 	for {
