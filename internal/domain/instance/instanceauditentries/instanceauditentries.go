@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ActionDefaultSendCapChange records a change of the default Send cap of new Workspaces
@@ -39,7 +40,7 @@ func Record(ctx context.Context, tx *ent.Client, staffMemberID int64, action str
 // Entries is a page of the log, newest first, each with the Staff member who made it: at most
 // limit entries older than the entry cursor (0 starts from the newest), and the cursor of the next
 // page (0 on the last page).
-func Entries(ctx context.Context, client *ent.Client, cursor int64, limit int) ([]*ent.InstanceAuditEntry, int64, error) {
+func Entries(ctx context.Context, client *ent.Client, cursor int64, limit int) (pagination.IDPage[*ent.InstanceAuditEntry], error) {
 	q := client.InstanceAuditEntry.Query().
 		WithStaffMember().
 		Order(ent.Desc(instanceauditentry.FieldID)).
@@ -49,11 +50,7 @@ func Entries(ctx context.Context, client *ent.Client, cursor int64, limit int) (
 	}
 	rows, err := q.All(ctx)
 	if err != nil {
-		return nil, 0, fmt.Errorf("read the instance audit log: %w", err)
+		return pagination.IDPage[*ent.InstanceAuditEntry]{}, fmt.Errorf("read the instance audit log: %w", err)
 	}
-	if len(rows) <= limit {
-		return rows, 0, nil
-	}
-	rows = rows[:limit]
-	return rows, rows[limit-1].ID, nil
+	return pagination.ByID(rows, limit, func(e *ent.InstanceAuditEntry) int64 { return e.ID }), nil
 }

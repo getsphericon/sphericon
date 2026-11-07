@@ -73,11 +73,11 @@ func (l *Log) exportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter
 	}
 	var cursor int64
 	for {
-		rows, next, err := l.Entries(ctx, s, f, cursor, exportPageSize)
+		page, err := l.Entries(ctx, s, f, cursor, exportPageSize)
 		if err != nil {
 			return err
 		}
-		for _, e := range rows {
+		for _, e := range page.Items {
 			if err := cw.Write(exportRow(e)); err != nil {
 				return err
 			}
@@ -86,10 +86,10 @@ func (l *Log) exportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter
 		if err := cw.Error(); err != nil {
 			return err
 		}
-		if next == 0 {
+		if page.Next == 0 {
 			return nil
 		}
-		cursor = next
+		cursor = page.Next
 	}
 }
 

@@ -18,7 +18,7 @@ func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffeeap
 	if err != nil {
 		return nil, err
 	}
-	out := &staffeeapi.StaffAuditEntryList{Items: staffMapper.AuditEntriesToResources(auditlog.StaffViewsOf(page.Entries))}
+	out := &staffeeapi.StaffAuditEntryList{Items: staffMapper.AuditEntriesToResources(auditlog.StaffViewsOf(page.Items))}
 	if page.Next > 0 {
 		out.NextCursor = staffeeapi.NewOptNilString(auditlog.NextCursor(page.Next))
 	}

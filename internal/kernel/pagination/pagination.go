@@ -183,6 +183,25 @@ func MapCursor[T, U any](p CursorPage[T], f func(T) U) CursorPage[U] {
 	return CursorPage[U]{Items: items, NextCursor: p.NextCursor, HasMore: p.HasMore}
 }
 
+// IDPage is one page of a log read newest first, before an entry id: the items, and the id
+// cursor of the next page, 0 on the last one.
+type IDPage[T any] struct {
+	Items []T
+	Next  int64
+}
+
+// ByID is the page of the rows a log read for a limit: up to limit+1 rows newest first, one past
+// the limit meaning that an older page follows, whose cursor is idOf the last row kept. Items is
+// never nil.
+func ByID[T any](rows []T, limit int, idOf func(T) int64) IDPage[T] {
+	items := append([]T{}, rows[:min(len(rows), limit)]...)
+	page := IDPage[T]{Items: items}
+	if len(rows) > limit && limit > 0 {
+		page.Next = idOf(items[limit-1])
+	}
+	return page
+}
+
 // Direction is the direction of a list's order, the contract's SortDirection.
 type Direction string
 

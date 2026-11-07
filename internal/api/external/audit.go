@@ -38,13 +38,13 @@ func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.Audi
 		RequestID:  params.RequestId.Or(""),
 	}
 
-	rows, next, err := h.audit.Entries(ctx, auth.TokenScoped(ctx), filter, cursor, limit)
+	page, err := h.audit.Entries(ctx, auth.TokenScoped(ctx), filter, cursor, limit)
 	if err != nil {
 		return nil, err
 	}
-	out := &externalapi.AuditEntryList{Items: mapper.AuditEntriesToResources(auditlog.ViewsOf(rows))}
-	if next > 0 {
-		out.NextCursor = externalapi.NewOptNilString(auditlog.NextCursor(next))
+	out := &externalapi.AuditEntryList{Items: mapper.AuditEntriesToResources(auditlog.ViewsOf(page.Items))}
+	if page.Next > 0 {
+		out.NextCursor = externalapi.NewOptNilString(auditlog.NextCursor(page.Next))
 	}
 	return out, nil
 }

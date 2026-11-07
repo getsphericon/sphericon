@@ -38,13 +38,13 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 		return nil, err
 	}
 
-	rows, next, err := h.audit.Entries(ctx, s, filter, cursor, limit)
+	page, err := h.audit.Entries(ctx, s, filter, cursor, limit)
 	if err != nil {
 		return nil, err
 	}
-	out := &siteapi.SiteAuditEntryList{Items: mapper.AuditEntriesToResources(auditlog.ViewsOf(rows))}
-	if next > 0 {
-		out.NextCursor = siteapi.NewOptNilString(auditlog.NextCursor(next))
+	out := &siteapi.SiteAuditEntryList{Items: mapper.AuditEntriesToResources(auditlog.ViewsOf(page.Items))}
+	if page.Next > 0 {
+		out.NextCursor = siteapi.NewOptNilString(auditlog.NextCursor(page.Next))
 	}
 	return out, nil
 }

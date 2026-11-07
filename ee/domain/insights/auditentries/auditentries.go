@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // Record stores the Audit entry an event carries, once: deduplicated by the envelope id, so a
@@ -125,24 +126,20 @@ func (l *Log) Licensed() bool { return l != nil && l.lic.Has(licensekey.FeatureA
 // RetentionLicensed reports whether this instance may set an Audit log retention window.
 func (l *Log) RetentionLicensed() bool { return l != nil && l.lic.Has(licensekey.FeatureRetention) }
 
-// Entries returns up to limit entries of the scoped Workspace matching the filter,
-// newest first, that precede the cursor (an entry id; 0 starts from the newest), and the cursor of the
-// next page (0 on the last page). The caller has already checked Licensed and the
+// Entries is a page of the scoped Workspace's entries matching the filter, newest first: up to
+// limit entries that precede the cursor (an entry id; 0 starts from the newest), and the cursor
+// of the next page (0 on the last page). The caller has already checked Licensed and the
 // reader's role.
-func (l *Log) Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) ([]*ent.AuditEntry, int64, error) {
+func (l *Log) Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error) {
 	q := s.AuditEntry().Query().Where(predicates(f)...).Order(ent.Desc(auditentry.FieldID)).Limit(limit + 1)
 	if cursor > 0 {
 		q = q.Where(auditentry.IDLT(cursor))
 	}
 	rows, err := q.All(ctx)
 	if err != nil {
-		return nil, 0, err
+		return pagination.IDPage[*ent.AuditEntry]{}, err
 	}
-	if len(rows) <= limit {
-		return rows, 0, nil
-	}
-	rows = rows[:limit]
-	return rows, rows[limit-1].ID, nil
+	return pagination.ByID(rows, limit, func(e *ent.AuditEntry) int64 { return e.ID }), nil
 }
 
 // Facets returns the values that occur in the scoped Workspace's Audit log, sorted, for its
