@@ -74,6 +74,8 @@ func (Invitation) Indexes() []ent.Index {
 			Unique().
 			StorageKey("invitations_pending_workspace_email").
 			Annotations(entsql.IndexWhere("accepted_at IS NULL")),
+		// The pending-only key cannot support the Workspace foreign key for accepted rows.
+		index.Fields("workspace_id"),
 		index.Fields("invited_by"),
 	}
 }

@@ -195,7 +195,19 @@ func (p *{{ $N }}Pointers) CompareAndSwap(ctx context.Context, before VersionSta
     } else {
         u.SetDraftVersionID(after.DraftID)
     }
-    err := u.Exec(ctx)
+    verb := "update"
+    {{- if $R }}
+    if after.Archived && !before.Archived {
+        verb = "archive"
+    } else if before.Archived && !after.Archived {
+        verb = "unarchive"
+    }
+    {{- else }}
+    if after.Discarded && !before.Discarded {
+        verb = "discard"
+    }
+    {{- end }}
+    _, err := u.save(ctx, verb)
     if IsNotFound(err) {
         return false, nil
     }

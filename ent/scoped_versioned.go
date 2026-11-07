@@ -157,7 +157,13 @@ func (p *AutomationPointers) CompareAndSwap(ctx context.Context, before VersionS
 	} else {
 		u.SetDraftVersionID(after.DraftID)
 	}
-	err := u.Exec(ctx)
+	verb := "update"
+	if after.Archived && !before.Archived {
+		verb = "archive"
+	} else if before.Archived && !after.Archived {
+		verb = "unarchive"
+	}
+	_, err := u.save(ctx, verb)
 	if IsNotFound(err) {
 		return false, nil
 	}
@@ -286,7 +292,11 @@ func (p *RulePointers) CompareAndSwap(ctx context.Context, before VersionState[R
 	} else {
 		u.SetDraftVersionID(after.DraftID)
 	}
-	err := u.Exec(ctx)
+	verb := "update"
+	if after.Discarded && !before.Discarded {
+		verb = "discard"
+	}
+	_, err := u.save(ctx, verb)
 	if IsNotFound(err) {
 		return false, nil
 	}

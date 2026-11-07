@@ -46,7 +46,7 @@ type Definition[O, V, E, B any] interface {
 	Publishable(ctx context.Context, ts *ent.Scoped, version *V) error
 	// Archivable refuses to archive the object while live work still needs it.
 	Archivable(ctx context.Context, ts *ent.Scoped, row *O) error
-	// Editable refuses an edit or a Revert of the object as it is under the lock: a deleted Rule,
+	// Editable refuses an edit or a Revert of the object at its loaded position: a deleted Rule,
 	// kept for its Firings, takes neither. An archived object is refused by the lifecycle itself
 	// (Errors.Archived).
 	Editable(row *O) error
@@ -361,7 +361,7 @@ func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id
 
 // Discard removes the object for good (ADR 0100): it leaves every list and every new work, is still
 // read by id so what refers to it shows its name, and is never restored. It makes the object
-// inactive first, under the same lock as Publish, so a discarded object never acts again.
+// inactive in the same conditional update, so a discarded object never acts again.
 // Discarding a discarded object changes nothing. It returns the object; an archivable kind is
 // refused (ent.ErrNotDiscardable).
 func (l *Lifecycle[O, V, E, B]) Discard(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {

@@ -217,7 +217,7 @@ var discardableKinds = []kindRow{
 	{"rule", ruleKind},
 }
 
-// Discard stops the object under the lock Publish takes and removes it for good: it is still read
+// Discard stops the object in its conditional write and removes it for good: it is still read
 // by id, but every owner move after it is not found, and discarding it again changes nothing.
 func TestDiscardLeavesTheObjectInactiveAndTakesNoMoreMoves(t *testing.T) {
 	for _, row := range discardableKinds {

@@ -407,7 +407,7 @@ func LiveAndDraft(r *ent.Rule) (live, draft *ent.RuleVersion) {
 }
 
 // Delete discards a Rule, whether or not it has fired (ADR 0098, ADR 0100), through
-// internal/domain/content/versioneddefinition' Discard: it is deactivated under the lock Publish takes, so it
+// internal/domain/content/versioneddefinition: its conditional write deactivates it and discards it, so it
 // never fires again, and it leaves the lists for good with its versions and Firings kept; Get still
 // reads it. Deleting a deleted Rule changes nothing.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {

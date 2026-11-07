@@ -3206,6 +3206,11 @@ func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 
 // Save verifies the references against the Workspace, then updates the Automation.
 func (x *AutomationScopedUpdateOne) Save(ctx context.Context) (*Automation, error) {
+	return x.save(ctx, "update")
+}
+
+// save keeps a machine's deletion verb while sharing the reference checks and audit capture.
+func (x *AutomationScopedUpdateOne) save(ctx context.Context, verb string) (*Automation, error) {
 	if err := x.check(ctx); err != nil {
 		return nil, err
 	}
@@ -3221,7 +3226,7 @@ func (x *AutomationScopedUpdateOne) Save(ctx context.Context) (*Automation, erro
 			if updated, err = x.b.Save(ctx); err != nil {
 				return err
 			}
-			return ts.record(ctx, auditChangeAutomation("update", before, updated))
+			return ts.record(ctx, auditChangeAutomation(verb, before, updated))
 		})
 		return updated, err
 	}
@@ -27852,6 +27857,11 @@ func (x *RuleScopedUpdateOne) check(ctx context.Context) error {
 
 // Save verifies the references against the Workspace, then updates the Rule.
 func (x *RuleScopedUpdateOne) Save(ctx context.Context) (*Rule, error) {
+	return x.save(ctx, "update")
+}
+
+// save keeps a machine's deletion verb while sharing the reference checks and audit capture.
+func (x *RuleScopedUpdateOne) save(ctx context.Context, verb string) (*Rule, error) {
 	if err := x.check(ctx); err != nil {
 		return nil, err
 	}
@@ -27867,7 +27877,7 @@ func (x *RuleScopedUpdateOne) Save(ctx context.Context) (*Rule, error) {
 			if updated, err = x.b.Save(ctx); err != nil {
 				return err
 			}
-			return ts.record(ctx, auditChangeRule("update", before, updated))
+			return ts.record(ctx, auditChangeRule(verb, before, updated))
 		})
 		return updated, err
 	}

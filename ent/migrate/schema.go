@@ -1222,6 +1222,11 @@ var (
 				},
 			},
 			{
+				Name:    "invitation_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{InvitationsColumns[9]},
+			},
+			{
 				Name:    "invitation_invited_by",
 				Unique:  false,
 				Columns: []*schema.Column{InvitationsColumns[8]},
