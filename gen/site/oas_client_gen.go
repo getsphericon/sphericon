@@ -526,9 +526,8 @@ type Invoker interface {
 	SiteContactsList(ctx context.Context, params SiteContactsListParams) (*SiteContactsListOK, error)
 	// SiteContactsLookup invokes SiteContacts_lookup operation.
 	//
-	// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
-	// is trimmed and lowercased; an invalid one is refused (422). An address nothing holds answers with
-	// zeros, not 404. Owner or admin only.
+	// Look up what the Workspace holds for one email address (a Privacy request): counts only. An address
+	// nothing holds answers with zeros, not 404. Owner or admin only.
 	//
 	// GET /workspaces/{workspaceId}/contacts/lookup
 	SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (*SiteContactHoldings, error)
@@ -11430,9 +11429,8 @@ func (c *Client) sendSiteContactsList(ctx context.Context, params SiteContactsLi
 
 // SiteContactsLookup invokes SiteContacts_lookup operation.
 //
-// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
-// is trimmed and lowercased; an invalid one is refused (422). An address nothing holds answers with
-// zeros, not 404. Owner or admin only.
+// Look up what the Workspace holds for one email address (a Privacy request): counts only. An address
+// nothing holds answers with zeros, not 404. Owner or admin only.
 //
 // GET /workspaces/{workspaceId}/contacts/lookup
 func (c *Client) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (*SiteContactHoldings, error) {

@@ -11938,7 +11938,8 @@ export type SiteContactsEraseData = {
   };
   query: {
     /**
-     * The email address to erase, as typed: trimmed and validated by the erasure module
+     * The email address to erase, as typed. The schema checks no format: the server trims and
+     * lowercases it, and refuses it (422) unless it is a single plain address.
      */
     email: string;
   };
@@ -12024,7 +12025,8 @@ export type SiteContactsLookupData = {
   };
   query: {
     /**
-     * The email address, as typed: trimmed and validated by the erasure module, not by the format check
+     * The email address, as typed. The schema checks no format: the server trims and lowercases
+     * it, and refuses it (422) unless it is a single plain address.
      */
     email: string;
   };
