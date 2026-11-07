@@ -737,6 +737,14 @@ deleted outright. Fact rows (Events, Outbound messages, Audit entries, Suppressi
 discarded nor deleted: only Retention and erasure remove them.
 _Avoid_: Archive, soft delete, trash, tombstone (a tombstone is the row an erased Workspace leaves)
 
+**Unchecked operation**:
+A write of a domain module whose check needs what the module may not call (a module of a higher
+context, or several modules), so a use case runs the check first and then calls the write. It still
+checks its own input; only the rule across modules is the use case's. It lives
+in a subpackage of its owner that only use cases may import (ADR 0110); called alone it would break a
+rule the use case keeps, such as a Tag deleted while an active Rule tests it.
+_Avoid_: Raw write, internal write, unsafe
+
 **Live use**:
 Work that will still send or act through a row: a scheduled or sending Broadcast, the live
 version of an active Automation, any version an unfinished Enrollment stands on, and an active

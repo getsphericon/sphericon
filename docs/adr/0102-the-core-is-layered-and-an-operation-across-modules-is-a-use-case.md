@@ -14,6 +14,12 @@ status: accepted
 >
 > Refined by [[0107-a-domain-module-checks-every-input-to-its-writes]]: no caller holds a rule of a
 > module's rows for it.
+>
+> Refined by [[0110-an-unchecked-operation-lives-where-only-a-use-case-can-import-it]]: an unchecked
+> removal lives in a subpackage only use cases may import, not in `forbid_symbol` lists, and easement
+> does match a member after its type. Refined by
+> [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]]: a driver calls one
+> operation of the core per function.
 
 ## Context
 
