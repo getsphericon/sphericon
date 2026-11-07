@@ -591,6 +591,7 @@ var deliveryPackage = do.Package(
 			outboundmessages.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outboundmessages.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
 			outboundmessages.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[*integrations.Module](i)),
+			outboundmessages.WithClock(do.MustInvoke[Clock](i)),
 		}
 		if cfg.SystemMailConfigured() {
 			opts = append(opts, outboundmessages.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))

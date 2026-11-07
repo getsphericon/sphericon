@@ -324,7 +324,8 @@ func WithMode(m config.Mode) Option { return func(s *setup) { s.cfg.ApplyMode(m)
 func WithConfig(edit func(*config.Config)) Option { return func(s *setup) { edit(s.cfg) } }
 
 // WithClock replaces the clock of the Instance (app.Clock: session expiry, the login delay,
-// holds, second factors, …), so a test freezes or advances time instead of sleeping.
+// holds, second factors, the Outbound send's Provider limit and claim lease, …), so a test freezes
+// or advances time instead of sleeping.
 func WithClock(now func() time.Time) Option { return func(s *setup) { s.now = now } }
 
 // WithRateLimits turns the rate limits on with the given (small) budgets. Without

@@ -284,8 +284,9 @@ func WithSystemSender(s messaging.EmailSender) Option { return func(m *Module) {
 // WithTestSendBudget caps the Test sends made from the System sender.
 func WithTestSendBudget(b TestSendBudget) Option { return func(m *Module) { m.testBudget = b } }
 
-// WithClock replaces the wall clock the module reads: the Provider limit's token buckets, the
-// claim lease and the moment a message is recorded sent. Tests move it instead of waiting.
+// WithClock gives the module the clock it reads for the Provider limit's token buckets, the claim
+// lease and the moment a message is recorded sent. The Instance passes its own clock (app.Clock);
+// without the option the module reads the wall clock. Tests move it instead of waiting.
 func WithClock(now func() time.Time) Option { return func(m *Module) { m.now = now } }
 
 // Now reads the module's clock (WithClock): the moment a Deferral's Wait is measured from, so a
