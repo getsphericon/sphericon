@@ -107,8 +107,8 @@ func (in CustomFieldUpdateInput) Retype(field *ent.CustomField) (customfield.Typ
 // change rewrites no stored value: the leaves of the new type read the values as they are, and are
 // false on one of another shape. It is the unchecked retype (ADR 0102): it does not ask whether a
 // Segment, a Rule or a Broadcast tests the field with a leaf the new type does not take. Editing a
-// Custom field is the use case internal/usecase/customfieldretyping, which runs that check first;
-// easement forbids every other package to call UpdateCustomFieldIn. A blank new name is
+// Custom field is the use case internal/usecase/customfieldretyping, which runs the Removal check
+// first; easement forbids every other package to call UpdateCustomFieldIn. A blank new name is
 // ErrCustomFieldNameRequired.
 func UpdateCustomFieldIn(ctx context.Context, s *ent.Scoped, field *ent.CustomField, in CustomFieldUpdateInput) (*ent.CustomField, error) {
 	if err := in.Check(); err != nil {

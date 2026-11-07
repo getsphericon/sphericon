@@ -29,19 +29,19 @@ version: 1
 x-unchecked-removals: &unchecked-removals
   - &tags-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.DeleteIn
-    because: deleting a Tag is the use case internal/usecase/tagdeletion, which checks the Tag's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
+    because: deleting a Tag is the use case internal/usecase/tagdeletion, which runs the Removal check, the Tag's Definition use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &leave-doomed-workspace-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.LeaveDoomedWorkspaceIn
     because: it lets the only Owner leave, which only User deletion may do, after it has refused a User who solely owns a live Workspace (ADR 0050); call memberships.Module.Leave or LeaveIn
   - &contacts-update-custom-field-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.UpdateCustomFieldIn
-    because: editing a Custom field is the use case internal/usecase/customfieldretyping, which refuses a retype while a Segment, a Rule or an armed Broadcast tests the field with a leaf the new type does not take (ADR 0102, ADR 0065); call the use case
+    because: editing a Custom field is the use case internal/usecase/customfieldretyping, which runs the Removal check under the Workspace lock first, refusing a retype while a Segment, a Rule or an armed Broadcast tests the field with a leaf the new type does not take (ADR 0102, ADR 0065, ADR 0099); call the use case
   - &integrations-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/sending/integrations.DeleteIn
-    because: deleting an Integration is the use case internal/usecase/integrationdeletion, which checks the Integration's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
+    because: deleting an Integration is the use case internal/usecase/integrationdeletion, which runs the Removal check, the Integration's Live use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &sendingdomains-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.DeleteIn
-    because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which checks the domain's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
+    because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which runs the Removal check, the domain's Live use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &sendingdomains-record-dkim
     name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDKIM
     because: a Sending domain becomes verified only by a live DKIM lookup (ADR 0010), which the use case internal/usecase/sendingdomainverification runs before it stores the outcome; call the use case
@@ -861,7 +861,7 @@ components:
     because: the job runner is a driver (ADR 0102) that only the wiring builds; no domain module imports it, and a package with jobs of its own hands them in as a jobextension.Extension
 
   # The use cases (ADR 0102): an operation that spans several domain modules, such as deleting a Tag
-  # after the Live use check of the modules that name it. Each directory under internal/usecase is
+  # after the Removal check of the modules that name it. Each directory under internal/usecase is
   # one use case; it calls the domain modules, opens the transaction they join and takes the
   # Workspace lock where ADR 0099 requires it. Only a driver or the wiring imports one.
   usecase:
@@ -983,9 +983,9 @@ components:
 
   # Orchestration, above sending: what targets Contacts and sends through the contexts below, the
   # Broadcasts, the Automations with their stored Steps (automationstep), the Rules and the
-  # Webhook endpoints, with the one shape of a refused removal the Live use checks return (liveuse).
-  # Its raw-client
-  # holders (docs/architecture.md, Workspace scoping) are `domain-orchestration-raw`.
+  # Webhook endpoints, with the one shape of a refused removal (liveuse), a leaf below the modules
+  # that return it, and the Removal check at its top (removalcheck, a component of its own). Its
+  # raw-client holders (docs/architecture.md, Workspace scoping) are `domain-orchestration-raw`.
   domain-orchestration-raw:
     in:
       [
@@ -993,6 +993,33 @@ components:
         internal/domain/orchestration/rules,
         internal/domain/orchestration/webhookendpoints,
       ]
+  # The Removal check (GLOSSARY "Removal check"): the one importer of the readers of what may hold
+  # a row (`domain-*-removalcheck-readers`). It holds no raw client and is called by the use cases
+  # that remove a checked row.
+  domain-orchestration-removalcheck:
+    in: internal/domain/orchestration/removalcheck
+    allow_importers: [usecase, wiring]
+    because: the Removal check runs inside a use case's transaction under the Workspace lock (ADR 0099), before its unchecked removal; a domain module never removes a row another module may hold
+  # The readers of the Removal check: each owner that may hold a row keeps them in a subpackage
+  # `<module>use`, which may import its owner and which the owner does not import (the Definition
+  # use of the Segments, Rules, Automations and armed Broadcasts, the Live use that sends of the
+  # Broadcasts and Automations). They are opened to the Removal check alone, so every removal that
+  # checks a row reads every holder, and a new holder is a reader the Removal check adds (ADR 0110:
+  # a fence by place). There is one component per context, so a reader keeps its owner's place in
+  # the order of contexts. Tests of the owners are not checked.
+  domain-contacts-removalcheck-readers:
+    in: internal/domain/contacts/segments/segmentsuse
+    allow_importers: [domain-orchestration-removalcheck]
+    because: a reader of what may hold a row is the Removal check's (internal/domain/orchestration/removalcheck, ADR 0049, ADR 0099), the one list of the holders; a removal that checks a row calls the Removal check under the Workspace lock
+  domain-orchestration-removalcheck-readers:
+    in:
+      [
+        internal/domain/orchestration/automations/automationsuse,
+        internal/domain/orchestration/broadcasts/broadcastsuse,
+        internal/domain/orchestration/rules/rulesuse,
+      ]
+    allow_importers: [domain-orchestration-removalcheck]
+    because: a reader of what may hold a row is the Removal check's (internal/domain/orchestration/removalcheck, ADR 0049, ADR 0099), the one list of the holders; a removal that checks a row calls the Removal check under the Workspace lock
   # The rest of orchestration, which holds no raw client; a new module under
   # internal/domain/orchestration lands here.
   domain-orchestration: { in: 'internal/domain/orchestration/**' }
@@ -1195,6 +1222,29 @@ rules:
     forbid_external: *no-container
     forbid_symbol: *core-forbids
     because: orchestration sits above sending in the domain tier (ADR 0102), so an orchestration module imports the kernel, the infrastructure, ent, the other orchestration modules and those of identity, contacts, content and sending, never a module of a context above (the Setup checklist, an Export stream, the Instance state) nor a use case; an operation that needs one is a use case above both
+  domain-orchestration-removalcheck:
+    may_depend_on:
+      [
+        domain-contacts-removalcheck-readers,
+        domain-orchestration-removalcheck-readers,
+        domain-orchestration,
+      ]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: the Removal check sits at the top of orchestration (ADR 0102), so it imports the readers of the modules that may hold a row and the other orchestration modules, never a module of a context above nor a use case
+  domain-contacts-removalcheck-readers:
+    may_depend_on: [domain-contacts]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: a reader belongs to its owner's context (ADR 0102), so a contacts reader imports its owner and the modules of contacts and below, never a module of a context above nor a use case
+  domain-orchestration-removalcheck-readers:
+    may_depend_on: [domain-orchestration-raw, domain-orchestration, domain-contacts]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: a reader belongs to its owner's context (ADR 0102), so an orchestration reader imports its owner, the modules beside it and those below, never a module of a context above nor a use case
   domain-insights:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
@@ -1226,6 +1276,7 @@ rules:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
     may_depend_on:
       [
+        domain-orchestration-removalcheck,
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,
@@ -1442,6 +1493,7 @@ rules:
   wiring:
     may_depend_on:
       [
+        domain-orchestration-removalcheck,
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -134,11 +135,11 @@ func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, time.Now)
 
-	drafted, err := rules.UsingTag(ctx, acme(env), "rule-inactive")
+	drafted, err := rulesuse.UsingTag(ctx, acme(env), "rule-inactive")
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, acme(env), fixtures.RuleInactiveID)
 	require.NoError(t, err)
-	published, err := rules.UsingTag(ctx, acme(env), "rule-inactive")
+	published, err := rulesuse.UsingTag(ctx, acme(env), "rule-inactive")
 	require.NoError(t, err)
 
 	assert.Equal(t, []int64{fixtures.RuleInactiveID}, lo.Map(drafted, func(r *ent.Rule, _ int) int64 { return r.ID }))
@@ -149,7 +150,7 @@ func TestAnActiveRuleWhoseConditionNamesATagUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// RuleVipOnly is active and its Condition tests the vip Tag; RuleMultiTrigger removes it.
-	using, err := rules.UsingTag(context.Background(), acme(env), "vip")
+	using, err := rulesuse.UsingTag(context.Background(), acme(env), "vip")
 
 	require.NoError(t, err)
 	ids := make([]int64, 0, len(using))
@@ -166,7 +167,7 @@ func TestADeletedRuleUsesNoTag(t *testing.T) {
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleVipOnlyID))
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleMultiTriggerID))
 
-	using, err := rules.UsingTag(ctx, acme(env), "vip")
+	using, err := rulesuse.UsingTag(ctx, acme(env), "vip")
 
 	require.NoError(t, err)
 	assert.Empty(t, using)

@@ -1425,6 +1425,12 @@ const (
 	CustomFieldAcmePlanKey = "plan"
 	// CustomFieldAcmePlanName is from fixtures/custom_fields.
 	CustomFieldAcmePlanName = "Plan"
+	// CustomFieldDuffEndsOnID is from fixtures/custom_fields.
+	CustomFieldDuffEndsOnID = 7702
+	// CustomFieldDuffEndsOnKey is from fixtures/custom_fields.
+	CustomFieldDuffEndsOnKey = "ends_on"
+	// CustomFieldDuffEndsOnName is from fixtures/custom_fields.
+	CustomFieldDuffEndsOnName = "ends_on"
 	// CustomFieldDuffHasItID is from fixtures/custom_fields.
 	CustomFieldDuffHasItID = 7703
 	// CustomFieldDuffHasItKey is from fixtures/custom_fields.
@@ -3297,6 +3303,10 @@ const (
 	SegmentCaptonID = 20010
 	// SegmentCaptonName is from fixtures/segments.
 	SegmentCaptonName = "Lives in Capton"
+	// SegmentDuffEndsSoonID is from fixtures/segments.
+	SegmentDuffEndsSoonID = 7700
+	// SegmentDuffEndsSoonName is from fixtures/segments.
+	SegmentDuffEndsSoonName = "Ends soon"
 	// SegmentGlobexID is from fixtures/segments.
 	SegmentGlobexID = 900
 	// SegmentGlobexName is from fixtures/segments.

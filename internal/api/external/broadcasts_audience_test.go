@@ -80,9 +80,9 @@ func TestExternalScheduledBroadcastSendsToTheConditionCopiedAtSchedule(t *testin
 	assert.NotContains(t, got, fixtures.ContactNoahEmail, "a free Contact, who matches only the edited Segment, does not")
 }
 
-// A Tag named only in a scheduled Broadcast's copied Condition is in use by that Broadcast, while
-// its Segment of origin is free to archive (ADR 0065).
-func TestExternalTagNamedInAScheduledBroadcastsCopyIsInUse(t *testing.T) {
+// A Tag named only in a scheduled Broadcast's copied Condition is in Definition use by that
+// Broadcast, while its Segment of origin is free to archive (ADR 0065).
+func TestExternalTagNamedInAScheduledBroadcastsCopyIsInDefinitionUse(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write", "segments:write")
 

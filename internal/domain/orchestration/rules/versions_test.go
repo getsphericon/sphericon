@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -156,9 +157,9 @@ func TestADraftThatNamesATagUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	neverPublished, err := rules.UsingTag(ctx, acme(env), "rule-inactive")
+	neverPublished, err := rulesuse.UsingTag(ctx, acme(env), "rule-inactive")
 	require.NoError(t, err)
-	draftOfActive, err := rules.UsingTag(ctx, acme(env), "rule-clicked-v2")
+	draftOfActive, err := rulesuse.UsingTag(ctx, acme(env), "rule-clicked-v2")
 	require.NoError(t, err)
 
 	assert.Equal(t, []int64{fixtures.RuleInactiveID}, lo.Map(neverPublished, func(r *ent.Rule, _ int) int64 { return r.ID }))

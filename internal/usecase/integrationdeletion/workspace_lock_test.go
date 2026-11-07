@@ -12,12 +12,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -77,7 +79,8 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	s, bus := race.Scope, race.Bus
 	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
-	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, ""), time.Now)
+	check := removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default()))
+	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, ""), check, time.Now)
 
 	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)

@@ -142,7 +142,7 @@
 
 # Duff (workspace 94): a Segment that tests ends_on with a date operator, and one that tests only
 # that has_it is there, which every type takes.
-- id: 7700
+- id: 7700 # fixture: SegmentDuffEndsSoon
   name: Ends soon
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"date","field":"custom:ends_on","operator":"after","at":"2026-01-01T00:00:00Z"}]}'
   workspace_id: 94
