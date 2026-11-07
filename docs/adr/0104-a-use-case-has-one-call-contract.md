@@ -42,7 +42,10 @@ A caller had to learn each package's shape anew, and a reviewer could check none
     Second factor code through the function `secondfactorcheck.UseCase.DeletionCode` hands it.
   - A third argument, or any optional one, goes into a typed `XInput` struct named after the method.
 - **The actor is part of the input. The clock is a dependency.**
-  - Who acts is one of the required arguments or a field of the `XInput`.
+  - An operation audited through its Workspace scope gets who acts from that scope: the driver
+    builds the `*ent.Scoped` with its actor (`As`, ADR 0022), and the scope is part of the input.
+    Any other operation takes the actor as one of its required arguments or as a field of its
+    `XInput`.
   - The time comes from the Instance clock (`app.Clock`), which the wiring gives to `New`. No
     method takes `now`, and no use case reads `time.Now`; a test gives `New` the clock it needs.
 - **A method returns one value, or a named struct.**

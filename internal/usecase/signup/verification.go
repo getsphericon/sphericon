@@ -183,7 +183,7 @@ var ErrOwnerEmailInvalid = validation.RefuseField(validation.FieldEmail, "signup
 // one (see db.IsUniqueViolation).
 func (u *UseCase) CreateOwner(ctx context.Context, email, name string) (string, error) {
 	if _, err := mail.ParseAddress(email); err != nil {
-		return "", ErrOwnerEmailInvalid
+		return "", ErrOwnerEmailInvalid.With(email)
 	}
 	password := rand.Text()
 	hash, err := u.passwords.Hash(password)
