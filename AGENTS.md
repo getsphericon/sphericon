@@ -144,8 +144,12 @@ The rest of this file is for maintainers and the agents they run: how work lands
 - Commit messages follow **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`,
   `refactor:`, `ci:` …) — release-please uses them for versioning/changelog.
   commitlint runs on every commit; the header fits 120 characters and each body line 100.
-  **Never create a merge commit** (`chore: merge origin/main` and the like): history stays linear.
-  Bring `main` in with `git fetch origin && git rebase origin/main`, never `git merge`.
+  **Nothing lands on `main` as a merge commit** (`chore: merge origin/main` and the like): its
+  history stays linear. Bring `main` into a worktree's branch with `git fetch origin && git rebase
+  origin/main`, never `git merge`. The one exception is `implement-spec`, whose own steps win: the
+  merges it makes between its implementer branches and its integration branch are allowed, and so
+  is bringing `main` in before it marks the pull request ready (below). The squash of that pull
+  request keeps `main` linear.
 - The configuration reference is generated: `mise run generate` writes `docs/configuration.md` from
   the `environment` struct of `config/` (each variable's tags, the profile defaults and its field's doc
   comment, which a new variable must have). The documentation site repository
@@ -240,11 +244,14 @@ A research note (the file the `research` skill writes, the `research/<name>` bra
 maintainers keep such notes elsewhere. An ADR or a ticket that rests on research states the finding
 itself, not a pointer to a note. The skills are vendored, so this rule lives here rather than in them.
 
-### Rebase onto main before marking ready
+### Bring main in before marking ready
 
-In `implement-spec`, before marking the draft PR ready, rebase the integration branch onto a freshly
-fetched `origin/main`, push it with `--force-with-lease`, and merge the PR at once: `main` moves while the integration runs, and a
-conflicting PR runs no CI. The skill is vendored, so this rule lives here rather than in the skill.
+In `implement-spec`, before marking the draft PR ready, merge a freshly fetched `origin/main` into
+the integration branch (`git fetch origin && git merge origin/main`), push it, and merge the PR at
+once: `main` moves while the integration runs, and a conflicting PR runs no CI. A rebase would
+flatten the merges the skill made and bring back every conflict its implementers already resolved;
+the squash of the PR keeps `main` linear. The skill is vendored, so this rule lives here rather than
+in the skill.
 
 ### Pull request body
 
