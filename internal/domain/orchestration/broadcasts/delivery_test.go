@@ -234,8 +234,11 @@ func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 	assert.Equal(t, broadcast.StatusSending, b.Status, "a hold keeps the status")
 }
 
+// A recipient that finds the Provider limit spent is deferred: it stays pending, sleeps until a
+// token is due and puts no hold on the Broadcast. On a clock that stands still, so no token
+// refills between the sends.
 func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, atFixedNow())
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
 	// Transactional traffic spends the Integration's capacity and is itself never slowed.
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
@@ -260,9 +263,10 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 }
 
 // The Provider limit that defers a recipient is the Broadcast's own Integration's: the
-// default is unlimited, the named one has its capacity spent.
+// default is unlimited, the named one has its capacity spent. On a clock that stands still, so no
+// token refills between the sends.
 func TestDeferralFollowsTheBroadcastsOwnIntegration(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, atFixedNow())
 	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetMaxPerSecond(1).ExecX(d.t.Context())
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())

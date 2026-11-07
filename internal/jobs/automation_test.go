@@ -196,6 +196,22 @@ func TestAutomationWaitParksTheEnrollmentAndQueuesTheNextStepForTheResumeTime(t 
 	assert.Empty(t, fs.sent)
 }
 
+// The Instance times a wait on the Instance clock, not the wall: a year ahead of the wall, the
+// Enrollment's one-hour wait ends an hour after that clock's time.
+func TestTheInstanceTimesAWaitOnTheInstanceClock(t *testing.T) {
+	at := time.Now().AddDate(1, 0, 0)
+	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
+	runID := enrollVia(t, env, fixtures.AutomationJobsWaitFirstID, fixtures.ContactAliceID)
+	want := at.Add(time.Hour)
+
+	ran := env.RunNextStep(t, env.StepExecution)
+
+	require.True(t, ran)
+	run := env.DB.AutomationRun.GetX(t.Context(), runID)
+	require.NotNil(t, run.ResumeAt)
+	assert.WithinDuration(t, want, *run.ResumeAt, time.Microsecond, "an hour after the Instance clock's time")
+}
+
 // A step that runs before the Enrollment's recorded resume time (a retried wait) queues itself
 // for that time and does nothing else: the email after the wait is not sent early.
 func TestAStepRunningBeforeTheResumeTimeQueuesItselfAndDoesNothingElse(t *testing.T) {

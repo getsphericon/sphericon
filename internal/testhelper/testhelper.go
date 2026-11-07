@@ -59,6 +59,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
@@ -229,6 +230,10 @@ type TestEnv struct {
 	// SignUp is the use case the server signs Users up with and makes them Verified with their
 	// first Workspace, an Owner made from a shell among them (ADR 0102).
 	SignUp *signup.UseCase
+	// StepExecution is the use case the Instance runs an Enrollment's steps with, on the env's
+	// clock (ADR 0102). A test that drives an Automation over senders of its own builds one with
+	// stepexecution.New instead.
+	StepExecution *stepexecution.UseCase
 
 	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,
 	// ADR 0063), on every env.
@@ -324,7 +329,9 @@ func WithMode(m config.Mode) Option { return func(s *setup) { s.cfg.ApplyMode(m)
 func WithConfig(edit func(*config.Config)) Option { return func(s *setup) { edit(s.cfg) } }
 
 // WithClock replaces the clock of the Instance (app.Clock: session expiry, the login delay,
-// holds, second factors, …), so a test freezes or advances time instead of sleeping.
+// holds, second factors, the Outbound send's Provider limit and claim lease, the open and click
+// stamps, an Enrollment's waits, the Automation report's period, …), so a test freezes or advances
+// time instead of sleeping.
 func WithClock(now func() time.Time) Option { return func(s *setup) { s.now = now } }
 
 // WithRateLimits turns the rate limits on with the given (small) budgets. Without
@@ -556,6 +563,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SecondFactor:      do.MustInvoke[*secondfactorcheck.UseCase](injector),
 		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
 		SignUp:            do.MustInvoke[*signup.UseCase](injector),
+		StepExecution:     do.MustInvoke[*stepexecution.UseCase](injector),
 		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
 		StaffEnterprise:   edition.Staff,
 

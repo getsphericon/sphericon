@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 )
@@ -29,11 +30,25 @@ func (e *riverEnv) recipientJobTimes(t *testing.T) []time.Time {
 	return times
 }
 
-func (e *riverEnv) planBroadcast(t *testing.T, id int64) {
+func (e *riverEnv) planBroadcast(t *testing.T, id int64, opts ...outboundmessages.Option) {
 	t.Helper()
 	e.DB.Broadcast.UpdateOneID(id).SetStatus(broadcast.StatusSending).ExecX(e.workCtx())
-	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender)))
+	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), opts...))
 	require.NoError(t, w.Work(e.workCtx(), job(broadcasts.SendArgs{BroadcastID: id})))
+}
+
+// The plan starts at Outbound send's clock (the Instance clock), not the wall: through a limited
+// Integration, the first recipient job is due at that clock's time.
+func TestThePlanStartsAtOutboundSendsClock(t *testing.T) {
+	e := newRiverEnv(t)
+	e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(e.workCtx())
+	at := time.Now().Add(time.Hour)
+
+	e.planBroadcast(t, fixtures.BroadcastDraftID, outboundmessages.WithClock(func() time.Time { return at }))
+
+	times := e.recipientJobTimes(t)
+	require.NotEmpty(t, times)
+	assert.WithinDuration(t, at, times[0], time.Millisecond, "the first send is due at the clock's time")
 }
 
 // The river adapter inserts each recipient job at the time the module computed for it.

@@ -2,6 +2,7 @@ package broadcasts_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -95,8 +96,8 @@ func TestEngagementIsRecordedOnce(t *testing.T) {
 	// An open and a click are stamps of the recipient's Outbound message (ADR 0053), read by the
 	// Broadcast's figures from there.
 	for name, record := range map[string]func() (bool, error){
-		"open":  func() (bool, error) { return outboundmessages.StampOpened(d.t.Context(), d.s, messageID) },
-		"click": func() (bool, error) { return outboundmessages.StampClicked(d.t.Context(), d.s, messageID) },
+		"open":  func() (bool, error) { return outboundmessages.StampOpened(d.t.Context(), d.s, messageID, time.Now()) },
+		"click": func() (bool, error) { return outboundmessages.StampClicked(d.t.Context(), d.s, messageID, time.Now()) },
 		"unsubscribe": func() (bool, error) {
 			return broadcasts.RecordUnsubscribe(d.t.Context(), d.s, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 		},
@@ -115,7 +116,7 @@ func TestEngagementIsRecordedOnce(t *testing.T) {
 func TestEngagementOfAnUnknownMessageIsNothing(t *testing.T) {
 	d := newDelivery(t)
 
-	recorded, err := outboundmessages.StampOpened(d.t.Context(), d.s, 424242)
+	recorded, err := outboundmessages.StampOpened(d.t.Context(), d.s, 424242, time.Now())
 	require.NoError(t, err)
 	assert.False(t, recorded)
 

@@ -291,9 +291,11 @@ func TestATelegramBroadcastIsHeldWhileItsBotIsRefusedAndResumesWhenTheTokenIsSav
 }
 
 // The Provider limit counts bot calls, not messages: a Contact with two chats spends two tokens,
-// so at two a second the next Contact's send waits.
+// so at two a second the next Contact's send waits. The Instance clock stands still, so no token
+// refills while the sends run, however long they take.
 func TestATelegramContactWithSeveralChatsSpendsTheProviderLimitPerChat(t *testing.T) {
-	env := testhelper.Setup(t)
+	still := time.Now()
+	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return still }))
 	ctx := t.Context()
 	bot := env.LacunaTelegram(t)
 	env.DB.Integration.UpdateOneID(int64(bot.Integration.ID)).SetMaxPerSecond(2).ExecX(ctx)

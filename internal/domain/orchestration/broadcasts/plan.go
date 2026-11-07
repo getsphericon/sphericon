@@ -60,19 +60,20 @@ func failPlan(ctx context.Context, s *ent.Scoped, id int64, cause error) error {
 // is past its plan (a stale job), and a plain error on a fault. A plan that failed the
 // Broadcast (see ErrPlanFailed) is recorded and returns nil. An empty audience
 // settles the Broadcast and schedules nothing. Eligibility is still checked per message at
-// send time, so an unsubscribe or Suppression that lands after planning is honoured.
-func (d *Delivery) Run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, now time.Time) error {
-	return d.run(ctx, s, id, sched, now, triggerPlan)
+// send time, so an unsubscribe or Suppression that lands after planning is honoured. The pace
+// starts at Outbound send's clock, the one its Deferrals of the same recipients read.
+func (d *Delivery) Run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler) error {
+	return d.run(ctx, s, id, sched, triggerPlan)
 }
 
 // RunClaimed is Run for a job queued after the Broadcast was claimed (Send or Schedule): it
 // refuses a draft with lifecycle.ErrInvalidTransition, so an unschedule that lands after
 // Due has answered is not undone by the plan.
-func (d *Delivery) RunClaimed(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, now time.Time) error {
-	return d.run(ctx, s, id, sched, now, triggerResume)
+func (d *Delivery) RunClaimed(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler) error {
+	return d.run(ctx, s, id, sched, triggerResume)
 }
 
-func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, now time.Time, t trigger) error {
+func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, t trigger) error {
 	ids, err := d.plan(ctx, s, id, t)
 	if errors.Is(err, ErrPlanFailed) {
 		return nil // the Broadcast failed once, recorded as such: a retry would only fail again
@@ -80,7 +81,7 @@ func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 	if err != nil || len(ids) == 0 {
 		return err
 	}
-	times, err := d.Pace(ctx, s, id, ids, now)
+	times, err := d.Pace(ctx, s, id, ids, d.out.Now())
 	if err != nil {
 		return err
 	}

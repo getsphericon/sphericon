@@ -102,6 +102,23 @@ func TestTheProviderLimitRunsOnTheInjectedClock(t *testing.T) {
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
 }
 
+// The Instance's Outbound send reads the Instance clock (app.Clock), not the wall: the test above
+// covers what the module does with its clock, this one that the Instance hands it its own.
+func TestTheInstancesOutboundSendRunsOnTheInstanceClock(t *testing.T) {
+	c := startClock()
+	env := testhelper.Setup(t, testhelper.WithClock(c.now))
+	c.elapse(time.Hour)
+	at := c.now()
+
+	res := send(t, env.OutboundModule(), env, "bc:1")
+
+	require.Equal(t, outboundmessages.Sent, res.Outcome)
+	msg, err := acme(env).OutboundMessage().Get(context.Background(), res.MessageID)
+	require.NoError(t, err)
+	require.NotNil(t, msg.SentAt)
+	assert.WithinDuration(t, at, *msg.SentAt, time.Microsecond, "recorded sent at the Instance clock, an hour off the wall")
+}
+
 // A provider that has stopped the account holds the route but does not refuse arming a send: the
 // standing lifts by itself, and the sends wait for it. A route with no Integration that can send is
 // refused.

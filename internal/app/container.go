@@ -591,6 +591,7 @@ var deliveryPackage = do.Package(
 			outboundmessages.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outboundmessages.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
 			outboundmessages.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[*integrations.Module](i)),
+			outboundmessages.WithClock(do.MustInvoke[Clock](i)),
 		}
 		if cfg.SystemMailConfigured() {
 			opts = append(opts, outboundmessages.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))
@@ -765,7 +766,7 @@ var contentPackage = do.Package(
 	}),
 	// Publish asks the Send route of Outbound send whether the email steps can send.
 	do.Lazy(func(i do.Injector) (*automations.Module, error) {
-		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i)), nil
+		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
 		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i)), nil
@@ -782,7 +783,7 @@ var contentPackage = do.Package(
 	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
 	// exit of its Enrollment on the raw client.
 	do.Lazy(func(i do.Injector) (*stepexecution.UseCase, error) {
-		return stepexecution.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i))), nil
+		return stepexecution.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i)), stepexecution.WithClock(do.MustInvoke[Clock](i))), nil
 	}),
 	do.Lazy(func(i do.Injector) (*eventrecording.UseCase, error) {
 		policy := eventrecording.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}
