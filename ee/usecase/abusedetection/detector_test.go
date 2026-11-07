@@ -10,15 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -33,11 +34,15 @@ func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.Licens
 	return lic
 }
 
+// support is the Instance's support contact the notices give an owner to appeal to.
 const support = "support@sphericon.test"
+
+// withSupport gives the Instance its support contact.
+var withSupport = testhelper.WithConfig(func(c *config.Config) { c.SupportEmail = support })
 
 func detector(t *testing.T, env *testhelper.TestEnv) *pass {
 	t.Helper()
-	return newDetector(env, licenseFor(t, licensekey.FeatureStaff), abusedetection.Config{Limits: limits, SupportEmail: support})
+	return newDetector(env, licenseFor(t, licensekey.FeatureStaff), abusedetection.Config{Limits: limits})
 }
 
 // pass runs the detector at a moment a test picks: the use case reads the clock it was built
@@ -53,11 +58,11 @@ func (p *pass) Run(ctx context.Context, at time.Time) (abusedetection.Summary, e
 	return p.detector.Run(ctx)
 }
 
-// newDetector is the detector over the env's bus and platform sender, as the Edition builds it.
+// newDetector is the detector over the env's bus, as the Edition builds it: what it publishes
+// tells the owners through the platform sender.
 func newDetector(env *testhelper.TestEnv, lic *licensekey.License, cfg abusedetection.Config) *pass {
-	notify := memberships.OwnerNotifier(env.DB, env.SystemMail)
 	p := &pass{}
-	p.detector = abusedetection.New(env.DB, lic, notify, suspension.NewSuspender(env.Bus, env.DB, notify, cfg.SupportEmail, time.Now), cfg,
+	p.detector = abusedetection.New(env.DB, env.Bus, lic, suspension.NewSuspender(env.Bus, time.Now), cfg,
 		func() time.Time { return p.now })
 	return p
 }
@@ -80,7 +85,7 @@ var limits = abusedetector.Limits{VolumeFloor: 20, WarnComplaintBP: 500, WarnBou
 func at(days int) time.Time { return time.Now().Add(-time.Duration(days) * 24 * time.Hour) }
 
 func TestAWorkspaceOverTheFreezeLimitIsFrozenAndItsOwnersTold(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, withSupport)
 
 	summary, err := detector(t, env).Run(t.Context(), at(overDay))
 
@@ -220,18 +225,24 @@ func TestARecoveredWorkspaceStartsANewEpisodeWhenItReEntersTheTier(t *testing.T)
 	assert.Len(t, env.SystemMail.Messages(), 4)
 }
 
-func TestAWarningWhoseMailFailedIsRetriedNextPass(t *testing.T) {
+// A warning whose mail fails is not warned again by the next pass: the episode is marked with the
+// warning, and the warning's send is retried on its own until the owners have it.
+func TestAWarningWhoseMailFailedIsRetriedByItsSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	d := detector(t, env)
 	env.SystemMail.SetErr(assert.AnError)
 
-	_, err := d.Run(t.Context(), at(warnDay))
-	require.Error(t, err)
-	env.SystemMail.SetErr(nil)
-	retried, err := d.Run(t.Context(), at(warnDay))
-
+	warned, err := d.Run(t.Context(), at(warnDay))
 	require.NoError(t, err)
-	assert.Equal(t, []int64{fixtures.VandelayID}, retried.Warned)
+	assert.Equal(t, []int64{fixtures.VandelayID}, warned.Warned)
+	assert.Empty(t, env.SystemMail.Messages(), "the send failed")
+
+	env.SystemMail.SetErr(nil)
+	again, err := d.Run(t.Context(), at(warnDay))
+	require.NoError(t, err)
+	assert.Empty(t, again.Warned, "the episode is already warned")
+	env.RetryJobs(t, jobs.SendNoticeArgs{})
+	assert.ElementsMatch(t, []string{fixtures.VandelayOwnerArtEmail, fixtures.VandelayOwnerCosmoEmail}, recipients(env))
 }
 
 func TestAnyOneOfSeveralDomainsFreezesTheWholeWorkspace(t *testing.T) {

@@ -266,7 +266,11 @@ func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLo
 			return err
 		}
 		identityID = identity.ID
-		return RecordUserAction(ctx, tx, pub, linked, events.ActionUserIdentityLink, map[string]any{"provider": in.Provider})
+		if err := RecordUserAction(ctx, tx, pub, linked, events.ActionUserIdentityLink, map[string]any{"provider": in.Provider}); err != nil {
+			return err
+		}
+		// The User did not take this step: the owner is told, with the link that undoes it (ADR 0048).
+		return pub.Publish(ctx, &events.IdentityLinked{UserID: linked.ID, Email: linked.Email, Provider: in.Provider, IdentityID: identityID})
 	})
 	return linked, identityID, err
 }

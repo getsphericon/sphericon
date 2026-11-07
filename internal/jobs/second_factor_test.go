@@ -16,8 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-const reminderAppURL = "https://app.example/"
-
 // Umbrella's requirement started 2026-03-01: Rita's grace ends 2026-03-08, Nina's (she
 // joined 2026-03-05) 2026-03-12. Sam has a Second factor. Fixture times are UTC.
 var (
@@ -25,9 +23,12 @@ var (
 	ninaDeadline = time.Date(2026, 3, 12, 0, 0, 0, 0, time.UTC)
 )
 
+// remind runs the reminder sweep at now: each reminder it claims is published, and its Notice is
+// sent when the test reads env.SystemMail.
 func remind(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	require.NoError(t, jobs.RemindSecondFactorDeadlines(context.Background(), env.DB, env.SystemMail, reminderAppURL, now))
+	sweep := jobs.NewRemindSecondFactorWorker(env.DB, env.Bus, func() time.Time { return now })
+	require.NoError(t, sweep.Work(context.Background(), job(jobs.RemindSecondFactorArgs{})))
 }
 
 func recipients(env *testhelper.TestEnv) []string {
@@ -52,7 +53,7 @@ func TestSecondFactorReminderIsSentOnceADayBeforeTheDeadline(t *testing.T) {
 	assert.Contains(t, msgs[0].Subject, "One day left")
 	assert.Contains(t, msgs[0].Subject, "Umbrella")
 	assert.Contains(t, msgs[0].Text, ritaDeadline.UTC().Format("2006-01-02 15:04 UTC"))
-	assert.Contains(t, msgs[0].Text, "https://app.example/account/security")
+	assert.Contains(t, msgs[0].Text, env.AppURL+"/account/security")
 
 	remind(t, env, ritaDeadline.Add(-22*time.Hour))
 	remind(t, env, ritaDeadline.Add(-time.Hour))
@@ -103,13 +104,17 @@ func TestSecondFactorReminderIsSentAgainForARestartedRequirement(t *testing.T) {
 		"Rita, already reminded in the earlier grace, is reminded again")
 }
 
-func TestAFailedSecondFactorReminderIsRetriedOnTheNextTick(t *testing.T) {
+// A reminder whose send fails is not claimed again by the next tick: its send job is retried on
+// its own, and Rita is reminded once.
+func TestAFailedSecondFactorReminderIsRetriedByItsSendJob(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.Error(t, jobs.RemindSecondFactorDeadlines(context.Background(), env.DB, env.SystemMail, reminderAppURL, ritaDeadline.Add(-12*time.Hour)))
+	remind(t, env, ritaDeadline.Add(-12*time.Hour))
+	assert.Empty(t, env.SystemMail.Messages(), "the send failed")
 
 	env.SystemMail.SetErr(nil)
 	remind(t, env, ritaDeadline.Add(-11*time.Hour))
+	env.RetryJobs(t, jobs.SendNoticeArgs{})
 	assert.Equal(t, []string{fixtures.UmbrellaOwnerRitaEmail}, recipients(env))
 }
 
@@ -126,5 +131,5 @@ func TestAPasskeyHolderWithoutASecondFactorIsRemindedAndToldBothWaysOut(t *testi
 	pat := lo.Filter(env.SystemMail.Messages(), func(m messaging.EmailMessage, _ int) bool { return m.To == fixtures.PasskeyPatEmail })
 	require.Len(t, pat, 1, "Pat holds a Passkey and no Second factor: her password sessions are withheld")
 	assert.Contains(t, pat[0].Text, "Passkey")
-	assert.Contains(t, pat[0].Text, "https://app.example/account/security")
+	assert.Contains(t, pat[0].Text, env.AppURL+"/account/security")
 }

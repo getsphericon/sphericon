@@ -2,48 +2,27 @@ package suspension
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
-// ErrNoticeNotSent means a Workspace was suspended but its owners could not be told: the
-// suspension stands.
-var ErrNoticeNotSent = errors.New("workspace suspended, but the owner notice could not be sent")
-
-// Suspender suspends a Workspace and tells its owners (ADR 0007): the one sequence the command
-// line, the Staff console and the abuse detector run.
+// Suspender suspends a Workspace (ADR 0007): the one operation the command line, the Staff
+// console and the abuse detector run. The suspension publishes events.WorkspaceSuspended in its
+// transaction, and the Notices tell the owners (ADR 0105).
 type Suspender struct {
-	bus     *events.Bus
-	client  *ent.Client
-	notify  memberships.Notify
-	support string
-	now     func() time.Time
+	bus *events.Bus
+	now func() time.Time
 }
 
-// NewSuspender is the Suspender that suspends through bus and tells the owners through notify
-// (the platform's system sender, nil for none), giving supportEmail as where they appeal, on the
-// Instance clock now.
-func NewSuspender(bus *events.Bus, client *ent.Client, notify memberships.Notify, supportEmail string, now func() time.Time) *Suspender {
-	return &Suspender{bus: bus, client: client, notify: notify, support: supportEmail, now: now}
+// NewSuspender is the Suspender that suspends through bus on the Instance clock now.
+func NewSuspender(bus *events.Bus, now func() time.Time) *Suspender {
+	return &Suspender{bus: bus, now: now}
 }
 
-// Suspend suspends the Workspace as by and tells its owners why. It reports whether anything
-// changed: an already-suspended Workspace is left as it was and its owners are not told twice.
-// A notice that cannot be sent does not undo the suspension: it reports true with an error
-// that wraps ErrNoticeNotSent.
+// Suspend suspends the Workspace as by. It reports whether anything changed: an
+// already-suspended Workspace is left as it was, and nothing is published for it, so its owners
+// are not told twice.
 func (s *Suspender) Suspend(ctx context.Context, workspaceID int64, by Actor, reason string) (bool, error) {
-	at := s.now()
-	changed, err := SuspendWorkspace(ctx, s.bus, workspaceID, by, reason, at)
-	if err != nil || !changed {
-		return changed, err
-	}
-	if err := NotifyOwners(ctx, s.client, s.notify, s.support, workspaceID, at); err != nil {
-		return true, fmt.Errorf("%w: %w", ErrNoticeNotSent, err)
-	}
-	return true, nil
+	return SuspendWorkspace(ctx, s.bus, workspaceID, by, reason, s.now())
 }

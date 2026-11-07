@@ -29,6 +29,26 @@ func TestDecodeKnowsEveryEventName(t *testing.T) {
 		events.NameCollected,
 		events.NameAuditEntry,
 		events.NameTrackingDomainChanged,
+		events.NameUserVerificationRequested,
+		events.NameUserPasswordResetRequested,
+		events.NameUserEmailChangeRequested,
+		events.NameUserDeletionRequested,
+		events.NameUserAddressClaimed,
+		events.NameUserSignedUp,
+		events.NameUserIdentityLinked,
+		events.NameUserDeleted,
+		events.NameUserPasskeyAdded,
+		events.NameUserPasskeyRemoved,
+		events.NameInvitationCreated,
+		events.NameWorkspaceSecondFactorRequired,
+		events.NameMembershipSecondFactorReminderDue,
+		events.NameWorkspaceSuspended,
+		events.NameWorkspaceAbuseWarned,
+		events.NameJoinDomainLost,
+		events.NameSendingDomainVerificationLost,
+		events.NameTrackingDomainReplaced,
+		events.NameTrackingDomainRemoved,
+		events.NameWebhookEndpointDisabled,
 	} {
 		ev, err := events.Decode(events.Envelope{Name: name, Data: []byte(`{"action":"` + name + `"}`)})
 		require.NoError(t, err, name)
@@ -37,7 +57,7 @@ func TestDecodeKnowsEveryEventName(t *testing.T) {
 }
 
 func TestEventsReportTheirEnvelopeMetadata(t *testing.T) {
-	for _, ev := range []events.DomainEvent{
+	for _, ev := range []events.Projected{
 		&events.ContactCreated{WorkspaceID: 7},
 		&events.EmailEngagement{Action: events.NameEmailOpened, WorkspaceID: 7},
 		&events.EmailDelivery{Action: events.NameEmailBounced, WorkspaceID: 7},

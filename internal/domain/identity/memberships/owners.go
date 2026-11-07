@@ -2,12 +2,9 @@ package memberships
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 )
 
 // The Owners of a Workspace (GLOSSARY "Role") are defined here and nowhere else: every
@@ -38,37 +35,4 @@ func OwnersOf(ctx context.Context, client *ent.Client, workspaceIDs ...int64) ([
 // the committed outcome of the first.
 func LockOwners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
 	return s.Membership().Query().Where(OwnerRole()).ForUpdate().IDs(ctx)
-}
-
-// NotifyOwners sends one platform email to every Owner of the Workspace through the system
-// sender, never the Workspace's own Integration (a suspended Workspace cannot send). It tries
-// every Owner and joins the failures.
-func NotifyOwners(ctx context.Context, client *ent.Client, sender messaging.EmailSender, workspaceID int64, subject, body string) error {
-	owners, err := Owners(ctx, client.Scoped(workspaceID))
-	if err != nil {
-		return err
-	}
-	var errs []error
-	for _, m := range owners {
-		u := m.Edges.User
-		if u == nil || u.Email == "" {
-			continue
-		}
-		if _, serr := sender.Send(ctx, messaging.EmailMessage{To: u.Email, Subject: subject, Text: body}); serr != nil {
-			errs = append(errs, fmt.Errorf("notify %s: %w", u.Email, serr))
-		}
-	}
-	return errors.Join(errs...)
-}
-
-// OwnerNotifier is the Notify that mails a Workspace's Owners through the system sender
-// (a nil sender gives a nil Notify, which sends nothing). It is the one seam of the modules that
-// tell Owners something (Join domains, Sending domains, webhooks, suspension).
-func OwnerNotifier(client *ent.Client, sender messaging.EmailSender) Notify {
-	if sender == nil {
-		return nil
-	}
-	return func(ctx context.Context, workspaceID int64, subject, body string) error {
-		return NotifyOwners(ctx, client, sender, workspaceID, subject, body)
-	}
 }

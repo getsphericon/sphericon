@@ -20,7 +20,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -94,12 +93,12 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	mod := outboundmessages.New(env.Bus, env.Holds, nil, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
-	// The runtime's own mail: env.SystemMail works the test's queued mail jobs before a read, and
+	// The runtime's own mail: env.SystemMail works the test's queued Notices before a read, and
 	// this queue is the process's committed one.
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
 		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: env.Cipher, SystemSender: mail, Catalog: registry.Default(),
-		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
+		OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})
 	require.NoError(t, err)
@@ -116,7 +115,7 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 
 	inserter, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
-	_, err = inserter.Insert(ctx, mailjobs.Welcome(contactEmail, "Policy"), nil)
+	_, err = inserter.Insert(ctx, jobs.SendNoticeArgs{EventID: "label-policy", To: contactEmail, Subject: "Policy", Text: "Policy"}, nil)
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		msgs := mail.Messages()

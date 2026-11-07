@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -158,7 +160,8 @@ func TestSiteTestSendFromASuspendedWorkspaceIsRefusedWithItsReason(t *testing.T)
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Value, "suspended")
-	assert.Empty(t, env.SystemMail.Messages())
+	tests := lo.Filter(env.SystemMail.Messages(), func(m messaging.EmailMessage, _ int) bool { return !strings.Contains(m.Subject, "suspended") })
+	assert.Empty(t, tests, "only the suspension notice to the owner went out, no test send")
 }
 
 func TestSiteTestSendOnAnInstanceWithNoSystemSenderIsRefusedWithItsReason(t *testing.T) {

@@ -3,17 +3,14 @@ package webhookendpoints
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
 
 // An endpoint disables itself (ADR 0039) on a 410, or when a run of consecutive failures has
@@ -82,49 +79,25 @@ func disableReason(e *ent.WebhookEndpoint, failure *webhook.DeliveryError, now t
 	return "", false
 }
 
-// disable turns the endpoint off as the system actor, so the Audit log shows it, and mails
-// the Workspace's owners once: the update only matches while the endpoint is still
-// enabled (disabled_at unset), so a concurrent worker or a retry that lost the race sends nothing.
+// disable turns the endpoint off as the system actor, so the Audit log shows it, and publishes
+// events.WebhookEndpointDisabled in the same transaction, which tells the Workspace's owners once
+// (ADR 0105): the update only matches while the endpoint is still enabled (disabled_at unset), so
+// a concurrent worker or a retry that lost the race publishes nothing.
 func (m *Module) disable(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, reason webhookendpoint.DisabledReason, now time.Time) error {
 	sys := m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
-	err := sys.WebhookEndpoint().UpdateOneID(e.ID).Where(webhookendpoint.DisabledAtIsNil()).
-		SetDisabledAt(now).SetDisabledReason(reason).Exec(ctx)
+	err := m.bus.WithinScopedTx(ctx, sys, func(ts *ent.Scoped, pub events.Publisher) error {
+		if err := ts.WebhookEndpoint().UpdateOneID(e.ID).Where(webhookendpoint.DisabledAtIsNil()).
+			SetDisabledAt(now).SetDisabledReason(reason).Exec(ctx); err != nil {
+			return err
+		}
+		return pub.Publish(ctx, &events.WebhookEndpointDisabled{
+			WorkspaceID: e.WorkspaceID, EndpointID: e.ID, Origin: originOf(e.URL), Reason: string(reason),
+		})
+	})
 	if ent.IsNotFound(err) {
 		return nil // already disabled
 	}
-	if err != nil {
-		return err
-	}
-	// A failed notice is logged, not returned: river would retry a delivery whose
-	// endpoint is already off.
-	m.notifyOwners(ctx, s, e, reason)
-	return nil
-}
-
-func (m *Module) notifyOwners(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, reason webhookendpoint.DisabledReason) {
-	if m.notify == nil {
-		return
-	}
-	ws, err := s.Workspace(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "webhook disable notice failed", "endpoint_id", e.ID, "error", err)
-		return
-	}
-	data := map[string]any{
-		"Workspace": ws.Name,
-		"URL":       originOf(e.URL),
-		"Failures":  DisableFailures,
-		"Window":    DisableWindow.String(),
-	}
-	data["Reason"] = i18n.T(disabledReasons[reason], data)
-	m.notify.TellBestEffort(ctx, ws.ID, memberships.Notice{Subject: i18n.EmailWebhookDisabledSubject, Body: i18n.EmailWebhookDisabledBody}, data, "endpoint_id", e.ID)
-}
-
-// disabledReasons words why the delivery disabled an endpoint, in the notice to the Owners. An
-// Owner disabling one is told nothing.
-var disabledReasons = map[webhookendpoint.DisabledReason]i18n.ID{
-	webhookendpoint.DisabledReasonGone:              i18n.EmailWebhookDisabledReasonGone,
-	webhookendpoint.DisabledReasonPersistentFailure: i18n.EmailWebhookDisabledReasonPersistentFailure,
+	return err
 }
 
 // originOf keeps scheme and host of an endpoint URL for a mail: the path and query may

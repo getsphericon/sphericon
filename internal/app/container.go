@@ -101,6 +101,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
+	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
@@ -335,10 +336,17 @@ var messagingPackage = do.Package(
 		}
 		return SystemSender{EmailSender: sender}, nil
 	}),
-	// How a Workspace's owners are told something: by mail through the platform's own sender,
-	// never the Workspace's Integration, which a hold may freeze.
-	do.Lazy(func(i do.Injector) (memberships.Notify, error) {
-		return memberships.OwnerNotifier(do.MustInvoke[*ent.Client](i), do.MustInvoke[SystemSender](i).EmailSender), nil
+	// Notice delivery (ADR 0105): what sphericon tells a User, a Member or a Workspace's Owners on
+	// its own behalf when a domain event calls for it, sent through the System sender by the
+	// Notices' event consumer.
+	do.Lazy(func(i do.Injector) (*noticedelivery.UseCase, error) {
+		cfg := do.MustInvoke[*config.Config](i)
+		links := users.NewLinks(do.MustInvoke[*users.Module](i), do.MustInvoke[*authtoken.Signer](i))
+		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*signinprovider.Providers](i), noticedelivery.Config{
+			AppURL:         cfg.AppURL,
+			Support:        cfg.SupportEmail,
+			TrackingTarget: do.MustInvoke[*trackingdomains.Module](i).Target(),
+		}, do.MustInvoke[Clock](i)), nil
 	}),
 	// The DKIM DNS resolver of Sending domain and Join domain verification (ADR 0010): published
 	// DNS records on every Instance; a development stack points the resolver at its own DNS
@@ -403,7 +411,6 @@ var editionPackage = do.Package(
 			Bus:           do.MustInvoke[*events.Bus](i),
 			License:       do.MustInvoke[*licensekey.License](i),
 			StaffSessions: members.Sessions(),
-			Notify:        do.MustInvoke[memberships.Notify](i),
 			Suspender:     do.MustInvoke[*suspension.Suspender](i),
 			Reputation:    do.MustInvoke[*reputation.Module](i),
 		}, workspaceoversight.Config{
@@ -419,11 +426,10 @@ var editionPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*holds.Holds, error) {
 		return do.MustInvoke[*ee.Edition](i).Holds(), nil
 	}),
-	// The one sequence that suspends a Workspace and tells its owners (ADR 0007): the command
-	// line, the Staff console and the abuse detector all suspend through it.
+	// The one operation that suspends a Workspace (ADR 0007): the command line, the Staff
+	// console and the abuse detector all suspend through it, and its event tells the owners.
 	do.Lazy(func(i do.Injector) (*suspension.Suspender, error) {
-		return suspension.NewSuspender(do.MustInvoke[*events.Bus](i), do.MustInvoke[*ent.Client](i), do.MustInvoke[memberships.Notify](i),
-			do.MustInvoke[*config.Config](i).SupportEmail, do.MustInvoke[Clock](i)), nil
+		return suspension.NewSuspender(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*orders.Module, error) {
 		return orders.New(do.MustInvoke[*workspaces.Module](i)), nil
@@ -492,7 +498,7 @@ var jobsPackage = do.Package(
 				Secret: cfg.JWTSecret,
 			}
 		}
-		return trackingdomains.New(client, do.MustInvoke[*events.Bus](i), do.MustInvoke[memberships.Notify](i), trackingdomains.Config{
+		return trackingdomains.New(client, do.MustInvoke[*events.Bus](i), trackingdomains.Config{
 			Checker:  checker,
 			OwnHosts: []string{urlHost(cfg.AppURL), urlHost(cfg.TrackerURL)},
 			Now:      do.MustInvoke[Clock](i),
@@ -528,6 +534,7 @@ var jobsPackage = do.Package(
 			Outbound:                  do.MustInvoke[*outboundmessages.Module](i),
 			Cipher:                    do.MustInvoke[*secrets.Cipher](i),
 			SystemSender:              do.MustInvoke[SystemSender](i).EmailSender,
+			Notices:                   do.MustInvoke[*noticedelivery.UseCase](i),
 			Catalog:                   do.MustInvoke[*messaging.Catalog](i),
 			Rules:                     do.MustInvoke[*rules.Module](i),
 			Users:                     do.MustInvoke[*users.Module](i),
@@ -539,7 +546,6 @@ var jobsPackage = do.Package(
 			TrackingDomains:           do.MustInvoke[*trackingdomains.Module](i),
 			Machine:                   do.MustInvoke[*privaterelayranges.Detector](i),
 			Clock:                     do.MustInvoke[Clock](i),
-			AppURL:                    cfg.AppURL,
 			OutboundAllow:             cfg.OutboundAllow,
 			Retention:                 jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
 			Webhooks:                  edition.Webhooks,
@@ -551,9 +557,9 @@ var jobsPackage = do.Package(
 		}
 		return &jobsClient{Client: jc}, nil
 	}),
-	// The insert-only river client the bus, the platform mails and the Integration quota refresh
-	// queue work through. It inserts over the main pool and works nothing, so what queues work
-	// never depends on the job client or on what its workers drive.
+	// The insert-only river client the bus queues every job through. It inserts over the main pool
+	// and works nothing, so what queues work never depends on the job client or on what its workers
+	// drive.
 	do.Lazy(func(i do.Injector) (*river.Client[*sql.Tx], error) {
 		return jobs.NewInserter(do.MustInvoke[Database](i).DB)
 	}),
@@ -642,8 +648,6 @@ var identityPackage = do.Package(
 			signup.SignUpConfig{
 				Consents:            do.MustInvoke[*consentrecords.Module](i),
 				Budget:              do.MustInvoke[*throttle.Attempts](i).For(throttle.KindSignUp),
-				Mail:                do.MustInvoke[*river.Client[*sql.Tx]](i),
-				Mint:                links.VerificationLink,
 				RequireVerification: do.MustInvoke[*config.Config](i).RequireEmailVerification,
 				SurveyDue:           do.MustInvoke[*signupsurveyresponses.Module](i).Enabled,
 			},
@@ -706,7 +710,7 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i), do.MustInvoke[*river.Client[*sql.Tx]](i),
+		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i),
 			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrationdeletion.UseCase, error) {
@@ -723,11 +727,10 @@ var audiencePackage = do.Package(
 	}),
 	// The Sending domain checks: the Verify button a person waits for and the re-check jobs (ADR 0010).
 	do.Lazy(func(i do.Injector) (*sendingdomainverification.UseCase, error) {
-		return sendingdomainverification.New(do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[memberships.Notify](i), do.MustInvoke[Clock](i)), nil
+		return sendingdomainverification.New(do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*joindomains.Module, error) {
-		return joindomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i),
-			do.MustInvoke[memberships.Notify](i)), nil
+		return joindomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
 	}),
 )
 
@@ -766,7 +769,7 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*webhookendpoints.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		client := webhook.NewClientAllowing(webhookendpoints.TestSendTimeout, cfg.OutboundAllow)
-		return webhookendpoints.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*ee.Edition](i).Audit, client, nil, do.MustInvoke[Clock](i)), nil
+		return webhookendpoints.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*ee.Edition](i).Audit, client, do.MustInvoke[Clock](i)), nil
 	}),
 	// Publish asks the Send route of Outbound send whether the email steps can send.
 	do.Lazy(func(i do.Injector) (*automations.Module, error) {
@@ -970,7 +973,6 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	cfg := do.MustInvoke[*config.Config](i)
 	edition := do.MustInvoke[*ee.Edition](i)
 	bus := do.MustInvoke[*events.Bus](i)
-	enqueue := do.MustInvoke[*river.Client[*sql.Tx]](i)
 	accountLink, _, err := accountlink.FromConfig(cfg)
 	if err != nil {
 		return apisite.Deps{}, err
@@ -1010,7 +1012,6 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Automations:               do.MustInvoke[*automations.Module](i),
 		Rules:                     do.MustInvoke[*rules.Module](i),
 		Broadcasts:                do.MustInvoke[*broadcasts.Module](i),
-		Mail:                      enqueue,
 		SendingDomains:            do.MustInvoke[*sendingdomains.Module](i),
 		SendingDomainDeletion:     do.MustInvoke[*sendingdomaindeletion.UseCase](i),
 		SendingDomainVerification: do.MustInvoke[*sendingdomainverification.UseCase](i),

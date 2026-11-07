@@ -15,7 +15,7 @@ import (
 
 // storeEvent writes the Event row of a projected domain event, on client, the producer's
 // transaction: it is the one place the Event log is written. It decodes nothing: the row is
-// the event's own Project(), so any event type projects faithfully without this function
+// the event's own projection p, so any event type projects faithfully without this function
 // knowing its fields.
 //
 // It reports whether the row is new. An event whose source id (Envelope.SourceID) is already a
@@ -23,8 +23,7 @@ import (
 // again. The row stays as it was and the caller publishes nothing more. The insert skips the
 // conflict rather than failing on it, because a failed statement would abort the producer's
 // whole transaction.
-func storeEvent(ctx context.Context, client *ent.Client, env Envelope, ev DomainEvent) (bool, error) {
-	p := ev.Project()
+func storeEvent(ctx context.Context, client *ent.Client, env Envelope, ev DomainEvent, p Projection) (bool, error) {
 	create := client.Event.Create().
 		SetWorkspaceID(env.WorkspaceID).
 		SetSubjectID(p.Subject).

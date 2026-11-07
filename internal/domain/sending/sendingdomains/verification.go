@@ -22,10 +22,11 @@ import (
 // state the check read and lands only while the domain is still kept: a check that lost to another
 // one, or a domain deleted during the lookup, stores nothing, and the stored state is the answer.
 // It returns the domain's verified state after the write, and lost, whether this write took the
-// verification away, so the Owners are told once per loss (ADR 0046). A check's outcome is not an
-// edit by whoever asked for it: the write is left out of the Audit log (events.Unaudited), as is
-// RecordDMARC's.
-func RecordDKIM(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain, verified bool, now time.Time) (state, lost bool, err error) {
+// verification away; a loss publishes events.SendingDomainVerificationLost on pub, so the Owners
+// are told once per loss (ADR 0046, ADR 0105): s and pub are the transaction's. A check's outcome
+// is not an edit by whoever asked for it: the write is left out of the Audit log
+// (events.Unaudited), as is RecordDMARC's.
+func RecordDKIM(ctx context.Context, s *ent.Scoped, pub events.Publisher, dom *ent.SendingDomain, verified bool, now time.Time) (state, lost bool, err error) {
 	was := dkimstate.Is(dom)
 	upd := events.Unaudited(s).SendingDomain().UpdateOneID(dom.ID).
 		Where(sendingdomain.DiscardedAtIsNil()).
@@ -50,7 +51,13 @@ func RecordDKIM(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain, veri
 		}
 		return false, false, err
 	}
-	return verified, was && !verified, nil
+	if !was || verified {
+		return verified, false, nil
+	}
+	return false, true, pub.Publish(ctx, &events.SendingDomainVerificationLost{
+		WorkspaceID: dom.WorkspaceID, SendingDomainID: dom.ID, Domain: dom.Domain,
+		Record: dom.DkimSelector + "._domainkey." + dom.Domain,
+	})
 }
 
 // RecordDMARC stores what a DMARC lookup of dom found (ADR 0012): dmarc_checked_at that a lookup

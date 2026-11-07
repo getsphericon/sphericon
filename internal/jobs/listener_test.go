@@ -18,7 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -42,7 +41,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), jobs.Deps{
 		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, messagetoken.New("test-secret", "http://local", time.Now), time.Now),
-		Cipher: cipher, SystemSender: mail, Catalog: registry.Default(), AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
+		Cipher: cipher, SystemSender: mail, Catalog: registry.Default(), OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 	})
 	require.NoError(t, err)
 	require.NoError(t, client.Start(ctx))
@@ -54,7 +53,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 
 	elsewhere, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
-	_, err = elsewhere.Insert(ctx, mailjobs.Welcome("listened@example.com", "Listened"), nil)
+	_, err = elsewhere.Insert(ctx, jobs.SendNoticeArgs{EventID: "01LISTENED", To: "listened@example.com", Subject: "Welcome", Text: "Listened"}, nil)
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool { return sentTo(mail, "listened@example.com") }, 2*time.Second, 20*time.Millisecond,

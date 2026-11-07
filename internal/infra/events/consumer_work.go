@@ -37,18 +37,18 @@ type WebhookDelivery struct {
 }
 
 // WebhookDeliveryOf serializes the event of env into its public webhook body. Endpoints select
-// on the semantic action (e.g. "page_view"), not the bus type. An unprojected event (an Audit
-// entry) has no Event action: it is delivered under its bus type, only to endpoints that select
-// it, and the Edition's dispatcher gates it by license (ADR 0022); the Staff identity in it is
-// masked.
+// on the semantic action (e.g. "page_view"), not the bus type. An event that is not Projected (an
+// Audit entry) has no Event action: it is delivered under its bus type, only to endpoints that
+// select it, and the Edition's dispatcher gates it by license (ADR 0022); the Staff identity in it
+// is masked.
 func WebhookDeliveryOf(env Envelope) (WebhookDelivery, error) {
 	ev, err := Decode(env)
 	if err != nil {
 		return WebhookDelivery{}, err
 	}
-	p := ev.Project()
+	p, projected := ProjectionOf(ev)
 	name := p.Action
-	if _, unprojected := ev.(Unprojected); unprojected {
+	if !projected {
 		name = env.Name
 	}
 	data := env.Data

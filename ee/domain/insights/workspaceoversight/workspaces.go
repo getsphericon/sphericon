@@ -2,8 +2,6 @@ package workspaceoversight
 
 import (
 	"context"
-	"errors"
-	"log/slog"
 	"strconv"
 	"strings"
 
@@ -59,9 +57,7 @@ func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, by *ent.
 	}
 	id := w.ID
 	changed, err := m.suspend.Suspend(ctx, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), reason)
-	if errors.Is(err, suspension.ErrNoticeNotSent) {
-		slog.ErrorContext(ctx, "workspace suspended, but the owner notice could not be sent", "workspace_id", id, "error", err)
-	} else if err != nil {
+	if err != nil {
 		return nil, err
 	}
 	return m.changeOf(ctx, id, changed)

@@ -6,8 +6,8 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 )
 
@@ -45,7 +45,7 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 		}
 	}
 
-	deleted, err := h.users.DeleteUser(ctx, u.ID, &users.DeleteProof{HadPassword: hadPassword, Confirm: h.secondFactor.DeletionCode(req.Code.Or(""))})
+	_, err = h.users.DeleteUser(ctx, u.ID, &users.DeleteProof{HadPassword: hadPassword, Confirm: h.secondFactor.DeletionCode(req.Code.Or(""))})
 	if errors.Is(err, secondfactorcheck.ErrDeletionCodeInvalid) {
 		// The wrong code is counted like a wrong password (ADR 0025).
 		if cerr := h.login.CountFailure(ctx, u.Email); cerr != nil {
@@ -54,11 +54,6 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 	}
 	if err != nil {
 		return nil, err
-	}
-
-	// The deletion is committed and cannot be undone: a mail that fails to queue does not undo it.
-	if _, err := h.mail.Insert(ctx, mailjobs.UserDeletedNotice(deleted.Email), nil); err != nil {
-		mailNotQueued(ctx, "UserDeletedNotice", err)
 	}
 	return &siteapi.SiteUserDeleteUserNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }
@@ -74,18 +69,15 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return err
 	}
-	token, err := h.links.DeletionLink(u)
-	if err != nil {
+	if err := users.ConfirmsDeletionByLink(u); err != nil {
 		return err
 	}
 	// Like the email-change link, every request takes a slot of the address's budget; a spent
-	// budget queues a mail job that sends nothing.
+	// budget publishes a request that is not delivered.
 	granted, err := h.attempts.Take(ctx, throttle.KindEmailChange, u.Email)
 	if err != nil {
 		return err
 	}
-	if _, err := h.mail.Insert(ctx, mailjobs.UserDeletionLink(u.Email, token, granted), nil); err != nil {
-		mailNotQueued(ctx, "UserDeletionLink", err)
-	}
+	h.publishRequest(ctx, &events.LinkRequested{Action: events.NameUserDeletionRequested, UserID: u.ID, Email: u.Email, Deliver: granted})
 	return nil
 }

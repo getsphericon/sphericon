@@ -81,7 +81,7 @@ func TestASignUpWithoutARequiredAcceptanceIsRefusedNamingItAndCostsNothing(t *te
 	exists, err := r.db.User.Query().Where(user.Email("grace@example.com")).Exist(t.Context())
 	require.NoError(t, err)
 	assert.False(t, exists)
-	assert.Empty(t, r.queue.jobs(t))
+	assert.Empty(t, r.queue.published(t))
 	assert.False(t, r.budgetTaken(t, "grace@example.com"))
 }
 

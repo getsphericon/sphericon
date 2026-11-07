@@ -251,6 +251,15 @@ func (p *Providers) Enabled() []Info {
 	return out
 }
 
+// DisplayName is what the provider name is called to a person ("Google"): its display name, or
+// its registry name when the Instance no longer offers it.
+func (p *Providers) DisplayName(name string) string {
+	if l := p.find(name); l != nil {
+		return l.entry.DisplayName
+	}
+	return name
+}
+
 func (p *Providers) find(name string) *provider {
 	i := slices.IndexFunc(p.live, func(l *provider) bool { return l.entry.Name == name })
 	if i < 0 {

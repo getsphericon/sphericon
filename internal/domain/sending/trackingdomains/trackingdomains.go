@@ -33,7 +33,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -93,13 +92,12 @@ type Config struct {
 type Module struct {
 	client   *ent.Client
 	bus      *events.Bus
-	notify   memberships.Notify
 	check    *Checker
 	ownHosts []string
 	now      func() time.Time
 }
 
-func New(client *ent.Client, bus *events.Bus, notify memberships.Notify, cfg Config) *Module {
+func New(client *ent.Client, bus *events.Bus, cfg Config) *Module {
 	now := cfg.Now
 	if now == nil {
 		panic("trackingdomains: Config.Now is required: the module reads the Instance clock")
@@ -110,7 +108,7 @@ func New(client *ent.Client, bus *events.Bus, notify memberships.Notify, cfg Con
 			own = append(own, h)
 		}
 	}
-	return &Module{client: client, bus: bus, notify: notify, check: cfg.Checker, ownHosts: own, now: now}
+	return &Module{client: client, bus: bus, check: cfg.Checker, ownHosts: own, now: now}
 }
 
 func targetOf(c *Checker) string {
@@ -208,12 +206,8 @@ func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.Track
 	if slices.Contains(m.ownHosts, host) {
 		return nil, ErrOwnHost
 	}
-	var (
-		row      *ent.TrackingDomain
-		promoted *ent.TrackingDomain
-		retired  *ent.TrackingDomain
-	)
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	var row, promoted *ent.TrackingDomain
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		rows, err := ts.TrackingDomain().Query().All(ctx)
 		if err != nil {
 			return err
@@ -251,7 +245,7 @@ func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.Track
 		}
 		if role == trackingdomain.RoleReplacement && row.State == trackingdomain.StateServing {
 			// A retired host brought back that still serves takes over at once.
-			promoted, retired, err = m.promote(ctx, ts, row)
+			promoted, err = m.promote(ctx, ts, pub, row)
 		}
 		return err
 	})
@@ -259,7 +253,6 @@ func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.Track
 		return nil, err
 	}
 	if promoted != nil {
-		m.notifyReplaced(ctx, promoted, retired)
 		return promoted, nil
 	}
 	return row, nil
@@ -301,23 +294,29 @@ func (m *Module) stepDown(ctx context.Context, ts *ent.Scoped, row *ent.Tracking
 	return ts.TrackingDomain().DeleteOneID(row.ID).Exec(ctx)
 }
 
-// promote makes a serving replacement the current host, stepping the current one down. It returns
-// the new current row and the one it replaced (nil when there was none).
-func (m *Module) promote(ctx context.Context, ts *ent.Scoped, rep *ent.TrackingDomain) (now, replaced *ent.TrackingDomain, err error) {
-	replaced, err = ts.TrackingDomain().Query().Where(trackingdomain.RoleEQ(trackingdomain.RoleCurrent)).Only(ctx)
+// promote makes a serving replacement the current host, stepping the current one down, and returns
+// the new current row. Replacing a current host publishes events.TrackingDomainReplaced on pub,
+// which tells the Owners.
+func (m *Module) promote(ctx context.Context, ts *ent.Scoped, pub events.Publisher, rep *ent.TrackingDomain) (*ent.TrackingDomain, error) {
+	replaced, err := ts.TrackingDomain().Query().Where(trackingdomain.RoleEQ(trackingdomain.RoleCurrent)).Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
-		return nil, nil, err
+		return nil, err
 	}
 	if replaced != nil {
 		if err := m.stepDown(ctx, ts, replaced); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 	if err := roleMachine(ts, rep).FireCtx(ctx, trackingdomain.RoleCurrent); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	now, err = ts.TrackingDomain().Get(ctx, rep.ID)
-	return now, replaced, err
+	now, err := ts.TrackingDomain().Get(ctx, rep.ID)
+	if err != nil || replaced == nil {
+		return now, err
+	}
+	return now, pub.Publish(ctx, &events.TrackingDomainReplaced{
+		WorkspaceID: now.WorkspaceID, TrackingDomainID: now.ID, Host: now.Host, Old: replaced.Host,
+	})
 }
 
 // Verify checks the Workspace's Tracking domain now, as the recheck job does, and returns it as
@@ -371,7 +370,6 @@ func (m *Module) checkRow(ctx context.Context, s *ent.Scoped, row *ent.TrackingD
 		return err
 	}
 	now := m.now()
-	var promoted, replaced *ent.TrackingDomain
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		if next == row.State {
 			return ts.TrackingDomain().UpdateOneID(row.ID).SetCheckedAt(now).ClearReason().Exec(ctx)
@@ -382,15 +380,15 @@ func (m *Module) checkRow(ctx context.Context, s *ent.Scoped, row *ent.TrackingD
 		if err := pub.Publish(ctx, &events.TrackingDomainChanged{
 			WorkspaceID: row.WorkspaceID, TrackingDomainID: row.ID, Host: row.Host,
 			From: string(row.State), To: string(next),
+			Regressed: row.Role == trackingdomain.RoleCurrent && stateRank(next) < stateRank(row.State),
 		}); err != nil {
 			return err
 		}
-		if row.Role == trackingdomain.RoleReplacement && next == trackingdomain.StateServing {
-			var err error
-			promoted, replaced, err = m.promote(ctx, ts, row)
-			return err
+		if row.Role != trackingdomain.RoleReplacement || next != trackingdomain.StateServing {
+			return nil
 		}
-		return nil
+		_, err := m.promote(ctx, ts, pub, row)
+		return err
 	})
 	switch {
 	case db.IsUniqueViolation(err):
@@ -407,19 +405,12 @@ func (m *Module) checkRow(ctx context.Context, s *ent.Scoped, row *ent.TrackingD
 	case err != nil:
 		return err
 	}
-	if promoted != nil {
-		m.notifyReplaced(ctx, promoted, replaced)
-	} else if row.Role == trackingdomain.RoleCurrent && stateRank(next) < stateRank(row.State) {
-		m.notify.TellBestEffort(ctx, row.WorkspaceID,
-			memberships.Notice{Subject: i18n.EmailTrackingDomainRegressedSubject, Body: i18n.EmailTrackingDomainRegressedBody},
-			map[string]any{"Host": row.Host, "From": row.State, "To": next, "Target": m.check.Target},
-			"tracking_domain_id", row.ID)
-	}
 	return nil
 }
 
 // checkRetired keeps a retired host while its CNAME reaches the edge and deletes it once it does
-// not, telling the Owners. A failed probe does not end it: DNS does (ADR 0071).
+// not, publishing events.TrackingDomainRemoved, which tells the Owners. A failed probe does not end
+// it: DNS does (ADR 0071).
 func (m *Module) checkRetired(ctx context.Context, s *ent.Scoped, row *ent.TrackingDomain) error {
 	ok, err := m.check.pointsAtTarget(ctx, row.Host)
 	if err != nil {
@@ -429,20 +420,14 @@ func (m *Module) checkRetired(ctx context.Context, s *ent.Scoped, row *ent.Track
 		return notFoundIsStale(s.TrackingDomain().UpdateOneID(row.ID).
 			Where(trackingdomain.RoleEQ(trackingdomain.RoleRetired)).SetCheckedAt(m.now()).Exec(ctx))
 	}
-	var gone int
-	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		var derr error
-		gone, derr = ts.TrackingDomain().Delete().
+	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		gone, err := ts.TrackingDomain().Delete().
 			Where(trackingdomain.ID(row.ID), trackingdomain.RoleEQ(trackingdomain.RoleRetired)).Exec(ctx)
-		return derr
+		if err != nil || gone == 0 {
+			return err
+		}
+		return pub.Publish(ctx, &events.TrackingDomainRemoved{WorkspaceID: row.WorkspaceID, TrackingDomainID: row.ID, Host: row.Host})
 	})
-	if err != nil || gone == 0 {
-		return err
-	}
-	m.notify.TellBestEffort(ctx, row.WorkspaceID,
-		memberships.Notice{Subject: i18n.EmailTrackingDomainRetiredGoneSubject, Body: i18n.EmailTrackingDomainRetiredGoneBody},
-		map[string]any{"Host": row.Host, "Target": m.check.Target}, "tracking_domain_id", row.ID)
-	return nil
 }
 
 // notFoundIsStale drops ent's not-found of a conditional write: the row moved meanwhile.
@@ -451,15 +436,6 @@ func notFoundIsStale(err error) error {
 		return nil
 	}
 	return err
-}
-
-func (m *Module) notifyReplaced(ctx context.Context, now, old *ent.TrackingDomain) {
-	if old == nil {
-		return
-	}
-	m.notify.TellBestEffort(ctx, now.WorkspaceID,
-		memberships.Notice{Subject: i18n.EmailTrackingDomainReplacedSubject, Body: i18n.EmailTrackingDomainReplacedBody},
-		map[string]any{"Host": now.Host, "Old": old.Host, "Target": m.check.Target}, "tracking_domain_id", now.ID)
 }
 
 // next is the state live DNS and the probe give a host: pending without the CNAME at Target,

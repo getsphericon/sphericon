@@ -17,7 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -65,10 +64,11 @@ func atEdge(hosts ...string) map[string]mockdns.Zone {
 	return zones
 }
 
-// module builds the module over the system mailbox, the way the composition root does.
+// module builds the module the way the composition root does: what it publishes tells the Owners
+// through the system mailbox.
 func module(t *testing.T, env *testhelper.TestEnv, zones map[string]mockdns.Zone, probe trackingdomains.Doer) *trackingdomains.Module {
 	t.Helper()
-	return trackingdomains.New(env.DB, env.Bus, memberships.OwnerNotifier(env.DB, env.SystemMail), trackingdomains.Config{
+	return trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{
 		Checker: &trackingdomains.Checker{
 			Lookup: dnstest.Resolver(t, zones).LookupCNAME,
 			Target: edge,
@@ -148,7 +148,7 @@ func TestSetRefusesAnInvalidOrOwnHost(t *testing.T) {
 
 func TestSetIsRefusedWhileTheFeatureIsOff(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := trackingdomains.New(env.DB, env.Bus, nil, trackingdomains.Config{Now: time.Now})
+	m := trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{Now: time.Now})
 
 	_, err := m.Set(t.Context(), env.DB.Scoped(fixtures.KramericaID), "t.kramerica.test")
 	require.ErrorIs(t, err, trackingdomains.ErrOff)
@@ -373,7 +373,7 @@ func TestAServingCurrentHostThatStopsAnsweringIsDemotedAndTheOwnersAreTold(t *te
 
 func TestAResolverFailureChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := trackingdomains.New(env.DB, env.Bus, nil, trackingdomains.Config{
+	m := trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{
 		Checker: &trackingdomains.Checker{
 			Lookup: func(context.Context, string) (string, error) { return "", errors.New("servfail") },
 			Target: edge,

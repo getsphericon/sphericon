@@ -25,7 +25,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/joindomain"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -68,14 +67,14 @@ type Module struct {
 	bus    *events.Bus
 	lookup domainname.TXTLookup
 	now    func() time.Time
-	notify memberships.Notify
 }
 
 // New builds the module. lookup is the injectable TXT resolver Sending domain
-// verification uses; now is the clock the check times are stamped with; notify mails a
-// Workspace's Owners when it loses a verified domain.
-func New(client *ent.Client, bus *events.Bus, lookup domainname.TXTLookup, now func() time.Time, notify memberships.Notify) *Module {
-	return &Module{client: client, bus: bus, lookup: lookup, now: now, notify: notify}
+// verification uses; now is the clock the check times are stamped with. A Workspace that loses a
+// verified domain publishes events.JoinDomainLost in the transaction of the loss, which tells its
+// Owners (ADR 0105).
+func New(client *ent.Client, bus *events.Bus, lookup domainname.TXTLookup, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, lookup: lookup, now: now}
 }
 
 // RecordOf derives the TXT record to publish for a stored domain.
@@ -172,11 +171,17 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 		err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error { return markVerified(ts) })
 	} else {
 		// The holder's row goes first: the verified-only unique index admits one at a time.
-		err = m.bus.WithinHandOverTx(ctx, s, holder.WorkspaceID, func(to, from *ent.Scoped) error {
-			// A miss means a re-check already reverted the holder.
+		err = m.bus.WithinHandOverTx(ctx, s, holder.WorkspaceID, func(to, from *ent.Scoped, pub events.Publisher) error {
 			err := from.JoinDomain().UpdateOneID(holder.ID).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().Exec(ctx)
-			if err != nil && !ent.IsNotFound(err) {
+			switch {
+			case ent.IsNotFound(err):
+				// A re-check already reverted the holder, and told its Owners.
+			case err != nil:
 				return err
+			default:
+				if err := pub.Publish(ctx, lost(holder)); err != nil {
+					return err
+				}
 			}
 			return markVerified(to)
 		})
@@ -191,10 +196,6 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	}
 	if err != nil {
 		return nil, err
-	}
-	if holder != nil {
-		// After the commit: a failed mail must not undo or fail the move.
-		m.notifyLost(ctx, holder)
 	}
 	return verified, nil
 }
@@ -212,7 +213,7 @@ func (m *Module) Due(ctx context.Context, limit int) ([]int64, error) {
 
 // Recheck re-reads a verified domain's TXT record. A record that is gone (or carries
 // another value) reverts the domain to unverified at once, under the system actor, and
-// mails the Workspace's Owners; it reports whether it did. A resolver failure is returned
+// publishes events.JoinDomainLost in the same transaction; it reports whether it did. A resolver failure is returned
 // and changes nothing, so the job retries. A domain that is not verified (it changed
 // since the job was queued) is left alone. Memberships are never touched.
 func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error) {
@@ -234,7 +235,12 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 	slog.WarnContext(ctx, "join domain verification lost",
 		"join_domain_id", id, "workspace_id", row.WorkspaceID, "domain", row.Domain)
 	system := m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
-	err = system.JoinDomain().UpdateOneID(id).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().SetLastCheckedAt(m.now()).Exec(ctx)
+	err = m.bus.WithinScopedTx(ctx, system, func(ts *ent.Scoped, pub events.Publisher) error {
+		if err := ts.JoinDomain().UpdateOneID(id).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().SetLastCheckedAt(m.now()).Exec(ctx); err != nil {
+			return err
+		}
+		return pub.Publish(ctx, lost(row))
+	})
 	if ent.IsNotFound(err) {
 		// Lost the swap: another re-check or a hand-over already reverted it and told the Owners.
 		return false, nil
@@ -242,15 +248,12 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 	if err != nil {
 		return false, err
 	}
-	m.notifyLost(ctx, row)
 	return true, nil
 }
 
-// notifyLost mails the Owners of the Workspace that held the domain, best-effort: a mail
-// failure is logged, never returned.
-func (m *Module) notifyLost(ctx context.Context, row *ent.JoinDomain) {
-	data := map[string]any{"Domain": row.Domain, "Record": RecordOf(row).Host}
-	m.notify.TellBestEffort(ctx, row.WorkspaceID, memberships.Notice{Subject: i18n.EmailJoinDomainUnverifiedSubject, Body: i18n.EmailJoinDomainUnverifiedBody}, data, "join_domain_id", row.ID)
+// lost is the event of the Join domain row, as it was read, losing its verification.
+func lost(row *ent.JoinDomain) *events.JoinDomainLost {
+	return &events.JoinDomainLost{WorkspaceID: row.WorkspaceID, JoinDomainID: row.ID, Domain: row.Domain, Record: RecordOf(row).Host}
 }
 
 // Holder returns the Join domain row that has the domain verified, across every

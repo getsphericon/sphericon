@@ -22,16 +22,3 @@ func ClaimSecondFactorReminder(ctx context.Context, s *ent.Scoped, m *ent.Member
 		Save(ctx)
 	return claimed > 0, err
 }
-
-// ReleaseSecondFactorReminder gives the Membership m back the reminder record it had when it
-// was loaded, after ClaimSecondFactorReminder, so a reminder that was not delivered is tried
-// again.
-func ReleaseSecondFactorReminder(ctx context.Context, s *ent.Scoped, m *ent.Membership) error {
-	release := s.Membership().UpdateOneID(m.ID)
-	if m.SecondFactorRemindedAt == nil {
-		release = release.ClearSecondFactorRemindedAt()
-	} else {
-		release = release.SetSecondFactorRemindedAt(*m.SecondFactorRemindedAt)
-	}
-	return release.Exec(ctx)
-}

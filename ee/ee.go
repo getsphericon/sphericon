@@ -25,7 +25,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
@@ -64,7 +63,7 @@ type Edition struct {
 	ServiceCredentials *servicecredentials.Module
 
 	staffSessions *staffmembers.Sessions
-	notify        memberships.Notify
+	bus           *events.Bus
 	suspend       *suspension.Suspender
 	abuseCfg      abusedetection.Config
 	now           func() time.Time
@@ -82,9 +81,7 @@ type Deps struct {
 	License *licensekey.License
 	// StaffSessions are the core Staff member's sessions, nil while its sign-in is off.
 	StaffSessions *staffmembers.Sessions
-	// Notify tells a Workspace's owners through the platform's (system) sender, nil for none.
-	Notify memberships.Notify
-	// Suspender suspends a Workspace and tells its owners (ADR 0007).
+	// Suspender suspends a Workspace (ADR 0007).
 	Suspender *suspension.Suspender
 	// Reputation computes a Workspace's rates, which the console shows.
 	Reputation *reputation.Module
@@ -98,7 +95,7 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 	e := &Edition{
 		lic:     lic,
 		client:  deps.Client,
-		notify:  deps.Notify,
+		bus:     deps.Bus,
 		suspend: deps.Suspender,
 		Audit:   auditLog,
 		Export:  &ExportStreams{lic: lic},
@@ -106,7 +103,7 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 
 		ServiceCredentials: servicecredentials.New(deps.Client, lic, staffCfg.Clock),
 	}
-	e.abuseCfg = abusedetection.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
+	e.abuseCfg = abusedetection.Config{Limits: staffCfg.Abuse}
 	e.now = staffCfg.Clock
 	if e.now == nil {
 		return nil, errors.New("ee: workspaceoversight.Config.Clock is required: the Edition reads the Instance clock")
@@ -179,7 +176,7 @@ func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() 
 // a Workspace's standing. It suspends through the core Suspender and tells owners through
 // the system (platform) sender. Unlicensed it does nothing.
 func (e *Edition) Abuse() *abusedetection.UseCase {
-	return abusedetection.New(e.client, e.lic, e.notify, e.suspend, e.abuseCfg, e.now)
+	return abusedetection.New(e.client, e.bus, e.lic, e.suspend, e.abuseCfg, e.now)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none

@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
@@ -117,25 +116,30 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingInactiveID)).ExistX(ctx), "the inactive one enrolled nobody")
 }
 
-// A failing platform sender surfaces from the owner notifications (the caller logs
-// it), while a healthy one reaches the owner.
-func TestOwnerNotificationsSurfaceSenderErrors(t *testing.T) {
+// A failing System sender leaves the owners' notice waiting for its next attempt, and a healthy
+// one then delivers it: the suspension stands either way.
+func TestOwnerNoticeIsRetriedWhenTheSystemSenderFails(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
+	env.SystemMail.SetErr(errors.New("smtp down"))
 	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaints", time.Now())
 	require.NoError(t, err)
-	env.SystemMail.SetErr(errors.New("smtp down"))
+	assert.Empty(t, env.SystemMail.Messages(), "the send failed")
 
-	require.Error(t, suspension.NotifyOwners(ctx, env.DB, memberships.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID, time.Now()))
+	env.SystemMail.SetErr(nil)
+	env.RetryJobs(t, jobs.SendNoticeArgs{})
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Equal(t, fixtures.OwnerJohnEmail, msgs[0].To)
 }
 
-// A re-check that flips a domain to unverified notifies the owner, and a failed
-// notification never fails the check.
+// A re-check that flips a domain to unverified tells the owner, and a failed send never fails
+// the check.
 func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, gone, time.Now))
 
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)
@@ -144,7 +148,7 @@ func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
-	// A failing alert on a fresh flip is only logged.
+	// A failing send on a fresh flip leaves the check done.
 	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetVerifiedAt(time.Now()).ClearVerificationLostAt().ExecX(ctx)
 	env.SystemMail.SetErr(errors.New("smtp down"))
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))

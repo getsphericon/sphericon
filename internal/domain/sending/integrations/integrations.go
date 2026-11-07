@@ -11,15 +11,12 @@ package integrations
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
-	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -90,7 +87,6 @@ type Module struct {
 	bus     *events.Bus
 	cipher  *secrets.Cipher
 	catalog *messaging.Catalog
-	quota   *river.Client[*sql.Tx]
 	presets *preset.Registry
 	appURL  string
 	confirm func(ctx context.Context, url string) error
@@ -137,8 +133,8 @@ func WithSubscriptionConfirmer(f func(ctx context.Context, url string) error) Op
 
 // New builds the module. presets is the Instance's Preset registry and appURL the public
 // origin the hook URLs are built from.
-func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota *river.Client[*sql.Tx], presets *preset.Registry, appURL string, opts ...Option) *Module {
-	m := &Module{bus: bus, cipher: cipher, catalog: catalog, quota: quota, presets: presets, appURL: appURL, confirm: confirmByGet}
+func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, presets *preset.Registry, appURL string, opts ...Option) *Module {
+	m := &Module{bus: bus, cipher: cipher, catalog: catalog, presets: presets, appURL: appURL, confirm: confirmByGet}
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -280,7 +276,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	}
 
 	var row *ent.Integration
-	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		// A new default clears the channel's current one first, in the same transaction,
 		// so the partial unique index never trips on our own writes.
 		if in.IsDefault {
@@ -304,8 +300,10 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		if inb.sealed != nil {
 			create.SetParamsEncrypted(*inb.sealed)
 		}
-		row, err = create.Save(ctx)
-		return err
+		if row, err = create.Save(ctx); err != nil {
+			return err
+		}
+		return m.discoverQuota(ctx, q, row)
 	})
 	if err != nil {
 		if provider == providers.Telegram && enabled {
@@ -314,7 +312,6 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		}
 		return nil, conflictOf(err)
 	}
-	m.discoverQuota(ctx, row)
 	return row, nil
 }
 
@@ -367,7 +364,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	promote := isDefault && !row.IsDefault
 
 	var updated *ent.Integration
-	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		if promote {
 			if err := clearDefault(ctx, ts, row.Channel); err != nil {
 				return err
@@ -380,18 +377,17 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			upd.SetProviderMaxPerSecond(telegramPerSecond)
 		}
 		var err error
-		updated, err = upd.Save(ctx)
-		return err
+		if updated, err = upd.Save(ctx); err != nil || sealed == nil {
+			return err
+		}
+		// New credentials or endpoint: what the provider allows may have changed.
+		return m.discoverQuota(ctx, q, updated)
 	})
 	if err != nil {
 		return nil, missing(conflictOf(err))
 	}
 	if tg.release {
 		m.release(ctx, updated)
-	}
-	if sealed != nil {
-		// New credentials or endpoint: what the provider allows may have changed.
-		m.discoverQuota(ctx, updated)
 	}
 	return updated, nil
 }
@@ -521,23 +517,20 @@ func validName(raw string) (string, error) {
 	return name, nil
 }
 
-// discoverQuota schedules a saved Integration's send quota lookup (ADR 0023), when its provider
-// can report one (SES; the Test inbox its own ceiling).
-// Best-effort: a failure is logged, never returned, so it cannot fail the save (the
-// hourly job picks an SES Integration up anyway). Providers without a quota are skipped.
-func (m *Module) discoverQuota(ctx context.Context, row *ent.Integration) {
-	if m.quota == nil || !m.reportsQuota(row) {
-		return
+// discoverQuota queues a saved Integration's send quota lookup (ADR 0023) on q, the transaction of
+// the save, when its provider can report one (SES; the Test inbox its own ceiling), so the lookup
+// is queued iff the save commits. Providers without a quota are skipped.
+func (m *Module) discoverQuota(ctx context.Context, q events.Enqueuer, row *ent.Integration) error {
+	if !m.reportsQuota(row) {
+		return nil
 	}
-	if _, err := m.quota.Insert(ctx, RefreshQuotaArgs{IntegrationID: row.ID}, nil); err != nil {
-		slog.WarnContext(ctx, "enqueue integration quota refresh failed", "integration_id", row.ID, "err", err)
-	}
+	return q.Enqueue(ctx, RefreshQuotaArgs{IntegrationID: row.ID}, nil)
 }
 
 // reportsQuota reports whether the Integration's provider can say what it allows: whether its
 // sender is a messaging.QuotaReader.
 func (m *Module) reportsQuota(row *ent.Integration) bool {
-	if row.Channel != channels.Email {
+	if row.Channel != channels.Email || m.catalog == nil {
 		return false
 	}
 	config, err := m.cipher.Decrypt(row.ConfigEncrypted)

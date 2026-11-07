@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -185,4 +186,23 @@ func TestARepeatedEventIsStoredAndPublishedOnce(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "one row")
 	assert.Equal(t, before+1, publishedCount(t, env), "published once")
+}
+
+// An event of the Instance (a password reset asked for) belongs to no Workspace: its envelope names
+// none, it has no Event row, and no Webhook endpoint receives it, but a consumer that wants it gets
+// its job.
+func TestAnEventOfTheInstanceNamesNoWorkspaceAndHasNoEventRow(t *testing.T) {
+	env := testhelper.Setup(t)
+	stored := len(env.StoredEvents(t))
+
+	require.NoError(t, env.Bus.Publish(t.Context(), &events.LinkRequested{
+		Action: events.NameUserPasswordResetRequested, UserID: fixtures.OwnerJohnID, Email: fixtures.OwnerJohnEmail, Deliver: true,
+	}))
+
+	published := env.QueuedEnvelopes(t, events.NameUserPasswordResetRequested)
+	require.Len(t, published, 1)
+	assert.Zero(t, published[0].WorkspaceID)
+	assert.Len(t, env.StoredEvents(t), stored, "no Event row")
+	assert.Empty(t, env.EventJobs(t, jobs.WebhookEventArgs{}.Kind()), "no webhook fan-out")
+	assert.Len(t, env.EventJobs(t, jobs.NoticeEventArgs{}.Kind()), 1, "the Notices' consumer wants it")
 }

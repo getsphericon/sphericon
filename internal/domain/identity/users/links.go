@@ -264,10 +264,19 @@ func deletionBinding(u *ent.User) string { return strconv.FormatInt(u.SessionEpo
 // (ErrDeletionUsePassword). It is bound to the User and their session epoch, never to the
 // address, and works once: the deletion removes the User it names.
 func (l *Links) DeletionLink(u *ent.User) (string, error) {
-	if u.PasswordHash != "" {
-		return "", refuseDeletion(ErrDeletionUsePassword)
+	if err := ConfirmsDeletionByLink(u); err != nil {
+		return "", err
 	}
 	return l.tokens.Mint(authtoken.PurposeUserDeletion, u.ID, deletionBinding(u), deletionLinkTTL, nil)
+}
+
+// ConfirmsDeletionByLink refuses with ErrDeletionUsePassword a User who has a password: only a
+// User with none confirms their deletion with a mailed link (ADR 0050).
+func ConfirmsDeletionByLink(u *ent.User) error {
+	if u.PasswordHash != "" {
+		return refuseDeletion(ErrDeletionUsePassword)
+	}
+	return nil
 }
 
 // CheckDeletionLink refuses with ErrConfirmLinkInvalid a token that is not a live deletion link

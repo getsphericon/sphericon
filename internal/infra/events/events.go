@@ -10,8 +10,10 @@
 //     to us, stored as-is. Ingesting one is itself OUR typed event, CollectedEvent,
 //     whose body carries the user's action + properties verbatim.
 //
-// An event job carries the envelope, with the typed event as Data (json); a consumer
-// decodes it back into the concrete type via the name registry and calls Project().
+// An event belongs to a Workspace or to the Instance (a User's sign-up, a password reset): only a
+// Workspace's event can be an Event of the Workspace, with a row of its own (Projected). An event
+// job carries the envelope, with the typed event as Data (json); a consumer decodes it back into
+// the concrete type via the name registry.
 package events
 
 import (
@@ -144,10 +146,10 @@ const (
 // Envelope is the generic bus message. It carries transport metadata plus the
 // typed event as Data; subscribers decode Data via the registry.
 type Envelope struct {
-	ID          string          `json:"id"`          // ULID; the event's own id
-	Name        string          `json:"name"`        // bus event type (registry key)
-	Version     int             `json:"version"`     // schema version of Data
-	WorkspaceID int64           `json:"workspaceId"` // every event is workspace-scoped
+	ID          string          `json:"id"`                    // ULID; the event's own id
+	Name        string          `json:"name"`                  // bus event type (registry key)
+	Version     int             `json:"version"`               // schema version of Data
+	WorkspaceID int64           `json:"workspaceId,omitempty"` // 0: an event of the Instance, no Workspace's
 	OccurredAt  time.Time       `json:"occurredAt"`
 	Data        json.RawMessage `json:"data"` // the typed event, marshaled
 	// DedupKey is the Event row's source id. Empty ⇒ use ID. An event with a
@@ -213,12 +215,55 @@ type Projection struct {
 }
 
 // DomainEvent is a typed, producer-side domain event. Implementations are
-// registered in registry and must use pointer receivers so Decode can unmarshal.
+// registered in registry and must use pointer receivers so Decode can unmarshal. An event is
+// the Instance's (a User's sign-up, a password reset: no Workspace holds it) unless it is a
+// WorkspaceEvent, and it has an Event row only when it is Projected.
 type DomainEvent interface {
-	EventName() string   // bus type / registry key
-	EventVersion() int   // schema version
-	Workspace() int64    // owning workspace
+	EventName() string // bus type / registry key
+	EventVersion() int // schema version
+}
+
+// WorkspaceEvent is a DomainEvent that belongs to a Workspace: its envelope names the Workspace,
+// and a Workspace's deletion and a Contact's Erasure find its jobs by it.
+type WorkspaceEvent interface {
+	DomainEvent
+	Workspace() int64 // owning workspace
+}
+
+// Projected is a WorkspaceEvent that is an Event of its Workspace (a data-plane fact): Publish
+// writes its row from the projection, and the automations, the Rules and the webhooks react to
+// it. Any other event (an Audit entry, a notice-worthy change of the Workspace's configuration,
+// an event of the Instance) has no row and is seen only by the consumers that ask for it.
+type Projected interface {
+	WorkspaceEvent
 	Project() Projection // how this event maps to the Event row + trigger
+}
+
+// WorkspaceOf is the Workspace ev belongs to, 0 for an event of the Instance.
+func WorkspaceOf(ev DomainEvent) int64 {
+	if w, ok := ev.(WorkspaceEvent); ok {
+		return w.Workspace()
+	}
+	return 0
+}
+
+// ProjectionOf is ev's projection onto its Event row; ok is false for an event that has none.
+func ProjectionOf(ev DomainEvent) (p Projection, ok bool) {
+	if pe, ok := ev.(Projected); ok {
+		return pe.Project(), true
+	}
+	return Projection{}, false
+}
+
+// IsUnprojected reports whether name is the bus type of events that are not Projected (an Audit
+// entry): a name that is no bus type (a customer's action, a System event's action) is not.
+func IsUnprojected(name string) bool {
+	newEvent, ok := registry[name]
+	if !ok {
+		return false
+	}
+	_, projected := newEvent().(Projected)
+	return !projected
 }
 
 // identifiable is an optional DomainEvent capability: an event with a stable
@@ -280,6 +325,28 @@ var registry = map[string]func() DomainEvent{
 	NameSmsClicked:            func() DomainEvent { return &SmsClicked{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
+
+	NameUserVerificationRequested:  func() DomainEvent { return &LinkRequested{} },
+	NameUserPasswordResetRequested: func() DomainEvent { return &LinkRequested{} },
+	NameUserEmailChangeRequested:   func() DomainEvent { return &LinkRequested{} },
+	NameUserDeletionRequested:      func() DomainEvent { return &LinkRequested{} },
+	NameUserAddressClaimed:         func() DomainEvent { return &AddressClaimed{} },
+	NameUserSignedUp:               func() DomainEvent { return &UserSignedUp{} },
+	NameUserIdentityLinked:         func() DomainEvent { return &IdentityLinked{} },
+	NameUserDeleted:                func() DomainEvent { return &UserDeleted{} },
+	NameUserPasskeyAdded:           func() DomainEvent { return &PasskeyChange{} },
+	NameUserPasskeyRemoved:         func() DomainEvent { return &PasskeyChange{} },
+
+	NameInvitationCreated:                 func() DomainEvent { return &InvitationCreated{} },
+	NameWorkspaceSecondFactorRequired:     func() DomainEvent { return &SecondFactorRequired{} },
+	NameMembershipSecondFactorReminderDue: func() DomainEvent { return &SecondFactorReminderDue{} },
+	NameWorkspaceSuspended:                func() DomainEvent { return &WorkspaceSuspended{} },
+	NameWorkspaceAbuseWarned:              func() DomainEvent { return &AbuseWarned{} },
+	NameJoinDomainLost:                    func() DomainEvent { return &JoinDomainLost{} },
+	NameSendingDomainVerificationLost:     func() DomainEvent { return &SendingDomainVerificationLost{} },
+	NameTrackingDomainReplaced:            func() DomainEvent { return &TrackingDomainReplaced{} },
+	NameTrackingDomainRemoved:             func() DomainEvent { return &TrackingDomainRemoved{} },
+	NameWebhookEndpointDisabled:           func() DomainEvent { return &WebhookEndpointDisabled{} },
 }
 
 // Names are the bus types of every event Decode knows, sorted.

@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
@@ -72,13 +73,16 @@ type Deps struct {
 	Bus      *events.Bus
 	Outbound *outboundmessages.Module
 	Cipher   *secrets.Cipher
-	// SystemSender is the platform's own sender of the account mails.
+	// SystemSender is the platform's own sender, which delivers the Notices (nil on an Instance
+	// with no outbound mail).
 	SystemSender messaging.EmailSender
-	Catalog      *messaging.Catalog
-	Rules        *rules.Module
-	Users        *users.Module
-	Orders       *orders.Module
-	Deletion     *workspacedeletion.UseCase
+	// Notices issues the Notices of the domain events (ADR 0105).
+	Notices  *noticedelivery.UseCase
+	Catalog  *messaging.Catalog
+	Rules    *rules.Module
+	Users    *users.Module
+	Orders   *orders.Module
+	Deletion *workspacedeletion.UseCase
 	// SendingDomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
 	SendingDomainVerification *sendingdomainverification.UseCase
@@ -89,8 +93,6 @@ type Deps struct {
 	Machine         *privaterelayranges.Detector
 	// Clock is the Instance's clock (app.Clock), which every worker reads; NewClient refuses none.
 	Clock func() time.Time
-	// AppURL is the public origin of the links in account emails (reset, verify, change).
-	AppURL string
 	// OutboundAllow is the Instance's internal allowlist for webhook deliveries (ADR 0039).
 	OutboundAllow webhook.Allowlist
 	Retention     Retention
@@ -109,7 +111,7 @@ type Deps struct {
 // connection that tells the client of a new job, a cancellation or a paused queue at once, and
 // built with riverdatabasesql.New (tests on one transaction) the client only polls.
 func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.Extension) (*Client, error) {
-	entClient, mod, bus, cipher, systemSender, appURL := deps.Ent, deps.Outbound, deps.Bus, deps.Cipher, deps.SystemSender, deps.AppURL
+	entClient, mod, bus, cipher, systemSender := deps.Ent, deps.Outbound, deps.Bus, deps.Cipher, deps.SystemSender
 	now := deps.Clock
 	if now == nil {
 		return nil, errors.New("jobs: Deps.Clock is required: the workers read the Instance clock")
@@ -125,12 +127,10 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus, stepper)})
 	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now))
 	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper))
-	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, bus, systemSender))
-	river.AddWorker(workers, NewWelcomeWorker(systemSender))
-	river.AddWorker(workers, NewAuthMailWorker(systemSender, appURL))
-	river.AddWorker(workers, NewMemberInviteWorker(systemSender))
-	river.AddWorker(workers, NewNotifySecondFactorRequiredWorker(entClient, systemSender, appURL))
-	river.AddWorker(workers, NewRemindSecondFactorWorker(entClient, systemSender, appURL, now))
+	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, bus))
+	river.AddWorker(workers, NewNoticeEventWorker(deps.Notices, systemSender))
+	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
+	river.AddWorker(workers, NewRemindSecondFactorWorker(entClient, bus, now))
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomainVerification))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))

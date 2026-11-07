@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"log/slog"
 	"slices"
 	"strings"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
 
@@ -151,19 +149,13 @@ func (h *Handlers) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context
 }
 
 // switchSecondFactorRequirement switches the requirement of the Workspace the operation addresses
-// on or off and answers its Workspace as the caller now sees it. Switching it on emails the Users
-// without a Second factor.
+// on or off and answers its Workspace as the caller now sees it. Switching it on tells the Users
+// without a Second factor (workspaces.Module.SetSecondFactorRequirement publishes it).
 func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required bool) (siteapi.SiteWorkspaceResource, error) {
 	s, m := workspaceScope(ctx), callerMembership(ctx)
-	w, switchedOn, err := h.workspaces.SetSecondFactorRequirement(ctx, s, h.actor(ctx), required, h.now())
+	w, err := h.workspaces.SetSecondFactorRequirement(ctx, s, h.actor(ctx), required, h.now())
 	if err != nil {
 		return siteapi.SiteWorkspaceResource{}, err
-	}
-	// The requirement is committed; the email is best-effort, like the invite.
-	if switchedOn {
-		if _, merr := h.mail.Insert(ctx, mailjobs.SecondFactorRequired(s.WorkspaceID()), nil); merr != nil {
-			slog.WarnContext(ctx, "second factor required email not enqueued", "error", merr, "workspace_id", s.WorkspaceID())
-		}
 	}
 	return h.workspaceResource(ctx, s, withWorkspace(m, w))
 }

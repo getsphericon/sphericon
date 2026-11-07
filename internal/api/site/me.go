@@ -8,10 +8,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 )
 
 // SiteUserGetMe returns the authenticated user's profile. Auth is enforced by
@@ -123,9 +123,10 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	}
 
 	// Whether the new address is Taken is never told to the requester (ADR 0031): every
-	// request takes a slot of the address's budget, mints a token and queues exactly one
-	// mail job to that address. Free, it is the confirm link; Taken, it is a tokenless
-	// notice to its owner. A job with no mail due (budget spent) is a no-send one.
+	// request takes a slot of the address's budget and publishes exactly one event for that
+	// address. Free, it is the request of the confirm link; Taken, the claim of the address,
+	// whose owner is told without a token. A request with no mail due (budget spent) is
+	// published undelivered.
 	granted, err := h.attempts.Take(ctx, throttle.KindEmailChange, newEmail)
 	if err != nil {
 		return err
@@ -134,21 +135,11 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	if err != nil {
 		return err
 	}
-
-	token, err := h.links.EmailChangeLink(u, newEmail)
-	if err != nil {
-		return err
-	}
 	if taken {
-		if _, err := h.mail.Insert(ctx, mailjobs.AddressTakenNotice(newEmail, granted), nil); err != nil {
-			mailNotQueued(ctx, "AddressTakenNotice", err)
-		}
+		h.publishRequest(ctx, &events.AddressClaimed{Email: newEmail, Deliver: granted})
 	} else {
-		if _, err := h.mail.Insert(ctx, mailjobs.EmailChangeConfirm(newEmail, token, granted), nil); err != nil {
-			mailNotQueued(ctx, "EmailChangeConfirm", err)
-		}
+		h.publishRequest(ctx, &events.LinkRequested{Action: events.NameUserEmailChangeRequested, UserID: u.ID, Email: newEmail, Deliver: granted})
 	}
-
 	return nil
 }
 

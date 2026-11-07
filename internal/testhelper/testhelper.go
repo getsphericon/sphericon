@@ -55,6 +55,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
@@ -189,7 +190,7 @@ type TestEnv struct {
 	license *licensekey.License
 
 	performers func(testing.TB) performers // the workers of PerformEnqueuedJobs
-	tb         testing.TB                  // the test, for the mail jobs SystemMail works before a read
+	tb         testing.TB                  // the test, for the Notices' jobs SystemMail works before a read
 
 	sender    *outboundmessages.Module // the Outbound module the queued Broadcast sends run through
 	jwtSecret string                   // for tokens a test needs in a state the Tracker never mints
@@ -198,7 +199,7 @@ type TestEnv struct {
 	sessionTTL time.Duration    // SPHERICON_SESSION_TTL, the lifetime of the site tokens tests mint
 
 	// Captured sends of the jobs tests work at once, for assertions.
-	SystemMail   *CapturingSender // platform mail (welcome, …)
+	SystemMail   *CapturingSender // the Notices (welcome, …), sent through the System sender
 	CustomerMail *CapturingSender // workspace/campaign mail (broadcasts)
 
 	// SES scripts the send quota every "ses" Integration reports.
@@ -501,6 +502,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	internal, err := do.Invoke[app.InternalHandler](injector)
 	require.NoError(t, err, "build internal handler")
 	edition := do.MustInvoke[*ee.Edition](injector)
+	// Every live event the test publishes is handed to the harness's recorder too, so
+	// QueuedEnvelopes sees it whether or not a consumer of the application wants it.
+	do.MustInvoke[*events.Bus](injector).UseConsumers(recorder)
 
 	// The client of a test's own writes of rows the feeds watch, on the same transaction, with
 	// the Edition's hooks like every other client.
@@ -513,16 +517,15 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		tb.Helper()
 		client := do.MustInvoke[*ent.Client](injector)
 		p := performers{}
-		add(tb, p, txDB, jobs.NewWelcomeWorker(systemMail))
-		add(tb, p, txDB, jobs.NewAuthMailWorker(systemMail, cfg.AppURL))
-		add(tb, p, txDB, jobs.NewMemberInviteWorker(systemMail))
-		add(tb, p, txDB, jobs.NewNotifySecondFactorRequiredWorker(client, systemMail, cfg.AppURL))
+		add(tb, p, txDB, jobs.NewSendNoticeWorker(systemSender))
 		add(tb, p, txDB, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector), st.now))
 		add(tb, p, txDB, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomainverification.UseCase](injector)))
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
 		add(tb, p, txDB, jobs.NewSuppressEventWorker(client))
 		add(tb, p, txDB, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
 		add(tb, p, txDB, jobs.NewBroadcastUnsubscribeEventWorker(client))
+		add(tb, p, txDB, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.UseCase](injector), systemSender))
+		add[recordedArgs](tb, p, txDB, recordedWorker{})
 		add(tb, p, txDB, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
 		add(tb, p, txDB, ee.NewEntryEventWorker(client, lic))
 		add(tb, p, txDB, ee.NewErasureEventWorker(client, lic))
@@ -570,8 +573,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 		ServiceCredentials: edition.ServiceCredentials,
 	}
-	// The platform mails a request queued are sent by the time a test reads them, as they were
-	// when the jobs ran in the request.
+	// The Notices a request's events call for are sent by the time a test reads them.
 	env.tb = t
 	systemMail.pending = env.performMail
 	return env
@@ -592,7 +594,7 @@ type CapturingSender struct {
 	sent []messaging.EmailMessage
 	Err  error
 
-	// pending works the mail jobs waiting in the queue before a read, so a test reads the mail
+	// pending works the Notices' jobs waiting in the queue before a read, so a test reads the mail
 	// its request queued as sent (SystemMail); nil for a sender no job sends through.
 	pending func()
 }
@@ -621,7 +623,7 @@ func (s *CapturingSender) Send(_ context.Context, msg messaging.EmailMessage) (m
 	return messaging.Receipt{MessageID: fmt.Sprintf("<test-%d@sphericon.test>", len(s.sent))}, nil
 }
 
-// Messages returns a copy of the captured sends, once the mail jobs waiting in the queue have run.
+// Messages returns a copy of the captured sends, once the Notices' jobs waiting in the queue have run.
 func (s *CapturingSender) Messages() []messaging.EmailMessage {
 	if s.pending != nil {
 		s.pending()

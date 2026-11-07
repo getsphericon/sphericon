@@ -69,7 +69,7 @@ coding standards in `CODING_STANDARDS.md`.
   `internal/usecase/signup`, ADR 0102, which also holds every other step that makes a User Verified
   with its first Workspace) is the one place of a Sign-up with a password, shaped
   like `login`: the form first, then the same work for every address (a mail budget slot, the hash, the
-  lookup, one write, a token and exactly one mail job) so a Taken address is not learnable, the recovery
+  lookup, one write and exactly one published event, ADR 0105) so a Taken address is not learnable, the recovery
   from a race on the unique email, the replaced password of an Unverified User, and the Sign-up
   browser's value (drawn here; its hash is `users.BrowserHash` and the verification link checks it
   with `users.SameBrowser`). The Sign-up items' answers (ADR 0062) are checked with the form, before
@@ -473,7 +473,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   tenant, not a tenant-owned entity, so the scoped client has no wrapper for it; a setting is written on the Workspace a
   scope names, and the command line resolves a Workspace id), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
   the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
-  several Workspaces, and the notice to the Owners of a Workspace it is given by id), `internal/api/auth` (credentials, token and key lookup),
+  several Workspaces), `internal/api/auth` (credentials, token and key lookup),
   `internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes and refresh tokens,
   ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is
   looked up by its secret before any scope exists), `internal/domain/identity/passkeys` and `internal/domain/identity/recoverycodes`
@@ -484,7 +484,9 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   exchange of a code or a refresh token, a secret that names its grant, see list item 6),
   `internal/usecase/workspacecreation` (a Workspace with its Owner Membership, ADR 0043: no Workspace
   exists yet), `internal/usecase/signup` (the steps that make a User Verified with its first
-  Workspace, ADR 0030, ADR 0043: neither exists yet) and
+  Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/noticedelivery` (the Notices of
+  the domain events, ADR 0105: an event of a User's account belongs to no Workspace, and a
+  Workspace's Owners and Members are read by the id an event names) and
   `internal/usecase/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the
   Workspaces whose window has passed and the Owners' deleted ones, which have no scope yet, opens a
   transaction per erase step (one per Workspace-owned table, the Send cap's bucket
@@ -496,7 +498,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   scopes one transaction to both Workspaces through `events.Bus.WithinHandOverTx`; the periodic
   re-check of verified domains, a river job in `internal/jobs`, lists the due domains of every Workspace with
   `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
-  loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits; `Tokens` reads every Workspace's claim of a domain for the end-to-end
+  loses a domain, by that re-check or by a hand-over, are told by the `join_domain.lost` event the loss publishes in its transaction; `Tokens` reads every Workspace's claim of a domain for the end-to-end
   suite's resolver), `internal/domain/sending/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
   listed by a river job that then reads each domain by id to learn its Workspace and hands the use case
   `internal/usecase/sendingdomainverification` that Workspace's scope; `DevTXTLookup`, the end-to-end suite's resolver; and `SecretSweeps`, the DKIM private keys the re-encryption rewrites; every other
@@ -553,8 +555,8 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
   (`site.AuditLog`, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
   (ent has one schema package) but is written and read only by `ee/domain/insights/auditentries`. An Audit entry is
-  an unprojected event (`events.Unprojected`): it has no Event row, and automations and
-  webhooks skip it.
+  an event that is not Projected (`events.Projected`): it has no Event row, automations skip it,
+  and a Webhook endpoint receives it only when it names `audit.entry`.
   The Audit table's rows are removed only through `ee/domain/insights/auditentries`: by `ee/usecase/auditlogretention`'s prune (the
   `retention` license feature, a Workspace `retention_days` window, one hourly river job registered
   through `Edition.Jobs()`, which calls `auditentries.PruneBefore`) and by the erase of a deleted Workspace.
@@ -604,13 +606,11 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   unchanged: no core component may import an `ee` component, and each `ee` component names its
   importers.
 - **Owners and suspension are defined once.** `internal/domain/identity/memberships` owns "Owner of a
-  Workspace": `Owners`, `OwnersOf`, `LockOwners`, `IsOwner`, `OwnerRole`, and the one notice to
-  them (`NotifyOwners`, the `Notify` seam, `OwnerNotifier`); `internal/domain/identity/suspension` owns "suspended"
-  (`Is`, `Suspended`, `NotSuspended`, `BySystem`) and the suspension notice (`NotifyOwners`). A
-  Workspace is suspended through the container's one `suspension.Suspender`, which also tells its
-  Owners (the command line, the Staff console and the abuse detector), and Owners are told through
-  its one `memberships.Notify`. Call them; do not test `suspended_at` or the owner Role, or mail
-  Owners, anywhere else.
+  Workspace": `Owners`, `OwnersOf`, `LockOwners`, `IsOwner`, `OwnerRole`;
+  `internal/domain/identity/suspension` owns "suspended" (`Is`, `Suspended`, `NotSuspended`,
+  `BySystem`). A Workspace is suspended through the container's one `suspension.Suspender` (the
+  command line, the Staff console and the abuse detector), whose event tells its Owners (see
+  "Notices"). Call them; do not test `suspended_at` or the owner Role anywhere else.
 - **Refused removals (ADR 0049)**: a row that live work still uses is not removed. `internal/domain/orchestration/liveuse`
   is the one shape of that refusal (`*liveuse.Error`: the removed `Subject` and the `Users` that hold it,
   with helpers like `liveuse.Broadcasts` and `liveuse.Enrollments`); the delete that checks Live use
@@ -631,11 +631,18 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   dependencies use live, an Enrollment uses its pinned version. `internal/domain/orchestration/automations` keeps
   preparation for writing (normalization, HTML sanitization, validation and secret sealing), masked
   API views and the version lifecycle. The shared reader neither queries nor executes Steps.
-- **Owner notices**: a module or a use case that tells the Owners of a Workspace something (Join domains,
-  Sending domain verification, webhooks, suspension, the abuse detector) takes a `memberships.Notify`
-  (`internal/domain/identity/memberships`, beside the Owners, at the bottom of identity, so that every module can take it)
-  and calls `Tell` or `TellBestEffort`; `memberships.OwnerNotifier` builds the one that mails the Owners
-  through the system sender.
+- **Notices (ADR 0105)**: every mail sphericon sends on its own behalf, through the System sender, is
+  a reaction to a domain event. A module or a use case that changes something a person must be told
+  of (a User's account, an Invitation, the Two-factor requirement, a suspension, an abuse warning, a
+  lost Join domain or Sending domain verification, a replaced or removed Tracking host, a disabled
+  Webhook endpoint) publishes its event in the transaction of the change
+  (`internal/infra/events/account.go`, `workspace_changes.go`), and knows neither the recipients nor
+  the sender; a request that changes no state (a password reset, a link sent again) publishes with
+  `events.Bus.Publish`. The use case `internal/usecase/noticedelivery` answers the Notices an event
+  calls for, who is told and what, read when the event is handled, a link minted then, and the
+  Notices' consumer (`internal/jobs/notices.go`) queues one send job per Notice, unique on the event
+  and the address, which the System sender delivers. Do not mail a person anywhere else: publish the
+  event and add its Notice to the use case.
 - **Async**: one queue, river, for jobs and domain events alike (ADR 0101,
   `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of
   the state change: it writes the Event row (a repeated `source_id` publishes nothing) and

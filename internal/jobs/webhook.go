@@ -10,10 +10,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -37,19 +35,19 @@ type DeliverWebhookWorker struct {
 	cipher *secrets.Cipher
 	client webhook.Doer
 	now    func() time.Time
-	// mod keeps the endpoint's failure state, disables it and tells the owners.
+	// mod keeps the endpoint's failure state and disables it, which tells the owners.
 	mod *webhookendpoints.Module
 }
 
 // NewDeliverWebhookWorker builds the worker that delivers a webhook through doer on the clock now;
-// the owners of a Workspace whose endpoint is turned off are told through sender.
-func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, bus *events.Bus, sender messaging.EmailSender) *DeliverWebhookWorker {
+// an endpoint the delivery turns off publishes it on bus, which tells the owners (ADR 0105).
+func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, bus *events.Bus) *DeliverWebhookWorker {
 	return &DeliverWebhookWorker{
 		ent:    client,
 		cipher: cipher,
 		client: doer,
 		now:    now,
-		mod:    webhookendpoints.New(bus, cipher, nil, nil, memberships.OwnerNotifier(client, sender), now),
+		mod:    webhookendpoints.New(bus, cipher, nil, nil, now),
 	}
 }
 
@@ -131,8 +129,8 @@ func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventNam
 }
 
 // matchesEvent reports whether an endpoint with the given filter receives the
-// event. An empty filter means "all customer-facing events": an unprojected event
-// (an Audit entry, ADR 0022) must be named explicitly.
+// event. An empty filter means "all customer-facing events", the Events: one that is not
+// Projected (an Audit entry, ADR 0022) must be named explicitly.
 func matchesEvent(filter []string, name string) bool {
 	if len(filter) == 0 {
 		return !events.IsUnprojected(name)

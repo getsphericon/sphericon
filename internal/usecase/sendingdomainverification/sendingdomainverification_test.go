@@ -12,7 +12,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
@@ -22,7 +21,7 @@ import (
 )
 
 func module(env *testhelper.TestEnv, lookup domainname.TXTLookup) *sendingdomainverification.UseCase {
-	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now)
+	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, lookup, time.Now)
 }
 
 // acme is the scope of the Workspace the checked fixture domains belong to.
@@ -116,10 +115,10 @@ func TestVerifyDKIM_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 	assert.NotNil(t, row.VerificationLostAt)
 }
 
-func TestVerifyDKIM_withoutANotifierStillFlips(t *testing.T) {
-	env := testhelper.Setup(t)
+func TestVerifyDKIM_withoutASystemSenderStillFlips(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithoutSystemSender())
 	ctx := context.Background()
-	m := sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), dnstest.Resolver(t, nil).LookupTXT, nil, time.Now)
+	m := sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, dnstest.Resolver(t, nil).LookupTXT, time.Now)
 
 	_, err := m.VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 

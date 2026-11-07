@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 )
 
 // A test works the jobs it queued the way ActiveJob's perform_enqueued_jobs does: the code under
@@ -48,13 +47,12 @@ func (env *TestEnv) PerformEnqueuedJobs(t *testing.T, only ...river.JobArgs) {
 	env.performEnqueuedJobs(t, true, only...)
 }
 
-// mailKinds are the jobs of the platform mails, which SystemMail runs before a read.
-var mailKinds = []river.JobArgs{
-	mailjobs.WelcomeArgs{}, mailjobs.AuthMailArgs{}, mailjobs.MemberInviteArgs{}, mailjobs.SecondFactorRequiredArgs{},
-}
+// mailKinds are the jobs of the Notices (ADR 0105), which SystemMail runs before a read: the
+// Notices' event consumer, which queues the sends, and the sends.
+var mailKinds = []river.JobArgs{jobs.NoticeEventArgs{}, jobs.SendNoticeArgs{}}
 
-// performMail works the queued platform mails (mailKinds) for SystemMail, leaving a mail whose
-// worker fails to retry.
+// performMail works the queued Notices (mailKinds) for SystemMail, leaving one whose worker fails
+// to retry.
 func (env *TestEnv) performMail() {
 	env.tb.Helper()
 	env.performEnqueuedJobs(env.tb, false, mailKinds...)

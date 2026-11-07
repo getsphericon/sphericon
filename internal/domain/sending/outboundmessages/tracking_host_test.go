@@ -49,7 +49,7 @@ func tracked(env *testhelper.TestEnv, opts ...outboundmessages.Option) *outbound
 // trackingDomains is the option the composition root passes while the Instance offers Tracking
 // domains.
 func trackingDomains(env *testhelper.TestEnv) outboundmessages.Option {
-	return outboundmessages.WithTrackingDomains(trackingdomains.New(env.DB, env.Bus, nil, trackingdomains.Config{Now: time.Now}))
+	return outboundmessages.WithTrackingDomains(trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{Now: time.Now}))
 }
 
 // Every link of a Workspace whose current Tracking domain serves is on it, whatever the

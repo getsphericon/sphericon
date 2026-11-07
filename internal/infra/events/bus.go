@@ -74,6 +74,14 @@ func (b *Bus) WithinTx(ctx context.Context, fn func(tx *ent.Client, pub Publishe
 	return b.within(ctx, func(tx *ent.Client, pub *txPublisher) error { return fn(tx, pub) })
 }
 
+// Publish publishes ev in a transaction of its own, for a request that changes no state of its
+// own and only asks for something to happen: a password reset, a verification link sent again.
+// A change of state publishes its event in the transaction of the change instead (WithinTx and
+// its scoped variants), so the event exists iff the change commits.
+func (b *Bus) Publish(ctx context.Context, ev DomainEvent) error {
+	return b.WithinTx(ctx, func(_ *ent.Client, pub Publisher) error { return pub.Publish(ctx, ev) })
+}
+
 // within is WithinTx over the concrete transaction publisher, which also implements
 // QueuePurger (see WithinScopedPurgeTx).
 func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublisher) error) (err error) {
@@ -168,18 +176,19 @@ type txPublisher struct {
 	now func() time.Time
 }
 
-// Publish stamps the envelope of ev and, for an event that is an Event (not Unprojected),
-// writes its row in the transaction. An event whose row already exists is a repeat, and is
-// not published again: no consumer sees it twice. Otherwise it inserts, in the transaction, the
-// job of every consumer that wants the event. An error leaves the caller to roll back, so no
-// state commits without its event.
+// Publish stamps the envelope of ev and, for an event that is an Event (Projected), writes its
+// row in the transaction. An event whose row already exists is a repeat, and is not published
+// again: no consumer sees it twice. Otherwise it inserts, in the transaction, the job of every
+// consumer that wants the event. An error leaves the caller to roll back, so no state commits
+// without its event.
 func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	data, err := json.Marshal(ev)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
 	}
 	recorded := p.now().UTC()
-	occurred := ev.Project().OccurredAt
+	projection, projected := ProjectionOf(ev)
+	occurred := projection.OccurredAt
 	if occurred.IsZero() {
 		occurred = recorded
 	}
@@ -194,7 +203,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		ID:          ulid.Make().String(),
 		Name:        ev.EventName(),
 		Version:     ev.EventVersion(),
-		WorkspaceID: ev.Workspace(),
+		WorkspaceID: WorkspaceOf(ev),
 		OccurredAt:  occurred,
 		RecordedAt:  recorded,
 		Data:        data,
@@ -202,8 +211,8 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		CausedBy:    causeOf(ctx),
 	}
 	stamp(ctx, &env)
-	if _, unprojected := ev.(Unprojected); !unprojected {
-		first, err := storeEvent(ctx, p.client, env, ev)
+	if projected {
+		first, err := storeEvent(ctx, p.client, env, ev, projection)
 		if err != nil {
 			return err
 		}
