@@ -20,6 +20,12 @@ status: accepted
 > does match a member after its type. Refined by
 > [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]]: a driver calls one
 > operation of the core per function.
+>
+> Refined by [[0112-an-operation-belongs-to-the-module-that-owns-its-subject]]: "an operation that
+> spans several domain modules" is no longer the test. An operation belongs to the module that owns
+> its subject, and is a use case only when that owner would call a module above it or no single
+> module can own it. The examples of a use case and the use case names below that it moves
+> (`eventrecording`, `releasecheck`, `transactionalsend`, `telemetryreport`) no longer hold.
 
 ## Context
 

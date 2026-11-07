@@ -246,9 +246,12 @@ coding standards in `CODING_STANDARDS.md`.
   the table's owner in this map, and a refusal no test of its owner asserts with `ErrorIs`. A refusal
   that never leaves its owner, which records it as the row's state (`trackingdomains`' host held by
   another Workspace), is unexported and caught there with `errors.Is` instead.
-- **Use cases (ADR 0102, component `usecase`).** An operation that spans several domain modules is a
-  use case, `internal/usecase/<subject><action>` in glossary words (`tagdeletion`), never a call from
-  one domain module into the modules above it: a base module knows no module that uses it. The use
+- **Use cases (ADR 0102, ADR 0112, component `usecase`).** An operation belongs to the domain module
+  that owns its subject, which may compose the modules of its own context and of the contexts below.
+  It is a use case only when that owner would have to call a module above it (a base module knows no
+  module that uses it) or when no single module can own it (it composes modules of several contexts
+  none of which owns it, or the Enterprise License with a core module's rows):
+  `internal/usecase/<subject><action>` in glossary words (`tagdeletion`). The use
   case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
   states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
   `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's

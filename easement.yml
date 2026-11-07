@@ -860,8 +860,9 @@ components:
     allow_importers: [wiring]
     because: the job runner is a driver (ADR 0102) that only the wiring builds; no domain module imports it, and a package with jobs of its own hands them in as a jobextension.Extension
 
-  # The use cases (ADR 0102): an operation that spans several domain modules, such as deleting a Tag
-  # after the Removal check of the modules that name it. Each directory under internal/usecase is
+  # The use cases (ADR 0102, ADR 0112): an operation whose subject's owner would have to call a
+  # module above it, or that no single module can own, such as deleting a Tag after the Removal
+  # check of the modules that name it. Each directory under internal/usecase is
   # one use case; it calls the domain modules, opens the transaction they join and takes the
   # Workspace lock where ADR 0099 requires it. Only a driver or the wiring imports one.
   usecase:
