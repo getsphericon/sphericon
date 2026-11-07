@@ -23,8 +23,9 @@ var (
 // remindedUsers are the Users of the reminders the test's sweeps claimed, in claim order.
 func remindedUsers(t *testing.T, env *testhelper.TestEnv) []int64 {
 	t.Helper()
-	var ids []int64
-	for _, ev := range env.QueuedEvents(t, events.NameMembershipSecondFactorReminderDue) {
+	reminders := env.QueuedEvents(t, events.NameMembershipSecondFactorReminderDue)
+	ids := make([]int64, 0, len(reminders))
+	for _, ev := range reminders {
 		due, ok := ev.(*events.SecondFactorReminderDue)
 		require.True(t, ok)
 		m, err := env.DB.Membership.Get(t.Context(), due.MembershipID)

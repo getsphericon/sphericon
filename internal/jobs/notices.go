@@ -28,15 +28,28 @@ type NoticeEventArgs struct {
 
 func (NoticeEventArgs) Kind() string { return "event_notice" }
 
-// callsForNotices wants an event Notice delivery covers.
+// callsForNotices wants an event that calls for Notices (noticedelivery.UseCase.Issue), reading the
+// event alone, as a consumer's filter must: an account's event, a change of a Workspace its people
+// are told of, and a Tracking host that fell back.
 func callsForNotices(_ events.Envelope, ev events.DomainEvent) bool {
-	return noticedelivery.Covers(ev)
+	switch e := ev.(type) {
+	case *events.LinkRequested, *events.AddressClaimed, *events.UserSignedUp, *events.IdentityLinked,
+		*events.UserDeleted, *events.PasskeyChange, *events.InvitationCreated, *events.SecondFactorRequired,
+		*events.SecondFactorReminderDue, *events.WorkspaceSuspended, *events.AbuseWarned, *events.JoinDomainLost,
+		*events.SendingDomainVerificationLost, *events.TrackingDomainReplaced, *events.TrackingDomainRemoved,
+		*events.WebhookEndpointDisabled:
+		return true
+	case *events.TrackingDomainChanged:
+		return e.Regressed
+	}
+	return false
 }
 
 // NoticeEventWorker turns an event into its Notices' send jobs. On an Instance with no System
 // sender there is nothing to send them with, and it queues none.
 type NoticeEventWorker struct {
 	river.WorkerDefaults[NoticeEventArgs]
+
 	notices *noticedelivery.UseCase
 	sender  messaging.EmailSender
 }
@@ -91,6 +104,7 @@ func (SendNoticeArgs) InsertOpts() river.InsertOpts {
 // (ADR 0015).
 type SendNoticeWorker struct {
 	river.WorkerDefaults[SendNoticeArgs]
+
 	sender messaging.EmailSender
 }
 

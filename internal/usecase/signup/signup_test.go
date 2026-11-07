@@ -35,9 +35,10 @@ type requests struct{ sqlDB *sql.DB }
 // published are the mail events published so far, oldest first.
 func (q requests) published(t *testing.T) []events.DomainEvent {
 	t.Helper()
-	out := []events.DomainEvent{}
-	for _, env := range testhelper.QueuedEnvelopesOn(t, q.sqlDB, events.NameUserVerificationRequested, events.NameUserAddressClaimed, events.NameUserSignedUp) {
-		ev, err := events.Decode(env)
+	envelopes := testhelper.QueuedEnvelopesOn(t, q.sqlDB, events.NameUserVerificationRequested, events.NameUserAddressClaimed, events.NameUserSignedUp)
+	out := make([]events.DomainEvent, 0, len(envelopes))
+	for i := range envelopes {
+		ev, err := events.Decode(envelopes[i])
 		require.NoError(t, err)
 		out = append(out, ev)
 	}

@@ -82,17 +82,17 @@ its own lock (orders takes one per Workspace).
 
 ## The consumers
 
-| Consumer    | Job kind                      | Wants                                                                                      | Does                                                                                |
-| ----------- | ----------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| suppression | `event_suppress`              | a hard bounce or a complaint                                                               | suppresses the address, once, keeping the first reason                              |
-| orders      | `event_order`                 | a collected order Event, loaded history included                                           | records the Order and its Movements under the Workspace's lock (ADR 0064)           |
-| automations | `automation_evaluate_trigger` | a live, person-made Event of a Contact (no history, no machine engagement, no Audit entry) | evaluates the Event against the Automations                                         |
-| rules       | `rule_evaluate_event`         | what automations wants, except an event a Rule's Action published (`CausedBy`)             | evaluates the Event against the Rules; a Firing is unique on the source id          |
-| webhooks    | `event_webhook`               | every live Event and every Audit entry                                                     | queues one delivery per enabled endpoint whose filter matches (ADR 0039)            |
-| notices     | `event_notice`                | an event Notice delivery covers (`noticedelivery.Covers`)                                  | queues one `send_notice` per Notice, unique on the event and the address (ADR 0105) |
-| broadcasts  | `event_broadcast_unsubscribe` | `telegram.unsubscribed` that names a Broadcast and its Contact                             | counts the unsubscribe on the Broadcast's recipient, once (ADR 0102)                |
-| audit (EE)  | `event_audit`                 | an Audit entry                                                                             | stores the entry, once, under the audit license (ADR 0022)                          |
-| export (EE) | `event_export_erasure`        | `contact.erased`                                                                           | adds the Erasure to the Erasures stream under the export license (ADR 0045)         |
+| Consumer    | Job kind                      | Wants                                                                                       | Does                                                                                |
+| ----------- | ----------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| suppression | `event_suppress`              | a hard bounce or a complaint                                                                | suppresses the address, once, keeping the first reason                              |
+| orders      | `event_order`                 | a collected order Event, loaded history included                                            | records the Order and its Movements under the Workspace's lock (ADR 0064)           |
+| automations | `automation_evaluate_trigger` | a live, person-made Event of a Contact (no history, no machine engagement, no Audit entry)  | evaluates the Event against the Automations                                         |
+| rules       | `rule_evaluate_event`         | what automations wants, except an event a Rule's Action published (`CausedBy`)              | evaluates the Event against the Rules; a Firing is unique on the source id          |
+| webhooks    | `event_webhook`               | every live Event and every Audit entry                                                      | queues one delivery per enabled endpoint whose filter matches (ADR 0039)            |
+| notices     | `event_notice`                | an event that calls for Notices: an account's, or a change a Workspace's people are told of | queues one `send_notice` per Notice, unique on the event and the address (ADR 0105) |
+| broadcasts  | `event_broadcast_unsubscribe` | `telegram.unsubscribed` that names a Broadcast and its Contact                              | counts the unsubscribe on the Broadcast's recipient, once (ADR 0102)                |
+| audit (EE)  | `event_audit`                 | an Audit entry                                                                              | stores the entry, once, under the audit license (ADR 0022)                          |
+| export (EE) | `event_export_erasure`        | `contact.erased`                                                                            | adds the Erasure to the Erasures stream under the export license (ADR 0045)         |
 
 The Event row is written before any consumer runs, so an Automation's exit and goal checks and a
 Rule's Condition that counts the Contact's Events see the Event that triggered them (#751).

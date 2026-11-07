@@ -73,23 +73,8 @@ func New(client *ent.Client, links *users.Links, providers *signinprovider.Provi
 	return &UseCase{client: client, links: links, providers: providers, cfg: cfg, now: now}
 }
 
-// Covers reports whether ev calls for Notices, reading the event alone: it is the filter of the
-// Notices' event consumer, which must not query.
-func Covers(ev events.DomainEvent) bool {
-	switch e := ev.(type) {
-	case *events.LinkRequested, *events.AddressClaimed, *events.UserSignedUp, *events.IdentityLinked,
-		*events.UserDeleted, *events.PasskeyChange, *events.InvitationCreated, *events.SecondFactorRequired,
-		*events.SecondFactorReminderDue, *events.WorkspaceSuspended, *events.AbuseWarned, *events.JoinDomainLost,
-		*events.SendingDomainVerificationLost, *events.TrackingDomainReplaced, *events.TrackingDomainRemoved,
-		*events.WebhookEndpointDisabled:
-		return true
-	case *events.TrackingDomainChanged:
-		return e.Regressed
-	}
-	return false
-}
-
-// Issue answers the Notices ev calls for, none when it calls for none (a request that is not
+// Issue answers the Notices ev calls for (the Notices' consumer wants only an event that calls for
+// some), none when it calls for none (a request that is not
 // delivered, a User gone since, a suspension lifted since). A suspension's notice is recorded on
 // the Workspace (workspaces.MarkAbuseFreezeNotified) when it is issued. An error leaves the event
 // to be handled again: Issue reads and mints nothing it cannot read and mint again.

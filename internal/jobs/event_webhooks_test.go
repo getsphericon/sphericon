@@ -28,9 +28,9 @@ func TestEveryLiveEventAndAuditEntryIsHandedToTheWebhooksConsumer(t *testing.T) 
 		env := events.Envelope{ID: "evt", Name: name, WorkspaceID: fixtures.AcmeID, Data: []byte(`{"action":"` + name + `"}`)}
 		ev, err := events.Decode(env)
 		require.NoError(t, err, name)
-		wanted := webhooks.Wants(env, ev)
 		reachesEndpoints := !events.IsUnprojected(name) || name == events.NameAuditEntry
-		assert.Equal(t, reachesEndpoints, wanted, "%s: only an Event or an Audit entry leaves through an endpoint", name)
+		handed := webhooks.Wants(env, ev)
+		assert.Equal(t, reachesEndpoints, handed, "%s: only an Event or an Audit entry leaves through an endpoint", name)
 	}
 	history := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, Action: "purchase", Backfill: true}
 	historyWanted := webhooks.Wants(events.Envelope{Name: events.NameCollected}, history)
