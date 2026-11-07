@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.7.0](https://github.com/getsphericon/sphericon/compare/v0.6.0...v0.7.0) (2026-11-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **events:** the domain-event outbox tables are dropped, the SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS setting and the `sphericon events replay` command are gone, and the outbox_lag_seconds, outbox_dead_letters and watermill_* metrics are no longer exported. Upgrade: let the running instance drain its outbox (outbox_lag_seconds at 0, no dead letters) before upgrading, then run `sphericon migrate`; remove SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS from the configuration; the event jobs are covered by the job queue alerts (river_queue_oldest_available_age_seconds, river_work_count).
+* the staff surface's `POST /signup-items/{id}/archive` is gone, replaced by `DELETE /signup-items/{id}`, and a Sign-up item's `archivedAt` is now `discardedAt`. Deleted items are no longer listed and can no longer be changed.
+* **sms:** sms channel on Twilio, with Confirmation required, E.164 and undelivered ([#1048](https://github.com/getsphericon/sphericon/issues/1048))
+
+### Features
+
+* archive is not discard: Broadcasts, Automations and Segments are archived, the rest discarded ([#1075](https://github.com/getsphericon/sphericon/issues/1075)) ([587bd14](https://github.com/getsphericon/sphericon/commit/587bd147e7996415f35304b84a2846a7c4ce9750))
+* **events:** deliver domain events as River jobs, one per consumer that wants them ([#1084](https://github.com/getsphericon/sphericon/issues/1084)) ([33e9a02](https://github.com/getsphericon/sphericon/commit/33e9a02ad56368e074315899307f4525d01789ec))
+* **sms:** sms channel on Twilio, with Confirmation required, E.164 and undelivered ([#1048](https://github.com/getsphericon/sphericon/issues/1048)) ([cbb430d](https://github.com/getsphericon/sphericon/commit/cbb430dc5f79e9c95a199e957433eecbc5751d72))
+* **typespec:** refuse a contract description that names the code behind it ([#1170](https://github.com/getsphericon/sphericon/issues/1170)) ([26df3cb](https://github.com/getsphericon/sphericon/commit/26df3cb8a8f4e0f15be5f86a6f36e89003e139e7))
+
+
+### Bug Fixes
+
+* **api:** list only operations as Service operations and read refusals as errors in tests ([#1150](https://github.com/getsphericon/sphericon/issues/1150)) ([3220681](https://github.com/getsphericon/sphericon/commit/3220681cf4c8571882ee9a2acd989cdb00332140))
+* close an Integration's window whose provider was deleted, and tidy two Go helpers after archive ([#1083](https://github.com/getsphericon/sphericon/issues/1083)) ([ca7303c](https://github.com/getsphericon/sphericon/commit/ca7303c79c68e4ef03b3df08de56cccaecdc1ba6))
+* **customfields:** check a retype's Live use and write it under the Workspace lock ([#1168](https://github.com/getsphericon/sphericon/issues/1168)) ([70f8f87](https://github.com/getsphericon/sphericon/commit/70f8f879063f0a70b711cba75d8426857a810532))
+* **dev:** stop the dns daemon in dev:down and worktrees:rm ([#1078](https://github.com/getsphericon/sphericon/issues/1078)) ([2a10a96](https://github.com/getsphericon/sphericon/commit/2a10a96d3abe9bb1f3ff295dc36635641f0a0db2))
+* **integrations:** save an Integration's credentials again from the app ([#1085](https://github.com/getsphericon/sphericon/issues/1085)) ([1523888](https://github.com/getsphericon/sphericon/commit/15238887d17c7b09b9a99d6700fdebbb8a991fe6)), closes [#1082](https://github.com/getsphericon/sphericon/issues/1082)
+* **integrations:** saving the same Telegram bot token again lifts a refused hold ([#1079](https://github.com/getsphericon/sphericon/issues/1079)) ([4ce78bd](https://github.com/getsphericon/sphericon/commit/4ce78bd2688d959966373e2b28768585e8d2f6a2)), closes [#1077](https://github.com/getsphericon/sphericon/issues/1077)
+* keep a Contact's email lower-cased in the database and state the Event facts in the schema ([#1107](https://github.com/getsphericon/sphericon/issues/1107)) ([11e033f](https://github.com/getsphericon/sphericon/commit/11e033f51b11ac9d7ecd43d839b94dac483d68ab))
+* read the Instance clock in Outbound send, step execution, automations and engagement stamps ([#1171](https://github.com/getsphericon/sphericon/issues/1171)) ([d4516a2](https://github.com/getsphericon/sphericon/commit/d4516a2e9d6a81682e5d2c9264675da4100234f9))
+* **staff:** refuse one Workspace's usage without the staff license ([#1115](https://github.com/getsphericon/sphericon/issues/1115)) ([e0eeb1f](https://github.com/getsphericon/sphericon/commit/e0eeb1fa3fe782101f544a9f98f40638416881da))
+
+
+### Performance Improvements
+
+* **ent:** verify a scoped bulk create's references once per batch ([#1106](https://github.com/getsphericon/sphericon/issues/1106)) ([b5d081b](https://github.com/getsphericon/sphericon/commit/b5d081b4e223ba23ce96e777dc84e75b29f3c559))
+
 ## [0.6.0](https://github.com/getsphericon/sphericon/compare/v0.5.0...v0.6.0) (2026-11-04)
 
 
