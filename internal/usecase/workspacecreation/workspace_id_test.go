@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -33,8 +32,7 @@ func TestCreateWorkspaceDrawsAnotherIdWhenOneIsTaken(t *testing.T) {
 		return "FreshId1"
 	}
 
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
-	ws, err := workspacecreation.New(env.Bus, acc, nil, testhelper.Passwords(), workspacecreation.WithWorkspaceIDs(generate)).
+	ws, err := workspacecreation.New(env.Bus, workspacecreation.WithWorkspaceIDs(generate)).
 		CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Fresh")
 	require.NoError(t, err)
 

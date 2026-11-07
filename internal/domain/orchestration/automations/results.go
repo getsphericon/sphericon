@@ -182,7 +182,7 @@ func periodResultsOf(ctx context.Context, s *ent.Scoped, id int64, w reportday.W
 			// raw sql: ent has no interval arithmetic; the mean of ended_at - began_at in seconds.
 			// The clamp at zero is for an Enrollment a step or an unsubscribe ended by the clock:
 			// it began when its triggering Event occurred, and a live Event may be dated ahead of
-			// the server's clock (eventlog refuses only a Backfill from the future), so the clock
+			// the server's clock (eventrecording refuses only a Backfill from the future), so the clock
 			// can end it before it began. An exit or goal Event ends it at that Event's time, which
 			// is never before it began.
 			sel.Select(sql.As("AVG(GREATEST(EXTRACT(EPOCH FROM "+sel.C(automationrun.FieldEndedAt)+" - "+sel.C(automationrun.FieldBeganAt)+"), 0))::float8", "seconds"))

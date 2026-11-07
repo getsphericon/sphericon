@@ -25,8 +25,8 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
+	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
@@ -55,9 +55,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
@@ -222,17 +223,20 @@ type TestEnv struct {
 	// env's clock (ADR 0020).
 	SecondFactor *secondfactorcheck.UseCase
 
-	// WorkspaceCreation is the use case the server creates Workspaces with, and makes Users
-	// Verified with their first one (ADR 0102).
+	// WorkspaceCreation is the use case the server creates a Verified User's Workspaces with
+	// (ADR 0102).
 	WorkspaceCreation *workspacecreation.UseCase
+	// SignUp is the use case the server signs Users up with and makes them Verified with their
+	// first Workspace, an Owner made from a shell among them (ADR 0102).
+	SignUp *signup.UseCase
 
 	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,
 	// ADR 0063), on every env.
 	StaffMembers *staffmembers.Module
 
-	// StaffEnterprise is the use case of the Staff console's Enterprise sections and of the
+	// StaffEnterprise is the module of the Staff console's Enterprise sections and of the
 	// service endpoints; it refuses every call on an unlicensed env.
-	StaffEnterprise *workspaceoversight.UseCase
+	StaffEnterprise *workspaceoversight.Module
 	// ServiceCredentials is the module of the service endpoints' Service credentials (ADR
 	// 0026); it refuses every call on an unlicensed env.
 	ServiceCredentials *servicecredentials.Module
@@ -506,7 +510,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, jobs.NewMemberInviteWorker(systemMail))
 		add(tb, p, txDB, jobs.NewNotifySecondFactorRequiredWorker(client, systemMail, cfg.AppURL))
 		add(tb, p, txDB, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector)))
-		add(tb, p, txDB, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*domainverification.UseCase](injector)))
+		add(tb, p, txDB, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomainverification.UseCase](injector)))
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
 		add(tb, p, txDB, jobs.NewSuppressEventWorker(client))
 		add(tb, p, txDB, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
@@ -551,6 +555,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Confirmations:     confirmations,
 		SecondFactor:      do.MustInvoke[*secondfactorcheck.UseCase](injector),
 		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
+		SignUp:            do.MustInvoke[*signup.UseCase](injector),
 		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
 		StaffEnterprise:   edition.Staff,
 

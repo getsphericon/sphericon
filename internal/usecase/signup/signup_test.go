@@ -1,0 +1,294 @@
+package signup_test
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"maps"
+	"slices"
+	"strconv"
+	"testing"
+
+	"github.com/riverqueue/river"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
+)
+
+// queue is the mail queue: an outside boundary, read for what was left on it.
+type queue struct{ rc *river.Client[*sql.Tx] }
+
+// jobs are the mail jobs queued so far, oldest first, as the args they were queued with.
+func (q queue) jobs(t *testing.T) []river.JobArgs {
+	t.Helper()
+	res, err := q.rc.JobList(t.Context(), river.NewJobListParams().
+		Kinds(mailjobs.WelcomeArgs{}.Kind(), mailjobs.AuthMailArgs{}.Kind()).OrderBy(river.JobListOrderByID, river.SortOrderAsc))
+	require.NoError(t, err)
+	out := []river.JobArgs{}
+	for _, job := range res.Jobs {
+		switch job.Kind {
+		case mailjobs.WelcomeArgs{}.Kind():
+			out = append(out, decoded[mailjobs.WelcomeArgs](t, job.EncodedArgs))
+		case mailjobs.AuthMailArgs{}.Kind():
+			out = append(out, decoded[mailjobs.AuthMailArgs](t, job.EncodedArgs))
+		}
+	}
+	return out
+}
+
+func decoded[T river.JobArgs](t *testing.T, encoded []byte) T {
+	t.Helper()
+	var args T
+	require.NoError(t, json.Unmarshal(encoded, &args))
+	return args
+}
+
+// mint names the User and the Sign-up browser hash a token was minted for.
+func mint(u *ent.User, browserHash string) (string, error) {
+	return tokenFor(u.ID, browserHash), nil
+}
+
+func tokenFor(id int64, browserHash string) string {
+	return strconv.FormatInt(id, 10) + ":" + browserHash
+}
+
+// linkOf is the token a link minted for the User id carries after the Sign-up res.
+func linkOf(id int64, res signup.SignUpResult) string {
+	return tokenFor(id, users.BrowserHash(res.Browser))
+}
+
+type rig struct {
+	env      *testhelper.TestEnv
+	db       *ent.Client
+	queue    queue
+	module   *signup.UseCase
+	consents *consentrecords.Module
+}
+
+type option func(*users.Module, *signup.SignUpConfig)
+
+// verificationOff runs the rig on an Instance that does not require email verification.
+func verificationOff(_ *users.Module, cfg *signup.SignUpConfig) {
+	cfg.RequireVerification = false
+}
+
+// newRig builds the module over the fixtures, with a mail budget of budget per address.
+func newRig(t *testing.T, budget int, opts ...option) rig {
+	t.Helper()
+	env := testhelper.Setup(t)
+	r := build(t, env.SQLDB, env.DB, env.Bus, budget, opts...)
+	r.env = env
+	return r
+}
+
+// newRacingRig builds the module with a first lookup that misses, as the lookup of a Sign-up that
+// lost a race on a new address did before the winner's User was written, on a database of the
+// test's own: the create that meets the winner's row fails a statement, which inside the one
+// transaction of the ordinary tests would abort everything after it.
+func newRacingRig(t *testing.T) rig {
+	t.Helper()
+	sqlDB := testhelper.RealDB(t)
+	return build(t, sqlDB, entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx), 5, func(acc *users.Module, cfg *signup.SignUpConfig) {
+		looked := false
+		cfg.Lookup = func(ctx context.Context, email string) (*ent.User, bool, error) {
+			if !looked {
+				looked = true
+				return nil, false, nil
+			}
+			u, err := acc.UserByEmail(ctx, email)
+			if ent.IsNotFound(err) {
+				return nil, false, nil
+			}
+			return u, err == nil, err
+		}
+	})
+}
+
+func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, budget int, opts ...option) rig {
+	t.Helper()
+	inserter, err := jobs.NewInserter(sqlDB)
+	require.NoError(t, err)
+	consents := testhelper.ConsentRecords(client, bus)
+	acc := users.New(client, bus, testhelper.Passwords(), consents)
+	attempts := throttle.NewAttempts(client, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
+	q := queue{rc: inserter}
+	cfg := signup.SignUpConfig{
+		Budget: attempts.For(throttle.KindSignUp), Mail: inserter, Mint: mint, Consents: consents,
+		RequireVerification: true, SurveyDue: func() bool { return false },
+	}
+	for _, o := range opts {
+		o(acc, &cfg)
+	}
+	module := signup.New(bus, acc, nil, testhelper.Passwords(), signup.WithSignUp(cfg))
+	return rig{db: client, queue: q, module: module, consents: consents}
+}
+
+func (r rig) signUp(t *testing.T, name, email, password string) signup.SignUpResult {
+	t.Helper()
+	res, err := r.module.SignUp(t.Context(), signup.SignUpInput{Name: name, Email: email, Password: password})
+	require.NoError(t, err)
+	return res
+}
+
+func (r rig) user(t *testing.T, email string) *ent.User {
+	t.Helper()
+	u, err := r.db.User.Query().Where(user.Email(email)).Only(t.Context())
+	require.NoError(t, err)
+	return u
+}
+
+// budgetTaken reports whether a slot of the address's mail budget was taken.
+func (r rig) budgetTaken(t *testing.T, email string) bool {
+	t.Helper()
+	taken, err := r.db.AuthAttempt.Query().Where(authattempt.Email(email), authattempt.KindEQ(throttle.KindSignUp)).Exist(t.Context())
+	require.NoError(t, err)
+	return taken
+}
+
+const password = "form-password-1"
+
+// ADR 0031: a new, an Unverified and a Verified address answer alike and cost the same
+// work: a budget slot, one Sign-up browser and exactly one mail job each. Only the job's
+// kind says which it was, and only its owner reads it.
+func TestEverySignUpDoesTheSameWorkWhateverTheAddress(t *testing.T) {
+	r := newRig(t, 5)
+	john := r.user(t, fixtures.OwnerJohnEmail)
+
+	fresh := r.signUp(t, "Grace", "grace@example.com", password)
+	unverified := r.signUp(t, "Mallory", fixtures.FreshUnverifiedUserEmail, password)
+	verified := r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
+
+	assert.NotEmpty(t, fresh.Browser)
+	assert.NotEmpty(t, unverified.Browser)
+	assert.NotEmpty(t, verified.Browser)
+	assert.True(t, r.budgetTaken(t, "grace@example.com"))
+	assert.True(t, r.budgetTaken(t, fixtures.FreshUnverifiedUserEmail))
+	assert.True(t, r.budgetTaken(t, fixtures.OwnerJohnEmail))
+	grace := r.user(t, "grace@example.com")
+	assert.Equal(t, []river.JobArgs{
+		mailjobs.EmailVerification("grace@example.com", linkOf(grace.ID, fresh), true),
+		mailjobs.EmailVerification(fixtures.FreshUnverifiedUserEmail, linkOf(fixtures.FreshUnverifiedUserID, unverified), true),
+		mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, true),
+	}, r.queue.jobs(t), "one job each, and only the taken address's carries no link")
+	after := r.user(t, fixtures.OwnerJohnEmail)
+	assert.Equal(t, john.PasswordHash, after.PasswordHash, "a Verified User's password is never replaced")
+	assert.Equal(t, john.Name, after.Name)
+}
+
+func TestASignUpOfANewAddressCreatesAnUnverifiedUserAndMailsItsLink(t *testing.T) {
+	r := newRig(t, 5)
+
+	res := r.signUp(t, "  Grace  ", "  grace@example.com ", password)
+
+	u := r.user(t, "grace@example.com")
+	assert.Equal(t, "Grace", u.Name)
+	assert.Nil(t, u.EmailVerifiedAt)
+	assert.True(t, credentials.VerifyPassword(u.PasswordHash, password))
+	assert.Equal(t, []river.JobArgs{mailjobs.EmailVerification("grace@example.com", linkOf(u.ID, res), true)}, r.queue.jobs(t),
+		"the link is the User's and trusts the Sign-up browser of the answer")
+}
+
+// ADR 0030: a repeated Sign-up of an Unverified address replaces its password, which ends
+// the earlier links, and keeps the name it was first given.
+func TestARepeatedSignUpOfAnUnverifiedAddressReplacesItsPassword(t *testing.T) {
+	r := newRig(t, 5)
+	before := r.user(t, fixtures.FreshUnverifiedUserEmail)
+
+	r.signUp(t, "Mallory", fixtures.FreshUnverifiedUserEmail, password)
+
+	after := r.user(t, fixtures.FreshUnverifiedUserEmail)
+	assert.True(t, credentials.VerifyPassword(after.PasswordHash, password))
+	assert.Equal(t, before.Name, after.Name)
+	assert.Nil(t, after.EmailVerifiedAt)
+}
+
+// Two Sign-ups of one new address race: the loser's lookup missed, its create meets the
+// winner's row on the unique email, and it ends as a repeated Sign-up of the winner.
+func TestASignUpThatLosesARaceEndsAsARepeatedSignUpOfTheWinner(t *testing.T) {
+	r := newRacingRig(t)
+
+	res := r.signUp(t, "Mallory", fixtures.FreshUnverifiedUserEmail, password)
+
+	assert.NotEmpty(t, res.Browser)
+	winner := r.user(t, fixtures.FreshUnverifiedUserEmail)
+	assert.True(t, credentials.VerifyPassword(winner.PasswordHash, password), "the loser replaced the winner's password")
+	assert.Equal(t, []river.JobArgs{mailjobs.EmailVerification(fixtures.FreshUnverifiedUserEmail, linkOf(winner.ID, res), true)}, r.queue.jobs(t))
+}
+
+// ADR 0031: once the address's mail budget is spent a Sign-up still does all the work, and
+// its mail job is queued but delivers nothing.
+func TestASignUpPastTheMailBudgetQueuesAJobThatDeliversNothing(t *testing.T) {
+	r := newRig(t, 1)
+
+	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
+	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
+
+	assert.Equal(t, []river.JobArgs{mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, true), mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, false)}, r.queue.jobs(t))
+}
+
+func TestARefusedFormNamesEveryFieldAndCostsNothing(t *testing.T) {
+	r := newRig(t, 5)
+
+	_, err := r.module.SignUp(t.Context(), signup.SignUpInput{Name: "  ", Email: "not-an-address", Password: "short"})
+
+	fields, ok := errors.AsType[*validation.FieldsError](err)
+	require.True(t, ok, "got %v", err)
+	refused := slices.Sorted(maps.Keys(fields.Fields))
+	assert.Equal(t, []string{"email", "name", "password"}, refused)
+	assert.Empty(t, r.queue.jobs(t))
+	assert.False(t, r.budgetTaken(t, "not-an-address"))
+}
+
+// ADR 0030: with verification off the User is Verified at once and welcomed, and no Sign-up
+// browser is drawn: no link follows.
+func TestWithVerificationOffASignUpMakesAVerifiedUserAndWelcomesIt(t *testing.T) {
+	r := newRig(t, 5, verificationOff)
+
+	res := r.signUp(t, "Grace", "grace@example.com", password)
+
+	assert.Empty(t, res.Browser)
+	u := r.user(t, "grace@example.com")
+	assert.NotNil(t, u.EmailVerifiedAt)
+	assert.Equal(t, []river.JobArgs{mailjobs.Welcome("grace@example.com", "Grace")}, r.queue.jobs(t))
+}
+
+// ADR 0031's one exception: with no mail to tell the owner, a Taken address is the answer.
+func TestWithVerificationOffATakenAddressIsTheAnswer(t *testing.T) {
+	r := newRig(t, 5, verificationOff)
+	john := r.user(t, fixtures.OwnerJohnEmail)
+
+	_, err := r.module.SignUp(t.Context(), signup.SignUpInput{Name: "Mallory", Email: fixtures.OwnerJohnEmail, Password: password})
+
+	require.ErrorIs(t, err, signup.ErrEmailTaken)
+	assert.Empty(t, r.queue.jobs(t))
+	assert.Equal(t, john.PasswordHash, r.user(t, fixtures.OwnerJohnEmail).PasswordHash)
+}
+
+func TestTheSignUpBrowserIsTheOneWhoseHashTheLinkCarries(t *testing.T) {
+	r := newRig(t, 5)
+	res := r.signUp(t, "Grace", "grace@example.com", password)
+	other := r.signUp(t, "Alan", "alan@example.com", password)
+
+	hash := users.BrowserHash(res.Browser)
+
+	assert.True(t, users.SameBrowser(hash, res.Browser))
+	assert.False(t, users.SameBrowser(hash, other.Browser))
+	assert.False(t, users.SameBrowser("", res.Browser), "a link minted without a browser trusts none")
+	assert.False(t, users.SameBrowser(hash, ""))
+}

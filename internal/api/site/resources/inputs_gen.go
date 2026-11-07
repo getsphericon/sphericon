@@ -33,7 +33,7 @@ import (
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	workspacecreation "github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 type InputsImpl struct{}
@@ -649,15 +649,15 @@ func (c *InputsImpl) SendingDomainCreate(source *site.CreateSendingDomainInput) 
 	}
 	return sendingdomainsCreateInput
 }
-func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) workspacecreation.SignUpInput {
-	var workspacecreationSignUpInput workspacecreation.SignUpInput
+func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.SignUpInput {
+	var signupSignUpInput signup.SignUpInput
 	if source != nil {
-		workspacecreationSignUpInput.Name = string((*source).Name)
-		workspacecreationSignUpInput.Email = string((*source).Email)
-		workspacecreationSignUpInput.Password = stringIn((*source).Password)
-		workspacecreationSignUpInput.SignupItems = c.SignupAnswers((*source).SignupItems)
+		signupSignUpInput.Name = string((*source).Name)
+		signupSignUpInput.Email = string((*source).Email)
+		signupSignUpInput.Password = stringIn((*source).Password)
+		signupSignUpInput.SignupItems = c.SignupAnswers((*source).SignupItems)
 	}
-	return workspacecreationSignUpInput
+	return signupSignUpInput
 }
 func (c *InputsImpl) SignupAnswers(source []site.SiteSignupItemAnswer) []consentrecords.Answer {
 	var consentrecordsAnswerList []consentrecords.Answer

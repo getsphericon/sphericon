@@ -59,7 +59,7 @@ type Grant struct {
 // its secret. The Membership is its own, so it ends with it, and it names the client it was
 // approved for, which tells it apart from a Personal token. The scopes are the consent's and
 // are not checked again here: only the exchange of an authorization code calls it
-// (internal/usecase/oauthauthorization), after it has checked the code and its PKCE verifier.
+// (internal/usecase/connectionissuance), after it has checked the code and its PKCE verifier.
 func IssueConnection(ctx context.Context, s *ent.Scoped, g Grant) (Minted, error) {
 	prefix, err := credentials.GenerateTokenPrefix()
 	if err != nil {
@@ -86,7 +86,7 @@ func IssueConnection(ctx context.Context, s *ent.Scoped, g Grant) (Minted, error
 
 // RotateConnection gives the active Connection token of the Workspace s a fresh secret, scopes
 // and expiry, keeping its row and prefix, and returns its new value; false when it was revoked
-// meanwhile. Only the exchange of a refresh token calls it (internal/usecase/oauthauthorization),
+// meanwhile. Only the exchange of a refresh token calls it (internal/usecase/connectionissuance),
 // after it has checked and claimed the refresh token.
 func RotateConnection(ctx context.Context, s *ent.Scoped, token *ent.ApiToken, scopes []string, expiresAt time.Time) (value string, rotated bool, err error) {
 	secret, err := credentials.GenerateTokenSecret()

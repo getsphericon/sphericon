@@ -26,7 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
-	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
+	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
@@ -165,9 +165,9 @@ type Inputs interface {
 	// goverter:context backfill
 	// goverter:map Properties | eventPropertiesIn
 	// goverter:map Backfill | backfillIn
-	Event(source externalapi.EventInput, backfill bool) (eventlog.Input, error)
+	Event(source externalapi.EventInput, backfill bool) (eventrecording.Input, error)
 	// goverter:context backfill
-	Events(source []externalapi.EventInput, backfill bool) ([]eventlog.Input, error)
+	Events(source []externalapi.EventInput, backfill bool) ([]eventrecording.Input, error)
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.

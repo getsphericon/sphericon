@@ -19,9 +19,9 @@ import (
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
+	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
-	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
@@ -56,9 +56,9 @@ type Edition struct {
 	Audit *auditentries.Log
 	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
 	Export *ExportStreams
-	// Staff is the use case of the console's Enterprise sections and of the service endpoints
+	// Staff is the module of the console's Enterprise sections and of the service endpoints
 	// (ADR 0026); every call refuses without the `staff` license.
-	Staff *workspaceoversight.UseCase
+	Staff *workspaceoversight.Module
 	// ServiceCredentials issues and checks the Service credentials of the service endpoints
 	// (ADR 0026); every call refuses without the `staff` license.
 	ServiceCredentials *servicecredentials.Module

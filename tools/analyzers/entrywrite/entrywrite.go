@@ -53,6 +53,7 @@ var surfaces = []string{
 	"internal/api/external",
 	"internal/api/collect",
 	"internal/api/staff",
+	"internal/api/oauth",
 	"ee/api/staff",
 }
 

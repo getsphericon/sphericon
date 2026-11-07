@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 
@@ -445,11 +446,11 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 // CreateOwner makes a Verified User with its first Workspace and a one-time password
 // (ADR 0042): an Owner made from a shell, with no Sign-up.
 func (a *App) CreateOwner(ctx context.Context, email, name string) (string, error) {
-	creation, err := do.Invoke[*workspacecreation.UseCase](a.injector)
+	signUp, err := do.Invoke[*signup.UseCase](a.injector)
 	if err != nil {
 		return "", err
 	}
-	return creation.CreateOwner(ctx, email, name)
+	return signUp.CreateOwner(ctx, email, name)
 }
 
 // CreateStaffMember makes a platform Staff member (ADR 0026, ADR 0063) and returns its one-time

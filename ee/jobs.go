@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
-	"github.com/getsphericon/sphericon/ee/usecase/retention"
+	"github.com/getsphericon/sphericon/ee/usecase/auditlogretention"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
@@ -90,7 +90,7 @@ func (w *ErasureEventWorker) Work(ctx context.Context, job *river.Job[ErasureEve
 	return erasures.Record(ctx, w.client, w.lic, job.Args.Envelope)
 }
 
-// RetentionPruneArgs is the advanced-retention prune (ADR 0014), every retention.Interval.
+// RetentionPruneArgs is the advanced-retention prune (ADR 0014), every auditlogretention.Interval.
 type RetentionPruneArgs struct{}
 
 func (RetentionPruneArgs) Kind() string { return "ee_retention_prune" }
@@ -103,7 +103,7 @@ type retentionPruneWorker struct {
 }
 
 func (w *retentionPruneWorker) Work(ctx context.Context, _ *river.Job[RetentionPruneArgs]) error {
-	_, err := retention.Prune(ctx, w.client, w.lic, time.Now())
+	_, err := auditlogretention.Prune(ctx, w.client, w.lic, time.Now())
 	return err
 }
 
@@ -180,7 +180,7 @@ func (e *Edition) Jobs() jobextension.Extension {
 			river.AddWorker(w, NewEntryEventWorker(e.client, e.lic))
 		},
 		PeriodicJobs: []*river.PeriodicJob{
-			every(retention.Interval, RetentionPruneArgs{}),
+			every(auditlogretention.Interval, RetentionPruneArgs{}),
 			every(usages.Interval, UsageRefreshArgs{}),
 			every(abusedetection.Interval, AbuseDetectionArgs{}),
 		},

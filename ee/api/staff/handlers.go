@@ -1,7 +1,7 @@
 // Package staff is the handlers of the Enterprise Staff surfaces (ADR 0026, ADR 0063): the Staff
 // console's Enterprise sections under /staff, with the core Staff member's session check
 // (internal/domain/identity/staffmembers), and the service endpoints under /service, with the Service credential's.
-// A handler receives the request, calls the use case ee/usecase/workspaceoversight and maps what it returns; the
+// A handler receives the request, calls the module ee/domain/insights/workspaceoversight and maps what it returns; the
 // Edition (ee) builds the surfaces and the composition root mounts them.
 //
 // Governed by ee/LICENSE, not the AGPL.
@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
-	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
+	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/api/problem"
@@ -32,7 +32,7 @@ type Surface struct {
 }
 
 // NewSurface builds the surface.
-func NewSurface(m *workspaceoversight.UseCase, s *staffmembers.Sessions) *Surface {
+func NewSurface(m *workspaceoversight.Module, s *staffmembers.Sessions) *Surface {
 	return &Surface{handlers: &Handlers{module: m}, security: &SecurityHandler{sessions: s}}
 }
 
@@ -45,7 +45,7 @@ func (s *Surface) Server(opts ...staffeeapi.ServerOption) (http.Handler, error) 
 
 // Handlers implements staffeeapi.Handler.
 type Handlers struct {
-	module *workspaceoversight.UseCase
+	module *workspaceoversight.Module
 }
 
 var _ staffeeapi.Handler = (*Handlers)(nil)

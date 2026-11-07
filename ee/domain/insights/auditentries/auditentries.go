@@ -103,7 +103,7 @@ func persist(ctx context.Context, client *ent.Client, env events.Envelope, e *ev
 }
 
 // PruneBefore deletes the scoped Workspace's Audit entries that occurred before cutoff and returns
-// how many it removed: the advanced-retention control's prune (ee/usecase/retention), the one remover of
+// how many it removed: the advanced-retention control's prune (ee/usecase/auditlogretention), the one remover of
 // entries besides the erasure of a deleted Workspace.
 func PruneBefore(ctx context.Context, s *ent.Scoped, cutoff time.Time) (int, error) {
 	return s.AuditEntry().Delete().Where(auditentry.OccurredAtLT(cutoff)).Exec(ctx)

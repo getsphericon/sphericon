@@ -31,8 +31,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
@@ -81,9 +81,9 @@ type Deps struct {
 	Users        *users.Module
 	Orders       *orders.Module
 	Deletion     *workspacedeletion.UseCase
-	// DomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
+	// SendingDomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
-	DomainVerification *domainverification.UseCase
+	SendingDomainVerification *sendingdomainverification.UseCase
 	// StepExecution executes the steps of the Enrollments (the run_step and http_step jobs).
 	StepExecution   *stepexecution.UseCase
 	JoinDomains     *joindomains.Module
@@ -133,7 +133,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewMemberInviteWorker(systemSender))
 	river.AddWorker(workers, NewNotifySecondFactorRequiredWorker(entClient, systemSender, appURL))
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
-	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.DomainVerification))
+	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomainVerification))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))

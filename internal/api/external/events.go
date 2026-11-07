@@ -6,6 +6,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -16,7 +17,7 @@ func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEven
 	}
 	// The module resolves identity and publishes the batch atomically; rows land
 	// asynchronously (accept-then-process).
-	return h.eventlog.Ingest(ctx, auth.TokenScoped(ctx), batch)
+	return h.eventrecording.Record(ctx, auth.TokenScoped(ctx), batch)
 }
 
 // EventsBatchSubmit records each Event independently and reports a per-item result.
@@ -25,7 +26,7 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 	if err != nil {
 		return nil, err
 	}
-	errs := h.eventlog.IngestEach(ctx, auth.TokenScoped(ctx), batch)
+	errs := h.eventrecording.RecordEach(ctx, auth.TokenScoped(ctx), batch)
 
 	results := make([]externalapi.EventBatchItemResult, len(errs))
 	for i, e := range errs {
@@ -39,7 +40,7 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 }
 
 func (h *Handlers) EventActionsList(ctx context.Context, params externalapi.EventActionsListParams) (*externalapi.EventActionsListOK, error) {
-	page, err := h.eventlog.ListActions(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := events.ListDistinctActions(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}

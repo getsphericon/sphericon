@@ -15,7 +15,7 @@ import (
 // (whatever the address, ADR 0031). No session starts and no Workspace is made here; they
 // follow the proof.
 func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpInput) (*siteapi.SiteAuthSignUpAccepted, error) {
-	res, err := h.workspaceCreation.SignUp(ctx, inputs.SignUp(req))
+	res, err := h.signUp.SignUp(ctx, inputs.SignUp(req))
 	if err != nil {
 		return nil, err
 	}

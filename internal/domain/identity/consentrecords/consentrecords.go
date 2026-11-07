@@ -215,7 +215,7 @@ type Mailing struct {
 // Mailings is the current consent to the operator's mailings of each of the Users that has
 // answered the item standing for it, by User id. A User who never answered it, and every User
 // when no item stands for it, is absent: they have not consented. It reads the records through
-// client, for the service feed of Users (ee/usecase/workspaceoversight), which pages over many Users at once.
+// client, for the service feed of Users (ee/domain/insights/workspaceoversight), which pages over many Users at once.
 func Mailings(ctx context.Context, client *ent.Client, userIDs ...int64) (map[int64]Mailing, error) {
 	rows, err := client.ConsentRecord.Query().
 		Where(

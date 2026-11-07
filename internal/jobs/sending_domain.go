@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a
@@ -30,11 +30,11 @@ type VerifySendingDomainWorker struct {
 	river.WorkerDefaults[VerifySendingDomainArgs]
 
 	ent          *ent.Client
-	verification *domainverification.UseCase
+	verification *sendingdomainverification.UseCase
 }
 
 // NewVerifySendingDomainWorker builds the worker that verifies one Sending domain.
-func NewVerifySendingDomainWorker(client *ent.Client, verification *domainverification.UseCase) *VerifySendingDomainWorker {
+func NewVerifySendingDomainWorker(client *ent.Client, verification *sendingdomainverification.UseCase) *VerifySendingDomainWorker {
 	return &VerifySendingDomainWorker{ent: client, verification: verification}
 }
 

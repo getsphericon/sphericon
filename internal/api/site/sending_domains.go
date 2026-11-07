@@ -63,7 +63,7 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	d, err := h.domainVerification.Verify(ctx, s, id)
+	d, err := h.sendingDomainVerification.Verify(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

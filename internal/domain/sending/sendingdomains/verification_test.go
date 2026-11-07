@@ -14,13 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 )
 
 // verification is the domain verification use case over the test's database: the dev resolver's
 // answers are read the way a check reads them.
-func verification(env *testhelper.TestEnv, lookup domainname.TXTLookup) *domainverification.UseCase {
-	return domainverification.New(sendingdomains.New(env.Bus, nil), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail))
+func verification(env *testhelper.TestEnv, lookup domainname.TXTLookup) *sendingdomainverification.UseCase {
+	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail))
 }
 
 func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {

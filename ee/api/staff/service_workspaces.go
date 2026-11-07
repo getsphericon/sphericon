@@ -3,7 +3,7 @@ package staff
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
+	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
