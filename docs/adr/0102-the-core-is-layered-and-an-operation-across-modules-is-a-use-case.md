@@ -11,6 +11,9 @@ status: accepted
 > Amended by #1159: a use case is named after its operation's glossary term, a read-only one after
 > its report; a protocol's or a console's endpoints are not a use case. See "Names follow one rule"
 > and "A use case is an operation that spans several domain modules".
+>
+> Refined by [[0107-a-domain-module-checks-every-input-to-its-writes]]: no caller holds a rule of a
+> module's rows for it.
 
 ## Context
 

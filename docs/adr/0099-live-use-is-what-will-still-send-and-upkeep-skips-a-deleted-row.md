@@ -4,6 +4,9 @@ status: accepted
 
 # Live use is what will still send, and upkeep skips a deleted row
 
+> **Refined by [[0108-a-write-that-moves-live-use-holds-the-lock-its-check-holds]]:** the writes that
+> move Live use include an Integration's default and From, and the lock is part of their types.
+
 ADR 0049 lets live dependencies block a removal and says which readers see discarded rows, but an
 audit of the code found the rules read three ways. Deleting an Integration counted a Broadcast that
 names none as using the default email Integration whatever its Channel, so a scheduled Telegram
