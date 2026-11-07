@@ -55,7 +55,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 			held := env.DB.AutomationRun.GetX(ctx, runID)
 			assert.Equal(t, automationrun.StatusActive, held.Status)
 			queued := queuedSteps(t, env)
-			assert.Equal(t, []map[string]any{stepJob(runID, 0)}, queued, "the held step is asked again later")
+			assert.Equal(t, []map[string]any{stepJob(t, env, runID, 0)}, queued, "the held step is asked again later")
 			route, err := env.OutboundModule().Route(ctx, env.DB.Scoped(fixtures.AcmeID), "sms", new(int64(account.Integration.ID)))
 			require.NoError(t, err)
 			assert.Equal(t, outboundmessages.HoldProviderRefused, route.Hold)

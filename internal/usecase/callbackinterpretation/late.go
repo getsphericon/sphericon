@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
 // A Delivery notice can reach the hook before the message it is about is committed: Twilio posts a
@@ -24,6 +25,8 @@ var LateNoticeDelays = []time.Duration{5 * time.Second, 30 * time.Second, 2 * ti
 // The notice keeps what finds and settles the message (its provider id, kind, status and error
 // code) and drops where it went: a job row is not erased with a Contact, so it holds no number.
 type LateNoticeArgs struct {
+	jobkind.Workspace
+
 	IntegrationID int64                 `json:"integrationId"`
 	Preset        string                `json:"preset"`
 	Notice        preset.DeliveryNotice `json:"notice"`
@@ -52,6 +55,7 @@ func (tx Tx) deferNotice(ctx context.Context, n preset.DeliveryNotice) error {
 	}
 	n.Destination, n.Reason = "", ""
 	return tx.queue.Enqueue(ctx, LateNoticeArgs{
+		WorkspaceID:   tx.Integration.WorkspaceID,
 		IntegrationID: tx.Integration.ID, Preset: tx.Preset, Notice: n, Attempt: tx.attempt + 1,
 	}, &river.InsertOpts{ScheduledAt: tx.Now.Add(LateNoticeDelays[tx.attempt])})
 }

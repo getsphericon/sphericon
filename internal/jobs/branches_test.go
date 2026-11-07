@@ -89,7 +89,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		require.NoError(t, err)
 		fs := &fakeSender{}
 		require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(fs))))
-		assert.Equal(t, []map[string]any{stepJob(id, env.DB.AutomationRun.GetX(t.Context(), id).CurrentStep)}, queuedSteps(t, env), "the same step is queued again")
+		assert.Equal(t, []map[string]any{stepJob(t, env, id, env.DB.AutomationRun.GetX(t.Context(), id).CurrentStep)}, queuedSteps(t, env), "the same step is queued again")
 		assert.True(t, env.JobSchedules(t, stepexecution.RunStepArgs{}.Kind())[0].After(time.Now().Add(10*time.Minute)))
 		assert.Empty(t, fs.sent)
 		assert.Equal(t, automationrun.StatusActive, runStatus(t.Context(), t, env, id), "the enrollment is unchanged")
@@ -141,17 +141,17 @@ func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, gone, time.Now))
 
-	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
+	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{WorkspaceID: fixtures.AcmeID, SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)
 
 	// Already unverified now: no second alert.
-	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
+	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{WorkspaceID: fixtures.AcmeID, SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing send on a fresh flip leaves the check done.
 	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetVerifiedAt(time.Now()).ClearVerificationLostAt().ExecX(ctx)
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
+	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{WorkspaceID: fixtures.AcmeID, SendingDomainID: fixtures.SendingDomainVerifiedID}))
 
-	require.Error(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: 424242}))
+	require.Error(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{WorkspaceID: fixtures.AcmeID, SendingDomainID: 424242}))
 }

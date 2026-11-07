@@ -40,7 +40,7 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
-	assert.Equal(t, []map[string]any{stepJob(runID, 0)}, queuedSteps(t, env), "the held step is asked again later")
+	assert.Equal(t, []map[string]any{stepJob(t, env, runID, 0)}, queuedSteps(t, env), "the held step is asked again later")
 	route, err := env.OutboundModule().Route(ctx, env.DB.Scoped(fixtures.AcmeID), "telegram", new(int64(bot.Integration.ID)))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.HoldProviderRefused, route.Hold, "the Send route reports the Hold")

@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
@@ -53,7 +54,8 @@ func stepperAt(env *testhelper.TestEnv, mod *outboundmessages.Module, now func()
 // previous step would have.
 func queueStep(t *testing.T, env *testhelper.TestEnv, runID int64) {
 	t.Helper()
-	env.EnqueueJob(t, stepexecution.RunStepArgs{RunID: runID, Step: env.DB.AutomationRun.GetX(t.Context(), runID).CurrentStep})
+	run := env.DB.AutomationRun.GetX(t.Context(), runID)
+	env.EnqueueJob(t, stepexecution.RunStepArgs{WorkspaceID: run.WorkspaceID, RunID: runID, Step: run.CurrentStep})
 }
 
 // stepOnce executes the step an Enrollment of Acme stands on, and returns what the step returned.
@@ -68,9 +70,12 @@ func queuedSteps(t *testing.T, env *testhelper.TestEnv) []map[string]any {
 	return env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
 }
 
-// stepJob is the args of a queued step job as JobsOf reads them.
-func stepJob(runID int64, step int) map[string]any {
-	return map[string]any{"run_id": float64(runID), "step": float64(step)}
+// stepJob is the args of a queued step job of the Enrollment runID as JobsOf reads them, its
+// Workspace included.
+func stepJob(t *testing.T, env *testhelper.TestEnv, runID int64, step int) map[string]any {
+	t.Helper()
+	run := env.DB.AutomationRun.GetX(t.Context(), runID)
+	return map[string]any{"run_id": float64(runID), "step": float64(step), jobkind.WorkspaceArg: float64(run.WorkspaceID)}
 }
 
 // triggerOf is the event that enrolls a fixture Automation: its live version's Trigger, or its draft's
@@ -196,7 +201,7 @@ func TestAutomationWaitParksTheEnrollmentAndQueuesTheNextStepForTheResumeTime(t 
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	require.NotNil(t, run.ResumeAt)
 	assert.Equal(t, 1, run.CurrentStep)
-	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, env), "the step after the wait is queued, and nothing else")
+	assert.Equal(t, []map[string]any{stepJob(t, env, runID, 1)}, queuedSteps(t, env), "the step after the wait is queued, and nothing else")
 	assert.WithinDuration(t, *run.ResumeAt, env.JobSchedules(t, stepexecution.RunStepArgs{}.Kind())[0], time.Second, "for the resume time")
 	assert.Empty(t, fs.sent)
 }
@@ -233,7 +238,7 @@ func TestAStepRunningBeforeTheResumeTimeQueuesItselfAndDoesNothingElse(t *testin
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, 1, run.CurrentStep, "the Enrollment stays on the step after the wait")
 	assert.Equal(t, automationrun.StatusActive, run.Status)
-	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, env), "the step waits for its time")
+	assert.Equal(t, []map[string]any{stepJob(t, env, runID, 1)}, queuedSteps(t, env), "the step waits for its time")
 	assert.WithinDuration(t, *run.ResumeAt, env.JobSchedules(t, stepexecution.RunStepArgs{}.Kind())[0], time.Second)
 }
 
@@ -271,7 +276,7 @@ func TestATagStepJobExecutedTwiceQueuesTheNextStepOnce(t *testing.T) {
 	require.NoError(t, mod.Step(ctx, acme, runID, 0))
 	require.NoError(t, mod.Step(ctx, acme, runID, 0))
 
-	assert.Equal(t, []map[string]any{stepJob(runID, 0), stepJob(runID, 1)}, queuedSteps(t, env), "the enrolling job and one follow-up")
+	assert.Equal(t, []map[string]any{stepJob(t, env, runID, 0), stepJob(t, env, runID, 1)}, queuedSteps(t, env), "the enrolling job and one follow-up")
 	assert.Equal(t, 1, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
 }
 
@@ -309,7 +314,7 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Zero(t, run.CurrentStep, "a hold does not advance the enrollment")
-	assert.Equal(t, []map[string]any{stepJob(runID, 0)}, queuedSteps(t, env), "the worker reschedules the same step")
+	assert.Equal(t, []map[string]any{stepJob(t, env, runID, 0)}, queuedSteps(t, env), "the worker reschedules the same step")
 	assert.Empty(t, fs.sent)
 
 	env.UnsuspendWorkspace(ctx, fixtures.AcmeID)

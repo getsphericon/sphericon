@@ -82,17 +82,19 @@ func RecordDMARC(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain, fou
 	return nil
 }
 
-// Due returns up to limit ids of the Sending domains of every Workspace whose DKIM is to be
-// re-checked, least-recently-checked first with NULLS FIRST: a freshly added, never-checked domain
+// Due returns up to limit of the Sending domains of every Workspace whose DKIM is to be
+// re-checked, each with only its id and its Workspace (the check job names both),
+// least-recently-checked first with NULLS FIRST: a freshly added, never-checked domain
 // is verified soonest rather than starved behind already-checked ones (plain ASC sorts NULLs last
 // in Postgres). A deleted (discarded) domain is skipped (ADR 0099). It reads across Workspaces,
 // before any scope exists, so it takes the raw client.
-func Due(ctx context.Context, client *ent.Client, limit int) ([]int64, error) {
+func Due(ctx context.Context, client *ent.Client, limit int) ([]*ent.SendingDomain, error) {
 	return client.SendingDomain.Query().
 		Where(sendingdomain.DiscardedAtIsNil()).
 		Order(sendingdomain.ByLastCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
 		Limit(limit).
-		IDs(ctx)
+		Select(sendingdomain.FieldID, sendingdomain.FieldWorkspaceID).
+		All(ctx)
 }
 
 // recordDomain is the domain a proof record's name belongs to: a DKIM record

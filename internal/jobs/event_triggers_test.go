@@ -43,11 +43,12 @@ func TestALiveEventOfAContactQueuesItsAutomationAndRuleEvaluations(t *testing.T)
 
 	triggers := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
 	require.Len(t, triggers, 1)
-	assert.EqualValues(t, fixtures.AcmeID, triggers[0]["workspace_id"])
+	assert.EqualValues(t, fixtures.AcmeID, triggers[0][jobkind.WorkspaceArg])
 	assert.EqualValues(t, fixtures.ContactAliceID, triggers[0]["contact_id"])
 	assert.Equal(t, events.NameEmailOpened, triggers[0]["action"])
 	evaluations := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 	require.Len(t, evaluations, 1)
+	assert.EqualValues(t, fixtures.AcmeID, evaluations[0][jobkind.WorkspaceArg])
 	assert.EqualValues(t, fixtures.ContactAliceID, evaluations[0]["contact_id"])
 	assert.Equal(t, events.NameEmailOpened, evaluations[0]["action"])
 }

@@ -268,7 +268,9 @@ coding standards in `CODING_STANDARDS.md`.
   `events.EraseEventsIn` and one more per Workspace-owned table; the Enterprise Edition's three, which
   no core package may import, the wiring hands in as `workspacedeletion.EditionTables`), and moves the
   Workspace row through `workspaces.DiscardIn`, `RestoreIn` and
-  `TombstoneIn`, with the OAuth codes that name it removed by `oauthclients.DeleteCodesIn`; and the
+  `TombstoneIn`, with the OAuth codes that name it removed by `oauthclients.DeleteCodesIn` and every
+  job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, "Async"
+  below), both in the tombstone's transaction; and the
   creation of a Workspace (`internal/usecase/workspacecreation`), which writes the Workspace through
   `workspaces.CreateIn` and its Owner Membership through `memberships.AddCreatorIn` with the Send cap it
   starts with (`instancestates.DefaultSendCapIn`, ADR 0067); and the Sign-up
@@ -678,7 +680,16 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   `internal/jobs` uses river (Postgres-backed queue, `database/sql` driver, polling). A job that must
   exist iff a state change commits is queued in that transaction with
   `events.Bus.WithinScopedEnqueueTx` (a Broadcast's claim and its send job); never claim first and
-  enqueue after, with a best-effort undo.
+  enqueue after, with a best-effort undo. River keeps a job's args after it ran (a day once
+  completed, 30 days once discarded) and a waiting one still runs, so every job of a Workspace names
+  it at the top-level args field `workspaceId`: its args embed `jobkind.Workspace`, or, for an event
+  job, the envelope carries it. A job of the Instance (a periodic sweep, a Notice to a User) names
+  none. The erase of a deleted Workspace deletes every job that names it, any kind, queue or state but
+  running, in its last transaction (`events.WorkspacePurger`), and a test of `internal/kernel/jobkind`
+  fails on a new args type that neither names a Workspace nor is listed as the Instance's. The job
+  runner keeps both ends: every insert refuses a job of a Workspace whose Workspace is 0
+  (`jobs.BaseConfig`), and a job of an erased Workspace is cancelled before its worker runs
+  (`jobs.WorkerConfig`), so no consumer writes into a Workspace that is gone.
 - **The Workspace lock (ADR 0099)**: a removal that checks Live use or Definition use (archiving a
   Segment; deleting an Integration, a Sending domain or a Tag and editing a Custom field, which run
   the Removal check) and a write that creates a use (a Broadcast's claim, saving a Segment, Create,

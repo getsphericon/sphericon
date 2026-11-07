@@ -2,9 +2,12 @@ package workspacedeletion_test
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/riverqueue/river/rivertype"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,10 +16,16 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -207,4 +216,91 @@ func feedTail(t *testing.T, env *testhelper.TestEnv, cursor string) (entries []w
 	page, err := env.StaffEnterprise.WorkspaceFeed(t.Context(), cursor, 200)
 	require.NoError(t, err)
 	return page.Items, page.NextCursor
+}
+
+// bounceIn publishes a hard bounce of address in the Workspace through the bus, which queues its
+// consumers' jobs (the suppression, the webhooks fan-out) as any producer's publish does.
+func bounceIn(t *testing.T, env *testhelper.TestEnv, workspaceID int64, address string) {
+	t.Helper()
+	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
+		return pub.Publish(t.Context(), &events.EmailDelivery{
+			Action: events.NameEmailBounced, WorkspaceID: workspaceID, Email: address,
+			BounceKind: events.BounceKindHard, DedupID: fmt.Sprintf("bounce-%d", workspaceID),
+		})
+	}))
+}
+
+// workspacesOfJobs is the Workspace each queued job of kind names, oldest first.
+func workspacesOfJobs(t *testing.T, env *testhelper.TestEnv, kind string) []int64 {
+	t.Helper()
+	return lo.Map(env.JobsOf(t, kind), func(args map[string]any, _ int) int64 {
+		id, _ := args[jobkind.WorkspaceArg].(float64)
+		return int64(id)
+	})
+}
+
+// The queue keeps a job's args, which carry personal data (an event's address, a webhook's body),
+// for days after it ran, and a waiting job still runs: the erase removes every job of the
+// Workspace with its rows, waiting, scheduled and discarded alike. A running one is left to
+// finish, and another Workspace's jobs and the Instance's stay.
+func TestEraseDueRemovesTheWorkspacesJobs(t *testing.T) {
+	env := testhelper.Setup(t)
+	deleteUmbrella(t, env, workspaces.DeletionWindow+time.Hour)
+	later := now.Add(7 * 24 * time.Hour)
+	for _, ws := range []int64{fixtures.UmbrellaID, fixtures.AcmeID} {
+		bounceIn(t, env, ws, "bounced@example.com")
+		env.EnqueueDiscardedJob(t, jobs.DeliverWebhookArgs{WorkspaceID: ws, EndpointID: 1, EventName: "email.bounced", DeliveryID: "d", Body: []byte(`{"data":{"email":"bounced@example.com"}}`)})
+		env.EnqueueScheduledJob(t, broadcasts.SendArgs{WorkspaceID: ws, BroadcastID: 1}, later)
+	}
+	env.EnqueueRunningJob(t, stepexecution.RunStepArgs{WorkspaceID: fixtures.UmbrellaID, RunID: 1})
+	env.EnqueueJob(t, jobs.PruneEventsArgs{})
+	require.Equal(t, []int64{fixtures.UmbrellaID, fixtures.AcmeID}, workspacesOfJobs(t, env, jobs.SuppressEventArgs{}.Kind()), "the publish queued the suppression")
+
+	runErase(t, env)
+
+	suppress := workspacesOfJobs(t, env, jobs.SuppressEventArgs{}.Kind())
+	fanOuts := workspacesOfJobs(t, env, jobs.WebhookEventArgs{}.Kind())
+	deliveries := workspacesOfJobs(t, env, jobs.DeliverWebhookArgs{}.Kind())
+	sends := workspacesOfJobs(t, env, broadcasts.SendArgs{}.Kind())
+	steps := workspacesOfJobs(t, env, stepexecution.RunStepArgs{}.Kind())
+	prunes := env.JobsOf(t, jobs.PruneEventsArgs{}.Kind())
+	assert.Equal(t, []int64{fixtures.AcmeID}, suppress)
+	assert.Equal(t, []int64{fixtures.AcmeID}, fanOuts)
+	assert.Equal(t, []int64{fixtures.AcmeID}, deliveries, "a discarded delivery goes")
+	assert.Equal(t, []int64{fixtures.AcmeID}, sends, "a scheduled send goes")
+	assert.Equal(t, []int64{fixtures.UmbrellaID}, steps, "a running job is left to finish")
+	assert.Len(t, prunes, 1, "a job of the Instance stays")
+}
+
+// lateBounce is a suppression consumer's job for a hard bounce of address in the Workspace, as the
+// bus queued it before the erase: a job a worker fetched before the purge and runs again after it.
+func lateBounce(t *testing.T, workspaceID int64, address string) jobs.SuppressEventArgs {
+	t.Helper()
+	data, err := json.Marshal(&events.EmailDelivery{
+		Action: events.NameEmailBounced, WorkspaceID: workspaceID, Email: address, BounceKind: events.BounceKindHard,
+	})
+	require.NoError(t, err)
+	return jobs.SuppressEventArgs{
+		ID: fmt.Sprintf("late-%d", workspaceID), Name: events.NameEmailBounced, Version: 1, WorkspaceID: workspaceID, Data: data,
+	}
+}
+
+// An event consumer writes into its envelope's Workspace without loading a row of it: one that
+// runs after the erase is cancelled before it writes, so nothing lands behind the tombstone,
+// while the same job of a live Workspace still writes.
+func TestAJobOfAnErasedWorkspaceWritesNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	deleteUmbrella(t, env, workspaces.DeletionWindow+time.Hour)
+	runErase(t, env)
+	env.EnqueueJob(t, lateBounce(t, fixtures.UmbrellaID, "late@example.com"))
+	env.EnqueueJob(t, lateBounce(t, fixtures.AcmeID, "late@example.com"))
+
+	env.PerformEnqueuedJobs(t, jobs.SuppressEventArgs{})
+
+	umbrella := rowsOf(t, env, fixtures.UmbrellaID)
+	acme := env.DB.Suppression.Query().Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination("late@example.com")).CountX(t.Context())
+	states := lo.Map(env.JobRowsOf(t, jobs.SuppressEventArgs{}.Kind()), func(j *rivertype.JobRow, _ int) rivertype.JobState { return j.State })
+	assert.Zero(t, umbrella["Suppression"], "nothing is written into the erased Workspace")
+	assert.Equal(t, 1, acme, "the live Workspace's job still writes")
+	assert.Equal(t, []rivertype.JobState{rivertype.JobStateCancelled, rivertype.JobStateCompleted}, states)
 }

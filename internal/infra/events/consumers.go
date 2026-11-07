@@ -32,7 +32,9 @@ type Consumer struct {
 // EventJob is what the args of every event consumer's job embed: the whole envelope, so the
 // consumer reads the typed event, its version, its times and its chain, and runs in the events
 // queue. The envelope's fields are the args' own, so every event job names a Workspace, a
-// Contact or an address at the same place, where Erasure finds them (PurgeEventJobs).
+// Contact or an address at the same place, where Erasure finds them (PurgeEventJobs); the
+// Workspace is at jobkind.WorkspaceArg, as on every other job of a Workspace, where the erase of
+// the Workspace finds it (PurgeWorkspaceJobs).
 type EventJob struct {
 	Envelope
 }

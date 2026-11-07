@@ -352,9 +352,12 @@ func (m *Module) Recheck(ctx context.Context, id int64) error {
 
 // Due returns every Tracking domain whose host is verified, retired ones included, so a host that
 // stops answering is demoted, and a retired one whose CNAME left is dropped, within one tick. A
-// pending host is checked only when its Owner asks.
-func (m *Module) Due(ctx context.Context) ([]int64, error) {
-	return m.client.TrackingDomain.Query().Where(trackinghostchanges.Serving()).IDs(ctx)
+// pending host is checked only when its Owner asks. Each row holds only its id and its Workspace
+// (the check job names both).
+func (m *Module) Due(ctx context.Context) ([]*ent.TrackingDomain, error) {
+	return m.client.TrackingDomain.Query().Where(trackinghostchanges.Serving()).
+		Select(trackingdomain.FieldID, trackingdomain.FieldWorkspaceID).
+		All(ctx)
 }
 
 // checkRow re-checks one host and stores the outcome. A retired host is checked by DNS alone:

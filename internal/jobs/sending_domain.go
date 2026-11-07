@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 )
 
@@ -21,6 +22,8 @@ const recheckBatchSize = 100
 // --- on-demand single-domain verification (the "Verify" button) ---
 
 type VerifySendingDomainArgs struct {
+	jobkind.Workspace
+
 	SendingDomainID int64 `json:"sending_domain_id"`
 }
 
@@ -68,13 +71,14 @@ func NewRecheckSendingDomainsWorker(client *ent.Client) *RecheckSendingDomainsWo
 // Work fans the periodic tick out into one VerifySendingDomain job per due domain, giving each
 // check its own isolation and retry and reusing the path of the "Verify" button.
 func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckSendingDomainsArgs]) error {
-	ids, err := sendingdomains.Due(ctx, w.ent, recheckBatchSize)
+	due, err := sendingdomains.Due(ctx, w.ent, recheckBatchSize)
 	if err != nil {
 		return err
 	}
 	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, id := range ids {
-		if _, err := rc.Insert(ctx, VerifySendingDomainArgs{SendingDomainID: id}, nil); err != nil {
+	for _, row := range due {
+		args := VerifySendingDomainArgs{WorkspaceID: row.WorkspaceID, SendingDomainID: row.ID}
+		if _, err := rc.Insert(ctx, args, nil); err != nil {
 			return err
 		}
 	}
@@ -84,6 +88,8 @@ func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, _ *river.Job[Rec
 // --- Tracking domains (ADR 0071): one check per verified host, retired ones included ---
 
 type VerifyTrackingDomainArgs struct {
+	jobkind.Workspace
+
 	TrackingDomainID int64 `json:"tracking_domain_id"`
 }
 
@@ -121,13 +127,14 @@ func NewRecheckTrackingDomainsWorker(mod *trackingdomains.Module) *RecheckTracki
 
 // Work fans the tick out into one VerifyTrackingDomain job per verified host.
 func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckTrackingDomainsArgs]) error {
-	ids, err := w.mod.Due(ctx)
+	due, err := w.mod.Due(ctx)
 	if err != nil {
 		return err
 	}
 	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, id := range ids {
-		if _, err := rc.Insert(ctx, VerifyTrackingDomainArgs{TrackingDomainID: id}, nil); err != nil {
+	for _, row := range due {
+		args := VerifyTrackingDomainArgs{WorkspaceID: row.WorkspaceID, TrackingDomainID: row.ID}
+		if _, err := rc.Insert(ctx, args, nil); err != nil {
 			return err
 		}
 	}
@@ -137,6 +144,8 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, _ *river.Job[Re
 // --- periodic re-check of verified Join domains (the same shape as the Sending domain one) ---
 
 type VerifyJoinDomainArgs struct {
+	jobkind.Workspace
+
 	JoinDomainID int64 `json:"join_domain_id"`
 }
 
@@ -177,13 +186,14 @@ func NewRecheckJoinDomainsWorker(mod *joindomains.Module) *RecheckJoinDomainsWor
 // Work fans the tick out into one VerifyJoinDomain job per due domain, up to
 // recheckBatchSize, least-recently-checked first.
 func (w *RecheckJoinDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckJoinDomainsArgs]) error {
-	ids, err := w.mod.Due(ctx, recheckBatchSize)
+	due, err := w.mod.Due(ctx, recheckBatchSize)
 	if err != nil {
 		return err
 	}
 	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, id := range ids {
-		if _, err := rc.Insert(ctx, VerifyJoinDomainArgs{JoinDomainID: id}, nil); err != nil {
+	for _, row := range due {
+		args := VerifyJoinDomainArgs{WorkspaceID: row.WorkspaceID, JoinDomainID: row.ID}
+		if _, err := rc.Insert(ctx, args, nil); err != nil {
 			return err
 		}
 	}

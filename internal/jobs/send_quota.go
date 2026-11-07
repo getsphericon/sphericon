@@ -41,29 +41,31 @@ func NewRefreshSendQuotasWorker(client *ent.Client) *RefreshSendQuotasWorker {
 // Work fans the hourly tick out into one RefreshIntegrationQuota job per Integration,
 // so each lookup has its own isolation and retry (the Sending-domain recheck pattern).
 func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[RefreshSendQuotasArgs]) error {
-	ids, err := IntegrationsDueForQuotaRefresh(ctx, w.ent, quotaRefreshBatchSize)
+	due, err := IntegrationsDueForQuotaRefresh(ctx, w.ent, quotaRefreshBatchSize)
 	if err != nil {
 		return err
 	}
 	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, id := range ids {
-		if _, err := rc.Insert(ctx, integrations.RefreshQuotaArgs{IntegrationID: id}, nil); err != nil {
+	for _, row := range due {
+		args := integrations.RefreshQuotaArgs{WorkspaceID: row.WorkspaceID, IntegrationID: row.ID}
+		if _, err := rc.Insert(ctx, args, nil); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// IntegrationsDueForQuotaRefresh returns up to limit SES Integration ids,
-// least-recently-checked first with NULLS FIRST, so a never-checked Integration is
+// IntegrationsDueForQuotaRefresh returns up to limit SES Integrations, each with only its id and
+// its Workspace (the lookup job names both), least-recently-checked first with NULLS FIRST, so a never-checked Integration is
 // reached before already-checked ones. Only SES reports a quota; SMTP has none. A deleted
 // Integration is not kept working (ADR 0099): nobody sends with its credential.
-func IntegrationsDueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]int64, error) {
+func IntegrationsDueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]*ent.Integration, error) {
 	return client.Integration.Query().
 		Where(integration.ProviderEQ(providers.SES), integration.DiscardedAtIsNil()).
 		Order(integration.ByProviderQuotaCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
 		Limit(limit).
-		IDs(ctx)
+		Select(integration.FieldID, integration.FieldWorkspaceID).
+		All(ctx)
 }
 
 type RefreshIntegrationQuotaWorker struct {

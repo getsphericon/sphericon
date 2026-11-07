@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -627,6 +628,8 @@ type Event struct {
 // ActionsArgs is the job that runs a Firing's Actions. It carries no personal data: the Firing
 // is read from the database, and goes with its Contact on Erasure.
 type ActionsArgs struct {
+	jobkind.Workspace
+
 	FiringID int64 `json:"firing_id"`
 }
 
@@ -742,7 +745,7 @@ func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev
 			return err
 		}
 		fired = f
-		return q.Enqueue(ctx, ActionsArgs{FiringID: f.ID}, &river.InsertOpts{})
+		return q.Enqueue(ctx, ActionsArgs{WorkspaceID: ts.WorkspaceID(), FiringID: f.ID}, &river.InsertOpts{})
 	})
 	if ent.IsConstraintError(err) {
 		return nil, nil // lost a race with the same Event delivered twice

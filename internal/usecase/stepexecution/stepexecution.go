@@ -40,6 +40,8 @@ const QueueHTTPSteps = "http_steps"
 // Enrollment finds it elsewhere and ends quietly. The args carry the run id, so Erasure can
 // delete a queued step by it (ADR 0021): renaming `run_id` breaks that purge.
 type RunStepArgs struct {
+	jobkind.Workspace
+
 	RunID int64 `json:"run_id"`
 	Step  int   `json:"step"`
 }
@@ -50,6 +52,8 @@ func (RunStepArgs) Kind() string { return jobkind.RunStep.Kind }
 // queue of its own. Like RunStepArgs it names the step it expects the Enrollment to be at,
 // and carries the run id for Erasure.
 type RunHTTPStepArgs struct {
+	jobkind.Workspace
+
 	RunID int64 `json:"run_id"`
 	Step  int   `json:"step"`
 }
@@ -177,7 +181,7 @@ func (m *UseCase) start(ctx context.Context, s *ent.Scoped, enroll func(ts *ent.
 		if !active {
 			return nil
 		}
-		return q.Enqueue(ctx, RunStepArgs{RunID: runID}, nil)
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID}, nil)
 	})
 	return made, err
 }
@@ -251,7 +255,7 @@ func (m *UseCase) Step(ctx context.Context, s *ent.Scoped, runID int64, step int
 	case automationstep.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
 		// the Enrollment on through ExecuteHTTP.
-		return m.enqueue(ctx, s, RunHTTPStepArgs{RunID: run.ID, Step: step}, nil)
+		return m.enqueue(ctx, s, RunHTTPStepArgs{WorkspaceID: s.WorkspaceID(), RunID: run.ID, Step: step}, nil)
 
 	default:
 		if _, sends := st.Type.Channel(); sends {
@@ -352,14 +356,14 @@ func (m *UseCase) advance(ctx context.Context, s *ent.Scoped, runID int64, from 
 				return err
 			}
 		}
-		return q.Enqueue(ctx, RunStepArgs{RunID: runID, Step: from + 1}, scheduled(mv.resumeAt))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, Step: from + 1}, scheduled(mv.resumeAt))
 	})
 	return quiet(err)
 }
 
 // requeue queues the same step again for at.
 func (m *UseCase) requeue(ctx context.Context, s *ent.Scoped, runID int64, step int, at time.Time) error {
-	return m.enqueue(ctx, s, RunStepArgs{RunID: runID, Step: step}, &at)
+	return m.enqueue(ctx, s, RunStepArgs{WorkspaceID: s.WorkspaceID(), RunID: runID, Step: step}, &at)
 }
 
 func (m *UseCase) enqueue(ctx context.Context, s *ent.Scoped, args river.JobArgs, at *time.Time) error {

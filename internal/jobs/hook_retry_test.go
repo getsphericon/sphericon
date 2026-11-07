@@ -112,7 +112,7 @@ func newHookRetryHarnessAt(t *testing.T, status int, retryAfter string, now time
 func (h *hookRetryHarness) work(maxAttempts int) (*rivertest.WorkResult, error) {
 	h.t.Helper()
 	inserted, err := h.env.queue.InsertTx(context.Background(), h.tx, jobs.DeliverWebhookArgs{
-		EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`),
+		WorkspaceID: fixtures.AcmeID, EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`),
 	}, &river.InsertOpts{MaxAttempts: maxAttempts})
 	require.NoError(h.t, err)
 	// The clock moves only after the insert, so a test can age the job.

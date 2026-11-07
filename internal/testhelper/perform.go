@@ -11,6 +11,7 @@ import (
 	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/jobs"
 )
 
@@ -31,11 +32,12 @@ type performFunc func(ctx context.Context, tb testing.TB, tx *sql.Tx, job *river
 // so the list is written out here; a kind missing from it fails PerformEnqueuedJobs by name.
 type performers map[string]performFunc
 
-// add registers worker under the kind of its args.
-func add[T river.JobArgs](tb testing.TB, p performers, sqlDB *sql.DB, worker river.Worker[T]) {
+// add registers worker under the kind of its args, worked with the worker client's configuration
+// (jobs.WorkerConfig over client).
+func add[T river.JobArgs](tb testing.TB, p performers, sqlDB *sql.DB, client *ent.Client, worker river.Worker[T]) {
 	tb.Helper()
 	var args T
-	p[args.Kind()] = rivertest.NewWorker(tb, riverdatabasesql.New(sqlDB), jobs.BaseConfig(), worker).WorkJob
+	p[args.Kind()] = rivertest.NewWorker(tb, riverdatabasesql.New(sqlDB), jobs.WorkerConfig(client), worker).WorkJob
 }
 
 // PerformEnqueuedJobs works the jobs waiting in the test's queue, oldest first, each by its real

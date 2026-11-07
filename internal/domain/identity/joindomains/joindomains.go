@@ -200,15 +200,16 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	return verified, nil
 }
 
-// Due returns up to limit ids of verified Join domains to re-check, across every
-// Workspace, least-recently-checked first with never-checked ones before the rest (plain
-// ascending order would put NULLs last in Postgres).
-func (m *Module) Due(ctx context.Context, limit int) ([]int64, error) {
+// Due returns up to limit verified Join domains to re-check, across every Workspace, each with
+// only its id and its Workspace (the check job names both), least-recently-checked first with
+// never-checked ones before the rest (plain ascending order would put NULLs last in Postgres).
+func (m *Module) Due(ctx context.Context, limit int) ([]*ent.JoinDomain, error) {
 	return m.client.JoinDomain.Query().
 		Where(joindomain.VerifiedAtNotNil()).
 		Order(joindomain.ByLastCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
 		Limit(limit).
-		IDs(ctx)
+		Select(joindomain.FieldID, joindomain.FieldWorkspaceID).
+		All(ctx)
 }
 
 // Recheck re-reads a verified domain's TXT record. A record that is gone (or carries

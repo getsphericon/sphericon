@@ -10,12 +10,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // RunRuleHTTPArgs is one http Action of one Firing. It carries no personal data: the Firing is
 // read from the database and goes with its Contact on Erasure, which leaves the job nothing to do.
 type RunRuleHTTPArgs struct {
+	jobkind.Workspace
+
 	FiringID int64 `json:"firing_id"`
 	// Index is the Action's position in the Firing, so two http Actions of one Firing are two jobs.
 	Index int `json:"index"`
@@ -39,7 +42,9 @@ func (RunRuleHTTPArgs) InsertOpts() river.InsertOpts {
 type httpAction struct{}
 
 func (httpAction) Run(_ context.Context, _ *ent.Scoped, in rules.ActionInput) (rules.Result, error) {
-	return rules.Result{Status: rules.Pending, Job: RunRuleHTTPArgs{FiringID: in.Firing.ID, Index: in.Index}}, nil
+	return rules.Result{Status: rules.Pending, Job: RunRuleHTTPArgs{
+		WorkspaceID: in.Firing.WorkspaceID, FiringID: in.Firing.ID, Index: in.Index,
+	}}, nil
 }
 
 // RunRuleHTTPWorker makes the call of an http Action (sealed URL, headers and secret, signed

@@ -21,6 +21,8 @@ import (
 // DeliverWebhookArgs is one delivery attempt of an event to one endpoint. river
 // retries on error, so a receiver may see duplicates — DeliveryID lets it dedupe.
 type DeliverWebhookArgs struct {
+	jobkind.Workspace
+
 	EndpointID int64  `json:"endpoint_id"`
 	EventName  string `json:"event_name"`
 	DeliveryID string `json:"delivery_id"`
@@ -125,10 +127,11 @@ func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventNam
 			continue
 		}
 		if _, err := queue.Insert(ctx, DeliverWebhookArgs{
-			EndpointID: e.ID,
-			EventName:  eventName,
-			DeliveryID: deliveryID,
-			Body:       body,
+			WorkspaceID: e.WorkspaceID,
+			EndpointID:  e.ID,
+			EventName:   eventName,
+			DeliveryID:  deliveryID,
+			Body:        body,
 		}, &river.InsertOpts{Queue: QueueWebhooks, MaxAttempts: webhook.HookMaxAttempts()}); err != nil {
 			return err
 		}
