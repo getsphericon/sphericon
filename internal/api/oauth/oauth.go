@@ -213,7 +213,7 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	)
 	switch r.PostForm.Get("grant_type") {
 	case grantAuthorizationCode:
-		out, err = s.connections.ExchangeCode(r.Context(), connectionissuance.CodeExchange{
+		out, err = s.connections.ExchangeCode(r.Context(), connectionissuance.ExchangeCodeInput{
 			Code: r.PostForm.Get("code"), ClientID: r.PostForm.Get("client_id"),
 			RedirectURI: r.PostForm.Get("redirect_uri"), Verifier: r.PostForm.Get("code_verifier"),
 		})

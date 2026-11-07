@@ -60,7 +60,7 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 	}
 	args := job.Args
 	ev := automations.Event{Action: args.Action, SourceID: args.SourceID, OccurredAt: args.OccurredAt}
-	return w.steps.OnEvent(ctx, w.ent.Scoped(c.WorkspaceID), stepexecution.EventInput{ContactID: c.ID, Event: ev, SourceAutomationID: args.SourceAutomationID})
+	return w.steps.OnEvent(ctx, w.ent.Scoped(c.WorkspaceID), stepexecution.OnEventInput{ContactID: c.ID, Event: ev, SourceAutomationID: args.SourceAutomationID})
 }
 
 // --- run a step: the adapter of the Step execution use case (internal/usecase/stepexecution) ---

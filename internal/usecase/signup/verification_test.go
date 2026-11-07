@@ -21,9 +21,9 @@ func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 	u, err := acc.CreateUnverified(t.Context(), users.NewUser{Name: "Grace", Email: "grace@example.com", PasswordHash: "signed-up-hash"})
 	require.NoError(t, err)
 
-	_, err = creation.VerifyEmail(t.Context(), u.ID, new("hash-one"))
+	_, err = creation.VerifyEmail(t.Context(), signup.VerifyEmailInput{UserID: u.ID, PasswordHash: new("hash-one")})
 	require.NoError(t, err)
-	_, err = creation.VerifyEmail(t.Context(), u.ID, new("hash-two"))
+	_, err = creation.VerifyEmail(t.Context(), signup.VerifyEmailInput{UserID: u.ID, PasswordHash: new("hash-two")})
 	require.ErrorIs(t, err, users.ErrAlreadyVerified)
 
 	stored, err := acc.User(t.Context(), u.ID)

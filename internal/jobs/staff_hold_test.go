@@ -70,7 +70,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	clock := &holdClock{t: time.Now()}
 	fs := &fakeSender{}
 
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.EventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 	runIDs := enrollmentsOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactHoldDemoID)
 	require.Len(t, runIDs, 1)
 	setHold(t, env, clock.t.Add(time.Hour))

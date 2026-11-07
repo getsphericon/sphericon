@@ -14,7 +14,7 @@ import (
 // address; an invalid address is refused (contacterasure.ErrInvalidEmail) before anything is
 // erased.
 func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteContactsEraseParams) error {
-	err := h.erasure.Erase(ctx, workspaceScope(ctx), contacterasure.Identifier{Email: params.Email},
+	err := h.erasure.Erase(ctx, workspaceScope(ctx), contacterasure.Identifier{Email: &params.Email},
 		contacterasure.Requester{Kind: contacterasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if err != nil {
 		return err

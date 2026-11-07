@@ -74,9 +74,9 @@ func New(client *ent.Client, clients *oauthclients.Module, now func() time.Time)
 	return &UseCase{ent: client, clients: clients, now: now}
 }
 
-// CodeExchange is a token request with an authorization code: the code, the client it was
+// ExchangeCodeInput is a token request with an authorization code: the code, the client it was
 // issued to, the redirect URI of the authorization request and the PKCE verifier.
-type CodeExchange struct {
+type ExchangeCodeInput struct {
 	Code        string
 	ClientID    string
 	RedirectURI string
@@ -93,7 +93,7 @@ type RefreshInput struct {
 
 // ExchangeCode trades an authorization code (with its PKCE verifier) for a Connection, an API
 // token of the approving User's Membership that expires, plus the first refresh token of the grant.
-func (s *UseCase) ExchangeCode(ctx context.Context, in CodeExchange) (*Issued, error) {
+func (s *UseCase) ExchangeCode(ctx context.Context, in ExchangeCodeInput) (*Issued, error) {
 	clientID, redirectURI, verifier := in.ClientID, in.RedirectURI, in.Verifier
 	grant, err := s.clients.Code(ctx, in.Code)
 	if ent.IsNotFound(err) {

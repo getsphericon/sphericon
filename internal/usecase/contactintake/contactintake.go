@@ -57,7 +57,7 @@ func (u *UseCase) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.So
 	rows := events.Unaudited(s)
 	out := batch.Each(items, func(in Input) (contacts.Result, error) { return u.upsert(ctx, rows, src, in) })
 	var sum contacts.ImportSummary
-	for _, o := range out.Outcomes {
+	for _, o := range out.Items {
 		switch {
 		case o.Err != nil:
 			sum.Failed++

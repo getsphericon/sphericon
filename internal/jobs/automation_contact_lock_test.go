@@ -77,7 +77,7 @@ func enrolledForTheExit(t *testing.T, e *realEnv) (int64, writer) {
 	ending := e.bus(t)
 	return runID, writer{name: "exit", run: func() error {
 		left := automations.Event{Action: "job_tag_exit_left", OccurredAt: time.Now()}
-		return testhelper.Enrollments(ending).OnEvent(ctx, e.scoped, stepexecution.EventInput{ContactID: fixtures.ContactAliceID, Event: left})
+		return testhelper.Enrollments(ending).OnEvent(ctx, e.scoped, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: left})
 	}}
 }
 

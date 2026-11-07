@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"fmt"
 	"net/mail"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // provenNow and noJoin say whether a step that makes a User Verified also proved the address
@@ -68,6 +69,13 @@ type Verified struct {
 	Landing *ent.Workspace
 }
 
+// VerifyEmailInput is the completion of a User's Sign-up: the User, and the password hash that
+// replaces the one stored at Sign-up (nil keeps it).
+type VerifyEmailInput struct {
+	UserID       int64
+	PasswordHash *string
+}
+
 // VerifyEmailLinkInput is a followed verification link: its token, the hash of the Sign-up
 // browser the request carries, and the password a request from another browser must send.
 type VerifyEmailLinkInput struct {
@@ -84,7 +92,7 @@ type PasswordReset struct {
 }
 
 // VerifyEmail completes a Sign-up (ADR 0030), in one transaction: it stamps the Verified email,
-// sets the password hash to *passwordHash (nil keeps the one stored at Sign-up), bumps the
+// sets the password hash to *in.PasswordHash (nil keeps the one stored at Sign-up), bumps the
 // session epoch (ending every session issued before, as a password change does) and creates the
 // User's first Workspace, named users.FirstWorkspaceName, with the User as owner. It records
 // `user.email_verify` in that Workspace's Audit log and returns the User. The address was just
@@ -92,9 +100,9 @@ type PasswordReset struct {
 // with the switch on, makes the User a `member` of that Workspace before the first Workspace is
 // created. Landing is where the User goes next: the joined Workspace, else the first one.
 // users.ErrAlreadyVerified when the User is no longer Unverified (a used link).
-func (u *UseCase) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (*Verified, error) {
+func (u *UseCase) VerifyEmail(ctx context.Context, in VerifyEmailInput) (*Verified, error) {
 	verified, landing, err := u.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.MarkVerifiedIn(ctx, tx, id, "", passwordHash)
+		return users.MarkVerifiedIn(ctx, tx, in.UserID, "", in.PasswordHash)
 	})
 	if err != nil {
 		return nil, err
@@ -110,7 +118,7 @@ func (u *UseCase) VerifyEmailLink(ctx context.Context, in VerifyEmailLinkInput) 
 	if err != nil {
 		return nil, err
 	}
-	verified, err := u.VerifyEmail(ctx, uid, hash)
+	verified, err := u.VerifyEmail(ctx, VerifyEmailInput{UserID: uid, PasswordHash: hash})
 	if errors.Is(err, users.ErrAlreadyVerified) {
 		return nil, users.ErrVerifyLinkUsed
 	}
@@ -134,7 +142,7 @@ func (u *UseCase) ResetPasswordLink(ctx context.Context, token, password string)
 		return nil, err
 	}
 	if stored.EmailVerifiedAt == nil {
-		verified, err := u.VerifyEmail(ctx, id, &passwordHash)
+		verified, err := u.VerifyEmail(ctx, VerifyEmailInput{UserID: id, PasswordHash: &passwordHash})
 		if err == nil {
 			return &PasswordReset{User: verified.User, CompletedSignUp: true}, nil
 		}
@@ -165,6 +173,9 @@ func (u *UseCase) SignUpVerified(ctx context.Context, n users.NewUser) (*ent.Use
 	return created, err
 }
 
+// ErrOwnerEmailInvalid refuses an Owner made from a shell whose address does not parse.
+var ErrOwnerEmailInvalid = validation.RefuseField(validation.FieldEmail, "signup: the owner's address is not an email address", i18n.ErrorsEmailInvalid)
+
 // CreateOwner is the Instance operator's way to make an Owner from a shell (ADR 0042): a
 // Verified User with a generated password and its first Workspace, named
 // users.FirstWorkspaceName, exactly as SignUpVerified makes them. The password is returned once;
@@ -172,7 +183,7 @@ func (u *UseCase) SignUpVerified(ctx context.Context, n users.NewUser) (*ent.Use
 // one (see db.IsUniqueViolation).
 func (u *UseCase) CreateOwner(ctx context.Context, email, name string) (string, error) {
 	if _, err := mail.ParseAddress(email); err != nil {
-		return "", fmt.Errorf("%q is not an email address", email)
+		return "", ErrOwnerEmailInvalid
 	}
 	password := rand.Text()
 	hash, err := u.passwords.Hash(password)

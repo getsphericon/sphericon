@@ -7,6 +7,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
@@ -77,13 +78,13 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 // same scope and rules as deleting by id. Exactly one identifier is required: the erasure
 // use case refuses anything else.
 func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) error {
-	id := contacterasure.Identifier{Email: string(params.Email.Or("")), VisitorID: params.VisitorId.Or("")}
+	id := contacterasure.Identifier{Email: convert.StringPtr(params.Email), VisitorID: convert.StringPtr(params.VisitorId)}
 	return h.erasure.Erase(ctx, auth.TokenScoped(ctx), id, tokenRequester(ctx))
 }
 
 // ContactsBatchUpsert upserts each Contact independently and reports a per-item result.
 func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (*externalapi.UpsertContactsResult, error) {
-	outcomes := h.intake.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactIntakes(req.Contacts)).Outcomes
+	outcomes := h.intake.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactIntakes(req.Contacts)).Items
 
 	results := make([]externalapi.ContactBatchItemResult, len(outcomes))
 	for i, o := range outcomes {

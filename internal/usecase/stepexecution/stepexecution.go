@@ -86,17 +86,17 @@ func New(bus *events.Bus, out *outboundmessages.Module, fence automations.Fencer
 	return &UseCase{bus: bus, out: out, fence: fence, cipher: cipher, client: client, now: now}
 }
 
-// EventInput is an Event of a Contact handed to the Automations: the Contact, the Event, and the
+// OnEventInput is an Event of a Contact handed to the Automations: the Contact, the Event, and the
 // Automation whose own email the Event came from (0 for any other Event).
-type EventInput struct {
+type OnEventInput struct {
 	ContactID          int64
 	Event              automations.Event
 	SourceAutomationID int64
 }
 
-// RuleEnrollmentInput is a Rule's Action that enrolls a Contact: the Automation, the Contact and
+// EnrollOnRuleInput is a Rule's Action that enrolls a Contact: the Automation, the Contact and
 // the source id of the Event the Rule fired on.
-type RuleEnrollmentInput struct {
+type EnrollOnRuleInput struct {
 	AutomationID int64
 	ContactID    int64
 	SourceID     string
@@ -112,7 +112,7 @@ type RuleEnrollmentInput struct {
 // in the Automation's own email can be its goal. The Event's OccurredAt is when it occurred; a zero
 // one (the job of a release before #751 carried none) is taken as now. Every Enrollment it makes
 // copies the stored Event's action and properties, read once (automations.OriginOf, #752).
-func (m *UseCase) OnEvent(ctx context.Context, s *ent.Scoped, in EventInput) error {
+func (m *UseCase) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventInput) error {
 	contactID, ev := in.ContactID, in.Event
 	if ev.OccurredAt.IsZero() {
 		ev.OccurredAt = m.now()
@@ -149,7 +149,7 @@ func (m *UseCase) OnEvent(ctx context.Context, s *ent.Scoped, in EventInput) err
 // starts over. It reports false, and queues nothing, when the Contact was enrolled before or
 // another writer won the race. An Enrollment an exit or goal Event recorded since that Event
 // ended at once is made, with no step queued (automations.EnrollOnRule).
-func (m *UseCase) EnrollOnRule(ctx context.Context, s *ent.Scoped, in RuleEnrollmentInput) (bool, error) {
+func (m *UseCase) EnrollOnRule(ctx context.Context, s *ent.Scoped, in EnrollOnRuleInput) (bool, error) {
 	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
 		return automations.EnrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID)
 	})

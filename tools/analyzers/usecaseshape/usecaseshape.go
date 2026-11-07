@@ -165,7 +165,7 @@ func checkResults(pass *analysis.Pass, fn *ast.FuncDecl, sig *types.Signature) {
 	for i := range res.Len() {
 		if s, ok := res.At(i).Type().(*types.Slice); ok && isError(s.Elem()) {
 			report(pass, fn, name+" returns []error",
-				"return the batch's outcomes as batch.Result (internal/kernel/batch)")
+				"return what became of each item as batch.Result (internal/kernel/batch)")
 		}
 	}
 }

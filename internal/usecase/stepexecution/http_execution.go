@@ -23,9 +23,9 @@ type HTTPExecution struct {
 	Wait   time.Duration
 }
 
-// HTTPStepInput is one attempt at the call of an HTTP step: the Enrollment, the step it is
+// ExecuteHTTPInput is one attempt at the call of an HTTP step: the Enrollment, the step it is
 // expected to be at, and the queue's attempt data.
-type HTTPStepInput struct {
+type ExecuteHTTPInput struct {
 	RunID   int64
 	Step    int
 	Attempt httpcall.Attempt
@@ -35,7 +35,7 @@ type HTTPStepInput struct {
 // Enrollment's exit fence, then advances or fails the Enrollment. The adapter supplies only the
 // Workspace scope and the ordinary attempt data. An accepted request whose advancement fails can
 // be repeated; external delivery is not exactly-once.
-func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in HTTPStepInput) (HTTPExecution, error) {
+func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTPInput) (HTTPExecution, error) {
 	step, attempt := in.Step, in.Attempt
 	run, err := s.AutomationRun().Get(ctx, in.RunID)
 	if ent.IsNotFound(err) {

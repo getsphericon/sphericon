@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
@@ -67,10 +68,10 @@ func TestIdentifyRefusesWhatCannotBeIdentified(t *testing.T) {
 	ctx := context.Background()
 
 	err := visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "   ", Email: new("a@example.com")})
-	require.EqualError(t, err, "visitorId is required")
+	require.ErrorIs(t, err, visitoridentification.ErrVisitorIDRequired)
 
 	err = visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-x"})
-	require.EqualError(t, err, "identify requires subjectId, email, or phone")
+	require.ErrorIs(t, err, contacts.ErrIdentityRequired)
 	n, err := env.DB.Visitor.Query().Where(visitor.VisitorID("dev-x")).Count(ctx)
 	require.NoError(t, err)
 	assert.Zero(t, n, "a refused identify leaves no device behind")

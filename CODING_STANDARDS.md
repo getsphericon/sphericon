@@ -119,7 +119,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   arguments after `ctx` and the scope (`*ent.Scoped` or `*ent.Client`), a `now` argument, a
   `func() time.Time` argument, an `io.Writer` argument, a `[]error` result and any use of `time.Now`. The
   fix is the shape the ADR states: a dependency or the clock is a parameter of `New`, a third or an
-  optional argument goes into a typed `XInput`, two values into a named result struct, a batch's outcomes
+  optional argument goes into a typed `XInput`, two values into a named result struct, what became of a batch's items
   into `batch.Result` (`internal/kernel/batch`), and a report is written by its driver.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,

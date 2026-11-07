@@ -26,7 +26,7 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 	if err != nil {
 		return nil, err
 	}
-	outcomes := h.eventrecording.RecordEach(ctx, auth.TokenScoped(ctx), batch).Outcomes
+	outcomes := h.eventrecording.RecordEach(ctx, auth.TokenScoped(ctx), batch).Items
 
 	results := make([]externalapi.EventBatchItemResult, len(outcomes))
 	for i, o := range outcomes {

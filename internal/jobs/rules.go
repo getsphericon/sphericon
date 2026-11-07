@@ -117,7 +117,7 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 	case auto.Status != automation.StatusActive:
 		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil
 	}
-	enrolled, err := a.steps.EnrollOnRule(ctx, s, stepexecution.RuleEnrollmentInput{AutomationID: auto.ID, ContactID: in.ContactID, SourceID: in.Firing.SourceID})
+	enrolled, err := a.steps.EnrollOnRule(ctx, s, stepexecution.EnrollOnRuleInput{AutomationID: auto.ID, ContactID: in.ContactID, SourceID: in.Firing.SourceID})
 	switch {
 	case errors.Is(err, automations.ErrInactive):
 		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil

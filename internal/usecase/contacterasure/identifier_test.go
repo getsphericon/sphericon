@@ -18,19 +18,21 @@ func TestAnErasureNamesExactlyOneIdentifier(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	neither := erasure.Erase(t.Context(), acme, contacterasure.Identifier{}, apiRequester)
-	both := erasure.Erase(t.Context(), acme, contacterasure.Identifier{Email: fixtures.ContactAliceEmail, VisitorID: "vis-1"}, apiRequester)
-	idAndEmail := erasure.Erase(t.Context(), acme, contacterasure.Identifier{ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail}, apiRequester)
+	both := erasure.Erase(t.Context(), acme, contacterasure.Identifier{Email: new(fixtures.ContactAliceEmail), VisitorID: new("vis-1")}, apiRequester)
+	idAndEmail := erasure.Erase(t.Context(), acme, contacterasure.Identifier{ContactID: fixtures.ContactAliceID, Email: new(fixtures.ContactAliceEmail)}, apiRequester)
+	emptyVisitor := erasure.Erase(t.Context(), acme, contacterasure.Identifier{VisitorID: new("")}, apiRequester)
 
 	require.ErrorIs(t, neither, contacterasure.ErrIdentifier)
 	require.ErrorIs(t, both, contacterasure.ErrIdentifier)
 	require.ErrorIs(t, idAndEmail, contacterasure.ErrIdentifier)
+	require.ErrorIs(t, emptyVisitor, contacterasure.ErrIdentifier, "an empty visitor id names nothing")
 }
 
 func TestAnErasureByAnAddressThatIsNotOnePlainAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	err := contacterasure.New(env.Bus).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
-		contacterasure.Identifier{Email: "Alice <" + fixtures.ContactAliceEmail + ">"}, apiRequester)
+		contacterasure.Identifier{Email: new("Alice <" + fixtures.ContactAliceEmail + ">")}, apiRequester)
 
 	require.ErrorIs(t, err, contacterasure.ErrInvalidEmail)
 	_, err = env.DB.Contact.Get(t.Context(), fixtures.ContactAliceID)

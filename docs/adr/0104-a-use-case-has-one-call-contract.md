@@ -54,7 +54,7 @@ A caller had to learn each package's shape anew, and a reviewer could check none
   OAuth token endpoint answers `connectionissuance.ErrInvalidGrant` (a
   `validation.UnknownReference`) as `invalid_grant` and `ErrScopeExceedsGrant` (a refused rule) as
   `invalid_scope`. Any other error is a failure the surface answers as 500.
-- **A batch returns `batch.Result`** (`internal/kernel/batch`), one outcome per item in the order
+- **A batch returns `batch.Result`** (`internal/kernel/batch`), one `batch.Item` per item in the order
   given: the item's value or its error. A batch never returns `[]error` or a type of its own.
 - **A use case holds no driver code.** It mounts no HTTP route and writes no report to an
   `io.Writer`; the API, the CLI or the job runner does that with the value the use case returns.

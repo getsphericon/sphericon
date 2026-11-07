@@ -56,13 +56,13 @@ func TestRecordEachIsolatesItems(t *testing.T) {
 		{SubjectID: "s-5", Action: "purchase"},
 	})
 
-	require.Len(t, errs.Outcomes, 5)
-	require.NoError(t, errs.Outcomes[0].Err)
-	require.ErrorIs(t, errs.Outcomes[1].Err, events.ErrRejected, "blank subject id")
-	require.ErrorIs(t, errs.Outcomes[2].Err, events.ErrRejected, "blank action")
-	require.Error(t, errs.Outcomes[3].Err)
-	require.NotErrorIs(t, errs.Outcomes[3].Err, events.ErrRejected)
-	require.NoError(t, errs.Outcomes[4].Err, "an earlier failure does not affect later items")
+	require.Len(t, errs.Items, 5)
+	require.NoError(t, errs.Items[0].Err)
+	require.ErrorIs(t, errs.Items[1].Err, events.ErrRejected, "blank subject id")
+	require.ErrorIs(t, errs.Items[2].Err, events.ErrRejected, "blank action")
+	require.Error(t, errs.Items[3].Err)
+	require.NotErrorIs(t, errs.Items[3].Err, events.ErrRejected)
+	require.NoError(t, errs.Items[4].Err, "an earlier failure does not affect later items")
 
 	got := queuedCollected(t, env)
 	require.Len(t, got, 2)
@@ -72,7 +72,7 @@ func TestRecordEachIsolatesItems(t *testing.T) {
 
 func TestRecordEachWithNoInputs(t *testing.T) {
 	env := testhelper.Setup(t)
-	assert.Empty(t, newModule(env).RecordEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil).Outcomes)
+	assert.Empty(t, newModule(env).RecordEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil).Items)
 }
 
 func TestRecordMarksBackfilledEvents(t *testing.T) {
@@ -165,10 +165,10 @@ func TestBackfillNeedsATimeThatHasPassed(t *testing.T) {
 		{SubjectID: "s-3", Action: "purchase", Backfill: true, OccurredAt: testNow.Add(-2 * liveWindow)},
 	})
 
-	noTime, future := rejected(t, errs.Outcomes[0].Err), rejected(t, errs.Outcomes[1].Err)
+	noTime, future := rejected(t, errs.Items[0].Err), rejected(t, errs.Items[1].Err)
 	assert.Contains(t, noTime, "needs occurredAt")
 	assert.Contains(t, future, "future")
-	assert.NoError(t, errs.Outcomes[2].Err, "history older than the live window is exactly what a backfill is for")
+	assert.NoError(t, errs.Items[2].Err, "history older than the live window is exactly what a backfill is for")
 }
 
 // The same client id twice in one batch is one Event, recorded and published once: a live one

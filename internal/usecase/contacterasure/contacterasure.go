@@ -58,35 +58,44 @@ var (
 )
 
 // Identifier names the data subject to erase: exactly one of a Contact's id, an email address
-// and a visitor id. An address with no Contact identifies the address itself, so delivery records
-// to it are anonymized; a visitor id names the Contact the visitor is bound to or, for an
-// anonymous Visitor with no Contact, the Visitor and its Events.
+// and a visitor id, an absent one nil. An address with no Contact identifies the address itself,
+// so delivery records to it are anonymized; a visitor id names the Contact the visitor is bound
+// to or, for an anonymous Visitor with no Contact, the Visitor and its Events.
 type Identifier struct {
+	ContactID int64
+	Email     *string
+	VisitorID *string
+}
+
+// subject is the checked Identifier Erase resolves: one of its fields is set, an address in its
+// canonical form.
+type subject struct {
 	ContactID int64
 	Email     string
 	VisitorID string
 }
 
-// checked is the identifier Erase acts on: exactly one of its fields is set (ErrIdentifier
-// otherwise), and an address is in its canonical form, refused (ErrInvalidEmail) unless it is a
-// single plain address.
-func (i Identifier) checked() (Identifier, error) {
-	set := lo.Count([]bool{i.ContactID != 0, i.Email != "", i.VisitorID != ""}, true)
-	if set != 1 {
-		return Identifier{}, ErrIdentifier
+// checked is the subject an Identifier names: exactly one of its fields is given (ErrIdentifier
+// otherwise, and for an empty visitor id, which names nothing), and an address is refused
+// (ErrInvalidEmail) unless it is a single plain address.
+func (i Identifier) checked() (subject, error) {
+	given := lo.Count([]bool{i.ContactID != 0, i.Email != nil, i.VisitorID != nil}, true)
+	if given != 1 || (i.VisitorID != nil && *i.VisitorID == "") {
+		return subject{}, ErrIdentifier
 	}
-	if i.Email != "" {
-		email, err := normalizeEmail(i.Email)
+	out := subject{ContactID: i.ContactID, VisitorID: lo.FromPtr(i.VisitorID)}
+	if i.Email != nil {
+		email, err := normalizeEmail(*i.Email)
 		if err != nil {
-			return Identifier{}, err
+			return subject{}, err
 		}
-		i.Email = email
+		out.Email = email
 	}
-	return i, nil
+	return out, nil
 }
 
 // kind names the identifier for the contact.erased Event.
-func (i Identifier) kind() string {
+func (i subject) kind() string {
 	switch {
 	case i.Email != "":
 		return "email"
@@ -160,12 +169,12 @@ func New(bus *events.Bus) *UseCase {
 // visitor id) means the identifier resolves to nothing in the Workspace (including a row of
 // another Workspace).
 func (u *UseCase) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Requester) error {
-	id, err := id.checked()
+	subj, err := id.checked()
 	if err != nil {
 		return err
 	}
 	return u.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
-		target, err := resolve(ctx, ts, id)
+		target, err := resolve(ctx, ts, subj)
 		if err != nil {
 			return err
 		}
@@ -258,7 +267,7 @@ func (u *UseCase) steps() []step {
 	}
 }
 
-func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error) {
+func resolve(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
 	c, err := findContact(ctx, s, id)
 	if err != nil {
 		return nil, err
@@ -289,7 +298,7 @@ func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error)
 // findContact returns the Contact the identifier names, locked to the end of the transaction s is
 // bound to (contactlock), or nil when it names none (an address or Visitor without a Contact). A
 // contact id that resolves to nothing is ErrContactNotFound.
-func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contact, error) {
+func findContact(ctx context.Context, s *ent.Scoped, id subject) (*ent.Contact, error) {
 	var (
 		c   *ent.Contact
 		err error
@@ -326,7 +335,7 @@ func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contac
 
 // resolveContactless resolves an email or visitor id that has no Contact: it is a
 // subject only if something in the Workspace refers to it.
-func resolveContactless(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error) {
+func resolveContactless(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
 	var (
 		t     *Target
 		known bool
