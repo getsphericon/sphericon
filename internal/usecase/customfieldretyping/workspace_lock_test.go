@@ -43,7 +43,7 @@ func newRetypeRace(t *testing.T) *retypeRace {
 	s, bus := race.Scope, race.Bus
 	cipher := testhelper.Cipher(t)
 	check := removalcheck.New(messaging.NewResolver(cipher, registry.Default()))
-	segs, ruleset, retyping := segments.New(bus, time.Now), rules.New(cipher, bus, time.Now), customfieldretyping.New(bus, check)
+	segs, ruleset, retyping := segments.New(bus, time.Now), rules.New(cipher, bus, nil, time.Now), customfieldretyping.New(bus, check)
 	r := &retypeRace{WorkspaceRace: race, savedID: new(int64)}
 	r.rename = testhelper.Writer{Name: "rename", Run: func() error {
 		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Name: patch.Set("Has it since")})

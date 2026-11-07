@@ -57,7 +57,7 @@ func (h *httpRuleHarness) reload() *ent.RuleFiring {
 }
 
 func (h *httpRuleHarness) worker(client webhook.Doer) *jobs.RunRuleHTTPWorker {
-	return jobs.NewRunRuleHTTPWorker(h.env.DB, rules.New(h.env.Cipher, h.env.Bus, time.Now), client, func() time.Time { return h.clock })
+	return jobs.NewRunRuleHTTPWorker(h.env.DB, rules.New(h.env.Cipher, h.env.Bus, client, func() time.Time { return h.clock }))
 }
 
 func (h *httpRuleHarness) allowing() *jobs.RunRuleHTTPWorker {
@@ -79,7 +79,7 @@ func TestAnHTTPActionIsPendingWhileTheActionsAfterItRun(t *testing.T) {
 	rcv := newHookReceiver(t)
 	quahog := env.DB.Scoped(fixtures.QuahogID)
 
-	require.NoError(t, rules.New(env.Cipher, env.Bus, time.Now).RunActions(context.Background(), quahog, fixtures.RuleFiringQuahogHookToRunID, ruleRunners(env)))
+	require.NoError(t, rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(context.Background(), quahog, fixtures.RuleFiringQuahogHookToRunID, ruleRunners(env)))
 
 	f := env.DB.RuleFiring.GetX(context.Background(), fixtures.RuleFiringQuahogHookToRunID)
 	results := resultsOf(t, f)

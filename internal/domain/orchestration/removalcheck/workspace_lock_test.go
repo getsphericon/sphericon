@@ -43,7 +43,7 @@ func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	cipher := testhelper.Cipher(t)
 	segs := segments.New(bus, time.Now)
-	ruleset := rules.New(cipher, bus, time.Now)
+	ruleset := rules.New(cipher, bus, nil, time.Now)
 	autos := automations.New(cipher, bus, testhelper.Renderer(), out, time.Now)
 	renamed := new("Renamed")
 

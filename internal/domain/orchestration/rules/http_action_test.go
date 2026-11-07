@@ -38,7 +38,7 @@ func newHTTPRule(t *testing.T, env *testhelper.TestEnv, m *rules.Module) (id int
 
 func TestAnHTTPActionIsStoredSealed(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
 	id, _ := newHTTPRule(t, env, m)
 
@@ -68,7 +68,7 @@ func draftOf(t *testing.T, r *ent.Rule) *ent.RuleVersion {
 // version holds.
 func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id, actionID := newHTTPRule(t, env, m)
 	_, err := m.Publish(context.Background(), s, id)
@@ -94,7 +94,7 @@ func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 
 func TestAnInvalidHTTPActionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	cases := map[string]rules.Action{
 		"no url":                  {Type: rules.ActionHTTP, Body: `{}`},
 		"not http":                {Type: rules.ActionHTTP, URL: "ftp://example.com", Body: `{}`},

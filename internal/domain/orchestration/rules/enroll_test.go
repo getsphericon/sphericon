@@ -15,7 +15,7 @@ import (
 
 func TestAnEnrollActionNeedsAnAutomationOfTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	create := func(a rules.Action) error {
 		_, err := m.Create(context.Background(), s, rules.CreateInput{Name: "Enroller", TriggerEvents: []string{"x"}, Actions: []rules.Action{a}})

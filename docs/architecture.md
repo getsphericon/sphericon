@@ -701,8 +701,9 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   accepted before a failed advancement may be repeated.
 - **Rule HTTP Actions**: `rules.Module.ExecuteHTTP` selects the pending Action of a Firing,
   opens its secrets, renders its Contact and Event, executes the protected call and records the
-  result. It receives ordinary attempt and timing data (`httpcall.Attempt`) and the existing
-  protected HTTP adapter, returning a retry or wait decision without River types. The River
+  result. The module holds the protected HTTP adapter and the Instance clock from `rules.New`, as
+  the use case does from `stepexecution.New`; each call receives only ordinary attempt data
+  (`httpcall.Attempt`) and returns a retry or wait decision without River types. The River
   worker loads the Firing to establish Workspace scope and translates that decision. A final
   failure belongs to the Action's result; it does not cancel the Firing's other Actions or adopt
   Enrollment lifecycle rules. The call retains its stable request identity and existing delivery

@@ -21,10 +21,11 @@ type HTTPExecution struct {
 	Wait  time.Duration
 }
 
-// ExecuteHTTP selects and executes the pending HTTP Action of a Firing, and records its result.
-// The adapter supplies the protected HTTP client, clock and ordinary attempt information. It needs no
-// queue job, and keeps the Firing's independent Actions and completion semantics.
-func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64, index int, attempt httpcall.Attempt, client webhook.Doer, now func() time.Time) (HTTPExecution, error) {
+// ExecuteHTTP selects and executes the pending HTTP Action of a Firing through the module's
+// protected HTTP client, and records its result. The adapter supplies only the ordinary attempt
+// information. It needs no queue job, and keeps the Firing's independent Actions and completion
+// semantics.
+func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64, index int, attempt httpcall.Attempt) (HTTPExecution, error) {
 	f, err := s.RuleFiring().Get(ctx, firingID)
 	if ent.IsNotFound(err) {
 		return HTTPExecution{}, nil
@@ -63,15 +64,15 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64,
 	if err != nil {
 		return record(Result{Status: Failed, Detail: "invalid_body: " + httpcall.BodyDetail(err)})
 	}
-	sendErr := webhook.Post(ctx, client, webhook.Call{
-		URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body), At: now(),
+	sendErr := webhook.Post(ctx, m.client, webhook.Call{
+		URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body), At: m.now(),
 		ID: fmt.Sprintf("rule_%d_%s", f.ID, action.ID),
 	})
 	if sendErr == nil {
 		return record(Result{Status: Succeeded})
 	}
 	failed := Result{Status: Failed, Detail: failureDetail(sendErr)}
-	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, now()); limited {
+	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, m.now()); limited {
 		if verdict.GiveUp {
 			return record(failed)
 		}
