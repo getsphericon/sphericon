@@ -5,7 +5,6 @@ package site
 import (
 	"context"
 	"io"
-	"log/slog"
 	"strconv"
 	"time"
 
@@ -90,6 +89,7 @@ type Handlers struct {
 	integrations    *integrations.Module
 	captured        *capturedmessages.Module
 	links           *users.Links
+	requests        *users.Requests
 	tracker         *messagetoken.Tracker
 	appURL          string
 	outbound        *outboundmessages.Module
@@ -291,7 +291,7 @@ func NewHandlers(d *Deps) *Handlers {
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts,
-		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
+		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
@@ -322,14 +322,4 @@ func (h *Handlers) actor(ctx context.Context) events.Actor {
 		actor.Name = u.Name
 	}
 	return actor
-}
-
-// publishRequest publishes a request that changes no state (a link asked for, an address
-// claimed) in a transaction of its own, best-effort: a failure is logged, never answered (a
-// failure shown to the caller could tell whether an address has an account), and a lost request
-// is asked for again.
-func (h *Handlers) publishRequest(ctx context.Context, request events.DomainEvent) {
-	if err := h.bus.Publish(ctx, request); err != nil {
-		slog.WarnContext(ctx, "request not published", "event", request.EventName(), "error", err)
-	}
 }
