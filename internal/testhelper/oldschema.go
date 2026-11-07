@@ -11,11 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sphericon "github.com/getsphericon/sphericon"
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // SchemaBefore is the input of a migration under test: a database of the test's own, migrated
@@ -51,10 +49,6 @@ func SchemaBefore(t *testing.T, name, dir string) *sql.DB {
 	_, err = db.MigrateBefore(ctx, sqlDB, older, version)
 	require.NoError(t, err)
 
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
-	require.NoError(t, fixtures.Load(ctx, sqlDB, cipher, dir))
+	require.NoError(t, fixtures.Load(ctx, sqlDB, Cipher(t), dir))
 	return sqlDB
 }

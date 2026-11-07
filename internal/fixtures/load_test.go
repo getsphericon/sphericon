@@ -9,12 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -23,10 +21,7 @@ import (
 // would be decades old and any test that depends on a date fails, in an order-dependent
 // way (the shuffle seed decides which test is first).
 func TestLoadInsideASynctestBubbleDatesTheFixturesByTheRealClock(t *testing.T) {
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
+	cipher := testhelper.Cipher(t)
 	url := testhelper.EmptyDBURL(t)
 	before := time.Now()
 

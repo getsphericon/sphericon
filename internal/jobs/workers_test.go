@@ -89,8 +89,7 @@ func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEn
 	t.Helper()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
+	cipher := env.Cipher
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
@@ -347,20 +346,16 @@ const webhookSecret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
 
 func TestDeliverWebhookWorker(t *testing.T) {
 	env := testhelper.Setup(t)
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
 	ctx := context.Background()
 	args := func(id int64) jobs.DeliverWebhookArgs {
 		return jobs.DeliverWebhookArgs{EndpointID: id, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{"a":1}`)}
 	}
 	rcv := newWebhookReceiver(t)
 	worker := func(allow webhook.Allowlist) *jobs.DeliverWebhookWorker {
-		return jobs.NewDeliverWebhookWorker(env.DB, cipher, webhook.NewClientAllowing(2*time.Second, allow), time.Now, env.Bus, env.SystemMail)
+		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, allow), time.Now, env.Bus, env.SystemMail)
 	}
 	ws := env.DB.Scoped(fixtures.AcmeID)
-	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
+	_, err := ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
 	require.NoError(t, err)
 
 	// A delivery reaches the receiver, which verifies the signature with the endpoint secret.
@@ -390,19 +385,15 @@ func TestDeliverWebhookWorker(t *testing.T) {
 // failures keeps its start, and a 2xx clears it all. The clock is injected.
 func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	env := testhelper.Setup(t)
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
 	ctx := context.Background()
 	rcv := newWebhookReceiver(t)
 	ws := env.DB.Scoped(fixtures.AcmeID)
-	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
+	_, err := ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
 	require.NoError(t, err)
 
 	clock := time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)
 	worker := func(allow webhook.Allowlist, timeout time.Duration) *jobs.DeliverWebhookWorker {
-		return jobs.NewDeliverWebhookWorker(env.DB, cipher, webhook.NewClientAllowing(timeout, allow), func() time.Time { return clock }, env.Bus, env.SystemMail)
+		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(timeout, allow), func() time.Time { return clock }, env.Bus, env.SystemMail)
 	}
 	deliver := func(w *jobs.DeliverWebhookWorker) error {
 		return w.Work(ctx, job(jobs.DeliverWebhookArgs{EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`)}))
@@ -483,14 +474,10 @@ type disableHarness struct {
 func newDisableHarness(t *testing.T) *disableHarness {
 	t.Helper()
 	env := testhelper.Setup(t)
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
 	h := &disableHarness{t: t, env: env, rcv: newWebhookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
-	_, err = env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(h.rcv.srv.URL).Save(context.Background())
+	_, err := env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(h.rcv.srv.URL).Save(context.Background())
 	require.NoError(t, err)
-	h.w = jobs.NewDeliverWebhookWorker(env.DB, cipher, webhook.NewClientAllowing(2*time.Second, h.rcv.allow), func() time.Time { return h.clock }, env.Bus, env.SystemMail)
+	h.w = jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, h.rcv.allow), func() time.Time { return h.clock }, env.Bus, env.SystemMail)
 	return h
 }
 

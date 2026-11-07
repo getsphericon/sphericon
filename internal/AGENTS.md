@@ -33,7 +33,9 @@ is dropped when the test ends, so no test cleans up by hand or resets state at i
 whose only reason is `rivertest`, which hands a worker a `*sql.Tx`, does not need one: the txdb
 connection serves it as long as the worker does not touch the database through another handle while
 the `tx` is open (the pool has one connection). The test role is a superuser (the fixture loader
-disables foreign-key triggers), as on the shared test database.
+disables foreign-key triggers), as on the shared test database. A module that seals secrets takes
+the server's cipher, `env.Cipher`; a test without `Setup` takes `testhelper.Cipher(t)`, the same key
+the fixtures are sealed with, and never loads the configuration for it.
 
 **A document is saved through a fake export.** A runtime of the editor's code takes seconds to
 start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Setup` and of a module a

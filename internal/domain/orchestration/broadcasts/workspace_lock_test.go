@@ -23,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -53,8 +52,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
+	cipher := testhelper.Cipher(t)
 	integrationDeletion := integrationdeletion.New(bus, integrations.New(bus, cipher, nil, nil, nil, ""))
 	domainDeletion := sendingdomaindeletion.New(bus, sendingdomains.New(bus, cipher), messaging.NewResolver(cipher, registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL)))
 	segs := segments.New(bus)

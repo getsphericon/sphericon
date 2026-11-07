@@ -19,7 +19,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -37,8 +36,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	t.Cleanup(listener.Close)
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err)
+	cipher := testhelper.Cipher(t)
 	entClient := entclient.New(pool)
 	bus := events.New(pool, entclient.NewTx)
 	mail := &testhelper.CapturingSender{}
