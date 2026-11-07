@@ -23,6 +23,10 @@ import (
 // maxResponseBytes caps how much of a receiver's response body we read.
 const maxResponseBytes = 64 << 10
 
+// DeliveryTimeout bounds a single outbound call: a Webhook delivery, an HTTP step or an HTTP
+// Action.
+const DeliveryTimeout = 15 * time.Second
+
 // ExcerptBytes is how much of a receiver's answer a failed call keeps.
 const ExcerptBytes = 1 << 10
 

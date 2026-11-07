@@ -26,12 +26,14 @@ type UseCase struct {
 	domains *sendingdomains.Module
 	lookup  domainname.TXTLookup
 	notify  memberships.Notify
+	now     func() time.Time
 }
 
-// New builds the domain verification use case: lookup resolves the DNS records, and notify mails
-// the Owners of a Workspace whose domain lost its verification (nil tells nobody).
-func New(domains *sendingdomains.Module, lookup domainname.TXTLookup, notify memberships.Notify) *UseCase {
-	return &UseCase{domains: domains, lookup: lookup, notify: notify}
+// New builds the domain verification use case: lookup resolves the DNS records, notify mails the
+// Owners of a Workspace whose domain lost its verification (nil tells nobody), and now is the
+// Instance clock a check is stamped with.
+func New(domains *sendingdomains.Module, lookup domainname.TXTLookup, notify memberships.Notify, now func() time.Time) *UseCase {
+	return &UseCase{domains: domains, lookup: lookup, notify: notify, now: now}
 }
 
 // Verify runs the live DNS check of the domain now, when a person asks for it, and returns the
@@ -76,7 +78,7 @@ func (u *UseCase) checkDMARC(ctx context.Context, s *ent.Scoped, dom *ent.Sendin
 			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "domain", dom.Domain, "err", err)
 		return
 	}
-	if err := sendingdomains.RecordDMARC(ctx, s, dom, found, time.Now()); err != nil {
+	if err := sendingdomains.RecordDMARC(ctx, s, dom, found, u.now()); err != nil {
 		slog.WarnContext(ctx, "sending domain DMARC result not stored",
 			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "err", err)
 	}
@@ -87,7 +89,7 @@ func (u *UseCase) checkDMARC(ctx context.Context, s *ent.Scoped, dom *ent.Sendin
 // Owners, best-effort: a failed notice never fails the check. A check that lost to another one
 // stores nothing and reports no loss: the Owners are told once per loss (ADR 0046). A deleted
 // domain is not checked: its stored state is the answer (ADR 0099).
-func (u *UseCase) VerifyDKIM(ctx context.Context, s *ent.Scoped, id int64) (verified bool, err error) {
+func (u *UseCase) VerifyDKIM(ctx context.Context, s *ent.Scoped, id int64) (bool, error) {
 	dom, err := u.domains.Get(ctx, s, id)
 	if err != nil {
 		return false, err
@@ -105,7 +107,7 @@ func (u *UseCase) verifyDKIM(ctx context.Context, s *ent.Scoped, dom *ent.Sendin
 	if err != nil {
 		return false, err
 	}
-	state, lost, err := sendingdomains.RecordDKIM(ctx, s, dom, verified, time.Now())
+	state, lost, err := sendingdomains.RecordDKIM(ctx, s, dom, verified, u.now())
 	if err != nil {
 		return false, err
 	}

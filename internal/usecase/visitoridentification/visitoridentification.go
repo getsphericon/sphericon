@@ -6,7 +6,6 @@ package visitoridentification
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -15,6 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // Input is an Identify call: the device and what it asserts about its Contact.
@@ -37,6 +38,10 @@ type UseCase struct {
 // New builds the Identify use case.
 func New(bus *events.Bus) *UseCase { return &UseCase{bus: bus} }
 
+// ErrVisitorIDRequired refuses an identify that names no visitor: there is no device to bind. An
+// identify that names no alias key of the Contact is contacts.ErrIdentityRequired.
+var ErrVisitorIDRequired = validation.RefuseField("visitorId", "identify: visitorId is required", i18n.ErrorsVisitorIdRequired)
+
 // Identify binds a Visitor to a Contact and asserts that Contact's alias keys
 // (subject_id / email / phone) and the core attributes its traits name (ADR 0072). It
 // upserts the Contact by any present alias key, auto-creates typed Custom fields from the
@@ -46,7 +51,7 @@ func New(bus *events.Bus) *UseCase { return &UseCase{bus: bus} }
 func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) error {
 	visitorID := strings.TrimSpace(input.VisitorID)
 	if visitorID == "" {
-		return errors.New("visitorId is required")
+		return ErrVisitorIDRequired
 	}
 
 	return u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
@@ -60,9 +65,6 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 			GuessedLocale:   input.Locale,
 			CustomFields:    fields,
 		})
-		if errors.Is(err, contacts.ErrIdentityRequired) {
-			return errors.New("identify requires subjectId, email, or phone")
-		}
 		if err != nil {
 			return err
 		}

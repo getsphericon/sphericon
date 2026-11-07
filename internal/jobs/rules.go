@@ -87,24 +87,24 @@ func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.Ac
 
 // RuleActionRunners are the Runners of the Actions a Rule can have. Each reuses the module that
 // already does the thing for an Automation step; internal/domain/orchestration/rules imports none of them.
-func RuleActionRunners(mod *outboundmessages.Module, bus *events.Bus) rules.ActionRunners {
+func RuleActionRunners(mod *outboundmessages.Module, bus *events.Bus, steps *stepexecution.UseCase) rules.ActionRunners {
 	tagging := contacts.New(bus)
 	return rules.ActionRunners{
 		rules.ActionApplyTag:  tagAction{mod: mod, tags: tagging, apply: true},
 		rules.ActionRemoveTag: tagAction{mod: mod, tags: tagging},
-		rules.ActionEnroll:    enrollAction{bus: bus},
+		rules.ActionEnroll:    enrollAction{steps: steps},
 		rules.ActionHTTP:      httpAction{},
 	}
 }
 
 // enrollAction enrolls the Contact in an Automation through the same Enrollment an Automation's
 // trigger uses: once ever, fenced (ADR 0046), beginning when the Event the Rule fired on occurred
-// (stepexecution.EnrollOnRule). An Automation that is not active (a draft or an archived one) or a
+// (stepexecution.UseCase.EnrollOnRule). An Automation that is not active (a draft or an archived one) or a
 // Contact already enrolled is Skipped, not Failed. The read here answers early; the Enrollment
 // checks the Automation again under its lock, which is what decides (automations.ErrInactive). The Enrollment and the job that starts stepping
 // it commit together, so a retry never finds an enrolled Contact whose run never started.
 type enrollAction struct {
-	bus *events.Bus
+	steps *stepexecution.UseCase
 }
 
 func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInput) (rules.Result, error) {
@@ -117,7 +117,7 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 	case auto.Status != automation.StatusActive:
 		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil
 	}
-	enrolled, err := stepexecution.EnrollOnRule(ctx, a.bus, s, auto.ID, in.ContactID, in.Firing.SourceID)
+	enrolled, err := a.steps.EnrollOnRule(ctx, s, stepexecution.EnrollOnRuleInput{AutomationID: auto.ID, ContactID: in.ContactID, SourceID: in.Firing.SourceID})
 	switch {
 	case errors.Is(err, automations.ErrInactive):
 		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil

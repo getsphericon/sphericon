@@ -132,8 +132,10 @@ func TestAnExemptWorkspaceHasNoWarningButKeepsItsRates(t *testing.T) {
 // The detector judges the traffic of the "over the freeze limit" scenario in fixtures/events.yml
 // (Vandelay, three days ago, at a floor of 20 sent), at the moment of that scenario.
 func TestAWorkspaceFrozenByTheDetectorRefusesSendsOnTheAPI(t *testing.T) {
-	h := newHarness(t, testhelper.WithStaffVolumeFloor(20))
-	summary, err := h.env.Abuse().Run(t.Context(), time.Now().Add(-3*24*time.Hour))
+	// The pass runs at the moment of the scenario: the env's clock is three days back.
+	scenario := time.Now().Add(-3 * 24 * time.Hour)
+	h := newHarness(t, testhelper.WithStaffVolumeFloor(20), testhelper.WithClock(func() time.Time { return scenario }))
+	summary, err := h.env.Abuse().Run(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, []int64{fixtures.VandelayID}, summary.Frozen)
 	vandelay := h.env.ExternalWithToken(t, h.env.ScopedBearerFor(t, fixtures.VandelayID, "emails:send"))

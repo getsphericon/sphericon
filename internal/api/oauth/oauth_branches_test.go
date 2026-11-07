@@ -130,7 +130,7 @@ func TestStorageFailureIsAServerError(t *testing.T) {
 	mux := http.NewServeMux()
 	closed := closedClient(t)
 	clients := oauthclients.New(closed, oauthclients.NewFetcher(webhook.Allowlist{}))
-	oauth.New(connectionissuance.New(closed, clients), clients, "https://app.test", "https://app.test").Mount(mux)
+	oauth.New(connectionissuance.New(closed, clients, time.Now), clients, "https://app.test", "https://app.test").Mount(mux)
 	do := func(req *http.Request) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)

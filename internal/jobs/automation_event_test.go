@@ -28,7 +28,7 @@ func TestAnAutomationEmailRendersTheTriggeringEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 	ev := storedEventOf(t, env, fixtures.EventPaymentFailedID)
 
-	require.NoError(t, stepexecution.OnEvent(t.Context(), env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactPaymentFailedID, ev, 0))
+	require.NoError(t, env.StepExecution.OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 

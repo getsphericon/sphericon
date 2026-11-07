@@ -28,29 +28,33 @@ import (
 // Interval is how often the Edition runs the detector (Run).
 const Interval = time.Hour
 
-// Config is what a Detector is built from.
+// Config is what the detector is built from.
 type Config struct {
 	Limits abusedetector.Limits
 	// SupportEmail is the contact the notices give an owner to appeal to; empty gives none.
 	SupportEmail string
 }
 
-// Detector performs the detector's pass (ADR 0026). It is the raw-client entry of the
+// UseCase performs the detector's pass (ADR 0026). It is the raw-client entry of the
 // control: like a job entry point it lists Workspaces, then scopes to each one.
-type Detector struct {
-	*abusedetector.Watch
-
+type UseCase struct {
+	watch   *abusedetector.Watch
 	client  *ent.Client
 	notify  memberships.Notify
 	suspend *suspension.Suspender
 	support string
+	now     func() time.Time
 }
 
-// New builds the Detector. notify tells the owners through the platform's (system) sender, nil
+// New builds the use case. notify tells the owners through the platform's (system) sender, nil
 // for none: the notices never go through a Workspace's own Integration, which a freeze holds. A
-// freeze suspends through suspender, which tells the owners the same way.
-func New(client *ent.Client, lic *licensekey.License, notify memberships.Notify, suspender *suspension.Suspender, cfg Config) *Detector {
-	return &Detector{Watch: abusedetector.NewWatch(lic, cfg.Limits), client: client, notify: notify, suspend: suspender, support: cfg.SupportEmail}
+// freeze suspends through suspender, which tells the owners the same way. now is the Instance
+// clock a pass judges at.
+func New(client *ent.Client, lic *licensekey.License, notify memberships.Notify, suspender *suspension.Suspender, cfg Config, now func() time.Time) *UseCase {
+	return &UseCase{
+		watch: abusedetector.NewWatch(lic, cfg.Limits), client: client, notify: notify, suspend: suspender,
+		support: cfg.SupportEmail, now: now,
+	}
 }
 
 // Summary is who a pass warned and who it froze.
@@ -58,16 +62,17 @@ type Summary struct {
 	Warned, Frozen []int64
 }
 
-// Run is one pass at now over every Workspace. Unlicensed it does nothing. Per Workspace,
+// Run is one pass over every Workspace, at the clock's now. Unlicensed it does nothing. Per Workspace,
 // in this order: a suspended one is skipped (its first actor and reason stand), an exempt
 // one is skipped, then the Workspace is judged over the window since its last clearance.
 // A freeze suspends it as `system`; a warning mails the owners once per episode, and
 // leaving the warning tier ends the episode. It never lifts a suspension. A failed notice
 // never undoes a freeze: it is logged, and a warning whose mail failed is retried next
 // pass. One Workspace's failure does not stop the others; the errors are joined.
-func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
+func (d *UseCase) Run(ctx context.Context) (Summary, error) {
+	now := d.now()
 	var sum Summary
-	if !d.Licensed() {
+	if !d.watch.Licensed() {
 		return sum, nil
 	}
 	// A Workspace that was warned and then suspended by hand or exempted has left the
@@ -84,7 +89,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 		return sum, errors.Join(append(errs, fmt.Errorf("list workspaces for the abuse detector: %w", err))...)
 	}
 	for _, ws := range candidates {
-		breach, err := d.Standing(ctx, d.client.Scoped(ws.ID), ws, now)
+		breach, err := d.watch.Standing(ctx, d.client.Scoped(ws.ID), ws, now)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("rates of workspace %d: %w", ws.ID, err))
 			continue
@@ -121,7 +126,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 // the escalation of a warning, so no warning mail goes out and the episode ends. A failed
 // notice is logged, not returned: the freeze stands and nothing retries a suspended
 // Workspace.
-func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b abusedetector.Breach) (bool, error) {
+func (d *UseCase) freeze(ctx context.Context, ws *ent.Workspace, b abusedetector.Breach) (bool, error) {
 	changed, err := d.suspend.Suspend(ctx, ws.ID, suspension.System, b.Describe()+" (freeze)")
 	if errors.Is(err, suspension.ErrNoticeNotSent) {
 		slog.ErrorContext(ctx, "workspace frozen by the abuse detector, but the owner notice could not be sent", "workspace_id", ws.ID, "error", err)
@@ -139,7 +144,7 @@ var metricNames = map[abusedetector.Metric]i18n.ID{abusedetector.Complaint: i18n
 
 // warn mails the owners once per episode: the marker is set only after the mail went, so
 // a failed send is retried, and is cleared when the Workspace leaves the tier.
-func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b abusedetector.Breach, now time.Time) (bool, error) {
+func (d *UseCase) warn(ctx context.Context, ws *ent.Workspace, b abusedetector.Breach, now time.Time) (bool, error) {
 	if ws.AbuseWarningNotifiedAt != nil || d.notify == nil {
 		return false, nil
 	}

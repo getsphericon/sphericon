@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // HTTPExecution is the queue-neutral decision of an HTTP Step. Its fields are mutually
@@ -24,12 +23,21 @@ type HTTPExecution struct {
 	Wait   time.Duration
 }
 
+// ExecuteHTTPInput is one attempt at the call of an HTTP step: the Enrollment, the step it is
+// expected to be at, and the queue's attempt data.
+type ExecuteHTTPInput struct {
+	RunID   int64
+	Step    int
+	Attempt httpcall.Attempt
+}
+
 // ExecuteHTTP selects the pinned Step, renders and executes its protected call under the
 // Enrollment's exit fence, then advances or fails the Enrollment. The adapter supplies only the
-// Workspace scope, ordinary attempt data, clock and existing secret and HTTP dependencies. An
-// accepted request whose advancement fails can be repeated; external delivery is not exactly-once.
-func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, step int, attempt httpcall.Attempt, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) (HTTPExecution, error) {
-	run, err := s.AutomationRun().Get(ctx, runID)
+// Workspace scope and the ordinary attempt data. An accepted request whose advancement fails can
+// be repeated; external delivery is not exactly-once.
+func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTPInput) (HTTPExecution, error) {
+	step, attempt := in.Step, in.Attempt
+	run, err := s.AutomationRun().Get(ctx, in.RunID)
 	if ent.IsNotFound(err) {
 		return HTTPExecution{}, nil
 	}
@@ -60,7 +68,7 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, s
 	if err != nil {
 		return HTTPExecution{}, err
 	}
-	opened, err := automations.OpenHTTP(cipher, st)
+	opened, err := automations.OpenHTTP(m.cipher, st)
 	if err != nil {
 		return HTTPExecution{}, err
 	}
@@ -71,7 +79,7 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, s
 	// An exit committed before this fence prevents the call; an exit during it waits until
 	// the call returns. Release it before the lifecycle move, which takes the row's write lock.
 	sendErr := m.fence(ctx, s, run.ID, func(ctx context.Context) error {
-		return webhook.Post(ctx, client, webhook.Call{
+		return webhook.Post(ctx, m.client, webhook.Call{
 			URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body),
 			ID: fmt.Sprintf("automation_%d_%d", run.ID, step),
 		})
@@ -83,7 +91,7 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, s
 		return HTTPExecution{}, m.advance(ctx, s, run.ID, step, move{})
 	}
 	f := automations.FailureOfDelivery(sendErr)
-	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, now()); limited {
+	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, m.now()); limited {
 		if verdict.GiveUp {
 			return m.failHTTP(ctx, s, run.ID, f, HTTPExecution{Cancel: sendErr})
 		}

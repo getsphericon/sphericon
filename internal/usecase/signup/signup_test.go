@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/riverqueue/river"
 	"github.com/stretchr/testify/assert"
@@ -135,7 +136,7 @@ func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, bud
 	for _, o := range opts {
 		o(acc, &cfg)
 	}
-	module := signup.New(bus, acc, nil, testhelper.Passwords(), signup.WithSignUp(cfg))
+	module := signup.New(bus, acc, nil, testhelper.Passwords(), nil, cfg, time.Now)
 	return rig{db: client, queue: q, module: module, consents: consents}
 }
 

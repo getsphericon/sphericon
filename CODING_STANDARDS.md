@@ -111,6 +111,16 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the Enterprise
   handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The helpers the
   analyzers share about the generated package are in `tools/analyzers/entx`.
+- **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
+  `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function
+  other than `New`, a `New` that returns anything but `*UseCase`, an exported type other than `UseCase`
+  with a method that takes a `context.Context`, a method that returns `*UseCase` (a builder), an exported
+  method with more than two results, a second result that is not `error` or named results, more than two
+  arguments after `ctx` and the scope (`*ent.Scoped` or `*ent.Client`), a `now` argument, a
+  `func() time.Time` argument, an `io.Writer` argument, a `[]error` result and any use of `time.Now`. The
+  fix is the shape the ADR states: a dependency or the clock is a parameter of `New`, a third or an
+  optional argument goes into a typed `XInput`, two values into a named result struct, what became of a batch's items
+  into `batch.Result` (`internal/kernel/batch`), and a report is written by its driver.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns

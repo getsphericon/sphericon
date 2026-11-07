@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -39,7 +40,12 @@ func samCode(t *testing.T, c *clock) string {
 // verify is a second step under the User's current challenge binding.
 func verify(t *testing.T, env *testhelper.TestEnv, userID int64, code string) (secondfactorcheck.Method, error) {
 	t.Helper()
-	return env.SecondFactor.Verify(t.Context(), userID, binding(t, env, userID), code)
+	return env.SecondFactor.Verify(t.Context(), pending(userID, binding(t, env, userID)), code)
+}
+
+// pending is the sign-in of the User waiting for its second step under binding.
+func pending(userID int64, binding string) login.Pending[*ent.User] {
+	return login.Pending[*ent.User]{Principal: &ent.User{ID: userID}, Binding: binding}
 }
 
 // binding is the User's current challenge binding ("" without a Second factor).
@@ -120,9 +126,9 @@ func TestVerifyRefusesABindingAnotherSecondStepMoved(t *testing.T) {
 	ctx := t.Context()
 	challenged := binding(t, env, fixtures.SecondFactorSamID)
 
-	_, err := env.SecondFactor.Verify(ctx, fixtures.SecondFactorSamID, challenged, fixtures.SecondFactorSamRecoveryCode)
+	_, err := env.SecondFactor.Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), fixtures.SecondFactorSamRecoveryCode)
 	require.NoError(t, err)
-	_, err = env.SecondFactor.Verify(ctx, fixtures.SecondFactorSamID, challenged, samCode(t, c))
+	_, err = env.SecondFactor.Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), samCode(t, c))
 	require.ErrorIs(t, err, secondfactorcheck.ErrBindingMoved)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
@@ -141,7 +147,7 @@ func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
 	session := env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 
 	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
-	require.NoError(t, env.SecondFactor.Reset(ctx, fixtures.SecondFactorSamID, jane, fixtures.GlobexID))
+	require.NoError(t, env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SecondFactorSamID, jane))
 
 	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
@@ -161,7 +167,7 @@ func TestResetIsAuditedInTheActingWorkspaceOnly(t *testing.T) {
 	ctx := t.Context()
 	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
 
-	require.NoError(t, env.SecondFactor.Reset(ctx, fixtures.SecondFactorSamID, jane, fixtures.GlobexID))
+	require.NoError(t, env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SecondFactorSamID, jane))
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	got, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionUserSecondFactorReset)).All(ctx)
@@ -179,7 +185,7 @@ func TestResetWithoutASecondFactorChangesNothing(t *testing.T) {
 	before, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
 	require.NoError(t, err)
 
-	err = env.SecondFactor.Reset(ctx, fixtures.OwnerJohnID, events.Actor{Kind: events.ActorUser, ID: "2"}, fixtures.AcmeID)
+	err = env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.OwnerJohnID, events.Actor{Kind: events.ActorUser, ID: "2"})
 	require.ErrorIs(t, err, secondfactorcheck.ErrNothingToReset)
 
 	after, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)

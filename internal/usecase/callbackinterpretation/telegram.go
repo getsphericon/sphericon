@@ -22,7 +22,7 @@ import (
 // message from a Destination Bound to a Contact is recorded as telegram.received. The bot never
 // answers a message; a button press is only acknowledged.
 type telegram struct {
-	Ignore
+	ignore
 
 	bots Bots
 }

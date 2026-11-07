@@ -55,7 +55,7 @@ func publishErased(ctx context.Context, s *ent.Scoped, t *Target, pub events.Pur
 		RequesterID:    t.Requester.ID,
 		ContactID:      t.ContactID,
 		VisitorIDs:     t.VisitorIDs,
-		EmailHash:      Hash(firstDestination(t)),
-		PhoneHash:      Hash(t.Phone),
+		EmailHash:      hash(firstDestination(t)),
+		PhoneHash:      hash(t.Phone),
 	})
 }

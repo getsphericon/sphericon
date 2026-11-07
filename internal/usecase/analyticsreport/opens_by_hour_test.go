@@ -15,7 +15,7 @@ import (
 
 func opensByHourAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window, now time.Time) *analyticsreport.OpensByHour {
 	t.Helper()
-	m := analyticsreport.New().WithClock(func() time.Time { return now })
+	m := analyticsreport.New(func() time.Time { return now }, 0)
 	r, err := m.OpensByHour(context.Background(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return r

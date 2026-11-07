@@ -30,13 +30,21 @@ var (
 	ErrUnknownAutomation = validation.RefuseField("sendingSource", "consent: unknown automation in sendingSource", i18n.ErrorsSendingSourceAutomationUnknown)
 )
 
-// OptOut records that destination opted out on channel from a sending source, as an opt-out that
-// reached the Workspace by any route: on email Unsubscribe, on telegram channelstop.TelegramUnsubscribe,
-// on sms channelstop.SMSUnsubscribe. An empty source is the Channel's default: `broadcasts` on email,
-// `everything` on telegram and sms, where a person stops all of the Workspace's messages.
-// Idempotent.
-func (u *UseCase) OptOut(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination, source string) (*ent.Unsubscribe, error) {
-	switch channel {
+// OptOutInput is an opt-out that reached the Workspace by any route: the Channel, the destination
+// that opted out and the sending source it opted out of (empty is the Channel's default).
+type OptOutInput struct {
+	Channel     channels.Channel
+	Destination string
+	Source      string
+}
+
+// OptOut records that the destination opted out on the Channel from a sending source: on email
+// Unsubscribe, on telegram channelstop.TelegramUnsubscribe, on sms channelstop.SMSUnsubscribe. An
+// empty source is the Channel's default: `broadcasts` on email, `everything` on telegram and sms,
+// where a person stops all of the Workspace's messages. Idempotent.
+func (u *UseCase) OptOut(ctx context.Context, s *ent.Scoped, in OptOutInput) (*ent.Unsubscribe, error) {
+	destination, source := in.Destination, in.Source
+	switch in.Channel {
 	case channels.Telegram:
 		return channelstop.TelegramUnsubscribe(ctx, u.bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
 	case channels.SMS:

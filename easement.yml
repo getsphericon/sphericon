@@ -1474,10 +1474,11 @@ rules:
         usecase,
         usecase-raw,
         gen-surfaces,
+        gen-telemetry,
         testsupport,
       ]
     forbid_symbol: *unchecked-removals
-    because: wiring is where the program is assembled
+    because: wiring is where the program is assembled; it builds the Telemetry report's client and reads the host the report describes (ADR 0104)
 
   web-generated:
     may_depend_on: []

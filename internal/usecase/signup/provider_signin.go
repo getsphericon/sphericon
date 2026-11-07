@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
@@ -140,11 +139,14 @@ func (u *UseCase) takeOver(ctx context.Context, holderID int64, in users.Provide
 // the Verified User with the provider's address and name, or takes over the Unverified User that
 // holds the address, as a provider sign-in without items does, its Linked identity, the Consent records
 // of the answers, the Membership of the Invitation the flow began from (users.Module.CompletePendingSignupIn),
-// and the first Workspace, as a provider sign-up without items does. surveyDue marks the User as owing the
-// Sign-up survey, unless the sign-up accepts an Invitation. It returns the User and the pending sign-up it
-// came from. users.ErrPendingSignupGone when the pending sign-up is no longer open, its Invitation no longer
-// pending, or its address or provider account was taken meanwhile; nothing is written then.
-func (u *UseCase) CompletePendingSignup(ctx context.Context, id int64, consents consentrecords.Consents, surveyDue bool, now time.Time) (*ent.User, *ent.PendingSignup, error) {
+// and the first Workspace, as a provider sign-up without items does. The User owes the Sign-up survey when
+// the Instance asks for it (SignUpConfig.SurveyDue), unless the sign-up accepts an Invitation. It returns the
+// User and the pending sign-up it came from. users.ErrPendingSignupGone when the pending sign-up is no longer
+// open, its Invitation no longer pending, or its address or provider account was taken meanwhile; nothing is
+// written then.
+func (u *UseCase) CompletePendingSignup(ctx context.Context, id int64, consents consentrecords.Consents) (*SignupCompleted, error) {
+	surveyDue := u.signUp.SurveyDue != nil && u.signUp.SurveyDue()
+	now := u.now()
 	var taken *ent.PendingSignup
 	completed, _, err := u.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
 		usr, p, err := u.users.CompletePendingSignupIn(ctx, tx, pub, id, consents, surveyDue, now)
@@ -153,10 +155,17 @@ func (u *UseCase) CompletePendingSignup(ctx context.Context, id int64, consents 
 	})
 	if db.IsUniqueViolation(err) {
 		// Another sign-up took the address or the provider account first.
-		return nil, nil, users.ErrPendingSignupGone
+		return nil, users.ErrPendingSignupGone
 	}
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return completed, taken, nil
+	return &SignupCompleted{User: completed, PendingSignup: taken}, nil
+}
+
+// SignupCompleted is a completed pending sign-up: the User it made Verified and the pending
+// sign-up it came from.
+type SignupCompleted struct {
+	User          *ent.User
+	PendingSignup *ent.PendingSignup
 }

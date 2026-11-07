@@ -30,17 +30,17 @@ func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
 		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: patch.Set("Alicia")},
 		{FirstName: patch.Set("No identity")},
 	})
-	require.Len(t, out, 3)
+	require.Len(t, out.Items, 3)
 
-	require.NoError(t, out[0].Err)
-	assert.True(t, out[0].Result.Created)
-	assert.Equal(t, "import", out[0].Result.Contact.CustomFields["source"])
-	assert.Equal(t, 1, createdEvents(t, env, out[0].Result.Contact.ID))
+	require.NoError(t, out.Items[0].Err)
+	assert.True(t, out.Items[0].Value.Created)
+	assert.Equal(t, "import", out.Items[0].Value.Contact.CustomFields["source"])
+	assert.Equal(t, 1, createdEvents(t, env, out.Items[0].Value.Contact.ID))
 
-	require.NoError(t, out[1].Err)
-	assert.False(t, out[1].Result.Created)
-	assert.EqualValues(t, fixtures.ContactAliceID, out[1].Result.Contact.ID)
-	assert.Equal(t, "Alicia", lo.FromPtr(out[1].Result.Contact.FirstName), "an asserted attribute overwrites")
+	require.NoError(t, out.Items[1].Err)
+	assert.False(t, out.Items[1].Value.Created)
+	assert.EqualValues(t, fixtures.ContactAliceID, out.Items[1].Value.Contact.ID)
+	assert.Equal(t, "Alicia", lo.FromPtr(out.Items[1].Value.Contact.FirstName), "an asserted attribute overwrites")
 
-	require.ErrorIs(t, out[2].Err, contacts.ErrIdentityRequired, "a failing item does not stop the batch")
+	require.ErrorIs(t, out.Items[2].Err, contacts.ErrIdentityRequired, "a failing item does not stop the batch")
 }

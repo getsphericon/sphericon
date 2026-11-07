@@ -238,7 +238,8 @@ func TestAMalformedCursorIsRefused(t *testing.T) {
 func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
-	deletion := workspacedeletion.New(h.env.DB, h.env.Bus, testhelper.EditionTables())
+	now := time.Now().UTC().Truncate(time.Second)
+	deletion := workspacedeletion.New(h.env.DB, h.env.Bus, testhelper.EditionTables(), func() time.Time { return now })
 	actor := events.Actor{Kind: events.ActorUser}
 	initech := h.env.DB.Scoped(fixtures.InitechID)
 	ws, err := initech.Workspace(t.Context())
@@ -248,8 +249,7 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	assert.False(t, live.DiscardedAt.IsSet())
 	assert.False(t, live.ErasedAt.IsSet())
 
-	now := time.Now().UTC().Truncate(time.Second)
-	_, err = deletion.Delete(t.Context(), initech, actor, ws.Name, now)
+	_, err = deletion.Delete(t.Context(), initech, actor, ws.Name)
 	require.NoError(t, err)
 	got, afterDelete := feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
@@ -264,7 +264,7 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	assert.Equal(t, got, again)
 	assert.Equal(t, afterDelete, replayed)
 
-	_, err = deletion.Restore(t.Context(), 5, fixtures.InitechPublicID, actor, now)
+	_, err = deletion.Restore(t.Context(), workspacedeletion.RestoreInput{UserID: 5, PublicID: fixtures.InitechPublicID, Actor: actor})
 	require.NoError(t, err)
 	got, _ = feedFrom(t, c, afterDelete)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))

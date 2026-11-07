@@ -33,7 +33,7 @@ import (
 // of them: a STOP's or a START's confirmation is the provider's auto-reply.
 //
 // It also reads the delivery reports of the texts sent through the Integration (ADR 0079).
-type sms struct{ Ignore }
+type sms struct{ ignore }
 
 // DeliveryNotice reads a final delivery report of a text: delivered, or undelivered with the
 // provider's error code. It lands on the text the provider's id names among the Integration's, and

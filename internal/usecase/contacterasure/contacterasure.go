@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -55,45 +57,49 @@ var (
 	ErrIdentifier = validation.Refuse("erasure: exactly one of email or visitorId is required", i18n.ErrorsErasureIdentifier)
 )
 
-// Identifier names the data subject to erase. Build one with ByContactID, ByEmail or
-// ByVisitorID.
+// Identifier names the data subject to erase: exactly one of a Contact's id, an email address
+// and a visitor id, an absent one nil. An address with no Contact identifies the address itself,
+// so delivery records to it are anonymized; a visitor id names the Contact the visitor is bound
+// to or, for an anonymous Visitor with no Contact, the Visitor and its Events.
 type Identifier struct {
-	contactID int64
-	email     string
-	visitorID string
+	ContactID int64
+	Email     *string
+	VisitorID *string
 }
 
-// ByContactID identifies a Contact by its id.
-func ByContactID(id int64) Identifier { return Identifier{contactID: id} }
-
-// ByEmail identifies a Contact by its email address; with no such Contact it
-// identifies the address itself, so delivery records to it are anonymized.
-func ByEmail(email string) Identifier {
-	return Identifier{email: canonicalEmail(email)}
+// subject is the checked Identifier Erase resolves: one of its fields is set, an address in its
+// canonical form.
+type subject struct {
+	ContactID int64
+	Email     string
+	VisitorID string
 }
 
-// ByVisitorID identifies the Contact the visitor is bound to, or, for an anonymous
-// Visitor with no Contact, the Visitor and its Events.
-func ByVisitorID(visitorID string) Identifier { return Identifier{visitorID: visitorID} }
-
-// ByEmailOrVisitorID is the identifier of a request that names exactly one of an address and a
-// visitor id (nil when absent); anything else is ErrIdentifier.
-func ByEmailOrVisitorID(email, visitorID *string) (Identifier, error) {
-	switch {
-	case email != nil && visitorID == nil:
-		return ByEmail(*email), nil
-	case email == nil && visitorID != nil && *visitorID != "":
-		return ByVisitorID(*visitorID), nil
+// checked is the subject an Identifier names: exactly one of its fields is given (ErrIdentifier
+// otherwise, and for an empty visitor id, which names nothing), and an address is refused
+// (ErrInvalidEmail) unless it is a single plain address.
+func (i Identifier) checked() (subject, error) {
+	given := lo.Count([]bool{i.ContactID != 0, i.Email != nil, i.VisitorID != nil}, true)
+	if given != 1 || (i.VisitorID != nil && *i.VisitorID == "") {
+		return subject{}, ErrIdentifier
 	}
-	return Identifier{}, ErrIdentifier
+	out := subject{ContactID: i.ContactID, VisitorID: lo.FromPtr(i.VisitorID)}
+	if i.Email != nil {
+		email, err := normalizeEmail(*i.Email)
+		if err != nil {
+			return subject{}, err
+		}
+		out.Email = email
+	}
+	return out, nil
 }
 
 // kind names the identifier for the contact.erased Event.
-func (i Identifier) kind() string {
+func (i subject) kind() string {
 	switch {
-	case i.email != "":
+	case i.Email != "":
 		return "email"
-	case i.visitorID != "":
+	case i.VisitorID != "":
 		return "visitor_id"
 	}
 	return "contact_id"
@@ -163,8 +169,12 @@ func New(bus *events.Bus) *UseCase {
 // visitor id) means the identifier resolves to nothing in the Workspace (including a row of
 // another Workspace).
 func (u *UseCase) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Requester) error {
+	subj, err := id.checked()
+	if err != nil {
+		return err
+	}
 	return u.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
-		target, err := resolve(ctx, ts, id)
+		target, err := resolve(ctx, ts, subj)
 		if err != nil {
 			return err
 		}
@@ -257,7 +267,7 @@ func (u *UseCase) steps() []step {
 	}
 }
 
-func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error) {
+func resolve(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
 	c, err := findContact(ctx, s, id)
 	if err != nil {
 		return nil, err
@@ -288,22 +298,22 @@ func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error)
 // findContact returns the Contact the identifier names, locked to the end of the transaction s is
 // bound to (contactlock), or nil when it names none (an address or Visitor without a Contact). A
 // contact id that resolves to nothing is ErrContactNotFound.
-func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contact, error) {
+func findContact(ctx context.Context, s *ent.Scoped, id subject) (*ent.Contact, error) {
 	var (
 		c   *ent.Contact
 		err error
 	)
 	switch {
-	case id.email != "":
-		c, err = s.Contact().Query().Where(contact.Email(id.email)).Only(ctx)
-	case id.visitorID != "":
+	case id.Email != "":
+		c, err = s.Contact().Query().Where(contact.Email(id.Email)).Only(ctx)
+	case id.VisitorID != "":
 		var v *ent.Visitor
-		v, err = s.Visitor().Query().Where(visitor.VisitorID(id.visitorID)).Only(ctx)
+		v, err = s.Visitor().Query().Where(visitor.VisitorID(id.VisitorID)).Only(ctx)
 		if err == nil && v.ContactID != nil {
 			c, err = s.Contact().Get(ctx, *v.ContactID)
 		}
 	default:
-		c, err = s.Contact().Get(ctx, id.contactID)
+		c, err = s.Contact().Get(ctx, id.ContactID)
 		if ent.IsNotFound(err) {
 			return nil, ErrContactNotFound
 		}
@@ -325,24 +335,24 @@ func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contac
 
 // resolveContactless resolves an email or visitor id that has no Contact: it is a
 // subject only if something in the Workspace refers to it.
-func resolveContactless(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error) {
+func resolveContactless(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
 	var (
 		t     *Target
 		known bool
 		err   error
 	)
 	switch {
-	case id.email != "":
-		t = &Target{Destinations: []string{id.email}}
-		known, err = s.OutboundMessage().Query().Where(outboundmessage.Destination(id.email)).Exist(ctx)
+	case id.Email != "":
+		t = &Target{Destinations: []string{id.Email}}
+		known, err = s.OutboundMessage().Query().Where(outboundmessage.Destination(id.Email)).Exist(ctx)
 		if err == nil && !known {
-			known, err = s.CapturedMessage().Query().Where(capturedmessage.Recipient(id.email)).Exist(ctx)
+			known, err = s.CapturedMessage().Query().Where(capturedmessage.Recipient(id.Email)).Exist(ctx)
 		}
-	case id.visitorID != "":
-		t = &Target{VisitorIDs: []string{id.visitorID}, SubjectID: id.visitorID}
-		known, err = s.Visitor().Query().Where(visitor.VisitorID(id.visitorID)).Exist(ctx)
+	case id.VisitorID != "":
+		t = &Target{VisitorIDs: []string{id.VisitorID}, SubjectID: id.VisitorID}
+		known, err = s.Visitor().Query().Where(visitor.VisitorID(id.VisitorID)).Exist(ctx)
 		if err == nil && !known {
-			known, err = s.Event().Query().Where(event.VisitorID(id.visitorID)).Exist(ctx)
+			known, err = s.Event().Query().Where(event.VisitorID(id.VisitorID)).Exist(ctx)
 		}
 	}
 	if err != nil {

@@ -26,21 +26,20 @@ func (m *Module) SentLast24h(ctx context.Context, w *ent.Workspace) (int, error)
 // with nil, as the Staff member, through the same core mechanism as suspension, audited with the
 // old and the new value. It reports whether the value changed. providerlimit.ErrNoSendCaps on an
 // Instance without Send caps; ErrWorkspaceNotFound for an unknown Workspace.
-func (m *Module) SetSendCap(ctx context.Context, publicID string, by *ent.StaffMember, perDay *int) (*ent.Workspace, bool, error) {
+func (m *Module) SetSendCap(ctx context.Context, publicID string, by *ent.StaffMember, perDay *int) (*WorkspaceChange, error) {
 	if err := m.licensed(); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if err := m.sendCaps.Check(); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	w, err := m.workspace(ctx, publicID)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	changed, err := suspension.SetSendCap(ctx, m.bus, w.ID, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), perDay)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	ws, err := m.ent.Workspace.Get(ctx, w.ID)
-	return ws, changed, err
+	return m.changeOf(ctx, w.ID, changed)
 }

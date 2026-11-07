@@ -33,7 +33,7 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555101, 555101)
 	runID := int64(fixtures.AutomationRunJobsTelegramHelloBobID)
 	queueStep(t, env, runID)
-	mod := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
+	mod := stepperAt(env, env.OutboundModule(), passingClock())
 	rotated := env.Telegram.Rotate(bot.ID) // the owner revoked the token in @BotFather
 
 	require.True(t, env.RunNextStep(t, mod))
@@ -149,7 +149,7 @@ func heldTelegram(t *testing.T, env *testhelper.TestEnv) (testhelper.TelegramBot
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555101, 555101)
 	runID := int64(fixtures.AutomationRunJobsTelegramHelloBobID)
 	queueStep(t, env, runID)
-	mod := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
+	mod := stepperAt(env, env.OutboundModule(), passingClock())
 	env.Telegram.Fail(telegramtest.SendMessage, telegramtest.Unauthorized)
 	require.True(t, env.RunNextStep(t, mod))
 	hold := holdOf(t, env, bot)
@@ -312,7 +312,7 @@ func TestATelegramDeadChatLosesItsBinding(t *testing.T) {
 			env.BindTelegram(t, bot, fixtures.ContactBobID, 555132, 555132)
 			runID := int64(fixtures.AutomationRunJobsTelegramHelloAgainBobID)
 			queueStep(t, env, runID)
-			mod := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
+			mod := stepperAt(env, env.OutboundModule(), passingClock())
 			env.Telegram.FailChat(telegramtest.SendMessage, 555131, gone)
 
 			require.True(t, env.RunNextStep(t, mod))

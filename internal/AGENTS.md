@@ -116,15 +116,18 @@ module instead (`instancestates.New(env.DB, …)`); the server's own are `env.Re
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Second factor's is `env.SecondFactor`
 (`internal/usecase/secondfactorcheck`), the Workspace creation's `env.WorkspaceCreation`
-(`internal/usecase/workspacecreation`; a test of its id retry builds it with `New` and
-`WithWorkspaceIDs`), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
+(`internal/usecase/workspacecreation`; a test of its id retry builds it with `New` and an id
+generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
 Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle
-(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables())`
+(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables(), clock)`
 (the removals of the Enterprise Edition's tables the wiring hands in), and the exchange of an OAuth
 grant (`internal/usecase/connectionissuance`) is driven through the server's `/oauth` routes, which
 its driver `internal/api/oauth` serves and tests.
-The Sign-up (`signup.UseCase.SignUp`) is built with `New` and `WithSignUp`; its test of a
-race on a new address gives it a `Lookup` whose first lookup misses.
+The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test
+of a race on a new address gives it a `Lookup` whose first lookup misses.
+A use case reads the time from the clock `New` takes (ADR 0104), so a test that needs a moment
+builds it with a clock it controls; the container's Step execution use case is `env.StepExecution`,
+for a test that hands it an Event or a Rule's enrollment.
 
 ## Fixture catalog
 

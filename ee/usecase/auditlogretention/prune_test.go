@@ -40,7 +40,7 @@ func TestPruneRemovesEntriesOlderThanTheWorkspaceRetention(t *testing.T) {
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetRetentionDays(7).ExecX(t.Context())
 	lic := licenseFor(t, licensekey.FeatureRetention)
 
-	n, err := auditlogretention.Prune(t.Context(), env.DB, lic, febFirst)
+	n, err := auditlogretention.New(env.DB, lic, func() time.Time { return febFirst }).Prune(t.Context())
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
@@ -52,7 +52,7 @@ func TestPruneKeepsEntriesInsideTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetRetentionDays(60).ExecX(t.Context())
 
-	n, err := auditlogretention.Prune(t.Context(), env.DB, licenseFor(t, licensekey.FeatureRetention), febFirst)
+	n, err := auditlogretention.New(env.DB, licenseFor(t, licensekey.FeatureRetention), func() time.Time { return febFirst }).Prune(t.Context())
 
 	require.NoError(t, err)
 	assert.Zero(t, n)
@@ -64,7 +64,7 @@ func TestPrunesNothingWithoutTheRetentionLicense(t *testing.T) {
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetRetentionDays(7).ExecX(t.Context())
 
 	for _, lic := range []*licensekey.License{nil, licenseFor(t), licenseFor(t, licensekey.FeatureAudit)} {
-		n, err := auditlogretention.Prune(t.Context(), env.DB, lic, febFirst)
+		n, err := auditlogretention.New(env.DB, lic, func() time.Time { return febFirst }).Prune(t.Context())
 		require.NoError(t, err)
 		assert.Zero(t, n)
 	}
@@ -77,7 +77,7 @@ func TestPruneSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 	before := countEntries(t, env, fixtures.BluthID)
 	require.Positive(t, before, "BluthAuditEntry is older than the window")
 
-	n, err := auditlogretention.Prune(t.Context(), env.DB, licenseFor(t, licensekey.FeatureRetention), febFirst)
+	n, err := auditlogretention.New(env.DB, licenseFor(t, licensekey.FeatureRetention), func() time.Time { return febFirst }).Prune(t.Context())
 
 	require.NoError(t, err)
 	assert.Zero(t, n)

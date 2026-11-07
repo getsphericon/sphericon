@@ -30,12 +30,9 @@ import (
 // Integration's Channel in one transaction before the 2xx; our own failure is 5xx so the
 // provider retries; a valid request the Preset does not handle is 2xx with nothing recorded.
 func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Module, now func() time.Time) http.Handler {
-	if now == nil {
-		now = time.Now
-	}
 	h := &hook{
 		ent:    client,
-		ingest: callbackinterpretation.New(bus, integ),
+		ingest: callbackinterpretation.New(bus, integ, now),
 		integ:  integ,
 		now:    now,
 	}
@@ -162,7 +159,7 @@ func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Inte
 	}
 
 	s := events.Ingest(h.ent.Scoped(row.WorkspaceID))
-	if err := h.ingest.Interpret(ctx, s, row, p.Name(), res, h.now()); err != nil {
+	if err := h.ingest.Interpret(ctx, s, callbackinterpretation.InterpretInput{Integration: row, Preset: p.Name(), Result: res}); err != nil {
 		log.Error("hooks: interpreting the facts failed", "integration_id", row.ID, "err", err)
 		writeProblem(w, http.StatusInternalServerError, "processing failed")
 		return

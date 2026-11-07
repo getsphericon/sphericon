@@ -26,14 +26,14 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 	if err != nil {
 		return nil, err
 	}
-	errs := h.eventrecording.RecordEach(ctx, auth.TokenScoped(ctx), batch)
+	outcomes := h.eventrecording.RecordEach(ctx, auth.TokenScoped(ctx), batch).Items
 
-	results := make([]externalapi.EventBatchItemResult, len(errs))
-	for i, e := range errs {
+	results := make([]externalapi.EventBatchItemResult, len(outcomes))
+	for i, o := range outcomes {
 		results[i] = externalapi.EventBatchItemResult{Index: int32(i), Status: externalapi.EventBatchStatusAccepted}
-		if e != nil {
+		if o.Err != nil {
 			results[i].Status = externalapi.EventBatchStatusFailed
-			results[i].Error = externalapi.NewOptString(itemError(e))
+			results[i].Error = externalapi.NewOptString(itemError(o.Err))
 		}
 	}
 	return &externalapi.RecordEventsBatchResult{Results: results}, nil

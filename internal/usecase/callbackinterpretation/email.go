@@ -12,12 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
 // email reads Delivery notices; email has no Inbound messages or Reachability changes.
-type email struct{ Ignore }
+type email struct{ ignore }
 
 // DeliveryNotice publishes the notice as an email delivery Event, linked to the Contact with
 // the address and to the Outbound message the provider's message id names, and stamps that
@@ -114,25 +112,4 @@ func actionOf(k preset.Kind) string {
 	default:
 		return events.NameEmailBounced
 	}
-}
-
-// RecordOutcome counts a provider's bounce or complaint on the send-outcome counter. The bus runs
-// it for every Event newly stored, once the Event's transaction committed (events.Bus.OnStored),
-// so neither a repeated notice nor a rolled-back one counts.
-func RecordOutcome(ctx context.Context, ev events.DomainEvent) {
-	f, ok := ev.(*events.EmailDelivery)
-	if !ok || f.Provider == "" {
-		return
-	}
-	var status messaging.SendStatus
-	switch f.Action {
-	case events.NameEmailBounced:
-		status = messaging.SendBounce
-	case events.NameEmailComplained:
-		status = messaging.SendComplaint
-	default:
-		return
-	}
-	// Provider is the Preset's name (ADR 0037), or "ses" for the SES adapter.
-	messaging.RecordSendOutcome(ctx, providers.Provider(f.Provider), status)
 }

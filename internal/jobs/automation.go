@@ -8,7 +8,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
@@ -22,7 +21,7 @@ type EvaluateTriggerArgs struct {
 	// SourceAutomationID is the Automation whose email the Event came from, 0 for any other Event.
 	SourceAutomationID int64 `json:"source_automation_id,omitempty"`
 	// OccurredAt is when the Event happened: it ends only the Enrollments that began by then, and
-	// an Enrollment it makes begins then. Zero in a job of a release before #751 (stepexecution.OnEvent).
+	// an Enrollment it makes begins then. Zero in a job of a release before #751 (stepexecution.UseCase.OnEvent).
 	OccurredAt time.Time `json:"occurred_at"`
 	// SourceID is the id the Event's row is stored under (events.Envelope.SourceID): an Enrollment
 	// the job makes copies that row's properties (#752). The properties themselves stay on the row,
@@ -36,14 +35,14 @@ func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
 type EvaluateTriggerWorker struct {
 	river.WorkerDefaults[EvaluateTriggerArgs]
 
-	ent *ent.Client
-	bus *events.Bus
+	ent   *ent.Client
+	steps *stepexecution.UseCase
 }
 
 // NewEvaluateTriggerWorker builds the worker that hands an Event of a Contact to the Automations
-// (stepexecution.OnEvent): the Enrollments it ends and the ones it makes.
-func NewEvaluateTriggerWorker(client *ent.Client, bus *events.Bus) *EvaluateTriggerWorker {
-	return &EvaluateTriggerWorker{ent: client, bus: bus}
+// (stepexecution.UseCase.OnEvent): the Enrollments it ends and the ones it makes.
+func NewEvaluateTriggerWorker(client *ent.Client, steps *stepexecution.UseCase) *EvaluateTriggerWorker {
+	return &EvaluateTriggerWorker{ent: client, steps: steps}
 }
 
 func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[EvaluateTriggerArgs]) error {
@@ -61,7 +60,7 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 	}
 	args := job.Args
 	ev := automations.Event{Action: args.Action, SourceID: args.SourceID, OccurredAt: args.OccurredAt}
-	return stepexecution.OnEvent(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, ev, args.SourceAutomationID)
+	return w.steps.OnEvent(ctx, w.ent.Scoped(c.WorkspaceID), stepexecution.OnEventInput{ContactID: c.ID, Event: ev, SourceAutomationID: args.SourceAutomationID})
 }
 
 // --- run a step: the adapter of the Step execution use case (internal/usecase/stepexecution) ---

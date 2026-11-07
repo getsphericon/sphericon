@@ -66,7 +66,7 @@ func tokenRequester(ctx context.Context) contacterasure.Requester {
 func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.ContactsDeleteParams) error {
 	id := int64(params.ID)
 
-	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), contacterasure.ByContactID(id),
+	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), contacterasure.Identifier{ContactID: id},
 		tokenRequester(ctx))
 	if err != nil {
 		return err
@@ -78,16 +78,13 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 // same scope and rules as deleting by id. Exactly one identifier is required: the erasure
 // use case refuses anything else.
 func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) error {
-	id, err := contacterasure.ByEmailOrVisitorID(convert.StringPtr(params.Email), convert.StringPtr(params.VisitorId))
-	if err != nil {
-		return err
-	}
+	id := contacterasure.Identifier{Email: convert.StringPtr(params.Email), VisitorID: convert.StringPtr(params.VisitorId)}
 	return h.erasure.Erase(ctx, auth.TokenScoped(ctx), id, tokenRequester(ctx))
 }
 
 // ContactsBatchUpsert upserts each Contact independently and reports a per-item result.
 func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (*externalapi.UpsertContactsResult, error) {
-	outcomes := h.intake.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactIntakes(req.Contacts))
+	outcomes := h.intake.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactIntakes(req.Contacts)).Items
 
 	results := make([]externalapi.ContactBatchItemResult, len(outcomes))
 	for i, o := range outcomes {
@@ -96,13 +93,13 @@ func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.Ups
 		case o.Err != nil:
 			results[i].Status = externalapi.ContactBatchStatusFailed
 			results[i].Error = externalapi.NewOptString(itemError(o.Err))
-		case o.Result.Created:
+		case o.Value.Created:
 			results[i].Status = externalapi.ContactBatchStatusCreated
 		default:
 			results[i].Status = externalapi.ContactBatchStatusUpdated
 		}
 		if o.Err == nil {
-			results[i].ContactId = externalapi.NewOptEntityId(externalapi.EntityId(o.Result.Contact.ID))
+			results[i].ContactId = externalapi.NewOptEntityId(externalapi.EntityId(o.Value.Contact.ID))
 		}
 	}
 	return &externalapi.UpsertContactsResult{Results: results}, nil

@@ -56,6 +56,11 @@ import (
 // internal listener.
 func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, detector *privaterelayranges.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
+	// The Instance clock of the use cases built here; a Deps without one (a test) reads the wall clock.
+	now := site.Clock
+	if now == nil {
+		now = time.Now
+	}
 	mux := http.NewServeMux()
 
 	// Login and logout are /site operations (ADR 0020), and the login operation is
@@ -110,7 +115,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// OAuth 2.1 for MCP connectors (ADR 0016): discovery, dynamic client
 	// registration, authorize (hands off to the SPA consent screen) and token.
-	oauth.New(connectionissuance.New(client, site.OAuth), site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
+	oauth.New(connectionissuance.New(client, site.OAuth, now), site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(
@@ -138,7 +143,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// Inbound provider callbacks (ADR 0037): POST /hooks/{key}, the key of one
 	// Integration, read with that Integration's Preset.
-	mux.Handle("/hooks/", hooksHandler(client, bus, site.Integrations, site.Clock))
+	mux.Handle("/hooks/", hooksHandler(client, bus, site.Integrations, now))
 
 	// Catch-all: the embedded SPA (release builds with -tags embed_spa). Most
 	// specific pattern wins, so this never shadows the API prefixes above.

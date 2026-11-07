@@ -14,13 +14,13 @@ func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffeeap
 	if err != nil {
 		return nil, err
 	}
-	rows, next, err := h.module.AuditEntries(ctx, string(params.WorkspaceId), cursor, int(params.Limit.Value))
+	page, err := h.module.AuditEntries(ctx, string(params.WorkspaceId), cursor, int(params.Limit.Value))
 	if err != nil {
 		return nil, err
 	}
-	out := &staffeeapi.StaffAuditEntryList{Items: staffMapper.AuditEntriesToResources(auditlog.StaffViewsOf(rows))}
-	if next > 0 {
-		out.NextCursor = staffeeapi.NewOptNilString(auditlog.NextCursor(next))
+	out := &staffeeapi.StaffAuditEntryList{Items: staffMapper.AuditEntriesToResources(auditlog.StaffViewsOf(page.Entries))}
+	if page.Next > 0 {
+		out.NextCursor = staffeeapi.NewOptNilString(auditlog.NextCursor(page.Next))
 	}
 	return out, nil
 }

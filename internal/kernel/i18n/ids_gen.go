@@ -213,7 +213,9 @@ var (
 	ErrorsNotFound                              = ID{key: "errors.not_found"}
 	ErrorsNotMeLinkInvalid                      = ID{key: "errors.not_me_link_invalid"}
 	ErrorsOauthClientUnknown                    = ID{key: "errors.oauth_client_unknown"}
+	ErrorsOauthGrantInvalid                     = ID{key: "errors.oauth_grant_invalid"}
 	ErrorsOauthRequestInvalid                   = ID{key: "errors.oauth_request_invalid"}
+	ErrorsOauthScopeExceedsGrant                = ID{key: "errors.oauth_scope_exceeds_grant"}
 	ErrorsOptionalConsentNotFound               = ID{key: "errors.optional_consent_not_found"}
 	ErrorsOptionalConsentNotOptional            = ID{key: "errors.optional_consent_not_optional"}
 	ErrorsOptionalConsentStale                  = ID{key: "errors.optional_consent_stale"}
@@ -330,6 +332,7 @@ var (
 	ErrorsVerifyLinkInvalid                     = ID{key: "errors.verify_link_invalid"}
 	ErrorsVerifyLinkStale                       = ID{key: "errors.verify_link_stale"}
 	ErrorsVerifyPasswordNeeded                  = ID{key: "errors.verify_password_needed"}
+	ErrorsVisitorIdRequired                     = ID{key: "errors.visitor_id_required"}
 	ErrorsWebhookAuditNeedsLicense              = ID{key: "errors.webhook_audit_needs_license"}
 	ErrorsWebhookEventTypeInvalid               = ID{key: "errors.webhook_event_type_invalid"}
 	ErrorsWebhookNotFound                       = ID{key: "errors.webhook_not_found"}

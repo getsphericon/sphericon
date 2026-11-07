@@ -219,7 +219,7 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 	if a == nil {
 		return []siteapi.SiteDeletedWorkspaceResource{}, nil
 	}
-	items, err := h.deletion.Deleted(ctx, a.UserID, h.now())
+	items, err := h.deletion.Deleted(ctx, a.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 // SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
 func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, _ siteapi.SiteWorkspacesDeleteParams) (*siteapi.SiteDeletedWorkspaceResource, error) {
 	s := workspaceScope(ctx)
-	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name, h.now())
+	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,9 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	if a == nil {
 		return nil, workspaces.ErrNotFound
 	}
-	if _, err := h.deletion.Restore(ctx, a.UserID, string(params.ID), h.actor(ctx), h.now()); err != nil {
+	in := inputs.WorkspaceRestore(params)
+	in.UserID, in.Actor = a.UserID, h.actor(ctx)
+	if _, err := h.deletion.Restore(ctx, in); err != nil {
 		return nil, err
 	}
 	// The Workspace is live again, so the caller's Owner Membership resolves like any other.

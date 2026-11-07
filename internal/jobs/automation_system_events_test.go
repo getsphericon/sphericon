@@ -57,7 +57,7 @@ func TestAnEnrollmentRecordsReachingItsGoalAndLeaving(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	on := func(contactID int64, action string) {
 		t.Helper()
-		require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, contactID, automations.Event{Action: action, OccurredAt: time.Now()}, 0))
+		require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: contactID, Event: automations.Event{Action: action, OccurredAt: time.Now()}}))
 	}
 
 	on(fixtures.ContactAliceID, "payment_failed")

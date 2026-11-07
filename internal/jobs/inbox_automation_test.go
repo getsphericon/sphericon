@@ -12,7 +12,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // An Automation step sent through the Test inbox needs no verified Sending domain: the inbox's
@@ -38,7 +37,7 @@ func TestAnAutomationStepThroughTheTestInboxIsSentAndCapturedWithoutAVerifiedDom
 	runID := int64(fixtures.AutomationRunJobsSingleEmailLiamID)
 	queueStep(t, env, runID)
 
-	env.RunQueuedSteps(t, stepexecution.New(env.Bus, env.OutboundModule(), noFence))
+	env.RunQueuedSteps(t, stepperWith(env, env.OutboundModule()))
 
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
 	kept := env.DB.CapturedMessage.Query().

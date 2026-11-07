@@ -78,7 +78,7 @@ coding standards in `CODING_STANDARDS.md`.
   records are written by `users` in the transaction that creates the User (or replaces an Unverified
   User's password; a Verified User gets none). The wiring gives it the budget
   (`throttle.Attempts.For(KindSignUp)`), the mails, the token mint and the verification gate
-  (`signup.WithSignUp`); the `/site` handler calls it and turns its result into the answer
+  (`signup.SignUpConfig`, a parameter of `signup.New`); the `/site` handler calls it and turns its result into the answer
   and the cookie. The
   profile rules of a User (a blank name, the password rule, the proof of the current password and
   whether the session is issued again) are `users.Module.ChangeProfile`, which takes the login module's
@@ -114,7 +114,7 @@ coding standards in `CODING_STANDARDS.md`.
   which stays at the root). Every component may import it, and easement fails its import of
   anything of ours but the kernel and the generated ent client: the bus knows no consumer (the
   wiring registers them; the suppression consumer is a job in `internal/jobs`, and the send-outcome
-  counter of a bounce or a complaint is `callbackinterpretation.RecordOutcome`, registered with `Bus.OnStored`), and
+  counter of a bounce or a complaint is `app.RecordSendOutcome`, registered with `Bus.OnStored`), and
   the database package installs no ent hook (`internal/app/entclient` builds every client). No core
   tier (kernel, infrastructure, domain) imports an API surface's generated package (component
   `gen-surfaces`): what the core shares with a contract is generated into the kernel, as the scope
@@ -237,7 +237,8 @@ coding standards in `CODING_STANDARDS.md`.
 - **Use cases (ADR 0102, component `usecase`).** An operation that spans several domain modules is a
   use case, `internal/usecase/<subject><action>` in glossary words (`tagdeletion`), never a call from
   one domain module into the modules above it: a base module knows no module that uses it. The use
-  case is a `UseCase` type built by `New` from what it needs (the bus), registered in
+  case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
+  states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
   `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
   included: the Sending domain re-check jobs call `sendingdomainverification`, the step jobs of an
   Enrollment `stepexecution`). It takes the

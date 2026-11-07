@@ -77,16 +77,6 @@ type SignUpConfig struct {
 	Lookup func(ctx context.Context, email string) (u *ent.User, ok bool, err error)
 }
 
-// WithSignUp gives the use case what a Sign-up needs (ADR 0030, ADR 0031).
-func WithSignUp(cfg SignUpConfig) Option {
-	return func(u *UseCase) {
-		if cfg.Lookup == nil {
-			cfg.Lookup = u.lookupUser
-		}
-		u.signUp = cfg
-	}
-}
-
 // signUpForm is what a Sign-up checks beyond the contract, the name and email already trimmed.
 type signUpForm struct {
 	Name     string `json:"name" validate:"required,display_name"`

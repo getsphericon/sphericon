@@ -11,13 +11,10 @@ import (
 // SiteContactsErase is Erasure by email address (ADR 0021, a Privacy request): the one
 // Contact erasure use case, with the signed-in User as requester. Owner or admin only, like
 // deleting a Contact. Not found means neither a Contact nor delivery records hold the
-// address.
+// address; an invalid address is refused (contacterasure.ErrInvalidEmail) before anything is
+// erased.
 func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteContactsEraseParams) error {
-	// An invalid address is refused before anything is erased.
-	if _, err := contacterasure.NormalizeEmail(params.Email); err != nil {
-		return err
-	}
-	err := h.erasure.Erase(ctx, workspaceScope(ctx), contacterasure.ByEmail(params.Email),
+	err := h.erasure.Erase(ctx, workspaceScope(ctx), contacterasure.Identifier{Email: &params.Email},
 		contacterasure.Requester{Kind: contacterasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if err != nil {
 		return err

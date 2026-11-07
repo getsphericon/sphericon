@@ -26,6 +26,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -59,7 +60,7 @@ var (
 	// ErrBindingMoved: the challenge binding a second step was started under has
 	// moved (another second step, an epoch bump or a password change got there
 	// first), so the challenge is spent.
-	ErrBindingMoved = errors.New("secondfactor: challenge binding moved")
+	ErrBindingMoved = validation.Unauthorized("secondfactor: challenge binding moved", i18n.ErrorsLoginChallengeInvalid)
 )
 
 // Method is how a code was verified.
@@ -78,13 +79,16 @@ type UseCase struct {
 	now    func() time.Time
 }
 
-// New builds the use case. now is the clock TOTP codes are checked against (nil
-// means time.Now); tests inject one.
+// New builds the use case. now is the Instance clock TOTP codes are checked against.
 func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, now func() time.Time) *UseCase {
-	if now == nil {
-		now = time.Now
-	}
 	return &UseCase{ent: client, bus: bus, cipher: cipher, now: now}
+}
+
+// CodesIssued is a change that issued a fresh set of Recovery codes: the stored User, whose
+// session the caller reissues (the epoch moved), and the codes, shown once.
+type CodesIssued struct {
+	User          *ent.User
+	RecoveryCodes []string
 }
 
 // Status is what the User may know about their Second factor.
@@ -145,9 +149,9 @@ func (m *UseCase) StartEnrollment(ctx context.Context, userID int64) (*Enrollmen
 // ConfirmEnrollment activates the pending secret when code is a current code for
 // it. It issues the Recovery codes (returned once), bumps the session epoch and
 // records `user.second_factor_enroll`, all in one transaction, and returns the
-// stored User for reissuing the acting session. ErrNoPending without a pending
+// stored User for reissuing the acting session with the codes. ErrNoPending without a pending
 // enrollment, ErrInvalidCode on a wrong code.
-func (m *UseCase) ConfirmEnrollment(ctx context.Context, userID int64, code string) (*ent.User, []string, error) {
+func (m *UseCase) ConfirmEnrollment(ctx context.Context, userID int64, code string) (*CodesIssued, error) {
 	var (
 		saved *ent.User
 		codes []string
@@ -177,15 +181,15 @@ func (m *UseCase) ConfirmEnrollment(ctx context.Context, userID int64, code stri
 		return users.RecordUserAction(ctx, tx, pub, u, events.ActionUserSecondFactorEnroll, nil)
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return saved, codes, nil
+	return &CodesIssued{User: saved, RecoveryCodes: codes}, nil
 }
 
 // RegenerateRecoveryCodes replaces the User's Recovery codes with a fresh set
 // (returned once; the previous set stops working), bumps the session epoch and
 // records `user.recovery_codes_regenerate`. ErrNotActive without a Second factor.
-func (m *UseCase) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*ent.User, []string, error) {
+func (m *UseCase) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*CodesIssued, error) {
 	var (
 		saved *ent.User
 		codes []string
@@ -208,9 +212,9 @@ func (m *UseCase) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*e
 		return users.RecordUserAction(ctx, tx, pub, u, events.ActionUserRecoveryCodesRegenerate, nil)
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return saved, codes, nil
+	return &CodesIssued{User: saved, RecoveryCodes: codes}, nil
 }
 
 // Disable removes the User's Second factor when code is a current TOTP code or an
@@ -243,16 +247,18 @@ func (m *UseCase) Disable(ctx context.Context, userID int64, code string) (*ent.
 // TOTP code (each time step works once) or an unused Recovery code (spent here,
 // and recorded as `user.recovery_code_use`). It returns which one matched.
 //
-// binding is the ChallengeBinding the step's challenge was minted under. It is
+// pending is the sign-in waiting for its second step: its User and the ChallengeBinding the
+// step's challenge was minted under. The binding is
 // re-checked inside the transaction with the User row locked, so of two second
 // steps racing on one challenge (say one with a TOTP code, one with a Recovery
 // code) the later sees the binding the earlier moved and fails: a challenge starts
 // at most one session. ErrNotActive without a Second factor, ErrBindingMoved when
 // the binding moved, ErrInvalidCode otherwise.
-func (m *UseCase) Verify(ctx context.Context, userID int64, binding, code string) (Method, error) {
+func (m *UseCase) Verify(ctx context.Context, pending login.Pending[*ent.User], code string) (Method, error) {
+	binding := pending.Binding
 	var method Method
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
+		u, err := tx.User.Query().Where(user.ID(pending.Principal.ID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err
 		}
@@ -272,18 +278,6 @@ func (m *UseCase) Verify(ctx context.Context, userID int64, binding, code string
 	return method, err
 }
 
-// VerifyIn checks a code for the User u inside the caller's transaction tx (with pub its
-// publisher), for an action that needs the Second factor's proof and its own atomicity: the
-// code is spent (a TOTP step used, a Recovery code consumed) only if the caller's
-// transaction commits. The caller holds u's row locked. ErrNotActive without a Second
-// factor, ErrInvalidCode on a wrong code.
-func (m *UseCase) VerifyIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, code string) (Method, error) {
-	if !users.HasSecondFactor(u) {
-		return "", ErrNotActive
-	}
-	return m.verify(ctx, tx, pub, u, code)
-}
-
 // DeletionCode is the users.DeleteConfirm of User deletion (ADR 0050): with a Second factor
 // it spends code in the deletion's transaction (ErrDeletionCodeInvalid on a wrong one), so the
 // code is spent only if the deletion commits; without one it confirms nothing.
@@ -292,7 +286,7 @@ func (m *UseCase) DeletionCode(code string) users.DeleteConfirm {
 		if !users.HasSecondFactor(locked) {
 			return nil
 		}
-		_, err := m.VerifyIn(ctx, tx, pub, locked, code)
+		_, err := m.verify(ctx, tx, pub, locked, code)
 		if errors.Is(err, ErrInvalidCode) {
 			return ErrDeletionCodeInvalid
 		}
@@ -324,12 +318,12 @@ func challengeBinding(ctx context.Context, client *ent.Client, u *ent.User) (str
 }
 
 // Reset clears the User's Second factor, Recovery codes and Passkeys and bumps the session
-// epoch, ending every session of theirs: an Owner or Admin resetting a member of
-// workspaceID. It records `user.second_factor_reset` by actor in that Workspace
+// epoch, ending every session of theirs: an Owner or Admin resetting a member of the
+// Workspace behind s. It records `user.second_factor_reset` by actor in that Workspace
 // only. ErrNothingToReset without a Second factor or a Passkey (nothing changes).
-func (m *UseCase) Reset(ctx context.Context, userID int64, actor events.Actor, workspaceID int64) error {
+func (m *UseCase) Reset(ctx context.Context, s *ent.Scoped, userID int64, actor events.Actor) error {
 	return m.reset(ctx, userID, func(pub events.Publisher, _ *ent.Client, u *ent.User) error {
-		return users.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, workspaceID)
+		return users.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, s.WorkspaceID())
 	})
 }
 

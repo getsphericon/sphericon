@@ -29,7 +29,7 @@ var testHost = telemetryreport.Host{
 
 func buildReport(t *testing.T, env *testhelper.TestEnv, now time.Time) telemetryapi.TelemetryReport {
 	t.Helper()
-	report, err := telemetryreport.Build(t.Context(), instancestates.New(env.DB, instancestates.Environment{}, nil), testHost, now)
+	report, err := telemetryreport.New(instancestates.New(env.DB, instancestates.Environment{}, nil), testHost, nil, func() time.Time { return now }).Report(t.Context())
 	require.NoError(t, err)
 	return report
 }
@@ -98,7 +98,7 @@ func TestReportEditionAndDeployShapeAreWhatTheCallerSays(t *testing.T) {
 	host.Edition = telemetryapi.TelemetryEditionEe
 	host.DeployShape = telemetryapi.TelemetryDeployShapeKubernetes
 
-	report, err := telemetryreport.Build(t.Context(), instancestates.New(env.DB, instancestates.Environment{}, nil), host, time.Now())
+	report, err := telemetryreport.New(instancestates.New(env.DB, instancestates.Environment{}, nil), host, nil, time.Now).Report(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, telemetryapi.TelemetryEditionEe, report.Edition)

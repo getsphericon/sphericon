@@ -538,13 +538,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail))).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now)).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -584,7 +584,7 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	c := e.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
 	trigger := triggerOf(t, e.TestEnv, fixtures.AutomationJobsGreetingID)
 
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB, e.Bus).Work(ctx, job(jobs.EvaluateTriggerArgs{
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB, e.StepExecution).Work(ctx, job(jobs.EvaluateTriggerArgs{
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: trigger,
 	})))
 	require.Len(t, e.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), 1, "the Enrollment is queued with its first step")
@@ -636,7 +636,7 @@ func TestEvaluateTriggerRetryAfterTheFirstStepFailedToQueueLeavesAQueuedEnrollme
 	}
 	realQueue, err := jobs.NewInserter(e.SQLDB)
 	require.NoError(t, err)
-	w := jobs.NewEvaluateTriggerWorker(e.DB, e.Bus)
+	w := jobs.NewEvaluateTriggerWorker(e.DB, e.StepExecution)
 
 	e.Bus.UseJobs(failingQueue{err: errors.New("queue is down")})
 	require.Error(t, w.Work(ctx, job(args)), "the trigger fails when its first step cannot be queued")

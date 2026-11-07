@@ -1,6 +1,7 @@
 package abusedetection_test
 
 import (
+	"context"
 	"crypto/ed25519"
 	"slices"
 	"testing"
@@ -34,15 +35,31 @@ func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.Licens
 
 const support = "support@sphericon.test"
 
-func detector(t *testing.T, env *testhelper.TestEnv) *abusedetection.Detector {
+func detector(t *testing.T, env *testhelper.TestEnv) *pass {
 	t.Helper()
 	return newDetector(env, licenseFor(t, licensekey.FeatureStaff), abusedetection.Config{Limits: limits, SupportEmail: support})
 }
 
+// pass runs the detector at a moment a test picks: the use case reads the clock it was built
+// with, which Run moves first.
+type pass struct {
+	detector *abusedetection.UseCase
+	now      time.Time
+}
+
+// Run is one pass of the detector at at.
+func (p *pass) Run(ctx context.Context, at time.Time) (abusedetection.Summary, error) {
+	p.now = at
+	return p.detector.Run(ctx)
+}
+
 // newDetector is the detector over the env's bus and platform sender, as the Edition builds it.
-func newDetector(env *testhelper.TestEnv, lic *licensekey.License, cfg abusedetection.Config) *abusedetection.Detector {
+func newDetector(env *testhelper.TestEnv, lic *licensekey.License, cfg abusedetection.Config) *pass {
 	notify := memberships.OwnerNotifier(env.DB, env.SystemMail)
-	return abusedetection.New(env.DB, lic, notify, suspension.NewSuspender(env.Bus, env.DB, notify, cfg.SupportEmail), cfg)
+	p := &pass{}
+	p.detector = abusedetection.New(env.DB, lic, notify, suspension.NewSuspender(env.Bus, env.DB, notify, cfg.SupportEmail), cfg,
+		func() time.Time { return p.now })
+	return p
 }
 
 // The traffic the tests judge is in fixtures/events.yml, one scenario per day offset: a test runs
@@ -158,7 +175,7 @@ func TestWithNoDeliveryNoticesTheComplaintRateIsNotJudged(t *testing.T) {
 	d := detector(t, env)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := d.Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(noDeliveryDay))
+	breach, err := abusedetector.NewWatch(licenseFor(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(noDeliveryDay))
 	require.NoError(t, err)
 	summary, err := d.Run(t.Context(), at(noDeliveryDay))
 
@@ -332,10 +349,9 @@ func TestUnsuspendingRecordsTheClearance(t *testing.T) {
 
 func TestTheDashboardWarningIsTheDetectorsOwnComputation(t *testing.T) {
 	env := testhelper.Setup(t)
-	d := detector(t, env)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := d.Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(warnDay))
+	breach, err := abusedetector.NewWatch(licenseFor(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(warnDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, abusedetector.TierWarn, breach.Tier)

@@ -94,27 +94,16 @@ type Point struct {
 	Sent, Opened, Clicked int
 }
 
-// UseCase computes Overviews. Its clock is time.Now.
+// UseCase computes Overviews.
 type UseCase struct {
 	now       func() time.Time
 	retention time.Duration
 }
 
-func New() *UseCase { return &UseCase{now: time.Now} }
-
-// WithClock returns the use case reading now from the given clock.
-func (m *UseCase) WithClock(now func() time.Time) *UseCase {
-	c := *m
-	c.now = now
-	return &c
-}
-
-// WithRetention returns the use case that reports d as the Event retention (config.EventsRetention):
-// the age past which Events are deleted, 0 when they are kept forever.
-func (m *UseCase) WithRetention(d time.Duration) *UseCase {
-	c := *m
-	c.retention = d
-	return &c
+// New builds the use case over the Instance clock, with retention the Event retention it reports
+// (config.EventsRetention): the age past which Events are deleted, 0 when they are kept forever.
+func New(now func() time.Time, retention time.Duration) *UseCase {
+	return &UseCase{now: now, retention: retention}
 }
 
 // RetentionDays is the Event retention in whole days, which a report over history states next

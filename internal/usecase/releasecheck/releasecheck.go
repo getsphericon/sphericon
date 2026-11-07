@@ -40,20 +40,10 @@ type UseCase struct {
 	log    *slog.Logger
 }
 
-// Option configures the use case.
-type Option func(*UseCase)
-
-// WithLogger sets the logger of the Release check's lines; the default is slog's.
-func WithLogger(l *slog.Logger) Option { return func(u *UseCase) { u.log = l } }
-
 // New builds the Release check over the Instance state, asking source for the newest release.
-// Without a source the check does nothing.
-func New(states *instancestates.Module, source ReleaseSource, opts ...Option) *UseCase {
-	u := &UseCase{states: states, source: source, log: slog.Default()}
-	for _, o := range opts {
-		o(u)
-	}
-	return u
+// Without a source the check does nothing; log takes the Release check's lines.
+func New(states *instancestates.Module, source ReleaseSource, log *slog.Logger) *UseCase {
+	return &UseCase{states: states, source: source, log: log}
 }
 
 // ReleaseFor is the banner of a newer release for the User userID: a User who holds the

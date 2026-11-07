@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
+	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
@@ -93,6 +94,11 @@ import (
 // goverter:extend broadcastChannelPtrIn
 // goverter:extend smsConsentIn
 type Inputs interface {
+	// The Channel defaults to email, which the handler picks with ConsentChannel and assigns.
+	// goverter:map SendingSource Source
+	// goverter:ignore Channel
+	OptOut(source *externalapi.CreateUnsubscribeInput) unsubscriberecording.OptOutInput
+
 	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *externalapi.UpdateTemplateInput) emailtemplates.UpdateInput

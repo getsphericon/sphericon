@@ -57,7 +57,7 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 	onlyEnvelope(t, env, events.NameContactTagged)
 	triggers := triggersOn(t, env, events.NameContactTagged)
 	require.Len(t, triggers, 1)
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationOnContactTaggedID), automationrun.ContactID(fixtures.ContactLiamID)).
@@ -112,7 +112,7 @@ func (r *triggerRouter) deliver(t *testing.T) []string {
 	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, r.env, jobs.EvaluateTriggerArgs{}.Kind())
 	actions := make([]string, 0, len(triggers)-r.evaluated)
 	for _, args := range triggers[r.evaluated:] {
-		require.NoError(t, jobs.NewEvaluateTriggerWorker(r.env.DB, r.env.Bus).Work(t.Context(), job(args)))
+		require.NoError(t, jobs.NewEvaluateTriggerWorker(r.env.DB, r.env.StepExecution).Work(t.Context(), job(args)))
 		actions = append(actions, args.Action)
 	}
 	r.evaluated = len(triggers)

@@ -43,17 +43,31 @@ var ErrNotRestorable = validation.Conflict("workspacedeletion: the workspace can
 type UseCase struct {
 	client *ent.Client
 	bus    *events.Bus
+	now    func() time.Time
 	batch  int
 	steps  []eraseStep
 }
 
-// New returns the use case; edition are the removals of the Enterprise Edition's own tables.
-func New(client *ent.Client, bus *events.Bus, edition EditionTables) *UseCase {
-	return &UseCase{client: client, bus: bus, batch: eraseBatch, steps: eraseSteps(edition)}
+// New returns the use case; edition are the removals of the Enterprise Edition's own tables, and
+// now is the Instance clock the window is measured on.
+func New(client *ent.Client, bus *events.Bus, edition EditionTables, now func() time.Time) *UseCase {
+	return &UseCase{client: client, bus: bus, now: now, batch: eraseBatch, steps: eraseSteps(edition)}
 }
 
-// Due lists the Workspaces whose window has passed at now and that are not erased yet.
-func (m *UseCase) Due(ctx context.Context, now time.Time) ([]int64, error) {
+// RestoreInput is a restore of a deleted Workspace: the Workspace by its public id, the User who
+// restores it and the actor the Audit log records.
+type RestoreInput struct {
+	UserID   int64
+	PublicID string
+	Actor    events.Actor
+}
+
+// Due lists the Workspaces whose window has passed and that are not erased yet.
+func (m *UseCase) Due(ctx context.Context) ([]int64, error) {
+	return m.due(ctx, m.now())
+}
+
+func (m *UseCase) due(ctx context.Context, now time.Time) ([]int64, error) {
 	return m.client.Workspace.Query().
 		Where(workspace.DiscardedAtLTE(now.Add(-workspaces.DeletionWindow)), workspace.ErasedAtIsNil()).
 		Order(workspace.ByID()).
@@ -70,7 +84,8 @@ func deletedDiff(wasDeleted, isDeleted bool) map[string]any {
 // must equal the stored name (ErrNameMismatch otherwise). Deleting an already deleted
 // Workspace keeps its first discarded_at. The caller has checked the Owner role. Recorded as
 // `workspace.delete` in the same transaction.
-func (m *UseCase) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, typedName string, now time.Time) (*ent.Workspace, error) {
+func (m *UseCase) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, typedName string) (*ent.Workspace, error) {
+	now := m.now()
 	var deleted *ent.Workspace
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
@@ -98,10 +113,10 @@ func (m *UseCase) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor,
 // Deleted lists the Workspaces in their deletion window whose User's Role holds workspace:delete
 // (their Owners, ADR 0061), most recently deleted first, each with that Membership and its
 // Workspace loaded.
-func (m *UseCase) Deleted(ctx context.Context, userID int64, now time.Time) ([]*ent.Membership, error) {
+func (m *UseCase) Deleted(ctx context.Context, userID int64) ([]*ent.Membership, error) {
 	return m.client.Membership.Query().
 		Where(membership.UserID(userID), memberships.HoldersOf(memberships.PermWorkspaceDelete),
-			membership.HasWorkspaceWith(workspaces.InsideDeletionWindow(now), workspace.DiscardedAtNotNil())).
+			membership.HasWorkspaceWith(workspaces.InsideDeletionWindow(m.now()), workspace.DiscardedAtNotNil())).
 		WithWorkspace().
 		Order(membership.ByWorkspaceField(workspace.FieldDiscardedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
 		All(ctx)
@@ -120,13 +135,14 @@ func (m *UseCase) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int6
 	return lo.MapValues(perWorkspace, func(n int, _ int64) bool { return n == 1 }), nil
 }
 
-// Restore ends the deletion of the Workspace publicID for a User: it clears discarded_at, which
+// Restore ends the deletion of the Workspace in.PublicID for a User: it clears discarded_at, which
 // lifts only the pending-deletion Hold (a suspension or Staff hold stays). A Workspace whose
 // User's Role does not hold workspace:delete (ADR 0061), or one that is not deleted, is
 // workspaces.ErrNotFound: a deleted Workspace is not exposed to anyone else. A Workspace past its window or
 // already erased is ErrNotRestorable (a lifecycle.ErrInvalidTransition). Recorded as `workspace.restore` in the
 // same transaction. It returns the restored Workspace.
-func (m *UseCase) Restore(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Workspace, error) {
+func (m *UseCase) Restore(ctx context.Context, in RestoreInput) (*ent.Workspace, error) {
+	userID, publicID, actor, now := in.UserID, in.PublicID, in.Actor, m.now()
 	// An erased Workspace has no Memberships left (the erase removes them), so the lookup
 	// below finds nothing and the API answers 404: no one can be authorized to restore it.
 	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the table.

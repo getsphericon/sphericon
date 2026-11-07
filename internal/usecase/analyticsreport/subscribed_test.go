@@ -15,7 +15,7 @@ import (
 
 func subscribedAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window, now time.Time) *analyticsreport.SubscribedPeople {
 	t.Helper()
-	m := analyticsreport.New().WithClock(func() time.Time { return now })
+	m := analyticsreport.New(func() time.Time { return now }, 0)
 	report, err := m.SubscribedPeople(context.Background(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return report
@@ -88,9 +88,9 @@ func TestTheCurrentNumberIsTheContactsThatAreNotGloballyOptedOut(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.TyrellID)
 
-	overview, err := analyticsreport.New().Overview(ctx, s, analyticsreport.Window7Days)
+	overview, err := analyticsreport.New(time.Now, 0).Overview(ctx, s, analyticsreport.Window7Days)
 	require.NoError(t, err)
-	report, err := analyticsreport.New().SubscribedPeople(ctx, s, analyticsreport.Window7Days)
+	report, err := analyticsreport.New(time.Now, 0).SubscribedPeople(ctx, s, analyticsreport.Window7Days)
 	require.NoError(t, err)
 
 	assert.Equal(t, overview.Contacts.Active, report.Current)

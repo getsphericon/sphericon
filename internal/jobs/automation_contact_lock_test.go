@@ -77,7 +77,7 @@ func enrolledForTheExit(t *testing.T, e *realEnv) (int64, writer) {
 	ending := e.bus(t)
 	return runID, writer{name: "exit", run: func() error {
 		left := automations.Event{Action: "job_tag_exit_left", OccurredAt: time.Now()}
-		return stepexecution.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, left, 0)
+		return e.enrollments(ending).OnEvent(ctx, e.scoped, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: left})
 	}}
 }
 
@@ -146,7 +146,7 @@ func TestAnErasureAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 			runID, exit := enrolledForTheExit(t, e)
 			erasing := contacterasure.New(e.bus(t))
 			erase := writer{name: "erase", run: func() error {
-				return erasing.Erase(ctx, e.scoped, contacterasure.ByContactID(fixtures.ContactAliceID), contacterasure.Requester{Kind: contacterasure.RequesterAPIToken})
+				return erasing.Erase(ctx, e.scoped, contacterasure.Identifier{ContactID: fixtures.ContactAliceID}, contacterasure.Requester{Kind: contacterasure.RequesterAPIToken})
 			}}
 
 			errs := queuedOnTheContact(t, e, fixtures.ContactAliceID, tc.queue(erase, exit)...)

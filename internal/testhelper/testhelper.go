@@ -232,7 +232,8 @@ type TestEnv struct {
 	SignUp *signup.UseCase
 	// StepExecution is the use case the Instance runs an Enrollment's steps with, on the env's
 	// clock (ADR 0102). A test that drives an Automation over senders of its own builds one with
-	// stepexecution.New instead.
+	// stepexecution.New instead. A test hands it an Event (OnEvent) or a Rule's enrollment
+	// (EnrollOnRule) too.
 	StepExecution *stepexecution.UseCase
 
 	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,

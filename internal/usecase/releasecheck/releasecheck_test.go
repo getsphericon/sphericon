@@ -28,7 +28,7 @@ func logged(t *testing.T, running string, src releasecheck.ReleaseSource) (*rele
 	buf := &bytes.Buffer{}
 	log := slog.New(slog.NewTextHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	states := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: running}, nil)
-	mod := releasecheck.New(states, src, releasecheck.WithLogger(log))
+	mod := releasecheck.New(states, src, log)
 	return mod, buf
 }
 

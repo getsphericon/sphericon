@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/batch"
 )
 
 // UseCase takes Contacts in. Every call receives the Workspace-scoped client (ADR 0017) built by
@@ -40,16 +41,10 @@ type Input struct {
 	SMSConsent *confirmations.Evidence
 }
 
-// BatchOutcome is the result of one item of UpsertBatch: Result on success, Err (a
-// domain error, or a storage error) otherwise.
-type BatchOutcome struct {
-	Result contacts.Result
-	Err    error
-}
-
 // UpsertBatch upserts each item in its own transaction, in order, so a failing item
 // neither rolls back nor blocks the others; each new Contact publishes contact.created
-// with its own commit. The outcomes are parallel to items.
+// with its own commit. The outcomes are in the order of items: the Contact's Result, or the
+// domain or storage error of its row.
 //
 // A batch is an import (ADR 0022): its rows are written through an unaudited scope and
 // the whole batch is recorded as ONE contact.import entry (counts only), not one entry
@@ -58,16 +53,15 @@ type BatchOutcome struct {
 // the entry cannot share their transaction: if recording it fails the failure is
 // logged and the committed outcomes are still returned, never a 500 for an import
 // that happened.
-func (u *UseCase) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []Input) []BatchOutcome {
+func (u *UseCase) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []Input) batch.Result[contacts.Result] {
 	rows := events.Unaudited(s)
-	out := make([]BatchOutcome, len(items))
+	out := batch.Each(items, func(in Input) (contacts.Result, error) { return u.upsert(ctx, rows, src, in) })
 	var sum contacts.ImportSummary
-	for i := range items {
-		out[i].Result, out[i].Err = u.upsert(ctx, rows, src, items[i])
+	for _, o := range out.Items {
 		switch {
-		case out[i].Err != nil:
+		case o.Err != nil:
 			sum.Failed++
-		case out[i].Result.Created:
+		case o.Value.Created:
 			sum.Created++
 		default:
 			sum.Updated++
