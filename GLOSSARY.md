@@ -158,7 +158,9 @@ Removing a Contact's personal data at the Workspace's request (GDPR Art. 17). It
 a Contact _is_ — there is no softer delete that keeps personal data. The Contact, its Visitors,
 Custom field values, Tags and Confirmation are removed, as are its customer-tracked Events and the Captured messages sent to its Destinations; the
 reserved `email.*` Events and delivery records stay as anonymous rows, so deliverability and
-metering counts do not change. What survives is the minimum that keeps the refusal honored: the
+metering counts do not change. Its Orders stay as Orders of no known Contact (ADR 0064), so revenue
+does not change either; they keep the shop's `order_id`, which a later refund matches. What survives
+of the person is the minimum that keeps the refusal honored: the
 Unsubscribe rows and the active Suppression rows for its Destinations (lifted ones refuse
 nothing and go); on SMS they keep only the phone number's hash, which still refuses the number, and
 nothing else of the number stays (sphericon does not delete the texts in Twilio's own log). It
