@@ -18,10 +18,10 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 // A domain event reaches its consumers as River jobs inserted by the publish (ADR 0101). No River
@@ -151,7 +151,7 @@ func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
 	require.NoError(t, err)
 	bus.UseJobs(inserter)
 	bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
-	bus.OnStored(callbackinterpretation.RecordOutcome)
+	bus.OnStored(app.RecordSendOutcome)
 	return bus
 }
 

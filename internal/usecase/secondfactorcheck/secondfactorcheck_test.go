@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -39,7 +40,12 @@ func samCode(t *testing.T, c *clock) string {
 // verify is a second step under the User's current challenge binding.
 func verify(t *testing.T, env *testhelper.TestEnv, userID int64, code string) (secondfactorcheck.Method, error) {
 	t.Helper()
-	return env.SecondFactor.Verify(t.Context(), secondfactorcheck.VerifyInput{UserID: userID, Binding: binding(t, env, userID), Code: code})
+	return env.SecondFactor.Verify(t.Context(), pending(userID, binding(t, env, userID)), code)
+}
+
+// pending is the sign-in of the User waiting for its second step under binding.
+func pending(userID int64, binding string) login.Pending[*ent.User] {
+	return login.Pending[*ent.User]{Principal: &ent.User{ID: userID}, Binding: binding}
 }
 
 // binding is the User's current challenge binding ("" without a Second factor).
@@ -120,9 +126,9 @@ func TestVerifyRefusesABindingAnotherSecondStepMoved(t *testing.T) {
 	ctx := t.Context()
 	challenged := binding(t, env, fixtures.SecondFactorSamID)
 
-	_, err := env.SecondFactor.Verify(ctx, secondfactorcheck.VerifyInput{UserID: fixtures.SecondFactorSamID, Binding: challenged, Code: fixtures.SecondFactorSamRecoveryCode})
+	_, err := env.SecondFactor.Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), fixtures.SecondFactorSamRecoveryCode)
 	require.NoError(t, err)
-	_, err = env.SecondFactor.Verify(ctx, secondfactorcheck.VerifyInput{UserID: fixtures.SecondFactorSamID, Binding: challenged, Code: samCode(t, c)})
+	_, err = env.SecondFactor.Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), samCode(t, c))
 	require.ErrorIs(t, err, secondfactorcheck.ErrBindingMoved)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))

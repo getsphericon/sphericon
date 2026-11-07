@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // QueueHTTPSteps isolates the HTTP steps of Automations (ADR 0039): an outbound call to a
@@ -66,21 +67,57 @@ func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 	}
 }
 
+// UseCase executes the steps of Enrollments and makes the Enrollments an Event or a Rule starts.
+type UseCase struct {
+	bus    *events.Bus
+	out    *outboundmessages.Module
+	fence  automations.Fencer
+	cipher *secrets.Cipher
+	client webhook.Doer
+	now    func() time.Time
+}
+
+// New builds the use case. The bus runs a move and the job that follows it in one transaction;
+// out sends an email step and acts as the `system` actor for a tag step; fence orders a send
+// against an exit of the Enrollment; cipher opens an HTTP step's sealed secrets and client makes
+// its call; now is the Instance clock, read to honour an Enrollment's resume time and to time a
+// wait.
+func New(bus *events.Bus, out *outboundmessages.Module, fence automations.Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, out: out, fence: fence, cipher: cipher, client: client, now: now}
+}
+
+// EventInput is an Event of a Contact handed to the Automations: the Contact, the Event, and the
+// Automation whose own email the Event came from (0 for any other Event).
+type EventInput struct {
+	ContactID          int64
+	Event              automations.Event
+	SourceAutomationID int64
+}
+
+// RuleEnrollmentInput is a Rule's Action that enrolls a Contact: the Automation, the Contact and
+// the source id of the Event the Rule fired on.
+type RuleEnrollmentInput struct {
+	AutomationID int64
+	ContactID    int64
+	SourceID     string
+}
+
 // OnEvent is what an Event of the Contact does to the Automations (#751): it first ends the
 // Contact's active Enrollments whose version names the action as an exit or goal event
 // (automations.EndOnEvent, in a transaction of its own, which it needs for the Contact's lock),
 // then enrolls the Contact into every active Automation whose live version's Trigger is the action
-// (ADR 0065), one transaction per Automation (EnrollOnTrigger). An Event from an Automation's own
-// email (sourceAutomationID, 0 for any other Event) never enrolls the Contact into that Automation,
-// so an open-triggered Automation cannot feed itself (ADR 0053); it still ends an Enrollment, so a
-// click in the Automation's own email can be its goal. ev.OccurredAt is when the Event occurred; a
-// zero one (the job of a release before #751 carried none) is taken as now. Every Enrollment it
-// makes copies the stored Event's action and properties, read once (automations.OriginOf, #752).
-func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, ev automations.Event, sourceAutomationID int64) error {
+// (ADR 0065), one transaction per Automation (enrollOnTrigger). An Event from an Automation's own
+// email (in.SourceAutomationID) never enrolls the Contact into that Automation, so an
+// open-triggered Automation cannot feed itself (ADR 0053); it still ends an Enrollment, so a click
+// in the Automation's own email can be its goal. The Event's OccurredAt is when it occurred; a zero
+// one (the job of a release before #751 carried none) is taken as now. Every Enrollment it makes
+// copies the stored Event's action and properties, read once (automations.OriginOf, #752).
+func (m *UseCase) OnEvent(ctx context.Context, s *ent.Scoped, in EventInput) error {
+	contactID, ev := in.ContactID, in.Event
 	if ev.OccurredAt.IsZero() {
-		ev.OccurredAt = time.Now()
+		ev.OccurredAt = m.now()
 	}
-	err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return automations.EndOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)
 	})
 	if err != nil {
@@ -90,7 +127,7 @@ func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int6
 	if err != nil {
 		return err
 	}
-	triggered = slices.DeleteFunc(triggered, func(id int64) bool { return id == sourceAutomationID })
+	triggered = slices.DeleteFunc(triggered, func(id int64) bool { return id == in.SourceAutomationID })
 	if len(triggered) == 0 {
 		return nil
 	}
@@ -99,7 +136,7 @@ func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int6
 		return err
 	}
 	for _, automationID := range triggered {
-		if _, err := EnrollOnTrigger(ctx, bus, s, automationID, contactID, origin); err != nil {
+		if _, err := m.enrollOnTrigger(ctx, s, automationID, contactID, origin); err != nil {
 			return err
 		}
 	}
@@ -107,30 +144,31 @@ func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int6
 }
 
 // EnrollOnRule enrolls the Contact in the Automation for a Rule's Action that fired on the Event
-// stored with sourceID, once ever (ADR 0046), and queues the job of its first step in the same
+// stored with in.SourceID, once ever (ADR 0046), and queues the job of its first step in the same
 // transaction: a failed queue insert leaves no Enrollment that nothing will move, and a retry
-// starts over. made is false, and nothing is queued, when the Contact was enrolled before or
+// starts over. It reports false, and queues nothing, when the Contact was enrolled before or
 // another writer won the race. An Enrollment an exit or goal Event recorded since that Event
 // ended at once is made, with no step queued (automations.EnrollOnRule).
-func EnrollOnRule(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, sourceID string) (made bool, err error) {
-	return start(ctx, bus, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
-		return automations.EnrollOnRule(ctx, ts, pub, automationID, contactID, sourceID)
+func (m *UseCase) EnrollOnRule(ctx context.Context, s *ent.Scoped, in RuleEnrollmentInput) (bool, error) {
+	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
+		return automations.EnrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID)
 	})
 }
 
-// EnrollOnTrigger is EnrollOnRule for the Event of the Origin (automations.OriginOf): it enrolls
+// enrollOnTrigger is EnrollOnRule for the Event of the Origin (automations.OriginOf): it enrolls
 // nobody unless, when the Enrollment is made, the Automation is still active and started by that
 // Event's action in its live version (automations.EnrollOnTrigger).
-func EnrollOnTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, o automations.Origin) (made bool, err error) {
-	return start(ctx, bus, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
+func (m *UseCase) enrollOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o automations.Origin) (bool, error) {
+	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
 		return automations.EnrollOnTrigger(ctx, ts, pub, automationID, contactID, o)
 	})
 }
 
 // start makes the Enrollment enroll makes and, when a step is to run, queues the job of its first
 // step, in one transaction: the transaction the Contact's lock is held in until both commit.
-func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error)) (made bool, err error) {
-	err = bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
+func (m *UseCase) start(ctx context.Context, s *ent.Scoped, enroll func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error)) (bool, error) {
+	made := false
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		runID, active, err := enroll(ts, pub)
 		if err != nil || runID == 0 {
 			return err
@@ -142,33 +180,6 @@ func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *
 		return q.Enqueue(ctx, RunStepArgs{RunID: runID}, nil)
 	})
 	return made, err
-}
-
-// UseCase executes the steps of Enrollments.
-type UseCase struct {
-	bus   *events.Bus
-	out   *outboundmessages.Module
-	fence automations.Fencer
-	now   func() time.Time
-}
-
-// Option configures the use case.
-type Option func(*UseCase)
-
-// WithClock gives the use case the clock it reads to honour an Enrollment's resume time and to
-// time a wait. The Instance passes its own clock (app.Clock); without the option the use case
-// reads the wall clock.
-func WithClock(now func() time.Time) Option { return func(m *UseCase) { m.now = now } }
-
-// New builds the use case. The bus runs a move and the job that follows it in one transaction;
-// out sends an email step and acts as the `system` actor for a tag step; fence orders a send
-// against an exit of the Enrollment.
-func New(bus *events.Bus, out *outboundmessages.Module, fence automations.Fencer, opts ...Option) *UseCase {
-	m := &UseCase{bus: bus, out: out, fence: fence, now: time.Now}
-	for _, o := range opts {
-		o(m)
-	}
-	return m
 }
 
 // Step executes step of the Enrollment runID and queues what follows it, in one transaction

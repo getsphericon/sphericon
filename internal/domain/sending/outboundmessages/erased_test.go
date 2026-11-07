@@ -24,7 +24,7 @@ func TestSendToAnErasedContactIsDroppedAtTheChokepoint(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	req := marketing(t, env, "bc:erased", fixtures.ContactAliceID)
 
-	require.NoError(t, contacterasure.New(env.Bus).Erase(ctx, s, contacterasure.ByContactID(fixtures.ContactAliceID),
+	require.NoError(t, contacterasure.New(env.Bus).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
 		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
@@ -46,7 +46,7 @@ func TestSendToAnErasedContactIdIsRefusedAtTheClaim(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, contacterasure.New(env.Bus).Erase(ctx, s, contacterasure.ByContactID(fixtures.ContactAliceID),
+	require.NoError(t, contacterasure.New(env.Bus).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
 		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 

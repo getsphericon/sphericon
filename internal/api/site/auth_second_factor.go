@@ -81,7 +81,7 @@ func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLo
 // module's Verify (a TOTP code, or a Recovery code spent once) under the binding the
 // challenge was minted with.
 func (h *Handlers) verifyLoginCode(ctx context.Context, p login.Pending[*ent.User], code string) error {
-	_, err := h.secondFactor.Verify(ctx, secondfactorcheck.VerifyInput{UserID: p.Principal.ID, Binding: p.Binding, Code: code})
+	_, err := h.secondFactor.Verify(ctx, p, code)
 	switch {
 	case errors.Is(err, secondfactorcheck.ErrInvalidCode):
 		return login.ErrInvalidCode

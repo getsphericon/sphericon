@@ -20,41 +20,23 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 )
 
 // UseCase creates Workspaces.
 type UseCase struct {
 	bus *events.Bus
-	// newPublicID draws a Workspace id (workspaceid.New by default).
+	// newPublicID draws a Workspace id.
 	newPublicID func() string
-	// states gives the Send cap a new Workspace starts with (WithStartingSendCap); nil gives none.
+	// states gives the Send cap a new Workspace starts with; nil gives none.
 	states *instancestates.Module
 }
 
-// Option tunes UseCase.
-type Option func(*UseCase)
-
-// WithWorkspaceIDs replaces the generator of Workspace ids (workspaceid.New by default). A test
-// uses it to force a collision and watch creation retry.
-func WithWorkspaceIDs(generate func() string) Option {
-	return func(u *UseCase) { u.newPublicID = generate }
-}
-
-// WithStartingSendCap gives the use case the Instance state, which says the Send cap a Workspace
-// starts with (instancestates.Module.StartingSendCapIn, ADR 0067). Without it (the default) a new
-// Workspace has none.
-func WithStartingSendCap(states *instancestates.Module) Option {
-	return func(u *UseCase) { u.states = states }
-}
-
-// New builds the use case; the bus opens its transactions.
-func New(bus *events.Bus, opts ...Option) *UseCase {
-	u := &UseCase{bus: bus, newPublicID: workspaceid.New}
-	for _, opt := range opts {
-		opt(u)
-	}
-	return u
+// New builds the use case: the bus opens its transactions, states says the Send cap a Workspace
+// starts with (instancestates.Module.StartingSendCapIn, ADR 0067; nil, as in a test, gives a new
+// Workspace none), and newPublicID draws a Workspace id (workspaceid.New; a test gives one that
+// collides to watch creation retry).
+func New(bus *events.Bus, states *instancestates.Module, newPublicID func() string) *UseCase {
+	return &UseCase{bus: bus, newPublicID: newPublicID, states: states}
 }
 
 // CreateWorkspace creates a Workspace named name for a Verified User, who becomes its
@@ -92,7 +74,7 @@ func (u *UseCase) CreateWorkspace(ctx context.Context, userID int64, name string
 }
 
 // createIn creates the Workspace and its owner Membership on tx, with a fresh Workspace id and
-// the Send cap a new Workspace starts with (WithStartingSendCap). A unique violation (an id already
+// the Send cap a new Workspace starts with. A unique violation (an id already
 // taken) aborts tx, so the caller retries the whole transaction with a fresh id.
 func (u *UseCase) createIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
 	var sendCap *int

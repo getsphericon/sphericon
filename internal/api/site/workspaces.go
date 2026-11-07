@@ -18,7 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
 // SiteWorkspacesList returns the workspaces the authenticated user is a member of.
@@ -267,7 +266,9 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	if a == nil {
 		return nil, workspaces.ErrNotFound
 	}
-	if _, err := h.deletion.Restore(ctx, workspacedeletion.RestoreInput{UserID: a.UserID, PublicID: string(params.ID), Actor: h.actor(ctx)}); err != nil {
+	in := inputs.WorkspaceRestore(params)
+	in.UserID, in.Actor = a.UserID, h.actor(ctx)
+	if _, err := h.deletion.Restore(ctx, in); err != nil {
 		return nil, err
 	}
 	// The Workspace is live again, so the caller's Owner Membership resolves like any other.

@@ -25,50 +25,63 @@ var (
 	ErrWorkspaceNotFound = validation.NotFound("staff: workspace not found", i18n.ErrorsWorkspaceNotFound)
 )
 
+// WorkspaceChange is a Staff member's change of a Workspace: the Workspace as it stands after it,
+// and whether anything changed (a repeated change leaves it as it was).
+type WorkspaceChange struct {
+	Workspace *ent.Workspace
+	Changed   bool
+}
+
 // SuspendWorkspace freezes the Workspace's outbound sending as the Staff member, through
 // the same Suspender the command line uses (ADR 0007), which tells its owners via the
 // system sender. It reports whether anything changed: an already-suspended
 // Workspace is left as it was and its owners are not told twice. A failed notice does
 // not undo the suspension; it is logged. A blank reason is ErrReasonRequired.
-func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, by *ent.StaffMember, reason string) (*ent.Workspace, bool, error) {
+func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, by *ent.StaffMember, reason string) (*WorkspaceChange, error) {
 	if err := m.licensed(); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if strings.TrimSpace(reason) == "" {
-		return nil, false, ErrReasonRequired
+		return nil, ErrReasonRequired
 	}
 	w, err := m.workspace(ctx, publicID)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	id := w.ID
 	changed, err := m.suspend.Suspend(ctx, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), reason)
 	if errors.Is(err, suspension.ErrNoticeNotSent) {
 		slog.ErrorContext(ctx, "workspace suspended, but the owner notice could not be sent", "workspace_id", id, "error", err)
 	} else if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	ws, err := m.ent.Workspace.Get(ctx, id)
-	return ws, changed, err
+	if err != nil {
+		return nil, err
+	}
+	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
 }
 
 // UnsuspendWorkspace lifts the Workspace's suspension as the Staff member; held sends
 // resume on their own. It reports whether the Workspace was suspended.
-func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *ent.StaffMember) (*ent.Workspace, bool, error) {
+func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *ent.StaffMember) (*WorkspaceChange, error) {
 	if err := m.licensed(); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	w, err := m.workspace(ctx, publicID)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	id := w.ID
 	changed, err := suspension.UnsuspendWorkspace(ctx, m.bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)))
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	ws, err := m.ent.Workspace.Get(ctx, id)
-	return ws, changed, err
+	if err != nil {
+		return nil, err
+	}
+	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
 }
 
 // workspace loads a Workspace row by its id (ADR 0043), the only address the console and the
@@ -175,21 +188,24 @@ func (m *Module) WorkspaceDeliverability(ctx context.Context, w *ent.Workspace) 
 // the Staff member (ADR 0026), through the same core mechanism, audited. It reports whether
 // the flag changed. The Workspace stays listed with its rates and can still be suspended
 // by hand.
-func (m *Module) SetAbuseExempt(ctx context.Context, publicID string, by *ent.StaffMember, exempt bool) (*ent.Workspace, bool, error) {
+func (m *Module) SetAbuseExempt(ctx context.Context, publicID string, by *ent.StaffMember, exempt bool) (*WorkspaceChange, error) {
 	if err := m.licensed(); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	w, err := m.workspace(ctx, publicID)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	id := w.ID
 	changed, err := suspension.SetAbuseExempt(ctx, m.bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), exempt)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	ws, err := m.ent.Workspace.Get(ctx, id)
-	return ws, changed, err
+	if err != nil {
+		return nil, err
+	}
+	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
 }
 
 // WorkspaceAbuse is the Workspace's warning now, by the detector's own computation:

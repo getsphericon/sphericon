@@ -134,15 +134,15 @@ func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staff
 
 // setSendCap is the change both Send cap operations make.
 func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, perDay *int) (*staffeeapi.StaffSendCapChange, error) {
-	w, changed, err := h.module.SetSendCap(ctx, string(wsID), staffmembers.Current(ctx), perDay)
+	done, err := h.module.SetSendCap(ctx, string(wsID), staffmembers.Current(ctx), perDay)
 	if err != nil {
 		return nil, err
 	}
-	sendCap, err := h.sendCap(ctx, w)
+	sendCap, err := h.sendCap(ctx, done.Workspace)
 	if err != nil {
 		return nil, err
 	}
-	return &staffeeapi.StaffSendCapChange{Changed: changed, SendCap: sendCap}, nil
+	return &staffeeapi.StaffSendCapChange{Changed: done.Changed, SendCap: sendCap}, nil
 }
 
 // sendCap is the Workspace's Send cap with its sends over the last 24 hours.
@@ -163,20 +163,20 @@ func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.Staff
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
-	w, changed, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx), req.Reason)
+	done, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx), req.Reason)
 	if err != nil {
 		return nil, err
 	}
-	return change(staffMapper.WorkspaceToResource(w), changed), nil
+	return change(staffMapper.WorkspaceToResource(done.Workspace), done.Changed), nil
 }
 
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
-	w, changed, err := h.module.UnsuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx))
+	done, err := h.module.UnsuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx))
 	if err != nil {
 		return nil, err
 	}
-	return change(staffMapper.WorkspaceToResource(w), changed), nil
+	return change(staffMapper.WorkspaceToResource(done.Workspace), done.Changed), nil
 }
 
 // StaffWorkspacesExempt exempts a Workspace from the abuse detector as the signed-in
@@ -192,9 +192,9 @@ func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeap
 
 // setExempt is the change both exemption operations make.
 func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (*staffeeapi.StaffExemptionChange, error) {
-	w, changed, err := h.module.SetAbuseExempt(ctx, string(wsID), staffmembers.Current(ctx), exempt)
+	done, err := h.module.SetAbuseExempt(ctx, string(wsID), staffmembers.Current(ctx), exempt)
 	if err != nil {
 		return nil, err
 	}
-	return &staffeeapi.StaffExemptionChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(w)}, nil
+	return &staffeeapi.StaffExemptionChange{Changed: done.Changed, Workspace: staffMapper.WorkspaceToResource(done.Workspace)}, nil
 }

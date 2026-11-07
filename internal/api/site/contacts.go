@@ -65,7 +65,7 @@ func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteCo
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.erasure.Erase(ctx, scoped, contacterasure.ByContactID(id),
+	err := h.erasure.Erase(ctx, scoped, contacterasure.Identifier{ContactID: id},
 		contacterasure.Requester{Kind: contacterasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if err != nil {
 		return err

@@ -32,10 +32,11 @@ import (
 // by the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
 	bus *events.Bus
+	now func() time.Time
 }
 
-// New builds the unsubscribe use case.
-func New(bus *events.Bus) *UseCase { return &UseCase{bus: bus} }
+// New builds the unsubscribe use case over the bus and the Instance clock.
+func New(bus *events.Bus, now func() time.Time) *UseCase { return &UseCase{bus: bus, now: now} }
 
 // RecordLink writes a per-(channel, destination, sending source) opt-out
 // (ADR 0001) from a signed token — no contact-row lookup, so the opt-out records
@@ -94,7 +95,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		// Automation: unsubscribing from an automation also exits its active
 		// enrollment (ADR: two effects from one action).
 		if isAutomation && target.ContactID != 0 {
-			if _, err := automations.Exit(ctx, sc, pub, automationID, target.ContactID, time.Now()); err != nil {
+			if _, err := automations.Exit(ctx, sc, pub, automationID, target.ContactID, u.now()); err != nil {
 				return err
 			}
 		}

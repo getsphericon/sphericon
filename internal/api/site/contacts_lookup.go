@@ -5,7 +5,6 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
-	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // SiteContactsLookup answers a Privacy request's first question (ADR 0021): what the
@@ -13,7 +12,7 @@ import (
 // or admin only; an address nothing holds answers with zeros.
 func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteContactsLookupParams) (*siteapi.SiteContactHoldings, error) {
 	// Lookup refuses an invalid address (contacterasure.ErrInvalidEmail).
-	held, err := contacterasure.Lookup(ctx, workspaceScope(ctx), params.Email)
+	held, err := h.erasure.Lookup(ctx, workspaceScope(ctx), params.Email)
 	if err != nil {
 		return nil, err
 	}

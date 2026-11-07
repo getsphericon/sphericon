@@ -5,6 +5,7 @@ import (
 	"net"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ import (
 // verification is the domain verification use case over the test's database: the dev resolver's
 // answers are read the way a check reads them.
 func verification(env *testhelper.TestEnv, lookup domainname.TXTLookup) *sendingdomainverification.UseCase {
-	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail))
+	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now)
 }
 
 func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {

@@ -2,6 +2,7 @@ package signup_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,13 +17,13 @@ import (
 func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
-	creation := signup.New(env.Bus, acc, nil, testhelper.Passwords())
+	creation := signup.New(env.Bus, acc, nil, testhelper.Passwords(), nil, signup.SignUpConfig{}, time.Now)
 	u, err := acc.CreateUnverified(t.Context(), users.NewUser{Name: "Grace", Email: "grace@example.com", PasswordHash: "signed-up-hash"})
 	require.NoError(t, err)
 
-	_, _, err = creation.VerifyEmail(t.Context(), u.ID, new("hash-one"))
+	_, err = creation.VerifyEmail(t.Context(), u.ID, new("hash-one"))
 	require.NoError(t, err)
-	_, _, err = creation.VerifyEmail(t.Context(), u.ID, new("hash-two"))
+	_, err = creation.VerifyEmail(t.Context(), u.ID, new("hash-two"))
 	require.ErrorIs(t, err, users.ErrAlreadyVerified)
 
 	stored, err := acc.User(t.Context(), u.ID)

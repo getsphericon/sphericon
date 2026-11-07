@@ -37,9 +37,9 @@ A caller had to learn each package's shape anew, and a reviewer could check none
   - The scope is the `*ent.Scoped` of the Workspace the operation acts in.
   - An operation that belongs to no Workspace when it starts takes no scope argument. Its use case
     holds the raw client from `New` (the closed list of `docs/architecture.md`, Workspace scoping),
-    because a driver holds no raw client to pass. The one exception is a method that joins its
-    caller's transaction, which takes that transaction's client as its scope
-    (`secondfactorcheck.VerifyIn`).
+    because a driver holds no raw client to pass. A method that joined its caller's transaction
+    would take that transaction's client as its scope. None does: the deletion of a User spends a
+    Second factor code through the function `secondfactorcheck.UseCase.DeletionCode` hands it.
   - A third argument, or any optional one, goes into a typed `XInput` struct named after the method.
 - **The actor is part of the input. The clock is a dependency.**
   - Who acts is one of the required arguments or a field of the `XInput`.
@@ -50,8 +50,9 @@ A caller had to learn each package's shape anew, and a reviewer could check none
   - Two or more values go into a named result struct (`XResult`, or a name of the glossary).
   - No exported method returns a tuple or has named results.
 - **Errors come from the shared taxonomy.** A refusal is a `validation` error that `api/problem`
-  maps (ADR 0103). A protocol's driver that answers in its own words maps the same kinds: the OAuth
-  token endpoint answers a `validation.UnknownReference` as `invalid_grant` and a refused rule as
+  maps (ADR 0103). A protocol's driver that answers in its own words maps the same refusals: the
+  OAuth token endpoint answers `connectionissuance.ErrInvalidGrant` (a
+  `validation.UnknownReference`) as `invalid_grant` and `ErrScopeExceedsGrant` (a refused rule) as
   `invalid_scope`. Any other error is a failure the surface answers as 500.
 - **A batch returns `batch.Result`** (`internal/kernel/batch`), one outcome per item in the order
   given: the item's value or its error. A batch never returns `[]error` or a type of its own.
@@ -87,6 +88,14 @@ A caller had to learn each package's shape anew, and a reviewer could check none
 
 - Every use case changes to this shape, with its callers in the API surfaces, MCP, the jobs and
   the CLI. The generated contracts do not change.
+- What was not an operation leaves the use cases:
+  - The CLI's reports and keyset changes move to `internal/app`, beside the operations the CLI
+    calls there.
+  - The send-outcome counter, an event subscriber, moves to the wiring (`app.RecordSendOutcome`).
+  - What the Telemetry report says of the process (its host and deploy shape) is read by the wiring,
+    and the Instance's report offset belongs to `instancestates`.
+  - The Erasure's identifier is an input value that the use case checks. Both surfaces now refuse an
+    invalid address the same way, where only the site checked it before.
 - The domain modules are not covered: the call contract binds the use case tiers only. The
   Workspace oversight module's tuples go too (#1160), but no check holds it to the rule.
 - A new use case is checked by the analyzer from its first commit.

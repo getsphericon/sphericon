@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -55,45 +57,40 @@ var (
 	ErrIdentifier = validation.Refuse("erasure: exactly one of email or visitorId is required", i18n.ErrorsErasureIdentifier)
 )
 
-// Identifier names the data subject to erase. Build one with ByContactID, ByEmail or
-// ByVisitorID.
+// Identifier names the data subject to erase: exactly one of a Contact's id, an email address
+// and a visitor id. An address with no Contact identifies the address itself, so delivery records
+// to it are anonymized; a visitor id names the Contact the visitor is bound to or, for an
+// anonymous Visitor with no Contact, the Visitor and its Events.
 type Identifier struct {
-	contactID int64
-	email     string
-	visitorID string
+	ContactID int64
+	Email     string
+	VisitorID string
 }
 
-// ByContactID identifies a Contact by its id.
-func ByContactID(id int64) Identifier { return Identifier{contactID: id} }
-
-// ByEmail identifies a Contact by its email address; with no such Contact it
-// identifies the address itself, so delivery records to it are anonymized.
-func ByEmail(email string) Identifier {
-	return Identifier{email: canonicalEmail(email)}
-}
-
-// ByVisitorID identifies the Contact the visitor is bound to, or, for an anonymous
-// Visitor with no Contact, the Visitor and its Events.
-func ByVisitorID(visitorID string) Identifier { return Identifier{visitorID: visitorID} }
-
-// ByEmailOrVisitorID is the identifier of a request that names exactly one of an address and a
-// visitor id (nil when absent); anything else is ErrIdentifier.
-func ByEmailOrVisitorID(email, visitorID *string) (Identifier, error) {
-	switch {
-	case email != nil && visitorID == nil:
-		return ByEmail(*email), nil
-	case email == nil && visitorID != nil && *visitorID != "":
-		return ByVisitorID(*visitorID), nil
+// checked is the identifier Erase acts on: exactly one of its fields is set (ErrIdentifier
+// otherwise), and an address is in its canonical form, refused (ErrInvalidEmail) unless it is a
+// single plain address.
+func (i Identifier) checked() (Identifier, error) {
+	set := lo.Count([]bool{i.ContactID != 0, i.Email != "", i.VisitorID != ""}, true)
+	if set != 1 {
+		return Identifier{}, ErrIdentifier
 	}
-	return Identifier{}, ErrIdentifier
+	if i.Email != "" {
+		email, err := normalizeEmail(i.Email)
+		if err != nil {
+			return Identifier{}, err
+		}
+		i.Email = email
+	}
+	return i, nil
 }
 
 // kind names the identifier for the contact.erased Event.
 func (i Identifier) kind() string {
 	switch {
-	case i.email != "":
+	case i.Email != "":
 		return "email"
-	case i.visitorID != "":
+	case i.VisitorID != "":
 		return "visitor_id"
 	}
 	return "contact_id"
@@ -163,6 +160,10 @@ func New(bus *events.Bus) *UseCase {
 // visitor id) means the identifier resolves to nothing in the Workspace (including a row of
 // another Workspace).
 func (u *UseCase) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Requester) error {
+	id, err := id.checked()
+	if err != nil {
+		return err
+	}
 	return u.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
 		target, err := resolve(ctx, ts, id)
 		if err != nil {
@@ -294,16 +295,16 @@ func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contac
 		err error
 	)
 	switch {
-	case id.email != "":
-		c, err = s.Contact().Query().Where(contact.Email(id.email)).Only(ctx)
-	case id.visitorID != "":
+	case id.Email != "":
+		c, err = s.Contact().Query().Where(contact.Email(id.Email)).Only(ctx)
+	case id.VisitorID != "":
 		var v *ent.Visitor
-		v, err = s.Visitor().Query().Where(visitor.VisitorID(id.visitorID)).Only(ctx)
+		v, err = s.Visitor().Query().Where(visitor.VisitorID(id.VisitorID)).Only(ctx)
 		if err == nil && v.ContactID != nil {
 			c, err = s.Contact().Get(ctx, *v.ContactID)
 		}
 	default:
-		c, err = s.Contact().Get(ctx, id.contactID)
+		c, err = s.Contact().Get(ctx, id.ContactID)
 		if ent.IsNotFound(err) {
 			return nil, ErrContactNotFound
 		}
@@ -332,17 +333,17 @@ func resolveContactless(ctx context.Context, s *ent.Scoped, id Identifier) (*Tar
 		err   error
 	)
 	switch {
-	case id.email != "":
-		t = &Target{Destinations: []string{id.email}}
-		known, err = s.OutboundMessage().Query().Where(outboundmessage.Destination(id.email)).Exist(ctx)
+	case id.Email != "":
+		t = &Target{Destinations: []string{id.Email}}
+		known, err = s.OutboundMessage().Query().Where(outboundmessage.Destination(id.Email)).Exist(ctx)
 		if err == nil && !known {
-			known, err = s.CapturedMessage().Query().Where(capturedmessage.Recipient(id.email)).Exist(ctx)
+			known, err = s.CapturedMessage().Query().Where(capturedmessage.Recipient(id.Email)).Exist(ctx)
 		}
-	case id.visitorID != "":
-		t = &Target{VisitorIDs: []string{id.visitorID}, SubjectID: id.visitorID}
-		known, err = s.Visitor().Query().Where(visitor.VisitorID(id.visitorID)).Exist(ctx)
+	case id.VisitorID != "":
+		t = &Target{VisitorIDs: []string{id.VisitorID}, SubjectID: id.VisitorID}
+		known, err = s.Visitor().Query().Where(visitor.VisitorID(id.VisitorID)).Exist(ctx)
 		if err == nil && !known {
-			known, err = s.Event().Query().Where(event.VisitorID(id.visitorID)).Exist(ctx)
+			known, err = s.Event().Query().Where(event.VisitorID(id.VisitorID)).Exist(ctx)
 		}
 	}
 	if err != nil {

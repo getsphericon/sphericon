@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
@@ -104,6 +105,15 @@ import (
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
 type Inputs interface {
+	// The restoring User and the actor the Audit log records come from the session, which the
+	// handler assigns.
+	// goverter:map ID PublicID
+	// goverter:ignore UserID Actor
+	WorkspaceRestore(source siteapi.SiteWorkspacesRestoreParams) workspacedeletion.RestoreInput
+	// The Sign-up browser is the request's cookie, a parameter the handler assigns.
+	// goverter:ignore Browser
+	VerifyEmailLink(source *siteapi.SiteVerifyEmailInput) signup.VerifyEmailLinkInput
+
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput

@@ -2,6 +2,7 @@ package auditlogretention_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func TestPruneNeverRemovesAClosedUsageSnapshot(t *testing.T) {
 	require.Positive(t, before, "the fixture snapshot of December 2025 is closed")
 	env.DB.Workspace.Update().SetRetentionDays(1).ExecX(t.Context())
 
-	n, err := auditlogretention.Prune(t.Context(), env.DB, licenseFor(t, licensekey.FeatureRetention), febFirst.AddDate(5, 0, 0))
+	n, err := auditlogretention.New(env.DB, licenseFor(t, licensekey.FeatureRetention), func() time.Time { return febFirst.AddDate(5, 0, 0) }).Prune(t.Context())
 
 	require.NoError(t, err)
 	assert.Positive(t, n, "the prune ran and removed the old Audit entries")

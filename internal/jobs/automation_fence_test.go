@@ -120,7 +120,7 @@ func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepexecu
 	t.Helper()
 	bus := e.bus(t)
 	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local"))
-	return stepexecution.New(bus, mod, e.fence)
+	return stepexecution.New(bus, mod, e.fence, nil, nil, time.Now)
 }
 
 // runRowIsLocked reports whether another writer would have to wait for the Enrollment's row:
@@ -217,7 +217,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
-	w := jobs.NewRunHTTPStepWorker(e.client, cipher, stepexecution.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
+	w := jobs.NewRunHTTPStepWorker(e.client, stepexecution.New(bus, nil, e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now))
 
 	workDone := make(chan error, 1)
 	go func() {

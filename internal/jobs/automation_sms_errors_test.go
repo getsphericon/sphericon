@@ -47,7 +47,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 			automationID := smsAutomation(t, env, smsStep(account, "Hello"))
 			confirmSMS(t, env, fixtures.ContactTexterPhone)
 			runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
-			mod := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
+			mod := stepperAt(env, env.OutboundModule(), passingClock())
 			refuse(t, env, account)
 
 			require.True(t, env.RunNextStep(t, mod))
@@ -85,7 +85,7 @@ func TestAHeldTwilioIntegrationSendsNothingUntilItIsSavedAgain(t *testing.T) {
 	account := env.AcmeTwilio(t)
 	runID := int64(fixtures.AutomationRunJobsSMSHelloConfirmedID)
 	queueStep(t, env, runID)
-	mod := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
+	mod := stepperAt(env, env.OutboundModule(), passingClock())
 	env.Twilio.RefuseSends(twiliotest.AccountNotActive)
 	require.True(t, env.RunNextStep(t, mod))
 	env.Twilio.AcceptSends()

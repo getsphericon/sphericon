@@ -24,6 +24,7 @@ import (
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	contactintake "github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	eventrecording "github.com/getsphericon/sphericon/internal/usecase/eventrecording"
+	unsubscriberecording "github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 
 type InputsImpl struct{}
@@ -385,6 +386,15 @@ func (c *InputsImpl) IntegrationUpdate(source *external.UpdateIntegrationInput) 
 		integrationsUpdateInput.RetireSecrets = boolIn((*source).RetireSecrets)
 	}
 	return integrationsUpdateInput, nil
+}
+func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscriberecording.OptOutInput {
+	var unsubscriberecordingOptOutInput unsubscriberecording.OptOutInput
+	if source != nil {
+		// unsubscriberecordingOptOutInput.Channel: ignore
+		unsubscriberecordingOptOutInput.Destination = (*source).Destination
+		unsubscriberecordingOptOutInput.Source = stringIn((*source).SendingSource)
+	}
+	return unsubscriberecordingOptOutInput
 }
 func (c *InputsImpl) RuleActionType(source external.RuleActionType) rules.ActionType {
 	var rulesActionType rules.ActionType

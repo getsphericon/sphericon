@@ -19,6 +19,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/usecase/connectionissuance"
 )
 
@@ -212,16 +213,20 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	)
 	switch r.PostForm.Get("grant_type") {
 	case grantAuthorizationCode:
-		out, err = s.connections.ExchangeCode(r.Context(), r.PostForm.Get("code"), r.PostForm.Get("client_id"),
-			r.PostForm.Get("redirect_uri"), r.PostForm.Get("code_verifier"))
+		out, err = s.connections.ExchangeCode(r.Context(), connectionissuance.CodeExchange{
+			Code: r.PostForm.Get("code"), ClientID: r.PostForm.Get("client_id"),
+			RedirectURI: r.PostForm.Get("redirect_uri"), Verifier: r.PostForm.Get("code_verifier"),
+		})
 	case grantRefreshToken:
-		out, err = s.connections.Refresh(r.Context(), r.PostForm.Get("refresh_token"), r.PostForm.Get("client_id"), r.PostForm.Get("scope"))
+		out, err = s.connections.Refresh(r.Context(), connectionissuance.RefreshInput{
+			RefreshToken: r.PostForm.Get("refresh_token"), ClientID: r.PostForm.Get("client_id"), Scope: r.PostForm.Get("scope"),
+		})
 	default:
 		writeOAuthError(w, http.StatusBadRequest, "unsupported_grant_type", "only authorization_code and refresh_token are supported")
 		return
 	}
-	if refusal, ok := errors.AsType[*connectionissuance.ExchangeRefusedError](err); ok {
-		writeOAuthError(w, http.StatusBadRequest, refusal.Kind, refusal.Description)
+	if code, ok := exchangeRefusal(err); ok {
+		writeOAuthError(w, http.StatusBadRequest, code, validation.Message(err))
 		return
 	}
 	if err != nil {
@@ -245,6 +250,18 @@ func writeJSON(w http.ResponseWriter, code int, body any) {
 	if err := json.NewEncoder(w).Encode(body); err != nil {
 		slog.Warn("write json response", "error", err)
 	}
+}
+
+// exchangeRefusal is the RFC 6749 section 5.2 error code of a refused exchange: a scope beyond the
+// grant is invalid_scope, any other refusal invalid_grant. An error that is no refusal is not one.
+func exchangeRefusal(err error) (string, bool) {
+	switch {
+	case errors.Is(err, connectionissuance.ErrScopeExceedsGrant):
+		return "invalid_scope", true
+	case errors.Is(err, connectionissuance.ErrInvalidGrant):
+		return "invalid_grant", true
+	}
+	return "", false
 }
 
 // writeOAuthError renders an RFC 6749 section 5.2 error response.

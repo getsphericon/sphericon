@@ -200,7 +200,7 @@ func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T)
 	follow(t, env, text[0], browserUA)
 	triggers := consume()
 	require.Len(t, triggers, 1)
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, testhelper.Enrollments(env.Bus)).Work(ctx, job(triggers[0])))
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationOnTelegramClickedID), automationrun.ContactID(fixtures.ContactLiamID)).Only(ctx)
 	require.NoError(t, err)

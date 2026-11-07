@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
@@ -18,16 +17,13 @@ import (
 type RunHTTPStepWorker struct {
 	river.WorkerDefaults[stepexecution.RunHTTPStepArgs]
 
-	ent    *ent.Client
-	cipher *secrets.Cipher
-	step   *stepexecution.UseCase
-	client webhook.Doer
-	now    func() time.Time
+	ent  *ent.Client
+	step *stepexecution.UseCase
 }
 
 // NewRunHTTPStepWorker builds the queue adapter for the Step execution use case's HTTP execution.
-func NewRunHTTPStepWorker(client *ent.Client, cipher *secrets.Cipher, step *stepexecution.UseCase, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
-	return &RunHTTPStepWorker{ent: client, cipher: cipher, step: step, client: doer, now: now}
+func NewRunHTTPStepWorker(client *ent.Client, step *stepexecution.UseCase) *RunHTTPStepWorker {
+	return &RunHTTPStepWorker{ent: client, step: step}
 }
 
 func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepexecution.RunHTTPStepArgs]) error {
@@ -41,9 +37,9 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepexecuti
 		return err
 	}
 	s := w.ent.Scoped(run.WorkspaceID)
-	decision, err := w.step.ExecuteHTTP(ctx, s, run.ID, job.Args.Step, httpcall.Attempt{
+	decision, err := w.step.ExecuteHTTP(ctx, s, stepexecution.HTTPStepInput{RunID: run.ID, Step: job.Args.Step, Attempt: httpcall.Attempt{
 		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt,
-	}, w.cipher, w.client, w.now)
+	}})
 	if err != nil {
 		return err
 	}

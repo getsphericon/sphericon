@@ -1,6 +1,8 @@
 package jobs_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // Erasing a Contact leaves nothing of its SMS life but its phone's hash (ADR 0021, #1032): the
@@ -135,7 +136,8 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	erased := env.QueuedEvents(t, events.NameContactErased)
 	require.Len(t, erased, 1)
 	hash := erased[0].(*events.ContactErased).PhoneHash
-	assert.Equal(t, contacterasure.Hash(number), hash, "the Erasure record holds the phone's hash")
+	sum := sha256.Sum256([]byte(number))
+	assert.Equal(t, hex.EncodeToString(sum[:]), hash, "the Erasure record holds the phone's hash, its lowercase hex SHA-256 (ADR 0045)")
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.Destination(hash)).OnlyX(ctx)
 	assert.Nil(t, optOut.ContactID, "the opt-out stays, by the hash, detached")
 	suppressed := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(channels.SMS), entsuppression.Destination(hash)).OnlyX(ctx)

@@ -178,8 +178,8 @@ func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() 
 // Abuse is the abuse detector (ADR 0026): the pass the hourly job runs, and the read of
 // a Workspace's standing. It suspends through the core Suspender and tells owners through
 // the system (platform) sender. Unlicensed it does nothing.
-func (e *Edition) Abuse() *abusedetection.Detector {
-	return abusedetection.New(e.client, e.lic, e.notify, e.suspend, e.abuseCfg)
+func (e *Edition) Abuse() *abusedetection.UseCase {
+	return abusedetection.New(e.client, e.lic, e.notify, e.suspend, e.abuseCfg, e.now)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none

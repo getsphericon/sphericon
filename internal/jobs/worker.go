@@ -38,11 +38,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
-// webhookDeliveryTimeout bounds a single outbound webhook request.
-const webhookDeliveryTimeout = 15 * time.Second
-
 // QueueWebhooks isolates outbound webhook delivery from the default queue.
-// Webhook deliveries are external HTTP calls (up to webhookDeliveryTimeout each),
+// Webhook deliveries are external HTTP calls (up to webhook.DeliveryTimeout each),
 // so a burst of them must not starve broadcast sends and automation steps.
 const QueueWebhooks = "webhooks"
 
@@ -120,14 +117,14 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
 	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
 	stepper := deps.StepExecution
-	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, bus))
+	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, stepper))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, now))
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
-	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus)})
-	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, webhook.NewClientAllowing(webhookDeliveryTimeout, deps.OutboundAllow), now))
-	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, cipher, stepper, webhook.NewClientAllowing(webhookDeliveryTimeout, deps.OutboundAllow), now))
-	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhookDeliveryTimeout, deps.OutboundAllow), now, bus, systemSender))
+	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus, stepper)})
+	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now))
+	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper))
+	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, bus, systemSender))
 	river.AddWorker(workers, NewWelcomeWorker(systemSender))
 	river.AddWorker(workers, NewAuthMailWorker(systemSender, appURL))
 	river.AddWorker(workers, NewMemberInviteWorker(systemSender))

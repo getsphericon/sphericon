@@ -1,6 +1,7 @@
 package releasecheck_test
 
 import (
+	"log/slog"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 func releaseFound(t *testing.T, env *testhelper.TestEnv) *releasecheck.UseCase {
 	t.Helper()
 	states := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, nil)
-	mod := releasecheck.New(states, fixedSource{version: "0.2.0"})
+	mod := releasecheck.New(states, fixedSource{version: "0.2.0"}, slog.Default())
 	require.NoError(t, mod.CheckRelease(t.Context()))
 	return mod
 }
@@ -42,7 +43,7 @@ func TestAnOwnerOfAnyWorkspaceIsToldOfANewerRelease(t *testing.T) {
 
 func TestAnOwnerIsToldOfNoReleaseBeforeTheCheckFindsOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	mod := releasecheck.New(instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, nil), nil)
+	mod := releasecheck.New(instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, nil), nil, slog.Default())
 
 	release, err := mod.ReleaseFor(t.Context(), fixtures.OwnerJohnID)
 

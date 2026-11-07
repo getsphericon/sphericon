@@ -32,7 +32,7 @@ func TestCreateWorkspaceDrawsAnotherIdWhenOneIsTaken(t *testing.T) {
 		return "FreshId1"
 	}
 
-	ws, err := workspacecreation.New(env.Bus, workspacecreation.WithWorkspaceIDs(generate)).
+	ws, err := workspacecreation.New(env.Bus, nil, generate).
 		CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Fresh")
 	require.NoError(t, err)
 

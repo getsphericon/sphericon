@@ -31,18 +31,18 @@ type Interpreter interface {
 	ReachabilityChange(ctx context.Context, tx Tx, c preset.ReachabilityChange) error
 }
 
-// Ignore is the Interpreter that records nothing. A Channel's Interpreter embeds it and
-// implements only the facts it reads; a Channel that reads none is Ignore itself.
-type Ignore struct{}
+// ignore is the Interpreter that records nothing. A Channel's Interpreter embeds it and
+// implements only the facts it reads; a Channel that reads none is ignore itself.
+type ignore struct{}
 
 // DeliveryNotice records nothing.
-func (Ignore) DeliveryNotice(context.Context, Tx, preset.DeliveryNotice) error { return nil }
+func (ignore) DeliveryNotice(context.Context, Tx, preset.DeliveryNotice) error { return nil }
 
 // InboundMessage records nothing.
-func (Ignore) InboundMessage(context.Context, Tx, preset.InboundMessage) error { return nil }
+func (ignore) InboundMessage(context.Context, Tx, preset.InboundMessage) error { return nil }
 
 // ReachabilityChange records nothing.
-func (Ignore) ReachabilityChange(context.Context, Tx, preset.ReachabilityChange) error { return nil }
+func (ignore) ReachabilityChange(context.Context, Tx, preset.ReachabilityChange) error { return nil }
 
 // Tx is what one request's facts are interpreted with: the transaction, the Integration the
 // callback came to, the Preset that parsed it, and the hook's clock.
@@ -90,14 +90,25 @@ const answerTimeout = 5 * time.Second
 type UseCase struct {
 	bus  *events.Bus
 	bots Bots
+	now  func() time.Time
 }
 
-// New builds the use case on the bus the facts' System events are published through and the bots
-// of Telegram Integrations.
-func New(bus *events.Bus, bots Bots) *UseCase { return &UseCase{bus: bus, bots: bots} }
+// New builds the use case on the bus the facts' System events are published through, the bots
+// of Telegram Integrations and the Instance clock the hook reads.
+func New(bus *events.Bus, bots Bots, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, bots: bots, now: now}
+}
+
+// InterpretInput is one Ingest hook request: the Integration the callback came to, the name of
+// the Preset that parsed it and the facts the Preset read.
+type InterpretInput struct {
+	Integration *ent.Integration
+	Preset      string
+	Result      preset.Result
+}
 
 // interpreterFor is the Interpreter of a Channel. A new Channel value fails the exhaustive
-// lint here until its Channel is given one: its own, or Ignore while it reads nothing.
+// lint here until its Channel is given one: its own, or ignore while it reads nothing.
 func (m *UseCase) interpreterFor(ch channels.Channel) Interpreter {
 	switch ch {
 	case channels.Email:
@@ -107,7 +118,7 @@ func (m *UseCase) interpreterFor(ch channels.Channel) Interpreter {
 	case channels.SMS:
 		return sms{}
 	}
-	return Ignore{}
+	return ignore{}
 }
 
 // Interpret writes what the facts of one request mean on the Integration's Channel, in one
@@ -115,8 +126,8 @@ func (m *UseCase) interpreterFor(ch channels.Channel) Interpreter {
 // Channel than the Integration's (an Integration serves one Channel, ADR 0074) is the Preset's
 // mistake: it is dropped and logged, so the rest of the request still counts and the provider
 // does not redeliver it forever.
-func (m *UseCase) Interpret(ctx context.Context, s *ent.Scoped, row *ent.Integration, presetName string, res preset.Result, now time.Time) error {
-	return m.interpret(ctx, s, row, presetName, res, now, 0)
+func (m *UseCase) Interpret(ctx context.Context, s *ent.Scoped, in InterpretInput) error {
+	return m.interpret(ctx, s, in.Integration, in.Preset, in.Result, m.now(), 0)
 }
 
 // interpret is Interpret for the facts read for the attempt-th time before (InterpretLate).

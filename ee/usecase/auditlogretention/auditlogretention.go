@@ -23,11 +23,26 @@ import (
 // Interval is how often the Edition prunes (Prune); the window is in days, so hourly is ample.
 const Interval = time.Hour
 
+// UseCase is the Retention of the Audit log over the raw client: it lists the Workspaces that set
+// a window, then scopes to each one.
+type UseCase struct {
+	client *ent.Client
+	lic    *licensekey.License
+	now    func() time.Time
+}
+
+// New builds the use case over the raw client, the license that switches the retention on and
+// the Instance clock the windows are measured on.
+func New(client *ent.Client, lic *licensekey.License, now func() time.Time) *UseCase {
+	return &UseCase{client: client, lic: lic, now: now}
+}
+
 // Prune deletes, in every Workspace that set a retention window, the Audit entries that
 // occurred before now minus that window, and returns how many it removed. A Workspace
 // with no window keeps everything. Without the retention license it removes nothing.
-func Prune(ctx context.Context, client *ent.Client, lic *licensekey.License, now time.Time) (int, error) {
-	if !lic.Has(licensekey.FeatureRetention) {
+func (u *UseCase) Prune(ctx context.Context) (int, error) {
+	client, now := u.client, u.now()
+	if !u.lic.Has(licensekey.FeatureRetention) {
 		return 0, nil
 	}
 	live, err := client.Workspace.Query().

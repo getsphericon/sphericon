@@ -2,14 +2,11 @@ package telemetryreport
 
 import (
 	"context"
-	"runtime"
 	"slices"
 	"time"
 
-	"github.com/getsphericon/sphericon/config"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
-	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
@@ -22,8 +19,8 @@ const schemaVersion = 1
 const reportWindow = 30 * 24 * time.Hour
 
 // Host is what the report says about the running binary and its surroundings. The builder
-// never reads the process (build info, environment, files): the caller hands these in, so a
-// test builds the same report every time.
+// never reads the process (build info, environment, files): the wiring reads them and hands
+// them in, so a test builds the same report every time.
 type Host struct {
 	AppVersion  string
 	Edition     telemetryapi.TelemetryEdition
@@ -33,44 +30,11 @@ type Host struct {
 	Locale      telemetryapi.TelemetryLocale
 }
 
-// HostOf reads the Host of this process: the version it was built as, the edition its
-// license key switches on (a bad key fails boot, so a key that is set is a valid one, and a
-// lapsed one, whose expiry the caller passes, runs the core: ADR 0035), where it runs and the
-// configured locale.
-func HostOf(cfg *config.Config, version string, licenseExpiredAt time.Time) Host {
-	edition := telemetryapi.TelemetryEditionCore
-	if cfg.LicenseKey != "" && licenseExpiredAt.IsZero() {
-		edition = telemetryapi.TelemetryEditionEe
-	}
-	return Host{
-		AppVersion:  version,
-		Edition:     edition,
-		DeployShape: DeployShapeOf(upgrade.DetectContainer()),
-		OS:          runtime.GOOS,
-		Arch:        runtime.GOARCH,
-		Locale:      telemetryapi.TelemetryLocaleEn,
-	}
-}
-
-// DeployShapeOf maps what upgrade.DetectContainer found ("helm" on Kubernetes, "docker" in
-// a container, "" otherwise) to the schema's deploy shape.
-func DeployShapeOf(container string) telemetryapi.TelemetryDeployShape {
-	switch container {
-	case "helm":
-		return telemetryapi.TelemetryDeployShapeKubernetes
-	case "docker":
-		return telemetryapi.TelemetryDeployShapeContainer
-	case "":
-		return telemetryapi.TelemetryDeployShapeBinary
-	}
-	return telemetryapi.TelemetryDeployShapeUnknown
-}
-
-// Build assembles the Telemetry report (ADR 0032) from the Instance's Figures, read from core
+// build assembles the Telemetry report (ADR 0032) from the Instance's Figures, read from core
 // tables only. It is the one builder, the preview and the daily sender both call it. Counts leave it
 // only as orders of magnitude, so an exact number never does, and it reads nothing that names a
 // Workspace or a person.
-func Build(ctx context.Context, states *instancestates.Module, host Host, now time.Time) (telemetryapi.TelemetryReport, error) {
+func build(ctx context.Context, states *instancestates.Module, host Host, now time.Time) (telemetryapi.TelemetryReport, error) {
 	f, err := states.Figures(ctx, now.Add(-reportWindow))
 	if err != nil {
 		return telemetryapi.TelemetryReport{}, err

@@ -78,7 +78,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 
 	enrolled := make(chan error, 1)
 	go func() {
-		enrolled <- stepexecution.OnEvent(ctx, enrolling, e.scoped, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0)
+		enrolled <- testhelper.Enrollments(enrolling).OnEvent(ctx, e.scoped, stepexecution.EventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_failed", OccurredAt: failed}})
 	}()
 	<-hold.reached
 	stored(t, e, &events.CollectedEvent{
@@ -87,7 +87,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 	ending := e.bus(t)
 	ended, endDone := make(chan error, 1), make(chan struct{})
 	go func() {
-		ended <- stepexecution.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, 0)
+		ended <- testhelper.Enrollments(ending).OnEvent(ctx, e.scoped, stepexecution.EventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}})
 		close(endDone)
 	}()
 	require.Eventually(t, func() bool {

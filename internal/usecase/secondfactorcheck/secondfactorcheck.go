@@ -26,6 +26,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -88,14 +89,6 @@ func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, now func()
 type CodesIssued struct {
 	User          *ent.User
 	RecoveryCodes []string
-}
-
-// VerifyInput is a second step of a sign-in: the User, the ChallengeBinding the step's
-// challenge was minted under and the code they entered.
-type VerifyInput struct {
-	UserID  int64
-	Binding string
-	Code    string
 }
 
 // Status is what the User may know about their Second factor.
@@ -254,17 +247,18 @@ func (m *UseCase) Disable(ctx context.Context, userID int64, code string) (*ent.
 // TOTP code (each time step works once) or an unused Recovery code (spent here,
 // and recorded as `user.recovery_code_use`). It returns which one matched.
 //
-// in.Binding is the ChallengeBinding the step's challenge was minted under. It is
+// pending is the sign-in waiting for its second step: its User and the ChallengeBinding the
+// step's challenge was minted under. The binding is
 // re-checked inside the transaction with the User row locked, so of two second
 // steps racing on one challenge (say one with a TOTP code, one with a Recovery
 // code) the later sees the binding the earlier moved and fails: a challenge starts
 // at most one session. ErrNotActive without a Second factor, ErrBindingMoved when
 // the binding moved, ErrInvalidCode otherwise.
-func (m *UseCase) Verify(ctx context.Context, in VerifyInput) (Method, error) {
-	binding, code := in.Binding, in.Code
+func (m *UseCase) Verify(ctx context.Context, pending login.Pending[*ent.User], code string) (Method, error) {
+	binding := pending.Binding
 	var method Method
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := tx.User.Query().Where(user.ID(in.UserID)).ForUpdate().Only(ctx)
+		u, err := tx.User.Query().Where(user.ID(pending.Principal.ID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err
 		}

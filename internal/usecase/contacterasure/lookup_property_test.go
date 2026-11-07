@@ -5,45 +5,53 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
-// A Privacy request address is trimmed and lowercased like ByEmail does, so any padding or
-// case of a plain address finds the same person.
-func TestNormalizeEmailIgnoresPaddingAndCase(t *testing.T) {
-	rapid.Check(t, func(t *rapid.T) {
-		local := rapid.StringMatching(`[a-z0-9]{1,12}`).Draw(t, "local")
-		domain := rapid.StringMatching(`[a-z0-9]{1,12}\.[a-z]{2,6}`).Draw(t, "domain")
-		pad := rapid.StringMatching(`[ \t]{0,3}`).Draw(t, "pad")
-		plain := local + "@" + domain
+// A Privacy request address is trimmed and lowercased, so any padding or case of a plain
+// address finds what the address itself finds.
+func TestLookupIgnoresPaddingAndCase(t *testing.T) {
+	env := testhelper.Setup(t)
+	erasure := contacterasure.New(env.Bus)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	want, err := erasure.Lookup(t.Context(), acme, fixtures.ContactAliceEmail)
+	require.NoError(t, err)
+	require.True(t, want.ContactHeld)
 
-		got, err := contacterasure.NormalizeEmail(pad + strings.ToUpper(plain) + pad)
+	rapid.Check(t, func(rt *rapid.T) {
+		pad := rapid.StringMatching(`[ \t]{0,3}`).Draw(rt, "pad")
+		upper := rapid.Bool().Draw(rt, "upper")
+		raw := fixtures.ContactAliceEmail
+		if upper {
+			raw = strings.ToUpper(raw)
+		}
 
-		if err != nil || got != plain {
-			t.Fatalf("got %q, %v, want %q", got, err, plain)
+		got, err := erasure.Lookup(t.Context(), acme, pad+raw+pad)
+
+		if err != nil || got != want {
+			rt.Fatalf("%q: got %+v, %v, want %+v", pad+raw+pad, got, err, want)
 		}
 	})
 }
 
-// Whatever comes in, an accepted address is already normalized, so normalizing it again
-// changes nothing, and a rejected one is always ErrInvalidEmail.
-func TestNormalizeEmailIsIdempotentOrRejected(t *testing.T) {
-	rapid.Check(t, func(t *rapid.T) {
-		raw := rapid.String().Draw(t, "raw")
+// Whatever comes in, a lookup either reads the address or refuses it as ErrInvalidEmail.
+func TestLookupReadsAnAddressOrRefusesIt(t *testing.T) {
+	env := testhelper.Setup(t)
+	erasure := contacterasure.New(env.Bus)
+	acme := env.DB.Scoped(fixtures.AcmeID)
 
-		once, err := contacterasure.NormalizeEmail(raw)
-		if err != nil {
-			if !errors.Is(err, contacterasure.ErrInvalidEmail) {
-				t.Fatalf("%q: unexpected error %v", raw, err)
-			}
-			return
-		}
-		twice, err := contacterasure.NormalizeEmail(once)
+	rapid.Check(t, func(rt *rapid.T) {
+		raw := rapid.String().Draw(rt, "raw")
 
-		if err != nil || once != twice {
-			t.Fatalf("%q normalizes to %q, then to %q, %v", raw, once, twice, err)
+		_, err := erasure.Lookup(t.Context(), acme, raw)
+
+		if err != nil && !errors.Is(err, contacterasure.ErrInvalidEmail) {
+			rt.Fatalf("%q: unexpected error %v", raw, err)
 		}
 	})
 }

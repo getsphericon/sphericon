@@ -7,7 +7,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
-	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
@@ -66,7 +65,7 @@ func tokenRequester(ctx context.Context) contacterasure.Requester {
 func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.ContactsDeleteParams) error {
 	id := int64(params.ID)
 
-	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), contacterasure.ByContactID(id),
+	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), contacterasure.Identifier{ContactID: id},
 		tokenRequester(ctx))
 	if err != nil {
 		return err
@@ -78,10 +77,7 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 // same scope and rules as deleting by id. Exactly one identifier is required: the erasure
 // use case refuses anything else.
 func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) error {
-	id, err := contacterasure.ByEmailOrVisitorID(convert.StringPtr(params.Email), convert.StringPtr(params.VisitorId))
-	if err != nil {
-		return err
-	}
+	id := contacterasure.Identifier{Email: string(params.Email.Or("")), VisitorID: params.VisitorId.Or("")}
 	return h.erasure.Erase(ctx, auth.TokenScoped(ctx), id, tokenRequester(ctx))
 }
 

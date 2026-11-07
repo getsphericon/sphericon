@@ -26,8 +26,9 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 }
 
 func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.CreateUnsubscribeInput) (*externalapi.UnsubscribeResource, error) {
-	channel := inputs.ConsentChannel(req.Channel.Or(externalapi.ConsentChannelEmail))
-	u, err := h.unsubscribe.OptOut(ctx, auth.TokenScoped(ctx), channel, req.Destination, req.SendingSource.Or(""))
+	in := inputs.OptOut(req)
+	in.Channel = inputs.ConsentChannel(req.Channel.Or(externalapi.ConsentChannelEmail))
+	u, err := h.unsubscribe.OptOut(ctx, auth.TokenScoped(ctx), in)
 	if err != nil {
 		return nil, err
 	}

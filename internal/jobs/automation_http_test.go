@@ -140,7 +140,9 @@ func (h *httpStepHarness) stepper() *stepexecution.UseCase {
 }
 
 func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorker {
-	return jobs.NewRunHTTPStepWorker(h.DB, h.cipher, h.stepper(), h.rcv.routed(webhook.NewClientAllowing(2*time.Second, allow)), func() time.Time { return h.clock })
+	steps := stepexecution.New(h.Bus, newMod(h.TestEnv, resolvingTo(h.sender)), noFence, h.cipher,
+		h.rcv.routed(webhook.NewClientAllowing(2*time.Second, allow)), func() time.Time { return h.clock })
+	return jobs.NewRunHTTPStepWorker(h.DB, steps)
 }
 
 // attempt works the HTTP step as river's attempt-th try; the last one is the job's MaxAttempts.

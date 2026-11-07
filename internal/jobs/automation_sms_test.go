@@ -23,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // The SMS send step (ADR 0081): a Contact whose phone has a Confirmation on sms gets the rendered
@@ -228,7 +227,7 @@ func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	account := env.AcmeTwilio(t)
 	runID := int64(fixtures.AutomationRunJobsSMSFirstSecondConfirmedID)
 	queueStep(t, env, runID)
-	stepper := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
+	stepper := stepperAt(env, env.OutboundModule(), passingClock())
 	require.True(t, env.RunNextStep(t, stepper))
 	first := env.Twilio.Messages()
 	require.Len(t, first, 1)

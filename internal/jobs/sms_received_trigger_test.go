@@ -35,7 +35,7 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 	onlyEnvelope(t, env, events.NameSmsReceived)
 	triggers := triggersOn(t, env, events.NameSmsReceived)
 	require.Len(t, triggers, 1)
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, testhelper.Enrollments(env.Bus)).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationOnSmsReceivedID), automationrun.ContactID(int64(texter.ID))).

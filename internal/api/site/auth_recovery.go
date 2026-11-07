@@ -53,12 +53,12 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 // SiteAuthResetPassword sets a new password from a reset link (users.Links, through the use case
 // workspacecreation, which completes the Sign-up of an Unverified User).
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) error {
-	u, completedSignUp, err := h.signUp.ResetPasswordLink(ctx, req.Token, req.Password)
+	reset, err := h.signUp.ResetPasswordLink(ctx, req.Token, req.Password)
 	if err != nil {
 		return err
 	}
-	if completedSignUp {
-		if _, err := h.mail.Insert(ctx, mailjobs.Welcome(u.Email, u.Name), nil); err != nil {
+	if reset.CompletedSignUp {
+		if _, err := h.mail.Insert(ctx, mailjobs.Welcome(reset.User.Email, reset.User.Name), nil); err != nil {
 			mailNotQueued(ctx, "Welcome", err)
 		}
 	}
@@ -72,10 +72,13 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 // the request carries the Sign-up browser cookie the token was minted for; any other
 // browser must send a password, which replaces it.
 func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (*siteapi.SiteVerifyEmailResultHeaders, error) {
-	verified, landing, err := h.signUp.VerifyEmailLink(ctx, req.Token, params.SIGNUPBROWSER.Or(""), req.Password.Or(""))
+	link := inputs.VerifyEmailLink(req)
+	link.Browser = params.SIGNUPBROWSER.Or("")
+	done, err := h.signUp.VerifyEmailLink(ctx, link)
 	if err != nil {
 		return nil, err
 	}
+	verified, landing := done.User, done.Landing
 	// Welcome email is a platform (transactional) send via the system sender, to an
 	// address that is now proven. Best-effort: never fail the verification.
 	if _, err := h.mail.Insert(ctx, mailjobs.Welcome(verified.Email, verified.Name), nil); err != nil {

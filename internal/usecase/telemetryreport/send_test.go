@@ -14,6 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
+	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/telemetryschema"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -72,7 +73,7 @@ type rig struct {
 // noPrep is the preparation of a case that needs none.
 func noPrep(*testing.T, *rig) {}
 
-func newRig(t *testing.T, version string, edit func(*config.Config), opts ...telemetryreport.Option) *rig {
+func newRig(t *testing.T, version string, edit func(*config.Config)) *rig {
 	t.Helper()
 	env := testhelper.Setup(t)
 	recv := newReceiver(t, http.StatusNoContent)
@@ -84,7 +85,9 @@ func newRig(t *testing.T, version string, edit func(*config.Config), opts ...tel
 	host := testHost
 	host.AppVersion = version
 	mod := instancestates.New(env.DB, instancestates.EnvironmentOf(cfg, version, time.Time{}), clk.now)
-	sender, err := telemetryreport.New(mod, host, cfg, clk.now, opts...)
+	client, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
+	require.NoError(t, err)
+	sender := telemetryreport.New(mod, host, client, clk.now)
 	require.NoError(t, err)
 	_, err = mod.AcknowledgeNotice(t.Context())
 	require.NoError(t, err)
@@ -103,7 +106,7 @@ func (r *rig) offset(t *testing.T) time.Duration {
 	t.Helper()
 	row, err := r.mod.Ensure(t.Context())
 	require.NoError(t, err)
-	return telemetryreport.ReportOffset(row.InstanceID)
+	return instancestates.ReportOffset(row.InstanceID)
 }
 
 // firstSend moves the clock to the moment the first report is due.
@@ -146,12 +149,12 @@ func TestSenderSendsOncePerDay(t *testing.T) {
 }
 
 func TestSenderOffsetIsAStableTimeOfDayDerivedFromTheInstanceId(t *testing.T) {
-	first := telemetryreport.ReportOffset("abc")
-	second := telemetryreport.ReportOffset("abc")
+	first := instancestates.ReportOffset("abc")
+	second := instancestates.ReportOffset("abc")
 	assert.Equal(t, first, second)
 	for _, id := range []string{"a", "b", "c", "d", "e", "f"} {
-		assert.Less(t, telemetryreport.ReportOffset(id), 6*time.Hour)
-		assert.GreaterOrEqual(t, telemetryreport.ReportOffset(id), time.Duration(0))
+		assert.Less(t, instancestates.ReportOffset(id), 6*time.Hour)
+		assert.GreaterOrEqual(t, instancestates.ReportOffset(id), time.Duration(0))
 	}
 }
 
@@ -233,7 +236,9 @@ func TestSenderLeavesThingsHealthyWhenTheReceiverIsUnreachableOrRefuses(t *testi
 	assert.Nil(t, r.lastSent(t))
 
 	failing := newReceiver(t, http.StatusInternalServerError)
-	sender, err := telemetryreport.New(r.mod, r.host, &config.Config{TelemetryReceiverURL: failing.URL}, r.clock.now)
+	client, err := telemetryapi.NewClient(failing.URL)
+	require.NoError(t, err)
+	sender := telemetryreport.New(r.mod, r.host, client, r.clock.now)
 	require.NoError(t, err)
 
 	require.NoError(t, sender.Send(t.Context()))

@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
+	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	"github.com/getsphericon/sphericon/internal/api/oauth"
@@ -90,10 +91,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
@@ -438,7 +439,7 @@ var editionPackage = do.Package(
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
 		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
 		// A provider's bounce or complaint counts on the send-outcome counter once it is stored.
-		bus.OnStored(callbackinterpretation.RecordOutcome)
+		bus.OnStored(RecordSendOutcome)
 		return bus, nil
 	}),
 )
@@ -502,8 +503,12 @@ var jobsPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*telemetryreport.UseCase, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		lapsedAt, _ := do.MustInvoke[*licensekey.License](i).LapsedAt()
-		host := telemetryreport.HostOf(cfg, string(do.MustInvoke[Version](i)), lapsedAt)
-		return telemetryreport.New(do.MustInvoke[*instancestates.Module](i), host, cfg, do.MustInvoke[Clock](i))
+		host := telemetryHost(cfg, string(do.MustInvoke[Version](i)), lapsedAt)
+		client, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
+		if err != nil {
+			return nil, err
+		}
+		return telemetryreport.New(do.MustInvoke[*instancestates.Module](i), host, client, do.MustInvoke[Clock](i)), nil
 	}),
 	// The Release check (ADR 0032): a daily job, the line at start and the banner of an owner.
 	do.Lazy(func(i do.Injector) (*releasecheck.UseCase, error) {
@@ -511,7 +516,7 @@ var jobsPackage = do.Package(
 		if err != nil {
 			return nil, err
 		}
-		return releasecheck.New(do.MustInvoke[*instancestates.Module](i), source), nil
+		return releasecheck.New(do.MustInvoke[*instancestates.Module](i), source, slog.Default()), nil
 	}),
 	do.Lazy(func(i do.Injector) (*jobsClient, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -626,8 +631,7 @@ var identityPackage = do.Package(
 	// The creation of a Verified User's Workspace (a use case, ADR 0102). On an Instance that has
 	// Send caps (ADR 0067) a new Workspace starts with the Instance's default; elsewhere it has none.
 	do.Lazy(func(i do.Injector) (*workspacecreation.UseCase, error) {
-		return workspacecreation.New(do.MustInvoke[*events.Bus](i),
-			workspacecreation.WithStartingSendCap(do.MustInvoke[*instancestates.Module](i))), nil
+		return workspacecreation.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*instancestates.Module](i), workspaceid.New), nil
 	}),
 	// The Sign-up and the steps that make a User Verified with its first Workspace (a use case,
 	// ADR 0102), which starts with the Instance's default Send cap where the Instance has them.
@@ -635,15 +639,16 @@ var identityPackage = do.Package(
 		usersModule := do.MustInvoke[*users.Module](i)
 		links := users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i))
 		return signup.New(do.MustInvoke[*events.Bus](i), usersModule, links, do.MustInvoke[*credentials.Hasher](i),
-			signup.WithStartingSendCap(do.MustInvoke[*instancestates.Module](i)),
-			signup.WithSignUp(signup.SignUpConfig{
+			do.MustInvoke[*instancestates.Module](i),
+			signup.SignUpConfig{
 				Consents:            do.MustInvoke[*consentrecords.Module](i),
 				Budget:              do.MustInvoke[*throttle.Attempts](i).For(throttle.KindSignUp),
 				Mail:                do.MustInvoke[*river.Client[*sql.Tx]](i),
 				Mint:                links.VerificationLink,
 				RequireVerification: do.MustInvoke[*config.Config](i).RequireEmailVerification,
 				SurveyDue:           do.MustInvoke[*signupsurveyresponses.Module](i).Enabled,
-			})), nil
+			},
+			do.MustInvoke[Clock](i)), nil
 	}),
 	// The Sign-up survey is on only with an explicit switch and the `staff` license; the warning for
 	// a switch without the license is logged here, once, at start.
@@ -719,7 +724,7 @@ var audiencePackage = do.Package(
 	}),
 	// The Sending domain checks: the Verify button a person waits for and the re-check jobs (ADR 0010).
 	do.Lazy(func(i do.Injector) (*sendingdomainverification.UseCase, error) {
-		return sendingdomainverification.New(do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[memberships.Notify](i)), nil
+		return sendingdomainverification.New(do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[memberships.Notify](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*joindomains.Module, error) {
 		return joindomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i),
@@ -749,7 +754,7 @@ var contentPackage = do.Package(
 		return customfieldretyping.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
-		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i)), nil
+		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contactintake.UseCase, error) {
 		return contactintake.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i)), nil
@@ -783,7 +788,8 @@ var contentPackage = do.Package(
 	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
 	// exit of its Enrollment on the raw client.
 	do.Lazy(func(i do.Injector) (*stepexecution.UseCase, error) {
-		return stepexecution.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i)), stepexecution.WithClock(do.MustInvoke[Clock](i))), nil
+		return stepexecution.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i)),
+			do.MustInvoke[*secrets.Cipher](i), webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*eventrecording.UseCase, error) {
 		policy := eventrecording.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}

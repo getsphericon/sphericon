@@ -82,11 +82,12 @@ func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi
 	if err != nil {
 		return nil, err
 	}
-	u, held, err := h.signUp.CompletePendingSignup(ctx, pending.ID, consents, h.signupSurvey.Enabled(), h.now())
+	done, err := h.signUp.CompletePendingSignup(ctx, pending.ID, consents)
 	if err != nil {
 		return nil, err
 	}
-	cookie, err := h.issueSession(ctx, u, held.Provider, auth.Session{Method: auth.MethodProvider, ProviderLoginAt: held.CreatedAt})
+	held := done.PendingSignup
+	cookie, err := h.issueSession(ctx, done.User, held.Provider, auth.Session{Method: auth.MethodProvider, ProviderLoginAt: held.CreatedAt})
 	if err != nil {
 		return nil, err
 	}

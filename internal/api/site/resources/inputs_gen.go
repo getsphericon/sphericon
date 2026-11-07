@@ -34,6 +34,7 @@ import (
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
+	workspacedeletion "github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
 type InputsImpl struct{}
@@ -864,6 +865,15 @@ func (c *InputsImpl) TokenCreate(source *site.SiteCreateTokenInput) apitokens.In
 	}
 	return apitokensInput
 }
+func (c *InputsImpl) VerifyEmailLink(source *site.SiteVerifyEmailInput) signup.VerifyEmailLinkInput {
+	var signupVerifyEmailLinkInput signup.VerifyEmailLinkInput
+	if source != nil {
+		signupVerifyEmailLinkInput.Token = (*source).Token
+		// signupVerifyEmailLinkInput.Browser: ignore
+		signupVerifyEmailLinkInput.Password = stringIn((*source).Password)
+	}
+	return signupVerifyEmailLinkInput
+}
 func (c *InputsImpl) WebhookCreate(source *site.CreateWebhookInput) webhookendpoints.CreateInput {
 	var webhookendpointsCreateInput webhookendpoints.CreateInput
 	if source != nil {
@@ -886,6 +896,13 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhookendpo
 		webhookendpointsUpdateInput.Enabled = boolPatch((*source).Enabled)
 	}
 	return webhookendpointsUpdateInput
+}
+func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) workspacedeletion.RestoreInput {
+	var workspacedeletionRestoreInput workspacedeletion.RestoreInput
+	// workspacedeletionRestoreInput.UserID: ignore
+	workspacedeletionRestoreInput.PublicID = string(source.ID)
+	// workspacedeletionRestoreInput.Actor: ignore
+	return workspacedeletionRestoreInput
 }
 func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
 	var consentrecordsReAcceptance consentrecords.ReAcceptance

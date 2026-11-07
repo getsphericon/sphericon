@@ -22,7 +22,7 @@ import (
 )
 
 func module(env *testhelper.TestEnv, lookup domainname.TXTLookup) *sendingdomainverification.UseCase {
-	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail))
+	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now)
 }
 
 // acme is the scope of the Workspace the checked fixture domains belong to.
@@ -119,7 +119,7 @@ func TestVerifyDKIM_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 func TestVerifyDKIM_withoutANotifierStillFlips(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := sendingdomainverification.New(sendingdomains.New(env.Bus, nil), dnstest.Resolver(t, nil).LookupTXT, nil)
+	m := sendingdomainverification.New(sendingdomains.New(env.Bus, nil), dnstest.Resolver(t, nil).LookupTXT, nil, time.Now)
 
 	_, err := m.VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 

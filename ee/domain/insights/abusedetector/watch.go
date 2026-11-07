@@ -14,7 +14,7 @@ import (
 )
 
 // Watch reads a Workspace's standing with the detector, without acting on it: the
-// console and the dashboard use it, the Detector builds on it.
+// console and the dashboard use it, the detector's pass (ee/usecase/abusedetection) builds on it.
 type Watch struct {
 	lic    *licensekey.License
 	limits Limits

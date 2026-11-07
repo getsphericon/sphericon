@@ -161,6 +161,14 @@ func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(
 	})
 }
 
+// Enrollments is the Step execution use case over bus for a test that only hands it an Event
+// (OnEvent) or a Rule's enrollment (EnrollOnRule): it makes and ends Enrollments and queues their
+// first step, but sends nothing and makes no call, so it is built without a sender, a fence or an
+// HTTP client.
+func Enrollments(bus *events.Bus) *stepexecution.UseCase {
+	return stepexecution.New(bus, nil, nil, nil, nil, time.Now)
+}
+
 // RunNextStep takes the oldest waiting step job of an Enrollment from the queue, executes its
 // step through mod as the worker would and deletes the job, the way a finished job leaves the
 // queue. It reports whether there was a job. The job is run whatever its schedule says: a step
