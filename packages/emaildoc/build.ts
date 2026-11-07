@@ -6,24 +6,33 @@ import { join } from 'node:path'
 import { runInThisContext } from 'node:vm'
 
 import { build, transformSync } from 'esbuild'
+import type { Plugin } from 'esbuild'
 
 const editorDist = realpathSync(join(import.meta.dirname, 'node_modules/@react-email/editor/dist'))
 
 // The image node is not a public export of @react-email/editor: it sits in an internal chunk whose
 // file name carries a content hash, so the chunk is found by the symbol it exports.
-function imageChunk() {
+function imageChunk(): string {
   const found = readdirSync(editorDist).filter(
     (name) =>
       name.startsWith('extension-') &&
       name.endsWith('.mjs') &&
       readFileSync(join(editorDist, name), 'utf8').includes('export { createImageExtension as t }'),
   )
-  if (found.length !== 1) {
+  const [chunk, ...others] = found
+  if (chunk === undefined || others.length > 0) {
     throw new Error(
       `expected one editor chunk exporting createImageExtension, found ${found.length}`,
     )
   }
-  return join(editorDist, found[0])
+  return join(editorDist, chunk)
+}
+
+/** A rewrite of a dependency's source: in the files `file` matches, `pattern` becomes `replacement`. */
+interface Rewrite {
+  file: RegExp
+  pattern: RegExp
+  replacement: string | ((match: string, ...groups: string[]) => string)
 }
 
 // Source rewrites for what goja cannot run. Each must match exactly once, so a dependency update that
@@ -43,7 +52,7 @@ function imageChunk() {
 //   compiles; the first read of `Prism.languages` still runs it, in case the host does not. The
 //   same languages register in the same order, so a code block exports as before, and the bundle
 //   compiles in about 0.2 seconds and starts a runtime in about 0.1.
-const rewrites = [
+const rewrites: Rewrite[] = [
   {
     file: /@react-email[\\/]editor[\\/]dist[\\/].*\.mjs$/,
     pattern: /import\(\s*(?:\/\*[\s\S]*?\*\/\s*)?`[^`]*`\s*\)/g,
@@ -58,7 +67,7 @@ const rewrites = [
     file: /react-email[\\/]dist[\\/]components[\\/]code-block[\\/]prism\.mjs$/,
     pattern:
       /(const Prism\$1 = PrismImport\.default \?\? PrismImport;\n)([\s\S]*)\nexport \{ Prism\$1 as Prism \};/g,
-    replacement: (_, head, languages) =>
+    replacement: (_match, head, languages) =>
       `${head}let languagesRegistered = false;
 const codeLanguagesSource = ${JSON.stringify(
         transformSync(`'use strict';\n${languages}`, { minify: true, legalComments: 'none' }).code,
@@ -81,36 +90,45 @@ export { Prism };`,
   },
 ]
 
-const rewritten = new Map()
-const rewriteSources = {
+const rewritten = new Map<Rewrite, number>()
+const rewriteSources: Plugin = {
   name: 'rewrite-sources',
   setup(b) {
     for (const rewrite of rewrites) {
       b.onLoad({ filter: rewrite.file }, (args) => {
-        const contents = readFileSync(args.path, 'utf8').replace(rewrite.pattern, (...match) => {
-          rewritten.set(rewrite, (rewritten.get(rewrite) ?? 0) + 1)
-          return typeof rewrite.replacement === 'function'
-            ? rewrite.replacement(...match)
-            : rewrite.replacement
-        })
+        const contents = readFileSync(args.path, 'utf8').replace(
+          rewrite.pattern,
+          (match: string, ...groups: string[]) => {
+            rewritten.set(rewrite, (rewritten.get(rewrite) ?? 0) + 1)
+            return typeof rewrite.replacement === 'function'
+              ? rewrite.replacement(match, ...groups)
+              : rewrite.replacement
+          },
+        )
         return { contents, loader: 'js' }
       })
     }
   },
 }
 
-const resolveImageChunk = {
+const resolveImageChunk: Plugin = {
   name: 'resolve-image-chunk',
   setup(b) {
-    b.onResolve({ filter: /^editor-image-extension$/ }, () => ({ path: imageChunk() }))
+    b.onResolve({ filter: /^#editor-image-extension$/ }, () => ({ path: imageChunk() }))
   },
 }
+
+// The shims run before any module of the bundle, so they go in as a classic script before it.
+const shims = transformSync(readFileSync(join(import.meta.dirname, 'src/shims.ts'), 'utf8'), {
+  loader: 'ts',
+  format: 'iife',
+}).code
 
 const outdir = join(import.meta.dirname, 'dist')
 mkdirSync(outdir, { recursive: true })
 
 await build({
-  entryPoints: [join(import.meta.dirname, 'src/entry.mjs')],
+  entryPoints: [join(import.meta.dirname, 'src/entry.ts')],
   outfile: join(outdir, 'emaildoc.js'),
   bundle: true,
   format: 'iife',
@@ -119,7 +137,7 @@ await build({
   minify: true,
   legalComments: 'none',
   define: { 'process.env.NODE_ENV': '"production"' },
-  banner: { js: readFileSync(join(import.meta.dirname, 'src/shims.js'), 'utf8') },
+  banner: { js: shims },
   plugins: [rewriteSources, resolveImageChunk],
   logLevel: 'warning',
 })
@@ -142,5 +160,7 @@ writeFileSync(
 
 // The editor version the bundle was built from: it is the lockfile's pin (the build reads the
 // installed package), stored beside every document the server renders.
-const editorPackage = JSON.parse(readFileSync(join(editorDist, '..', 'package.json'), 'utf8'))
+const editorPackage: { version: string } = JSON.parse(
+  readFileSync(join(editorDist, '..', 'package.json'), 'utf8'),
+)
 writeFileSync(join(outdir, 'editor-version.txt'), `${editorPackage.version}\n`)

@@ -4,8 +4,17 @@
   "private": true,
   "description": "Builds the email document renderer bundle that the Go binary runs in an embedded JavaScript runtime",
   "type": "module",
+  "imports": {
+    "#compose-react-email": {
+      "types": "./src/compose-react-email.d.ts",
+      "default": "@react-email/editor/core"
+    },
+    "#editor-image-extension": {
+      "types": "./src/editor-image-extension.d.ts"
+    }
+  },
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.ts"
   },
   "dependencies": {
     "@react-email/editor": "1.7.19",
