@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
@@ -55,7 +56,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
-	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 )
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
@@ -494,7 +494,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	TrackingReasonToResource(source trackingdomain.Reason) externalapi.TrackingReason
 	// goverter:enum:transform value
-	TransactionalSendStatusToResource(source transactionalsend.Status) externalapi.TransactionalSendStatus
+	TransactionalSendStatusToResource(source outboundmessages.TransactionalStatus) externalapi.TransactionalSendStatus
 	// goverter:enum:transform value
 	TrackingStateToResource(source trackingdomain.State) externalapi.TrackingState
 	// goverter:enum:transform value

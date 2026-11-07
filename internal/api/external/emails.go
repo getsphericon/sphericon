@@ -9,16 +9,16 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 )
 
-// EmailsSend is the transactional send surface (ADR 0005). The whole operation is the
-// Transactional send use case's; this handler only unpacks the request, calls it and renders its
-// Result as the HTTP contract; a request the use case refuses is its error. The optional
+// EmailsSend is the transactional send surface (ADR 0005). The whole operation is the Outbound send
+// module's (SendTransactional); this handler only unpacks the request, calls it and renders its
+// result as the HTTP contract; a request the module refuses is its error. The optional
 // Idempotency-Key becomes the send's claim key: a repeated key replays the recorded outcome
 // instead of sending again, and a key whose first request is still in flight is refused (409).
 func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransactionalEmailInput, params externalapi.EmailsSendParams) (*externalapi.SendTransactionalEmailResponse, error) {
-	res, err := h.transactional.Send(ctx, auth.TokenScoped(ctx), transactionalsend.Request{
+	res, err := h.outbound.SendTransactional(ctx, auth.TokenScoped(ctx), outboundmessages.TransactionalRequest{
 		TemplateID:     int64(req.TemplateId),
 		Destination:    string(req.Destination),
 		Variables:      lo.MapValues(req.Variables.Or(nil), func(v jx.Raw, _ string) json.RawMessage { return json.RawMessage(v) }),

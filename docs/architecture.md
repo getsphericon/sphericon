@@ -254,7 +254,9 @@ coding standards in `CODING_STANDARDS.md`.
   `internal/usecase/<subject><action>` in glossary words (`tagdeletion`). An operation whose
   modules its owner may import is the owner's, with its tests: the Contact intake of an import is
   `contacts.Module.UpsertBatch`, which records a row's SMS Confirmation through `confirmations` in
-  the row's transaction. The use
+  the row's transaction, and the Transactional send is `outboundmessages.Module.SendTransactional`,
+  which reads the Template it references, resolves the Contact through `contacts` and sends through
+  the module's own `Send`. The use
   case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
   states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
   `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
@@ -333,14 +335,14 @@ coding standards in `CODING_STANDARDS.md`.
   the raw client in a fixed order, and sweeps them by id and compare-and-swap
   (`secrets.Cipher.Reencrypt`). A sweep only stores the value it read again under the
   primary key, so no check guards it and it is not in `x-unchecked-removals`.
-  A use case need not guard a removal: an operation that writes no table itself but reads or
-  changes several modules' rows is one too. A Visitor identification (`internal/usecase/visitoridentification`, built in
+  A use case need not guard a removal: an operation whose subject's owner would have to call a
+  module above it is one too, and so is one that reads modules of several contexts. A Visitor
+  identification (`internal/usecase/visitoridentification`, built in
   `internal/server` with the collect surface) upserts the Contact through `contacts`, binds the
-  Visitor through `visitors`, announces its chats through `bindings` and stitches its Events through
-  the bus, in one transaction. The Ingest hook's reading of a provider's callbacks
+  Visitor through `visitors`, announces its chats through `bindings` (sending, above the Contact)
+  and stitches its Events through the bus, in one transaction. The Ingest hook's reading of a provider's callbacks
   (`callbackinterpretation`) opens the request's transaction and changes Outbound messages, Suppressions,
-  Unsubscribes, Confirmations and Bindings through their modules; the Transactional send
-  (`transactionalsend`) hands its request to the Outbound send module; recording a customer's Event
+  Unsubscribes, Confirmations and Bindings through their modules; recording a customer's Event
   (`eventrecording`) resolves its Contact and publishes it on the bus, which owns the Event log's reads; the Analytics reports (`analyticsreport`) and what Needs
   attention (`needsattentionreport`) only read.
   The consent of a Destination (`internal/domain/contacts/confirmations`,

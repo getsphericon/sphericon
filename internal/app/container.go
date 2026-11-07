@@ -111,7 +111,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
-	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
@@ -763,10 +762,6 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
-	// The transactional send surface of /api: a Template sent through Outbound send.
-	do.Lazy(func(i do.Injector) (*transactionalsend.UseCase, error) {
-		return transactionalsend.New(do.MustInvoke[*emailtemplates.Module](i), do.MustInvoke[*outboundmessages.Module](i)), nil
-	}),
 	// Webhooks: the audit.entry rule asks the Edition whether the license is active.
 	do.Lazy(func(i do.Injector) (*webhookendpoints.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -949,7 +944,6 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		CustomFieldRetyping:       do.MustInvoke[*customfieldretyping.UseCase](i),
 		Bindings:                  do.MustInvoke[*bindings.Module](i),
 		Templates:                 do.MustInvoke[*emailtemplates.Module](i),
-		Transactional:             do.MustInvoke[*transactionalsend.UseCase](i),
 		BrandKit:                  do.MustInvoke[*brandkits.Module](i),
 		Automations:               do.MustInvoke[*automations.Module](i),
 		Rules:                     do.MustInvoke[*rules.Module](i),

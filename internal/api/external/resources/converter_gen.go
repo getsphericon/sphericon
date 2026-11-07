@@ -32,6 +32,7 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	linkclick "github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
+	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	providerlimit "github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
@@ -45,7 +46,6 @@ import (
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
-	transactionalsend "github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	jx "github.com/go-faster/jx"
 )
 
@@ -1625,12 +1625,12 @@ func (c *ConverterImpl) TrackingStateToResource(source trackingdomain.State) ext
 	}
 	return externalapiTrackingState
 }
-func (c *ConverterImpl) TransactionalSendStatusToResource(source transactionalsend.Status) external.TransactionalSendStatus {
+func (c *ConverterImpl) TransactionalSendStatusToResource(source outboundmessages.TransactionalStatus) external.TransactionalSendStatus {
 	var externalapiTransactionalSendStatus external.TransactionalSendStatus
 	switch source {
-	case transactionalsend.Sent:
+	case outboundmessages.TransactionalSent:
 		externalapiTransactionalSendStatus = external.TransactionalSendStatusSent
-	case transactionalsend.Suppressed:
+	case outboundmessages.TransactionalSuppressed:
 		externalapiTransactionalSendStatus = external.TransactionalSendStatusSuppressed
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

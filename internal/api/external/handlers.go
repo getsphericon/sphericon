@@ -37,7 +37,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 
@@ -75,7 +74,6 @@ type Handlers struct {
 	sendingDomainVerification *sendingdomainverification.UseCase
 	bindings                  *bindings.Module
 	templates                 *emailtemplates.Module
-	transactional             *transactionalsend.UseCase
 	brandKit                  *brandkits.Module
 	automations               *automations.Module
 	rules                     *rules.Module
@@ -133,7 +131,6 @@ type Deps struct {
 	SendingDomainVerification *sendingdomainverification.UseCase
 	Bindings                  *bindings.Module
 	Templates                 *emailtemplates.Module
-	Transactional             *transactionalsend.UseCase
 	BrandKit                  *brandkits.Module
 	Automations               *automations.Module
 	Rules                     *rules.Module
@@ -156,7 +153,7 @@ func NewHandlers(d Deps) *Handlers {
 	return &Handlers{
 		now:        d.Clock,
 		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
-		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
+		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,
 		unsubscribe: d.Unsubscribe,

@@ -110,7 +110,9 @@ steps of an Enrollment, `internal/usecase/secretreencryption` the re-encryption 
 secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
 `internal/usecase/visitoridentification` what Identify binds and stitches). An operation that moves
 into the module that owns its subject (ADR 0112) takes its tests to that module's `_test` package:
-`internal/domain/contacts/contacts` holds an import's rows (`UpsertBatch`). The use case is built from the container like a
+`internal/domain/contacts/contacts` holds an import's rows (`UpsertBatch`) and
+`internal/domain/sending/outboundmessages` the refusals of a Transactional send
+(`SendTransactional`). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step

@@ -1285,7 +1285,6 @@ rules:
         domain-instance,
         domain-identity-base,
         domain-contacts,
-        domain-content,
         domain-sending-raw,
         domain-sending,
         gen-telemetry,
