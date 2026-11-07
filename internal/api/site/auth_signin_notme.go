@@ -2,38 +2,9 @@ package site
 
 import (
 	"context"
-	"log/slog"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 )
-
-// noticeIdentityLinked mails the owner that a Sign-in provider was linked to the account
-// silently (ADR 0048), with the link that undoes it. Best-effort, like the other account
-// notices: the sign-in it follows has already succeeded, and the visitor's response must not
-// depend on the mail (it is the same for an address that existed and one that did not).
-func (h *Handlers) noticeIdentityLinked(ctx context.Context, u *ent.User, provider string, identityID int64) {
-	token, err := h.links.NotMeLink(u, identityID)
-	if err != nil {
-		slog.WarnContext(ctx, "signin: could not mint the not-me link", "error", err)
-		return
-	}
-	if _, err := h.mail.Insert(ctx, mailjobs.IdentityLinkedNotice(u.Email, h.providerDisplayName(provider), token), nil); err != nil {
-		slog.WarnContext(ctx, "signin: could not queue the linked-identity notice", "error", err)
-	}
-}
-
-// providerDisplayName is what a provider is called to a person ("Google"); its registry name
-// when the Instance no longer offers it.
-func (h *Handlers) providerDisplayName(name string) string {
-	for _, p := range h.signin.Enabled() {
-		if p.Name == name {
-			return p.DisplayName
-		}
-	}
-	return name
-}
 
 // SiteAuthSigninNotMe is the link of the notice mailed after a silent link: it unlinks the
 // identity the token names and ends every session of its User (ADR 0048). The token is the

@@ -9,7 +9,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 )
 
 // SitePasskeysList lists the session User's Passkeys, oldest first (ADR 0052).
@@ -58,8 +57,8 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.
 }
 
 // SitePasskeysFinishRegistration stores the Passkey once the User proves their identity (the
-// password, or a fresh provider login) and the authenticator's response checks out, and mails
-// the owner. Every session of the User goes on.
+// password, or a fresh provider login) and the authenticator's response checks out; the owner
+// is told by mail. Every session of the User goes on.
 func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *siteapi.SitePasskeyRegistrationInput, params siteapi.SitePasskeysFinishRegistrationParams) (*siteapi.SitePasskey, error) {
 	name, err := passkeys.PasskeyName(string(req.Name))
 	if err != nil {
@@ -73,12 +72,9 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 	if err != nil {
 		return nil, err
 	}
-	u, row, err := h.passkeys.FinishRegistration(ctx, userID, params.PASSKEY.Or(""), response, name)
+	_, row, err := h.passkeys.FinishRegistration(ctx, userID, params.PASSKEY.Or(""), response, name)
 	if err != nil {
 		return nil, err
-	}
-	if _, err := h.mail.Insert(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyAdded, row.Name), nil); err != nil {
-		mailNotQueued(ctx, "PasskeyNotice", err)
 	}
 	res := mapper.PasskeyToResource(row)
 	return &res, nil
@@ -183,7 +179,7 @@ func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePass
 	if err != nil {
 		return nil, err
 	}
-	u, row, err := h.passkeys.Remove(ctx, userID, int64(params.ID))
+	u, _, err := h.passkeys.Remove(ctx, userID, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -198,9 +194,6 @@ func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePass
 	cookie, err := h.sessions.Issue(u, sess)
 	if err != nil {
 		return nil, err
-	}
-	if _, err := h.mail.Insert(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyRemoved, row.Name), nil); err != nil {
-		mailNotQueued(ctx, "PasskeyNotice", err)
 	}
 	return &siteapi.SitePasskeysRemoveNoContent{SetCookie: cookie.String()}, nil
 }

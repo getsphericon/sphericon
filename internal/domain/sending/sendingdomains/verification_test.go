@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -21,7 +20,7 @@ import (
 // verification is the domain verification use case over the test's database: the dev resolver's
 // answers are read the way a check reads them.
 func verification(env *testhelper.TestEnv, lookup domainname.TXTLookup) *sendingdomainverification.UseCase {
-	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now)
+	return sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, lookup, time.Now)
 }
 
 func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {

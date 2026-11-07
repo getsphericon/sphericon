@@ -34,7 +34,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -47,7 +46,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
@@ -104,7 +102,7 @@ func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEn
 	mod := newMod(env, resolvingTo(fs), time.Now)
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
 		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: env.SystemMail, Catalog: registry.Default(),
-		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
+		OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})
 	require.NoError(t, err)
@@ -166,7 +164,7 @@ func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
 	require.NoError(t, e.client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
 
-	e.insert(t, mailjobs.Welcome("runtime@example.com", "Run"))
+	e.insert(t, jobs.SendNoticeArgs{EventID: "01RUNTIME", To: "runtime@example.com", Subject: "Welcome", Text: "Run"})
 
 	require.Eventually(t, func() bool {
 		for _, m := range e.SystemMail.Messages() {
@@ -221,83 +219,18 @@ func TestDispatchSendsAuditEntriesOnlyToEndpointsThatSelectThem(t *testing.T) {
 	assert.Equal(t, []int64{fixtures.WebhookInitechID}, e.queuedEndpoints(t), "an empty filter still receives customer events")
 }
 
-func TestWelcomeWorker(t *testing.T) {
+// A Notice is sent through the System sender as it was queued.
+func TestSendNoticeWorker(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, jobs.NewWelcomeWorker(env.SystemMail).Work(context.Background(),
-		job(mailjobs.WelcomeArgs{Email: "w@example.com", Name: "Wendy"})))
+	require.NoError(t, jobs.NewSendNoticeWorker(env.SystemMail).Work(context.Background(),
+		job(jobs.SendNoticeArgs{EventID: "01NOTICE", To: "w@example.com", Subject: "Welcome", Text: "Hello Wendy"})))
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "w@example.com", msgs[0].To)
-	assert.Contains(t, msgs[0].Text, "Wendy")
+	assert.Equal(t, "Hello Wendy", msgs[0].Text)
 
-	err := jobs.NewWelcomeWorker(nil).Work(context.Background(), job(mailjobs.WelcomeArgs{Email: "w@example.com"}))
+	err := jobs.NewSendNoticeWorker(nil).Work(context.Background(), job(jobs.SendNoticeArgs{To: "w@example.com"}))
 	require.Error(t, err, "no system sender configured")
-}
-
-func TestAuthMailWorker(t *testing.T) {
-	env := testhelper.Setup(t)
-	w := jobs.NewAuthMailWorker(env.SystemMail, "https://app.example/")
-	for _, flow := range []struct {
-		flow mailjobs.Flow
-		path string
-	}{
-		{mailjobs.FlowPasswordReset, "/reset-password"},
-		{mailjobs.FlowEmailVerify, "/verify-email"},
-		{mailjobs.FlowEmailChange, "/confirm-email-change"},
-		{mailjobs.FlowUserDeletion, "/delete-account"},
-	} {
-		require.NoError(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: flow.flow, Email: "a@example.com", Token: "t/1"})))
-		msgs := env.SystemMail.Messages()
-		assert.Contains(t, msgs[len(msgs)-1].Text, "https://app.example"+flow.path+"?token=t%2F1")
-	}
-
-	require.Error(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "nope", Email: "a@example.com"})))
-	require.Error(t, jobs.NewAuthMailWorker(nil, "").Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "password_reset"})))
-}
-
-// The Taken-address notice (ADR 0031) carries no token: only the sign-in and the
-// forgot-password pages, so it can never be a way into the account.
-func TestAuthMailWorkerAddressTakenNoticeCarriesNoToken(t *testing.T) {
-	env := testhelper.Setup(t)
-	w := jobs.NewAuthMailWorker(env.SystemMail, "https://app.example/")
-
-	require.NoError(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "address_taken", Email: "owner@example.com"})))
-
-	msgs := env.SystemMail.Messages()
-	require.Len(t, msgs, 1)
-	assert.Equal(t, "owner@example.com", msgs[0].To)
-	assert.NotContains(t, msgs[0].Text, "token")
-	assert.Contains(t, msgs[0].Text, "https://app.example/login")
-	assert.Contains(t, msgs[0].Text, "https://app.example/forgot-password")
-}
-
-// A Discard job does the whole job (builds the mail) but sends nothing: forgot-password
-// enqueues one for an unknown or over-limit address so every request costs the same.
-func TestAuthMailWorkerDiscardSendsNothing(t *testing.T) {
-	env := testhelper.Setup(t)
-	w := jobs.NewAuthMailWorker(env.SystemMail, "https://app.example/")
-	require.NoError(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "password_reset", Email: "a@example.com", Token: "t", Discard: true})))
-	assert.Empty(t, env.SystemMail.Messages())
-	require.Error(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "nope", Email: "a@example.com", Discard: true})), "a discarded job still validates what it renders")
-}
-
-func TestMemberInviteWorker(t *testing.T) {
-	env := testhelper.Setup(t)
-	w := jobs.NewMemberInviteWorker(env.SystemMail)
-	require.NoError(t, w.Work(context.Background(), job(mailjobs.MemberInviteArgs{
-		Email: "i@example.com", InviteURL: "https://x/invite/1", WorkspaceName: "Acme", InviterName: "Jane",
-	})))
-	// An invite without an inviter name falls back to a generic subject.
-	require.NoError(t, w.Work(context.Background(), job(mailjobs.MemberInviteArgs{
-		Email: "i@example.com", InviteURL: "https://x/invite/2", WorkspaceName: "Acme",
-	})))
-	msgs := env.SystemMail.Messages()
-	require.Len(t, msgs, 2)
-	assert.Contains(t, msgs[0].Text, "Jane invited you")
-	assert.Contains(t, msgs[1].Text, "Someone invited you")
-	assert.Equal(t, "You're invited to Acme on sphericon", msgs[0].Subject)
-
-	require.Error(t, jobs.NewMemberInviteWorker(nil).Work(context.Background(), job(mailjobs.MemberInviteArgs{})))
 }
 
 // webhookReceiver is an httptest server the Instance allowlist permits: the real hardened
@@ -362,7 +295,7 @@ func TestDeliverWebhookWorker(t *testing.T) {
 	}
 	rcv := newWebhookReceiver(t)
 	worker := func(allow webhook.Allowlist) *jobs.DeliverWebhookWorker {
-		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, allow), time.Now, env.Bus, env.SystemMail)
+		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, allow), time.Now, env.Bus)
 	}
 	ws := env.DB.Scoped(fixtures.AcmeID)
 	_, err := ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
@@ -403,7 +336,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 
 	clock := time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)
 	worker := func(allow webhook.Allowlist, timeout time.Duration) *jobs.DeliverWebhookWorker {
-		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(timeout, allow), func() time.Time { return clock }, env.Bus, env.SystemMail)
+		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(timeout, allow), func() time.Time { return clock }, env.Bus)
 	}
 	deliver := func(w *jobs.DeliverWebhookWorker) error {
 		return w.Work(ctx, job(jobs.DeliverWebhookArgs{EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`)}))
@@ -487,7 +420,7 @@ func newDisableHarness(t *testing.T) *disableHarness {
 	h := &disableHarness{t: t, env: env, rcv: newWebhookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
 	_, err := env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(h.rcv.srv.URL).Save(context.Background())
 	require.NoError(t, err)
-	h.w = jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, h.rcv.allow), func() time.Time { return h.clock }, env.Bus, env.SystemMail)
+	h.w = jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, h.rcv.allow), func() time.Time { return h.clock }, env.Bus)
 	return h
 }
 
@@ -548,13 +481,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, gone, time.Now))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now)).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, gone, time.Now)).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -808,7 +741,7 @@ func TestRecheckTrackingDomainsWorkerFansOutOneJobPerVerifiedHost(t *testing.T) 
 	require.NoError(t, err)
 	require.Positive(t, due)
 
-	mod := trackingdomains.New(e.DB, e.Bus, nil, trackingdomains.Config{Now: time.Now})
+	mod := trackingdomains.New(e.DB, e.Bus, trackingdomains.Config{Now: time.Now})
 	require.NoError(t, jobs.NewRecheckTrackingDomainsWorker(mod).Work(ctx, job(jobs.RecheckTrackingDomainsArgs{})))
 
 	kinds := e.queued(t)

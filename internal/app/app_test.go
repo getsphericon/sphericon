@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/samber/lo"
@@ -74,24 +73,16 @@ func TestE2EDKIMLookupOptionIsRefusedOutsideTheE2EProfile(t *testing.T) {
 	}
 }
 
-// relayTo points the system mail at a relay on host:port.
-func relayTo(t *testing.T, host string, port int) {
-	t.Helper()
-	t.Setenv("SPHERICON_SMTP_HOST", host)
-	t.Setenv("SPHERICON_SMTP_PORT", strconv.Itoa(port))
-	t.Setenv("SPHERICON_SMTP_USER", "")
-	t.Setenv("SPHERICON_SMTP_PASS", "")
-}
-
 func kramerica(t *testing.T, client *ent.Client) *ent.Workspace {
 	t.Helper()
 	return client.Workspace.Query().Where(workspace.PublicID(fixtures.KramericaPublicID)).OnlyX(t.Context())
 }
 
+// The command line suspends a Workspace; the suspension's event tells the owner, through the
+// server's job runner, so the notice waits in the queue the command committed to.
 func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
-	sink := testhelper.NewMailSink(t)
-	relayTo(t, sink.Host, sink.Port)
 	a, client := newCommandApp(t)
+	queue := sqlDBOn(t, os.Getenv("SPHERICON_DATABASE_URL"))
 	ctx := context.Background()
 
 	changed, err := a.SuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.StaffMember("op-42"), "complaint rate")
@@ -102,14 +93,12 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	assert.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 	assert.Equal(t, "op-42", *ws.SuspendedByID)
 	assert.Equal(t, "complaint rate", *ws.SuspensionReason)
-	notices := sink.Messages()
-	require.Len(t, notices, 1, "the owner is told")
-	assert.Equal(t, []string{fixtures.KramericaOwnerNewmanEmail}, notices[0].Rcpt)
+	require.Len(t, testhelper.QueuedEnvelopesOn(t, queue, events.NameWorkspaceSuspended), 1, "the owner is told")
 
 	changed, err = a.SuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.CLI, "again")
 	require.NoError(t, err)
 	assert.False(t, changed, "already suspended: nothing changes")
-	assert.Len(t, sink.Messages(), 1, "and the owner is not told twice")
+	assert.Len(t, testhelper.QueuedEnvelopesOn(t, queue, events.NameWorkspaceSuspended), 1, "and the owner is not told twice")
 	assert.Equal(t, "complaint rate", *kramerica(t, client).SuspensionReason)
 
 	changed, err = a.UnsuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.CLI)
@@ -120,18 +109,6 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	changed, err = a.UnsuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.CLI)
 	require.NoError(t, err)
 	assert.False(t, changed)
-}
-
-func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
-	// Nothing listens on this port: the suspension must still stand.
-	relayTo(t, "127.0.0.1", freePort(t))
-	a, client := newCommandApp(t)
-
-	changed, err := a.SuspendWorkspace(context.Background(), fixtures.KramericaPublicID, suspension.CLI, "abuse")
-	assert.True(t, changed)
-	require.ErrorContains(t, err, "workspace suspended, but the owner notice could not be sent")
-
-	assert.NotNil(t, kramerica(t, client).SuspendedAt)
 }
 
 func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {

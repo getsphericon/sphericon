@@ -3,22 +3,19 @@ package signup
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
 	"strings"
 
-	"github.com/riverqueue/river"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -61,12 +58,6 @@ type Consents interface {
 type SignUpConfig struct {
 	Consents Consents
 	Budget   Budget
-	// Mail is the insert-only river client that queues the mails a Sign-up sends: the
-	// verification link, the Taken-address notice and the welcome.
-	Mail *river.Client[*sql.Tx]
-	// Mint mints the verification token of a User, bound to its stored password hash and
-	// carrying the hash of the Sign-up browser it trusts (users.Links.VerificationLink).
-	Mint func(u *ent.User, browserHash string) (string, error)
 	// RequireVerification is the email verification gate (ADR 0030): on in the saas Mode.
 	RequireVerification bool
 	// SurveyDue reports whether a new User owes the Sign-up survey (ADR 0055).
@@ -95,9 +86,10 @@ type signUpForm struct {
 //  1. the form is checked before any work, so a refused one costs no hash;
 //  2. with verification required, every address costs the same: a slot of its mail budget, a
 //     password hash, a lookup, a write (the create, or the replace that a Verified User's row
-//     ignores), a token and exactly one mail job, which delivers only when the budget granted
-//     it. Only what the job carries differs: a verification link for a new or Unverified User,
-//     a tokenless notice for a Verified one;
+//     ignores) and exactly one published event, delivered only when the budget granted it. Only
+//     the event differs: the request of a verification link for a new or Unverified User (the
+//     link is minted when it is mailed), the claim of the address for a Verified one, whose owner
+//     is told without a token;
 //  3. two Sign-ups of one new address may race on the unique email: the loser finds the
 //     winner's User and goes on as a repeated Sign-up of it, so a race is no answer of its own;
 //  4. a repeated Sign-up of an Unverified address replaces its password, which ends every
@@ -141,21 +133,19 @@ func (u *UseCase) SignUp(ctx context.Context, in SignUpInput) (SignUpResult, err
 		return SignUpResult{}, err
 	}
 
-	// The token is bound to the stored password hash, so it works until a Sign-up replaces the
-	// hash or the address is verified, and it carries the hash of the Sign-up browser drawn
-	// here. A Verified User gets the same token and browser, and its notice carries no token.
+	// The link is bound to the stored password hash, so it works until a Sign-up replaces the
+	// hash or the address is verified, and it trusts the Sign-up browser drawn here. A Verified
+	// User draws the same browser, and the notice to its owner carries no token.
 	browser, browserHash := newBrowser()
-	token, err := cfg.Mint(usr, browserHash)
-	if err != nil {
-		return SignUpResult{}, err
+	var request events.DomainEvent = &events.LinkRequested{
+		Action: events.NameUserVerificationRequested, UserID: usr.ID, Email: usr.Email, BrowserHash: browserHash, Deliver: granted,
 	}
-	// Best-effort: a lost mail is asked for again.
 	if usr.EmailVerifiedAt != nil {
-		if _, err := cfg.Mail.Insert(ctx, mailjobs.AddressTakenNotice(usr.Email, granted), nil); err != nil {
-			mailNotQueued(ctx, "AddressTakenNotice", err)
-		}
-	} else if _, err := cfg.Mail.Insert(ctx, mailjobs.EmailVerification(usr.Email, token, granted), nil); err != nil {
-		mailNotQueued(ctx, "EmailVerification", err)
+		request = &events.AddressClaimed{Email: usr.Email, Deliver: granted}
+	}
+	// Best-effort: a lost request is asked for again.
+	if err := u.bus.Publish(ctx, request); err != nil {
+		slog.WarnContext(ctx, "signup: request not published", "event", request.EventName(), "error", err)
 	}
 	return SignUpResult{Browser: browser}, nil
 }
@@ -197,23 +187,21 @@ func (u *UseCase) signUpUser(ctx context.Context, n users.NewUser) (*ent.User, e
 }
 
 // signUpVerified is a Sign-up on an Instance that does not require email verification: the
-// User is Verified with its first Workspace at once (SignUpVerified), and the welcome mail
-// follows as it does after a verification link. No session starts; the User signs in next.
+// User is Verified with its first Workspace at once, and the Sign-up completes as it does after
+// a verification link (events.UserSignedUp, which welcomes the User). No session starts; the
+// User signs in next.
 func (u *UseCase) signUpVerified(ctx context.Context, n users.NewUser, password string) (SignUpResult, error) {
 	hash, err := u.passwords.Hash(password)
 	if err != nil {
 		return SignUpResult{}, err
 	}
 	n.PasswordHash = hash
-	usr, err := u.SignUpVerified(ctx, n)
+	_, err = u.createVerified(ctx, n, signedUp)
 	switch {
 	case db.IsUniqueViolation(err):
 		return SignUpResult{}, ErrEmailTaken
 	case err != nil:
 		return SignUpResult{}, err
-	}
-	if _, err := u.signUp.Mail.Insert(ctx, mailjobs.Welcome(usr.Email, usr.Name), nil); err != nil {
-		mailNotQueued(ctx, "Welcome", err)
 	}
 	return SignUpResult{}, nil
 }
@@ -226,10 +214,6 @@ func merged(fields map[string][]string, items *validation.FieldsError) *validati
 		maps.Copy(all, items.Fields)
 	}
 	return &validation.FieldsError{Fields: all}
-}
-
-func mailNotQueued(ctx context.Context, mail string, err error) {
-	slog.WarnContext(ctx, "mail not enqueued", "mail", mail, "error", err)
 }
 
 // newBrowser draws the random value that marks one Sign-up browser and returns it with the

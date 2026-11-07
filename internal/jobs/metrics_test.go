@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
 )
 
@@ -33,7 +32,7 @@ func TestQueueMetricsReportDepthAndOldestAge(t *testing.T) {
 	ctx := t.Context()
 	waiting := time.Now().Add(-time.Minute)
 	insertJob(t, e.pool, river.QueueDefault, rivertype.JobStateAvailable, waiting)
-	e.insert(t, mailjobs.Welcome("b@example.com", "B"))
+	e.insert(t, jobs.SendNoticeArgs{EventID: "01METRICS", To: "b@example.com", Subject: "Welcome", Text: "B"})
 	later := time.Now().Add(time.Hour)
 	_, err = e.queue.Insert(ctx, broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID, ScheduledAt: &later},
 		&river.InsertOpts{Queue: broadcasts.Queue, ScheduledAt: later})

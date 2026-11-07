@@ -106,9 +106,9 @@ type InviteInput struct {
 // expiry, role; a prior acceptance is cleared), and records `invitation.create` in
 // the same transaction. It generates the one-time token, stores only its hash, sets
 // the expiry InviteTokenTTL ahead and returns the raw token for the caller's link;
-// the token itself is never logged. ErrEmailEmpty for a blank email, ErrAlreadyMember
-// when the address already has a Membership in the Workspace. Delivery is the
-// caller's concern.
+// the token itself is never logged. It publishes events.InvitationCreated in the same
+// transaction, which mails the invitee their link (ADR 0105). ErrEmailEmpty for a blank email,
+// ErrAlreadyMember when the address already has a Membership in the Workspace.
 func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, in InviteInput) (*ent.Invitation, string, error) {
 	email := throttle.NormalizeEmail(in.Email)
 	if email == "" {
@@ -150,7 +150,7 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		if err != nil {
 			return err
 		}
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
+		if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: s.WorkspaceID(),
 			Actor:       actor,
 			Action:      events.ActionInvitationCreate,
@@ -158,6 +158,11 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 			TargetID:    strconv.FormatInt(inv.ID, 10),
 			TargetName:  inv.Email,
 			Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
+		}); err != nil {
+			return err
+		}
+		return pub.Publish(ctx, &events.InvitationCreated{
+			WorkspaceID: s.WorkspaceID(), InvitationID: inv.ID, Email: inv.Email, Token: token, InvitedBy: in.InvitedBy,
 		})
 	})
 	if err != nil {

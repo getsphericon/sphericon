@@ -21,12 +21,13 @@ func (b *Bus) WithinScopedTx(ctx context.Context, s *ent.Scoped, fn func(ts *ent
 // domain moving to the Workspace that now proves it): fn receives to, the caller's scope
 // bound to the transaction, and from, a scope over the Workspace named by fromID acting as
 // the system, in the same transaction, so both sides commit or neither does. The
-// hand-over is the one place a transaction is scoped to a Workspace other than the caller's.
-func (b *Bus) WithinHandOverTx(ctx context.Context, s *ent.Scoped, fromID int64, fn func(to, from *ent.Scoped) error) error {
+// hand-over is the one place a transaction is scoped to a Workspace other than the caller's. pub
+// publishes in the same transaction, for either side.
+func (b *Bus) WithinHandOverTx(ctx context.Context, s *ent.Scoped, fromID int64, fn func(to, from *ent.Scoped, pub Publisher) error) error {
 	return b.WithinTx(ctx, func(tx *ent.Client, pub Publisher) error {
 		ap := auditPublisher{pub: pub}
 		from := tx.Scoped(fromID).As(Actor{Kind: ActorSystem}, b).InTx(tx, ap)
-		return fn(s.InTx(tx, ap), from)
+		return fn(s.InTx(tx, ap), from, pub)
 	})
 }
 

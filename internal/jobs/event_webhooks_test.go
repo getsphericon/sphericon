@@ -14,11 +14,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// Every live event of every type the bus knows is handed to the webhooks consumer, which finds
-// the endpoints that want it; loaded history is not. Tests read what a request published from the
-// queued event jobs (testhelper.QueuedEnvelopes), so a webhooks filter narrower than this would
-// let an assertion that nothing was published pass on nothing.
-func TestEveryLiveEventIsHandedToTheWebhooksConsumer(t *testing.T) {
+// Every live Event and every Audit entry is handed to the webhooks consumer, which finds the
+// endpoints that want it; loaded history is not, and neither is an event of the Instance or a
+// change told only to a Workspace's people (an Invitation carries its link's token), which no
+// endpoint may receive.
+func TestEveryLiveEventAndAuditEntryIsHandedToTheWebhooksConsumer(t *testing.T) {
 	webhooks, ok := lo.Find(jobs.EventConsumers(), func(c events.Consumer) bool {
 		return c.Job(events.Envelope{}, &events.CollectedEvent{}).Kind() == jobs.WebhookEventArgs{}.Kind()
 	})
@@ -29,7 +29,8 @@ func TestEveryLiveEventIsHandedToTheWebhooksConsumer(t *testing.T) {
 		ev, err := events.Decode(env)
 		require.NoError(t, err, name)
 		wanted := webhooks.Wants(env, ev)
-		assert.True(t, wanted, name)
+		reachesEndpoints := !events.IsUnprojected(name) || name == events.NameAuditEntry
+		assert.Equal(t, reachesEndpoints, wanted, "%s: only an Event or an Audit entry leaves through an endpoint", name)
 	}
 	history := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, Action: "purchase", Backfill: true}
 	historyWanted := webhooks.Wants(events.Envelope{Name: events.NameCollected}, history)

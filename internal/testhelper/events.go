@@ -31,10 +31,10 @@ import (
 
 // QueuedEnvelopes are the events this test's publishes handed to a consumer, one envelope per
 // event, in the order they were published; with names, only those of these bus types. A publish
-// writes the Event row and inserts the job of every consumer that wants the event, and every live
-// event goes at least to the webhooks consumer (jobs' TestEveryLiveEventIsHandedToTheWebhooksConsumer),
-// so this is what the test published: a repeat is not, and loaded history is unless a consumer
-// wants it (StoredEvents shows those).
+// writes the Event row and inserts the job of every consumer that wants the event, and the harness
+// registers a consumer of its own that wants every live event (recorder), so this is what the test
+// published: a repeat is not, and loaded history is unless a consumer wants it (StoredEvents shows
+// those).
 func (env *TestEnv) QueuedEnvelopes(t *testing.T, names ...string) []events.Envelope {
 	t.Helper()
 	return queuedEnvelopes(t, env.riverClient(t), names)
@@ -143,6 +143,30 @@ func (p busPublisher) Publish(ctx context.Context, ev events.DomainEvent) error 
 	return p.bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error { return pub.Publish(ctx, ev) })
 }
 
+// recordedArgs is the job of the harness's own consumer of the domain events (recorder): every live
+// event a test publishes is handed to it, whether or not a consumer of the application wants it,
+// so QueuedEnvelopes sees an event no consumer reacts to yet. Working it does nothing.
+type recordedArgs struct {
+	events.EventJob
+}
+
+func (recordedArgs) Kind() string { return "test_event_recorded" }
+
+// recordedWorker works the recorder's jobs, doing nothing.
+type recordedWorker struct {
+	river.WorkerDefaults[recordedArgs]
+}
+
+func (recordedWorker) Work(context.Context, *river.Job[recordedArgs]) error { return nil }
+
+// recorder is the harness's consumer of every live event (recordedArgs).
+var recorder = events.Consumer{
+	Wants: func(_ events.Envelope, ev events.DomainEvent) bool { return !events.IsBackfill(ev) },
+	Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
+		return recordedArgs{events.EventJob{Envelope: env}}
+	},
+}
+
 // BusOn is the application's event bus over a database a test writes to for real (RealDB): a
 // publish stores its Event row and inserts the jobs of core's and the Edition's consumers there.
 func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
@@ -152,6 +176,7 @@ func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
 	require.NoError(t, err)
 	bus.UseJobs(inserter)
 	bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
+	bus.UseConsumers(recorder)
 	bus.OnStored(app.RecordSendOutcome)
 	return bus
 }
@@ -179,8 +204,9 @@ func (env *TestEnv) PerformEventJobOf(t *testing.T, args river.JobArgs, publishe
 	}, args)
 }
 
-// RetryJobs makes the completed jobs of the kinds of only available again with river's own retry
-// (JobRetry), so the next PerformEnqueuedJobs works them again, as river redelivers a job.
+// RetryJobs makes the completed jobs of the kinds of only, and those waiting for their next
+// attempt after a failure, available again with river's own retry (JobRetry), so the next
+// PerformEnqueuedJobs works them again, as river redelivers a job.
 func (env *TestEnv) RetryJobs(t *testing.T, only ...river.JobArgs) {
 	t.Helper()
 	require.NotEmpty(t, only)
@@ -190,7 +216,7 @@ func (env *TestEnv) RetryJobs(t *testing.T, only ...river.JobArgs) {
 	}
 	rc := env.riverClient(t)
 	res, err := rc.JobList(t.Context(), river.NewJobListParams().Kinds(kinds...).
-		States(rivertype.JobStateCompleted).First(maxQueuedJobs))
+		States(rivertype.JobStateCompleted, rivertype.JobStateRetryable).First(maxQueuedJobs))
 	require.NoError(t, err)
 	for _, job := range res.Jobs {
 		_, err := rc.JobRetry(t.Context(), job.ID)

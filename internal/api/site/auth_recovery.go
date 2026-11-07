@@ -7,18 +7,17 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 )
 
-// SiteAuthForgotPassword mints a reset token and emails a link. It answers 202
-// whether or not the address matches an account and whether or not the per-address
-// budget is spent, so the endpoint cannot be used to enumerate the addresses that hold a User
-// (the per-IP cap answers 429 in the rate limit middleware, before this runs). Every
-// request does the same work: take a slot of the address's budget in one atomic
-// step, look the address up, mint a token and enqueue a mail job. Only a known
-// address that was granted a slot gets its mail delivered; for the others the job
-// is a no-send one, so response time does not leak existence either.
+// SiteAuthForgotPassword asks for a reset link to be mailed. It answers 202 whether or not the
+// address matches an account and whether or not the per-address budget is spent, so the endpoint
+// cannot be used to enumerate the addresses that hold a User (the per-IP cap answers 429 in the
+// rate limit middleware, before this runs). Every request does the same work: take a slot of the
+// address's budget in one atomic step, look the address up and publish the request. Only a known
+// address that was granted a slot gets its link, minted when it is mailed and bound to the
+// password as it is then, so it works once.
 func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.SiteForgotPasswordInput) error {
 	email := strings.TrimSpace(string(req.Email))
 	if email == "" {
@@ -33,44 +32,27 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 	if err != nil && !ent.IsNotFound(err) {
 		return err
 	}
-	// The link is bound to the current password hash, so it works once; an unknown address
-	// gets a throwaway one over the same code path.
-	to := email
+	request := &events.LinkRequested{Action: events.NameUserPasswordResetRequested, Email: email}
 	if u != nil {
-		to = u.Email
+		request.UserID, request.Email, request.Deliver = u.ID, u.Email, granted
 	}
-	token, err := h.links.PasswordResetLink(u)
-	if err != nil {
-		return err
-	}
-	// Best-effort enqueue (mirrors the welcome email): never fail the request.
-	if _, err := h.mail.Insert(ctx, mailjobs.PasswordReset(to, token, u != nil && granted), nil); err != nil {
-		mailNotQueued(ctx, "PasswordReset", err)
-	}
+	h.publishRequest(ctx, request)
 	return nil
 }
 
 // SiteAuthResetPassword sets a new password from a reset link (users.Links, through the use case
-// workspacecreation, which completes the Sign-up of an Unverified User).
+// signup, which completes the Sign-up of an Unverified User and then welcomes them).
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) error {
-	reset, err := h.signUp.ResetPasswordLink(ctx, req.Token, req.Password)
-	if err != nil {
-		return err
-	}
-	if reset.CompletedSignUp {
-		if _, err := h.mail.Insert(ctx, mailjobs.Welcome(reset.User.Email, reset.User.Name), nil); err != nil {
-			mailNotQueued(ctx, "Welcome", err)
-		}
-	}
-	return nil
+	_, err := h.signUp.ResetPasswordLink(ctx, req.Token, req.Password)
+	return err
 }
 
-// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, workspacecreation): the
+// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, the use case signup): the
 // token proves the address, so it stamps the Verified email, ends every earlier session,
-// creates the User's first Workspace and sends the welcome email, then starts the
-// session through the login issuer. The password stored at Sign-up stays only when
-// the request carries the Sign-up browser cookie the token was minted for; any other
-// browser must send a password, which replaces it.
+// creates the User's first Workspace and welcomes the User, then starts the session through
+// the login issuer. The password stored at Sign-up stays only when the request carries the
+// Sign-up browser cookie the token was minted for; any other browser must send a password,
+// which replaces it.
 func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (*siteapi.SiteVerifyEmailResultHeaders, error) {
 	link := inputs.VerifyEmailLink(req)
 	link.Browser = params.SIGNUPBROWSER.Or("")
@@ -79,11 +61,6 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 		return nil, err
 	}
 	verified, landing := done.User, done.Landing
-	// Welcome email is a platform (transactional) send via the system sender, to an
-	// address that is now proven. Best-effort: never fail the verification.
-	if _, err := h.mail.Insert(ctx, mailjobs.Welcome(verified.Email, verified.Name), nil); err != nil {
-		mailNotQueued(ctx, "Welcome", err)
-	}
 	// The session starts after the epoch bump VerifyEmailLink made, so it is the only one.
 	cookie, err := h.sessions.Issue(verified, auth.Session{Method: auth.MethodEmail})
 	if err != nil {

@@ -13,27 +13,26 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
-	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
 
 // UseCase checks Sending domains. Every call receives the Workspace-scoped client (ADR 0017) of
 // the domain's Workspace, built by the entry point.
 type UseCase struct {
 	domains *sendingdomains.Module
+	bus     *events.Bus
 	lookup  domainname.TXTLookup
-	notify  memberships.Notify
 	now     func() time.Time
 }
 
-// New builds the domain verification use case: lookup resolves the DNS records, notify mails the
-// Owners of a Workspace whose domain lost its verification (nil tells nobody), and now is the
-// Instance clock a check is stamped with.
-func New(domains *sendingdomains.Module, lookup domainname.TXTLookup, notify memberships.Notify, now func() time.Time) *UseCase {
-	return &UseCase{domains: domains, lookup: lookup, notify: notify, now: now}
+// New builds the domain verification use case: bus opens the transaction a DKIM outcome is stored
+// and its loss published in (which tells the Owners, ADR 0105), lookup resolves the DNS records,
+// and now is the Instance clock a check is stamped with.
+func New(domains *sendingdomains.Module, bus *events.Bus, lookup domainname.TXTLookup, now func() time.Time) *UseCase {
+	return &UseCase{domains: domains, bus: bus, lookup: lookup, now: now}
 }
 
 // Verify runs the live DNS check of the domain now, when a person asks for it, and returns the
@@ -85,9 +84,9 @@ func (u *UseCase) checkDMARC(ctx context.Context, s *ent.Scoped, dom *ent.Sendin
 }
 
 // VerifyDKIM re-checks a domain's DKIM DNS and persists the result (sendingdomains.RecordDKIM). It
-// returns the resulting verified state. A check that loses a live domain's verification mails the
-// Owners, best-effort: a failed notice never fails the check. A check that lost to another one
-// stores nothing and reports no loss: the Owners are told once per loss (ADR 0046). A deleted
+// returns the resulting verified state. A check that loses a live domain's verification publishes
+// the loss with it, which tells the Owners. A check that lost to another one stores nothing and
+// reports no loss: the Owners are told once per loss (ADR 0046). A deleted
 // domain is not checked: its stored state is the answer (ADR 0099).
 func (u *UseCase) VerifyDKIM(ctx context.Context, s *ent.Scoped, id int64) (bool, error) {
 	dom, err := u.domains.Get(ctx, s, id)
@@ -107,19 +106,18 @@ func (u *UseCase) verifyDKIM(ctx context.Context, s *ent.Scoped, dom *ent.Sendin
 	if err != nil {
 		return false, err
 	}
-	state, lost, err := sendingdomains.RecordDKIM(ctx, s, dom, verified, u.now())
+	var state, lost bool
+	err = u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		var err error
+		state, lost, err = sendingdomains.RecordDKIM(ctx, ts, pub, dom, verified, u.now())
+		return err
+	})
 	if err != nil {
 		return false, err
 	}
 	if lost {
 		slog.WarnContext(ctx, "sending domain DKIM verification lost",
 			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
-		u.notifyUnverified(ctx, dom)
 	}
 	return state, nil
-}
-
-func (u *UseCase) notifyUnverified(ctx context.Context, dom *ent.SendingDomain) {
-	data := map[string]any{"Domain": dom.Domain, "Record": dom.DkimSelector + "._domainkey." + dom.Domain}
-	u.notify.TellBestEffort(ctx, dom.WorkspaceID, memberships.Notice{Subject: i18n.EmailSendingDomainUnverifiedSubject, Body: i18n.EmailSendingDomainUnverifiedBody}, data, "sending_domain_id", dom.ID)
 }

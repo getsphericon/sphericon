@@ -3,7 +3,6 @@ package workspaceoversight_test
 import (
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -12,11 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -68,26 +64,6 @@ func TestTheConsoleShowsSystemAndCLISuspensionsWithoutAnActorId(t *testing.T) {
 			assert.Equal(t, tc.kind, ws.Suspension.Value.Actor.Kind)
 			assert.False(t, ws.Suspension.Value.Actor.ID.IsSet() && !ws.Suspension.Value.Actor.ID.IsNull(), "no actor id")
 			assert.Equal(t, "complaint rate", ws.Suspension.Value.Reason.Value)
-		})
-	}
-}
-
-func TestTheOwnerNoticeNamesSystemOrSphericonStaffAsTheActor(t *testing.T) {
-	for name, tc := range map[string]struct {
-		id  int64
-		key i18n.ID
-	}{
-		"system": {fixtures.NakatomiID, i18n.EmailWorkspaceSuspendedActorSystem},
-		"cli":    {fixtures.SiriusID, i18n.EmailWorkspaceSuspendedActorStaff},
-	} {
-		t.Run(name, func(t *testing.T) {
-			h := newHarness(t)
-
-			require.NoError(t, suspension.NotifyOwners(t.Context(), h.env.DB, memberships.OwnerNotifier(h.env.DB, h.env.SystemMail), "", tc.id, time.Now()))
-
-			msgs := h.env.SystemMail.Messages()
-			require.Len(t, msgs, 1)
-			assert.Contains(t, msgs[0].Text, i18n.T(tc.key, nil))
 		})
 	}
 }

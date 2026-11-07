@@ -95,7 +95,7 @@ func newHookRetryHarnessAt(t *testing.T, status int, retryAfter string, now time
 
 	h := &hookRetryHarness{t: t, env: env, clock: &riversharedtest.TimeStub{}, now: now}
 	h.clock.StubNow(h.now)
-	w := jobs.NewDeliverWebhookWorker(env.DB, env.cipher, webhook.NewClientAllowing(2*time.Second, allow), h.clock.Now, env.Bus, env.SystemMail)
+	w := jobs.NewDeliverWebhookWorker(env.DB, env.cipher, webhook.NewClientAllowing(2*time.Second, allow), h.clock.Now, env.Bus)
 	// river's rows live in a database of their own: rivertest hands the job to the worker inside a
 	// transaction, which would hold the one connection the test's txdb has, and the worker reads
 	// and writes the endpoint through it.

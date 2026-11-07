@@ -196,7 +196,7 @@ func (p *Module) Rename(ctx context.Context, userID, id int64, name string) (*en
 }
 
 // Remove deletes the User's Passkey id and bumps the session epoch, ending every session of the
-// User, in one transaction. It returns the saved User, for reissuing the acting session, and the
+// User, in one transaction, which publishes events.PasskeyChange (the owner is told, ADR 0105). It returns the saved User, for reissuing the acting session, and the
 // removed Passkey. The caller has proven the User's identity. ErrPasskeyNotFound when the
 // Passkey is not theirs; ErrLastSignIn when it is the last way the User can sign in.
 func (p *Module) Remove(ctx context.Context, userID, id int64) (*ent.User, *ent.Passkey, error) {
@@ -204,7 +204,7 @@ func (p *Module) Remove(ctx context.Context, userID, id int64) (*ent.User, *ent.
 		saved *ent.User
 		row   *ent.Passkey
 	)
-	err := p.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	err := p.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		u, err := tx.User.Get(ctx, userID)
 		if err != nil {
 			return err
@@ -231,8 +231,10 @@ func (p *Module) Remove(ctx context.Context, userID, id int64) (*ent.User, *ent.
 		if err := tx.Passkey.DeleteOneID(id).Exec(ctx); err != nil {
 			return err
 		}
-		saved, err = users.BumpSessionEpochIn(ctx, tx, userID)
-		return err
+		if saved, err = users.BumpSessionEpochIn(ctx, tx, userID); err != nil {
+			return err
+		}
+		return pub.Publish(ctx, &events.PasskeyChange{Action: events.NameUserPasskeyRemoved, UserID: u.ID, Email: u.Email, Name: row.Name})
 	})
 	if err != nil {
 		return nil, nil, err
@@ -271,7 +273,8 @@ func (p *Module) BeginRegistration(ctx context.Context, u *ent.User) (options []
 // FinishRegistration completes the ceremony begun under cookie for User userID, with the
 // authenticator's response (the browser's RegistrationResponseJSON), and stores the Passkey
 // under name. The caller has proven the User's identity. One transaction spends the
-// challenge and stores the Passkey; it returns the User and the stored Passkey. The session
+// challenge, stores the Passkey and publishes events.PasskeyChange (the owner is told, ADR 0105);
+// it returns the User and the stored Passkey. The session
 // epoch stays: a new way to sign in takes nothing from the sessions already open (ADR 0052).
 //
 // A ceremony that cannot finish is ErrRegistrationFailed, wrapping its cause: ErrCeremony for an
@@ -301,7 +304,7 @@ func (p *Module) finishRegistration(ctx context.Context, userID int64, ceremony 
 		saved *ent.User
 		row   *ent.Passkey
 	)
-	err = p.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	err = p.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		u, err := tx.User.Get(ctx, userID)
 		if err != nil {
 			return err
@@ -340,7 +343,7 @@ func (p *Module) finishRegistration(ctx context.Context, userID int64, ceremony 
 			return err
 		}
 		saved = u
-		return nil
+		return pub.Publish(ctx, &events.PasskeyChange{Action: events.NameUserPasskeyAdded, UserID: u.ID, Email: u.Email, Name: row.Name})
 	})
 	if err != nil {
 		return nil, nil, err

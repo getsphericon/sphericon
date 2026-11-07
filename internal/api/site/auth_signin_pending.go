@@ -65,7 +65,7 @@ func (h *Handlers) SiteAuthSigninPending(ctx context.Context, params siteapi.Sit
 		return nil, err
 	}
 	res := mapper.PendingSignupToResource(pending)
-	res.Provider = h.providerDisplayName(pending.Provider)
+	res.Provider = h.signin.DisplayName(pending.Provider)
 	return res, nil
 }
 

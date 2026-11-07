@@ -24,7 +24,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -77,16 +76,14 @@ type Module struct {
 	cipher *secrets.Cipher
 	lic    Licensing
 	client webhook.Doer
-	notify memberships.Notify
 	// now is the Instance clock a test event and a disabled endpoint are dated by.
 	now func() time.Time
 }
 
 // New builds the module. lic may be nil (unlicensed). client is the one hardened
-// outbound client, used by TestSend. notify mails the Owners when an endpoint disables
-// itself; nil sends nothing. now is the Instance clock.
-func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify memberships.Notify, now func() time.Time) *Module {
-	return &Module{bus: bus, cipher: cipher, lic: lic, client: client, notify: notify, now: now}
+// outbound client, used by TestSend. now is the Instance clock.
+func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, now func() time.Time) *Module {
+	return &Module{bus: bus, cipher: cipher, lic: lic, client: client, now: now}
 }
 
 // TestSendTimeout bounds a test delivery, the same budget as a real one.

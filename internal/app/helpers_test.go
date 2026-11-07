@@ -84,15 +84,6 @@ func freeAddr(t *testing.T) string {
 	return addr
 }
 
-// freePort returns a loopback port nothing listens on.
-func freePort(t *testing.T) int {
-	t.Helper()
-	ln := listen(t)
-	port := ln.Addr().(*net.TCPAddr).Port
-	require.NoError(t, ln.Close())
-	return port
-}
-
 // lifecycleApp builds an e2e-profile app on a caller-opened listener, so Start can bring every
 // part up, and returns it with the base URL it serves on.
 func lifecycleApp(t *testing.T) (a *app.App, base string) {

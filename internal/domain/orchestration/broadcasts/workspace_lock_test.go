@@ -53,7 +53,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	cipher := testhelper.Cipher(t)
-	integrationDeletion := integrationdeletion.New(bus, integrations.New(bus, cipher, nil, nil, nil, ""), time.Now)
+	integrationDeletion := integrationdeletion.New(bus, integrations.New(bus, cipher, nil, nil, ""), time.Now)
 	domainDeletion := sendingdomaindeletion.New(bus, sendingdomains.New(bus, cipher, time.Now), messaging.NewResolver(cipher, registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL)), time.Now)
 	segs := segments.New(bus, time.Now)
 	tagDeletion := tagdeletion.New(bus)

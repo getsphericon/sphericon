@@ -872,8 +872,9 @@ components:
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
   # *ent.Scoped to take: the Second factor of a User, the exchange of an OAuth code or refresh
   # token, a secret that names its grant, the deletion cycle of a Workspace, which lists the
-  # Workspaces that have no scope yet, the creation of a Workspace, and the Sign-up with the steps
-  # that make a User Verified with its first one. They hold the raw client (the closed list of
+  # Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the steps
+  # that make a User Verified with its first one, and Notice delivery, which reads a User or a
+  # Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
   # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
   usecase-raw:
@@ -884,6 +885,7 @@ components:
         'internal/usecase/workspacedeletion*',
         'internal/usecase/workspacecreation*',
         'internal/usecase/signup*',
+        'internal/usecase/noticedelivery*',
       ]
     isolated: true
     allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]

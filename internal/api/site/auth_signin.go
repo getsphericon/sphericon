@@ -123,9 +123,6 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 		}
 		return h.signinHeld(flow, token), nil
 	}
-	if signedIn.LinkedIdentityID != 0 {
-		h.noticeIdentityLinked(ctx, signedIn.User, params.Provider, signedIn.LinkedIdentityID)
-	}
 	if users.HasSecondFactor(signedIn.User) {
 		// A provider sign-in replaces only the password step: an enrolled Second factor still
 		// gets the challenge of ADR 0020, finished on the login page through the same second

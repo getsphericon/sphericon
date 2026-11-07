@@ -462,11 +462,24 @@ goes through that Integration and is captured, and the editor says it was not se
 _Avoid_: Preview (that is rendering without sending), dry run
 
 **System sender**:
-The Instance's own sending identity for platform mail to Users (welcome, email verification,
-password reset, invitations, the unverified-domain notice) and for a Test send from a Workspace
-with no verified Sending domain. It belongs to no Workspace and is absent on an Instance with no
-outbound mail.
+The Instance's own sending identity for the Notices (welcome, email verification, password reset,
+invitations, the unverified-domain notice) and for a Test send from a Workspace with no verified
+Sending domain. It belongs to no Workspace and is absent on an Instance with no outbound mail.
 _Avoid_: No-reply sender, platform mailer
+
+**Notice**:
+A message sphericon sends on its own behalf, through the System sender, to a person who must know
+that something happened: a User their account's links and notices (a verification link, a password
+reset, a removed Passkey), a Member their Invitation or Second factor deadline, the Owners of a
+Workspace what happened to its standing or its configuration (a suspension, a lost domain, a
+disabled Webhook endpoint). Every Notice is a reaction to a domain event, never a step of the change
+itself. Not a Workspace's mail to its Contacts, which goes through Outbound send.
+_Avoid_: Notification, platform mail, system email
+
+**Notice delivery**:
+Deciding, for a domain event, the Notices it calls for: who is told and what, read when the event is
+handled, with a link minted then. A Notice of a change undone since (a suspension lifted, a
+requirement switched off) is not sent. Each Notice is sent and retried on its own.
 
 **Outbound message**:
 The durable record of one Outbound send — which surface and which of its records it belongs to,

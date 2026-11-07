@@ -128,24 +128,6 @@ var ExplicitAuditActions = []string{
 	ActionWebhookEndpointTest,
 }
 
-// Unprojected is an optional DomainEvent capability: an event that is not a
-// data-plane fact. Publish writes no Event row for it, the automation trigger
-// consumer and the webhooks consumer skip it, and an endpoint with an empty
-// subscription list never matches it (see IsUnprojected).
-type Unprojected interface {
-	Unprojected()
-}
-
-// IsUnprojected reports whether the bus event type opts out of the Event projection.
-func IsUnprojected(name string) bool {
-	newEvent, ok := registry[name]
-	if !ok {
-		return false
-	}
-	_, unprojected := newEvent().(Unprojected)
-	return unprojected
-}
-
 // The keys of one field's entry in an AuditEntry's Diff, the shape the scoped client's own
 // diffs have (ent/template/scoped_audit.tmpl).
 const (
@@ -183,7 +165,9 @@ func ChangeOf[T comparable](from, to *T) (entry map[string]any, changed bool) {
 }
 
 // AuditEntry is emitted in the transaction of the change it records; the envelope id
-// is the dedupe key, so at-least-once redelivery writes one row.
+// is the dedupe key, so at-least-once redelivery writes one row. It is not Projected: an
+// administrative change, not a data-plane fact, so it has no Event row, the automations skip it
+// and a Webhook endpoint receives it only when it names `audit.entry`.
 type AuditEntry struct {
 	WorkspaceID int64          `json:"workspaceId"`
 	Actor       Actor          `json:"actor"`
@@ -214,7 +198,6 @@ func WorkspaceAudit(ws *ent.Workspace, actor Actor, action string, diff map[stri
 func (*AuditEntry) EventName() string  { return NameAuditEntry }
 func (*AuditEntry) EventVersion() int  { return 1 }
 func (e *AuditEntry) Workspace() int64 { return e.WorkspaceID }
-func (*AuditEntry) Unprojected()       {}
 
 // MaskStaff replaces a staff actor (a Staff member or a Service credential) with the
 // customer-facing label and drops the staff id, for every surface that leaves the
@@ -224,9 +207,6 @@ func (e *AuditEntry) MaskStaff() {
 		e.Actor = Actor{Kind: ActorStaff, Name: StaffLabel}
 	}
 }
-
-// Project is never persisted (AuditEntry is Unprojected); it only names the action.
-func (e *AuditEntry) Project() Projection { return Projection{Action: e.Action} }
 
 // RecordAudit publishes an Audit entry through pub, inside the caller's transaction
 // (the seam, ADR 0022). A missing or ingest actor is skipped: ingest traffic never

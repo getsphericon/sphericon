@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -32,8 +31,8 @@ type inviteForm struct {
 }
 
 // SiteInvitationsCreate invites an email address to the workspace. Owner/admin
-// only. The one-time accept link is returned (copy-link path) and an invite email
-// is sent best-effort — a missing/failed mailer must not fail the invite.
+// only. The one-time accept link is returned (copy-link path), and the Invitation's
+// event mails it to the invitee through the System sender when the Instance has one.
 func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteCreateInvitationInput, _ siteapi.SiteInvitationsCreateParams) (*siteapi.SiteCreateInvitationResponse, error) {
 	s := workspaceScope(ctx)
 
@@ -53,21 +52,9 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 		return nil, err
 	}
 
+	// The copy-link is the invite's own delivery, so an Instance without outbound mail still
+	// invites; the Invitation's event mails the link too.
 	inviteURL := strings.TrimRight(h.appURL, "/") + "/invitations/" + token
-
-	// Send the invite email best-effort: the copy-link above already delivered
-	// the invite, so self-hosted instances without SMTP still work.
-	wsEnt, err := h.workspaces.Get(ctx, s)
-	if err != nil {
-		return nil, err
-	}
-	inviterName := ""
-	if caller, cerr := h.users.User(ctx, a.UserID); cerr == nil {
-		inviterName = caller.Name
-	}
-	if _, merr := h.mail.Insert(ctx, mailjobs.MemberInviteArgs{Email: inv.Email, InviteURL: inviteURL, WorkspaceName: wsEnt.Name, InviterName: inviterName}, nil); merr != nil {
-		slog.WarnContext(ctx, "member invite email not enqueued", "error", merr, "invitation_id", inv.ID)
-	}
 
 	inviter, uerr := h.users.User(ctx, a.UserID)
 	if uerr != nil {

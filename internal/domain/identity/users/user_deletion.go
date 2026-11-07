@@ -104,7 +104,8 @@ type DeleteProof struct {
 // of a `membership.delete` Audit entry (Audit entries that name the User are never
 // rewritten), and the User row is deleted: Linked identities and Recovery codes follow by
 // cascade, an Invitation the User sent keeps its place with no sender. Sessions need
-// nothing: the security handler finds no User.
+// nothing: the security handler finds no User. The deletion publishes events.UserDeleted, which
+// tells the address (ADR 0105).
 func (a *Module) DeleteUser(ctx context.Context, userID int64, proof *DeleteProof) (*ent.User, error) {
 	var deleted *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
@@ -150,7 +151,7 @@ func (a *Module) DeleteUser(ctx context.Context, userID int64, proof *DeleteProo
 			return err
 		}
 		deleted = u
-		return nil
+		return pub.Publish(ctx, &events.UserDeleted{UserID: u.ID, Email: u.Email})
 	})
 	return deleted, err
 }

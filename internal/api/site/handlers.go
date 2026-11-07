@@ -4,13 +4,10 @@ package site
 
 import (
 	"context"
-	"database/sql"
 	"io"
 	"log/slog"
 	"strconv"
 	"time"
-
-	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -87,7 +84,6 @@ type Handlers struct {
 	bus             *events.Bus
 	webhooks        *webhookendpoints.Module
 	broadcasts      *broadcasts.Module
-	mail            *river.Client[*sql.Tx]
 	sendingDomains  *sendingdomains.Module
 	trackingDomains *trackingdomains.Module
 	joinDomains     *joindomains.Module
@@ -213,13 +209,10 @@ type Deps struct {
 	Automations         *automations.Module
 	Rules               *rules.Module
 	Broadcasts          *broadcasts.Module
-	// Mail queues the platform mails (welcome, account mails, invites, Second factor notices) on
-	// the insert-only river client.
-	Mail            *river.Client[*sql.Tx]
-	SendingDomains  *sendingdomains.Module
-	TrackingDomains *trackingdomains.Module
-	JoinDomains     *joindomains.Module
-	Integrations    *integrations.Module
+	SendingDomains      *sendingdomains.Module
+	TrackingDomains     *trackingdomains.Module
+	JoinDomains         *joindomains.Module
+	Integrations        *integrations.Module
 	// IntegrationDeletion, SendingDomainDeletion and SendingDomainVerification are the use cases behind
 	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
 	IntegrationDeletion       *integrationdeletion.UseCase
@@ -297,7 +290,7 @@ func NewHandlers(d *Deps) *Handlers {
 	h := &Handlers{
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
-		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
+		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
@@ -331,9 +324,12 @@ func (h *Handlers) actor(ctx context.Context) events.Actor {
 	return actor
 }
 
-// mailNotQueued logs a notice mail that could not be queued. The response never depends on it (a
-// failure shown to the caller would tell whether an address has an account) and a lost mail is
-// asked for again.
-func mailNotQueued(ctx context.Context, mail string, err error) {
-	slog.WarnContext(ctx, "mail not enqueued", "mail", mail, "error", err)
+// publishRequest publishes a request that changes no state (a link asked for, an address
+// claimed) in a transaction of its own, best-effort: a failure is logged, never answered (a
+// failure shown to the caller could tell whether an address has an account), and a lost request
+// is asked for again.
+func (h *Handlers) publishRequest(ctx context.Context, request events.DomainEvent) {
+	if err := h.bus.Publish(ctx, request); err != nil {
+		slog.WarnContext(ctx, "request not published", "event", request.EventName(), "error", err)
+	}
 }

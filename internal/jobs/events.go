@@ -37,6 +37,9 @@ func EventConsumers() []events.Consumer {
 		{Wants: countsOnBroadcast, Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
 			return BroadcastUnsubscribeEventArgs{events.EventJob{Envelope: env}}
 		}},
+		{Wants: callsForNotices, Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
+			return NoticeEventArgs{events.EventJob{Envelope: env}}
+		}},
 	}
 }
 
@@ -48,10 +51,16 @@ type WebhookEventArgs struct {
 
 func (WebhookEventArgs) Kind() string { return "event_webhook" }
 
-// reachesWebhooks wants every live event: loaded history is recorded, never delivered. Which
-// endpoints receive one is the job's to find.
+// reachesWebhooks wants every live event a Workspace's endpoints may receive: an Event (loaded
+// history is recorded, never delivered) or an Audit entry. An event of the Instance and a change
+// told only to the Owners leave the platform through no endpoint. Which endpoints receive one is
+// the job's to find.
 func reachesWebhooks(_ events.Envelope, ev events.DomainEvent) bool {
-	return !events.IsBackfill(ev)
+	if _, audit := ev.(*events.AuditEntry); audit {
+		return true
+	}
+	_, projected := ev.(events.Projected)
+	return projected && !events.IsBackfill(ev)
 }
 
 // WebhookEventWorker serializes an event into its public webhook body (events.WebhookDeliveryOf)
@@ -83,11 +92,8 @@ func (w *WebhookEventWorker) Work(ctx context.Context, job *river.Job[WebhookEve
 // history enrolls nobody) and made by a person (a scanner's open or click neither enrolls nor ends
 // an Enrollment, ADR 0053). An administrative action (an Audit entry) is never one.
 func triggers(_ events.Envelope, ev events.DomainEvent) bool {
-	if _, unprojected := ev.(events.Unprojected); unprojected || events.IsBackfill(ev) {
-		return false
-	}
-	p := ev.Project()
-	return p.ContactID != 0 && !p.Machine
+	p, projected := events.ProjectionOf(ev)
+	return projected && !events.IsBackfill(ev) && p.ContactID != 0 && !p.Machine
 }
 
 // firesRules wants what triggers wants, except an event a Rule's Action published (its envelope
@@ -101,7 +107,7 @@ func firesRules(env events.Envelope, ev events.DomainEvent) bool {
 // or a customer's "page_view". The Event's row is stored by the publish that queues it, so the
 // evaluation finds it among the Contact's.
 func evaluateTrigger(env events.Envelope, ev events.DomainEvent) river.JobArgs {
-	p := ev.Project()
+	p, _ := events.ProjectionOf(ev)
 	return EvaluateTriggerArgs{
 		WorkspaceID:        env.WorkspaceID,
 		ContactID:          p.ContactID,
@@ -117,7 +123,7 @@ func evaluateTrigger(env events.Envelope, ev events.DomainEvent) river.JobArgs {
 // a Condition that counts the Contact's Events counts the one that fired the Rule. A Firing is
 // unique on the Event's source id, so a retried job fires a Rule once.
 func evaluateRules(env events.Envelope, ev events.DomainEvent) river.JobArgs {
-	p := ev.Project()
+	p, _ := events.ProjectionOf(ev)
 	return EvaluateRulesArgs{
 		WorkspaceID: env.WorkspaceID,
 		ContactID:   p.ContactID,
@@ -174,7 +180,7 @@ func (SuppressEventArgs) Kind() string { return "event_suppress" }
 
 // suppresses wants an event that suppresses its address: a hard bounce or a complaint.
 func suppresses(_ events.Envelope, ev events.DomainEvent) bool {
-	p := ev.Project()
+	p, _ := events.ProjectionOf(ev)
 	kind, _ := p.Properties["bounceKind"].(string)
 	_, ok := suppressions.ForEvent(p.Action, kind)
 	return ok
@@ -204,7 +210,7 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 	if err != nil {
 		return err
 	}
-	p := ev.Project()
+	p, _ := events.ProjectionOf(ev)
 	kind, _ := p.Properties["bounceKind"].(string)
 	reason, ok := suppressions.ForEvent(p.Action, kind)
 	if !ok {

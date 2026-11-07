@@ -35,7 +35,7 @@ type license bool
 func (l license) Licensed() bool { return bool(l) }
 
 func module(env *testhelper.TestEnv, lic webhookendpoints.Licensing) *webhookendpoints.Module {
-	return webhookendpoints.New(env.Bus, env.Cipher, lic, webhook.NewClient(2*time.Second), nil, time.Now)
+	return webhookendpoints.New(env.Bus, env.Cipher, lic, webhook.NewClient(2*time.Second), time.Now)
 }
 
 // moduleAllowing is the module with a client the Instance's allowlist lets reach rcv.
@@ -45,7 +45,7 @@ func moduleAllowing(t *testing.T, env *testhelper.TestEnv, rcv *receiver) *webho
 	require.NoError(t, err)
 	allow, err := webhook.ParseAllowlist(u.Host)
 	require.NoError(t, err)
-	return webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClientAllowing(2*time.Second, allow), nil, time.Now)
+	return webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClientAllowing(2*time.Second, allow), time.Now)
 }
 
 // Fixtures (workspace 1): endpoint 100 (codebasics, filtered, secret whsec_Mf...)
@@ -400,48 +400,31 @@ func TestEnablingClearsTheFailureStateAndTheDisabledReason(t *testing.T) {
 	assert.Nil(t, got.LastFailureAt)
 }
 
-// owners records the Owners' notices the module asks for.
-type owners struct {
-	mu   sync.Mutex
-	sent []notice
-}
-
-type notice struct {
-	workspaceID   int64
-	subject, body string
-}
-
-func (o *owners) notify(_ context.Context, workspaceID int64, subject, body string) error {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	o.sent = append(o.sent, notice{workspaceID, subject, body})
-	return nil
-}
-
-func (o *owners) notices() []notice {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	return append([]notice(nil), o.sent...)
-}
-
-// recording is the module over a stub Owners' notifier, with the clock the test injects.
+// recording is the module with the clock the test injects.
 type recording struct {
-	t      *testing.T
-	env    *testhelper.TestEnv
-	mod    *webhookendpoints.Module
-	owners *owners
-	now    time.Time
+	t   *testing.T
+	env *testhelper.TestEnv
+	mod *webhookendpoints.Module
+	now time.Time
 }
 
 func newRecording(t *testing.T) *recording {
 	t.Helper()
 	env := testhelper.Setup(t)
-	o := &owners{}
 	return &recording{
-		t: t, env: env, owners: o,
-		mod: webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), o.notify, time.Now),
+		t: t, env: env,
+		mod: webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), time.Now),
 		now: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC),
 	}
+}
+
+// disabled are the endpoints the delivery turned off, as it published them: what the owners are
+// told of.
+func (r *recording) disabled() []*events.WebhookEndpointDisabled {
+	r.t.Helper()
+	return lo.Map(r.env.QueuedEvents(r.t, events.NameWebhookEndpointDisabled), func(ev events.DomainEvent, _ int) *events.WebhookEndpointDisabled {
+		return ev.(*events.WebhookEndpointDisabled)
+	})
 }
 
 func (r *recording) scope() *ent.Scoped { return r.env.DB.Scoped(fixtures.AcmeID) }
@@ -539,13 +522,17 @@ func TestRecordDeliveryDisablesOnGoneAndTellsTheOwnersOnce(t *testing.T) {
 	require.NotNil(t, e.DisabledReason)
 	assert.Equal(t, webhookendpoint.DisabledReasonGone, *e.DisabledReason)
 
-	sent := r.owners.notices()
+	published := r.disabled()
+	require.Len(t, published, 1)
+	assert.EqualValues(t, fixtures.AcmeID, published[0].WorkspaceID)
+	assert.Equal(t, "https://hooks.example.com", published[0].Origin, "the path and the query may carry a secret")
+	sent := r.env.SystemMail.Messages()
 	require.Len(t, sent, 1)
-	assert.EqualValues(t, fixtures.AcmeID, sent[0].workspaceID)
-	assert.Contains(t, sent[0].subject, "webhook")
-	assert.Contains(t, sent[0].body, "410")
-	assert.Contains(t, sent[0].body, "https://hooks.example.com")
-	assert.NotContains(t, sent[0].body, "hidden")
+	assert.Equal(t, fixtures.OwnerJohnEmail, sent[0].To)
+	assert.Contains(t, sent[0].Subject, "webhook")
+	assert.Contains(t, sent[0].Text, "410")
+	assert.Contains(t, sent[0].Text, "https://hooks.example.com")
+	assert.NotContains(t, sent[0].Text, "hidden")
 
 	entries := lo.FilterMap(r.env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		a := ev.(*events.AuditEntry)
@@ -557,7 +544,7 @@ func TestRecordDeliveryDisablesOnGoneAndTellsTheOwnersOnce(t *testing.T) {
 
 	// A second failure that lost the race finds it off and tells nobody.
 	r.record(status(http.StatusGone))
-	assert.Len(t, r.owners.notices(), 1)
+	assert.Len(t, r.disabled(), 1)
 }
 
 // A run of failures disables only when it has both reached the count and lasted the window.
@@ -573,7 +560,7 @@ func TestRecordDeliveryDisablesOnlyWhenTheRunReachedTheCountAndTheWindow(t *test
 	r.midRun(webhookendpoints.DisableFailures-2, 2*webhookendpoints.DisableWindow)
 	r.record(status(http.StatusServiceUnavailable))
 	assert.Nil(t, r.endpoint().DisabledAt, "the window without the count")
-	assert.Empty(t, r.owners.notices())
+	assert.Empty(t, r.disabled())
 
 	r.midRun(webhookendpoints.DisableFailures-1, webhookendpoints.DisableWindow)
 	r.record(status(http.StatusServiceUnavailable))
@@ -581,13 +568,13 @@ func TestRecordDeliveryDisablesOnlyWhenTheRunReachedTheCountAndTheWindow(t *test
 	assert.NotNil(t, e.DisabledAt)
 	require.NotNil(t, e.DisabledReason)
 	assert.Equal(t, webhookendpoint.DisabledReasonPersistentFailure, *e.DisabledReason)
-	assert.Len(t, r.owners.notices(), 1)
+	assert.Len(t, r.disabled(), 1)
 }
 
-// Without a notifier the endpoint still disables.
-func TestRecordDeliveryDisablesWithoutANotifier(t *testing.T) {
-	env := testhelper.Setup(t)
-	mod := webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), nil, time.Now)
+// Without a System sender the endpoint still disables.
+func TestRecordDeliveryDisablesWithoutASystemSender(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithoutSystemSender())
+	mod := webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	e, err := acme.WebhookEndpoint().Get(context.Background(), fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)

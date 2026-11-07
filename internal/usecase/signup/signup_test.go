@@ -3,15 +3,12 @@ package signup_test
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"maps"
 	"slices"
-	"strconv"
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -24,60 +21,42 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
-// queue is the mail queue: an outside boundary, read for what was left on it.
-type queue struct{ rc *river.Client[*sql.Tx] }
+// requests are the events a Sign-up publishes for its mail, read from what the publish left in
+// the queue: the request of a verification link, the claim of a Taken address, the completed
+// Sign-up.
+type requests struct{ sqlDB *sql.DB }
 
-// jobs are the mail jobs queued so far, oldest first, as the args they were queued with.
-func (q queue) jobs(t *testing.T) []river.JobArgs {
+// published are the mail events published so far, oldest first.
+func (q requests) published(t *testing.T) []events.DomainEvent {
 	t.Helper()
-	res, err := q.rc.JobList(t.Context(), river.NewJobListParams().
-		Kinds(mailjobs.WelcomeArgs{}.Kind(), mailjobs.AuthMailArgs{}.Kind()).OrderBy(river.JobListOrderByID, river.SortOrderAsc))
-	require.NoError(t, err)
-	out := []river.JobArgs{}
-	for _, job := range res.Jobs {
-		switch job.Kind {
-		case mailjobs.WelcomeArgs{}.Kind():
-			out = append(out, decoded[mailjobs.WelcomeArgs](t, job.EncodedArgs))
-		case mailjobs.AuthMailArgs{}.Kind():
-			out = append(out, decoded[mailjobs.AuthMailArgs](t, job.EncodedArgs))
-		}
+	out := []events.DomainEvent{}
+	for _, env := range testhelper.QueuedEnvelopesOn(t, q.sqlDB, events.NameUserVerificationRequested, events.NameUserAddressClaimed, events.NameUserSignedUp) {
+		ev, err := events.Decode(env)
+		require.NoError(t, err)
+		out = append(out, ev)
 	}
 	return out
 }
 
-func decoded[T river.JobArgs](t *testing.T, encoded []byte) T {
-	t.Helper()
-	var args T
-	require.NoError(t, json.Unmarshal(encoded, &args))
-	return args
-}
-
-// mint names the User and the Sign-up browser hash a token was minted for.
-func mint(u *ent.User, browserHash string) (string, error) {
-	return tokenFor(u.ID, browserHash), nil
-}
-
-func tokenFor(id int64, browserHash string) string {
-	return strconv.FormatInt(id, 10) + ":" + browserHash
-}
-
-// linkOf is the token a link minted for the User id carries after the Sign-up res.
-func linkOf(id int64, res signup.SignUpResult) string {
-	return tokenFor(id, users.BrowserHash(res.Browser))
+// verificationRequested is the request of a verification link for the User id at email that
+// trusts the Sign-up browser of the answer res, delivered when the budget granted it.
+func verificationRequested(id int64, email string, res signup.SignUpResult, deliver bool) *events.LinkRequested {
+	return &events.LinkRequested{
+		Action: events.NameUserVerificationRequested, UserID: id, Email: email,
+		BrowserHash: users.BrowserHash(res.Browser), Deliver: deliver,
+	}
 }
 
 type rig struct {
 	env      *testhelper.TestEnv
 	db       *ent.Client
-	queue    queue
+	queue    requests
 	module   *signup.UseCase
 	consents *consentrecords.Module
 }
@@ -105,7 +84,7 @@ func newRig(t *testing.T, budget int, opts ...option) rig {
 func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
-	return build(t, sqlDB, entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx, time.Now), 5, func(acc *users.Module, cfg *signup.SignUpConfig) {
+	return build(t, sqlDB, entclient.New(sqlDB), testhelper.BusOn(t, sqlDB), 5, func(acc *users.Module, cfg *signup.SignUpConfig) {
 		looked := false
 		cfg.Lookup = func(ctx context.Context, email string) (*ent.User, bool, error) {
 			if !looked {
@@ -123,14 +102,12 @@ func newRacingRig(t *testing.T) rig {
 
 func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, budget int, opts ...option) rig {
 	t.Helper()
-	inserter, err := jobs.NewInserter(sqlDB)
-	require.NoError(t, err)
 	consents := testhelper.ConsentRecords(client, bus)
 	acc := users.New(client, bus, testhelper.Passwords(), consents, time.Now)
 	attempts := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
-	q := queue{rc: inserter}
+	q := requests{sqlDB: sqlDB}
 	cfg := signup.SignUpConfig{
-		Budget: attempts.For(throttle.KindSignUp), Mail: inserter, Mint: mint, Consents: consents,
+		Budget: attempts.For(throttle.KindSignUp), Consents: consents,
 		RequireVerification: true, SurveyDue: func() bool { return false },
 	}
 	for _, o := range opts {
@@ -165,8 +142,8 @@ func (r rig) budgetTaken(t *testing.T, email string) bool {
 const password = "form-password-1"
 
 // ADR 0031: a new, an Unverified and a Verified address answer alike and cost the same
-// work: a budget slot, one Sign-up browser and exactly one mail job each. Only the job's
-// kind says which it was, and only its owner reads it.
+// work: a budget slot, one Sign-up browser and exactly one published event each. Only the
+// event says which it was, and only the address's owner reads its mail.
 func TestEverySignUpDoesTheSameWorkWhateverTheAddress(t *testing.T) {
 	r := newRig(t, 5)
 	john := r.user(t, fixtures.OwnerJohnEmail)
@@ -182,11 +159,11 @@ func TestEverySignUpDoesTheSameWorkWhateverTheAddress(t *testing.T) {
 	assert.True(t, r.budgetTaken(t, fixtures.FreshUnverifiedUserEmail))
 	assert.True(t, r.budgetTaken(t, fixtures.OwnerJohnEmail))
 	grace := r.user(t, "grace@example.com")
-	assert.Equal(t, []river.JobArgs{
-		mailjobs.EmailVerification("grace@example.com", linkOf(grace.ID, fresh), true),
-		mailjobs.EmailVerification(fixtures.FreshUnverifiedUserEmail, linkOf(fixtures.FreshUnverifiedUserID, unverified), true),
-		mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, true),
-	}, r.queue.jobs(t), "one job each, and only the taken address's carries no link")
+	assert.Equal(t, []events.DomainEvent{
+		verificationRequested(grace.ID, "grace@example.com", fresh, true),
+		verificationRequested(fixtures.FreshUnverifiedUserID, fixtures.FreshUnverifiedUserEmail, unverified, true),
+		&events.AddressClaimed{Email: fixtures.OwnerJohnEmail, Deliver: true},
+	}, r.queue.published(t), "one event each, and the taken address's asks for no link")
 	after := r.user(t, fixtures.OwnerJohnEmail)
 	assert.Equal(t, john.PasswordHash, after.PasswordHash, "a Verified User's password is never replaced")
 	assert.Equal(t, john.Name, after.Name)
@@ -201,7 +178,7 @@ func TestASignUpOfANewAddressCreatesAnUnverifiedUserAndMailsItsLink(t *testing.T
 	assert.Equal(t, "Grace", u.Name)
 	assert.Nil(t, u.EmailVerifiedAt)
 	assert.True(t, credentials.VerifyPassword(u.PasswordHash, password))
-	assert.Equal(t, []river.JobArgs{mailjobs.EmailVerification("grace@example.com", linkOf(u.ID, res), true)}, r.queue.jobs(t),
+	assert.Equal(t, []events.DomainEvent{verificationRequested(u.ID, "grace@example.com", res, true)}, r.queue.published(t),
 		"the link is the User's and trusts the Sign-up browser of the answer")
 }
 
@@ -229,18 +206,21 @@ func TestASignUpThatLosesARaceEndsAsARepeatedSignUpOfTheWinner(t *testing.T) {
 	assert.NotEmpty(t, res.Browser)
 	winner := r.user(t, fixtures.FreshUnverifiedUserEmail)
 	assert.True(t, credentials.VerifyPassword(winner.PasswordHash, password), "the loser replaced the winner's password")
-	assert.Equal(t, []river.JobArgs{mailjobs.EmailVerification(fixtures.FreshUnverifiedUserEmail, linkOf(winner.ID, res), true)}, r.queue.jobs(t))
+	assert.Equal(t, []events.DomainEvent{verificationRequested(winner.ID, fixtures.FreshUnverifiedUserEmail, res, true)}, r.queue.published(t))
 }
 
 // ADR 0031: once the address's mail budget is spent a Sign-up still does all the work, and
-// its mail job is queued but delivers nothing.
-func TestASignUpPastTheMailBudgetQueuesAJobThatDeliversNothing(t *testing.T) {
+// its event is published but not delivered.
+func TestASignUpPastTheMailBudgetPublishesAnUndeliveredEvent(t *testing.T) {
 	r := newRig(t, 1)
 
 	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
 	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
 
-	assert.Equal(t, []river.JobArgs{mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, true), mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, false)}, r.queue.jobs(t))
+	assert.Equal(t, []events.DomainEvent{
+		&events.AddressClaimed{Email: fixtures.OwnerJohnEmail, Deliver: true},
+		&events.AddressClaimed{Email: fixtures.OwnerJohnEmail, Deliver: false},
+	}, r.queue.published(t))
 }
 
 func TestARefusedFormNamesEveryFieldAndCostsNothing(t *testing.T) {
@@ -252,7 +232,7 @@ func TestARefusedFormNamesEveryFieldAndCostsNothing(t *testing.T) {
 	require.True(t, ok, "got %v", err)
 	refused := slices.Sorted(maps.Keys(fields.Fields))
 	assert.Equal(t, []string{"email", "name", "password"}, refused)
-	assert.Empty(t, r.queue.jobs(t))
+	assert.Empty(t, r.queue.published(t))
 	assert.False(t, r.budgetTaken(t, "not-an-address"))
 }
 
@@ -266,7 +246,7 @@ func TestWithVerificationOffASignUpMakesAVerifiedUserAndWelcomesIt(t *testing.T)
 	assert.Empty(t, res.Browser)
 	u := r.user(t, "grace@example.com")
 	assert.NotNil(t, u.EmailVerifiedAt)
-	assert.Equal(t, []river.JobArgs{mailjobs.Welcome("grace@example.com", "Grace")}, r.queue.jobs(t))
+	assert.Equal(t, []events.DomainEvent{&events.UserSignedUp{UserID: u.ID, Email: "grace@example.com", Name: "Grace"}}, r.queue.published(t))
 }
 
 // ADR 0031's one exception: with no mail to tell the owner, a Taken address is the answer.
@@ -277,7 +257,7 @@ func TestWithVerificationOffATakenAddressIsTheAnswer(t *testing.T) {
 	_, err := r.module.SignUp(t.Context(), signup.SignUpInput{Name: "Mallory", Email: fixtures.OwnerJohnEmail, Password: password})
 
 	require.ErrorIs(t, err, signup.ErrEmailTaken)
-	assert.Empty(t, r.queue.jobs(t))
+	assert.Empty(t, r.queue.published(t))
 	assert.Equal(t, john.PasswordHash, r.user(t, fixtures.OwnerJohnEmail).PasswordHash)
 }
 

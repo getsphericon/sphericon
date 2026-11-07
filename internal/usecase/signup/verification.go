@@ -22,6 +22,14 @@ const (
 	noJoin    = false
 )
 
+// signedUp and madeByOperator say whether a User made Verified with their first Workspace
+// completed a Sign-up, which publishes events.UserSignedUp (the welcome, ADR 0105), or was made
+// from a shell by the Instance operator, who hands the User their password themself.
+const (
+	signedUp       = true
+	madeByOperator = false
+)
+
 // verified is what makes a User Verified, shared by VerifyEmail, SignUpVerified and the
 // provider sign-in: write stores the User's verified state (and whatever else its step writes,
 // on the same publisher); then, when proven (the step stamped email_proven_at from empty), the
@@ -85,7 +93,7 @@ type VerifyEmailLinkInput struct {
 }
 
 // PasswordReset is a password set from a reset link: the User, and whether it completed their
-// Sign-up (the caller then sends the welcome email).
+// Sign-up.
 type PasswordReset struct {
 	User            *ent.User
 	CompletedSignUp bool
@@ -98,11 +106,16 @@ type PasswordReset struct {
 // `user.email_verify` in that Workspace's Audit log and returns the User. The address was just
 // proven, so it is a domain-join step (ADR 0051): a verified Join domain equal to its domain,
 // with the switch on, makes the User a `member` of that Workspace before the first Workspace is
-// created. Landing is where the User goes next: the joined Workspace, else the first one.
+// created. The Sign-up is complete, so it publishes events.UserSignedUp, which welcomes the
+// User. Landing is where the User goes next: the joined Workspace, else the first one.
 // users.ErrAlreadyVerified when the User is no longer Unverified (a used link).
 func (u *UseCase) VerifyEmail(ctx context.Context, in VerifyEmailInput) (*Verified, error) {
-	verified, landing, err := u.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.MarkVerifiedIn(ctx, tx, in.UserID, "", in.PasswordHash, u.now())
+	verified, landing, err := u.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
+		usr, err := users.MarkVerifiedIn(ctx, tx, in.UserID, "", in.PasswordHash, u.now())
+		if err != nil {
+			return nil, err
+		}
+		return usr, pub.Publish(ctx, signUpCompleted(usr))
 	})
 	if err != nil {
 		return nil, err
@@ -129,8 +142,8 @@ func (u *UseCase) VerifyEmailLink(ctx context.Context, in VerifyEmailLinkInput) 
 // the link first (users.Links.PasswordReset), then the reset. The link was mailed to the login
 // address, so following it proves the address as much as the verification link does: for an
 // Unverified User it completes the Sign-up exactly as VerifyEmail (Verified email, first
-// Workspace, `user.email_verify`) and reports CompletedSignUp with the User, so the caller
-// sends the welcome email. For a Verified User it is only a password change, recorded like
+// Workspace, `user.email_verify`, the welcome) and reports CompletedSignUp with the User. For a
+// Verified User it is only a password change, recorded like
 // users.Module.ChangeProfile. Either way every earlier session ends.
 func (u *UseCase) ResetPasswordLink(ctx context.Context, token, password string) (*PasswordReset, error) {
 	id, passwordHash, err := u.links.PasswordReset(ctx, token, password)
@@ -164,13 +177,28 @@ func (u *UseCase) ResetPasswordLink(ctx context.Context, token, password string)
 // exactly as VerifyEmail does. The unique index on the email refuses a taken address (see
 // db.IsUniqueViolation). SurveyDue marks the User as owing the Sign-up survey.
 func (u *UseCase) SignUpVerified(ctx context.Context, n users.NewUser) (*ent.User, error) {
+	return u.createVerified(ctx, n, signedUp)
+}
+
+// createVerified is SignUpVerified; welcome says whether the User completed a Sign-up (signedUp,
+// which publishes events.UserSignedUp) or was made by the operator (madeByOperator).
+func (u *UseCase) createVerified(ctx context.Context, n users.NewUser, welcome bool) (*ent.User, error) {
 	if err := users.CheckName(n.Name); err != nil {
 		return nil, err
 	}
-	created, _, err := u.verified(ctx, noJoin, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.CreateVerifiedIn(ctx, tx, n, u.now())
+	created, _, err := u.verified(ctx, noJoin, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
+		usr, err := users.CreateVerifiedIn(ctx, tx, n, u.now())
+		if err != nil || !welcome {
+			return usr, err
+		}
+		return usr, pub.Publish(ctx, signUpCompleted(usr))
 	})
 	return created, err
+}
+
+// signUpCompleted is the event of usr's completed Sign-up.
+func signUpCompleted(usr *ent.User) *events.UserSignedUp {
+	return &events.UserSignedUp{UserID: usr.ID, Email: usr.Email, Name: usr.Name}
 }
 
 // ErrOwnerEmailInvalid refuses an Owner made from a shell whose address does not parse.
@@ -190,7 +218,7 @@ func (u *UseCase) CreateOwner(ctx context.Context, email, name string) (string, 
 	if err != nil {
 		return "", err
 	}
-	if _, err := u.SignUpVerified(ctx, users.NewUser{Name: name, Email: email, PasswordHash: hash}); err != nil {
+	if _, err := u.createVerified(ctx, users.NewUser{Name: name, Email: email, PasswordHash: hash}, madeByOperator); err != nil {
 		return "", err
 	}
 	return password, nil

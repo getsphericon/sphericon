@@ -296,9 +296,10 @@ func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.
 // SetSecondFactorRequirement switches the scoped Workspace's Two-factor requirement
 // (ADR 0020) on, starting at now, or off. Switching it on while it is on keeps the
 // original start, so no member's grace restarts. A change is recorded as a
-// `workspace.update` Audit entry in the same transaction. The caller has checked the
-// role. switchedOn reports that this call turned the requirement on.
-func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, actor events.Actor, required bool, now time.Time) (updated *ent.Workspace, switchedOn bool, err error) {
+// `workspace.update` Audit entry in the same transaction, and switching it on publishes
+// events.SecondFactorRequired there too, which tells the members without a Second factor
+// (ADR 0105). The caller has checked the role.
+func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, actor events.Actor, required bool, now time.Time) (updated *ent.Workspace, err error) {
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
 		if err != nil {
@@ -317,8 +318,7 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 		if updated, err = upd.Save(ctx); err != nil {
 			return err
 		}
-		switchedOn = required
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
+		if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: s.WorkspaceID(),
 			Actor:       actor,
 			Action:      events.ActionWorkspaceUpdate,
@@ -326,9 +326,12 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 			TargetID:    strconv.FormatInt(before.ID, 10),
 			TargetName:  before.Name,
 			Diff:        map[string]any{"second_factor_required_at": events.Change(before.SecondFactorRequiredAt, updated.SecondFactorRequiredAt)},
-		})
+		}); err != nil || !required {
+			return err
+		}
+		return pub.Publish(ctx, &events.SecondFactorRequired{WorkspaceID: s.WorkspaceID()})
 	})
-	return updated, switchedOn, err
+	return updated, err
 }
 
 func ptrEqual(a, b *int) bool {

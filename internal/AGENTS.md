@@ -17,8 +17,11 @@ floor) is configuration, set on the test's config.
 Code under test queues jobs through the real river client, and they wait in the test's transaction.
 `env.PerformEnqueuedJobs(t, only...)` works them with their real workers through river's test
 executor, ActiveJob's `perform_enqueued_jobs`; a worker it does not know is added to the list in
-`Setup`. `env.SystemMail.Messages()` works the queued platform mails first, so a test reads them as
-sent. A test that runs a real river runtime on its database passes that runtime a sender of its own.
+`Setup`. `env.SystemMail.Messages()` works the queued Notices first (their event consumer and their
+sends, ADR 0105), so a test reads them as sent. A test that runs a real river runtime on its
+database passes that runtime a sender of its own. The harness registers a consumer of its own that
+wants every live event, so `env.QueuedEnvelopes` shows every event a test published, one no
+consumer of the application wants yet included.
 
 **Ride the transaction unless the test cannot.** A transaction costs the same however much the
 test writes, so `Setup` is the default, for a test of a hook, a refusal, a reader of the database,

@@ -65,7 +65,8 @@ func (a Actor) auditActor() events.Actor {
 // (ADR 0015); login, reads and /collect are unaffected. It reports whether anything
 // changed: suspending an already-suspended Workspace is a no-op, so the first actor
 // and reason — the ones the owner was told about — are never overwritten. A change is
-// recorded as `workspace.suspend` in the Workspace's Audit log in the same transaction.
+// recorded as `workspace.suspend` in the Workspace's Audit log and published as
+// events.WorkspaceSuspended, which tells its owners (ADR 0105), in the same transaction.
 func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, reason string, at time.Time) (bool, error) {
 	reason = strings.TrimSpace(reason)
 	if err := by.validate(); err != nil {
@@ -81,8 +82,11 @@ func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, b
 			return err
 		}
 		changed = true
-		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceSuspend,
-			map[string]any{"suspended": events.Change(false, true), "reason": events.Became(reason)})
+		if err := recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceSuspend,
+			map[string]any{"suspended": events.Change(false, true), "reason": events.Became(reason)}); err != nil {
+			return err
+		}
+		return pub.Publish(ctx, &events.WorkspaceSuspended{WorkspaceID: workspaceID})
 	})
 	if err != nil {
 		return false, fmt.Errorf("suspend workspace %d: %w", workspaceID, err)
