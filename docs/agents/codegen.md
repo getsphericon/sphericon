@@ -104,7 +104,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   | `@mcp(#{ hidden?, name?, send? })`                                         | `x-mcp`                  | `lib/main.tsp`                   |
   | `@everyOperationDeclares("scopes" \| "workspacePermissions")` on a surface | (a check)                | `lib/main.tsp`                   |
 
-  A decorator typed by a contract enum is declared beside it; `lib/decorators.js` implements them
+  A decorator typed by a contract enum is declared beside it; `lib/decorators.ts` implements them
   all and checks, in `$onValidate`, what each surface's operations must declare (the checks
   `cmd/scopegen` repeats on the OpenAPI document). The OpenAPI output is what a raw `@extension`
   wrote. A new extension a Go reader depends on gets a decorator here, a fixture under

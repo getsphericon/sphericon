@@ -20,13 +20,13 @@ const config: KnipConfig = {
     '.': {
       // The scripts that node runs: mise tasks, the CI workflows and the hook of .claude/settings.json.
       // The TypeSpec decorators, which `typespec/lib/main.tsp` imports.
-      entry: ['i18next.config.ts', 'mise/scripts/*.ts', 'typespec/lib/decorators.js'],
+      entry: ['i18next.config.ts', 'mise/scripts/*.ts', 'typespec/lib/decorators.ts'],
     },
     'packages/emaildoc': {
-      // esbuild reads the entry and the shims; `editor-image-extension` is a virtual module that
-      // build.mjs resolves to the editor's internal image chunk.
-      entry: ['src/entry.mjs', 'src/shims.js'],
-      ignoreDependencies: ['editor-image-extension'],
+      // esbuild reads the entry and the shims; `#editor-image-extension` has only types, and
+      // build.ts resolves it to the editor's internal image chunk.
+      entry: ['src/entry.ts', 'src/shims.ts'],
+      ignoreUnresolved: ['#editor-image-extension'],
     },
   },
 }

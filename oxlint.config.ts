@@ -100,6 +100,15 @@ export default defineConfig({
     'unicorn/prefer-dom-node-append': 'error',
     'unicorn/no-array-callback-reference': 'error',
     'unicorn/no-unnecessary-array-splice-count': 'error',
+    'typescript/promise-function-async': 'error',
+    'import/unambiguous': 'error',
+    'unicorn/no-await-expression-member': 'error',
+    'unicorn/prefer-spread': 'error',
+    'typescript/prefer-readonly': 'error',
+    'typescript/no-non-null-assertion': 'error',
+    'eslint/no-await-in-loop': 'error',
+    'eslint/max-params': 'error',
+    'eslint/no-multi-assign': 'error',
     // The only disabled rule: tsconfig uses jsx "react-jsx" (automatic runtime), where
     // importing React in scope is unnecessary; oxlint has no option to detect this.
     'react/react-in-jsx-scope': 'off',
@@ -150,27 +159,6 @@ export default defineConfig({
     {
       files: ['src/**', 'packages/*/src/**'],
       rules: { 'import/no-default-export': 'error', 'node/no-process-env': 'error' },
-    },
-    // Type-aware, so only where there are types; the runtime shims in packages/emaildoc are untyped
-    // classic scripts, which is also why they cannot be asked to be modules.
-    {
-      files: ['**/*.ts', '**/*.tsx'],
-      rules: { 'typescript/promise-function-async': 'error', 'import/unambiguous': 'error' },
-    },
-    // Our own TypeScript only: the JavaScript beside it (the emaildoc runtime shims, the TypeSpec
-    // decorators) implements the API of the host that calls it, whose signatures, private fields and
-    // sequential awaits are not ours to reshape.
-    {
-      files: ['**/*.ts', '**/*.tsx'],
-      rules: {
-        'unicorn/no-await-expression-member': 'error',
-        'unicorn/prefer-spread': 'error',
-        'typescript/prefer-readonly': 'error',
-        'typescript/no-non-null-assertion': 'error',
-        'eslint/no-await-in-loop': 'error',
-        'eslint/max-params': 'error',
-        'eslint/no-multi-assign': 'error',
-      },
     },
     // Text shown to a person comes from the catalog; the punctuation joining translated pieces is not text.
     {
