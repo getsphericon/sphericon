@@ -2,22 +2,18 @@ package customfieldretyping_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -28,12 +24,11 @@ import (
 // has_it is a datetime field only a notNull leaf tests, so it may become a string.
 const dateHasIt = `{"kind":"group","combinator":"and","rules":[{"kind":"date","field":"custom:` + fixtures.CustomFieldDuffHasItKey + `","operator":"after","at":"2026-01-01T00:00:00Z"}]}`
 
-// retypeRace is one test's database and the writers that meet on it: a retype of has_it to a string, and
-// the save of a Segment and of a Rule testing has_it with a date leaf.
+// retypeRace is a race over Duff's lock and the writers that meet in it: a retype of has_it to a
+// string, and the save of a Segment and of a Rule testing has_it with a date leaf.
 type retypeRace struct {
-	sqlDB                         *sql.DB
-	bus                           *events.Bus
-	s                             *ent.Scoped
+	*testhelper.WorkspaceRace
+
 	retype, saveSegment, saveRule testhelper.Writer
 	savedID                       *int64
 }
@@ -41,16 +36,14 @@ type retypeRace struct {
 func newRetypeRace(t *testing.T) *retypeRace {
 	t.Helper()
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	s := entclient.New(sqlDB).Scoped(fixtures.DuffID)
-	bus := events.New(sqlDB, entclient.NewTx)
+	race := testhelper.NewWorkspaceRace(t, fixtures.DuffID)
+	s, bus := race.Scope, race.Bus
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	segs, ruleset, retyping := segments.New(bus), rules.New(cipher, bus), customfieldretyping.New(bus)
-	r := &retypeRace{sqlDB: sqlDB, bus: bus, s: s, savedID: new(int64)}
+	r := &retypeRace{WorkspaceRace: race, savedID: new(int64)}
 	r.retype = testhelper.Writer{Name: "retype", Run: func() error {
 		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Type: patch.Set(string(customfield.TypeString))})
 		return err
@@ -74,7 +67,7 @@ func newRetypeRace(t *testing.T) *retypeRace {
 
 func (r *retypeRace) fieldType(t *testing.T) customfield.Type {
 	t.Helper()
-	field, err := contacts.CustomField(context.Background(), r.s, fixtures.CustomFieldDuffHasItID)
+	field, err := contacts.CustomField(context.Background(), r.Scope, fixtures.CustomFieldDuffHasItID)
 	require.NoError(t, err)
 	return field.Type
 }
@@ -95,7 +88,7 @@ func TestRetypingACustomFieldWaitsForASaveThatTestsIt(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := newRetypeRace(t)
 
-			errs := testhelper.QueuedBehind(t, r.sqlDB, testhelper.HoldWorkspaceLock(t, r.bus, r.s), tc.save(r), r.retype)
+			errs := r.Queue(t, tc.save(r), r.retype)
 
 			require.NoError(t, errs["save"])
 			var used *liveuse.Error
@@ -121,7 +114,7 @@ func TestASaveBehindARetypeIsCheckedAgainstTheNewType(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := newRetypeRace(t)
 
-			errs := testhelper.QueuedBehind(t, r.sqlDB, testhelper.HoldWorkspaceLock(t, r.bus, r.s), r.retype, tc.save(r))
+			errs := r.Queue(t, r.retype, tc.save(r))
 
 			require.NoError(t, errs["retype"])
 			require.ErrorIs(t, errs["save"], tc.refusal)

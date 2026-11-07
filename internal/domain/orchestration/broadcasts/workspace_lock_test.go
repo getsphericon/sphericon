@@ -9,7 +9,6 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -21,7 +20,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -49,11 +47,8 @@ func (anySender) Send(context.Context, messaging.EmailMessage) (messaging.Receip
 // to wait.
 func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceLock(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB, entclient.NewTx)
-	bus.UseJobs(testhelper.AcceptingQueue{})
+	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	s, bus := race.Scope, race.Bus
 	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local"))
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	cfg, err := config.Load("test")
@@ -107,7 +102,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 		{"archive an Automation", func() error { _, err := autos.Archive(ctx, s, fixtures.AutomationJobsEditableID); return err }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			testhelper.QueuedBehind(t, sqlDB, testhelper.HoldWorkspaceLock(t, bus, s), testhelper.Writer{Name: tc.name, Run: tc.run})
+			race.Queue(t, testhelper.Writer{Name: tc.name, Run: tc.run})
 		})
 	}
 }

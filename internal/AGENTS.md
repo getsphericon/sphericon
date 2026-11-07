@@ -104,7 +104,8 @@ secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the A
 `internal/usecase/contactintake` an import's rows and `internal/usecase/visitoridentification` what Identify
 binds and stitches). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
-`New` over `env.Bus`, or over a bus on `testhelper.RealDB` when it races the Workspace lock. A use
+`New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
+Workspace lock, whose `Queue` runs its writers queued behind the lock. A use
 case of the whole Instance (the Release check, the Telemetry report) is built over the Instance state
 module instead (`instancestates.New(env.DB, …)`); the server's own are `env.ReleaseCheck` and
 `env.TelemetryReport`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
