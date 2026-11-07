@@ -111,6 +111,13 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `typespec/lib/testdata/` (`// expect-next-line: <code>` marks a statement that must fail) and a
   case in `decorators.test.ts`; `mise run test:typespec` runs them.
 
+- **Descriptions say what happens, not which code does it.** `$onValidate` also refuses a
+  description (a doc comment, `@doc`, `@summary`, `@returns`/`@returnsDoc`, `@errors`/`@errorsDoc`)
+  that names the code behind the contract: the words module, package or use case, a Go identifier
+  such as `throttle.NormalizeEmail`, a Go path or file (`internal/…`, `lookup.go`). Such a
+  description goes stale when the code moves; it says what happens to the value instead, in the
+  words of `GLOSSARY.md`. Its fixture is `typespec/lib/testdata/descriptions.tsp`.
+
 - `mise run generate` — full cycle: typespec → openapi → backend (ent + ogen) → fixture catalog → configuration reference → frontend → i18n types → format.
 - `mise run generate:typespec` / `mise run generate:backend` / `mise run generate:openapi` — partial regens.
 

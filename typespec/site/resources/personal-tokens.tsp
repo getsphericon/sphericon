@@ -61,7 +61,8 @@ model SiteCreatePersonalTokenResponse {
 
 // Bespoke (not WorkspaceCrud): any member mints one of their own, create returns the one-time
 // secret, and there is no GET or PUT of one. Each User sees and revokes their own; members:manage
-// sees and revokes anyone's (the Policy of a Connection, in the module, not a declaration).
+// sees and revokes anyone's. The server checks that per token, as for a Connection, so the
+// operations declare no Permission.
 @tag("Site Personal Tokens")
 namespace SitePersonalTokens {
   /** List the active Personal tokens the caller may see: their own, or every member's with
