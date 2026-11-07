@@ -4,10 +4,15 @@
 // this file implements them. Each one checks its arguments at `tsp compile` (and in the editor),
 // then writes the `x-*` extension the Go readers of the OpenAPI documents read (cmd/scopegen,
 // internal/mcpserver), exactly as a raw `@extension` wrote it. `$onValidate` checks what spans
-// the contract: what each operation of a surface must declare, and that no raw `@extension`
-// writes one of these keys past its decorator.
+// the contract: what each operation of a surface must declare, that no raw `@extension` writes
+// one of these keys past its decorator, and that no description names the code behind it.
 import {
   createTypeSpecLibrary,
+  getDocData,
+  getErrorsDocData,
+  getReturnsDocData,
+  getSourceLocation,
+  getSummary,
   navigateProgram,
   paramMessage,
   serializeValueAsJson,
@@ -72,6 +77,12 @@ export const $lib = createTypeSpecLibrary({
       messages: {
         default:
           'The operation addresses a Workspace and declares no Permissions: give it @requiresPermissions, `#[]` for any member',
+      },
+    },
+    'implementation-in-description': {
+      severity: 'error',
+      messages: {
+        default: paramMessage`The description names the code behind the contract (\`${'word'}\`): say what happens to the value, in the words of the glossary, not which code does it`,
       },
     },
     'outside-workspace': {
@@ -391,6 +402,32 @@ export const $decorators = {
 }
 
 /**
+ * Calls `visit` on every declaration of the program that can carry a decorator, a template's
+ * declaration included.
+ *
+ * @param {Program} program
+ * @param {(type: Type & { decorators?: DecoratorApplication[] }) => void} visit
+ */
+function visitDeclarations(program, visit) {
+  navigateProgram(
+    program,
+    {
+      namespace: visit,
+      model: visit,
+      modelProperty: visit,
+      operation: visit,
+      interface: visit,
+      enum: visit,
+      enumMember: visit,
+      union: visit,
+      unionVariant: visit,
+      scalar: visit,
+    },
+    { includeTemplateDeclaration: true },
+  )
+}
+
+/**
  * Refuses a raw `@extension` that writes one of the decorators' keys, wherever it stands (a
  * template's operation reports once, at the template).
  *
@@ -420,22 +457,125 @@ function checkRawExtensions(program) {
       })
     }
   }
-  navigateProgram(
-    program,
-    {
-      namespace: visit,
-      model: visit,
-      modelProperty: visit,
-      operation: visit,
-      interface: visit,
-      enum: visit,
-      enumMember: visit,
-      union: visit,
-      unionVariant: visit,
-      scalar: visit,
-    },
-    { includeTemplateDeclaration: true },
-  )
+  visitDeclarations(program, visit)
+}
+
+/**
+ * The descriptions of a type, by what they describe: the type (a doc comment or `@doc`), its
+ * summary, and an operation's return and errors (`@returns` or `@returnsDoc`, `@errors` or
+ * `@errorsDoc`). Each reads the text the OpenAPI document carries, however it was written.
+ *
+ * @type {Record<string, (program: Program, type: Type) => string | undefined>}
+ */
+const descriptions = {
+  doc: (program, type) => getDocData(program, type)?.value,
+  summary: (program, type) => getSummary(program, type),
+  returns: (program, type) =>
+    type.kind === 'Operation' ? getReturnsDocData(program, type)?.value : undefined,
+  errors: (program, type) =>
+    type.kind === 'Operation' ? getErrorsDocData(program, type)?.value : undefined,
+}
+
+/**
+ * What names the code behind the contract rather than says what happens: a module, a package or a
+ * use case; a Go identifier qualified by its package (`throttle.NormalizeEmail`, while
+ * `window.Sphericon.track()` is a path of a script); a Go source path or file.
+ */
+const implementationWords = [
+  /\b(?:modules?|packages?|use[ -]cases?)\b/i,
+  /\b[a-z][a-z0-9]*\.[A-Z][A-Za-z0-9]*(?![\w.])/,
+  /\b(?:internal|ee|cmd)\/[a-z]\w*/,
+  /\b\w+\.go\b/,
+]
+
+/**
+ * The first words of a text that name the code behind the contract, or undefined.
+ *
+ * @param {string} text
+ * @returns {string | undefined}
+ */
+function implementationWord(text) {
+  for (const word of implementationWords) {
+    const match = word.exec(text)
+    if (match !== null) {
+      return match[0]
+    }
+  }
+  return undefined
+}
+
+/**
+ * What a type was copied from: the operation or model it `is`, the property it spreads or a
+ * template declares.
+ *
+ * @param {Type} type
+ * @returns {Type | undefined}
+ */
+function copiedFrom(type) {
+  if (type.kind === 'Operation') {
+    return type.sourceOperation
+  }
+  if (type.kind === 'Model') {
+    return type.sourceModel
+  }
+  if (type.kind === 'ModelProperty') {
+    return type.sourceProperty
+  }
+  return undefined
+}
+
+/**
+ * The type a description was written on. An operation or a model declared with `is`, and a
+ * property spread or copied from a template, carry the description of their source: it is
+ * reported once, at the source.
+ *
+ * @param {Type} type
+ * @param {(type: Type) => string | undefined} read
+ * @returns {Type}
+ */
+function writtenOn(type, read) {
+  const text = read(type)
+  let at = type
+  for (;;) {
+    const source = copiedFrom(at)
+    if (source === undefined || read(source) !== text) {
+      return at
+    }
+    at = source
+  }
+}
+
+/**
+ * Refuses a description that names the code behind the contract: it goes stale when the code
+ * moves, and a client cannot act on it. A description says what happens to the value, in the
+ * glossary's words. Each is reported once, where it is written; a library's are not read.
+ *
+ * @param {Program} program
+ */
+function checkDescriptions(program) {
+  /** @type {Map<string, Set<unknown>>} */
+  const seen = new Map()
+  visitDeclarations(program, (type) => {
+    for (const [kind, describe] of Object.entries(descriptions)) {
+      /** @param {Type} t */
+      const read = (t) => describe(program, t)
+      const text = read(type)
+      const word = text === undefined ? undefined : implementationWord(text)
+      if (word === undefined) {
+        continue
+      }
+      const at = writtenOn(type, read)
+      const key = ('node' in at ? at.node : undefined) ?? at
+      const reported = seen.get(kind) ?? new Set()
+      seen.set(kind, reported)
+      const inLibrary = getSourceLocation(at).file.path.includes('/node_modules/')
+      if (reported.has(key) || inLibrary) {
+        continue
+      }
+      reported.add(key)
+      report(program, { code: 'implementation-in-description', format: { word }, target: at })
+    }
+  })
 }
 
 /**
@@ -486,4 +626,5 @@ export function $onValidate(program) {
   checkGrantedWith(program)
   checkRawExtensions(program)
   checkSurfaces(program)
+  checkDescriptions(program)
 }

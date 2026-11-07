@@ -38,7 +38,8 @@ model SiteConnectionResource {
 
 // Bespoke (not WorkspaceCrud): a Connection is created by consenting on the OAuth screen, never
 // via POST, and is only listed and revoked here. Each User sees and revokes their own;
-// members:manage sees and revokes anyone's (a Policy of the module, not a declaration).
+// members:manage sees and revokes anyone's. The server checks that per Connection, so the
+// operations declare no Permission.
 @tag("Site Connections")
 namespace SiteConnections {
   /** List the Connections the caller may see: their own, or every member's with members:manage */

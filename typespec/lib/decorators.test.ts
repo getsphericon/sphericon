@@ -113,6 +113,10 @@ await test('a raw @extension of a decorator key is refused once per declaration,
   assert.equal(extension(program, 'Fixture.Contact.email', 'x-something-else'), true)
 })
 
+await test('a description that names the code behind the contract is refused once, where it is written', async () => {
+  await assertDiagnostics('descriptions.tsp')
+})
+
 await test('@grantable lists every member with its @grantedWith, only in a @grantable enum', async () => {
   const program = await assertDiagnostics('grants.tsp')
   assert.deepEqual(extension(program, 'Fixture.Grantable', 'x-grant-permissions'), [
