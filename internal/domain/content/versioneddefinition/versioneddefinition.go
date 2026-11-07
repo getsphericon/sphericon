@@ -137,7 +137,7 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 		if err != nil {
 			return err
 		}
-		return l.move(ctx, store, st, triggerDraft, versionID)
+		return l.move(ctx, store, st, Draft, versionID)
 	})
 	if err != nil {
 		return nil, err
@@ -171,40 +171,34 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 		if err != nil {
 			return err
 		}
-		// Fence the owner before rewriting its existing draft or its own fields. All state
-		// writers update this row first, so a concurrent Publish/Revert cannot expose an edit
-		// of a version after it became live or discard a version still being rewritten.
-		if l.def.Equal(base, body) {
-			if own == nil {
-				return nil
-			}
-			if err := l.move(ctx, store, st, triggerEdit, 0); err != nil {
+		unchanged := l.def.Equal(base, body)
+		if unchanged && own == nil {
+			return nil
+		}
+		draftID := st.DraftID
+		if !unchanged && st.Draft == nil {
+			newest, err := store.Newest(ctx, id)
+			if err != nil {
 				return err
 			}
-			return own(ctx, ts, st.Row)
-		}
-		if st.Draft != nil {
-			if err := l.move(ctx, store, st, triggerDraft, st.DraftID); err != nil {
+			draftID, err = l.def.Write(ctx, ts, id, newest+1, nil, body)
+			if err != nil {
 				return err
 			}
-			if own != nil {
-				if err := own(ctx, ts, st.Row); err != nil {
-					return err
-				}
+		}
+		event := Edit
+		if !unchanged {
+			event = Draft
+		}
+		// Fence the owner before rewriting an existing draft. A concurrent move cannot
+		// publish or remove that version between this write and the body's write.
+		if err := l.move(ctx, store, st, event, draftID); err != nil {
+			return err
+		}
+		if !unchanged && st.Draft != nil {
+			if _, err := l.def.Write(ctx, ts, id, 0, st.Draft, body); err != nil {
+				return err
 			}
-			_, err := l.def.Write(ctx, ts, id, 0, st.Draft, body)
-			return err
-		}
-		newest, err := store.Newest(ctx, id)
-		if err != nil {
-			return err
-		}
-		versionID, err := l.def.Write(ctx, ts, id, newest+1, nil, body)
-		if err != nil {
-			return err
-		}
-		if err := l.move(ctx, store, st, triggerDraft, versionID); err != nil {
-			return err
 		}
 		if own != nil {
 			return own(ctx, ts, st.Row)
@@ -240,7 +234,7 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id i
 			if err := l.def.Publishable(ctx, ts, st.Draft); err != nil {
 				return err
 			}
-			return l.move(ctx, store, st, triggerPublish, 0)
+			return l.move(ctx, store, st, Publish, 0)
 		case st.Live == nil:
 			return l.errs.NothingToPublish
 		case st.Active:
@@ -249,7 +243,7 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id i
 			if err := l.def.Publishable(ctx, ts, st.Live); err != nil {
 				return err
 			}
-			return l.move(ctx, store, st, triggerPublish, 0)
+			return l.move(ctx, store, st, Publish, 0)
 		}
 	})
 	if err != nil {
@@ -276,7 +270,7 @@ func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id in
 		}
 		// The pointer is cleared through the audited write first, so the Audit log records the
 		// Revert; the key's SET NULL would leave no trace.
-		if err := l.move(ctx, store, st, triggerRevert, 0); err != nil {
+		if err := l.move(ctx, store, st, Revert, 0); err != nil {
 			return err
 		}
 		return store.DeleteVersion(ctx, id, st.DraftID)
@@ -304,7 +298,7 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 		if !st.Active {
 			return nil
 		}
-		return l.move(ctx, store, st, triggerDeactivate, 0)
+		return l.move(ctx, store, st, Deactivate, 0)
 	})
 	if err != nil {
 		return nil, err
@@ -330,7 +324,7 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 		if err := l.def.Archivable(ctx, ts, st.Row); err != nil {
 			return err
 		}
-		return l.move(ctx, store, st, triggerArchive, 0)
+		return l.move(ctx, store, st, Archive, 0)
 	})
 	if err != nil {
 		return nil, err
@@ -351,7 +345,7 @@ func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id
 		if !st.Archived {
 			return nil
 		}
-		return l.move(ctx, store, st, triggerUnarchive, 0)
+		return l.move(ctx, store, st, Unarchive, 0)
 	})
 	if err != nil {
 		return nil, err
@@ -374,7 +368,7 @@ func (l *Lifecycle[O, V, E, B]) Discard(ctx context.Context, s *ent.Scoped, id i
 		if st.Discarded {
 			return nil
 		}
-		return l.move(ctx, store, st, triggerDiscard, 0)
+		return l.move(ctx, store, st, Discard, 0)
 	})
 	if err != nil {
 		return nil, err

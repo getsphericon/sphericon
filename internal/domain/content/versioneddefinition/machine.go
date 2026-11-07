@@ -21,17 +21,18 @@ const (
 	discarded
 )
 
-type trigger string
+// Trigger names one operation of the Versioned definition lifecycle.
+type Trigger string
 
 const (
-	triggerDraft      trigger = "draft"
-	triggerEdit       trigger = "edit"
-	triggerPublish    trigger = "publish"
-	triggerRevert     trigger = "revert"
-	triggerDeactivate trigger = "deactivate"
-	triggerArchive    trigger = "archive"
-	triggerUnarchive  trigger = "unarchive"
-	triggerDiscard    trigger = "discard"
+	Draft      Trigger = "draft"
+	Edit       Trigger = "edit"
+	Publish    Trigger = "publish"
+	Revert     Trigger = "revert"
+	Deactivate Trigger = "deactivate"
+	Archive    Trigger = "archive"
+	Unarchive  Trigger = "unarchive"
+	Discard    Trigger = "discard"
 )
 
 func positionState(p ent.VersionPosition) state {
@@ -58,62 +59,88 @@ func positionState(p ent.VersionPosition) state {
 // activity but move a pointer. The empty state exists only inside Create's transaction.
 func machine(storage lifecycle.Storage[state]) *stateless.StateMachine {
 	m := lifecycle.New(storage)
-	m.Configure(state(0)).Permit(triggerDraft, hasDraft)
+	m.Configure(state(0)).Permit(Draft, hasDraft)
 	for _, st := range []state{hasDraft, hasLive, hasLive | hasDraft, active | hasLive, active | hasLive | hasDraft} {
-		cfg := m.Configure(st).PermitReentry(triggerEdit)
+		cfg := m.Configure(st).PermitReentry(Edit)
 		if st&hasDraft != 0 {
-			cfg.PermitReentry(triggerDraft)
+			cfg.PermitReentry(Draft)
 		} else {
-			cfg.Permit(triggerDraft, st|hasDraft)
+			cfg.Permit(Draft, st|hasDraft)
 		}
 		if st == active|hasLive {
-			cfg.Ignore(triggerPublish)
+			cfg.Ignore(Publish)
 		} else {
-			cfg.Permit(triggerPublish, active|hasLive)
+			cfg.Permit(Publish, active|hasLive)
 		}
 		if st&hasLive != 0 && st&hasDraft != 0 {
-			cfg.Permit(triggerRevert, st&^hasDraft)
+			cfg.Permit(Revert, st&^hasDraft)
 		}
 		if st&active != 0 {
-			cfg.Permit(triggerDeactivate, st&^active)
+			cfg.Permit(Deactivate, st&^active)
 		} else {
-			cfg.Ignore(triggerDeactivate)
+			cfg.Ignore(Deactivate)
 		}
-		cfg.Permit(triggerArchive, st&^active|archived)
-		cfg.Permit(triggerDiscard, st&^active|discarded)
-		cfg.Ignore(triggerUnarchive)
+		cfg.Permit(Archive, st&^active|archived)
+		cfg.Permit(Discard, st&^active|discarded)
+		cfg.Ignore(Unarchive)
 	}
 	for _, st := range []state{hasDraft, hasLive, hasLive | hasDraft} {
-		m.Configure(st|archived).Permit(triggerUnarchive, st).Ignore(triggerArchive)
-		m.Configure(st | discarded).Ignore(triggerDiscard)
+		m.Configure(st|archived).Permit(Unarchive, st).Ignore(Archive)
+		m.Configure(st | discarded).Ignore(Discard)
 	}
 	return m
 }
 
-// move holds all state writes behind the transition table. Updating the owner first also fences
-// a body edit: the transaction holds its update lock until the draft's write or removal commits.
-func (l *Lifecycle[O, V, E, B]) move(ctx context.Context, store ent.VersionedStore[O, V], before ent.VersionState[O, V], event trigger, draftID int64) error {
+// Change supplies an operation and, for Draft, the version to attach as the new draft.
+type Change struct {
+	Trigger Trigger
+	DraftID int64
+}
+
+// Transition runs the table and moves the full position through storage's conditional writer.
+// The caller keeps its effects in the same transaction after this move. A Draft needs a positive
+// version id; all other pointer changes are determined by the position, not by the caller.
+func Transition(ctx context.Context, storage lifecycle.Storage[ent.VersionPosition], change Change) error {
+	if change.Trigger == Draft && change.DraftID <= 0 {
+		return lifecycle.ErrInvalidTransition
+	}
+	var before ent.VersionPosition
 	m := machine(lifecycle.Storage[state]{
-		Read: func(context.Context) (state, error) { return positionState(before.VersionPosition), nil },
+		Read: func(ctx context.Context) (state, error) {
+			var err error
+			before, err = storage.Read(ctx)
+			return positionState(before), err
+		},
 		Write: func(ctx context.Context, _ state, to state) (bool, error) {
-			after := before.VersionPosition
+			after := before
 			after.Active = to&active != 0
 			after.Archived = to&archived != 0
 			after.Discarded = to&discarded != 0
-			switch event {
-			case triggerDraft:
-				after.DraftID = draftID
-			case triggerPublish:
+			switch change.Trigger {
+			case Draft:
+				after.DraftID = change.DraftID
+			case Publish:
 				if before.DraftID != 0 {
 					after.LiveID = before.DraftID
 					after.DraftID = 0
 				}
-			case triggerRevert:
+			case Revert:
 				after.DraftID = 0
-			case triggerEdit, triggerDeactivate, triggerArchive, triggerUnarchive, triggerDiscard:
+			case Edit, Deactivate, Archive, Unarchive, Discard:
 			}
-			return store.CompareAndSwap(ctx, before, after, l.now())
+			return storage.Write(ctx, before, after)
 		},
 	})
-	return m.FireCtx(ctx, event)
+	return m.FireCtx(ctx, change.Trigger)
+}
+
+// move updates the owner before a body edit: the transaction holds its update lock until the
+// draft's write or removal commits. The generated writer also compares the loaded revision.
+func (l *Lifecycle[O, V, E, B]) move(ctx context.Context, store ent.VersionedStore[O, V], before ent.VersionState[O, V], event Trigger, draftID int64) error {
+	return Transition(ctx, lifecycle.Storage[ent.VersionPosition]{
+		Read: func(context.Context) (ent.VersionPosition, error) { return before.VersionPosition, nil },
+		Write: func(ctx context.Context, _, after ent.VersionPosition) (bool, error) {
+			return store.CompareAndSwap(ctx, before, after, l.now())
+		},
+	}, Change{Trigger: event, DraftID: draftID})
 }
