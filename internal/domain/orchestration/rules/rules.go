@@ -254,11 +254,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // rewritten in place; a Rule with none gets one, the version above the newest. A definition equal
 // to the one it starts from stores nothing. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Rule, error) {
-	rename := func(ctx context.Context, ts *ent.Scoped, r *ent.Rule) error {
+	rename := func(r *ent.Rule) func(context.Context, *ent.Scoped) error {
 		if in.Name == nil || *in.Name == r.Name {
 			return nil
 		}
-		return ts.Rule().UpdateOneID(r.ID).SetName(*in.Name).Exec(ctx)
+		return func(ctx context.Context, ts *ent.Scoped) error {
+			return ts.Rule().UpdateOneID(r.ID).SetName(*in.Name).Exec(ctx)
+		}
 	}
 	return m.life.Edit(ctx, s, id, rename, in)
 }

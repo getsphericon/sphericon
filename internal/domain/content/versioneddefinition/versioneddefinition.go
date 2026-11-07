@@ -150,8 +150,10 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 // draft's, or the live version's when there is no draft. The live version is never rewritten: the
 // first edit above it makes the draft, the version above the newest, and the next ones rewrite the
 // draft in place. A definition equal to the one it starts from stores nothing. The status is
-// untouched. own, when given, changes the object's own row (its name) under the same lock.
-func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int64, own func(ctx context.Context, ts *ent.Scoped, row *O) error, edit E) (*O, error) {
+// untouched. own, when given, plans a change of the object's own row (its name) from the loaded
+// snapshot: it returns nil if nothing differs, otherwise a writer to run after the conditional
+// move. Planning has no effects; the writer runs in the move's transaction.
+func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int64, own func(row *O) func(ctx context.Context, ts *ent.Scoped) error, edit E) (*O, error) {
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.read(ctx, store, id)
@@ -172,8 +174,12 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 		if err != nil {
 			return err
 		}
+		var writeOwner func(context.Context, *ent.Scoped) error
+		if own != nil {
+			writeOwner = own(st.Row)
+		}
 		unchanged := l.def.Equal(base, body)
-		if unchanged && own == nil {
+		if unchanged && writeOwner == nil {
 			return nil
 		}
 		draftID := st.DraftID
@@ -201,8 +207,8 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 				return err
 			}
 		}
-		if own != nil {
-			return own(ctx, ts, st.Row)
+		if writeOwner != nil {
+			return writeOwner(ctx, ts)
 		}
 		return nil
 	})

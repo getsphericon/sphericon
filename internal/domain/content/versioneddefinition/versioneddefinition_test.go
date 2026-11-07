@@ -35,10 +35,12 @@ type version struct {
 
 // view is an object's lifecycle as a test reads it.
 type view struct {
+	name        string
 	active      bool
 	archived    bool
 	discarded   bool
 	activatedAt *time.Time
+	updatedAt   time.Time
 	live, draft version
 }
 
@@ -57,6 +59,7 @@ type kind struct {
 	// An object of another Workspace.
 	foreign int64
 
+	rename     func(ctx context.Context, s *ent.Scoped, id int64, name string) (view, error)
 	edit       func(ctx context.Context, s *ent.Scoped, id int64, mark string) (view, error)
 	get        func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	publish    func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
@@ -88,7 +91,8 @@ func automationView(a *ent.Automation, err error) (view, error) {
 	}
 	live, draft := automations.LiveAndDraft(a)
 	return view{
-		active: a.Status == automation.StatusActive, archived: a.ArchivedAt != nil, activatedAt: a.ActivatedAt,
+		name:   a.Name,
+		active: a.Status == automation.StatusActive, archived: a.ArchivedAt != nil, activatedAt: a.ActivatedAt, updatedAt: a.UpdatedAt,
 		live: automationVersion(live), draft: automationVersion(draft),
 	}, nil
 }
@@ -100,6 +104,9 @@ func automationKind(env *testhelper.TestEnv) kind {
 		live:   fixtures.AutomationHoldDemoID, liveMark: "hold_demo",
 		liveWithDraft: fixtures.AutomationWelcomeSeriesID, neverPublished: fixtures.AutomationWinBackID,
 		foreign: fixtures.AutomationGlobexID,
+		rename: func(ctx context.Context, s *ent.Scoped, id int64, name string) (view, error) {
+			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Name: &name}))
+		},
 		edit: func(ctx context.Context, s *ent.Scoped, id int64, mark string) (view, error) {
 			return automationView(m.Update(ctx, s, id, automations.UpdateInput{TriggerEvent: &mark}))
 		},
@@ -148,7 +155,8 @@ func ruleView(r *ent.Rule, err error) (view, error) {
 	}
 	live, draft := rules.LiveAndDraft(r)
 	return view{
-		active: r.Status == rule.StatusActive, discarded: r.DiscardedAt != nil, activatedAt: r.ActivatedAt,
+		name:   r.Name,
+		active: r.Status == rule.StatusActive, discarded: r.DiscardedAt != nil, activatedAt: r.ActivatedAt, updatedAt: r.UpdatedAt,
 		live: ruleVersion(live), draft: ruleVersion(draft),
 	}, nil
 }
@@ -160,6 +168,9 @@ func ruleKind(env *testhelper.TestEnv) kind {
 		live:   fixtures.RuleVipOnlyID, liveMark: "rule_vip",
 		liveWithDraft: fixtures.RuleTagClickedID, neverPublished: fixtures.RuleInactiveID,
 		foreign: fixtures.RuleGlobexID,
+		rename: func(ctx context.Context, s *ent.Scoped, id int64, name string) (view, error) {
+			return ruleView(m.Update(ctx, s, id, rules.UpdateInput{Name: &name}))
+		},
 		edit: func(ctx context.Context, s *ent.Scoped, id int64, mark string) (view, error) {
 			return ruleView(m.Update(ctx, s, id, rules.UpdateInput{TriggerEvents: &[]string{mark}}))
 		},
@@ -349,11 +360,18 @@ func TestAnUnchangedEditStoresNothing(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			got, err := k.edit(context.Background(), acme(env), k.live, k.liveMark)
+			before, err := k.get(t.Context(), acme(env), k.live)
+			require.NoError(t, err)
+			got, err := k.edit(t.Context(), acme(env), k.live, k.liveMark)
 
 			require.NoError(t, err)
+			assert.Equal(t, before.updatedAt, got.updatedAt)
 			assert.Equal(t, version{}, got.draft)
 			assert.Equal(t, []int{1}, k.versions(t, k.live))
+			named, err := k.rename(t.Context(), acme(env), k.live, before.name)
+			require.NoError(t, err)
+			assert.Equal(t, before.updatedAt, named.updatedAt)
+			assert.Equal(t, before.name, named.name)
 		})
 	}
 }
