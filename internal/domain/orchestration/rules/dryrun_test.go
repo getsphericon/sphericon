@@ -15,7 +15,7 @@ import (
 
 func dryRun(t *testing.T, env *testhelper.TestEnv, ruleID, eventID int64) rules.DryRun {
 	t.Helper()
-	res, err := rules.New(env.Cipher, env.Bus, time.Now).DryRun(context.Background(), env.DB.Scoped(fixtures.AcmeID), ruleID, eventID)
+	res, err := rules.New(env.Cipher, env.Bus, nil, time.Now).DryRun(context.Background(), env.DB.Scoped(fixtures.AcmeID), ruleID, eventID)
 	require.NoError(t, err)
 	return res
 }
@@ -104,7 +104,7 @@ func TestDryRunTestsAnInactiveRuleWithoutLookingAtActivation(t *testing.T) {
 
 func TestDryRunRefusesAnotherWorkspacesEventOrRule(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := m.DryRun(context.Background(), s, fixtures.RuleTagClickedID, fixtures.EventGlobexID)

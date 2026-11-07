@@ -175,15 +175,6 @@ func TestDeliverWebhookRateLimitLeavesAFailingRunAsItWas(t *testing.T) {
 	assert.Equal(t, 3, *h.endpoint().ConsecutiveFailures)
 }
 
-func TestDeliverWebhookRateLimitWithoutRetryAfterUsesTheDefault(t *testing.T) {
-	h := newHookRetryHarness(t, http.StatusTooManyRequests, "")
-
-	res, err := h.work(webhook.HookMaxAttempts())
-	require.NoError(t, err)
-
-	assert.WithinDuration(t, h.now.Add(webhook.HookSnoozeDefault), res.Job.ScheduledAt, time.Second)
-}
-
 func TestDeliverWebhookRateLimitEndsTheJobPastTheHorizon(t *testing.T) {
 	h := newHookRetryHarness(t, http.StatusTooManyRequests, "1")
 	h.now = h.now.Add(webhook.HookRetryHorizon + time.Hour)

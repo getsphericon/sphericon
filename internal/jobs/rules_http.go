@@ -48,15 +48,14 @@ func (httpAction) Run(_ context.Context, _ *ent.Scoped, in rules.ActionInput) (r
 type RunRuleHTTPWorker struct {
 	river.WorkerDefaults[RunRuleHTTPArgs]
 
-	ent    *ent.Client
-	mod    *rules.Module
-	client webhook.Doer
-	now    func() time.Time
+	ent *ent.Client
+	mod *rules.Module
 }
 
-// NewRunRuleHTTPWorker builds the worker that runs a Firing's HTTP Action through doer, on the clock now.
-func NewRunRuleHTTPWorker(client *ent.Client, mod *rules.Module, doer webhook.Doer, now func() time.Time) *RunRuleHTTPWorker {
-	return &RunRuleHTTPWorker{ent: client, mod: mod, client: doer, now: now}
+// NewRunRuleHTTPWorker builds the worker that runs a Firing's HTTP Action through the Rules
+// module, which holds the protected HTTP client and the Instance clock.
+func NewRunRuleHTTPWorker(client *ent.Client, mod *rules.Module) *RunRuleHTTPWorker {
+	return &RunRuleHTTPWorker{ent: client, mod: mod}
 }
 
 func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTPArgs]) error {
@@ -71,7 +70,7 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 	s := w.ent.Scoped(f.WorkspaceID)
 	decision, err := w.mod.ExecuteHTTP(ctx, s, f.ID, job.Args.Index, httpcall.Attempt{
 		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt,
-	}, w.client, w.now)
+	})
 	if err != nil {
 		return err
 	}

@@ -24,7 +24,7 @@ import (
 // jobs it writes sit in the test's queue.
 func evaluate(t *testing.T, env *testhelper.TestEnv, contactID int64, action, sourceID string) []int64 {
 	t.Helper()
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID:  contactID,
 		Action:     action,
@@ -129,7 +129,7 @@ func TestEvaluateNeverReplaysAnEventRecordedBeforeActivation(t *testing.T) {
 	// RuleActivatedLater was published an hour from now: an Event recorded now predates it.
 	before := evaluate(t, env, fixtures.ContactAliceID, "rule_later", "evt-before")
 
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	after, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID: fixtures.ContactAliceID, Action: "rule_later", SourceID: "evt-after", RecordedAt: time.Now().Add(2 * time.Hour),
 	})
@@ -142,7 +142,7 @@ func TestEvaluateNeverReplaysAnEventRecordedBeforeActivation(t *testing.T) {
 
 func TestEvaluateFiresNothingForAnotherWorkspacesContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
 	// The Contact belongs to Globex; the scope is Acme's.
 	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
@@ -160,7 +160,7 @@ func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
 	fire := func(sourceID string, props map[string]any) int {
 		fired, err := m.Evaluate(ctx, s, rules.Event{
@@ -185,7 +185,7 @@ func TestEvaluateComparesANumberProperty(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	fire := func(sourceID string, score any) int {
 		fired, err := m.Evaluate(ctx, s, rules.Event{
 			ContactID: fixtures.ContactAliceID, Action: "nps_submitted", SourceID: sourceID,
@@ -246,7 +246,7 @@ func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
 
 	record(t, env, "revisit-liam", fixtures.ContactLiamID, "rule_revisit")
 	record(t, env, "revisit-alice", fixtures.ContactAliceID, "rule_revisit")
-	evaluateQueued(t, env, rules.New(env.Cipher, env.Bus, time.Now))
+	evaluateQueued(t, env, rules.New(env.Cipher, env.Bus, nil, time.Now))
 	liam := firedFor(fixtures.ContactLiamID)
 	alice := firedFor(fixtures.ContactAliceID)
 
@@ -258,7 +258,7 @@ func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
 // Firing alike: the Condition does not see the url the Actions could never have templated.
 func TestEvaluateSeesAnOversizedEventsPropertiesAsAbsent(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
 	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID: fixtures.ContactAliceID, Action: "rule_url", SourceID: "evt-oversized",

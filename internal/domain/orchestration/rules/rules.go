@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -163,15 +164,19 @@ type Module struct {
 	cipher *secrets.Cipher
 	bus    *events.Bus
 	life   *versioneddefinition.Lifecycle[ent.Rule, ent.RuleVersion, UpdateInput, definition]
-	// now is the Instance clock a condition's relative date counts back from and a Firing completes by.
+	// client makes the call of an http Action.
+	client webhook.Doer
+	// now is the Instance clock a condition's relative date counts back from, a Firing completes
+	// by and an http Action's call is signed and retried by.
 	now func() time.Time
 }
 
 // New builds the Rules module. The cipher seals an http Action's secrets; the bus runs a Firing
 // and the job that executes it in one transaction, and each move of a Rule's definition
-// (internal/domain/content/versioneddefinition). now is the Instance clock.
-func New(cipher *secrets.Cipher, bus *events.Bus, now func() time.Time) *Module {
-	m := &Module{cipher: cipher, bus: bus, now: now}
+// (internal/domain/content/versioneddefinition); client is the protected HTTP client an http
+// Action calls through (ADR 0039). now is the Instance clock.
+func New(cipher *secrets.Cipher, bus *events.Bus, client webhook.Doer, now func() time.Time) *Module {
+	m := &Module{cipher: cipher, bus: bus, client: client, now: now}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound: ErrNotFound,
 		// A Rule is discarded, never archived (ADR 0100): the lifecycle never finds one archived.

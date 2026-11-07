@@ -125,7 +125,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, now))
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus, stepper)})
-	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now))
+	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules))
 	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper))
 	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, bus))
 	river.AddWorker(workers, NewNoticeEventWorker(deps.Notices, systemSender))

@@ -33,7 +33,7 @@ func TestAnAutomationAnActiveRuleEnrollsInIsNotArchived(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, kept.ArchivedAt)
 
-	_, err = rules.New(env.Cipher, env.Bus, time.Now).Deactivate(ctx, s, fixtures.RuleEnrollWaitFirstID)
+	_, err = rules.New(env.Cipher, env.Bus, nil, time.Now).Deactivate(ctx, s, fixtures.RuleEnrollWaitFirstID)
 	require.NoError(t, err)
 	archived, err := m.Archive(ctx, s, fixtures.AutomationJobsWaitFirstID)
 	require.NoError(t, err, "an inactive Rule holds nothing")

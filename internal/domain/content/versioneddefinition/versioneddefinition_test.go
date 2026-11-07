@@ -154,7 +154,7 @@ func ruleView(r *ent.Rule, err error) (view, error) {
 }
 
 func ruleKind(env *testhelper.TestEnv) kind {
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	return kind{
 		target: "rule",
 		live:   fixtures.RuleVipOnlyID, liveMark: "rule_vip",

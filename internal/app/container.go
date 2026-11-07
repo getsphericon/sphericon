@@ -782,7 +782,8 @@ var contentPackage = do.Package(
 		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
-		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+		client := webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow)
+		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), client, do.MustInvoke[Clock](i)), nil
 	}),
 	// `sphericon encryption-key reencrypt`: each owner's columns of stored secrets, swept on the raw
 	// client in this order.

@@ -90,20 +90,17 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTP
 	if sendErr == nil {
 		return HTTPExecution{}, m.advance(ctx, s, run.ID, step, move{})
 	}
-	f := automations.FailureOfDelivery(sendErr)
-	if verdict, limited := webhook.DecideRateLimited(sendErr, attempt.CreatedAt, m.now()); limited {
-		if verdict.GiveUp {
-			return m.failHTTP(ctx, s, run.ID, f, HTTPExecution{Cancel: sendErr})
-		}
-		return HTTPExecution{Wait: verdict.Wait}, nil
+	decision := httpcall.OneOff.Decide(sendErr, attempt, m.now())
+	switch {
+	case decision.Outcome == httpcall.Wait:
+		return HTTPExecution{Wait: decision.Wait}, nil
+	case decision.Outcome == httpcall.Retry:
+		return HTTPExecution{Retry: sendErr}, nil
+	case decision.Reason == httpcall.AttemptsExhausted:
+		// The last attempt fails as an ordinary one, and the queue ends it as exhausted.
+		return m.failHTTP(ctx, s, run.ID, automations.FailureOfDelivery(sendErr), HTTPExecution{Retry: sendErr})
 	}
-	if !webhook.Retryable(sendErr) {
-		return m.failHTTP(ctx, s, run.ID, f, HTTPExecution{Cancel: sendErr})
-	}
-	if attempt.Number >= attempt.Limit {
-		return m.failHTTP(ctx, s, run.ID, f, HTTPExecution{Retry: sendErr})
-	}
-	return HTTPExecution{Retry: sendErr}, nil
+	return m.failHTTP(ctx, s, run.ID, automations.FailureOfDelivery(sendErr), HTTPExecution{Cancel: sendErr})
 }
 
 func (m *UseCase) failHTTP(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure, decision HTTPExecution) (HTTPExecution, error) {

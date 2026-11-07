@@ -22,7 +22,7 @@ import (
 func runFiring(t *testing.T, env *testhelper.TestEnv, firingID int64) *ent.RuleFiring {
 	t.Helper()
 	ctx := context.Background()
-	require.NoError(t, rules.New(env.Cipher, env.Bus, time.Now).RunActions(ctx, env.DB.Scoped(fixtures.AcmeID), firingID, ruleRunners(env)))
+	require.NoError(t, rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(ctx, env.DB.Scoped(fixtures.AcmeID), firingID, ruleRunners(env)))
 	return env.DB.RuleFiring.GetX(ctx, firingID)
 }
 
@@ -32,7 +32,7 @@ func fireAndRun(t *testing.T, env *testhelper.TestEnv, contactID int64, action, 
 	t.Helper()
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := rules.New(env.Cipher, env.Bus, time.Now)
+	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	fired, err := m.Evaluate(ctx, s, rules.Event{ContactID: contactID, Action: action, SourceID: sourceID, RecordedAt: time.Now()})
 	require.NoError(t, err)
 	require.Len(t, fired, 1)
@@ -102,7 +102,7 @@ func TestRunningAFinishedFiringAgainChangesNothing(t *testing.T) {
 	f := runFiring(t, env, fixtures.RuleFiringPendingID)
 	env.DB.Tag.Delete().Where(tag.Name("rule-clicked")).ExecX(ctx)
 
-	err := rules.New(env.Cipher, env.Bus, time.Now).RunActions(ctx, s, f.ID, ruleRunners(env))
+	err := rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(ctx, s, f.ID, ruleRunners(env))
 
 	require.NoError(t, err)
 	assert.Empty(t, tagsOf(t, env, fixtures.ContactBobID), "the Action did not run a second time")
@@ -114,7 +114,7 @@ func TestRunActionsOfAFiringThatIsGoneDoesNothing(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	env.DB.RuleFiring.Delete().Where(rulefiring.ID(fixtures.RuleFiringPendingID)).ExecX(context.Background())
 
-	err := rules.New(env.Cipher, env.Bus, time.Now).RunActions(context.Background(), s, fixtures.RuleFiringPendingID, ruleRunners(env))
+	err := rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(context.Background(), s, fixtures.RuleFiringPendingID, ruleRunners(env))
 
 	assert.NoError(t, err)
 }

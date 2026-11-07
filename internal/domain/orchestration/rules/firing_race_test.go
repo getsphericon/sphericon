@@ -28,7 +28,7 @@ func TestARuleDeletedAfterEvaluateReadItRecordsNoFiring(t *testing.T) {
 	s := client.Scoped(fixtures.AcmeID)
 	bus := events.New(sqlDB, entclient.NewTx, time.Now)
 	bus.UseJobs(testhelper.AcceptingQueue{})
-	m := rules.New(nil, bus, time.Now)
+	m := rules.New(nil, bus, nil, time.Now)
 
 	// The test holds the Rule's row, so the Delete waits for it, and Evaluate, which reads the Rule
 	// before it fires, reaches its Firing while the Delete is still waiting.
