@@ -4,6 +4,9 @@ status: accepted
 
 # Lifecycles are `stateless` transition tables with a compare-and-swap write
 
+> **Refined by [[0109-a-state-is-a-machine-or-a-latch-declared-in-the-schema]]:** a latch has one
+> form too, a `versioneddefinition` is a machine, and the schema declares each state field's form.
+
 Six entities move through states that code changes with a bare `UpdateOneID(...).SetStatus(...)`,
 or with a guard written at one call site and forgotten at the next. No transition table exists
 anywhere, so "which states does a Broadcast have, and which moves are legal" is answered by
