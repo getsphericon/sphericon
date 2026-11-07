@@ -9,12 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 )
@@ -28,11 +26,9 @@ func names(ts []*ent.Tag) []string {
 // the delete then finds, so the Tag is kept instead of vanishing under it.
 func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB, entclient.NewTx)
-	segs, catalogue, deletion := segments.New(bus), tags.New(), tagdeletion.New(bus)
+	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	s := race.Scope
+	segs, catalogue, deletion := segments.New(race.Bus), tags.New(), tagdeletion.New(race.Bus)
 
 	var saved int64
 	save := testhelper.Writer{Name: "save", Run: func() error {
@@ -45,7 +41,7 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	}}
 	remove := testhelper.Writer{Name: "delete", Run: func() error { return deletion.Delete(ctx, s, fixtures.TagUnusedID) }}
 
-	errs := testhelper.QueuedBehind(t, sqlDB, testhelper.HoldWorkspaceLock(t, bus, s), save, remove)
+	errs := race.Queue(t, save, remove)
 
 	require.NoError(t, errs["save"])
 	var used *liveuse.Error

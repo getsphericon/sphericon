@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
+	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
@@ -63,6 +64,8 @@ type Handlers struct {
 	erasure         *contacterasure.UseCase
 	tags            *tags.Module
 	tagDeletion     *tagdeletion.UseCase
+	// customFieldRetyping is the use case behind editing a Custom field.
+	customFieldRetyping *customfieldretyping.UseCase
 	// integrationDeletion, sendingDomainDeletion and sendingDomainVerification are the use cases behind
 	// deleting an Integration or a Sending domain and verifying one.
 	integrationDeletion       *integrationdeletion.UseCase
@@ -121,6 +124,8 @@ type Deps struct {
 	Erasure          *contacterasure.UseCase
 	Tags             *tags.Module
 	TagDeletion      *tagdeletion.UseCase
+	// CustomFieldRetyping is the use case behind editing a Custom field (ADR 0102).
+	CustomFieldRetyping *customfieldretyping.UseCase
 	// IntegrationDeletion, SendingDomainDeletion and SendingDomainVerification are the use cases behind
 	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
 	IntegrationDeletion       *integrationdeletion.UseCase
@@ -149,7 +154,7 @@ type Deps struct {
 func NewHandlers(d Deps) *Handlers {
 	return &Handlers{
 		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
-		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
+		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,
 		intake: d.Intake, unsubscribe: d.Unsubscribe,

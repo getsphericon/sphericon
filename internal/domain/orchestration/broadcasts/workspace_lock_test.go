@@ -9,7 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -20,12 +20,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
@@ -42,16 +42,13 @@ func (anySender) Send(context.Context, messaging.EmailMessage) (messaging.Receip
 	return messaging.Receipt{}, nil
 }
 
-// Every removal that checks Live use and every write that creates it waits for the Workspace's
-// lock (ADR 0099). What each one answers once it runs is its own module's concern; here it only has
+// Every removal that checks Live use, every write that creates it and the edit of a Custom field,
+// which checks it before a retype, waits for the Workspace's lock (ADR 0099). What each one answers once it runs is its own module's concern; here it only has
 // to wait.
 func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceLock(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB, entclient.NewTx)
-	bus.UseJobs(testhelper.AcceptingQueue{})
+	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	s, bus := race.Scope, race.Bus
 	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local"))
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	cfg, err := config.Load("test")
@@ -62,6 +59,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 	domainDeletion := sendingdomaindeletion.New(bus, sendingdomains.New(bus, cipher), messaging.NewResolver(cipher, registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL)))
 	segs := segments.New(bus)
 	tagDeletion := tagdeletion.New(bus)
+	retyping := customfieldretyping.New(bus)
 	ruleset := rules.New(cipher, bus)
 	autos := automations.New(cipher, bus, testhelper.Renderer(), out)
 	renamed := new("Renamed")
@@ -73,6 +71,10 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 		{"delete an Integration", func() error { return integrationDeletion.Delete(ctx, s, fixtures.IntegrationAcmeGenericAID) }},
 		{"delete a Sending domain", func() error { return domainDeletion.Delete(ctx, s, fixtures.SendingDomainUnverifiedID) }},
 		{"delete a Tag", func() error { return tagDeletion.Delete(ctx, s, fixtures.TagUnusedID) }},
+		{"edit a Custom field", func() error {
+			_, err := retyping.Update(ctx, s, fixtures.CustomFieldAcmePlanID, contacts.CustomFieldUpdateInput{Name: patch.Set("Tier")})
+			return err
+		}},
 		{"archive a Segment", func() error { _, err := segs.Archive(ctx, s, fixtures.SegmentRetiredID); return err }},
 		{"create a Segment", func() error { _, err := segs.Create(ctx, s, segments.CreateInput{Name: "New"}); return err }},
 		{"update a Segment", func() error {
@@ -100,7 +102,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 		{"archive an Automation", func() error { _, err := autos.Archive(ctx, s, fixtures.AutomationJobsEditableID); return err }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			testhelper.QueuedBehind(t, sqlDB, testhelper.HoldWorkspaceLock(t, bus, s), testhelper.Writer{Name: tc.name, Run: tc.run})
+			race.Queue(t, testhelper.Writer{Name: tc.name, Run: tc.run})
 		})
 	}
 }

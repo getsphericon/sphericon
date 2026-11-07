@@ -5,7 +5,7 @@
 // and refuses with a *liveuse.Error naming them if one does, because their Conditions would stop
 // compiling. The contacts module knows none of them, so the check lives here and calls the
 // module's unchecked edit, contacts.UpdateCustomFieldIn, which easement forbids every other package
-// to call. A rename alone passes through: the edit is one audited change (ADR 0022).
+// to call. The check and the edit run in one transaction under the Workspace's lock (ADR 0099).
 package customfieldretyping
 
 import (
@@ -19,7 +19,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
+
+// UseCase edits a Custom field. Every call receives the Workspace-scoped client (ADR 0017) built by
+// the entry point; the use case opens the transaction the modules it calls join.
+type UseCase struct {
+	bus *events.Bus
+}
+
+// New builds the Custom field retyping use case.
+func New(bus *events.Bus) *UseCase { return &UseCase{bus: bus} }
 
 // Update renames a Custom field or changes its type, an audited change (ADR 0022). A type change
 // rewrites no stored value: the leaves of the new type read the values as they are, and are false
@@ -28,27 +38,35 @@ import (
 // stop compiling; a leaf every type takes (notNull) does not hold the type. An unknown id is
 // contacts.ErrCustomFieldNotFound, a blank new name contacts.ErrCustomFieldNameRequired.
 //
-// It takes the Workspace-scoped client (ADR 0017) the entry point built and holds nothing, so it
-// is a function. It opens no transaction and takes no Workspace lock: the edit is one write, and
-// the check and the write ran apart before the check moved here, which ADR 0099 does not cover.
-func Update(ctx context.Context, s *ent.Scoped, id int64, in contacts.CustomFieldUpdateInput) (*ent.CustomField, error) {
-	field, err := contacts.CustomField(ctx, s, id)
+// The check and the edit run in one transaction under the Workspace's lock (ADR 0099), which saving
+// a Segment or a Rule and scheduling a Broadcast take too: one saved first is what the check finds,
+// and one saved after is checked against the new type. A rename takes the same path.
+func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, id int64, in contacts.CustomFieldUpdateInput) (*ent.CustomField, error) {
+	var updated *ent.CustomField
+	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		field, err := contacts.CustomField(ctx, ts, id)
+		if err != nil {
+			return err
+		}
+		if err := in.Check(); err != nil {
+			return err
+		}
+		if t, ok := in.Retype(field); ok {
+			users, err := unfitUsers(ctx, ts, field.Key, t)
+			if err != nil {
+				return err
+			}
+			if len(users) > 0 {
+				return &liveuse.Error{What: liveuse.SubjectCustomField, Users: users}
+			}
+		}
+		updated, err = contacts.UpdateCustomFieldIn(ctx, ts, field, in)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
-	if err := in.Check(); err != nil {
-		return nil, err
-	}
-	if t, ok := in.Retype(field); ok {
-		users, err := unfitUsers(ctx, s, field.Key, t)
-		if err != nil {
-			return nil, err
-		}
-		if len(users) > 0 {
-			return nil, &liveuse.Error{What: liveuse.SubjectCustomField, Users: users}
-		}
-	}
-	return contacts.UpdateCustomFieldIn(ctx, s, field, in)
+	return updated, nil
 }
 
 // unfitUsers is what tests the Custom field key with a Condition leaf a field of type t does not

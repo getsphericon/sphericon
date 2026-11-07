@@ -13,7 +13,8 @@
 // moves the pointers and the state. Every move runs in one transaction under the row's lock, and
 // each write of the row is audited. Create, Edit, Publish and Archive take the Workspace's lock
 // first (ADR 0099): a definition names Tags, Segments, Integrations and Automations whose removal
-// checks for it under that lock, Publish makes it Live use, and Archive checks what still needs it.
+// checks for it under that lock, a Rule's Condition tests Custom fields whose retype checks for it
+// under the same lock, Publish makes it Live use, and Archive checks what still needs it.
 // It takes a *ent.Scoped on every call and holds no client.
 package versioneddefinition
 

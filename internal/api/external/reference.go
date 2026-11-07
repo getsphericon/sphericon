@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 )
 
 // CustomFieldsList returns the whole (small, unpaginated) Custom field catalogue.
@@ -24,7 +23,7 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (*externalapi.CustomFie
 // CustomFieldsUpdate renames a Custom field or changes its type through the Custom field retyping
 // use case.
 func (h *Handlers) CustomFieldsUpdate(ctx context.Context, req *externalapi.UpdateCustomFieldInput, params externalapi.CustomFieldsUpdateParams) (*externalapi.CustomFieldResource, error) {
-	field, err := customfieldretyping.Update(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
+	field, err := h.customFieldRetyping.Update(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
 	if err != nil {
 		return nil, err
 	}

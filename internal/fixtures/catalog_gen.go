@@ -1419,6 +1419,18 @@ const (
 	ContractTokenPrefix = "contractfz01"
 	// ContractTokenSecret is from fixtures/api_tokens.
 	ContractTokenSecret = "contract-token-secret-000000000000000000"
+	// CustomFieldAcmePlanID is from fixtures/custom_fields.
+	CustomFieldAcmePlanID = 1
+	// CustomFieldAcmePlanKey is from fixtures/custom_fields.
+	CustomFieldAcmePlanKey = "plan"
+	// CustomFieldAcmePlanName is from fixtures/custom_fields.
+	CustomFieldAcmePlanName = "Plan"
+	// CustomFieldDuffHasItID is from fixtures/custom_fields.
+	CustomFieldDuffHasItID = 7703
+	// CustomFieldDuffHasItKey is from fixtures/custom_fields.
+	CustomFieldDuffHasItKey = "has_it"
+	// CustomFieldDuffHasItName is from fixtures/custom_fields.
+	CustomFieldDuffHasItName = "has_it"
 	// CustomFieldGlobexID is from fixtures/custom_fields.
 	CustomFieldGlobexID = 900
 	// CustomFieldGlobexKey is from fixtures/custom_fields.

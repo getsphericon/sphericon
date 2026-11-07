@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -60,10 +61,38 @@ func QueuedBehind(t *testing.T, probe *sql.DB, release func(), writers ...Writer
 	return errs
 }
 
-// HoldWorkspaceLock takes the Workspace's lock (events.Bus.WithinWorkspaceLockTx) in a transaction
+// WorkspaceRace is a race of writes that take one Workspace's lock (ADR 0099): a database of the
+// test's own (RealDB) whose pool lets the writers wait side by side, a bus over it that takes every
+// job and keeps none (AcceptingQueue), and the Workspace's scope the writers act in. The modules
+// and use cases under test are built over Bus and called with Scope.
+type WorkspaceRace struct {
+	DB    *sql.DB
+	Bus   *events.Bus
+	Scope *ent.Scoped
+}
+
+// NewWorkspaceRace opens the race's database at the fixture state and scopes it to the Workspace.
+func NewWorkspaceRace(t *testing.T, workspaceID int64) *WorkspaceRace {
+	t.Helper()
+	db := RealDB(t)
+	db.SetMaxOpenConns(8)
+	bus := events.New(db, entclient.NewTx)
+	bus.UseJobs(AcceptingQueue{})
+	return &WorkspaceRace{DB: db, Bus: bus, Scope: entclient.New(db).Scoped(workspaceID)}
+}
+
+// Queue runs the writers queued behind the Workspace's lock, which the race holds until all of
+// them wait for it (QueuedBehind): they meet in their order, and a writer that takes no Workspace
+// lock fails the test. It returns each writer's error by its name.
+func (r *WorkspaceRace) Queue(t *testing.T, writers ...Writer) map[string]error {
+	t.Helper()
+	return QueuedBehind(t, r.DB, holdWorkspaceLock(t, r.Bus, r.Scope), writers...)
+}
+
+// holdWorkspaceLock takes the Workspace's lock (events.Bus.WithinWorkspaceLockTx) in a transaction
 // of its own and holds it until the returned release is called, as a removal or a write that
 // creates Live use holds it while it runs.
-func HoldWorkspaceLock(t *testing.T, bus *events.Bus, s *ent.Scoped) (release func()) {
+func holdWorkspaceLock(t *testing.T, bus *events.Bus, s *ent.Scoped) (release func()) {
 	t.Helper()
 	held, let := make(chan struct{}), make(chan struct{})
 	ended := make(chan error, 1)

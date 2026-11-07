@@ -2,7 +2,6 @@ package integrationdeletion_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
@@ -19,7 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -43,17 +40,18 @@ func (anySender) Send(context.Context, messaging.EmailMessage) (messaging.Receip
 func TestADeleteOfAnIntegrationQueuedFirstRefusesTheScheduleThroughIt(t *testing.T) {
 	r := newIntegrationRace(t)
 
-	errs := testhelper.QueuedBehind(t, r.sqlDB, testhelper.HoldWorkspaceLock(t, r.bus, r.s), r.remove, r.schedule)
+	errs := r.Queue(t, r.remove, r.schedule)
 
 	require.NoError(t, errs["delete"])
 	require.ErrorIs(t, errs["schedule"], outboundmessages.ErrRouteHeld)
-	assert.Equal(t, broadcast.StatusDraft, r.broadcast(t).Status)
+	b := r.broadcast(t)
+	assert.Equal(t, broadcast.StatusDraft, b.Status)
 }
 
 func TestAScheduleQueuedFirstRefusesTheDeleteOfTheIntegrationItSendsThrough(t *testing.T) {
 	r := newIntegrationRace(t)
 
-	errs := testhelper.QueuedBehind(t, r.sqlDB, testhelper.HoldWorkspaceLock(t, r.bus, r.s), r.schedule, r.remove)
+	errs := r.Queue(t, r.schedule, r.remove)
 
 	require.NoError(t, errs["schedule"])
 	b := r.broadcast(t)
@@ -66,9 +64,8 @@ func TestAScheduleQueuedFirstRefusesTheDeleteOfTheIntegrationItSendsThrough(t *t
 // integrationRace is a draft Broadcast that sends through an Integration, with a writer that
 // deletes the Integration and one that schedules the Broadcast, on a database of its own.
 type integrationRace struct {
-	sqlDB            *sql.DB
-	bus              *events.Bus
-	s                *ent.Scoped
+	*testhelper.WorkspaceRace
+
 	sends            *broadcasts.Module
 	remove, schedule testhelper.Writer
 }
@@ -76,11 +73,8 @@ type integrationRace struct {
 func newIntegrationRace(t *testing.T) integrationRace {
 	t.Helper()
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB, entclient.NewTx)
-	bus.UseJobs(testhelper.AcceptingQueue{})
+	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	s, bus := race.Scope, race.Bus
 	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local"))
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, nil, ""))
@@ -88,10 +82,8 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)
 	return integrationRace{
-		sqlDB: sqlDB,
-		bus:   bus,
-		s:     s,
-		sends: sends,
+		WorkspaceRace: race,
+		sends:         sends,
 		remove: testhelper.Writer{Name: "delete", Run: func() error {
 			return deletion.Delete(ctx, s, fixtures.IntegrationAcmeGenericAID)
 		}},
@@ -104,7 +96,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 
 func (r integrationRace) broadcast(t *testing.T) *ent.Broadcast {
 	t.Helper()
-	b, err := r.sends.Get(context.Background(), r.s, fixtures.BroadcastDraftID)
+	b, err := r.sends.Get(context.Background(), r.Scope, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	return b
 }

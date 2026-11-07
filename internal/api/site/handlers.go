@@ -55,6 +55,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
+	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
@@ -100,6 +101,8 @@ type Handlers struct {
 	erasure         *contacterasure.UseCase
 	tags            *tags.Module
 	tagDeletion     *tagdeletion.UseCase
+	// customFieldRetyping is the use case behind editing a Custom field.
+	customFieldRetyping *customfieldretyping.UseCase
 	// integrationDeletion, sendingDomainDeletion and sendingDomainVerification are the use cases behind
 	// deleting an Integration or a Sending domain and verifying one.
 	integrationDeletion       *integrationdeletion.UseCase
@@ -201,12 +204,14 @@ type Deps struct {
 	Erasure     *contacterasure.UseCase
 	Tags        *tags.Module
 	TagDeletion *tagdeletion.UseCase
-	Bindings    *bindings.Module
-	Templates   *emailtemplates.Module
-	BrandKit    *brandkits.Module
-	Automations *automations.Module
-	Rules       *rules.Module
-	Broadcasts  *broadcasts.Module
+	// CustomFieldRetyping is the use case behind editing a Custom field (ADR 0102).
+	CustomFieldRetyping *customfieldretyping.UseCase
+	Bindings            *bindings.Module
+	Templates           *emailtemplates.Module
+	BrandKit            *brandkits.Module
+	Automations         *automations.Module
+	Rules               *rules.Module
+	Broadcasts          *broadcasts.Module
 	// Mail queues the platform mails (welcome, account mails, invites, Second factor notices) on
 	// the insert-only river client.
 	Mail            *river.Client[*sql.Tx]
@@ -290,7 +295,7 @@ func NewHandlers(d *Deps) *Handlers {
 	}
 	h := &Handlers{
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
-		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
+		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,

@@ -26,12 +26,12 @@ archived Automations from a count the ADR said it keeps.
 - **Live use blocks; nothing else does.** A row in Live use answers 409 to Archive and to Delete
   (ADR 0100), naming what uses it.
 - **A check and its removal do not race.** Archiving or deleting a Segment, an Integration, a
-  Sending domain or a Tag, and the writes that create Live use (scheduling a Broadcast, Publish,
-  saving a Segment or a Rule), take one transaction-scoped advisory lock of the Workspace: these are
-  rare, and a lock per referenced row is awkward for a Sending domain, which is referenced by the
-  domain of an address, not by a key. The hot paths (a Rule firing, an enrollment from a Rule) lock
-  the row they act on and check it again under the lock, as an enrollment from a Trigger already
-  does.
+  Sending domain or a Tag, retyping a Custom field, and the writes that create Live use (scheduling
+  a Broadcast, Publish, saving a Segment or a Rule), take one transaction-scoped advisory lock of the
+  Workspace: these are rare, and a lock per referenced row is awkward for a Sending domain, which is
+  referenced by the domain of an address, not by a key. The hot paths (a Rule firing, an enrollment
+  from a Rule) lock the row they act on and check it again under the lock, as an enrollment from a
+  Trigger already does.
 - **History counts what is archived or deleted; inventory does not.** Figures of what happened
   (messages sent, clicks, conversions, a Broadcast's report, the names on them) include archived and
   deleted rows. Counts of what the Workspace has set up (how many Automations, how many active) and
