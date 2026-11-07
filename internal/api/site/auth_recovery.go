@@ -2,42 +2,17 @@ package site
 
 import (
 	"context"
-	"strings"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 )
 
-// SiteAuthForgotPassword asks for a reset link to be mailed. It answers 202 whether or not the
-// address matches an account and whether or not the per-address budget is spent, so the endpoint
-// cannot be used to enumerate the addresses that hold a User (the per-IP cap answers 429 in the
-// rate limit middleware, before this runs). Every request does the same work: take a slot of the
-// address's budget in one atomic step, look the address up and publish the request. Only a known
-// address that was granted a slot gets its link, minted when it is mailed and bound to the
-// password as it is then, so it works once.
+// SiteAuthForgotPassword asks for a reset link to be mailed (users.Requests.PasswordReset). It
+// answers 202 whether or not the address matches an account and whether or not the per-address
+// budget is spent, so the endpoint cannot be used to enumerate the addresses that hold a User (the
+// per-IP cap answers 429 in the rate limit middleware, before this runs).
 func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.SiteForgotPasswordInput) error {
-	email := strings.TrimSpace(string(req.Email))
-	if email == "" {
-		return nil
-	}
-	// Unknown addresses spend their budget exactly like known ones.
-	granted, err := h.attempts.Take(ctx, throttle.KindPasswordReset, email)
-	if err != nil {
-		return err
-	}
-	u, err := h.users.UserByEmail(ctx, email)
-	if err != nil && !ent.IsNotFound(err) {
-		return err
-	}
-	request := &events.LinkRequested{Action: events.NameUserPasswordResetRequested, Email: email}
-	if u != nil {
-		request.UserID, request.Email, request.Deliver = u.ID, u.Email, granted
-	}
-	h.publishRequest(ctx, request)
-	return nil
+	return h.requests.PasswordReset(ctx, string(req.Email))
 }
 
 // SiteAuthResetPassword sets a new password from a reset link (users.Links, through the use case

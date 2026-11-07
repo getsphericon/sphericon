@@ -6,8 +6,6 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 )
 
@@ -65,19 +63,5 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return err
 	}
-	u, err := h.users.DeletionSubject(ctx, userID, string(req.Email))
-	if err != nil {
-		return err
-	}
-	if err := users.ConfirmsDeletionByLink(u); err != nil {
-		return err
-	}
-	// Like the email-change link, every request takes a slot of the address's budget; a spent
-	// budget publishes a request that is not delivered.
-	granted, err := h.attempts.Take(ctx, throttle.KindEmailChange, u.Email)
-	if err != nil {
-		return err
-	}
-	h.publishRequest(ctx, &events.LinkRequested{Action: events.NameUserDeletionRequested, UserID: u.ID, Email: u.Email, Deliver: granted})
-	return nil
+	return h.requests.DeletionLink(ctx, userID, string(req.Email))
 }

@@ -637,12 +637,15 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   lost Join domain or Sending domain verification, a replaced or removed Tracking host, a disabled
   Webhook endpoint) publishes its event in the transaction of the change
   (`internal/infra/events/account.go`, `workspace_changes.go`), and knows neither the recipients nor
-  the sender; a request that changes no state (a password reset, a link sent again) publishes with
-  `events.Bus.Publish`. The use case `internal/usecase/noticedelivery` answers the Notices an event
-  calls for, who is told and what, read when the event is handled, a link minted then, and the
-  Notices' consumer (`internal/jobs/notices.go`) queues one send job per Notice, unique on the event
-  and the address, which the System sender delivers. Do not mail a person anywhere else: publish the
-  event and add its Notice to the use case.
+  the sender; a request that changes no state publishes with `events.Bus.Publish`: an account's
+  requests for a mailed link (a password reset, the verification link sent again, an email change,
+  a deletion link) are `users.Requests`, which take the address's mail budget and publish the same
+  work for every address (ADR 0031), and the `/site` handlers only call them. The use case
+  `internal/usecase/noticedelivery` answers the Notices an event calls for, who is told and what,
+  read when the event is handled, a link minted then, and the Notices' consumer
+  (`internal/jobs/notices.go`) queues one send job per Notice, unique on the event and the address,
+  which the System sender delivers. Do not mail a person anywhere else: publish the event and add its
+  Notice to the use case.
 - **Async**: one queue, river, for jobs and domain events alike (ADR 0101,
   `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of
   the state change: it writes the Event row (a repeated `source_id` publishes nothing) and
