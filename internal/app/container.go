@@ -96,6 +96,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
+	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
@@ -743,6 +744,9 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*tagdeletion.UseCase, error) {
 		return tagdeletion.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
+	do.Lazy(func(i do.Injector) (*customfieldretyping.UseCase, error) {
+		return customfieldretyping.New(do.MustInvoke[*events.Bus](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
@@ -930,6 +934,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Erasure:                   do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                      do.MustInvoke[*tags.Module](i),
 		TagDeletion:               do.MustInvoke[*tagdeletion.UseCase](i),
+		CustomFieldRetyping:       do.MustInvoke[*customfieldretyping.UseCase](i),
 		Bindings:                  do.MustInvoke[*bindings.Module](i),
 		Templates:                 do.MustInvoke[*emailtemplates.Module](i),
 		Transactional:             do.MustInvoke[*transactionalsend.UseCase](i),
@@ -991,6 +996,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Erasure:                   do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                      do.MustInvoke[*tags.Module](i),
 		TagDeletion:               do.MustInvoke[*tagdeletion.UseCase](i),
+		CustomFieldRetyping:       do.MustInvoke[*customfieldretyping.UseCase](i),
 		Unsubscribe:               do.MustInvoke[*unsubscriberecording.UseCase](i),
 		Bindings:                  do.MustInvoke[*bindings.Module](i),
 		Templates:                 do.MustInvoke[*emailtemplates.Module](i),
