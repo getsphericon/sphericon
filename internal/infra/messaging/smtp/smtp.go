@@ -50,7 +50,7 @@ func NewDescriptor(allowPrivate bool) messaging.ProviderDescriptor {
 	}
 }
 
-var mailPorts = []int{25, 465, 587, 2525}
+var mailPorts = []uint16{25, 465, 587, 2525}
 
 func validate(raw []byte, allowPrivate bool) error {
 	cfg, err := parse(raw)
@@ -64,7 +64,7 @@ func validate(raw []byte, allowPrivate bool) error {
 		return errors.New("smtp: port must be positive")
 	case cfg.From == "":
 		return errors.New("smtp: from is required")
-	case !allowPrivate && !slices.Contains(mailPorts, cfg.Port):
+	case !allowPrivate && !slices.ContainsFunc(mailPorts, func(p uint16) bool { return int(p) == cfg.Port }):
 		return errors.New("smtp: port must be one of 25, 465, 587, 2525")
 	}
 	return nil

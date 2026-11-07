@@ -10,11 +10,11 @@ import (
 	"io"
 	"net/netip"
 	"net/url"
-	"slices"
 	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
 
+	"code.dny.dev/ssrf"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 
@@ -105,20 +105,9 @@ func CheckImage(imageURL string) error {
 // internalSuffixes are the names that never resolve on the public internet.
 var internalSuffixes = []string{".localhost", ".local", ".internal", ".localdomain", ".lan", ".home.arpa"}
 
-// blockedPrefixes are the ranges, beyond what netip classifies, that a public image never lives in.
-var blockedPrefixes = []netip.Prefix{
-	netip.MustParsePrefix("0.0.0.0/8"),      // "this network"
-	netip.MustParsePrefix("100.64.0.0/10"),  // CGNAT
-	netip.MustParsePrefix("192.0.0.0/24"),   // IETF protocol assignments
-	netip.MustParsePrefix("198.18.0.0/15"),  // benchmarking
-	netip.MustParsePrefix("240.0.0.0/4"),    // reserved, broadcast
-	netip.MustParsePrefix("::/96"),          // IPv4-compatible, unspecified and ::1
-	netip.MustParsePrefix("64:ff9b::/96"),   // NAT64: reaches the IPv4 address inside
-	netip.MustParsePrefix("64:ff9b:1::/48"), // local-use NAT64
-	netip.MustParsePrefix("2002::/16"),      // 6to4: embeds an IPv4 address
-	netip.MustParsePrefix("fec0::/10"),      // site-local, deprecated
-	netip.MustParsePrefix("100::/64"),       // discard-only
-}
+// publicAddrs judges an IP address against IANA's special-purpose registries (code.dny.dev/ssrf),
+// where a public image never lives. Any port may serve one.
+var publicAddrs = ssrf.New(ssrf.WithAnyPort())
 
 // internalHost says what kind of internal host name is, "" when it may be public.
 func internalHost(host string) string {
@@ -150,16 +139,11 @@ func internalHost(host string) string {
 	return ""
 }
 
+// blockedAddr reports whether addr is no public image host: a scoped address, or one in a
+// special-purpose range. An IPv4-mapped IPv6 address is judged as IPv6, outside the global unicast
+// range, so it is refused whatever IPv4 address it carries.
 func blockedAddr(addr netip.Addr) bool {
-	if addr.Zone() != "" {
-		return true
-	}
-	addr = addr.Unmap()
-	if addr.IsLoopback() || addr.IsPrivate() || addr.IsLinkLocalUnicast() || addr.IsLinkLocalMulticast() ||
-		addr.IsInterfaceLocalMulticast() || addr.IsMulticast() || addr.IsUnspecified() {
-		return true
-	}
-	return slices.ContainsFunc(blockedPrefixes, func(p netip.Prefix) bool { return p.Contains(addr) })
+	return addr.Zone() != "" || publicAddrs.SafeAddr(addr) != nil
 }
 
 // CheckUnsubscribeButton refuses a label of an unsubscribe button longer than MaxUnsubscribeButton

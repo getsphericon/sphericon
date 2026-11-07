@@ -4,6 +4,7 @@ go 1.27.3
 
 require (
 	ariga.io/atlas v1.3.0
+	code.dny.dev/ssrf v0.3.0
 	entgo.io/ent v0.14.6
 	github.com/aws/aws-sdk-go-v2 v1.47.5
 	github.com/aws/aws-sdk-go-v2/config v1.33.13

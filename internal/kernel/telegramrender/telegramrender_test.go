@@ -140,6 +140,9 @@ var refusedImageURLs = []string{
 	"https://[fd12:3456::1]/a.png", "https://[::ffff:127.0.0.1]/a.png", "https://[::ffff:10.0.0.1]/a.png",
 	"https://[::ffff:169.254.169.254]/a.png", "https://[64:ff9b::7f00:1]/a.png", "https://[fe80::1%25eth0]/a.png",
 	"https://2130706433/a.png", "https://0x7f000001/a.png", "https://0x7f.1/a.png", "https://127.1/a.png",
+	// IANA special-purpose ranges netip does not classify: Teredo, documentation, 6to4 relay anycast.
+	"https://[2001:0:4136:e378:8000:63bf:3fff:fdd2]/a.png", "https://[2001:db8::1]/a.png",
+	"https://192.0.2.1/a.png", "https://198.51.100.7/a.png", "https://203.0.113.9/a.png", "https://192.88.99.1/a.png",
 }
 
 func TestCheckImageRefusesInternalTargets(t *testing.T) {

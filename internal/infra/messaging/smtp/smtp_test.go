@@ -324,6 +324,22 @@ func TestSendRefusesAPrivateHostUnlessAllowed(t *testing.T) {
 	assert.Empty(t, srv.captured())
 }
 
+func TestSendRefusesSpecialPurposeAddresses(t *testing.T) {
+	// The IANA special-purpose ranges netip does not classify: documentation (TEST-NET-1/2/3) and
+	// the deprecated 6to4 relay anycast. The refusal comes before any packet, so the deadline only
+	// bounds a dial that was let through.
+	for _, host := range []string{"192.0.2.1", "198.51.100.7", "203.0.113.9", "192.88.99.1"} {
+		raw := fmt.Sprintf(`{"host":%q,"port":587,"from":"a@b.com"}`, host)
+		built, err := smtp.Descriptor().Build([]byte(raw), messaging.Deps{})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+		_, err = built.(messaging.EmailSender).Send(ctx, messaging.EmailMessage{To: "r@example.com", Subject: "s", Text: "t"})
+		cancel()
+		require.ErrorContains(t, err, "non-public address", host)
+	}
+}
+
 func TestSendPutsTheConfiguredReplyToOnTheMessage(t *testing.T) {
 	srv := newTestServer(t.Context(), t, false)
 	sender := build(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "noreply@acme.com", ReplyTo: "help@acme.com"})
