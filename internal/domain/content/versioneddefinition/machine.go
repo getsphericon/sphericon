@@ -9,18 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
-// state is the shape of a position: version ids belong to the conditional write, while the
-// presence of live and draft versions determines which moves the lifecycle permits.
-type state uint8
-
-const (
-	hasLive state = 1 << iota
-	hasDraft
-	active
-	archived
-	discarded
-)
-
 // Trigger names one operation of the Versioned definition lifecycle.
 type Trigger string
 
@@ -35,112 +23,104 @@ const (
 	Discard    Trigger = "discard"
 )
 
-func positionState(p ent.VersionPosition) state {
-	var st state
-	if p.LiveID != 0 {
-		st |= hasLive
-	}
-	if p.DraftID != 0 {
-		st |= hasDraft
-	}
-	if p.Active {
-		st |= active
-	}
-	if p.Archived {
-		st |= archived
-	}
-	if p.Discarded {
-		st |= discarded
-	}
-	return st
-}
-
-// machine declares every move of a Versioned definition, including changes that keep its
-// activity but move a pointer. The empty state exists only inside Create's transaction.
-func machine(storage lifecycle.Storage[state]) *stateless.StateMachine {
-	m := lifecycle.New(storage)
-	m.Configure(state(0)).Permit(Draft, hasDraft)
-	for _, st := range []state{hasDraft, hasLive, hasLive | hasDraft, active | hasLive, active | hasLive | hasDraft} {
-		cfg := m.Configure(st).PermitReentry(Edit)
-		if st&hasDraft != 0 {
-			cfg.PermitReentry(Draft)
-		} else {
-			cfg.Permit(Draft, st|hasDraft)
-		}
-		if st == active|hasLive {
-			cfg.Ignore(Publish)
-		} else {
-			cfg.Permit(Publish, active|hasLive)
-		}
-		if st&hasLive != 0 && st&hasDraft != 0 {
-			cfg.Permit(Revert, st&^hasDraft)
-		}
-		if st&active != 0 {
-			cfg.Permit(Deactivate, st&^active)
-		} else {
-			cfg.Ignore(Deactivate)
-		}
-		cfg.Permit(Archive, st&^active|archived)
-		cfg.Permit(Discard, st&^active|discarded)
-		cfg.Ignore(Unarchive)
-	}
-	for _, st := range []state{hasDraft, hasLive, hasLive | hasDraft} {
-		m.Configure(st|archived).Permit(Unarchive, st).Ignore(Archive)
-		m.Configure(st | discarded).Ignore(Discard)
-	}
-	return m
-}
-
 // Change supplies an operation and, for Draft, the version to attach as the new draft.
 type Change struct {
 	Trigger Trigger
 	DraftID int64
 }
 
-// Transition runs the table and moves the full position through storage's conditional writer.
-// The caller keeps its effects in the same transaction after this move. A Draft needs a positive
-// version id; all other pointer changes are determined by the position, not by the caller.
-func Transition(ctx context.Context, storage lifecycle.Storage[ent.VersionPosition], change Change) error {
-	if change.Trigger == Draft && change.DraftID <= 0 {
-		return lifecycle.ErrInvalidTransition
+// Machine configures the activity transitions for one Change against a loaded snapshot. Fire
+// change.Trigger once, inside the transaction that loaded before and owns the remaining effects.
+// Versions and deletion markers are guards and transition data, not additional machine states.
+// Both a status transition and an internal action use the same conditional position writer.
+func Machine(before ent.VersionPosition, change Change, write func(context.Context, ent.VersionPosition, ent.VersionPosition) (bool, error)) *stateless.StateMachine {
+	const inactive, active = false, true
+	current := before.Active
+	after := before
+	persist := func(ctx context.Context, to bool) (bool, error) {
+		next := after
+		next.Active = to
+		swapped, err := write(ctx, before, next)
+		if err == nil && swapped {
+			current = to
+		}
+		return swapped, err
 	}
-	var before ent.VersionPosition
-	m := machine(lifecycle.Storage[state]{
-		Read: func(ctx context.Context) (state, error) {
-			var err error
-			before, err = storage.Read(ctx)
-			return positionState(before), err
-		},
-		Write: func(ctx context.Context, _ state, to state) (bool, error) {
-			after := before
-			after.Active = to&active != 0
-			after.Archived = to&archived != 0
-			after.Discarded = to&discarded != 0
-			switch change.Trigger {
-			case Draft:
-				after.DraftID = change.DraftID
-			case Publish:
-				if before.DraftID != 0 {
-					after.LiveID = before.DraftID
-					after.DraftID = 0
-				}
-			case Revert:
-				after.DraftID = 0
-			case Edit, Deactivate, Archive, Unarchive, Discard:
-			}
-			return storage.Write(ctx, before, after)
+	m := lifecycle.New(lifecycle.Storage[bool]{
+		Read: func(context.Context) (bool, error) { return current, nil },
+		Write: func(ctx context.Context, _, to bool) (bool, error) {
+			return persist(ctx, to)
 		},
 	})
-	return m.FireCtx(ctx, change.Trigger)
+	internal := func(ctx context.Context, _ ...any) error {
+		// stateless does not call the external storage writer for an InternalTransition.
+		swapped, err := persist(ctx, before.Active)
+		if err != nil {
+			return err
+		}
+		if !swapped {
+			return lifecycle.ErrInvalidTransition
+		}
+		return nil
+	}
+	when := func(allowed bool) stateless.GuardFunc {
+		return func(context.Context, ...any) bool { return allowed }
+	}
+	kept := when(!before.Archived && !before.Discarded)
+	hasDefinition := when(before.LiveID != 0 || before.DraftID != 0)
+	off, on := m.Configure(inactive), m.Configure(active)
+	switch change.Trigger {
+	case Draft:
+		after.DraftID = change.DraftID
+		for _, cfg := range []*stateless.StateConfiguration{off, on} {
+			cfg.InternalTransition(Draft, internal, kept, when(change.DraftID > 0))
+		}
+	case Edit:
+		for _, cfg := range []*stateless.StateConfiguration{off, on} {
+			cfg.InternalTransition(Edit, internal, kept, hasDefinition)
+		}
+	case Revert:
+		after.DraftID = 0
+		for _, cfg := range []*stateless.StateConfiguration{off, on} {
+			cfg.InternalTransition(Revert, internal, kept, when(before.LiveID != 0 && before.DraftID != 0))
+		}
+	case Publish:
+		if before.DraftID != 0 {
+			after.LiveID = before.DraftID
+			after.DraftID = 0
+		}
+		off.Permit(Publish, active, kept, hasDefinition)
+		on.InternalTransition(Publish, internal, kept, when(before.DraftID != 0))
+		on.Ignore(Publish, kept, when(before.LiveID != 0 && before.DraftID == 0))
+	case Deactivate:
+		on.Permit(Deactivate, inactive, kept, hasDefinition)
+		off.Ignore(Deactivate, kept, hasDefinition)
+	case Archive:
+		after.Archived = true
+		on.Permit(Archive, inactive, kept, hasDefinition)
+		off.InternalTransition(Archive, internal, kept, hasDefinition)
+		off.Ignore(Archive, when(before.Archived && !before.Discarded))
+	case Unarchive:
+		after.Archived = false
+		off.InternalTransition(Unarchive, internal, when(before.Archived && !before.Discarded), hasDefinition)
+		for _, cfg := range []*stateless.StateConfiguration{off, on} {
+			cfg.Ignore(Unarchive, kept, hasDefinition)
+		}
+	case Discard:
+		after.Discarded = true
+		on.Permit(Discard, inactive, kept, hasDefinition)
+		off.InternalTransition(Discard, internal, kept, hasDefinition)
+		off.Ignore(Discard, when(before.Discarded && !before.Archived))
+	}
+	return m
 }
 
 // move updates the owner before a body edit: the transaction holds its update lock until the
 // draft's write or removal commits. The generated writer also compares the loaded revision.
 func (l *Lifecycle[O, V, E, B]) move(ctx context.Context, store ent.VersionedStore[O, V], before ent.VersionState[O, V], event Trigger, draftID int64) error {
-	return Transition(ctx, lifecycle.Storage[ent.VersionPosition]{
-		Read: func(context.Context) (ent.VersionPosition, error) { return before.VersionPosition, nil },
-		Write: func(ctx context.Context, _, after ent.VersionPosition) (bool, error) {
+	m := Machine(before.VersionPosition, Change{Trigger: event, DraftID: draftID},
+		func(ctx context.Context, _, after ent.VersionPosition) (bool, error) {
 			return store.CompareAndSwap(ctx, before, after, l.now())
-		},
-	}, Change{Trigger: event, DraftID: draftID})
+		})
+	return m.FireCtx(ctx, event)
 }

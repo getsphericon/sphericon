@@ -10,8 +10,9 @@
 // The package owns the moves and their order; each kind of definition supplies its body through
 // Definition (merge and validate an edit, compare, write, the check before Publish and before
 // Archive), and the generated storage half (ent.VersionedStore, the scoped client's <N>Pointers)
-// moves the pointers and the state. Every move runs through a lifecycle table and one conditional write, and
-// each write of the row is audited. Create, Edit, Publish and Archive take the Workspace's lock
+// moves the pointers and the state. Every persisted move runs through the lifecycle table and one
+// conditional write; operations that keep activity use internal transitions, without exit or entry
+// callbacks. Each write of the row is audited. Create, Edit, Publish and Archive take the Workspace's lock
 // first (ADR 0099): a definition names Tags, Segments, Integrations and Automations whose removal
 // checks for it under that lock, a Rule's Condition tests Custom fields whose retype checks for it
 // under the same lock, Publish makes it Live use, and Archive checks what still needs it.
