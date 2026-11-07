@@ -6,6 +6,9 @@ status: accepted
 
 > Refines [[0102-the-core-is-layered-and-an-operation-across-modules-is-a-use-case]]: it said what a
 > use case is; this says how one is called.
+>
+> Refined by [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]]: the CLI's
+> operations leave `internal/app` for the CLI's driver package.
 
 ## Context
 
