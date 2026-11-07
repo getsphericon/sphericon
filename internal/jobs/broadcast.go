@@ -68,7 +68,7 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[broadcast
 	}
 	// RunClaimed refuses a Broadcast unscheduled after the check above: Due is the shortcut
 	// of the usual case, the claim inside the plan decides the race.
-	err = w.del.RunClaimed(ctx, s, job.Args.BroadcastID, riverSends{river.ClientFromContext[*sql.Tx](ctx)}, time.Now())
+	err = w.del.RunClaimed(ctx, s, job.Args.BroadcastID, riverSends{river.ClientFromContext[*sql.Tx](ctx)})
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return nil // stale: the Broadcast is past its plan (sent or failed), nothing to retry
 	}
@@ -188,7 +188,7 @@ func SendBroadcast(ctx context.Context, client *ent.Client, mod *outboundmessage
 		return err
 	}
 	del := broadcasts.NewDelivery(mod)
-	return del.Run(ctx, s, broadcastID, inlineSends{s: s, del: del}, time.Now())
+	return del.Run(ctx, s, broadcastID, inlineSends{s: s, del: del})
 }
 
 // inlineSends is the synchronous adapter of the module's scheduling seam: it sends in order,

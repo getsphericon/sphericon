@@ -155,8 +155,9 @@ type UseCase struct {
 // Option configures the use case.
 type Option func(*UseCase)
 
-// WithClock replaces the wall clock the use case reads to honour an Enrollment's resume time
-// and to time a wait.
+// WithClock gives the use case the clock it reads to honour an Enrollment's resume time and to
+// time a wait. The Instance passes its own clock (app.Clock); without the option the use case
+// reads the wall clock.
 func WithClock(now func() time.Time) Option { return func(m *UseCase) { m.now = now } }
 
 // New builds the use case. The bus runs a move and the job that follows it in one transaction;

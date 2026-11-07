@@ -132,7 +132,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	mux.Handle("/t.js", trackerHandler())
 
 	// Public engagement endpoints (open pixel, click redirect, unsubscribe, a short tracked link).
-	trackingH := trackingHandler(client, bus, site.Tracker, site.Unsubscribe, limiter, detector, cfg.AppURL)
+	trackingH := trackingHandler(client, bus, site.Tracker, site.Unsubscribe, limiter, detector, cfg.AppURL, site.Clock)
 	mux.Handle("/e/", trackingH)
 	mux.Handle("/c/", trackingH)
 

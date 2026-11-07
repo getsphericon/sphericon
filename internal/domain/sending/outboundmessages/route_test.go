@@ -108,6 +108,7 @@ func TestTheInstancesOutboundSendRunsOnTheInstanceClock(t *testing.T) {
 	c := startClock()
 	env := testhelper.Setup(t, testhelper.WithClock(c.now))
 	c.elapse(time.Hour)
+	at := c.now()
 
 	res := send(t, env.OutboundModule(), env, "bc:1")
 
@@ -115,7 +116,7 @@ func TestTheInstancesOutboundSendRunsOnTheInstanceClock(t *testing.T) {
 	msg, err := acme(env).OutboundMessage().Get(context.Background(), res.MessageID)
 	require.NoError(t, err)
 	require.NotNil(t, msg.SentAt)
-	assert.WithinDuration(t, c.now(), *msg.SentAt, time.Microsecond, "recorded sent at the Instance clock, an hour off the wall")
+	assert.WithinDuration(t, at, *msg.SentAt, time.Microsecond, "recorded sent at the Instance clock, an hour off the wall")
 }
 
 // A provider that has stopped the account holds the route but does not refuse arming a send: the

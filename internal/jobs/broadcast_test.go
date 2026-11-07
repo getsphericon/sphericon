@@ -336,8 +336,8 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 
 // newMod builds the Outbound send module over a test resolver, with a real tracker
 // so marketing sends carry their unsubscribe footer and header.
-func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, env.Holds, resolver, messagetoken.New("test-secret", "http://local"))
+func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders, opts ...outboundmessages.Option) *outboundmessages.Module {
+	return outboundmessages.New(env.Bus, env.Holds, resolver, messagetoken.New("test-secret", "http://local"), opts...)
 }
 
 // The synchronous adapter runs the production sequence: the module plans, paces and settles
@@ -354,6 +354,22 @@ func TestSendBroadcastRunsTheProductionSequence(t *testing.T) {
 	assert.Equal(t, broadcast.StatusSent, got.Status)
 	assert.NotNil(t, got.LastScheduledAt, "paced like production")
 	assert.Len(t, fs.sent, figuresOf(t, env, fixtures.BroadcastDraftID).Sent)
+}
+
+// The synchronous adapter paces from Outbound send's clock (the Instance clock), as the river
+// adapter does, not from the wall.
+func TestSendBroadcastPacesFromOutboundSendsClock(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(10000).ExecX(ctx)
+	at := time.Now().Add(time.Hour)
+	mod := newMod(env, resolvingTo(&fakeSender{}), outboundmessages.WithClock(func() time.Time { return at }))
+
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, mod, fixtures.BroadcastDraftID))
+
+	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
+	require.NotNil(t, got.LastScheduledAt)
+	assert.WithinDuration(t, at, *got.LastScheduledAt, time.Second, "the last send is a fraction of a second after the clock's time")
 }
 
 // A sent Broadcast stays sent when the synchronous adapter is run on it again.

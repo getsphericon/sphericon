@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -55,8 +56,9 @@ var pixelGIF = []byte{
 // skipped. Unsubscribe is not rate limited at all; its signed token protects it.
 //
 // The token is a signed JWT naming one Outbound message. Opens always return the pixel (even
-// on a bad token) so we never leak token validity through the image.
-func trackingHandler(client *ent.Client, bus *events.Bus, tracker *messagetoken.Tracker, unsubscribe *unsubscriberecording.UseCase, limiter *ratelimit.Limiter, detector *privaterelayranges.Detector, appURL string) http.Handler {
+// on a bad token) so we never leak token validity through the image. A first open or click is
+// stamped at the time now (the Instance clock) reads.
+func trackingHandler(client *ent.Client, bus *events.Bus, tracker *messagetoken.Tracker, unsubscribe *unsubscriberecording.UseCase, limiter *ratelimit.Limiter, detector *privaterelayranges.Detector, appURL string, now func() time.Time) http.Handler {
 	mux := http.NewServeMux()
 	appURL = strings.TrimRight(appURL, "/")
 
@@ -67,7 +69,7 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *messagetoken.
 			return
 		}
 		if err == nil && limiter.RecordsTracking(r) {
-			recordOpen(r.Context(), client, bus, mid, isMachine(r, detector))
+			recordOpen(r.Context(), client, bus, mid, isMachine(r, detector), now())
 		}
 		w.Header().Set("Content-Type", "image/gif")
 		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
@@ -85,7 +87,7 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *messagetoken.
 			return
 		}
 		if limiter.RecordsTracking(r) {
-			recordClick(r.Context(), client, bus, mid, dest, isMachine(r, detector))
+			recordClick(r.Context(), client, bus, mid, dest, isMachine(r, detector), now())
 		}
 		http.Redirect(w, r, dest, http.StatusFound)
 	})
@@ -106,7 +108,7 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *messagetoken.
 		}
 		// A Test send's link has no message: it redirects and records nothing.
 		if link.OutboundMessageID != nil && limiter.RecordsTracking(r) {
-			recordClick(r.Context(), client, bus, *link.OutboundMessageID, link.URL, isMachine(r, detector))
+			recordClick(r.Context(), client, bus, *link.OutboundMessageID, link.URL, isMachine(r, detector), now())
 		}
 		http.Redirect(w, r, link.URL, http.StatusFound)
 	})
@@ -312,14 +314,14 @@ func (e engaged) click(dest string, software bool) events.DomainEvent {
 	}
 }
 
-func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messageID int64, software bool) {
+func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messageID int64, software bool, at time.Time) {
 	e, ok := loadEngaged(ctx, client, messageID)
 	if !ok {
 		return
 	}
 	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
 		if !software {
-			if _, err := outboundmessages.StampOpened(ctx, ts, e.msg.ID); err != nil {
+			if _, err := outboundmessages.StampOpened(ctx, ts, e.msg.ID, at); err != nil {
 				return err
 			}
 		}
@@ -330,14 +332,14 @@ func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messag
 	}
 }
 
-func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, messageID int64, dest string, software bool) {
+func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, messageID int64, dest string, software bool, at time.Time) {
 	e, ok := loadEngaged(ctx, client, messageID)
 	if !ok {
 		return
 	}
 	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
 		if !software {
-			if _, err := outboundmessages.StampClicked(ctx, ts, e.msg.ID); err != nil {
+			if _, err := outboundmessages.StampClicked(ctx, ts, e.msg.ID, at); err != nil {
 				return err
 			}
 		}

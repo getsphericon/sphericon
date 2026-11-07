@@ -114,8 +114,8 @@ func TestAnAutomationMessageIsCountedAndATransactionalOneIsNot(t *testing.T) {
 	before := read()
 
 	for _, id := range []int64{fixtures.OutboundMessageAutomationSentRecentlyID, fixtures.OutboundMessageWelcomeID} {
-		for _, record := range []func(context.Context, *ent.Scoped, int64) (bool, error){outboundmessages.StampOpened, outboundmessages.StampClicked} {
-			set, err := record(ctx, acme, id)
+		for _, record := range []func(context.Context, *ent.Scoped, int64, time.Time) (bool, error){outboundmessages.StampOpened, outboundmessages.StampClicked} {
+			set, err := record(ctx, acme, id, time.Now())
 			require.NoError(t, err)
 			require.True(t, set)
 		}

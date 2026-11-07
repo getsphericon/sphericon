@@ -11,6 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -43,6 +44,26 @@ func TestTheAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *testin
 	assert.Len(t, after.Series, 7)
 	assert.Equal(t, before.Current.Exited+1, after.Current.Exited)
 	assert.Equal(t, before.Previous, after.Previous)
+}
+
+// The report's period ends on today by the Instance clock, not the wall's: ten days ahead, the
+// last day of the series is that clock's day in the Workspace time zone.
+func TestTheAutomationReportEndsOnTheInstanceClocksDay(t *testing.T) {
+	at := time.Now().AddDate(0, 0, 10)
+	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
+	loc, err := reportday.Location(env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).Timezone)
+	require.NoError(t, err)
+	c := env.SiteActor(t, fixtures.MemberMaryEmail)
+	today := at.In(loc).Format(time.DateOnly)
+
+	results := automationResults(t, c, siteapi.SiteAutomationReportsGetParams{
+		WorkspaceId:  fixtures.AcmePublicID,
+		AutomationId: idStr(fixtures.AutomationWelcomeSeriesID),
+	})
+
+	require.NotEmpty(t, results.Series)
+	last := results.Series[len(results.Series)-1]
+	assert.Equal(t, today, last.Date, "the series ends on the Instance clock's day")
 }
 
 func TestTheAutomationReportReadsThirtyDaysByDefault(t *testing.T) {

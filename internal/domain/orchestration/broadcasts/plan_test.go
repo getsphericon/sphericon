@@ -29,8 +29,8 @@ func (d *delivery) recipientCount(id int64) int {
 	return n
 }
 
-// fixedNow is the clock of every pacing test: the module is handed the time, so no test
-// reads or waits for the real one.
+// fixedNow is the clock of every pacing test: Pace is handed the time, and a plan starts at Outbound
+// send's clock (atFixedNow), so no test reads or waits for the real one.
 var fixedNow = time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
 
 // atFixedNow is Outbound send's clock standing still at fixedNow, so the Provider limit's
@@ -63,7 +63,7 @@ func (r *recordingScheduler) times() []time.Time {
 // run plans, paces and schedules the draft Broadcast and returns what the scheduler saw.
 func (d *delivery) run(id int64) (*recordingScheduler, error) {
 	sched := &recordingScheduler{}
-	err := d.del.Run(d.t.Context(), d.s, id, sched, fixedNow)
+	err := d.del.Run(d.t.Context(), d.s, id, sched)
 	return sched, err
 }
 
@@ -229,9 +229,10 @@ func TestFinalizeIsIdempotent(t *testing.T) {
 }
 
 // A Broadcast through an Integration limited to 2 per second is paced at one over the rate:
-// the sends are spread 500ms apart from now, and the last time is recorded for the estimate.
+// the sends are spread 500ms apart from now by Outbound send's clock, and the last time is
+// recorded for the estimate.
 func TestPaceSpreadsSendsAtTheEffectiveRate(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, atFixedNow())
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(d.t.Context())
 
 	sched, err := d.run(fixtures.BroadcastDraftID)
@@ -600,7 +601,7 @@ func sinceStart(times []time.Time, start time.Time) []time.Duration {
 func TestQueuedRunRefusesADraftUnscheduledAfterItsDueCheck(t *testing.T) {
 	d := newDelivery(t)
 
-	err := d.del.RunClaimed(d.t.Context(), d.s, fixtures.BroadcastDraftID, &recordingScheduler{}, fixedNow)
+	err := d.del.RunClaimed(d.t.Context(), d.s, fixtures.BroadcastDraftID, &recordingScheduler{})
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	status := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).Status
@@ -612,7 +613,7 @@ func TestQueuedRunPlansAScheduledBroadcast(t *testing.T) {
 	d := newDelivery(t)
 
 	sched := &recordingScheduler{}
-	err := d.del.RunClaimed(d.t.Context(), d.s, fixtures.BroadcastScheduledID, sched, fixedNow)
+	err := d.del.RunClaimed(d.t.Context(), d.s, fixtures.BroadcastScheduledID, sched)
 
 	require.NoError(t, err)
 	status := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastScheduledID).Status

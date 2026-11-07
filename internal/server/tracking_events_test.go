@@ -66,6 +66,26 @@ func TestEveryOpenIsAnEventAndTheRollupIsStampedOnce(t *testing.T) {
 	assert.Equal(t, 1, figures(t, env, fixtures.BroadcastSentUntrackedID).Opened, "unique opens count the recipient once")
 }
 
+// The first open and the first click are stamped at the Instance clock's time, not the wall's.
+func TestOpenAndClickAreStampedAtTheInstanceClock(t *testing.T) {
+	at := time.Now().Add(time.Hour)
+	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
+	ctx := t.Context()
+	openAt := openPath(t, env, fixtures.OutboundMessageTrackingSampleID)
+	clickAt := clickPathTo(t, env, fixtures.OutboundMessageTrackingSampleID, linkA)
+
+	opened := trackingGet(t, env, openAt)
+	clicked := trackingGet(t, env, clickAt)
+
+	require.Equal(t, http.StatusOK, opened.Code)
+	require.Equal(t, http.StatusFound, clicked.Code)
+	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID)
+	require.NotNil(t, msg.OpenedAt)
+	require.NotNil(t, msg.ClickedAt)
+	assert.WithinDuration(t, at, *msg.OpenedAt, time.Microsecond, "opened at the Instance clock")
+	assert.WithinDuration(t, at, *msg.ClickedAt, time.Microsecond, "clicked at the Instance clock")
+}
+
 func TestEveryClickIsAnEventWithItsURLAndTheReportListsTheLinks(t *testing.T) {
 	env := testhelper.Setup(t)
 
