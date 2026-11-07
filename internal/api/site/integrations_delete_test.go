@@ -168,7 +168,7 @@ func TestAnEmptyStoredDefinitionAllowsPublishingAndRemovingItsUnusedIntegration(
 	_, needsAttention := cannotSendOf(items, fixtures.AutomationMeridianEmptyID)
 	assert.False(t, needsAttention, "no Step sends through the disabled Integration")
 
-	require.NoError(t, integrationdeletion.New(env.Bus, env.Integrations, time.Now).Delete(ctx, s, fixtures.IntegrationMeridianDisabledID), "an empty stored definition must not disagree with Publish")
+	require.NoError(t, integrationdeletion.New(env.Bus, env.Integrations, env.RemovalCheck, time.Now).Delete(ctx, s, fixtures.IntegrationMeridianDisabledID), "an empty stored definition must not disagree with Publish")
 	deleted, err := env.Integrations.Get(ctx, s, fixtures.IntegrationMeridianDisabledID)
 	require.NoError(t, err)
 	assert.NotNil(t, deleted.DiscardedAt)

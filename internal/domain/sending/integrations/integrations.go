@@ -447,8 +447,8 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 
 // DeleteIn discards the Integration row for good (ADR 0049) on the transaction's scoped client,
 // without asking whether work still sends through it: the unchecked removal behind the Integration
-// deletion use case (internal/usecase/integrationdeletion), which checks its Live use under the
-// Workspace lock first and is the only caller easement allows. A deleted Integration gives up the
+// deletion use case (internal/usecase/integrationdeletion), which runs the Removal check (its Live
+// use) under the Workspace lock first and is the only caller easement allows. A deleted Integration gives up the
 // default: its channel has none until another is picked. A missing row is ErrNotFound.
 func DeleteIn(ctx context.Context, ts *ent.Scoped, row *ent.Integration, at time.Time) error {
 	if row.IsDefault {

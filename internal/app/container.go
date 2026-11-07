@@ -61,6 +61,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
@@ -714,7 +715,7 @@ var audiencePackage = do.Package(
 			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrationdeletion.UseCase, error) {
-		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
+		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*integrations.Module](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*bindings.Module, error) {
 		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
@@ -723,7 +724,12 @@ var audiencePackage = do.Package(
 		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomaindeletion.UseCase, error) {
-		return sendingdomaindeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[Clock](i)), nil
+		return sendingdomaindeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	// The Removal check every removal of a row others may hold runs first (ADR 0049, ADR 0099); it
+	// reads the From an Integration sends with from the resolver a send builds its sender with.
+	do.Lazy(func(i do.Injector) (*removalcheck.Module, error) {
+		return removalcheck.New(do.MustInvoke[*messaging.Resolver](i)), nil
 	}),
 	// The Sending domain checks: the Verify button a person waits for and the re-check jobs (ADR 0010).
 	do.Lazy(func(i do.Injector) (*sendingdomainverification.UseCase, error) {
@@ -750,10 +756,10 @@ var contentPackage = do.Package(
 		return tags.New(), nil
 	}),
 	do.Lazy(func(i do.Injector) (*tagdeletion.UseCase, error) {
-		return tagdeletion.New(do.MustInvoke[*events.Bus](i)), nil
+		return tagdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*customfieldretyping.UseCase, error) {
-		return customfieldretyping.New(do.MustInvoke[*events.Bus](i)), nil
+		return customfieldretyping.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil

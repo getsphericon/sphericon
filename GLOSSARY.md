@@ -734,9 +734,10 @@ What Delete does to a row of a kind other rows may refer to (an Integration, a S
 Rule, a Sign-up item, a Workspace): the row leaves every list and every new work for good, yet is
 kept, so what refers to it still shows its name and reports still count it. It is never restored,
 except a Workspace within its window. A row in **Live use** cannot be discarded. A kind nothing can
-refer to (a Tag, a Template, a Brand kit, a Webhook endpoint, a Membership, an Invitation) is
-deleted outright. Fact rows (Events, Outbound messages, Audit entries, Suppressions) are neither
-discarded nor deleted: only Retention and erasure remove them.
+refer to (a Template, a Brand kit, a Webhook endpoint, a Membership, an Invitation) is deleted
+outright, and so is a Tag unless it is in **Definition use**. Fact rows (Events, Outbound
+messages, Audit entries, Suppressions) are neither discarded nor deleted: only Retention and erasure
+remove them.
 _Avoid_: Archive, soft delete, trash, tombstone (a tombstone is the row an erased Workspace leaves)
 
 **Unchecked operation**:
@@ -754,6 +755,18 @@ Rule. A Broadcast or step uses the Integration it sends through (its own, or its
 default) and the Sending domain of the From address it actually sends from. A row in Live use
 cannot be archived or discarded.
 _Avoid_: Dependency, reference, in use
+
+**Definition use**:
+A definition that names a row: a Segment's Condition, the live version or the draft of a kept
+Automation or Rule, or the Condition an armed Broadcast copied from its Segment. A row in Definition
+use is not deleted, nor changed in a way the definition would stop reading (a Custom field's type).
+_Avoid_: Dependency, reference, in use
+
+**Removal check**:
+The check, under the Workspace's lock, that a row is in neither **Live use** nor **Definition use**
+before it is removed, or changed in a way that would break what uses it (a Custom field's type); it
+refuses naming them.
+_Avoid_: Dependency check, in-use check
 
 **Integration**:
 A workspace-scoped, **outbound** connection to a sending provider, external or built in (the Test

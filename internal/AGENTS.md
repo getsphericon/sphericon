@@ -100,9 +100,11 @@ the moved files. The move recipe is at the end of that section of `docs/architec
 A use case (`internal/usecase/<name>`, ADR 0102; the recipe is "Use cases" in
 `docs/architecture.md`) owns the tests of its operation, in its own `_test` package through its
 exports: when a check moves out of a domain module into a use case, its test moves with it and keeps
-its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's Live use refusal under the
-Workspace lock, `internal/usecase/customfieldretyping` a Custom field retype's under the same lock,
-`internal/usecase/integrationdeletion` the Integration's,
+its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's race with the writes the
+Removal check reads under the Workspace lock, `internal/usecase/customfieldretyping` a Custom field
+edit's, `internal/usecase/integrationdeletion` the Integration's and
+`internal/usecase/sendingdomaindeletion` the Sending domain's, while what the Removal check finds is
+tested in `internal/domain/orchestration/removalcheck` against `env.RemovalCheck`,
 `internal/usecase/sendingdomainverification` the Sending domain checks, `internal/usecase/stepexecution` the
 steps of an Enrollment, `internal/usecase/secretreencryption` the re-encryption of every stored
 secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records,

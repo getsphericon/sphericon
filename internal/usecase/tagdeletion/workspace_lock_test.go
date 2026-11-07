@@ -13,7 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 )
@@ -29,7 +32,7 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	ctx := context.Background()
 	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
 	s := race.Scope
-	segs, catalogue, deletion := segments.New(race.Bus, time.Now), tags.New(), tagdeletion.New(race.Bus)
+	segs, catalogue, deletion := segments.New(race.Bus, time.Now), tags.New(), tagdeletion.New(race.Bus, removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default())))
 
 	var saved int64
 	save := testhelper.Writer{Name: "save", Run: func() error {

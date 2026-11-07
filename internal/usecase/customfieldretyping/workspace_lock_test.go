@@ -8,12 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
@@ -28,8 +32,8 @@ const dateHasIt = `{"kind":"group","combinator":"and","rules":[{"kind":"date","f
 type retypeRace struct {
 	*testhelper.WorkspaceRace
 
-	retype, saveSegment, saveRule testhelper.Writer
-	savedID                       *int64
+	retype, rename, saveSegment, saveRule testhelper.Writer
+	savedID                               *int64
 }
 
 func newRetypeRace(t *testing.T) *retypeRace {
@@ -37,8 +41,14 @@ func newRetypeRace(t *testing.T) *retypeRace {
 	ctx := context.Background()
 	race := testhelper.NewWorkspaceRace(t, fixtures.DuffID)
 	s, bus := race.Scope, race.Bus
-	segs, ruleset, retyping := segments.New(bus, time.Now), rules.New(testhelper.Cipher(t), bus, time.Now), customfieldretyping.New(bus)
+	cipher := testhelper.Cipher(t)
+	check := removalcheck.New(messaging.NewResolver(cipher, registry.Default()))
+	segs, ruleset, retyping := segments.New(bus, time.Now), rules.New(cipher, bus, time.Now), customfieldretyping.New(bus, check)
 	r := &retypeRace{WorkspaceRace: race, savedID: new(int64)}
+	r.rename = testhelper.Writer{Name: "rename", Run: func() error {
+		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Name: patch.Set("Has it since")})
+		return err
+	}}
 	r.retype = testhelper.Writer{Name: "retype", Run: func() error {
 		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Type: patch.Set(string(customfield.TypeString))})
 		return err
@@ -62,12 +72,17 @@ func newRetypeRace(t *testing.T) *retypeRace {
 
 func (r *retypeRace) fieldType(t *testing.T) customfield.Type {
 	t.Helper()
-	field, err := contacts.CustomField(context.Background(), r.Scope, fixtures.CustomFieldDuffHasItID)
-	require.NoError(t, err)
-	return field.Type
+	return r.field(t).Type
 }
 
-// Retyping a Custom field runs its Live use check and its write in one transaction under the
+func (r *retypeRace) field(t *testing.T) *ent.CustomField {
+	t.Helper()
+	field, err := contacts.CustomField(context.Background(), r.Scope, fixtures.CustomFieldDuffHasItID)
+	require.NoError(t, err)
+	return field
+}
+
+// Retyping a Custom field runs the Removal check and its write in one transaction under the
 // Workspace's lock, which saving a Segment or a Rule takes too (ADR 0099): a Segment or a Rule saved
 // first, testing the field with a leaf the new type does not take, is what the retype then finds and
 // names, so the field keeps its type.
@@ -117,4 +132,16 @@ func TestASaveBehindARetypeIsCheckedAgainstTheNewType(t *testing.T) {
 			assert.Equal(t, customfield.TypeString, retyped)
 		})
 	}
+}
+
+// A rename takes the same path as a retype, under the Workspace's lock (#1168): it waits for the
+// lock like every other edit of a Custom field.
+func TestRenamingACustomFieldWaitsForTheWorkspaceLock(t *testing.T) {
+	r := newRetypeRace(t)
+
+	errs := r.Queue(t, r.rename)
+
+	require.NoError(t, errs["rename"])
+	renamed := r.field(t)
+	assert.Equal(t, "Has it since", renamed.Name)
 }

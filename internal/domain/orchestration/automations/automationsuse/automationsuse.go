@@ -1,7 +1,14 @@
-package automations
+// Package automationsuse reads the use the Automations make of a row: the Definition use of a kept
+// Automation's live version or draft that applies or removes a Tag, and the Live use of the
+// versions that will still send (ADR 0099). It is a reader of the Removal check
+// (internal/domain/orchestration/removalcheck), the one package easement lets import it, so every
+// removal that checks a row reads every holder. The automations module does not import it.
+package automationsuse
 
 import (
 	"context"
+	"slices"
+	"strings"
 
 	"github.com/samber/lo"
 
@@ -9,10 +16,51 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 )
+
+// UsingTag returns the Workspace's kept Automations whose live version or draft applies or
+// removes the Tag by its name, in id order (spec #767, "In use"). An archived Automation takes no
+// part in new work.
+func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Automation, error) {
+	all, err := s.Automation().Query().WithLiveVersion().WithDraftVersion().Order(ent.Asc(automation.FieldID)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var using []*ent.Automation
+	for _, a := range all {
+		live, draft := automations.LiveAndDraft(a)
+		inLive, err := namesTag(live, name)
+		if err != nil {
+			return nil, err
+		}
+		inDraft, err := namesTag(draft, name)
+		if err != nil {
+			return nil, err
+		}
+		if inLive || inDraft {
+			using = append(using, a)
+		}
+	}
+	return using, nil
+}
+
+// namesTag reports whether a step of the version, if there is one, applies or removes the Tag.
+func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
+	if v == nil {
+		return false, nil
+	}
+	steps, err := automationstep.Decode(v.Steps)
+	if err != nil {
+		return false, err
+	}
+	return slices.ContainsFunc(steps, func(st automationstep.Step) bool {
+		return (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && strings.TrimSpace(st.Tag) == name
+	}), nil
+}
 
 // LiveSends returns the sends of the Automations in Live use (ADR 0099), in Automation id order:
 // each send step of the live version of an active, kept Automation, and each send step of any

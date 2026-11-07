@@ -82,8 +82,8 @@ func Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Tag, error) {
 // DeleteIn removes the Tag from the catalogue, and from every Contact that has it, inside the
 // transaction s is bound to. It is the unchecked removal (ADR 0102): it does not ask whether a
 // Segment, an Automation, a Rule or a Broadcast names the Tag. Deleting a Tag is the use case
-// internal/usecase/tagdeletion, which runs that Live use check and this removal in one transaction
-// under the Workspace's lock; easement forbids every other package to call DeleteIn. A missing Tag is
+// internal/usecase/tagdeletion, which runs the Removal check (the Tag's Definition use) and this
+// removal in one transaction under the Workspace's lock; easement forbids every other package to call DeleteIn. A missing Tag is
 // ErrNotFound.
 func DeleteIn(ctx context.Context, s *ent.Scoped, id int64) error {
 	err := s.Tag().DeleteOneID(id).Exec(ctx)

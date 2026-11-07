@@ -1,12 +1,13 @@
-// Package liveuse is the one shape of a removal refused for Live use (ADR 0049, GLOSSARY "Live use"): a row that live work still
-// uses is not removed, and the refusal names the users. A delete that checks Live use (a domain
-// module's, or a use case's when the users are modules above it) returns an *Error;
-// internal/api/problem renders it as the contracts' Problem (409, `usedBy`) on every surface. A
-// Send is one send of the Live use that sends, the shape the orchestration modules read it in.
+// Package liveuse is the one shape of a removal refused because something still uses the row (ADR
+// 0049, GLOSSARY "Live use" and "Definition use"): a row that live work or a definition still uses
+// is not removed, and the refusal names the users. It is the refusal a Removal check returns
+// (internal/domain/orchestration/removalcheck), and the one a domain module's own check returns (an
+// Automation's archive); internal/api/problem renders it as the contracts' Problem (409, `usedBy`)
+// on every surface. A Send is one send of the Live use that sends, the shape the orchestration
+// modules read it in. It is a leaf below the modules that return it, so it names none of them.
 package liveuse
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -39,7 +40,7 @@ const (
 // Subject is the row a refused removal was for.
 type Subject string
 
-// The rows a removal can be refused for; the text reads "<subject> is in use by ...".
+// The rows a removal can be refused for; the text reads "<subject> is used by ...".
 const (
 	SubjectTag           Subject = "tag"
 	SubjectIntegration   Subject = "integration"
@@ -110,7 +111,7 @@ func (e *Error) Error() string {
 			names[i] = fmt.Sprintf("%d %s of %q", u.Count, lo.Ternary(u.Count == 1, string(u.Kind), string(u.Kind)+"s"), u.Name)
 		}
 	}
-	return fmt.Sprintf("%s is in use by %s", e.What, strings.Join(names, ", "))
+	return fmt.Sprintf("%s is used by %s", e.What, strings.Join(names, ", "))
 }
 
 // As reports the refusal an error carries, if it is one.
@@ -121,9 +122,9 @@ func As(err error) (*Error, bool) {
 }
 
 // Send is one send of Live use (ADR 0099): who sends, on which Channel, and the route it takes.
-// broadcasts.LiveSends and automations.LiveSends read them, by the Send route's own resolution of
-// the Integration (messaging.Through), so a removal check and the send path agree on where work
-// sends.
+// broadcastsuse.LiveSends and automationsuse.LiveSends read them, by the Send route's own
+// resolution of the Integration (messaging.Through), so the Removal check and the send path agree
+// on where work sends.
 type Send struct {
 	// User is the work that sends: a Broadcast, or an Automation for a send step of one of its
 	// versions.
@@ -141,21 +142,6 @@ type Send struct {
 // Uses reports whether the send goes through the Integration with the id.
 func (s Send) Uses(integrationID int64) bool {
 	return s.Integration != nil && s.Integration.ID == integrationID
-}
-
-// Sends is the Live use that sends (ADR 0099), read through each reader in the order given: the
-// Broadcasts' and the Automations' (broadcasts.LiveSends, automations.LiveSends), which import this
-// package and so cannot be named here.
-func Sends(ctx context.Context, s *ent.Scoped, readers ...func(context.Context, *ent.Scoped) ([]Send, error)) ([]Send, error) {
-	var sends []Send
-	for _, read := range readers {
-		more, err := read(ctx, s)
-		if err != nil {
-			return nil, err
-		}
-		sends = append(sends, more...)
-	}
-	return sends, nil
 }
 
 // SendUsers is the work of the sends, each named once, in the order of sends.

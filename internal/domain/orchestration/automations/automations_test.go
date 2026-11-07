@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -233,7 +234,7 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	using := func() []string {
 		t.Helper()
-		got, err := automations.UsingTag(ctx, acme, fixtures.TagVipName)
+		got, err := automationsuse.UsingTag(ctx, acme, fixtures.TagVipName)
 		require.NoError(t, err)
 		return lo.Map(got, func(a *ent.Automation, _ int) string { return a.Name })
 	}

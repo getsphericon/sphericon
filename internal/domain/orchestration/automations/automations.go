@@ -408,46 +408,6 @@ func withVersions(q *ent.AutomationQuery) *ent.AutomationQuery {
 	return q.WithLiveVersion().WithDraftVersion()
 }
 
-// UsingTag returns the Workspace's kept Automations whose live version or draft applies or
-// removes the Tag by its name, in id order (spec #767, "In use"). An archived Automation takes no
-// part in new work.
-func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Automation, error) {
-	all, err := withVersions(s.Automation().Query()).Order(ent.Asc(automation.FieldID)).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var using []*ent.Automation
-	for _, a := range all {
-		live, draft := LiveAndDraft(a)
-		inLive, err := namesTag(live, name)
-		if err != nil {
-			return nil, err
-		}
-		inDraft, err := namesTag(draft, name)
-		if err != nil {
-			return nil, err
-		}
-		if inLive || inDraft {
-			using = append(using, a)
-		}
-	}
-	return using, nil
-}
-
-// namesTag reports whether a step of the version, if there is one, applies or removes the Tag.
-func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
-	if v == nil {
-		return false, nil
-	}
-	steps, err := automationstep.Decode(v.Steps)
-	if err != nil {
-		return false, err
-	}
-	return slices.ContainsFunc(steps, func(st automationstep.Step) bool {
-		return (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && strings.TrimSpace(st.Tag) == name
-	}), nil
-}
-
 // Get returns one Automation of the Workspace, archived or not: an archived Automation is
 // still addressable (viewed, unarchived, its Enrollments listed).
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {

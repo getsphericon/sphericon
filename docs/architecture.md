@@ -186,9 +186,12 @@ coding standards in `CODING_STANDARDS.md`.
   Outbound send or other sending module, and neither context imports `broadcasts`,
   `automations`, `rules`, `webhookendpoints` or a use case.
   Orchestration, above sending, is `broadcasts`, `automations`, `automationstep`, `rules` and
-  `webhookendpoints` (the spec's list), with one package placed by the same rule: `liveuse`, the one shape of a
-  refused removal (ADR 0049), which names Broadcasts, Rules and Integrations and which `broadcasts`
-  and `automations` return. The ent aggregate functions of the Broadcast and Automation reports
+  `webhookendpoints` (the spec's list), with two packages placed by the same rule: `liveuse`, the one shape of a
+  refused removal (ADR 0049), a leaf below `broadcasts` and `automations`, which return it, and
+  `removalcheck`, the Removal check at the top of the context, which reads the Segments below it and
+  the Broadcasts, Automations and Rules beside it through their `<module>use` readers and is a
+  component of its own (`domain-orchestration-removalcheck`, imported only by the use cases and the
+  wiring). The ent aggregate functions of the Broadcast and Automation reports
   hold no domain rule, so they are infrastructure (`internal/infra/aggregates`). Its raw-client holders `automations`, `rules` and `webhookendpoints` are
   `domain-orchestration-raw`, the rest `domain-orchestration`. Insights, above orchestration, is
   one component (`domain-insights`): the read packages `setupchecklist`, `auditlog`,
@@ -243,7 +246,7 @@ coding standards in `CODING_STANDARDS.md`.
   included: the Sending domain re-check jobs call `sendingdomainverification`, the step jobs of an
   Enrollment `stepexecution`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
-  Workspace lock where ADR 0099 requires it, so a Live use check opens it with
+  Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
   `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Broadcast's count and the Enrollment's exit, and `contactintake` one per imported row for the Contact and its SMS Confirmation), reads them, and changes their rows only through their functions
   (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, then calls `broadcasts.RecordUnsubscribe` and `automations.Exit`; an imported row upserts through `contacts.ImportIn` and confirms through `confirmations.ConfirmSMSIn`).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
@@ -299,7 +302,10 @@ coding standards in `CODING_STANDARDS.md`.
   `internal/usecase/contacterasure` sequences; the purge of its queued jobs is a method of the bus's
   publisher, which a name cannot forbid) are such items too. The tests of the operation live in the use case's own `_test` package
   (`internal/usecase/tagdeletion`, `internal/usecase/customfieldretyping`, `internal/usecase/unsubscriberecording`, `internal/usecase/contactintake`; a retype's refusal is also tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
-  rows. An operation that belongs to no Workspace has no `*ent.Scoped` to take: the Release check and
+  rows. What the Removal check finds is tested in its own package
+  (`internal/domain/orchestration/removalcheck`, with the writes that create a use waiting for the
+  Workspace lock), and each removal that runs it races those writes in its use case's own
+  `workspace_lock_test.go`. An operation that belongs to no Workspace has no `*ent.Scoped` to take: the Release check and
   the Telemetry report (`internal/usecase/releasecheck`, `internal/usecase/telemetryreport`) take
   the Instance state module (`internal/domain/instance/instancestates`), whose functions make the Instance-wide
   reads on its raw client, and hold no client themselves. The Secret re-encryption
@@ -611,19 +617,34 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   `BySystem`). A Workspace is suspended through the container's one `suspension.Suspender` (the
   command line, the Staff console and the abuse detector), whose event tells its Owners (see
   "Notices"). Call them; do not test `suspended_at` or the owner Role anywhere else.
-- **Refused removals (ADR 0049)**: a row that live work still uses is not removed. `internal/domain/orchestration/liveuse`
-  is the one shape of that refusal (`*liveuse.Error`: the removed `Subject` and the `Users` that hold it,
-  with helpers like `liveuse.Broadcasts` and `liveuse.Enrollments`); the delete that checks Live use
-  returns it, and every API surface answers it with the contract's `Problem` (409, `usedBy`). When the
-  users are modules above the removed row's module, the check is a use case (`tagdeletion` asks
-  Segments, Automations, Rules and Broadcasts before `tags.DeleteIn`, `customfieldretyping` asks
-  Segments, Rules and Broadcasts before a Custom field's type changes; `integrationdeletion` and
-  `sendingdomaindeletion` read the Live use that sends before `integrations.DeleteIn` and
-  `sendingdomains.DeleteIn`; see "Use cases"). The Live use that sends is read from the orchestration
-  modules that own it: `broadcasts.LiveSends` and `automations.LiveSends` return each send as an
-  `liveuse.Send` (who sends, on which Channel, through which Integration by `messaging.Through`, from
-  which From), so the removal check and the send path agree on where work sends. `liveuse` is a leaf
-  that holds no raw `*ent.Client`: it only maps rows to users and states these shapes.
+- **Refused removals (ADR 0049)**: a row in Live use or in Definition use is not removed (nor is a
+  Custom field retyped while a Condition tests it with a leaf the new type does not take).
+  `internal/domain/orchestration/liveuse` is the one shape of that refusal (`*liveuse.Error`: the
+  removed `Subject` and the `Users` that hold it, with helpers like `liveuse.Broadcasts` and
+  `liveuse.Enrollments`), and every API surface answers it with the contract's `Problem` (409,
+  `usedBy`). When the holders are modules above the removed row's module, the check is the Removal
+  check, `internal/domain/orchestration/removalcheck`: one method per subject (`Tag`,
+  `CustomFieldRetype`, `Integration`, `SendingDomain`), each returning nil or the `*liveuse.Error`
+  with its `Subject` set, called by the use case that removes the row under the Workspace lock before
+  its unchecked removal (`tagdeletion` before `tags.DeleteIn`, `customfieldretyping` before
+  `contacts.UpdateCustomFieldIn`, `integrationdeletion` and `sendingdomaindeletion` before
+  `integrations.DeleteIn` and `sendingdomains.DeleteIn`; see "Use cases"). It is the one list of the
+  readers of what may hold a row. Each owner keeps its readers in a subpackage `<module>use` (ADR
+  0110's fence by place), which may import its owner and which the owner does not import: Definition
+  use is `segmentsuse.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.UsingTag`,
+  `rulesuse.UsingTag` and `UnfitForCustomFieldType` and `broadcastsuse.UsingTag` and
+  `UnfitForCustomFieldType`; the Live use that sends is `broadcastsuse.LiveSends` and
+  `automationsuse.LiveSends`, which return each send as a `liveuse.Send` (who sends, on which
+  Channel, through which Integration by `messaging.Through`, from which From), so the Removal check
+  and the send path agree on where work sends; a Sending domain's check reads the From an
+  Integration sends with from the resolver a send builds its sender with
+  (`messaging.EffectiveFrom`). Two easement components, one per context (`domain-contacts-removalcheck-readers`,
+  `domain-orchestration-removalcheck-readers`), own the four subpackages with `allow_importers:
+  [domain-orchestration-removalcheck]` (ADR 0110), so no other package reads a holder and a new holder is a reader the Removal check adds. The Removal check takes the
+  transaction's `*ent.Scoped`; the scope type of the Workspace lock (ADR 0108) replaces it in its
+  methods and its readers when that type exists. A domain module that checks the holders of its own
+  row (an Automation's archive) returns the same `*liveuse.Error`. `liveuse` is a leaf that holds no
+  raw `*ent.Client`: it only maps rows to users and states these shapes.
 - **Stored Automation Steps:** `internal/domain/orchestration/automationstep` owns the stored Step model, its kinds,
   decoding and whether a definition sends email. Publish, Needs attention and live-use checks
   share that interpretation: an empty stored string means no Steps; damaged JSON returns an error,
@@ -658,9 +679,10 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   exist iff a state change commits is queued in that transaction with
   `events.Bus.WithinScopedEnqueueTx` (a Broadcast's claim and its send job); never claim first and
   enqueue after, with a best-effort undo.
-- **The Workspace lock (ADR 0099)**: a removal that checks Live use (archiving or deleting a
-  Segment, an Integration, a Sending domain, a Tag) and a write that creates it (a Broadcast's
-  claim, saving a Segment, Create, Edit, Publish and Archive of a Versioned definition) run in
+- **The Workspace lock (ADR 0099)**: a removal that checks Live use or Definition use (archiving a
+  Segment; deleting an Integration, a Sending domain or a Tag and editing a Custom field, which run
+  the Removal check) and a write that creates a use (a Broadcast's claim, saving a Segment, Create,
+  Edit, Publish and Archive of a Versioned definition) run in
   `events.Bus.WithinWorkspaceLockTx` (or `WithinWorkspaceLockEnqueueTx`), whose first statement
   takes the Workspace's transaction-scoped advisory lock, so a check never passes on work that
   becomes live before the removal commits. The lock comes before any row lock. A hot path (a Rule

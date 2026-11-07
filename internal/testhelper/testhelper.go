@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -169,6 +170,9 @@ type TestEnv struct {
 	Cipher *secrets.Cipher
 	// Integrations is the module the server serves Integrations and their hooks with.
 	Integrations *integrations.Module
+	// RemovalCheck is the Removal check the server's removals run (ADR 0049, ADR 0099), over the
+	// server's resolver: for a test of the check, or one that builds a removal use case with New.
+	RemovalCheck *removalcheck.Module
 	// ConsentRecords is the module the server records the Users' decisions on the Sign-up items
 	// with (ADR 0062): read a User's current answers with Current.
 	ConsentRecords *consentrecords.Module
@@ -546,6 +550,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Tracker:           do.MustInvoke[*messagetoken.Tracker](injector),
 		Cipher:            do.MustInvoke[*secrets.Cipher](injector),
 		Integrations:      do.MustInvoke[*integrations.Module](injector),
+		RemovalCheck:      do.MustInvoke[*removalcheck.Module](injector),
 		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
 		Holds:             do.MustInvoke[*holds.Holds](injector),
 		Orders:            do.MustInvoke[*orders.Module](injector),

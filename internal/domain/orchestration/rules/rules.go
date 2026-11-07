@@ -25,7 +25,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
@@ -401,12 +400,6 @@ func LiveAndDraft(r *ent.Rule) (live, draft *ent.RuleVersion) {
 	return versioneddefinition.LiveAndDraft(r)
 }
 
-// versions are the Rule's live and draft versions that exist.
-func versions(r *ent.Rule) []*ent.RuleVersion {
-	live, draft := LiveAndDraft(r)
-	return lo.Compact([]*ent.RuleVersion{live, draft})
-}
-
 // Delete discards a Rule, whether or not it has fired (ADR 0098, ADR 0100), through
 // internal/domain/content/versioneddefinition' Discard: it is deactivated under the lock Publish takes, so it
 // never fires again, and it leaves the lists for good with its versions and Firings kept; Get still
@@ -414,63 +407,6 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	_, err := m.life.Discard(ctx, s, id)
 	return err
-}
-
-// UnfitForCustomFieldType returns the Workspace's kept Rules, in id order, whose live version or
-// draft tests the Custom field key in its Condition with a leaf a field of type t does not take, so
-// it would stop compiling were the field retyped. A deleted Rule acts on nothing, so it does not
-// count.
-func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) ([]*ent.Rule, error) {
-	kept, err := withVersions(s.Rule().Query()).Order(ent.Asc(rule.FieldID)).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return lo.Filter(kept, func(r *ent.Rule, _ int) bool {
-		return lo.SomeBy(versions(r), func(v *ent.RuleVersion) bool {
-			g, err := condition.Parse(lo.FromPtr(v.Condition))
-			return err == nil && !g.FitsCustomFieldType(key, t)
-		})
-	}), nil
-}
-
-// UsingTag returns the Workspace's kept Rules, in id order, whose live version or draft names the
-// Tag by its name: in a Condition leaf or in a tag Action (spec #767, "In use"). A deleted Rule
-// acts on nothing, so it does not hold the Tag.
-func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Rule, error) {
-	kept, err := withVersions(s.Rule().Query()).Order(ent.Asc(rule.FieldID)).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var using []*ent.Rule
-	for _, r := range kept {
-		for _, v := range versions(r) {
-			names, err := namesTag(v, name)
-			if err != nil {
-				return nil, err
-			}
-			if names {
-				using = append(using, r)
-				break
-			}
-		}
-	}
-	return using, nil
-}
-
-// namesTag reports whether the version names the Tag in its Condition or in a tag Action.
-func namesTag(v *ent.RuleVersion, name string) (bool, error) {
-	g, err := condition.Parse(lo.FromPtr(v.Condition))
-	if err != nil {
-		return false, err
-	}
-	if g.NamesTag(name) {
-		return true, nil
-	}
-	actions, err := DecodeActions(v.Actions)
-	if err != nil {
-		return false, err
-	}
-	return slices.ContainsFunc(actions, func(a Action) bool { return a.NamesTag(name) }), nil
 }
 
 // Publish makes the Rule's draft its live version and the Rule active (ADR 0065); with no draft,
