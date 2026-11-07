@@ -22,7 +22,6 @@ import (
 	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
-	contactintake "github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	eventrecording "github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	unsubscriberecording "github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
@@ -255,21 +254,21 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 	}
 	return contactsCreateInput
 }
-func (c *InputsImpl) ContactIntake(source external.UpsertContactInput) contactintake.Input {
-	var contactintakeInput contactintake.Input
-	contactintakeInput.UpsertInput = c.ContactUpsert(source)
-	contactintakeInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
-	return contactintakeInput
+func (c *InputsImpl) ContactIntake(source external.UpsertContactInput) contacts.IntakeInput {
+	var contactsIntakeInput contacts.IntakeInput
+	contactsIntakeInput.UpsertInput = c.ContactUpsert(source)
+	contactsIntakeInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
+	return contactsIntakeInput
 }
-func (c *InputsImpl) ContactIntakes(source []external.UpsertContactInput) []contactintake.Input {
-	var contactintakeInputList []contactintake.Input
+func (c *InputsImpl) ContactIntakes(source []external.UpsertContactInput) []contacts.IntakeInput {
+	var contactsIntakeInputList []contacts.IntakeInput
 	if source != nil {
-		contactintakeInputList = make([]contactintake.Input, len(source))
+		contactsIntakeInputList = make([]contacts.IntakeInput, len(source))
 		for i := 0; i < len(source); i++ {
-			contactintakeInputList[i] = c.ContactIntake(source[i])
+			contactsIntakeInputList[i] = c.ContactIntake(source[i])
 		}
 	}
-	return contactintakeInputList
+	return contactsIntakeInputList
 }
 func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput

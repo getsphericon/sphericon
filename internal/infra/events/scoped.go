@@ -49,8 +49,8 @@ func Ingest(s *ent.Scoped) *ent.Scoped { return s.As(Actor{Kind: ActorIngest}, n
 
 // Unaudited returns the scope with its writes left out of the Audit log, for a write that
 // is not a configuration change by the actor: a bulk import records one entry for the
-// whole import (contacts.RecordImport), and applying a Tag to a Contact is a data-plane
-// edge, not a field of the Contact.
+// whole import (the Contact intake, contacts.Module.UpsertBatch), and applying a Tag to a
+// Contact is a data-plane edge, not a field of the Contact.
 func Unaudited(s *ent.Scoped) *ent.Scoped { return s.As(Actor{Kind: ActorIngest}, nil) }
 
 // auditPublisher publishes the scoped client's audit changes through the seam, in the

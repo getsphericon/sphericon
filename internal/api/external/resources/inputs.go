@@ -25,7 +25,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
-	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
@@ -140,8 +139,8 @@ type Inputs interface {
 	ContactUpsert(source externalapi.UpsertContactInput) contacts.UpsertInput
 	// An import row: the Contact it asserts and the SMS consent it carries.
 	// goverter:map . UpsertInput
-	ContactIntake(source externalapi.UpsertContactInput) contactintake.Input
-	ContactIntakes(source []externalapi.UpsertContactInput) []contactintake.Input
+	ContactIntake(source externalapi.UpsertContactInput) contacts.IntakeInput
+	ContactIntakes(source []externalapi.UpsertContactInput) []contacts.IntakeInput
 
 	IntegrationCreate(source *externalapi.CreateIntegrationInput) (integrations.CreateInput, error)
 	IntegrationUpdate(source *externalapi.UpdateIntegrationInput) (integrations.UpdateInput, error)

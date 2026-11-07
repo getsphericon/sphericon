@@ -31,7 +31,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
-	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -83,8 +82,6 @@ type Handlers struct {
 	bootstrapToken            string
 	audit                     AuditLog
 	export                    ExportStreams
-	// intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
-	intake *contactintake.UseCase
 	// unsubscribe records an opt-out (a use case, ADR 0102).
 	unsubscribe *unsubscriberecording.UseCase
 }
@@ -148,8 +145,6 @@ type Deps struct {
 	// Clock is the Instance clock (app.Clock) the handlers read, and the security handler checks a
 	// Connection's Two-factor requirement against. Required.
 	Clock func() time.Time
-	// Intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
-	Intake *contactintake.UseCase
 	// Unsubscribe records an opt-out (a use case, ADR 0102).
 	Unsubscribe *unsubscriberecording.UseCase
 }
@@ -164,7 +159,7 @@ func NewHandlers(d Deps) *Handlers {
 		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,
-		intake: d.Intake, unsubscribe: d.Unsubscribe,
+		unsubscribe: d.Unsubscribe,
 	}
 }
 

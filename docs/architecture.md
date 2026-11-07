@@ -251,7 +251,10 @@ coding standards in `CODING_STANDARDS.md`.
   It is a use case only when that owner would have to call a module above it (a base module knows no
   module that uses it) or when no single module can own it (it composes modules of several contexts
   none of which owns it, or the Enterprise License with a core module's rows):
-  `internal/usecase/<subject><action>` in glossary words (`tagdeletion`). The use
+  `internal/usecase/<subject><action>` in glossary words (`tagdeletion`). An operation whose
+  modules its owner may import is the owner's, with its tests: the Contact intake of an import is
+  `contacts.Module.UpsertBatch`, which records a row's SMS Confirmation through `confirmations` in
+  the row's transaction. The use
   case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
   states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
   `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
@@ -259,8 +262,8 @@ coding standards in `CODING_STANDARDS.md`.
   Enrollment `stepexecution`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
-  `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Broadcast's count and the Enrollment's exit, and `contactintake` one per imported row for the Contact and its SMS Confirmation), reads them, and changes their rows only through their functions
-  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, then calls `broadcasts.RecordUnsubscribe` and `automations.Exit`; an imported row upserts through `contacts.ImportIn` and confirms through `confirmations.ConfirmSMSIn`).
+  `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Broadcast's count and the Enrollment's exit), reads them, and changes their rows only through their functions
+  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, then calls `broadcasts.RecordUnsubscribe` and `automations.Exit`).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
   the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
   `workspaces.Module.LinkScope`). easement
@@ -315,7 +318,7 @@ coding standards in `CODING_STANDARDS.md`.
   (`visitors.EraseSubject`, `events.EraseSubject`, `rules.EraseFirings` and the others
   `internal/usecase/contacterasure` sequences; the purge of its queued jobs is a method of the bus's
   publisher, which a name cannot forbid) are such items too. The tests of the operation live in the use case's own `_test` package
-  (`internal/usecase/tagdeletion`, `internal/usecase/customfieldretyping`, `internal/usecase/unsubscriberecording`, `internal/usecase/contactintake`; a retype's refusal is also tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
+  (`internal/usecase/tagdeletion`, `internal/usecase/customfieldretyping`, `internal/usecase/unsubscriberecording`; a retype's refusal is also tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
   rows. What the Removal check finds is tested in its own package
   (`internal/domain/orchestration/removalcheck`, with the writes that create a use waiting for the
   Workspace lock), and each removal that runs it races those writes in its use case's own

@@ -97,7 +97,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
-	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -764,9 +763,6 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*contactintake.UseCase, error) {
-		return contactintake.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i)), nil
-	}),
 	// The transactional send surface of /api: a Template sent through Outbound send.
 	do.Lazy(func(i do.Injector) (*transactionalsend.UseCase, error) {
 		return transactionalsend.New(do.MustInvoke[*emailtemplates.Module](i), do.MustInvoke[*outboundmessages.Module](i)), nil
@@ -970,7 +966,6 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Audit:                     edition.Audit,
 		Export:                    edition.Export,
 
-		Intake:      do.MustInvoke[*contactintake.UseCase](i),
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
 	}, nil
 }
