@@ -18,7 +18,7 @@ import (
 
 func prunePendingSignups(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	w := jobs.NewPrunePendingSignupsWorker(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords), func() time.Time { return now })
+	w := jobs.NewPrunePendingSignupsWorker(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now), func() time.Time { return now })
 	require.NoError(t, w.Work(t.Context(), &river.Job[jobs.PrunePendingSignupsArgs]{JobRow: &rivertype.JobRow{}}))
 }
 

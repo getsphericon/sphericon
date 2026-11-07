@@ -120,6 +120,10 @@ type usageRefreshWorker struct {
 	now    func() time.Time
 }
 
+func newUsageRefreshWorker(client *ent.Client, lic *licensekey.License, now func() time.Time) *usageRefreshWorker {
+	return &usageRefreshWorker{client: client, lic: lic, now: now}
+}
+
 func (w *usageRefreshWorker) Work(ctx context.Context, _ *river.Job[UsageRefreshArgs]) error {
 	return usages.Refresh(ctx, w.client, w.lic, w.now())
 }
@@ -155,6 +159,10 @@ type exportPruneWorker struct {
 	now       func() time.Time
 }
 
+func newExportPruneWorker(client *ent.Client, lic *licensekey.License, retention time.Duration, now func() time.Time) *exportPruneWorker {
+	return &exportPruneWorker{client: client, lic: lic, retention: retention, now: now}
+}
+
 func (w *exportPruneWorker) Work(ctx context.Context, _ *river.Job[ExportPruneArgs]) error {
 	_, err := erasures.Prune(ctx, w.client, w.lic, w.retention, w.now())
 	return err
@@ -176,7 +184,7 @@ func (e *Edition) Jobs() jobextension.Extension {
 	return jobextension.Extension{
 		Workers: func(w *river.Workers) {
 			river.AddWorker(w, &retentionPruneWorker{retention: auditlogretention.New(e.client, e.lic, e.now)})
-			river.AddWorker(w, &usageRefreshWorker{client: e.client, lic: e.lic, now: e.now})
+			river.AddWorker(w, newUsageRefreshWorker(e.client, e.lic, e.now))
 			river.AddWorker(w, &abuseDetectionWorker{detector: detector})
 			river.AddWorker(w, NewEntryEventWorker(e.client, e.lic))
 		},
@@ -195,7 +203,7 @@ func (e *Edition) Jobs() jobextension.Extension {
 func (e *Edition) ExportJobs(eventsRetention time.Duration) jobextension.Extension {
 	return jobextension.Extension{
 		Workers: func(w *river.Workers) {
-			river.AddWorker(w, &exportPruneWorker{client: e.client, lic: e.lic, retention: eventsRetention, now: e.now})
+			river.AddWorker(w, newExportPruneWorker(e.client, e.lic, eventsRetention, e.now))
 			river.AddWorker(w, NewErasureEventWorker(e.client, e.lic))
 		},
 		PeriodicJobs: []*river.PeriodicJob{every(erasures.Interval, ExportPruneArgs{})},

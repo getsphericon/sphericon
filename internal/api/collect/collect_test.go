@@ -145,6 +145,7 @@ func TestCollectIdentifyStitchesAnonymousEvents(t *testing.T) {
 	// segment (which joins Contact↔Event on contact_id, per ADR 0002).
 	pred, err := condition.ContactPredicate(ctx, env.DB.Scoped(fixtures.AcmeID),
 		`{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"page_view","operator":"atLeast","times":1}]}`,
+		time.Now(),
 	)
 	require.NoError(t, err)
 	n, err := env.DB.Contact.Query().Where(contact.IDEQ(ct.ID), pred).Count(ctx)

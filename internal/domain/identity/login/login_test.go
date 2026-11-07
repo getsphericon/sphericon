@@ -103,7 +103,7 @@ func newRig(t *testing.T, opts ...func(*login.Config[*ent.User])) rig {
 	env := testhelper.Setup(t)
 	clk := &clock{t: time.Now()}
 	counters := throttle.NewAttempts(env.DB,
-		throttle.WithClock(clk.now),
+		clk.now,
 		throttle.WithRule(throttle.KindLogin, throttle.LoginRule(2)),
 		throttle.WithRule(throttle.KindStaffLogin, throttle.LoginRule(2)))
 	r := rig{db: env.DB, clock: clk, login: counters.For(throttle.KindLogin), staff: counters.For(throttle.KindStaffLogin)}

@@ -20,5 +20,5 @@ func (h *Handlers) SiteConnectionsList(ctx context.Context, _ siteapi.SiteConnec
 
 // SiteConnectionsDelete revokes a Connection: the caller's own, or anyone's with members:manage.
 func (h *Handlers) SiteConnectionsDelete(ctx context.Context, params siteapi.SiteConnectionsDeleteParams) error {
-	return apitokens.RevokeConnection(ctx, workspaceScope(ctx), callerMembership(ctx), int64(params.ID))
+	return apitokens.RevokeConnection(ctx, workspaceScope(ctx), callerMembership(ctx), int64(params.ID), h.now())
 }

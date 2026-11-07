@@ -2,6 +2,7 @@ package suspension
 
 import (
 	"context"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -30,8 +31,8 @@ func BySystem() predicate.Workspace {
 // it (ADR 0007). notify is the memberships.Notify seam: the platform's system sender, not the
 // Workspace's own Integration, because the Workspace cannot send while suspended (ADR 0015).
 // supportEmail, when set, is where the Owner appeals. A nil notify or a Workspace that is not
-// suspended is a no-op. It stamps the abuse freeze notice marker once the notice went.
-func NotifyOwners(ctx context.Context, client *ent.Client, notify memberships.Notify, supportEmail string, workspaceID int64) error {
+// suspended is a no-op. It stamps the abuse freeze notice marker, at `at`, once the notice went.
+func NotifyOwners(ctx context.Context, client *ent.Client, notify memberships.Notify, supportEmail string, workspaceID int64, at time.Time) error {
 	if notify == nil {
 		return nil
 	}
@@ -55,5 +56,5 @@ func NotifyOwners(ctx context.Context, client *ent.Client, notify memberships.No
 	if err := notify.Tell(ctx, ws.ID, memberships.Notice{Subject: i18n.EmailWorkspaceSuspendedSubject, Body: i18n.EmailWorkspaceSuspendedBody}, data); err != nil {
 		return err
 	}
-	return workspaces.MarkAbuseFreezeNotified(ctx, client, ws.ID)
+	return workspaces.MarkAbuseFreezeNotified(ctx, client, ws.ID, at)
 }

@@ -129,7 +129,7 @@ var ErrTelegramSource = validation.RefuseField("sendingSource", "consent: a tele
 // Contact the id is Bound to. A manual opt-out is Channel-wide: only the `everything` source is
 // accepted here; a source-scoped one comes from the link in a message (the unsubscribe use case).
 // Idempotent.
-func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
+func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string, now time.Time) (*ent.Unsubscribe, error) {
 	dest := strings.TrimSpace(destination)
 	if dest == "" {
 		return nil, unsubscribes.ErrDestinationEmpty
@@ -140,7 +140,6 @@ func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, de
 	if source != eligibility.SourceEverything {
 		return nil, ErrTelegramSource
 	}
-	now := time.Now()
 	err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return StopTelegram(ctx, ts, pub, TelegramStop{
 			Destination: dest, Via: events.UnsubscribedByManual, Now: now,

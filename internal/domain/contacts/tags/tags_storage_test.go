@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	return entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx)
+	return entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx, time.Now)
 }
 
 // A storage failure surfaces as the underlying error: it is never mistaken for a

@@ -78,7 +78,7 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *en
 		return nil, err
 	}
 	id := w.ID
-	changed, err := suspension.UnsuspendWorkspace(ctx, m.bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)))
+	changed, err := suspension.UnsuspendWorkspace(ctx, m.bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), m.now())
 	if err != nil {
 		return nil, err
 	}

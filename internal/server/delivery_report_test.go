@@ -21,7 +21,7 @@ import (
 // pruneAllAnalytical expires every analytical Event, as retention does once they are old enough.
 func pruneAllAnalytical(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	_, err := events.PruneEvents(t.Context(), env.DB, time.Nanosecond, 1000)
+	_, err := events.PruneEvents(t.Context(), env.DB, time.Nanosecond, 1000, time.Now())
 	require.NoError(t, err)
 }
 

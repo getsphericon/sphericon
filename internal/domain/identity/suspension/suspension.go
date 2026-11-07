@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -65,7 +66,7 @@ func (a Actor) auditActor() events.Actor {
 // changed: suspending an already-suspended Workspace is a no-op, so the first actor
 // and reason — the ones the owner was told about — are never overwritten. A change is
 // recorded as `workspace.suspend` in the Workspace's Audit log in the same transaction.
-func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, reason string) (bool, error) {
+func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, reason string, at time.Time) (bool, error) {
 	reason = strings.TrimSpace(reason)
 	if err := by.validate(); err != nil {
 		return false, fmt.Errorf("suspend workspace: %w", err)
@@ -75,7 +76,7 @@ func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, b
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := workspaces.SuspendIn(ctx, tx, workspaceID, by.Kind, nilIfEmpty(by.ID), reason)
+		n, err := workspaces.SuspendIn(ctx, tx, workspaceID, by.Kind, nilIfEmpty(by.ID), reason, at)
 		if err != nil || n == 0 {
 			return err
 		}
@@ -94,13 +95,13 @@ func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, b
 // (ADR 0026) counts only Events after the clearance. It reports whether the Workspace was
 // suspended. Held sends resume on their own: the jobs that were snoozed ask Outbound
 // send again.
-func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor) (bool, error) {
+func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, at time.Time) (bool, error) {
 	if err := by.validate(); err != nil {
 		return false, fmt.Errorf("unsuspend workspace: %w", err)
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := workspaces.UnsuspendIn(ctx, tx, workspaceID)
+		n, err := workspaces.UnsuspendIn(ctx, tx, workspaceID, at)
 		if err != nil || n == 0 {
 			return err
 		}

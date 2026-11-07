@@ -148,7 +148,7 @@ func TestSetRefusesAnInvalidOrOwnHost(t *testing.T) {
 
 func TestSetIsRefusedWhileTheFeatureIsOff(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := trackingdomains.New(env.DB, env.Bus, nil, trackingdomains.Config{})
+	m := trackingdomains.New(env.DB, env.Bus, nil, trackingdomains.Config{Now: time.Now})
 
 	_, err := m.Set(t.Context(), env.DB.Scoped(fixtures.KramericaID), "t.kramerica.test")
 	require.ErrorIs(t, err, trackingdomains.ErrOff)

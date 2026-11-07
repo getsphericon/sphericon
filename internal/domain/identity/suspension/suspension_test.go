@@ -3,6 +3,7 @@ package suspension_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,7 @@ func TestSuspendWorkspaceRecordsAttribution(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, "complaint rate 0.9%")
+	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, "complaint rate 0.9%", time.Now())
 	require.NoError(t, err)
 	assert.True(t, changed)
 
@@ -36,9 +37,9 @@ func TestSuspendWorkspaceIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "first")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "first", time.Now())
 	require.NoError(t, err)
-	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, "second")
+	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, "second", time.Now())
 	require.NoError(t, err)
 	assert.False(t, changed)
 
@@ -51,9 +52,9 @@ func TestUnsuspendWorkspaceClearsEverything(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, "abuse")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, "abuse", time.Now())
 	require.NoError(t, err)
-	changed, err := suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI)
+	changed, err := suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, time.Now())
 	require.NoError(t, err)
 	assert.True(t, changed)
 
@@ -63,7 +64,7 @@ func TestUnsuspendWorkspaceClearsEverything(t *testing.T) {
 	assert.Nil(t, ws.SuspendedByID)
 	assert.Nil(t, ws.SuspensionReason)
 
-	changed, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI)
+	changed, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, time.Now())
 	require.NoError(t, err)
 	assert.False(t, changed, "unsuspending a workspace that is not suspended is a no-op")
 }
@@ -71,7 +72,7 @@ func TestUnsuspendWorkspaceClearsEverything(t *testing.T) {
 func TestSuspendWorkspaceRequiresAReason(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "  ")
+	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "  ", time.Now())
 	require.Error(t, err, "attribution needs a reason: the owner is told why")
 }
 
@@ -80,7 +81,7 @@ func TestSuspendWorkspaceKeepsTheStaffId(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report", time.Now())
 	require.NoError(t, err)
 
 	ws := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
@@ -94,11 +95,11 @@ func TestSuspendWorkspaceRejectsAnInvalidActor(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember(""), "abuse")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember(""), "abuse", time.Now())
 	require.Error(t, err, "a StaffMember without an id")
-	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Actor{}, "abuse")
+	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Actor{}, "abuse", time.Now())
 	require.Error(t, err, "no actor")
-	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Actor{Kind: workspace.SuspendedByKindSystem, ID: "x"}, "abuse")
+	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Actor{Kind: workspace.SuspendedByKindSystem, ID: "x"}, "abuse", time.Now())
 	require.Error(t, err, "only a StaffMember has an id")
 }
 
@@ -111,7 +112,7 @@ func TestUnsuspendFixtureWorkspaceClearsTheStructuredActor(t *testing.T) {
 	require.NotNil(t, ws.SuspendedByKind)
 	require.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 
-	changed, err := suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.HooliID, suspension.CLI)
+	changed, err := suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.HooliID, suspension.CLI, time.Now())
 	require.NoError(t, err)
 	assert.True(t, changed)
 	ws = env.DB.Workspace.GetX(ctx, fixtures.HooliID)
@@ -122,7 +123,7 @@ func TestUnsuspendFixtureWorkspaceClearsTheStructuredActor(t *testing.T) {
 func TestSuspendedPredicatesFollowTheSuspension(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaint rate 0.9%")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaint rate 0.9%", time.Now())
 	require.NoError(t, err)
 
 	suspended, err := env.DB.Workspace.Query().Where(suspension.Suspended(), workspace.ID(fixtures.AcmeID)).IDs(ctx)

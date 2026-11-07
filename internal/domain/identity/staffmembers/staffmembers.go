@@ -55,7 +55,7 @@ type Config struct {
 	SessionTTL time.Duration
 	// SecureCookies sets the cookie's Secure attribute (the instance is served over HTTPS).
 	SecureCookies bool
-	// Clock is the clock of TOTP codes, challenges and session expiry; nil is time.Now.
+	// Clock is the Instance clock of TOTP codes, challenges and session expiry. Required.
 	Clock func() time.Time
 	// Passwords hashes the password a Staff member is created with, and the login's decoy.
 	Passwords *credentials.Hasher
@@ -110,11 +110,11 @@ func New(client *ent.Client, cipher *secrets.Cipher, siteSecrets []string, cfg C
 	}
 	now := cfg.Clock
 	if now == nil {
-		now = time.Now
+		return nil, errors.New("staffmembers: Config.Clock is required: the module reads the Instance clock")
 	}
 	m := &Module{ent: client, cipher: cipher, passwords: cfg.Passwords, now: now}
 	if cfg.SignIn() {
-		m.challenges = authtoken.New(cfg.Secret).WithClock(now)
+		m.challenges = authtoken.New(cfg.Secret, now)
 		m.login = m.newLogin(cfg.Attempts.For(loginKind))
 		m.sessions = newSessions(client, cfg, now)
 	}

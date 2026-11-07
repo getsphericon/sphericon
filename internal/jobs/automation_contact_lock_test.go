@@ -71,7 +71,7 @@ func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers ...wr
 func enrolledForTheExit(t *testing.T, e *realEnv) (int64, writer) {
 	t.Helper()
 	ctx := context.Background()
-	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationJobsTagWithExitID, fixtures.ContactAliceID)
+	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationJobsTagWithExitID, fixtures.ContactAliceID, time.Now())
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	ending := e.bus(t)
@@ -144,7 +144,7 @@ func TestAnErasureAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 			e := newRealEnv(t)
 			ctx := context.Background()
 			runID, exit := enrolledForTheExit(t, e)
-			erasing := contacterasure.New(e.bus(t))
+			erasing := contacterasure.New(e.bus(t), time.Now)
 			erase := writer{name: "erase", run: func() error {
 				return erasing.Erase(ctx, e.scoped, contacterasure.Identifier{ContactID: fixtures.ContactAliceID}, contacterasure.Requester{Kind: contacterasure.RequesterAPIToken})
 			}}

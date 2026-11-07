@@ -43,7 +43,7 @@ func TestClientRefusesLoopbackWithoutAllowlist(t *testing.T) {
 	byName := "http://localhost:" + u.Port()
 
 	for _, target := range []string{srv.URL, byName} {
-		err := webhook.Send(t.Context(), webhook.NewClient(2*time.Second), target, testSecret, "x", "msg_1", []byte(`{}`))
+		err := webhook.Send(t.Context(), webhook.NewClient(2*time.Second), target, testSecret, "x", "msg_1", []byte(`{}`), time.Now())
 		require.Error(t, err, target)
 	}
 }
@@ -70,7 +70,7 @@ func TestClientReachesAnAllowlistedReceiverAndItVerifiesTheSignature(t *testing.
 		w.WriteHeader(http.StatusAccepted)
 	})
 
-	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "contact.created", "evt_1", body)
+	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "contact.created", "evt_1", body, time.Now())
 	require.NoError(t, err)
 	require.NoError(t, verifyErr)
 	assert.Equal(t, "contact.created", gotEvent)
@@ -86,7 +86,7 @@ func TestAllowlistNamesThePortToo(t *testing.T) {
 	allow, err := webhook.ParseAllowlist("127.0.0.1:" + otherPort)
 	require.NoError(t, err)
 
-	err = webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "x", "msg_1", []byte(`{}`))
+	err = webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "x", "msg_1", []byte(`{}`), time.Now())
 	require.Error(t, err)
 }
 
@@ -98,7 +98,7 @@ func TestClientDoesNotFollowRedirects(t *testing.T) {
 		http.Redirect(w, r, target.URL, http.StatusFound)
 	})
 
-	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "x", "msg_1", []byte(`{}`))
+	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "x", "msg_1", []byte(`{}`), time.Now())
 	require.ErrorContains(t, err, "302")
 	assert.Zero(t, hits)
 }
@@ -106,7 +106,7 @@ func TestClientDoesNotFollowRedirects(t *testing.T) {
 func TestSendErrorsOnNon2xx(t *testing.T) {
 	srv, allow := receiver(t, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusInternalServerError) })
 
-	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "x", "msg_1", []byte(`{}`))
+	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "x", "msg_1", []byte(`{}`), time.Now())
 	require.ErrorContains(t, err, "500")
 }
 

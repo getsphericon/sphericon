@@ -3,6 +3,7 @@ package automations_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,7 @@ func TestEncodeSanitizesAnEmailStepBody(t *testing.T) {
 
 func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 
 	a, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
@@ -79,7 +80,7 @@ func automationNames(t *testing.T, env *testhelper.TestEnv) []string {
 
 func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	before := automationNames(t, env)
 
@@ -104,7 +105,7 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 
 func TestListIsNewestFirstWithinTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	page, err := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule()).List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, automations.ListFilter{})
+	page, err := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now).List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, automations.ListFilter{})
 	require.NoError(t, err)
 	require.Greater(t, page.TotalItems, 1)
 	for _, a := range page.Items {
@@ -116,7 +117,7 @@ func TestListIsNewestFirstWithinTheWorkspace(t *testing.T) {
 
 func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	before, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
@@ -136,7 +137,7 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 
 func TestPublishAndDeactivateFlipTheStatus(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 
 	off, err := m.Deactivate(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
@@ -155,7 +156,7 @@ func TestPublishAndDeactivateFlipTheStatus(t *testing.T) {
 // by id, and archiving it again changes nothing.
 func TestArchiveKeepsANeverPublishedAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
@@ -175,7 +176,7 @@ func TestArchiveKeepsANeverPublishedAutomation(t *testing.T) {
 // row is untouched.
 func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	foreign := env.DB.Automation.GetX(ctx, fixtures.AutomationGlobexID)
 
@@ -205,7 +206,7 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 // are refused as archived (409), and change nothing.
 func TestAnArchivedAutomationIsNeitherPublishedNorDeactivated(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	_, err := m.Archive(ctx, acme, fixtures.AutomationNotifySlackID)
@@ -227,7 +228,7 @@ func TestAnArchivedAutomationIsNeitherPublishedNorDeactivated(t *testing.T) {
 // (spec #767, "In use"): a draft that names it keeps it, an archived Automation does not.
 func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	using := func() []string {
@@ -246,7 +247,7 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 	drafted := using()
 	assert.ElementsMatch(t, []string{fixtures.AutomationWinBackName, fixtures.AutomationTagOnEngagementName}, drafted, "a draft names it too")
 
-	require.NoError(t, acme.Automation().Archive(ctx, fixtures.AutomationTagOnEngagementID))
+	require.NoError(t, acme.Automation().Archive(ctx, fixtures.AutomationTagOnEngagementID, time.Now()))
 	archived := using()
 	assert.Equal(t, []string{fixtures.AutomationWinBackName}, archived, "an archived Automation uses nothing")
 }
@@ -258,7 +259,7 @@ func emailVia(id *int64) automationstep.Step {
 
 func TestEachEmailStepSavesTheIntegrationItSendsThrough(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	mailgun, smtp := int64(fixtures.IntegrationAcmeMailgunID), int64(fixtures.IntegrationAcmeDefaultID)
@@ -285,10 +286,10 @@ func TestEachEmailStepSavesTheIntegrationItSendsThrough(t *testing.T) {
 
 func TestAnAutomationRefusesAStepIntegrationThatIsMissingOrArchived(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID))
+	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID, time.Now()))
 	before := automationNames(t, env)
 
 	for name, id := range map[string]int64{"unknown": 999999, "archived": fixtures.IntegrationAcmeMailgunID} {

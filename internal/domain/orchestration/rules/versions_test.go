@@ -31,7 +31,7 @@ func appliedTags(t *testing.T, v *ent.RuleVersion) []string {
 func TestCreateStoresTheDefinitionAsTheDraftOfAnInactiveRule(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	r, err := rules.New(env.Cipher, env.Bus).Create(context.Background(), acme(env), rules.CreateInput{
+	r, err := rules.New(env.Cipher, env.Bus, time.Now).Create(context.Background(), acme(env), rules.CreateInput{
 		Name: "new", TriggerEvents: []string{"signed_up"}, Actions: tagAction("fresh"),
 	})
 
@@ -50,7 +50,7 @@ func TestCreateStoresTheDefinitionAsTheDraftOfAnInactiveRule(t *testing.T) {
 func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	triggers := []string{"rule_vip", "rule_vip_again"}
 	cond := `{"kind":"group","combinator":"and","rules":[]}`
 	actions := tagAction("rule-vip-edited")
@@ -89,7 +89,7 @@ func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 func TestARewrittenDraftKeepsTheFieldsAnEditLeavesOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	actions := tagAction("rule-clicked-v3")
 
 	r, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Actions: &actions})
@@ -105,7 +105,7 @@ func TestARewrittenDraftKeepsTheFieldsAnEditLeavesOut(t *testing.T) {
 func TestAnUnchangedDefinitionMakesNoDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	name := "Renamed"
 	triggers := []string{"rule_vip"}
 	cond := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}`
@@ -122,7 +122,7 @@ func TestAnUnchangedDefinitionMakesNoDraft(t *testing.T) {
 func TestAnEmptyConditionGroupIsNoChangeToAVersionWithNoCondition(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	empty := `{"kind":"group","combinator":"and","rules":[]}`
 	triggers := []string{"rule_multi_a", "rule_multi_b"}
 
@@ -136,7 +136,7 @@ func TestAnEmptyConditionGroupIsNoChangeToAVersionWithNoCondition(t *testing.T) 
 func TestPublishRefusesADraftWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	none := []rules.Action{}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Actions: &none})
 	require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestADraftThatNamesATagUsesIt(t *testing.T) {
 func TestOnlyTheLiveVersionOfAnActiveRuleEnrollsInAnAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	enroll := []rules.Action{{Type: rules.ActionEnroll, AutomationID: fixtures.AutomationJobsWaitFirstID}}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Actions: &enroll})
 	require.NoError(t, err)

@@ -498,7 +498,7 @@ var archivable = []broadcast.Status{broadcast.StatusDraft, broadcast.StatusSent,
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	var archived *ent.Broadcast
 	err := m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		err := ts.Broadcast().Archive(ctx, id, broadcast.StatusIn(archivable...))
+		err := ts.Broadcast().Archive(ctx, id, m.out.Now(), broadcast.StatusIn(archivable...))
 		if err != nil && !ent.IsNotFound(err) {
 			return err
 		}

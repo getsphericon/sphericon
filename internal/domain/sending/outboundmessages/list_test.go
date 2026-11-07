@@ -3,6 +3,7 @@ package outboundmessages_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ import (
 
 func TestListTransactionalPagesOnlyTransactionalMessagesNewestFirst(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := newModule(env)
+	m := newModule(env, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	all, err := m.ListTransactional(context.Background(), s, pagination.Params{Page: 1, PageSize: 100})

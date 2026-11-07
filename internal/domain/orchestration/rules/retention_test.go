@@ -25,7 +25,7 @@ func firingPresent(t *testing.T, env *testhelper.TestEnv, id int64) bool {
 func TestPruneRuleFiringsDeletesInBoundedBatches(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	deleted, err := rules.PruneFirings(context.Background(), env.DB, eventsRetention, 1)
+	deleted, err := rules.PruneFirings(context.Background(), env.DB, eventsRetention, 1, time.Now())
 
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), deleted)

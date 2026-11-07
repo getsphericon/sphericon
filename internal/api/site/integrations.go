@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -20,7 +19,7 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, _ siteapi.SiteInteg
 		return nil, err
 	}
 
-	limits, err := providerlimit.Statuses(ctx, s, rows, time.Now())
+	limits, err := providerlimit.Statuses(ctx, s, rows, h.now())
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +165,7 @@ func (h *Handlers) integrationToResource(row *ent.Integration, limit providerlim
 // integrationResource renders one Integration with its 24-hour usage, for the
 // single-row responses (get, create, update).
 func (h *Handlers) integrationResource(ctx context.Context, s *ent.Scoped, row *ent.Integration) (siteapi.SiteIntegrationResource, error) {
-	limits, err := providerlimit.Statuses(ctx, s, []*ent.Integration{row}, time.Now())
+	limits, err := providerlimit.Statuses(ctx, s, []*ent.Integration{row}, h.now())
 	if err != nil {
 		return siteapi.SiteIntegrationResource{}, err
 	}

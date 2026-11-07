@@ -38,7 +38,7 @@ func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 	assert.Equal(t, []string{"rule_vip", "anything"}, draft.TriggerEvents)
 	assert.Equal(t, "hijacked", draft.Actions[0].Tag.Or(""))
 
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	bob, err := m.Evaluate(ctx, s, rules.Event{ContactID: fixtures.ContactBobID, Action: "rule_vip", SourceID: "evt-748-bob", RecordedAt: time.Now()})
 	require.NoError(t, err)

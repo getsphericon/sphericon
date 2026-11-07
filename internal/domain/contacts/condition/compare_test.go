@@ -191,7 +191,7 @@ func TestTriggerNumberLeafIsValidOnlyInARule(t *testing.T) {
 	env := testhelper.Setup(t)
 	g := opsGroup(numberLeaf("trigger:score", siteapi.SiteConditionNumberOperatorGt, 1))
 
-	_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), g)
+	_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), g, time.Now())
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "only in a Rule")
@@ -215,7 +215,7 @@ func TestCompileRefusesANumberLeafThatDoesNotFit(t *testing.T) {
 		"a date operator":     {numberLeaf(score, "before", 1), "unsupported operator"},
 		"no value":            {withoutValue, "value is required"},
 	} {
-		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(tc.leaf))
+		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(tc.leaf), time.Now())
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
@@ -250,7 +250,7 @@ func TestCompileRefusesADateLeafThatDoesNotFit(t *testing.T) {
 		"a window of no days":       {dateWithin(seenAt, 0), "withinDays must be 1 or more"},
 		"a window of negative days": {dateWithin(seenAt, -1), "withinDays must be 1 or more"},
 	} {
-		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(tc.leaf))
+		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(tc.leaf), time.Now())
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
@@ -269,7 +269,7 @@ func TestCompileRefusesARuleOperatorThatDoesNotFitTheCustomFieldType(t *testing.
 		"beginsWith on a string":   rule("custom:"+fixtures.CustomFieldWonkaPlanKey, "beginsWith", "p"),
 		"a number operator on one": rule(score, "gt", "1"),
 	} {
-		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(leaf))
+		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(leaf), time.Now())
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "unsupported operator", name)
 	}
@@ -286,7 +286,7 @@ func TestEveryListedRuleOperatorCompiles(t *testing.T) {
 
 	for typ, field := range fields {
 		for _, op := range condition.RuleOperators(typ) {
-			_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(rule(field, op, "x")))
+			_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(rule(field, op, "x")), time.Now())
 			require.NoError(t, err, "%s on %s", op, typ)
 		}
 	}
@@ -297,7 +297,7 @@ func TestRuleRefusesADateLeafOnATriggerProperty(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := condition.RulePredicate(context.Background(), s, encode(t, opsGroup(dateWithin("trigger:at", 7))), nil)
+	_, err := condition.RulePredicate(context.Background(), s, encode(t, opsGroup(dateWithin("trigger:at", 7))), nil, time.Now())
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "takes a custom field of type datetime")

@@ -94,7 +94,7 @@ func automationView(a *ent.Automation, err error) (view, error) {
 }
 
 func automationKind(env *testhelper.TestEnv) kind {
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	return kind{
 		target: "automation",
 		live:   fixtures.AutomationHoldDemoID, liveMark: "hold_demo",
@@ -154,7 +154,7 @@ func ruleView(r *ent.Rule, err error) (view, error) {
 }
 
 func ruleKind(env *testhelper.TestEnv) kind {
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	return kind{
 		target: "rule",
 		live:   fixtures.RuleVipOnlyID, liveMark: "rule_vip",

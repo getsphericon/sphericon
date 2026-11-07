@@ -25,7 +25,7 @@ var (
 // Workspace publicID names, as a surface would before admitting it.
 func admission(t *testing.T, env *testhelper.TestEnv, userID int64, publicID string) (*users.Module, *ent.Membership) {
 	t.Helper()
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 	_, m, err := memberships.New(env.DB, env.Bus).Scope(t.Context(), userID, publicID)
 	require.NoError(t, err)
 	return acc, m
@@ -70,7 +70,7 @@ func TestTheTwoFactorRequirementWithholdsAMemberOnceTheGraceEnds(t *testing.T) {
 
 func TestTheTwoFactorRequirementDoesNotWithholdOutsideItsWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 
 	err := acc.Admit(t.Context(), users.Admission{UserID: fixtures.UmbrellaOwnerRitaID, At: afterRitasEnd})
 

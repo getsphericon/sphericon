@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
@@ -21,12 +22,14 @@ type Suspender struct {
 	client  *ent.Client
 	notify  memberships.Notify
 	support string
+	now     func() time.Time
 }
 
 // NewSuspender is the Suspender that suspends through bus and tells the owners through notify
-// (the platform's system sender, nil for none), giving supportEmail as where they appeal.
-func NewSuspender(bus *events.Bus, client *ent.Client, notify memberships.Notify, supportEmail string) *Suspender {
-	return &Suspender{bus: bus, client: client, notify: notify, support: supportEmail}
+// (the platform's system sender, nil for none), giving supportEmail as where they appeal, on the
+// Instance clock now.
+func NewSuspender(bus *events.Bus, client *ent.Client, notify memberships.Notify, supportEmail string, now func() time.Time) *Suspender {
+	return &Suspender{bus: bus, client: client, notify: notify, support: supportEmail, now: now}
 }
 
 // Suspend suspends the Workspace as by and tells its owners why. It reports whether anything
@@ -34,11 +37,12 @@ func NewSuspender(bus *events.Bus, client *ent.Client, notify memberships.Notify
 // A notice that cannot be sent does not undo the suspension: it reports true with an error
 // that wraps ErrNoticeNotSent.
 func (s *Suspender) Suspend(ctx context.Context, workspaceID int64, by Actor, reason string) (bool, error) {
-	changed, err := SuspendWorkspace(ctx, s.bus, workspaceID, by, reason)
+	at := s.now()
+	changed, err := SuspendWorkspace(ctx, s.bus, workspaceID, by, reason, at)
 	if err != nil || !changed {
 		return changed, err
 	}
-	if err := NotifyOwners(ctx, s.client, s.notify, s.support, workspaceID); err != nil {
+	if err := NotifyOwners(ctx, s.client, s.notify, s.support, workspaceID, at); err != nil {
 		return true, fmt.Errorf("%w: %w", ErrNoticeNotSent, err)
 	}
 	return true, nil

@@ -383,7 +383,7 @@ func (m *UseCase) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, now t
 	}
 	var items []Item
 	for _, b := range scheduled {
-		audience, err := broadcasts.AudienceSize(ctx, s, b)
+		audience, err := broadcasts.AudienceSize(ctx, s, b, now)
 		if errors.Is(err, broadcasts.ErrNoAudience) {
 			// Its plan fails it instead, a failure of its own: it draws nothing from the bucket.
 			continue

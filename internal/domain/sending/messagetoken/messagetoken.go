@@ -35,6 +35,8 @@ const confirmTTL = 7 * 24 * time.Hour
 // Tracker mints recipient tokens and builds tracking URLs against baseURL.
 type Tracker struct {
 	secret []byte
+	// now is the Instance clock a confirmation link expires by.
+	now func() time.Time
 	// verifyWith are the secondary secrets (a JWT secret rotation in progress): a token that
 	// does not verify under secret is checked against each, so links already mailed keep working.
 	verifyWith [][]byte
@@ -42,9 +44,9 @@ type Tracker struct {
 }
 
 // New builds a Tracker. baseURL is the public origin (e.g. https://sphericon.localhost);
-// a trailing slash is trimmed.
-func New(secret, baseURL string, verifyWith ...string) *Tracker {
-	t := &Tracker{secret: []byte(secret), baseURL: strings.TrimRight(baseURL, "/")}
+// a trailing slash is trimmed. now is the Instance clock a confirmation link expires by.
+func New(secret, baseURL string, now func() time.Time, verifyWith ...string) *Tracker {
+	t := &Tracker{secret: []byte(secret), now: now, baseURL: strings.TrimRight(baseURL, "/")}
 	for _, v := range verifyWith {
 		t.verifyWith = append(t.verifyWith, []byte(v))
 	}
@@ -103,7 +105,7 @@ func (t *Tracker) sign(claims jwt.Claims) (string, error) {
 }
 
 func (t *Tracker) parse(token string, claims jwt.Claims, opts ...jwt.ParserOption) error {
-	opts = append([]jwt.ParserOption{jwt.WithValidMethods([]string{"HS256"})}, opts...)
+	opts = append([]jwt.ParserOption{jwt.WithValidMethods([]string{"HS256"}), jwt.WithTimeFunc(t.now)}, opts...)
 	var err error
 	for _, secret := range append([][]byte{t.secret}, t.verifyWith...) {
 		if _, err = jwt.ParseWithClaims(token, claims, func(*jwt.Token) (any, error) { return secret, nil }, opts...); err == nil {
@@ -203,7 +205,7 @@ func (t *Tracker) DecodeUnsub(token string) (linktarget.Unsubscribe, error) {
 // numeric date so DecodeConfirm can reject a stale link.
 func (t *Tracker) confirmToken(target linktarget.Confirmation) (string, error) {
 	return t.sign(&confirmClaims{
-		ExpiresAt:   jwt.NewNumericDate(time.Now().Add(confirmTTL)),
+		ExpiresAt:   jwt.NewNumericDate(t.now().Add(confirmTTL)),
 		Destination: target.Destination,
 		WorkspaceID: target.WorkspaceID,
 		ContactID:   target.ContactID,

@@ -35,7 +35,7 @@ type license bool
 func (l license) Licensed() bool { return bool(l) }
 
 func module(env *testhelper.TestEnv, lic webhookendpoints.Licensing) *webhookendpoints.Module {
-	return webhookendpoints.New(env.Bus, env.Cipher, lic, webhook.NewClient(2*time.Second), nil)
+	return webhookendpoints.New(env.Bus, env.Cipher, lic, webhook.NewClient(2*time.Second), nil, time.Now)
 }
 
 // moduleAllowing is the module with a client the Instance's allowlist lets reach rcv.
@@ -45,7 +45,7 @@ func moduleAllowing(t *testing.T, env *testhelper.TestEnv, rcv *receiver) *webho
 	require.NoError(t, err)
 	allow, err := webhook.ParseAllowlist(u.Host)
 	require.NoError(t, err)
-	return webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClientAllowing(2*time.Second, allow), nil)
+	return webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClientAllowing(2*time.Second, allow), nil, time.Now)
 }
 
 // Fixtures (workspace 1): endpoint 100 (codebasics, filtered, secret whsec_Mf...)
@@ -439,7 +439,7 @@ func newRecording(t *testing.T) *recording {
 	o := &owners{}
 	return &recording{
 		t: t, env: env, owners: o,
-		mod: webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), o.notify),
+		mod: webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), o.notify, time.Now),
 		now: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC),
 	}
 }
@@ -587,7 +587,7 @@ func TestRecordDeliveryDisablesOnlyWhenTheRunReachedTheCountAndTheWindow(t *test
 // Without a notifier the endpoint still disables.
 func TestRecordDeliveryDisablesWithoutANotifier(t *testing.T) {
 	env := testhelper.Setup(t)
-	mod := webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), nil)
+	mod := webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), nil, time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	e, err := acme.WebhookEndpoint().Get(context.Background(), fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)

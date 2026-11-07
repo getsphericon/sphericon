@@ -32,7 +32,7 @@ func newAttempts(t *testing.T) (*throttle.Attempts, *clock, *testhelper.TestEnv)
 	env := testhelper.Setup(t)
 	c := &clock{t: time.Now()}
 	a := throttle.NewAttempts(env.DB,
-		throttle.WithClock(c.now),
+		c.now,
 		throttle.WithRule(throttle.KindLogin, throttle.LoginRule(5)),
 	)
 	return a, c, env
@@ -123,7 +123,7 @@ func TestUnknownEmailsGetRowsLikeKnownOnes(t *testing.T) {
 
 func TestDisabledRuleNeverDelaysOrWrites(t *testing.T) {
 	env := testhelper.Setup(t)
-	a := throttle.NewAttempts(env.DB, throttle.WithRule(throttle.KindLogin, throttle.LoginRule(0)))
+	a := throttle.NewAttempts(env.DB, time.Now, throttle.WithRule(throttle.KindLogin, throttle.LoginRule(0)))
 	fail(t, a, "x@attempts.test", 20)
 	assert.Zero(t, delay(t, a, "x@attempts.test"))
 	n, err := env.DB.AuthAttempt.Query().Where(authattempt.Email("x@attempts.test")).Count(t.Context())
@@ -133,7 +133,7 @@ func TestDisabledRuleNeverDelaysOrWrites(t *testing.T) {
 
 func TestPurgeRemovesStaleRowsOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	a := throttle.NewAttempts(env.DB)
+	a := throttle.NewAttempts(env.DB, time.Now)
 	removed, err := a.Purge(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, removed)
@@ -148,7 +148,7 @@ func TestResetBudgetGrantsThresholdSlotsAndReopensAfterTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := &clock{t: time.Now()}
 	a := throttle.NewAttempts(env.DB,
-		throttle.WithClock(c.now),
+		c.now,
 		throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(3)))
 	const email = "Reset@Attempts.test"
 	take := func() bool {
@@ -172,7 +172,7 @@ func TestResetBudgetGrantsThresholdSlotsAndReopensAfterTheWindow(t *testing.T) {
 
 func TestResetBudgetNeverRefusesWhenDisabled(t *testing.T) {
 	env := testhelper.Setup(t)
-	a := throttle.NewAttempts(env.DB)
+	a := throttle.NewAttempts(env.DB, time.Now)
 	for range 5 {
 		ok, err := a.Take(t.Context(), throttle.KindPasswordReset, "x@attempts.test")
 		require.NoError(t, err)
@@ -188,7 +188,7 @@ func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
 	client := entclient.New(testhelper.RealDB(t))
 	const email = "race@attempts.test"
 
-	a := throttle.NewAttempts(client, throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(3)))
+	a := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(3)))
 	const workers = 24
 	var granted atomic.Int32
 	var wg sync.WaitGroup

@@ -36,7 +36,7 @@ func (h *Handlers) CustomFieldsUpdate(ctx context.Context, req *externalapi.Upda
 func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalapi.SendingDomainRatesListParams) (*externalapi.SendingDomainRatesListOK, error) {
 	days := params.WindowDays.Value
 
-	rates, err := h.reputation.Rates(ctx, auth.TokenScoped(ctx), reputation.Trailing(time.Duration(days)*24*time.Hour))
+	rates, err := h.reputation.Rates(ctx, auth.TokenScoped(ctx), reputation.Trailing(time.Duration(days)*24*time.Hour, h.now()))
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package customfieldretyping_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,7 +37,7 @@ func newRetypeRace(t *testing.T) *retypeRace {
 	ctx := context.Background()
 	race := testhelper.NewWorkspaceRace(t, fixtures.DuffID)
 	s, bus := race.Scope, race.Bus
-	segs, ruleset, retyping := segments.New(bus), rules.New(testhelper.Cipher(t), bus), customfieldretyping.New(bus)
+	segs, ruleset, retyping := segments.New(bus, time.Now), rules.New(testhelper.Cipher(t), bus, time.Now), customfieldretyping.New(bus)
 	r := &retypeRace{WorkspaceRace: race, savedID: new(int64)}
 	r.retype = testhelper.Writer{Name: "retype", Run: func() error {
 		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Type: patch.Set(string(customfield.TypeString))})

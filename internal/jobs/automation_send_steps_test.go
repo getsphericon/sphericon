@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -94,7 +95,7 @@ func TestAHeldIntegrationStopsOnlyTheStepsThatSendThroughIt(t *testing.T) {
 			env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(t.Context())
 		},
 		"archived": func(env *testhelper.TestEnv) {
-			require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().Discard(t.Context(), fixtures.IntegrationAcmeMailgunID))
+			require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().Discard(t.Context(), fixtures.IntegrationAcmeMailgunID, time.Now()))
 		},
 	}
 	for name, makeUnusable := range unusable {

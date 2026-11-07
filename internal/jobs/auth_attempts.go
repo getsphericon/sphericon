@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"time"
 
 	"github.com/riverqueue/river"
 
@@ -20,14 +21,16 @@ type PurgeAuthAttemptsWorker struct {
 	river.WorkerDefaults[PurgeAuthAttemptsArgs]
 
 	ent *ent.Client
+	now func() time.Time
 }
 
-// NewPurgeAuthAttemptsWorker builds the purge of failed sign-in attempts past their window.
-func NewPurgeAuthAttemptsWorker(client *ent.Client) *PurgeAuthAttemptsWorker {
-	return &PurgeAuthAttemptsWorker{ent: client}
+// NewPurgeAuthAttemptsWorker builds the purge of failed sign-in attempts past their window, by the
+// Instance clock now.
+func NewPurgeAuthAttemptsWorker(client *ent.Client, now func() time.Time) *PurgeAuthAttemptsWorker {
+	return &PurgeAuthAttemptsWorker{ent: client, now: now}
 }
 
 func (w *PurgeAuthAttemptsWorker) Work(ctx context.Context, _ *river.Job[PurgeAuthAttemptsArgs]) error {
-	_, err := throttle.NewAttempts(w.ent).Purge(ctx)
+	_, err := throttle.NewAttempts(w.ent, w.now).Purge(ctx)
 	return err
 }

@@ -96,8 +96,8 @@ func storedEvent(ctx context.Context, s *ent.Scoped, sourceID string) (*ent.Even
 // Contact has been enrolled before (the common trigger-replay path) or another request won the
 // race. enrolled says that a step is to run: it is false too for an Enrollment made already ended
 // (enroll). The Contact's lock is held to the end of the transaction s is bound to.
-func Enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64) (runID int64, enrolled bool, err error) {
-	return enroll(ctx, s, pub, automationID, contactID, Origin{OccurredAt: time.Now()}, admitsAll)
+func Enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, now time.Time) (runID int64, enrolled bool, err error) {
+	return enroll(ctx, s, pub, automationID, contactID, Origin{OccurredAt: now}, admitsAll)
 }
 
 // EnrollOnRule enrolls the Contact as Enroll does, for a Rule that fired on the Event stored with
@@ -107,12 +107,12 @@ func Enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 // The Rule job reads the Automation before it enrolls, so a Deactivate or an Archive may have
 // landed since: under the lock it enrolls nobody and returns ErrInactive unless the Automation is
 // still kept and active (ADR 0099).
-func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, sourceID string) (runID int64, enrolled bool, err error) {
+func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, sourceID string, now time.Time) (runID int64, enrolled bool, err error) {
 	fired, err := storedEvent(ctx, s, sourceID)
 	if err != nil {
 		return 0, false, err
 	}
-	o := Origin{OccurredAt: time.Now()}
+	o := Origin{OccurredAt: now}
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 	}

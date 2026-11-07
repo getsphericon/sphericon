@@ -3,6 +3,7 @@ package users_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,8 +24,8 @@ import (
 // transaction: whatever the caller believed about the address, no session is refused.
 func TestAcceptInvitationOfAVerifiedUserNeedsTheirSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
-	inv, _, err := invitations.New(env.DB, env.Bus).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
 
@@ -61,8 +62,8 @@ func firstInsertMember(next ent.Mutator) ent.Mutator {
 // and the explicit Invitation's admin Role still raises it.
 func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
-	inv, _, err := invitations.New(env.DB, env.Bus).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleAdmin, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
 	env.Bus.Use(hook.On(firstInsertMember, ent.OpCreate))

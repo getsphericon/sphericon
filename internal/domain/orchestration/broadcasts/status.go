@@ -142,9 +142,9 @@ func canBegin(ctx context.Context, s *ent.Scoped, id int64, t trigger) error {
 }
 
 // fail moves a sending Broadcast to failed, stamping when it failed.
-func fail(ctx context.Context, s *ent.Scoped, id int64) error {
+func fail(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 	return fire(ctx, s, id, triggerFail, func(u *ent.BroadcastScopedUpdate) {
-		u.SetFailedAt(time.Now())
+		u.SetFailedAt(at)
 	})
 }
 

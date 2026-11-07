@@ -29,7 +29,7 @@ var testHost = telemetryreport.Host{
 
 func buildReport(t *testing.T, env *testhelper.TestEnv, now time.Time) telemetryapi.TelemetryReport {
 	t.Helper()
-	report, err := telemetryreport.New(instancestates.New(env.DB, instancestates.Environment{}, nil), testHost, nil, func() time.Time { return now }).Report(t.Context())
+	report, err := telemetryreport.New(instancestates.New(env.DB, instancestates.Environment{}, time.Now), testHost, nil, func() time.Time { return now }).Report(t.Context())
 	require.NoError(t, err)
 	return report
 }
@@ -83,7 +83,7 @@ func TestReportActivityFlagsFallAwayWhenNothingHappenedInThirtyDays(t *testing.T
 
 func TestReportAgeCountsWholeDaysSinceTheInstanceFirstStarted(t *testing.T) {
 	env := testhelper.Setup(t)
-	row, err := instancestates.New(env.DB, instancestates.Environment{}, nil).Ensure(t.Context())
+	row, err := instancestates.New(env.DB, instancestates.Environment{}, time.Now).Ensure(t.Context())
 	require.NoError(t, err)
 
 	report := buildReport(t, env, row.CreatedAt.Add(42*24*time.Hour+3*time.Hour))
@@ -98,7 +98,7 @@ func TestReportEditionAndDeployShapeAreWhatTheCallerSays(t *testing.T) {
 	host.Edition = telemetryapi.TelemetryEditionEe
 	host.DeployShape = telemetryapi.TelemetryDeployShapeKubernetes
 
-	report, err := telemetryreport.New(instancestates.New(env.DB, instancestates.Environment{}, nil), host, nil, time.Now).Report(t.Context())
+	report, err := telemetryreport.New(instancestates.New(env.DB, instancestates.Environment{}, time.Now), host, nil, time.Now).Report(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, telemetryapi.TelemetryEditionEe, report.Edition)
@@ -115,7 +115,7 @@ func TestReportProvidersComeFromKeptIntegrationsOnly(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, ses)
 	for _, i := range ses {
-		require.NoError(t, env.DB.Scoped(i.WorkspaceID).Integration().Discard(t.Context(), i.ID))
+		require.NoError(t, env.DB.Scoped(i.WorkspaceID).Integration().Discard(t.Context(), i.ID, time.Now()))
 	}
 
 	report := buildReport(t, env, time.Now())

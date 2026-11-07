@@ -35,12 +35,16 @@ type Bus struct {
 	// newTxClient builds the ent client bound to a transaction, with the hooks every such client
 	// carries (the wiring's internal/app/entclient.NewTx).
 	newTxClient func(dialect.Driver) *ent.Client
+	// now is the Instance clock an envelope is stamped by.
+	now func() time.Time
 }
 
 // New builds a Bus over the application's database pool. newTxClient builds the ent client of
 // each transaction the bus opens; the wiring passes the one that carries the application's hooks.
-func New(pool *sql.DB, newTxClient func(dialect.Driver) *ent.Client) *Bus {
-	return &Bus{db: pool, newTxClient: newTxClient}
+// now is the Instance clock (app.Clock) that dates an envelope: when it is recorded, and when it
+// occurred unless the event says.
+func New(pool *sql.DB, newTxClient func(dialect.Driver) *ent.Client, now func() time.Time) *Bus {
+	return &Bus{db: pool, newTxClient: newTxClient, now: now}
 }
 
 // Use registers ent hooks on the transaction client of every later WithinTx, the way
@@ -88,7 +92,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	txClient := b.newTxClient(newTxDriver(sqlTx))
 	txClient.Use(b.hooks...)
 
-	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers, stored: b.stored}
+	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers, stored: b.stored, now: b.now}
 	if err := fn(txClient, pub); err != nil {
 		_ = sqlTx.Rollback()
 		return err
@@ -160,6 +164,8 @@ type txPublisher struct {
 	stored []func(context.Context, DomainEvent)
 	// committed runs once tx has committed, in order.
 	committed []func()
+	// now is the bus's clock.
+	now func() time.Time
 }
 
 // Publish stamps the envelope of ev and, for an event that is an Event (not Unprojected),
@@ -172,9 +178,10 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
 	}
+	recorded := p.now().UTC()
 	occurred := ev.Project().OccurredAt
 	if occurred.IsZero() {
-		occurred = time.Now().UTC()
+		occurred = recorded
 	}
 	// The envelope id is always a fresh ULID. An event with a natural upstream id supplies a
 	// DedupKey besides, which its Event row is stored under (source_id), so a redelivery is
@@ -189,7 +196,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		Version:     ev.EventVersion(),
 		WorkspaceID: ev.Workspace(),
 		OccurredAt:  occurred,
-		RecordedAt:  time.Now().UTC(),
+		RecordedAt:  recorded,
 		Data:        data,
 		DedupKey:    dedupKey,
 		CausedBy:    causeOf(ctx),

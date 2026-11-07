@@ -83,9 +83,6 @@ type Attempts struct {
 // AttemptsOption tunes NewAttempts.
 type AttemptsOption func(*Attempts)
 
-// WithClock replaces time.Now, for tests.
-func WithClock(now func() time.Time) AttemptsOption { return func(a *Attempts) { a.now = now } }
-
 // WithRule sets the throttle of a Kind. Until it is set a Kind is not throttled.
 func WithRule(kind Kind, rule Rule) AttemptsOption {
 	return func(a *Attempts) { a.rules[kind] = rule }
@@ -105,11 +102,11 @@ func WithRateLimits(limits config.RateLimits) AttemptsOption {
 	}
 }
 
-// NewAttempts builds the module over the ent client.
-func NewAttempts(client *ent.Client, opts ...AttemptsOption) *Attempts {
+// NewAttempts builds the module over the ent client, on the Instance clock now.
+func NewAttempts(client *ent.Client, now func() time.Time, opts ...AttemptsOption) *Attempts {
 	// Every Kind starts disabled but with its window, so a bare module (the purge
 	// job's) still knows when a row is stale.
-	a := &Attempts{ent: client, now: time.Now, rules: map[Kind]Rule{
+	a := &Attempts{ent: client, now: now, rules: map[Kind]Rule{
 		KindLogin:         LoginRule(0),
 		KindStaffLogin:    LoginRule(0),
 		KindPasswordReset: ResetRule(0),

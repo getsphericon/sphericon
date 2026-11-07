@@ -62,12 +62,12 @@ type delivery struct {
 }
 
 // newDelivery builds the delivery over an Outbound send module with opts (a clock of the test's).
-func newDelivery(t *testing.T, opts ...outboundmessages.Option) *delivery {
+func newDelivery(t *testing.T, now func() time.Time, opts ...outboundmessages.Option) *delivery {
 	t.Helper()
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outboundmessages.New(env.Bus, env.Holds, res, messagetoken.New("test-secret", "http://local"), opts...)
+	out := outboundmessages.New(env.Bus, env.Holds, res, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
 	return &delivery{
 		t: t, env: env, box: box, res: res,
 		out: out, del: broadcasts.NewDelivery(out),
@@ -119,7 +119,7 @@ func (d *delivery) claim(recipientID int64, age time.Duration) {
 }
 
 func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(holdreason.WorkspaceSuspended).ExecX(d.t.Context())
 
@@ -136,7 +136,7 @@ func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
 }
 
 func TestSendRecipientIsIdempotent(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
@@ -146,7 +146,7 @@ func TestSendRecipientIsIdempotent(t *testing.T) {
 }
 
 func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).ClearEmail().ExecX(d.t.Context())
 	id := d.recipient(fixtures.ContactAliceID)
 
@@ -162,7 +162,7 @@ func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
 }
 
 func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 	alice := d.env.DB.Contact.GetX(d.t.Context(), fixtures.ContactAliceID)
 	d.env.SuppressDestination(d.t.Context(), *alice.Email)
@@ -175,7 +175,7 @@ func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
 }
 
 func TestRecipientThatCannotRenderFails(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetSubject("{% if %}broken").ExecX(d.t.Context())
 
@@ -188,7 +188,7 @@ func TestRecipientThatCannotRenderFails(t *testing.T) {
 
 // The message goes out through the Integration the Broadcast names, not the default.
 func TestRecipientIsSentThroughTheBroadcastsOwnIntegration(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
 	id := d.recipient(fixtures.ContactAliceID)
 
@@ -202,7 +202,7 @@ func TestRecipientIsSentThroughTheBroadcastsOwnIntegration(t *testing.T) {
 
 // A named Integration that cannot send holds the recipient: nothing falls back to the default.
 func TestRecipientIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(d.t.Context())
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
 	id := d.recipient(fixtures.ContactAliceID)
@@ -217,7 +217,7 @@ func TestRecipientIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
 }
 
 func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 	d.env.SuspendWorkspace(d.t.Context(), fixtures.AcmeID, fixedNow)
 
@@ -288,12 +288,12 @@ func TestDeferralFollowsTheBroadcastsOwnIntegration(t *testing.T) {
 }
 
 func TestUnknownRecipientIsNothingToSend(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, 424242))
 }
 
 func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 
 	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("smtp unavailable")))
@@ -309,7 +309,7 @@ func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T)
 // A live claim is another attempt that may still reach the provider: giving up fails nothing,
 // so the recipient is not left failed while its mail goes out, and the adapter can ask again.
 func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactBobID)
 	d.claim(id, 0)
 
@@ -322,7 +322,7 @@ func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
 }
 
 func TestGiveUpFailsAnExpiredClaim(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactBobID)
 	d.claim(id, time.Hour)
 
@@ -335,7 +335,7 @@ func TestGiveUpFailsAnExpiredClaim(t *testing.T) {
 // A send that reached the provider but whose recipient write was lost is sent, whatever the
 // retries that followed said: the recipient follows its message.
 func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 	b := d.broadcastRow()
 	rec := d.recipientRow(id)
@@ -356,7 +356,7 @@ func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
 // A recipient that is already decided keeps its outcome: a late give-up neither fails it nor
 // rewrites its message.
 func TestAGiveUpAfterTheSendKeepsItsOutcome(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 

@@ -78,13 +78,15 @@ type Module struct {
 	lic    Licensing
 	client webhook.Doer
 	notify memberships.Notify
+	// now is the Instance clock a test event and a disabled endpoint are dated by.
+	now func() time.Time
 }
 
 // New builds the module. lic may be nil (unlicensed). client is the one hardened
 // outbound client, used by TestSend. notify mails the Owners when an endpoint disables
-// itself; nil sends nothing.
-func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify memberships.Notify) *Module {
-	return &Module{bus: bus, cipher: cipher, lic: lic, client: client, notify: notify}
+// itself; nil sends nothing. now is the Instance clock.
+func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify memberships.Notify, now func() time.Time) *Module {
+	return &Module{bus: bus, cipher: cipher, lic: lic, client: client, notify: notify, now: now}
 }
 
 // TestSendTimeout bounds a test delivery, the same budget as a real one.
@@ -137,7 +139,7 @@ func (m *Module) TestSend(ctx context.Context, s *ent.Scoped, id int64, eventTyp
 	body, err := json.Marshal(map[string]any{
 		"id":          deliveryID,
 		"type":        eventType,
-		"occurredAt":  time.Now().UTC(),
+		"occurredAt":  m.now().UTC(),
 		"workspaceId": s.WorkspaceID(),
 		"subject":     "Sphericon test event",
 		"data":        map[string]any{"test": true},
@@ -146,7 +148,7 @@ func (m *Module) TestSend(ctx context.Context, s *ent.Scoped, id int64, eventTyp
 		return TestResult{}, err
 	}
 	rec := &statusRecorder{Doer: m.client}
-	sendErr := webhook.Send(ctx, rec, e.URL, e.Secret, eventType, deliveryID, body)
+	sendErr := webhook.Send(ctx, rec, e.URL, e.Secret, eventType, deliveryID, body, m.now())
 	var res TestResult
 	var delivery *webhook.DeliveryError
 	switch {
@@ -248,7 +250,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (End
 		SetSecretEncrypted(sealed).
 		SetEventTypes(in.EventTypes)
 	if in.Enabled != nil && !*in.Enabled {
-		create = create.SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
+		create = create.SetDisabledAt(m.now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
 	}
 	e, err := create.Save(ctx)
 	if err != nil {
@@ -295,7 +297,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	// enabled. An endpoint that is already off keeps the moment and the reason it has: the
 	// miss falls back to the plain edit, whose own miss means the endpoint is gone.
 	e, err := build().Where(webhookendpoint.DisabledAtIsNil()).
-		SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner).Save(ctx)
+		SetDisabledAt(m.now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner).Save(ctx)
 	if ent.IsNotFound(err) {
 		e, err = build().Save(ctx)
 	}

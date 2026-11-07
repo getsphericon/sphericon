@@ -165,7 +165,7 @@ func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *test
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).DeleteUser(t.Context(), fixtures.InitechCoOwnerOwenID, nil)
+	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now).DeleteUser(t.Context(), fixtures.InitechCoOwnerOwenID, nil)
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)

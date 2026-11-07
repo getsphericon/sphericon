@@ -3,6 +3,7 @@ package suppressions_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,11 +88,11 @@ func TestRemoveLiftsAndReportsAMissingOrLiftedRow(t *testing.T) {
 
 	added, err := suppressions.AddManual(ctx, s, channels.Email, "gone@example.com")
 	require.NoError(t, err)
-	require.NoError(t, suppressions.Remove(ctx, s, added.ID))
+	require.NoError(t, suppressions.Remove(ctx, s, added.ID, time.Now()))
 
-	err = suppressions.Remove(ctx, s, added.ID)
+	err = suppressions.Remove(ctx, s, added.ID, time.Now())
 	require.ErrorIs(t, err, suppressions.ErrNotFound, "a lifted row cannot be lifted again")
-	require.ErrorIs(t, suppressions.Remove(ctx, s, 987654321), suppressions.ErrNotFound)
+	require.ErrorIs(t, suppressions.Remove(ctx, s, 987654321, time.Now()), suppressions.ErrNotFound)
 
 	kept, err := s.Suppression().Get(ctx, added.ID)
 	require.NoError(t, err)

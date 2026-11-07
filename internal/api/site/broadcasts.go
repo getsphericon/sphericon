@@ -32,7 +32,7 @@ func withStats(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.Si
 // and ETA (ADR 0023), derived on the server from its recipients. Only the single-row
 // responses (get, send) use it: the list leaves progress out.
 func (h *Handlers) broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
-	d, err := h.broadcasts.Detail(ctx, s, b, time.Now())
+	d, err := h.broadcasts.Detail(ctx, s, b, h.now())
 	if err != nil {
 		return siteapi.SiteBroadcastResource{}, err
 	}

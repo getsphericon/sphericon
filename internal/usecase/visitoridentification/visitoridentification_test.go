@@ -3,6 +3,7 @@ package visitoridentification_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestIdentifyCreatesTheContactBindsTheDeviceAndStitchesEarlierEvents(t *test
 	// The fixtures hold an earlier anonymous event from the device, and one from another device.
 	const device, otherDevice = fixtures.EventAnonymousFirstVisitorID, fixtures.EventAnonymousSecondVisitorID
 
-	err := visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: "  " + device + " ",
 		Email:     new("Visitor@Example.com"),
 		Traits:    map[string]any{"plan": "pro"},
@@ -52,8 +53,8 @@ func TestIdentifyReusesAnExistingContactAndDevice(t *testing.T) {
 	ctx := context.Background()
 	input := visitoridentification.Input{VisitorID: "dev-known", Email: lo.ToPtr(fixtures.ContactAliceEmail)}
 
-	require.NoError(t, visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input))
-	require.NoError(t, visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input), "identify is idempotent")
+	require.NoError(t, visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input))
+	require.NoError(t, visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input), "identify is idempotent")
 
 	v, err := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-known")).Only(ctx)
 	require.NoError(t, err)
@@ -67,10 +68,10 @@ func TestIdentifyRefusesWhatCannotBeIdentified(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "   ", Email: new("a@example.com")})
+	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "   ", Email: new("a@example.com")})
 	require.ErrorIs(t, err, visitoridentification.ErrVisitorIDRequired)
 
-	err = visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-x"})
+	err = visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-x"})
 	require.ErrorIs(t, err, contacts.ErrIdentityRequired)
 	n, err := env.DB.Visitor.Query().Where(visitor.VisitorID("dev-x")).Count(ctx)
 	require.NoError(t, err)

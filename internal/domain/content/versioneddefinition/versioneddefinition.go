@@ -71,14 +71,16 @@ type Lifecycle[O, V, E, B any] struct {
 	bus  *events.Bus
 	def  Definition[O, V, E, B]
 	errs Errors
+	now  func() time.Time
 }
 
-// New builds the lifecycle of a kind of definition. The bus opens the transaction of each move.
-func New[O, V, E, B any](bus *events.Bus, def Definition[O, V, E, B], errs Errors) *Lifecycle[O, V, E, B] {
+// New builds the lifecycle of a kind of definition. The bus opens the transaction of each move;
+// now is the Instance clock an activation is dated by.
+func New[O, V, E, B any](bus *events.Bus, def Definition[O, V, E, B], errs Errors, now func() time.Time) *Lifecycle[O, V, E, B] {
 	if errs.NotFound == nil || errs.Archived == nil || errs.NothingToPublish == nil || errs.NothingToRevert == nil {
 		panic("drafts: a kind names every refusal of drafts.Errors")
 	}
-	return &Lifecycle[O, V, E, B]{bus: bus, def: def, errs: errs}
+	return &Lifecycle[O, V, E, B]{bus: bus, def: def, errs: errs, now: now}
 }
 
 // errNoVersion: an object with neither a draft nor a live version to edit, which Create never
@@ -210,7 +212,7 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id i
 		if err := l.acting(st); err != nil {
 			return err
 		}
-		now := time.Now()
+		now := l.now()
 		var activatedAt *time.Time
 		if !st.Active {
 			activatedAt = &now
@@ -315,7 +317,7 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 				return err
 			}
 		}
-		return store.Archive(ctx, id)
+		return store.Archive(ctx, id, l.now())
 	})
 	if err != nil {
 		return nil, err
@@ -369,7 +371,7 @@ func (l *Lifecycle[O, V, E, B]) Discard(ctx context.Context, s *ent.Scoped, id i
 				return err
 			}
 		}
-		return store.Discard(ctx, id)
+		return store.Discard(ctx, id, l.now())
 	})
 	if err != nil {
 		return nil, err

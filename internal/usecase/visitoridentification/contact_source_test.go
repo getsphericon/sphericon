@@ -3,6 +3,7 @@ package visitoridentification_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ func TestAContactCreatedByIdentifyCarriesTheTrackerSource(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-source", Email: new("source-tracker@example.com")})
+	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-source", Email: new("source-tracker@example.com")})
 	require.NoError(t, err)
 
 	created, err := env.DB.Contact.Query().Where(contact.Email("source-tracker@example.com")).Only(ctx)
@@ -30,7 +31,7 @@ func TestIdentifyOfAnExistingContactLeavesItsSource(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-alice", Email: new(fixtures.ContactAliceEmail)})
+	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-alice", Email: new(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 
 	alice, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)

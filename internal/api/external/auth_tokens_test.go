@@ -161,7 +161,7 @@ func TestExternalAuthTokensDeleteCannotTouchAnotherWorkspace(t *testing.T) {
 func TestExternalAuthTokensBootstrap(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	h := external.NewHandlers(external.Deps{Workspaces: workspaces.New(env.DB, env.Bus), BootstrapToken: "bootstrap-secret"})
+	h := external.NewHandlers(external.Deps{Clock: time.Now, Workspaces: workspaces.New(env.DB, env.Bus), BootstrapToken: "bootstrap-secret"})
 	in := &externalapi.CreateApiTokenInput{Name: "first", Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeTokensWrite}}
 
 	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "nope"})
@@ -181,7 +181,7 @@ func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T
 	in := &externalapi.CreateApiTokenInput{Name: "first"}
 
 	// Unconfigured: an empty header must not match the empty secret.
-	h := external.NewHandlers(external.Deps{Workspaces: workspaces.New(env.DB, env.Bus)})
+	h := external.NewHandlers(external.Deps{Clock: time.Now, Workspaces: workspaces.New(env.DB, env.Bus)})
 	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: ""})
 	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
 	// Through the real server too.

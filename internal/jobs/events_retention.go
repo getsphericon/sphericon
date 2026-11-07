@@ -34,22 +34,24 @@ type PruneEventsWorker struct {
 
 	ent       *ent.Client
 	retention time.Duration
+	now       func() time.Time
 }
 
-// NewPruneEventsWorker builds the prune of analytical Events older than retention (0 disables it).
-func NewPruneEventsWorker(client *ent.Client, retention time.Duration) *PruneEventsWorker {
-	return &PruneEventsWorker{ent: client, retention: retention}
+// NewPruneEventsWorker builds the prune of analytical Events older than retention (0 disables it),
+// by the Instance clock now.
+func NewPruneEventsWorker(client *ent.Client, retention time.Duration, now func() time.Time) *PruneEventsWorker {
+	return &PruneEventsWorker{ent: client, retention: retention, now: now}
 }
 
 func (w *PruneEventsWorker) Work(ctx context.Context, _ *river.Job[PruneEventsArgs]) error {
-	deleted, err := events.PruneEvents(ctx, w.ent, w.retention, eventsRetentionBatch)
+	deleted, err := events.PruneEvents(ctx, w.ent, w.retention, eventsRetentionBatch, w.now())
 	if err != nil {
 		return err
 	}
 	if deleted > 0 {
 		slog.InfoContext(ctx, "expired events pruned", "deleted", deleted)
 	}
-	firings, err := rules.PruneFirings(ctx, w.ent, w.retention, eventsRetentionBatch)
+	firings, err := rules.PruneFirings(ctx, w.ent, w.retention, eventsRetentionBatch, w.now())
 	if err != nil {
 		return err
 	}

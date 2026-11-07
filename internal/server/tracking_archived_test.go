@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,10 +23,10 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
 	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().Archive(ctx, b.ID))
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().Archive(ctx, b.ID, time.Now()))
 	token, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)
 	require.NoError(t, err)
 

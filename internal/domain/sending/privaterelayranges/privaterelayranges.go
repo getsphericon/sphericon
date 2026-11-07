@@ -95,9 +95,10 @@ type Detector struct {
 	retryAt time.Time
 }
 
-// New builds the detector over the raw client and the source of the published list.
-func New(client *ent.Client, source Source) *Detector {
-	return &Detector{client: client, source: source, now: time.Now}
+// New builds the detector over the raw client and the source of the published list; now is the
+// Instance clock a loaded list ages by.
+func New(client *ent.Client, source Source, now func() time.Time) *Detector {
+	return &Detector{client: client, source: source, now: now}
 }
 
 // IsMachine reports whether a hit with this user-agent from this client address is machine

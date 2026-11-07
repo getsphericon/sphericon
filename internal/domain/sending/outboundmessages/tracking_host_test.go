@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,13 +43,13 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outboundmessages.Module,
 }
 
 func tracked(env *testhelper.TestEnv, opts ...outboundmessages.Option) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, env.Holds, senders{sender: env.CustomerMail}, messagetoken.New("test-secret", "http://local"), opts...)
+	return outboundmessages.New(env.Bus, env.Holds, senders{sender: env.CustomerMail}, messagetoken.New("test-secret", "http://local", time.Now), time.Now, opts...)
 }
 
 // trackingDomains is the option the composition root passes while the Instance offers Tracking
 // domains.
 func trackingDomains(env *testhelper.TestEnv) outboundmessages.Option {
-	return outboundmessages.WithTrackingDomains(trackingdomains.New(env.DB, env.Bus, nil, trackingdomains.Config{}))
+	return outboundmessages.WithTrackingDomains(trackingdomains.New(env.DB, env.Bus, nil, trackingdomains.Config{Now: time.Now}))
 }
 
 // Every link of a Workspace whose current Tracking domain serves is on it, whatever the

@@ -64,7 +64,7 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64,
 		return record(Result{Status: Failed, Detail: "invalid_body: " + httpcall.BodyDetail(err)})
 	}
 	sendErr := webhook.Post(ctx, client, webhook.Call{
-		URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body),
+		URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body), At: now(),
 		ID: fmt.Sprintf("rule_%d_%s", f.ID, action.ID),
 	})
 	if sendErr == nil {

@@ -7,6 +7,7 @@ import (
 	"net/netip"
 	"strings"
 	"testing"
+	"time"
 
 	"entgo.io/ent"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +64,7 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 	host := fixtures.TrackingDomainServingHost
 
 	unsubFor := func(ws int64) string {

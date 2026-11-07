@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
@@ -17,7 +18,7 @@ import (
 // address finds what the address itself finds.
 func TestLookupIgnoresPaddingAndCase(t *testing.T) {
 	env := testhelper.Setup(t)
-	erasure := contacterasure.New(env.Bus)
+	erasure := contacterasure.New(env.Bus, time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	want, err := erasure.Lookup(t.Context(), acme, fixtures.ContactAliceEmail)
 	require.NoError(t, err)
@@ -38,7 +39,7 @@ func TestLookupIgnoresPaddingAndCase(t *testing.T) {
 // Whatever comes in, a lookup either reads the address or refuses it as ErrInvalidEmail.
 func TestLookupReadsAnAddressOrRefusesIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	erasure := contacterasure.New(env.Bus)
+	erasure := contacterasure.New(env.Bus, time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	rapid.Check(t, func(rt *rapid.T) {

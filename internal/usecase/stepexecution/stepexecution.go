@@ -151,7 +151,7 @@ func (m *UseCase) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventInput) e
 // ended at once is made, with no step queued (automations.EnrollOnRule).
 func (m *UseCase) EnrollOnRule(ctx context.Context, s *ent.Scoped, in EnrollOnRuleInput) (bool, error) {
 	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
-		return automations.EnrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID)
+		return automations.EnrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID, m.now())
 	})
 }
 

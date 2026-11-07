@@ -32,14 +32,14 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 	ctx := context.Background()
 	at := time.Date(2026, 5, 1, 9, 0, 0, 0, time.UTC)
 
-	require.NoError(t, visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+	require.NoError(t, visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: "dev-id", Email: lo.ToPtr(fixtures.ContactAliceEmail), SubjectID: new("alice-1"),
 	}))
 
 	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{
 		{VisitorID: " dev-id ", Action: "signup", Properties: map[string]any{"plan": "pro"}, OccurredAt: &at},
 		{VisitorID: "dev-anon", Action: "page_view"},
-	}))
+	}, time.Now()))
 
 	got := queuedCollected(t, env)
 	require.Len(t, got, 2)
@@ -66,7 +66,7 @@ func TestCollectTreatsAVanishedContactAsAnonymous(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.StarkID), []visitors.CollectEventInput{{VisitorID: fixtures.VisitorStarkVanishedVisitorID, Action: "login"}}))
+	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.StarkID), []visitors.CollectEventInput{{VisitorID: fixtures.VisitorStarkVanishedVisitorID, Action: "login"}}, time.Now()))
 	got := queuedCollected(t, env)
 	require.Len(t, got, 1)
 	assert.Zero(t, got[0].ContactID)

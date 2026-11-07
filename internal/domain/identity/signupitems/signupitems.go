@@ -115,11 +115,11 @@ type Module struct {
 
 // New builds the module over the raw client and the bus, whose transaction carries a change of
 // several rows (a new order) and the mailings consent mark (it changes what the service feed of
-// Users reports, internal/domain/identity/usertombstones); now is the clock of publishing and deleting, nil is
-// time.Now.
+// Users reports, internal/domain/identity/usertombstones); now is the Instance clock of publishing and
+// deleting, which is required.
 func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
 	if now == nil {
-		now = time.Now
+		panic("signupitems: the module needs the Instance clock")
 	}
 	return &Module{ent: client, bus: bus, now: now}
 }

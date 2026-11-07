@@ -101,7 +101,7 @@ func TestGoogleTrustRefusesAnUnverifiedAddressWhateverItsDomain(t *testing.T) {
 }
 
 func TestTrustRefusesAProviderThatIsNotEnabled(t *testing.T) {
-	p := signinprovider.New(nil, "https://app.test")
+	p := signinprovider.New(nil, "https://app.test", time.Now)
 
 	got := p.Trust("google", signinprovider.Profile{Email: "ann@gmail.com", EmailVerified: true})
 
@@ -109,7 +109,7 @@ func TestTrustRefusesAProviderThatIsNotEnabled(t *testing.T) {
 }
 
 func TestOnlyConfiguredProvidersAreListed(t *testing.T) {
-	none := signinprovider.New(nil, "https://app.test")
+	none := signinprovider.New(nil, "https://app.test", time.Now)
 	some := newProviders()
 
 	assert.Empty(t, none.Enabled())
@@ -153,7 +153,7 @@ func TestStartRefusesAProviderThatIsNotEnabled(t *testing.T) {
 // A flow opens only as it was sealed, for its own provider, while it lives.
 func TestFlowRoundTripsThroughTheCookie(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		codec := signinprovider.NewFlowCodec("secret-0123456789", nil)
+		codec := signinprovider.NewFlowCodec("secret-0123456789", time.Now)
 		flow := signinprovider.Flow{
 			Provider: "google", State: rapid.StringMatching(`[a-z0-9]{1,40}`).Draw(t, "state"),
 			Verifier: rapid.String().Draw(t, "verifier"), Nonce: rapid.String().Draw(t, "nonce"), ReturnTo: rapid.String().Draw(t, "return"),
@@ -169,7 +169,7 @@ func TestFlowRoundTripsThroughTheCookie(t *testing.T) {
 }
 
 func TestFlowDoesNotOpenForAnotherProvider(t *testing.T) {
-	codec := signinprovider.NewFlowCodec("secret-0123456789", nil)
+	codec := signinprovider.NewFlowCodec("secret-0123456789", time.Now)
 	sealed, err := codec.Seal(signinprovider.Flow{Provider: "google", State: "s"}, time.Minute)
 	require.NoError(t, err)
 
@@ -179,10 +179,10 @@ func TestFlowDoesNotOpenForAnotherProvider(t *testing.T) {
 }
 
 func TestFlowDoesNotOpenUnderAnotherSecret(t *testing.T) {
-	sealed, err := signinprovider.NewFlowCodec("secret-0123456789", nil).Seal(signinprovider.Flow{Provider: "google", State: "s"}, time.Minute)
+	sealed, err := signinprovider.NewFlowCodec("secret-0123456789", time.Now).Seal(signinprovider.Flow{Provider: "google", State: "s"}, time.Minute)
 	require.NoError(t, err)
 
-	_, err = signinprovider.NewFlowCodec("another-secret-987654", nil).Open(sealed, "google")
+	_, err = signinprovider.NewFlowCodec("another-secret-987654", time.Now).Open(sealed, "google")
 
 	assert.ErrorIs(t, err, signinprovider.ErrFlow)
 }
@@ -209,7 +209,7 @@ func TestFlowStateMatchesOnlyTheSameNonEmptyState(t *testing.T) {
 
 // Whatever a browser sends as the flow cookie is a flow or the one refusal, never a panic.
 func FuzzOpenFlow(f *testing.F) {
-	codec := signinprovider.NewFlowCodec("secret-0123456789", nil)
+	codec := signinprovider.NewFlowCodec("secret-0123456789", time.Now)
 	sealed, err := codec.Seal(signinprovider.Flow{Provider: "google", State: "s", ReturnTo: "/x"}, time.Minute)
 	require.NoError(f, err)
 	f.Add(sealed)
@@ -224,7 +224,7 @@ func FuzzOpenFlow(f *testing.F) {
 }
 
 func newProviders() *signinprovider.Providers {
-	return signinprovider.New(map[string]config.SigninCredentials{"google": {ClientID: "client-id", ClientSecret: "client-secret"}}, "https://app.test")
+	return signinprovider.New(map[string]config.SigninCredentials{"google": {ClientID: "client-id", ClientSecret: "client-secret"}}, "https://app.test", time.Now)
 }
 
 func TestReasonsAreTheContractsErrorCodes(t *testing.T) {

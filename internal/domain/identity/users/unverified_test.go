@@ -20,7 +20,7 @@ func TestPruneUnverifiedDeletesInBoundedBatches(t *testing.T) {
 	stale := []int64{fixtures.StaleUnverifiedUserID, fixtures.StaleUnverifiedBulkOneID, fixtures.StaleUnverifiedBulkTwoID}
 
 	// A batch of one forces several rounds; every stale row still goes.
-	deleted, err := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).PruneUnverified(t.Context(), unverifiedRetention, 1)
+	deleted, err := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now).PruneUnverified(t.Context(), unverifiedRetention, 1)
 
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, int(deleted), len(stale), "at least the stale Users go, one batch at a time")

@@ -59,23 +59,26 @@ func NewClient(timeout time.Duration) Doer {
 
 // Send signs the body with the endpoint secret (Standard Webhooks scheme) and
 // POSTs it via client. It errors on transport failure or a non-2xx response so
-// the caller can retry. Use a client from NewClient so the SSRF guard applies.
-func Send(ctx context.Context, client Doer, url, secret, eventName, deliveryID string, body []byte) error {
+// the caller can retry. Use a client from NewClient so the SSRF guard applies. at dates the
+// signature.
+func Send(ctx context.Context, client Doer, url, secret, eventName, deliveryID string, body []byte, at time.Time) error {
 	return Post(ctx, client, Call{
-		URL: url, Secret: secret, ID: deliveryID, Body: body,
+		URL: url, Secret: secret, ID: deliveryID, Body: body, At: at,
 		Headers: map[string]string{EventHeader: eventName},
 	})
 }
 
 // Call is one outbound POST of a JSON body. A Secret signs it (Standard Webhooks, with ID
 // as the message id); an empty Secret sends it unsigned. Headers are extra request
-// headers, set after the standard ones.
+// headers, set after the standard ones. At is the moment the signature is dated, by the Instance
+// clock.
 type Call struct {
 	URL     string
 	Secret  string
 	ID      string
 	Headers map[string]string
 	Body    []byte
+	At      time.Time
 }
 
 // Post makes the call through client, which should come from NewClient or
@@ -92,7 +95,7 @@ func Post(ctx context.Context, client Doer, c Call) error {
 		if err != nil {
 			return fmt.Errorf("webhook secret: %w", err)
 		}
-		ts := time.Now()
+		ts := c.At
 		sig, err := wh.Sign(c.ID, ts, c.Body)
 		if err != nil {
 			return fmt.Errorf("sign webhook: %w", err)

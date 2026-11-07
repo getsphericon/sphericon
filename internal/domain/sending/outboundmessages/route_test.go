@@ -20,7 +20,7 @@ func TestTheRouteOfTheDefaultCarriesItsIntegrationAndPace(t *testing.T) {
 	env := testhelper.Setup(t)
 	limited(t, env, new(4), nil)
 
-	route, err := newModule(env).Route(context.Background(), acme(env), channels.Email, nil)
+	route, err := newModule(env, time.Now).Route(context.Background(), acme(env), channels.Email, nil)
 
 	require.NoError(t, err)
 	assert.False(t, route.Held())
@@ -44,7 +44,7 @@ func TestTheRouteOfANamedIntegrationThatCannotSendIsHeld(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 
-			route, err := newModule(env).Route(context.Background(), acme(env), channels.Email, &id)
+			route, err := newModule(env, time.Now).Route(context.Background(), acme(env), channels.Email, &id)
 
 			require.NoError(t, err)
 			assert.Equal(t, outboundmessages.HoldNoIntegration, route.Hold)
@@ -59,7 +59,7 @@ func TestTheRouteOfANamedIntegrationThatCannotSendIsHeld(t *testing.T) {
 // Workspace's default could send: nothing is claimed and nothing goes out.
 func TestASendThroughADisabledNamedIntegrationIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := newModule(env)
+	m := newModule(env, time.Now)
 	req := marketing(t, env, "bc:disabled", fixtures.ContactAliceID)
 	req.IntegrationID = new(int64(fixtures.IntegrationAcmeSesID))
 
@@ -82,7 +82,7 @@ func TestASendThroughADisabledNamedIntegrationIsHeld(t *testing.T) {
 func TestTheProviderLimitRunsOnTheInjectedClock(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, outboundmessages.WithClock(c.now))
+	m := newModule(env, c.now)
 	limited(t, env, new(1), nil)
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome)
 
@@ -132,7 +132,7 @@ func TestAStoppedProviderHoldsTheRouteButArmingStillPasses(t *testing.T) {
 // its place, and a send through it claims nothing and sends nothing.
 func TestTheRouteNeverGoesThroughAnotherChannelsIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := newModule(env)
+	m := newModule(env, time.Now)
 	req := marketing(t, env, "bc:sms", fixtures.ContactAliceID)
 	req.IntegrationID = new(int64(fixtures.IntegrationAcmeSmsID))
 

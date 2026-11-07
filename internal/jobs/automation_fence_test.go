@@ -108,7 +108,7 @@ func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) ev
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	bus := events.New(sqlDB, entclient.NewTx)
+	bus := events.New(sqlDB, entclient.NewTx, time.Now)
 	queue, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	bus.UseJobs(wrap(queue))
@@ -119,7 +119,7 @@ func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) ev
 func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepexecution.UseCase {
 	t.Helper()
 	bus := e.bus(t)
-	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local"))
+	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 	return stepexecution.New(bus, mod, e.fence, nil, nil, time.Now)
 }
 
@@ -157,7 +157,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	bs := newBlockingSender()
 	t.Cleanup(bs.release) // a failed assertion must not leave the send blocked
 	stepper := e.stepper(t, bs)
-	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
+	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID, time.Now())
 	require.NoError(t, err)
 	require.True(t, enrolled)
 
@@ -213,14 +213,14 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		Headers: []httpcall.Header{{Name: "Authorization"}},
 	}}
 	bus := e.bus(t)
-	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), messagetoken.New("test-secret", "http://local"))
-	mod := automations.New(cipher, bus, testhelper.Renderer(), out)
+	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+	mod := automations.New(cipher, bus, testhelper.Renderer(), out, time.Now)
 	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
 	// The edit is a draft until it is published (ADR 0065); the Enrollment begins on the live one.
 	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
-	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
+	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID, time.Now())
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	w := jobs.NewRunHTTPStepWorker(e.client, stepexecution.New(bus, nil, e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now))

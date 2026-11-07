@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func acme(env *testhelper.TestEnv) *ent.Scoped { return env.DB.Scoped(fixtures.A
 func TestDeleteOfARuleWithFiringsHidesItStopsItFiringAndKeepsTheFirings(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	page := pagination.Params{Page: 1, PageSize: 100}
 	before, err := m.Firings(ctx, acme(env), fixtures.RuleTagClickedID, page)
 	require.NoError(t, err)
@@ -55,7 +56,7 @@ func TestDeleteOfARuleWithFiringsHidesItStopsItFiringAndKeepsTheFirings(t *testi
 func TestADeletedRuleTakesNoMove(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	s := acme(env)
 	id := int64(fixtures.RuleTagClickedID)
 	require.NoError(t, m.Delete(ctx, s, id))
@@ -83,7 +84,7 @@ func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
 	client := entclient.New(sqlDB)
-	m := rules.New(nil, events.New(sqlDB, entclient.NewTx))
+	m := rules.New(nil, events.New(sqlDB, entclient.NewTx, time.Now), time.Now)
 	s := client.Scoped(fixtures.AcmeID)
 	_, err := m.Deactivate(t.Context(), s, fixtures.RuleTagClickedID)
 	require.NoError(t, err)
@@ -105,7 +106,7 @@ func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing
 func TestDeleteKeepsARuleThatNeverFired(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleInactiveID))
 
@@ -119,7 +120,7 @@ func TestDeleteKeepsARuleThatNeverFired(t *testing.T) {
 func TestDeleteOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	assert.ErrorIs(t, rules.New(env.Cipher, env.Bus).Delete(context.Background(), acme(env), fixtures.RuleGlobexID), rules.ErrNotFound)
+	assert.ErrorIs(t, rules.New(env.Cipher, env.Bus, time.Now).Delete(context.Background(), acme(env), fixtures.RuleGlobexID), rules.ErrNotFound)
 }
 
 func tagAction(tag string) []rules.Action {
@@ -131,7 +132,7 @@ func tagAction(tag string) []rules.Action {
 func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 
 	drafted, err := rules.UsingTag(ctx, acme(env), "rule-inactive")
 	require.NoError(t, err)
@@ -161,7 +162,7 @@ func TestAnActiveRuleWhoseConditionNamesATagUsesIt(t *testing.T) {
 func TestADeletedRuleUsesNoTag(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleVipOnlyID))
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleMultiTriggerID))
 
@@ -182,7 +183,7 @@ func manyActions(n int) []rules.Action {
 func TestCreateRefusesMoreActionsThanTheCap(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := rules.New(env.Cipher, env.Bus).Create(context.Background(), acme(env),
+	_, err := rules.New(env.Cipher, env.Bus, time.Now).Create(context.Background(), acme(env),
 		rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Actions: manyActions(rules.MaxActions + 1)})
 
 	require.ErrorIs(t, err, rules.ErrInvalid)
@@ -192,7 +193,7 @@ func TestCreateRefusesMoreActionsThanTheCap(t *testing.T) {
 func TestCreateAcceptsTheCapExactlyAndUpdateEnforcesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 
 	r, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "full", TriggerEvents: []string{"x"}, Actions: manyActions(rules.MaxActions)})
 	require.NoError(t, err)
@@ -211,7 +212,7 @@ func conditionOf(n int) string {
 func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	big := conditionOf(rules.MaxConditionNodes)
 
 	_, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Condition: &big})
@@ -228,7 +229,7 @@ func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
 
 func TestARuleHasNoCapOnTheirNumber(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	for i := range 30 {
 		_, err := m.Create(context.Background(), acme(env), rules.CreateInput{Name: "r" + strconv.Itoa(i), TriggerEvents: []string{"x"}, Actions: tagAction("a")})
 		require.NoError(t, err)
@@ -242,7 +243,7 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	ctx := context.Background()
 	actor := events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.OwnerJohnID), Name: "John"}
 	s := env.Bus.Act(acme(env), actor)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 
 	r, err := m.Create(ctx, s, rules.CreateInput{Name: "audited", TriggerEvents: []string{"x"}, Actions: tagAction("secretish")})
 	require.NoError(t, err)

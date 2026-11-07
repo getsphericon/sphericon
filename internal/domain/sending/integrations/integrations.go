@@ -16,6 +16,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/riverqueue/river"
@@ -453,13 +454,13 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 // deletion use case (internal/usecase/integrationdeletion), which checks its Live use under the
 // Workspace lock first and is the only caller easement allows. A deleted Integration gives up the
 // default: its channel has none until another is picked. A missing row is ErrNotFound.
-func DeleteIn(ctx context.Context, ts *ent.Scoped, row *ent.Integration) error {
+func DeleteIn(ctx context.Context, ts *ent.Scoped, row *ent.Integration, at time.Time) error {
 	if row.IsDefault {
 		if err := ts.Integration().UpdateOneID(row.ID).SetIsDefault(false).Exec(ctx); err != nil {
 			return missing(err)
 		}
 	}
-	return missing(ts.Integration().Discard(ctx, row.ID))
+	return missing(ts.Integration().Discard(ctx, row.ID, at))
 }
 
 // ReleaseDeleted lets the bot of a Telegram Integration that held its webhook go of it, best

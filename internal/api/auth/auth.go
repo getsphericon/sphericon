@@ -95,8 +95,8 @@ type ExternalSecurityDeps struct {
 	Bus *events.Bus
 	// Users admits a Connection's User as it admits their own session (Admit).
 	Users *users.Module
-	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
-	// time.Now).
+	// Clock is the Instance clock a token's expiry and a Connection's Two-factor requirement are
+	// checked against. Required.
 	Clock func() time.Time
 }
 
@@ -104,7 +104,7 @@ type ExternalSecurityDeps struct {
 func NewExternalSecurityHandler(d ExternalSecurityDeps) *ExternalSecurityHandler {
 	now := d.Clock
 	if now == nil {
-		now = time.Now
+		panic("auth: ExternalSecurityDeps.Clock is required: the handler reads the Instance clock")
 	}
 	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, users: d.Users, now: now}
 }
@@ -253,7 +253,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 	if token.RevokedAt != nil {
 		return ctx, ErrUnauthorized
 	}
-	if token.ExpiresAt != nil && token.ExpiresAt.Before(time.Now()) {
+	if token.ExpiresAt != nil && token.ExpiresAt.Before(h.now()) {
 		return ctx, ErrUnauthorized
 	}
 	if !credentials.VerifySecret(parsed.Secret, token.SecretHash) {
@@ -399,12 +399,12 @@ type SiteSecurityHandler struct {
 	now      func() time.Time
 }
 
-// NewSiteSecurityHandler builds the cookie handler. now is the clock the token's
-// expiry is checked against; nil means time.Now. A token verifies against jwtSecret and then
+// NewSiteSecurityHandler builds the cookie handler. now is the Instance clock the token's
+// expiry is checked against, which is required. A token verifies against jwtSecret and then
 // against each of verifyWith, the secondary key of a JWT secret rotation.
 func NewSiteSecurityHandler(jwtSecret string, client *ent.Client, now func() time.Time, verifyWith ...string) *SiteSecurityHandler {
 	if now == nil {
-		now = time.Now
+		panic("auth: the site security handler needs the Instance clock")
 	}
 	return &SiteSecurityHandler{verifier: newVerifier(jwtSecret, verifyWith), ent: client, now: now}
 }

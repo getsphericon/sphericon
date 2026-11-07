@@ -33,7 +33,7 @@ func TestRuleActionEnrollsTheContactInAnAutomation(t *testing.T) {
 
 func TestRuleActionSkipsAnAutomationThatIsNotActive(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Automation().Archive(context.Background(), fixtures.AutomationJobsSingleEmailID))
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Automation().Archive(context.Background(), fixtures.AutomationJobsSingleEmailID, time.Now()))
 
 	draft := runFiring(t, env, fixtures.RuleFiringEnrollDraftPendingID)
 	archived := runFiring(t, env, fixtures.RuleFiringEnrollSingleEmailPendingID)
@@ -57,7 +57,7 @@ func TestAnAutomationDeactivatedAfterTheRuleJobsCheckEnrollsNobody(t *testing.T)
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	_, err := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule()).
+	_, err := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now).
 		Deactivate(ctx, s, fixtures.AutomationJobsGreetingID)
 	require.NoError(t, err)
 

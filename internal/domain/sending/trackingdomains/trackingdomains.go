@@ -85,7 +85,8 @@ type Config struct {
 	Checker *Checker
 	// OwnHosts are the Instance's own hosts (the app, the tracker), never a Tracking domain.
 	OwnHosts []string
-	Now      func() time.Time
+	// Now is the Instance clock (app.Clock). Required.
+	Now func() time.Time
 }
 
 // Module holds the shared collaborators; it is stateless otherwise.
@@ -101,7 +102,7 @@ type Module struct {
 func New(client *ent.Client, bus *events.Bus, notify memberships.Notify, cfg Config) *Module {
 	now := cfg.Now
 	if now == nil {
-		now = time.Now
+		panic("trackingdomains: Config.Now is required: the module reads the Instance clock")
 	}
 	own := make([]string, 0, len(cfg.OwnHosts)+1)
 	for _, h := range append(slices.Clone(cfg.OwnHosts), targetOf(cfg.Checker)) {

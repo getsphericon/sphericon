@@ -34,5 +34,5 @@ func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.Si
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	return suppressions.Remove(ctx, s, id)
+	return suppressions.Remove(ctx, s, id, h.now())
 }

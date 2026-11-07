@@ -3,6 +3,7 @@ package segments_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,7 @@ func TestUsingTagIncludesArchivedSegments(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.Segment().Archive(ctx, fixtures.SegmentNewsletterReadersID))
+	require.NoError(t, acme.Segment().Archive(ctx, fixtures.SegmentNewsletterReadersID, time.Now()))
 
 	using, err := segments.UsingTag(ctx, acme, "newsletter")
 	require.NoError(t, err)

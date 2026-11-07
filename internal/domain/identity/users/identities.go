@@ -125,19 +125,18 @@ func providerName(in ProviderLogin) string {
 // identity in tx: the provider's name, or the address's local part when it gave none, and no
 // password. Its email is proven now; the caller creates its first Workspace and records
 // `user.email_verify` on the same transaction (internal/usecase/workspacecreation).
-func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin) (*ent.User, error) {
+func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin, now time.Time) (*ent.User, error) {
 	email := strings.TrimSpace(in.Email)
 	name := providerName(in)
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
 	}
-	now := time.Now()
 	u, err := tx.User.Create().
 		SetName(name).
 		SetEmail(email).
 		SetEmailVerifiedAt(now).
 		SetEmailProvenAt(now).
-		SetNillableSignupSurveyDueAt(surveyDueAt(in.SurveyDue)).
+		SetNillableSignupSurveyDueAt(surveyDueAt(in.SurveyDue, now)).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -250,7 +249,7 @@ func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLo
 		// The provider's proof stamps the address only from empty, and the rows-changed count
 		// says whether it did: that, and only that, is a domain-join step (ADR 0051).
 		stamped, err := tx.User.Update().Where(user.ID(holderID), user.EmailProvenAtIsNil()).
-			SetEmailProvenAt(time.Now()).ClearPasswordHash().Save(ctx)
+			SetEmailProvenAt(a.now()).ClearPasswordHash().Save(ctx)
 		if err != nil {
 			return err
 		}
@@ -277,8 +276,7 @@ func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLo
 // sessions ended, and the Linked identity; a pending Invitation to the address is not touched.
 // The caller gives it its first Workspace on the same transaction, as a verify link would
 // (internal/usecase/workspacecreation). ErrAlreadyVerified when the User is no longer Unverified.
-func TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin) (*ent.User, error) {
-	now := time.Now()
+func TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin, now time.Time) (*ent.User, error) {
 	upd := tx.User.Update().
 		Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).
 		SetEmailVerifiedAt(now).

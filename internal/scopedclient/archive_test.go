@@ -3,6 +3,7 @@ package scopedclient_test
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -56,7 +57,7 @@ func TestArchiveHidesFromListsAndKeepsByIDReadsAndWrites(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(acme)
 
-	require.NoError(t, s.Automation().Archive(ctx, keptAutomation))
+	require.NoError(t, s.Automation().Archive(ctx, keptAutomation, time.Now()))
 
 	assert.False(t, automationListed(t, s.Automation().Query()), "a list query hides the archived row")
 	assert.True(t, automationListed(t, s.Automation().QueryArchived()), "the archived view lists it")
@@ -81,16 +82,16 @@ func TestArchiveIsFencedByPredicatesStateAndWorkspace(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(acme)
 
-	fenced := s.Automation().Archive(ctx, keptAutomation, automation.Name("another name"))
+	fenced := s.Automation().Archive(ctx, keptAutomation, time.Now(), automation.Name("another name"))
 	assert.True(t, ent.IsNotFound(fenced), "a predicate the row does not match fences it")
 	require.NoError(t, s.Automation().Unarchive(ctx, keptAutomation), "unarchiving a kept row changes nothing")
 	assert.True(t, automationListed(t, s.Automation().Query()))
 
-	require.NoError(t, s.Automation().Archive(ctx, keptAutomation))
-	twice := s.Automation().Archive(ctx, keptAutomation)
+	require.NoError(t, s.Automation().Archive(ctx, keptAutomation, time.Now()))
+	twice := s.Automation().Archive(ctx, keptAutomation, time.Now())
 	assert.True(t, ent.IsNotFound(twice), "already archived")
 
-	assert.True(t, ent.IsNotFound(s.Automation().Archive(ctx, foreignAutomation)))
+	assert.True(t, ent.IsNotFound(s.Automation().Archive(ctx, foreignAutomation, time.Now())))
 	assert.True(t, ent.IsNotFound(s.Automation().Unarchive(ctx, foreignAutomation)))
 	_, err := s.Automation().Get(ctx, foreignAutomation)
 	assert.True(t, ent.IsNotFound(err))
@@ -103,7 +104,7 @@ func TestArchiveAndUnarchiveAreAudited(t *testing.T) {
 	ctx := t.Context()
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
 
-	require.NoError(t, s.Automation().Archive(ctx, keptAutomation))
+	require.NoError(t, s.Automation().Archive(ctx, keptAutomation, time.Now()))
 	require.NoError(t, s.Automation().Unarchive(ctx, keptAutomation))
 	require.NoError(t, s.Automation().Unarchive(ctx, keptAutomation))
 

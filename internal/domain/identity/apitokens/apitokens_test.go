@@ -87,16 +87,16 @@ func TestRevokeRetiresOnceAndIsWorkspaceScoped(t *testing.T) {
 	require.NoError(t, err)
 	id := minted.Token.ID
 
-	require.ErrorIs(t, apitokens.Revoke(ctx, env.DB.Scoped(fixtures.GlobexID), id), apitokens.ErrNotFound,
+	require.ErrorIs(t, apitokens.Revoke(ctx, env.DB.Scoped(fixtures.GlobexID), id, time.Now()), apitokens.ErrNotFound,
 		"another Workspace cannot revoke it")
 
-	require.NoError(t, apitokens.Revoke(ctx, s, id))
+	require.NoError(t, apitokens.Revoke(ctx, s, id, time.Now()))
 	got, err := s.ApiToken().Get(ctx, id)
 	require.NoError(t, err)
 	assert.NotNil(t, got.RevokedAt, "revoked, not removed")
 
-	require.ErrorIs(t, apitokens.Revoke(ctx, s, id), apitokens.ErrNotFound, "already revoked")
-	assert.ErrorIs(t, apitokens.Revoke(ctx, s, 999999), apitokens.ErrNotFound)
+	require.ErrorIs(t, apitokens.Revoke(ctx, s, id, time.Now()), apitokens.ErrNotFound, "already revoked")
+	assert.ErrorIs(t, apitokens.Revoke(ctx, s, 999999, time.Now()), apitokens.ErrNotFound)
 }
 
 func TestCheckBootstrapAdmitsOnlyTheConfiguredToken(t *testing.T) {

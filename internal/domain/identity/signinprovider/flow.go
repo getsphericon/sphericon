@@ -40,11 +40,11 @@ type FlowCodec struct {
 	now func() time.Time
 }
 
-// NewFlowCodec builds the codec from the instance's JWT secret; now is the clock, nil
-// meaning time.Now.
+// NewFlowCodec builds the codec from the instance's JWT secret; now is the Instance clock, which
+// is required.
 func NewFlowCodec(secret string, now func() time.Time) *FlowCodec {
 	if now == nil {
-		now = time.Now
+		panic("signinprovider: a flow codec needs the Instance clock")
 	}
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte("signin_flow"))

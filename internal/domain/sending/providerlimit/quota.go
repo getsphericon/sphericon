@@ -30,7 +30,7 @@ const quotaTimeout = 15 * time.Second
 // cannot report a quota (SMTP) are left untouched.
 // An error is returned only when the stored config cannot be read or the row cannot
 // be written.
-func RefreshQuota(ctx context.Context, s *ent.Scoped, cipher *secrets.Cipher, catalog *messaging.Catalog, integ *ent.Integration) error {
+func RefreshQuota(ctx context.Context, s *ent.Scoped, cipher *secrets.Cipher, catalog *messaging.Catalog, integ *ent.Integration, now time.Time) error {
 	config, err := cipher.Decrypt(integ.ConfigEncrypted)
 	if err != nil {
 		return fmt.Errorf("decrypt integration %d config: %w", integ.ID, err)
@@ -51,7 +51,7 @@ func RefreshQuota(ctx context.Context, s *ent.Scoped, cipher *secrets.Cipher, ca
 	if lookupErr != nil {
 		slog.WarnContext(ctx, "provider send quota unavailable",
 			"integration_id", integ.ID, "workspace_id", integ.WorkspaceID, "err", lookupErr)
-		return integrations.RecordQuotaUnavailable(ctx, s, integ.ID)
+		return integrations.RecordQuotaUnavailable(ctx, s, integ.ID, now)
 	}
-	return integrations.RecordQuota(ctx, s, integ.ID, quota)
+	return integrations.RecordQuota(ctx, s, integ.ID, quota, now)
 }

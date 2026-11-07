@@ -4,6 +4,7 @@ package segments
 
 import (
 	"context"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -34,12 +35,14 @@ var (
 // is subtracted only at send, never folded into a count (ADR 0001).
 type Module struct {
 	bus *events.Bus
+	// now is the Instance clock a relative date of a rule counts back from.
+	now func() time.Time
 }
 
 // New builds the Segments module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017); the bus runs a save and the archive each in one
-// transaction under the Workspace's lock (ADR 0099).
-func New(bus *events.Bus) *Module { return &Module{bus: bus} }
+// transaction under the Workspace's lock (ADR 0099). now is the Instance clock.
+func New(bus *events.Bus, now func() time.Time) *Module { return &Module{bus: bus, now: now} }
 
 // CreateInput is a new Segment. A nil or empty Condition means "no rules yet".
 type CreateInput struct {
@@ -61,7 +64,7 @@ func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond string) erro
 	if cond == "" {
 		return nil
 	}
-	if _, err := condition.ContactPredicate(ctx, ws, cond); err != nil {
+	if _, err := condition.ContactPredicate(ctx, ws, cond, s.now()); err != nil {
 		return ErrInvalidCondition.With(err.Error())
 	}
 	return nil
@@ -129,7 +132,7 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 
 // Preview counts the Contacts in the Workspace that match an unsaved condition.
 func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, cond string) (int, error) {
-	pred, err := condition.ContactPredicate(ctx, ws, cond)
+	pred, err := condition.ContactPredicate(ctx, ws, cond, s.now())
 	if err != nil {
 		return 0, ErrInvalidCondition.With(err.Error())
 	}
@@ -165,7 +168,7 @@ func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagin
 	if seg.Condition != nil {
 		cond = *seg.Condition
 	}
-	pred, err := condition.ContactPredicate(ctx, ws, cond)
+	pred, err := condition.ContactPredicate(ctx, ws, cond, s.now())
 	if err != nil {
 		return pagination.Page[*ent.Contact]{}, ErrInvalidCondition.With(err.Error())
 	}
@@ -214,7 +217,7 @@ func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Se
 		if seg.ArchivedAt != nil {
 			return nil
 		}
-		return ts.Segment().Archive(ctx, id)
+		return ts.Segment().Archive(ctx, id, s.now())
 	})
 	if err != nil {
 		return nil, err

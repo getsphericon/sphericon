@@ -38,11 +38,11 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	require.NoError(t, err)
 	cipher := testhelper.Cipher(t)
 	entClient := entclient.New(pool)
-	bus := events.New(pool, entclient.NewTx)
+	bus := events.New(pool, entclient.NewTx, time.Now)
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), jobs.Deps{
-		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, messagetoken.New("test-secret", "http://local")),
-		Cipher: cipher, SystemSender: mail, Catalog: registry.Default(), AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,
+		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, messagetoken.New("test-secret", "http://local", time.Now), time.Now),
+		Cipher: cipher, SystemSender: mail, Catalog: registry.Default(), AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 	})
 	require.NoError(t, err)
 	require.NoError(t, client.Start(ctx))

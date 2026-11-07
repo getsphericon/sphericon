@@ -29,7 +29,7 @@ func byDomain(t *testing.T, rates []reputation.DomainRates) map[string]reputatio
 // bounce (a soft one is excluded), 6 delivered and 1 complaint; older events fall outside.
 func TestRatesOverTheTrailingWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day))
+	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day, time.Now()))
 	require.NoError(t, err)
 
 	mail := byDomain(t, rates)["mail.acme.com"]
@@ -62,7 +62,7 @@ func TestComplaintRateIsUndefinedWithoutDeliveryNotices(t *testing.T) {
 
 func TestRatesListsEveryDomainOrderedByIDWithUndefinedRatesForNoTraffic(t *testing.T) {
 	env := testhelper.Setup(t)
-	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day))
+	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day, time.Now()))
 	require.NoError(t, err)
 
 	require.GreaterOrEqual(t, len(rates), 3)
@@ -80,9 +80,9 @@ func TestRatesWindowSelectsByTheEventsOwnTimestamp(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := reputation.New()
 
-	narrow, err := m.Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day))
+	narrow, err := m.Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day, time.Now()))
 	require.NoError(t, err)
-	wide, err := m.Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(365*day))
+	wide, err := m.Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(365*day, time.Now()))
 	require.NoError(t, err)
 
 	n, w := byDomain(t, narrow)["mail.acme.com"], byDomain(t, wide)["mail.acme.com"]
@@ -91,7 +91,7 @@ func TestRatesWindowSelectsByTheEventsOwnTimestamp(t *testing.T) {
 
 func TestRatesAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.GlobexID), reputation.Trailing(7*day))
+	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.GlobexID), reputation.Trailing(7*day, time.Now()))
 	require.NoError(t, err)
 	require.Len(t, rates, 1, "only Globex's own domain is listed")
 	assert.Equal(t, "mail.globex.test", rates[0].Domain.Domain)
@@ -103,7 +103,7 @@ func TestRatesReportsQueryErrors(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := reputation.New().Rates(ctx, env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day))
+	_, err := reputation.New().Rates(ctx, env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day, time.Now()))
 	assert.Error(t, err)
 }
 
@@ -122,7 +122,7 @@ func TestRatesReportsCountErrors(t *testing.T) {
 				return next.Query(ctx, q)
 			})
 		}))
-		_, err := reputation.New().Rates(context.Background(), client.Scoped(fixtures.AcmeID), reputation.Trailing(7*day))
+		_, err := reputation.New().Rates(context.Background(), client.Scoped(fixtures.AcmeID), reputation.Trailing(7*day, time.Now()))
 		assert.ErrorIs(t, err, assert.AnError, "failing event count #%d", n)
 	}
 }

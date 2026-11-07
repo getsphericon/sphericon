@@ -71,7 +71,7 @@ func (d *Delivery) SendRecipient(ctx context.Context, s *ent.Scoped, recipientID
 			return err
 		}
 	}
-	return Finalize(ctx, s, rec.BroadcastID)
+	return Finalize(ctx, s, rec.BroadcastID, d.out.Now())
 }
 
 func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient) error {
@@ -186,7 +186,7 @@ func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 	if err := d.fail(ctx, s, rec, cause); err != nil {
 		return err
 	}
-	return Finalize(ctx, s, rec.BroadcastID)
+	return Finalize(ctx, s, rec.BroadcastID, d.out.Now())
 }
 
 // setHold records why a Broadcast is held: the reason Outbound send held it for, a

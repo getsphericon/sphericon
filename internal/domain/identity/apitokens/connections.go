@@ -30,10 +30,10 @@ func Connections(ctx context.Context, s *ent.Scoped, caller *ent.Membership) ([]
 // RevokeConnection retires the active Connection id of the Workspace s on behalf of caller, under
 // the Policy of Connections: the caller's own, or anyone's when the Role holds members:manage. A
 // Connection the caller may not see is ErrConnectionNotFound, as an unknown one is.
-func RevokeConnection(ctx context.Context, s *ent.Scoped, caller *ent.Membership, id int64) error {
+func RevokeConnection(ctx context.Context, s *ent.Scoped, caller *ent.Membership, id int64, at time.Time) error {
 	n, err := s.ApiToken().Update().
 		Where(apitoken.ID(id), isConnection(), visibleTo(caller), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(time.Now()).
+		SetRevokedAt(at).
 		Save(ctx)
 	if err != nil {
 		return err
@@ -108,10 +108,10 @@ func RotateConnection(ctx context.Context, s *ent.Scoped, token *ent.ApiToken, s
 // RevokeGrant revokes the Connection id of the Workspace s unless it is revoked already: a
 // rotated refresh token of its grant was presented again, so the connector's credentials may be
 // stolen (ADR 0016).
-func RevokeGrant(ctx context.Context, s *ent.Scoped, id int64) error {
+func RevokeGrant(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 	_, err := s.ApiToken().Update().
 		Where(apitoken.ID(id), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(time.Now()).
+		SetRevokedAt(at).
 		Save(ctx)
 	return err
 }

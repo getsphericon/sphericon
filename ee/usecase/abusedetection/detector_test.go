@@ -57,7 +57,7 @@ func (p *pass) Run(ctx context.Context, at time.Time) (abusedetection.Summary, e
 func newDetector(env *testhelper.TestEnv, lic *licensekey.License, cfg abusedetection.Config) *pass {
 	notify := memberships.OwnerNotifier(env.DB, env.SystemMail)
 	p := &pass{}
-	p.detector = abusedetection.New(env.DB, lic, notify, suspension.NewSuspender(env.Bus, env.DB, notify, cfg.SupportEmail), cfg,
+	p.detector = abusedetection.New(env.DB, lic, notify, suspension.NewSuspender(env.Bus, env.DB, notify, cfg.SupportEmail, time.Now), cfg,
 		func() time.Time { return p.now })
 	return p
 }
@@ -307,7 +307,7 @@ func TestAnExemptWorkspaceIsNeitherWarnedNorFrozenButCanBeSuspendedByHand(t *tes
 	assert.NotContains(t, summary.Warned, fixtures.KramericaID)
 	assert.False(t, suspended(t, env, fixtures.KramericaID))
 	assert.NotContains(t, recipients(env), fixtures.KramericaOwnerNewmanEmail)
-	changed, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.CLI, "verified abuse")
+	changed, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.CLI, "verified abuse", time.Now())
 	require.NoError(t, err)
 	assert.True(t, changed, "an exemption is not a loophole for real abuse")
 }
@@ -323,7 +323,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 	_, err := d.Run(t.Context(), now)
 	require.NoError(t, err)
 	require.True(t, suspended(t, env, fixtures.KramericaID))
-	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.StaffMember("1"))
+	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.StaffMember("1"), time.Now())
 	require.NoError(t, err)
 
 	immediately, err := d.Run(t.Context(), now.Add(time.Minute))
@@ -341,7 +341,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 
 func TestUnsuspendingRecordsTheClearance(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.HooliID, suspension.StaffMember("1"))
+	_, err := suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.HooliID, suspension.StaffMember("1"), time.Now())
 	require.NoError(t, err)
 
 	assert.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.HooliID).ClearedAt)
@@ -366,7 +366,7 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID).AbuseWarningNotifiedAt)
 
-	_, err = suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.CLI, "manual")
+	_, err = suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.CLI, "manual", time.Now())
 	require.NoError(t, err)
 	_, err = d.Run(t.Context(), at(warnDay).Add(time.Minute))
 

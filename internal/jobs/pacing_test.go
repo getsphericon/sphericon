@@ -10,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 )
@@ -30,10 +29,10 @@ func (e *riverEnv) recipientJobTimes(t *testing.T) []time.Time {
 	return times
 }
 
-func (e *riverEnv) planBroadcast(t *testing.T, id int64, opts ...outboundmessages.Option) {
+func (e *riverEnv) planBroadcast(t *testing.T, id int64, now func() time.Time) {
 	t.Helper()
 	e.DB.Broadcast.UpdateOneID(id).SetStatus(broadcast.StatusSending).ExecX(e.workCtx())
-	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), opts...))
+	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), now))
 	require.NoError(t, w.Work(e.workCtx(), job(broadcasts.SendArgs{BroadcastID: id})))
 }
 
@@ -44,7 +43,7 @@ func TestThePlanStartsAtOutboundSendsClock(t *testing.T) {
 	e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(e.workCtx())
 	at := time.Now().Add(time.Hour)
 
-	e.planBroadcast(t, fixtures.BroadcastDraftID, outboundmessages.WithClock(func() time.Time { return at }))
+	e.planBroadcast(t, fixtures.BroadcastDraftID, func() time.Time { return at })
 
 	times := e.recipientJobTimes(t)
 	require.NotEmpty(t, times)
@@ -57,7 +56,7 @@ func TestRiverAdapterSchedulesRecipientJobsAtTheModulesTimes(t *testing.T) {
 	ctx := e.workCtx()
 	e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
 
-	e.planBroadcast(t, fixtures.BroadcastDraftID)
+	e.planBroadcast(t, fixtures.BroadcastDraftID, time.Now)
 
 	times := e.recipientJobTimes(t)
 	require.Greater(t, len(times), 2)
@@ -71,9 +70,9 @@ func TestRiverAdapterSchedulesRecipientJobsAtTheModulesTimes(t *testing.T) {
 func TestARetriedPlanLeavesOneJobPerRecipient(t *testing.T) {
 	e := newRiverEnv(t)
 
-	e.planBroadcast(t, fixtures.BroadcastDraftID)
+	e.planBroadcast(t, fixtures.BroadcastDraftID, time.Now)
 	first := len(e.recipientJobTimes(t))
-	e.planBroadcast(t, fixtures.BroadcastDraftID)
+	e.planBroadcast(t, fixtures.BroadcastDraftID, time.Now)
 
 	require.Positive(t, first)
 	assert.Len(t, e.recipientJobTimes(t), first)

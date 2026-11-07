@@ -76,7 +76,7 @@ func NewWorkspaceRace(t *testing.T, workspaceID int64) *WorkspaceRace {
 	t.Helper()
 	db := RealDB(t)
 	db.SetMaxOpenConns(8)
-	bus := events.New(db, entclient.NewTx)
+	bus := events.New(db, entclient.NewTx, time.Now)
 	bus.UseJobs(AcceptingQueue{})
 	return &WorkspaceRace{DB: db, Bus: bus, Scope: entclient.New(db).Scoped(workspaceID)}
 }

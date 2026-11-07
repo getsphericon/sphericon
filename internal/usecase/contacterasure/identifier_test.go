@@ -2,6 +2,7 @@ package contacterasure_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -14,7 +15,7 @@ var apiRequester = contacterasure.Requester{Kind: contacterasure.RequesterAPITok
 
 func TestAnErasureNamesExactlyOneIdentifier(t *testing.T) {
 	env := testhelper.Setup(t)
-	erasure := contacterasure.New(env.Bus)
+	erasure := contacterasure.New(env.Bus, time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	neither := erasure.Erase(t.Context(), acme, contacterasure.Identifier{}, apiRequester)
@@ -31,7 +32,7 @@ func TestAnErasureNamesExactlyOneIdentifier(t *testing.T) {
 func TestAnErasureByAnAddressThatIsNotOnePlainAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := contacterasure.New(env.Bus).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
+	err := contacterasure.New(env.Bus, time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		contacterasure.Identifier{Email: new("Alice <" + fixtures.ContactAliceEmail + ">")}, apiRequester)
 
 	require.ErrorIs(t, err, contacterasure.ErrInvalidEmail)

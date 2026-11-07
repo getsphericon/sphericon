@@ -2,6 +2,7 @@ package broadcasts
 
 import (
 	"context"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -17,7 +18,7 @@ import (
 // anonymous record. It runs inside the caller's transaction (s and purger come from the
 // same one); a send job that is already running is not purged, and finds its recipient
 // gone when it starts.
-func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger events.QueuePurger) error {
+func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger events.QueuePurger, at time.Time) error {
 	unsent, err := s.BroadcastRecipient().Query().
 		Where(broadcastrecipient.ContactID(contactID), Pending()).
 		All(ctx)
@@ -39,7 +40,7 @@ func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger e
 	for _, id := range affected {
 		// The Broadcast's figures are read from its rows, so removing the recipients is all
 		// they need; one left with nothing pending settles.
-		if err := Finalize(ctx, s, id); err != nil {
+		if err := Finalize(ctx, s, id, at); err != nil {
 			return err
 		}
 	}

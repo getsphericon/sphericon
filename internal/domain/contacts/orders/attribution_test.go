@@ -206,7 +206,7 @@ func TestABackfilledOrderWhoseClickWasPrunedIsUnattributed(t *testing.T) {
 	b, _ := creditedTo(first)
 	require.EqualValues(t, fixtures.BroadcastEmporiumID, b, "while the click is kept it credits a Backfilled Order")
 
-	pruned, err := events.PruneEvents(t.Context(), env.DB, retention, 100)
+	pruned, err := events.PruneEvents(t.Context(), env.DB, retention, 100, time.Now())
 	require.NoError(t, err)
 	require.NotZero(t, pruned)
 	second := record(t, env, completed("R-2", fixtures.ContactClickerPrunedID, ago(retention)))

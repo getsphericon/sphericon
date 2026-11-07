@@ -3,6 +3,7 @@ package segments_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -22,7 +23,7 @@ const (
 
 func TestCreateRejectsInvalidDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
+	m := segments.New(env.Bus, time.Now)
 	ctx := context.Background()
 
 	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Condition: new(badCondition)})
@@ -35,7 +36,7 @@ func TestCreateRejectsInvalidDefinition(t *testing.T) {
 
 func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
+	m := segments.New(env.Bus, time.Now)
 	ctx := context.Background()
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`
@@ -52,7 +53,7 @@ func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {
 
 func TestUpdateValidatesLikeCreate(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
+	m := segments.New(env.Bus, time.Now)
 	ctx := context.Background()
 
 	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Condition: patch.Set(badCondition)})
@@ -72,7 +73,7 @@ func TestUpdateValidatesLikeCreate(t *testing.T) {
 
 func TestUpdateIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
+	m := segments.New(env.Bus, time.Now)
 
 	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: patch.Set("x")})
 	require.ErrorIs(t, err, segments.ErrNotFound)
@@ -80,12 +81,12 @@ func TestUpdateIsWorkspaceScoped(t *testing.T) {
 
 func TestPreviewAndCountAgree(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
+	m := segments.New(env.Bus, time.Now)
 	ctx := context.Background()
 
 	stored, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
-	pred, err := condition.ContactPredicate(ctx, env.DB.Scoped(fixtures.AcmeID), *stored.Condition)
+	pred, err := condition.ContactPredicate(ctx, env.DB.Scoped(fixtures.AcmeID), *stored.Condition, time.Now())
 	require.NoError(t, err)
 	want, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), pred).Count(ctx)
 	require.NoError(t, err)
@@ -102,7 +103,7 @@ func TestPreviewAndCountAgree(t *testing.T) {
 
 func TestPreviewAndCountErrors(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
+	m := segments.New(env.Bus, time.Now)
 	ctx := context.Background()
 
 	_, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), badCondition)
@@ -117,7 +118,7 @@ func TestPreviewAndCountErrors(t *testing.T) {
 // has both), and its negation the rest of the Workspace.
 func TestASegmentOfContactsThatCanBeTextedCountsAndListsThem(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
+	m := segments.New(env.Bus, time.Now)
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.TyrellID)
 	listed := func(id int64) (int, []int64) {

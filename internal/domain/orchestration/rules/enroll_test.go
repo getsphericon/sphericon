@@ -3,6 +3,7 @@ package rules_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,7 @@ import (
 
 func TestAnEnrollActionNeedsAnAutomationOfTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	create := func(a rules.Action) error {
 		_, err := m.Create(context.Background(), s, rules.CreateInput{Name: "Enroller", TriggerEvents: []string{"x"}, Actions: []rules.Action{a}})

@@ -16,17 +16,17 @@ import (
 // RecordQuotaUnavailable stores that the lookup for the Integration id failed: the moment it was
 // checked, and the moment the lookup first failed, which a second failure keeps. The last known
 // provider values and standing stay.
-func RecordQuotaUnavailable(ctx context.Context, s *ent.Scoped, id int64) error {
-	if err := s.Integration().UpdateOneID(id).SetProviderQuotaCheckedAt(time.Now()).Exec(ctx); err != nil {
+func RecordQuotaUnavailable(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
+	if err := s.Integration().UpdateOneID(id).SetProviderQuotaCheckedAt(at).Exec(ctx); err != nil {
 		return err
 	}
-	return markQuotaFailed(ctx, s, id)
+	return markQuotaFailed(ctx, s, id, at)
 }
 
 // RecordQuota stores the quota and standing the provider reported for the Integration id, with
 // the moment it was checked, and ends a recorded failure.
-func RecordQuota(ctx context.Context, s *ent.Scoped, id int64, quota messaging.Quota) error {
-	upd := s.Integration().UpdateOneID(id).SetProviderQuotaCheckedAt(time.Now())
+func RecordQuota(ctx context.Context, s *ent.Scoped, id int64, quota messaging.Quota, at time.Time) error {
+	upd := s.Integration().UpdateOneID(id).SetProviderQuotaCheckedAt(at)
 	upd.SetNillableProviderMaxPerSecond(quota.PerSecond).
 		SetNillableProviderMaxPerDay(quota.PerDay)
 	if quota.PerSecond == nil {
@@ -49,10 +49,10 @@ func RecordQuota(ctx context.Context, s *ent.Scoped, id int64, quota messaging.Q
 
 // markQuotaFailed records the moment the lookup first failed: it writes only while no failure is
 // recorded, so a second failed lookup keeps the first moment.
-func markQuotaFailed(ctx context.Context, s *ent.Scoped, id int64) error {
+func markQuotaFailed(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 	_, err := s.Integration().Update().
 		Where(integration.ID(id), integration.ProviderQuotaFailedAtIsNil()).
-		SetProviderQuotaFailedAt(time.Now()).
+		SetProviderQuotaFailedAt(at).
 		Save(ctx)
 	return err
 }

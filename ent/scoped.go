@@ -2317,11 +2317,11 @@ func (t *AutomationScoped) Get(ctx context.Context, id int64) (*Automation, erro
 	return t.QueryWithArchived().Where(automation.ID(id)).Only(ctx)
 }
 
-// Archive stamps archived_at on the kept Automation with the id (ps fence it further); a row of
+// Archive stamps archived_at, at `at`, on the kept Automation with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
-func (t *AutomationScoped) Archive(ctx context.Context, id int64, ps ...predicate.Automation) error {
+func (t *AutomationScoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.Automation) error {
 	where := append([]predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws), automation.ArchivedAtIsNil()}, ps...)
-	return t.setArchived(ctx, id, where, "archive", func(u *AutomationUpdateOne) { u.SetArchivedAt(time.Now()) })
+	return t.setArchived(ctx, id, where, "archive", func(u *AutomationUpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the Automation with the id. Unarchiving a kept row changes
@@ -7302,11 +7302,11 @@ func (t *BroadcastScoped) Get(ctx context.Context, id int64) (*Broadcast, error)
 	return t.QueryWithArchived().Where(broadcast.ID(id)).Only(ctx)
 }
 
-// Archive stamps archived_at on the kept Broadcast with the id (ps fence it further); a row of
+// Archive stamps archived_at, at `at`, on the kept Broadcast with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
-func (t *BroadcastScoped) Archive(ctx context.Context, id int64, ps ...predicate.Broadcast) error {
+func (t *BroadcastScoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.Broadcast) error {
 	where := append([]predicate.Broadcast{broadcast.ID(id), broadcast.WorkspaceID(t.s.ws), broadcast.ArchivedAtIsNil()}, ps...)
-	return t.setArchived(ctx, id, where, "archive", func(u *BroadcastUpdateOne) { u.SetArchivedAt(time.Now()) })
+	return t.setArchived(ctx, id, where, "archive", func(u *BroadcastUpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the Broadcast with the id. Unarchiving a kept row changes
@@ -18091,13 +18091,13 @@ func (t *IntegrationScoped) Get(ctx context.Context, id int64) (*Integration, er
 	return t.QueryWithDiscarded().Where(integration.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at on the kept Integration with the id (ps fence it further); a row of
+// Discard stamps discarded_at, at `at`, on the kept Integration with the id (ps fence it further); a row of
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
-func (t *IntegrationScoped) Discard(ctx context.Context, id int64, ps ...predicate.Integration) error {
+func (t *IntegrationScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.Integration) error {
 	where := append([]predicate.Integration{integration.ID(id), integration.WorkspaceID(t.s.ws), integration.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*Integration, error) {
-		return c.Integration.UpdateOneID(id).Where(where...).SetDiscardedAt(time.Now()).Save(ctx)
+		return c.Integration.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
 	}
 	if t.s.auditing() {
 		return t.s.audited(ctx, func(ts *Scoped) error {
@@ -26980,13 +26980,13 @@ func (t *RuleScoped) Get(ctx context.Context, id int64) (*Rule, error) {
 	return t.QueryWithDiscarded().Where(rule.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at on the kept Rule with the id (ps fence it further); a row of
+// Discard stamps discarded_at, at `at`, on the kept Rule with the id (ps fence it further); a row of
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
-func (t *RuleScoped) Discard(ctx context.Context, id int64, ps ...predicate.Rule) error {
+func (t *RuleScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.Rule) error {
 	where := append([]predicate.Rule{rule.ID(id), rule.WorkspaceID(t.s.ws), rule.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*Rule, error) {
-		return c.Rule.UpdateOneID(id).Where(where...).SetDiscardedAt(time.Now()).Save(ctx)
+		return c.Rule.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
 	}
 	if t.s.auditing() {
 		return t.s.audited(ctx, func(ts *Scoped) error {
@@ -30491,11 +30491,11 @@ func (t *SegmentScoped) Get(ctx context.Context, id int64) (*Segment, error) {
 	return t.QueryWithArchived().Where(segment.ID(id)).Only(ctx)
 }
 
-// Archive stamps archived_at on the kept Segment with the id (ps fence it further); a row of
+// Archive stamps archived_at, at `at`, on the kept Segment with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
-func (t *SegmentScoped) Archive(ctx context.Context, id int64, ps ...predicate.Segment) error {
+func (t *SegmentScoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.Segment) error {
 	where := append([]predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws), segment.ArchivedAtIsNil()}, ps...)
-	return t.setArchived(ctx, id, where, "archive", func(u *SegmentUpdateOne) { u.SetArchivedAt(time.Now()) })
+	return t.setArchived(ctx, id, where, "archive", func(u *SegmentUpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the Segment with the id. Unarchiving a kept row changes
@@ -31801,13 +31801,13 @@ func (t *SendingDomainScoped) Get(ctx context.Context, id int64) (*SendingDomain
 	return t.QueryWithDiscarded().Where(sendingdomain.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at on the kept SendingDomain with the id (ps fence it further); a row of
+// Discard stamps discarded_at, at `at`, on the kept SendingDomain with the id (ps fence it further); a row of
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
-func (t *SendingDomainScoped) Discard(ctx context.Context, id int64, ps ...predicate.SendingDomain) error {
+func (t *SendingDomainScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.SendingDomain) error {
 	where := append([]predicate.SendingDomain{sendingdomain.ID(id), sendingdomain.WorkspaceID(t.s.ws), sendingdomain.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*SendingDomain, error) {
-		return c.SendingDomain.UpdateOneID(id).Where(where...).SetDiscardedAt(time.Now()).Save(ctx)
+		return c.SendingDomain.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
 	}
 	if t.s.auditing() {
 		return t.s.audited(ctx, func(ts *Scoped) error {

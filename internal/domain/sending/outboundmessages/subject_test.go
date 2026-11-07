@@ -3,6 +3,7 @@ package outboundmessages_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func TestASentEmailKeepsItsRenderedSubject(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	res, err := newModule(env).Send(ctx, s, outboundmessages.Transactional(outboundmessages.TransactionalMessage{
+	res, err := newModule(env, time.Now).Send(ctx, s, outboundmessages.Transactional(outboundmessages.TransactionalMessage{
 		Destination: "ada@example.com",
 		Variables:   map[string]any{"nick": "countess"},
 		Content:     outboundmessages.EmailContent{Subject: "Hi {{ nick }}", Body: htmlBody},
@@ -54,7 +55,7 @@ func TestBroadcastAndAutomationSendsKeepTheirRenderedSubject(t *testing.T) {
 	for name, req := range map[string]outboundmessages.Request{"a recipient": broadcastReq, "a step": stepReq} {
 		t.Run(name, func(t *testing.T) {
 			before := len(env.CustomerMail.Messages())
-			res, err := newModule(env).Send(ctx, s, req)
+			res, err := newModule(env, time.Now).Send(ctx, s, req)
 			require.NoError(t, err)
 			require.Equal(t, outboundmessages.Sent, res.Outcome)
 

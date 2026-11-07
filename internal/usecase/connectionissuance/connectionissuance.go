@@ -212,7 +212,7 @@ func (s *UseCase) Refresh(ctx context.Context, in RefreshInput) (*Issued, error)
 // revokeGrant revokes the grant's API token (a rotated refresh token was replayed, so the
 // connector's credentials may be stolen) and answers invalid_grant.
 func (s *UseCase) revokeGrant(ctx context.Context, token *ent.ApiToken) error {
-	if err := apitokens.RevokeGrant(ctx, s.ent.Scoped(token.WorkspaceID), token.ID); err != nil {
+	if err := apitokens.RevokeGrant(ctx, s.ent.Scoped(token.WorkspaceID), token.ID, s.now()); err != nil {
 		return err
 	}
 	return invalidGrant("refresh token was already used; the grant is revoked")

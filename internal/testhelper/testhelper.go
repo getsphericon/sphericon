@@ -517,7 +517,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, jobs.NewAuthMailWorker(systemMail, cfg.AppURL))
 		add(tb, p, txDB, jobs.NewMemberInviteWorker(systemMail))
 		add(tb, p, txDB, jobs.NewNotifySecondFactorRequiredWorker(client, systemMail, cfg.AppURL))
-		add(tb, p, txDB, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector)))
+		add(tb, p, txDB, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector), st.now))
 		add(tb, p, txDB, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomainverification.UseCase](injector)))
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
 		add(tb, p, txDB, jobs.NewSuppressEventWorker(client))

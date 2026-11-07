@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +37,7 @@ func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automati
 	t.Helper()
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	created, err := m.Create(ctx, s, automations.CreateInput{
 		Name: "Telegram welcome", TriggerEvent: events.NameTelegramBound, ExitEvents: []string{}, Steps: steps,
 	})

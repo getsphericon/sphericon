@@ -145,10 +145,10 @@ type Option func(*Module)
 // Staff member sets. Without them (the default) it has none.
 func WithSendCaps(c providerlimit.SendCaps) Option { return func(m *Module) { m.sendCaps = c } }
 
-// New builds the module; a nil clock means time.Now.
+// New builds the module on the Instance clock now, which is required.
 func New(client *ent.Client, env Environment, now func() time.Time, opts ...Option) *Module {
 	if now == nil {
-		now = time.Now
+		panic("instancestates: the module needs the Instance clock")
 	}
 	m := &Module{ent: client, env: env, now: now}
 	for _, o := range opts {

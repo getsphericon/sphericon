@@ -49,12 +49,13 @@ var (
 type Module struct {
 	client *ent.Client
 	bus    *events.Bus
+	now    func() time.Time
 }
 
 // New builds the module over the ent client; the bus opens the transactions of an issue and a
-// revocation, which record their Audit entries.
-func New(client *ent.Client, bus *events.Bus) *Module {
-	return &Module{client: client, bus: bus}
+// revocation, which record their Audit entries. now is the Instance clock a link expires by.
+func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, now: now}
 }
 
 // PendingInvitations lists the unaccepted Invitations of the Workspace s with their inviters,
@@ -72,7 +73,7 @@ func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, 
 // front. ErrInvitationLinkNotFound when there is none.
 func (m *Module) PendingInvitation(ctx context.Context, token string) (*ent.Invitation, error) {
 	inv, err := m.client.Invitation.Query().
-		Where(invitation.TokenHash(HashInviteToken(token)), PendingAt(time.Now())).
+		Where(invitation.TokenHash(HashInviteToken(token)), PendingAt(m.now())).
 		WithWorkspace().
 		Only(ctx)
 	if ent.IsNotFound(err) {
@@ -88,9 +89,9 @@ func PendingAt(now time.Time) predicate.Invitation {
 }
 
 // MarkAcceptedIn marks the Invitation id of the scoped Workspace accepted, on the transaction of
-// the acceptance that made its Membership.
-func MarkAcceptedIn(ctx context.Context, ts *ent.Scoped, id int64) error {
-	return ts.Invitation().UpdateOneID(id).SetAcceptedAt(time.Now()).Exec(ctx)
+// the acceptance that made its Membership, at `at`.
+func MarkAcceptedIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
+	return ts.Invitation().UpdateOneID(id).SetAcceptedAt(at).Exec(ctx)
 }
 
 // InviteInput is a new (or reissued) Invitation request. The token, its hash and
@@ -118,7 +119,7 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		return nil, "", err
 	}
 	tokenHash := HashInviteToken(token)
-	expiresAt := time.Now().Add(InviteTokenTTL)
+	expiresAt := m.now().Add(InviteTokenTTL)
 
 	var inv *ent.Invitation
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {

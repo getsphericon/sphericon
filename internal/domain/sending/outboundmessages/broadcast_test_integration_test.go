@@ -3,6 +3,7 @@ package outboundmessages_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,8 +44,14 @@ func globexBroadcastTestVia(env *testhelper.TestEnv, to string, via perIntegrati
 }
 
 func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string, via perIntegration, integrationID *int64) (outboundmessages.Result, error) {
-	m := outboundmessages.New(env.Bus, env.Holds, via, messagetoken.New("test-secret", "http://local"),
-		outboundmessages.WithSystemSender(env.SystemMail))
+	m := outboundmessages.New(
+		env.Bus,
+		env.Holds,
+		via,
+		messagetoken.New("test-secret", "http://local", time.Now),
+		time.Now,
+		outboundmessages.WithSystemSender(env.SystemMail),
+	)
 	b := &ent.Broadcast{WorkspaceID: workspaceID, Channel: channels.Email, Subject: new("Launch"), Body: new(htmlBody), FromEmail: &from, IntegrationID: integrationID}
 	return m.SendBroadcastTest(context.Background(), env.DB.Scoped(workspaceID), b, outboundmessages.TestAddress{Email: to},
 		&outboundmessages.Asker{UserID: fixtures.OwnerJaneID, Email: fixtures.OwnerJaneEmail})

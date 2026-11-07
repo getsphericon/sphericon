@@ -28,14 +28,14 @@ type CollectEventInput struct {
 
 // SeeIn returns the Visitor visitorID, marked seen now, and creates it when it has not been seen,
 // inside the transaction s is bound to: the device Identify resolves.
-func SeeIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
-	return findOrCreateVisitor(ctx, s, visitorID)
+func SeeIn(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
+	return findOrCreateVisitor(ctx, s, visitorID, now)
 }
 
 // EnsureIn returns the Visitor visitorID, creating it when it has not been seen; a Visitor that
 // exists is left as it is. A chat started on its behalf binds to it
 // (internal/domain/sending/bindings).
-func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
+func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
 	vis, err := s.Visitor().Query().Where(visitor.VisitorID(visitorID)).First(ctx)
 	if err == nil {
 		return vis, nil
@@ -43,7 +43,7 @@ func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visito
 	if !ent.IsNotFound(err) {
 		return nil, fmt.Errorf("find visitor: %w", err)
 	}
-	vis, err = s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(time.Now()).Save(ctx)
+	vis, err = s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(now).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("create visitor: %w", err)
 	}
@@ -52,16 +52,16 @@ func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visito
 
 // BindIn binds the Visitor id to the Contact contactID and marks it seen now, inside the
 // transaction s is bound to: the device Identify resolved.
-func BindIn(ctx context.Context, s *ent.Scoped, id, contactID int64) error {
+func BindIn(ctx context.Context, s *ent.Scoped, id, contactID int64, now time.Time) error {
 	return s.Visitor().UpdateOneID(id).
 		SetContactID(contactID).
-		SetLastSeenAt(time.Now()).
+		SetLastSeenAt(now).
 		Exec(ctx)
 }
 
 // Collect refuses the whole batch with events.ErrRejected when an event claims a
 // reserved action: delivery, consent and Contact lifecycle facts are the system's alone.
-func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []CollectEventInput) error {
+func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []CollectEventInput, now time.Time) error {
 	for _, evt := range evts {
 		if events.ReservedAction(evt.Action) {
 			return events.CheckAction(evt.Action)
@@ -93,7 +93,7 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 		// event commit together. The collected event is the customer's own — its
 		// action and properties are stored as-is.
 		if err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-			res, err := resolveIdentity(ctx, ts, visitorID)
+			res, err := resolveIdentity(ctx, ts, visitorID, now)
 			if err != nil {
 				return err
 			}
@@ -130,8 +130,8 @@ type identityResolution struct {
 	phone     string
 }
 
-func resolveIdentity(ctx context.Context, s *ent.Scoped, visitorID string) (*identityResolution, error) {
-	vis, err := findOrCreateVisitor(ctx, s, visitorID)
+func resolveIdentity(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*identityResolution, error) {
+	vis, err := findOrCreateVisitor(ctx, s, visitorID, now)
 	if err != nil {
 		return nil, err
 	}
@@ -153,13 +153,13 @@ func resolveIdentity(ctx context.Context, s *ent.Scoped, visitorID string) (*ide
 	}, nil
 }
 
-func findOrCreateVisitor(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
+func findOrCreateVisitor(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
 	existing, err := s.Visitor().Query().
 		Where(visitor.VisitorID(visitorID)).
 		First(ctx)
 	if err == nil {
 		return s.Visitor().UpdateOneID(existing.ID).
-			SetLastSeenAt(time.Now()).
+			SetLastSeenAt(now).
 			Save(ctx)
 	}
 	if !ent.IsNotFound(err) {
@@ -167,6 +167,6 @@ func findOrCreateVisitor(ctx context.Context, s *ent.Scoped, visitorID string) (
 	}
 	return s.Visitor().Create().
 		SetVisitorID(visitorID).
-		SetLastSeenAt(time.Now()).
+		SetLastSeenAt(now).
 		Save(ctx)
 }

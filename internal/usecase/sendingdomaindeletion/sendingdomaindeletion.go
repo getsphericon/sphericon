@@ -8,6 +8,7 @@ package sendingdomaindeletion
 
 import (
 	"context"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -31,12 +32,13 @@ type UseCase struct {
 	bus     *events.Bus
 	domains *sendingdomains.Module
 	senders Senders
+	now     func() time.Time
 }
 
 // New builds the Sending domain deletion use case over the Sending domains module, which reads the
-// row, and senders, which tells the From an Integration sends with.
-func New(bus *events.Bus, domains *sendingdomains.Module, senders Senders) *UseCase {
-	return &UseCase{bus: bus, domains: domains, senders: senders}
+// row, and senders, which tells the From an Integration sends with; now is the Instance clock.
+func New(bus *events.Bus, domains *sendingdomains.Module, senders Senders, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, domains: domains, senders: senders, now: now}
 }
 
 // Delete discards a Sending domain for good (ADR 0049): it leaves the lists and is never
@@ -64,7 +66,7 @@ func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		if len(users) > 0 {
 			return &liveuse.Error{What: liveuse.SubjectSendingDomain, Users: users}
 		}
-		return sendingdomains.DeleteIn(ctx, ts, id)
+		return sendingdomains.DeleteIn(ctx, ts, id, u.now())
 	})
 }
 

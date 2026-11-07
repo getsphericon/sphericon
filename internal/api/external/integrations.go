@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -24,7 +23,7 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 	if err != nil {
 		return nil, err
 	}
-	limits, err := providerlimit.Statuses(ctx, s, page.Items, time.Now())
+	limits, err := providerlimit.Statuses(ctx, s, page.Items, h.now())
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +126,7 @@ func (h *Handlers) IntegrationsDelete(ctx context.Context, params externalapi.In
 
 // integrationOne renders a single row with its 24-hour usage.
 func (h *Handlers) integrationOne(ctx context.Context, s *ent.Scoped, row *ent.Integration) (externalapi.IntegrationResource, error) {
-	limits, err := providerlimit.Statuses(ctx, s, []*ent.Integration{row}, time.Now())
+	limits, err := providerlimit.Statuses(ctx, s, []*ent.Integration{row}, h.now())
 	if err != nil {
 		return externalapi.IntegrationResource{}, err
 	}

@@ -48,6 +48,8 @@ var mapper = &resources.ConverterImpl{}
 var inputs = &resources.InputsImpl{}
 
 type Handlers struct {
+	// now is the Instance clock (Deps.Clock).
+	now             func() time.Time
 	workspaces      *workspaces.Module
 	bus             *events.Bus
 	eventrecording  *eventrecording.UseCase
@@ -142,8 +144,8 @@ type Deps struct {
 	BootstrapToken            string
 	Audit                     AuditLog
 	Export                    ExportStreams
-	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
-	// time.Now); the security handler reads it.
+	// Clock is the Instance clock (app.Clock) the handlers read, and the security handler checks a
+	// Connection's Two-factor requirement against. Required.
 	Clock func() time.Time
 	// Intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
 	Intake *contactintake.UseCase
@@ -152,7 +154,11 @@ type Deps struct {
 }
 
 func NewHandlers(d Deps) *Handlers {
+	if d.Clock == nil {
+		panic("external: Deps.Clock is required: the handlers read the Instance clock")
+	}
 	return &Handlers{
+		now:        d.Clock,
 		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,

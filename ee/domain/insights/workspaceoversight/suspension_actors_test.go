@@ -3,6 +3,7 @@ package workspaceoversight_test
 import (
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -82,7 +83,7 @@ func TestTheOwnerNoticeNamesSystemOrSphericonStaffAsTheActor(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			h := newHarness(t)
 
-			require.NoError(t, suspension.NotifyOwners(t.Context(), h.env.DB, memberships.OwnerNotifier(h.env.DB, h.env.SystemMail), "", tc.id))
+			require.NoError(t, suspension.NotifyOwners(t.Context(), h.env.DB, memberships.OwnerNotifier(h.env.DB, h.env.SystemMail), "", tc.id, time.Now()))
 
 			msgs := h.env.SystemMail.Messages()
 			require.Len(t, msgs, 1)

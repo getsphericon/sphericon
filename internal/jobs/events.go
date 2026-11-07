@@ -265,8 +265,9 @@ func (w *BroadcastUnsubscribeEventWorker) Work(ctx context.Context, job *river.J
 	if !ok || e.BroadcastID == 0 {
 		return nil
 	}
-	// The Workspace comes from the event envelope, as for every consumer.
-	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(env.WorkspaceID), e.BroadcastID, e.ContactID); err != nil {
+	// The Workspace comes from the event envelope, as for every consumer, and the moment from when
+	// the unsubscribe occurred.
+	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(env.WorkspaceID), e.BroadcastID, e.ContactID, env.OccurredAt); err != nil {
 		return fmt.Errorf("count the unsubscribe for the broadcast: %w", err)
 	}
 	return nil

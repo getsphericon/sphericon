@@ -109,7 +109,7 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 	e.abuseCfg = abusedetection.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
 	e.now = staffCfg.Clock
 	if e.now == nil {
-		e.now = time.Now
+		return nil, errors.New("ee: workspaceoversight.Config.Clock is required: the Edition reads the Instance clock")
 	}
 	if lic.Has(licensekey.FeatureStaff) {
 		if staffSessions == nil {

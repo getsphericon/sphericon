@@ -85,16 +85,26 @@ func newRiverEnvWithRealQueue(t *testing.T) *riverEnv {
 	return newRiverEnvOn(t, testhelper.Setup(t), testhelper.RealDB(t))
 }
 
+// The job runner refuses to start without the Instance clock rather than fall back to the wall
+// clock: every worker reads the clock it is given (#1172).
+func TestTheJobRunnerRefusesToStartWithoutTheInstanceClock(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	_, err := jobs.NewClient(riverdatabasesql.New(env.SQLDB), jobs.Deps{Ent: env.DB, Bus: env.Bus})
+
+	require.ErrorContains(t, err, "Deps.Clock is required")
+}
+
 func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEnv {
 	t.Helper()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	cipher := env.Cipher
 	fs := &fakeSender{}
-	mod := newMod(env, resolvingTo(fs))
+	mod := newMod(env, resolvingTo(fs), time.Now)
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
 		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: env.SystemMail, Catalog: registry.Default(),
-		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,
+		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})
 	require.NoError(t, err)
@@ -538,13 +548,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now)).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), gone, memberships.OwnerNotifier(env.DB, env.SystemMail), time.Now)).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -569,7 +579,7 @@ func TestPurgeAuthAttemptsWorkerRemovesStaleRowsOnly(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
 
-	require.NoError(t, jobs.NewPurgeAuthAttemptsWorker(e.DB).Work(ctx, job(jobs.PurgeAuthAttemptsArgs{})))
+	require.NoError(t, jobs.NewPurgeAuthAttemptsWorker(e.DB, time.Now).Work(ctx, job(jobs.PurgeAuthAttemptsArgs{})))
 
 	_, err := e.DB.AuthAttempt.Get(ctx, fixtures.StaleLoginAttemptID)
 	assert.True(t, ent.IsNotFound(err), "the stale row is purged")
@@ -653,7 +663,7 @@ func TestEvaluateTriggerRetryAfterTheFirstStepFailedToQueueLeavesAQueuedEnrollme
 func TestBroadcastWorkers(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
-	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender)))
+	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now))
 	assert.Equal(t, 10*time.Minute, w.Timeout(nil))
 
 	// A draft (unscheduled after queueing) is not sent.
@@ -672,7 +682,7 @@ func TestBroadcastWorkers(t *testing.T) {
 	require.Len(t, recs, len(kinds))
 
 	// Delivering every recipient finalizes the broadcast.
-	rw := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender)))
+	rw := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now))
 	for _, r := range recs {
 		require.NoError(t, rw.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: r.ID, BroadcastID: fixtures.BroadcastDraftID})))
 	}
@@ -686,14 +696,14 @@ func TestBroadcastWorkers(t *testing.T) {
 
 	// A resolver failure is a plain error: river retries it, spending an attempt.
 	e.DB.Broadcast.UpdateOneID(fixtures.BroadcastProSegmentID).SetStatus(broadcast.StatusSending).ExecX(ctx)
-	failing := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, failingResolver(errors.New("no integration"))))
+	failing := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, failingResolver(errors.New("no integration")), time.Now))
 	err := failing.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID}))
 	require.Error(t, err)
 	var snooze *river.JobSnoozeError
 	assert.NotErrorAs(t, err, &snooze, "a failure is not a snooze")
 
 	// A suspended workspace holds: the job snoozes rather than fails.
-	_, err = suspension.SuspendWorkspace(ctx, e.Bus, fixtures.AcmeID, suspension.System, "complaints")
+	_, err = suspension.SuspendWorkspace(ctx, e.Bus, fixtures.AcmeID, suspension.System, "complaints", time.Now())
 	require.NoError(t, err)
 	require.ErrorAs(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
 	assert.Equal(t, outboundmessages.HoldBackoff, snooze.Duration, "a hold asks again after the hold backoff")
@@ -704,7 +714,7 @@ func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 	ctx := e.workCtx()
 	ids := []int64{e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)}
 
-	failing := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(erroringSender{})))
+	failing := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(erroringSender{}), time.Now))
 	// Not the last attempt: the error surfaces for retry, row stays pending.
 	err := failing.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastSendingID}))
 	require.Error(t, err)
@@ -742,7 +752,7 @@ func TestSendRecipientWorkerSnoozesInsteadOfGivingUpOnALiveClaim(t *testing.T) {
 	ctx := e.workCtx()
 	id := e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 
-	worker := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(takeoverSender{db: e.DB})))
+	worker := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(takeoverSender{db: e.DB}), time.Now))
 	last := job(jobs.SendRecipientArgs{RecipientID: id, BroadcastID: fixtures.BroadcastSendingID})
 	last.Attempt = last.MaxAttempts
 
@@ -761,7 +771,7 @@ func TestSendRecipientWorkerSnoozesWhileAnotherAttemptSends(t *testing.T) {
 	id := e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactBobID)
 	e.ClaimRecipient(ctx, id, 0)
 
-	err := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender))).
+	err := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now)).
 		Work(ctx, job(jobs.SendRecipientArgs{RecipientID: id, BroadcastID: fixtures.BroadcastSendingID}))
 
 	var snooze *river.JobSnoozeError
@@ -776,7 +786,7 @@ func TestSendRecipientWorkerSnoozesWhileAnotherAttemptSends(t *testing.T) {
 func TestSendBroadcastWorkerFinishesAStaleJob(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
-	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender)))
+	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now))
 
 	for id, want := range map[int64]broadcast.Status{
 		fixtures.BroadcastSentID:   broadcast.StatusSent,
@@ -798,7 +808,7 @@ func TestRecheckTrackingDomainsWorkerFansOutOneJobPerVerifiedHost(t *testing.T) 
 	require.NoError(t, err)
 	require.Positive(t, due)
 
-	mod := trackingdomains.New(e.DB, e.Bus, nil, trackingdomains.Config{})
+	mod := trackingdomains.New(e.DB, e.Bus, nil, trackingdomains.Config{Now: time.Now})
 	require.NoError(t, jobs.NewRecheckTrackingDomainsWorker(mod).Work(ctx, job(jobs.RecheckTrackingDomainsArgs{})))
 
 	kinds := e.queued(t)

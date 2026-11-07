@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +25,7 @@ func TestAFiringRunsTheLiveVersionNotTheDraft(t *testing.T) {
 
 func TestAfterPublishTheNextFiringRunsTheNewVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := rules.New(env.Cipher, env.Bus).Publish(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.RuleTagClickedID)
+	_, err := rules.New(env.Cipher, env.Bus, time.Now).Publish(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.RuleTagClickedID)
 	require.NoError(t, err)
 
 	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_click", "evt-published")
@@ -39,7 +40,7 @@ func TestAFiringInProgressKeepsTheVersionItBeganWith(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := rules.New(env.Cipher, env.Bus)
+	m := rules.New(env.Cipher, env.Bus, time.Now)
 	_, err := m.Publish(ctx, s, fixtures.RuleTagClickedID)
 	require.NoError(t, err)
 

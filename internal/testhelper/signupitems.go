@@ -2,6 +2,7 @@ package testhelper
 
 import (
 	"context"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -22,5 +23,5 @@ func (env *TestEnv) PutSignupItemsInEffect(ctx context.Context, ids ...int64) {
 // ConsentRecords is the Consent records module over a client of a test's own database (one from
 // RealDB), for a test that builds a module needing it outside Setup.
 func ConsentRecords(client *ent.Client, bus *events.Bus) *consentrecords.Module {
-	return consentrecords.New(client, bus, signupitems.New(client, bus, nil))
+	return consentrecords.New(client, bus, signupitems.New(client, bus, time.Now))
 }

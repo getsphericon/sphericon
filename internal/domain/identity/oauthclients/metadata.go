@@ -72,7 +72,7 @@ func (s *Module) metadataClient(ctx context.Context, clientID string) (*ent.OAut
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, err
 	}
-	if row != nil && row.MetadataExpiresAt != nil && row.MetadataExpiresAt.After(time.Now()) {
+	if row != nil && row.MetadataExpiresAt != nil && row.MetadataExpiresAt.After(s.now()) {
 		return row, nil
 	}
 
@@ -88,7 +88,7 @@ func (s *Module) metadataClient(ctx context.Context, clientID string) (*ent.OAut
 		SetClientID(clientID).
 		SetName(name).
 		SetRedirectUris(doc.RedirectURIs).
-		SetMetadataExpiresAt(time.Now().Add(ttl)).
+		SetMetadataExpiresAt(s.now().Add(ttl)).
 		OnConflictColumns(oauthclient.FieldClientID).
 		UpdateName().
 		UpdateRedirectUris().

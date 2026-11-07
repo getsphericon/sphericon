@@ -468,7 +468,7 @@ func TestASuspendedWorkspaceShowsNoAutomationThatCannotSend(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
 		SetProviderEnforcement(providers.EnforcementShutdown).Exec(t.Context()))
-	suspended, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "abuse")
+	suspended, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "abuse", time.Now())
 	require.NoError(t, err)
 	require.True(t, suspended)
 

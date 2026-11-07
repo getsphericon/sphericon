@@ -39,7 +39,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	fake := &testhelper.FakeSES{}
 	fake.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, fake.Catalog())
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, fake.Catalog(), time.Now)
 	run := func() {
 		require.NoError(t, worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID})))
 	}
@@ -69,7 +69,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 
 func TestRefreshIntegrationQuotaOfADeletedIntegrationIsNothingToDo(t *testing.T) {
 	env := testhelper.Setup(t)
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, (&testhelper.FakeSES{}).Catalog())
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, (&testhelper.FakeSES{}).Catalog(), time.Now)
 	require.NoError(t, worker.Work(t.Context(), job(integrations.RefreshQuotaArgs{IntegrationID: 424242})))
 }
 
@@ -101,7 +101,7 @@ func TestRefreshIntegrationQuotaOfAnIntegrationDeletedAfterItWasQueuedChangesNot
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetDiscardedAt(time.Now()).ExecX(ctx)
 	fake := &testhelper.FakeSES{}
 	fake.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, fake.Catalog())
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Cipher, fake.Catalog(), time.Now)
 
 	err := worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID}))
 

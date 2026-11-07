@@ -14,11 +14,11 @@ import (
 // kept for the same window as the Events that fired them (ADR 0019, ADR 0054), and the Event
 // retention job prunes both. A retention of zero or less disables the prune. It spans every
 // Workspace, so it takes the raw client.
-func PruneFirings(ctx context.Context, client *ent.Client, retention time.Duration, batchSize int) (int64, error) {
+func PruneFirings(ctx context.Context, client *ent.Client, retention time.Duration, batchSize int, now time.Time) (int64, error) {
 	if retention <= 0 {
 		return 0, nil
 	}
-	cutoff := time.Now().Add(-retention)
+	cutoff := now.Add(-retention)
 	var total int64
 	for {
 		ids, err := client.RuleFiring.Query().

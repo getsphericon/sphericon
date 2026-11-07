@@ -35,8 +35,8 @@ var fixedNow = time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
 
 // atFixedNow is Outbound send's clock standing still at fixedNow, so the Provider limit's
 // buckets refill nothing between the sends of a test.
-func atFixedNow() outboundmessages.Option {
-	return outboundmessages.WithClock(func() time.Time { return fixedNow })
+func atFixedNow() func() time.Time {
+	return func() time.Time { return fixedNow }
 }
 
 // recordingScheduler is the scheduling seam recording what it is asked, so a test asserts
@@ -69,7 +69,7 @@ func (d *delivery) run(id int64) (*recordingScheduler, error) {
 
 // A late or retried plan on a finished Broadcast must not move it back to sending.
 func TestPlanIsRefusedFromSentAndFailed(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 
 	for id, want := range map[int64]broadcast.Status{
 		fixtures.BroadcastSentID:   broadcast.StatusSent,
@@ -83,7 +83,7 @@ func TestPlanIsRefusedFromSentAndFailed(t *testing.T) {
 }
 
 func TestPlanCreatesOnePendingRecipientPerEligibleContact(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 
 	ids, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestPlanCreatesOnePendingRecipientPerEligibleContact(t *testing.T) {
 // The audience is reached at its Channel's Destination: on email a Contact without an address is
 // not frozen as a recipient, so no row waits for a send that can never happen.
 func TestPlanLeavesOutAContactWithoutADestination(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestPlanLeavesOutAContactWithoutADestination(t *testing.T) {
 // time, before any recipient row exists, not failed: it keeps its status, records why, and
 // plans again once the domain is verified.
 func TestPlanHoldsOnUnverifiedFromDomain(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	// news.acme.com exists as an *unverified* sending domain (fixture id 2).
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetFromEmail("noreply@news.acme.com").ExecX(d.t.Context())
 
@@ -145,7 +145,7 @@ func TestPlanHoldsOnUnverifiedFromDomain(t *testing.T) {
 // A template that cannot render affects every recipient, so it is caught at plan time
 // (ADR 0015): the Broadcast fails as a whole, before any recipient row exists.
 func TestPlanFailsTheWholeBroadcastOnABrokenTemplate(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSubject("{% if %}broken").ExecX(d.t.Context())
 
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
@@ -162,7 +162,7 @@ func TestPlanFailsOnABrokenSegment(t *testing.T) {
 	// A draft takes the copy of its Segment's Condition as it leaves draft (ADR 0065): a Segment it
 	// cannot read refuses the move, and the draft stays a draft.
 	t.Run("segment of another workspace", func(t *testing.T) {
-		d := newDelivery(t)
+		d := newDelivery(t, time.Now)
 		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentGlobexID).ExecX(d.t.Context())
 
 		_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
@@ -173,7 +173,7 @@ func TestPlanFailsOnABrokenSegment(t *testing.T) {
 	})
 
 	t.Run("sending broadcast whose condition was never copied", func(t *testing.T) {
-		d := newDelivery(t)
+		d := newDelivery(t, time.Now)
 		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetSegmentID(fixtures.SegmentProPlanID).ExecX(d.t.Context())
 
 		_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastSendingID)
@@ -184,7 +184,7 @@ func TestPlanFailsOnABrokenSegment(t *testing.T) {
 	})
 
 	t.Run("segment with an undecodable definition", func(t *testing.T) {
-		d := newDelivery(t)
+		d := newDelivery(t, time.Now)
 		d.env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition("{not json").ExecX(d.t.Context())
 		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentProPlanID).ExecX(d.t.Context())
 
@@ -199,7 +199,7 @@ func TestPlanFailsOnABrokenSegment(t *testing.T) {
 // An empty audience settles the Broadcast at once, so it never hangs in "sending" with no
 // recipient to complete it. Fixture broadcast 104 targets a segment that matches nobody.
 func TestEmptyAudienceFinalizes(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 
 	sched, err := d.run(fixtures.BroadcastEmptyAudienceID)
 	require.NoError(t, err)
@@ -216,14 +216,14 @@ func TestEmptyAudienceFinalizes(t *testing.T) {
 // Finalizing a sent Broadcast again is a no-op: sent_at stays put across concurrent or
 // repeated finalizers.
 func TestFinalizeIsIdempotent(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	id := d.recipient(fixtures.ContactAliceID)
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 	first := d.broadcastRow()
 	require.Equal(t, broadcast.StatusSent, first.Status)
 	require.NotNil(t, first.SentAt)
 
-	require.NoError(t, broadcasts.Finalize(d.t.Context(), d.s, fixtures.BroadcastSendingID))
+	require.NoError(t, broadcasts.Finalize(d.t.Context(), d.s, fixtures.BroadcastSendingID, time.Now()))
 
 	assert.True(t, first.SentAt.Equal(*d.broadcastRow().SentAt))
 }
@@ -253,7 +253,7 @@ func TestPaceSpreadsSendsAtTheEffectiveRate(t *testing.T) {
 
 // A Broadcast that names an Integration is paced by that Integration's limit, not the default's.
 func TestPaceUsesTheBroadcastsOwnIntegration(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetMaxPerSecond(2).ExecX(d.t.Context())
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
 
@@ -269,7 +269,7 @@ func TestPaceUsesTheBroadcastsOwnIntegration(t *testing.T) {
 // The plan's Preflight asks about the Broadcast's own Integration: one that is disabled holds
 // the plan rather than falling back to the default.
 func TestPlanIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(d.t.Context())
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
 
@@ -283,7 +283,7 @@ func TestPlanIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
 // A ceiling discovered from the provider paces a Broadcast just like a manual one: the
 // effective rate is the lower of the two (ADR 0023).
 func TestPaceByTheProviderDiscoveredRate(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetProviderMaxPerSecond(4).SetMaxPerSecond(100).ExecX(d.t.Context())
 
 	sched, err := d.run(fixtures.BroadcastDraftID)
@@ -298,7 +298,7 @@ func TestPaceByTheProviderDiscoveredRate(t *testing.T) {
 
 // A Broadcast scheduled for later starts pacing at its scheduled time, not at now.
 func TestPaceStartsAtTheScheduledTimeWhenLater(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerDay(86400).ExecX(d.t.Context())
 	start := fixedNow.Add(2 * time.Hour)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetScheduledAt(start).ExecX(d.t.Context())
@@ -314,7 +314,7 @@ func TestPaceStartsAtTheScheduledTimeWhenLater(t *testing.T) {
 
 // With no limit the Broadcast is planned unpaced: every send at once, no pacing recorded.
 func TestPaceLeavesAnUnlimitedBroadcastUnpaced(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 
 	sched, err := d.run(fixtures.BroadcastDraftID)
 	require.NoError(t, err)
@@ -329,7 +329,7 @@ func TestPaceLeavesAnUnlimitedBroadcastUnpaced(t *testing.T) {
 
 // Another Workspace's limit never paces this one: the ceiling lives on the Integration.
 func TestAnotherWorkspacesLimitDoesNotPaceThisBroadcast(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetMaxPerSecond(1).ExecX(d.t.Context())
 
 	times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, 50), fixedNow)
@@ -341,7 +341,7 @@ func TestAnotherWorkspacesLimitDoesNotPaceThisBroadcast(t *testing.T) {
 // The progress estimate and the planner pace by the same interval: with the planned jobs
 // behind us, the estimate is the remaining recipients at the planner's step.
 func TestProgressEstimateUsesThePlannersInterval(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(d.t.Context())
 	d.recipient(fixtures.ContactAliceID)
 	d.recipient(fixtures.ContactBobID)
@@ -357,7 +357,7 @@ func TestProgressEstimateUsesThePlannersInterval(t *testing.T) {
 
 // The estimate follows the Broadcast's own Integration too, not the default's.
 func TestProgressEstimateUsesTheBroadcastsOwnIntegration(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetMaxPerSecond(2).ExecX(d.t.Context())
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
 	d.recipient(fixtures.ContactAliceID)
@@ -374,7 +374,7 @@ func TestProgressEstimateUsesTheBroadcastsOwnIntegration(t *testing.T) {
 // A delayed job outlives an unschedule: a Broadcast back in draft is not due, a scheduled
 // one is.
 func TestDueIsFalseOnlyForADraft(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 
 	due, err := broadcasts.Due(d.t.Context(), d.s, fixtures.BroadcastDraftID, nil)
 	require.NoError(t, err)
@@ -388,7 +388,7 @@ func TestDueIsFalseOnlyForADraft(t *testing.T) {
 // A delayed job is bound to the schedule it was enqueued for: after a reschedule (or
 // unschedule + schedule) the superseded job must not send the Broadcast early.
 func TestDueIsFalseForASupersededScheduledJob(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	oldAt := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastScheduledID).ScheduledAt
 	require.NotNil(t, oldAt)
 	newAt := oldAt.Add(48 * time.Hour)
@@ -406,7 +406,7 @@ func TestDueIsFalseForASupersededScheduledJob(t *testing.T) {
 // A delayed job is also superseded by an immediate send (which clears scheduled_at), while
 // a retry of the job that legitimately started the send (sending, same scheduled_at) runs.
 func TestDueForADelayedJobAcrossSendAndRetry(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	at := *d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastScheduledID).ScheduledAt
 
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastScheduledID).SetStatus(broadcast.StatusSending).ExecX(d.t.Context())
@@ -423,7 +423,7 @@ func TestDueForADelayedJobAcrossSendAndRetry(t *testing.T) {
 // A Workspace freeze holds the plan: the Broadcast keeps its status, records why and no
 // recipient row exists; it resumes once the freeze lifts (story 6).
 func TestPlanHoldsOnAWorkspaceFreezeAndResumes(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.SuspendWorkspace(d.t.Context(), fixtures.AcmeID, fixedNow)
 
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
@@ -447,7 +447,7 @@ func TestPlanHoldsOnAWorkspaceFreezeAndResumes(t *testing.T) {
 
 // A Workspace with no usable Integration holds the plan the same way.
 func TestPlanHoldsWithNoIntegration(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.res.err = messaging.ErrNoProvider
 
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
@@ -464,7 +464,7 @@ func TestPlanHoldsWithNoIntegration(t *testing.T) {
 // A plan that fails the Broadcast is recorded once and finishes cleanly: Run returns nil, so
 // no queue retries it, and the Broadcast is failed with no recipient row.
 func TestRunFinishesCleanlyWhenThePlanFailsTheBroadcast(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSubject("{% if %}broken").ExecX(d.t.Context())
 
 	sched, err := d.run(fixtures.BroadcastDraftID)
@@ -482,7 +482,7 @@ func TestRunFinishesCleanlyWhenThePlanFailsTheBroadcast(t *testing.T) {
 
 // A plan that was refused leaves a held Broadcast's hold alone: a stale job records nothing.
 func TestStalePlanLeavesTheHoldReasonAlone(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSentID).SetHoldReason(holdreason.NoIntegration).ExecX(d.t.Context())
 	d.env.SuspendWorkspace(d.t.Context(), fixtures.AcmeID, fixedNow)
 
@@ -497,7 +497,7 @@ func TestStalePlanLeavesTheHoldReasonAlone(t *testing.T) {
 // Pacing only decides when a send runs: an unsubscribe or Suppression that lands after
 // planning is honoured when the send runs, and the recipient is skipped, never mailed.
 func TestSuppressionDuringPacingIsHonouredAtSendTime(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
 	_, err := d.run(fixtures.BroadcastDraftID)
 	require.NoError(t, err)
@@ -569,7 +569,7 @@ func TestDeferralBacklogIgnoresRecipientsAsleepOnTheirOwnDeferral(t *testing.T) 
 // Whatever the rate, the start and the number of sends, pacing starts at the start, puts the
 // sends exactly one step (one over the rate) apart and records the last one on the Broadcast.
 func TestPaceSpreadsEverySendOneStepApartFromTheStart(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 	rapid.Check(t, func(rt *rapid.T) {
 		n := rapid.IntRange(1, 500).Draw(rt, "n")
 		perSecond := rapid.IntRange(1, 1000).Draw(rt, "perSecond")
@@ -599,7 +599,7 @@ func sinceStart(times []time.Time, start time.Time) []time.Duration {
 // that an unschedule returned to draft after the job's Due check must stay a draft: the
 // plan of a direct caller may claim a draft, the plan of a queued job may not.
 func TestQueuedRunRefusesADraftUnscheduledAfterItsDueCheck(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 
 	err := d.del.RunClaimed(d.t.Context(), d.s, fixtures.BroadcastDraftID, &recordingScheduler{})
 
@@ -610,7 +610,7 @@ func TestQueuedRunRefusesADraftUnscheduledAfterItsDueCheck(t *testing.T) {
 }
 
 func TestQueuedRunPlansAScheduledBroadcast(t *testing.T) {
-	d := newDelivery(t)
+	d := newDelivery(t, time.Now)
 
 	sched := &recordingScheduler{}
 	err := d.del.RunClaimed(d.t.Context(), d.s, fixtures.BroadcastScheduledID, sched)

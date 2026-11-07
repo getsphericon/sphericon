@@ -21,6 +21,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -157,11 +158,13 @@ type step func(ctx context.Context, s *ent.Scoped, t *Target, pub events.Purging
 // the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
 	bus *events.Bus
+	now func() time.Time
 }
 
-// New builds the Contact erasure use case over the bus whose transaction every erasure runs in.
-func New(bus *events.Bus) *UseCase {
-	return &UseCase{bus: bus}
+// New builds the Contact erasure use case over the bus whose transaction every erasure runs in;
+// now is the Instance clock a Broadcast left with nothing pending settles by.
+func New(bus *events.Bus, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, now: now}
 }
 
 // Erase erases the identified data subject in one transaction: either all of it
@@ -203,7 +206,7 @@ func (u *UseCase) steps() []step {
 		// The Broadcast delivery module cancels the Contact's unsent recipients; a Broadcast left
 		// with nothing pending settles.
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
-			return broadcasts.CancelPending(ctx, s, t.ContactID, pub)
+			return broadcasts.CancelPending(ctx, s, t.ContactID, pub, u.now())
 		},
 		// The Automation module cancels the queued step calls and trigger evaluations that name the
 		// Contact or its runs (a failure's response excerpt sits on the run, which goes below).

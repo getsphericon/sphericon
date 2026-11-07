@@ -38,7 +38,7 @@ func capped(t *testing.T, env *testhelper.TestEnv, workspaceID int64, perDay *in
 
 // sendCapModule is the send path of an Instance with Send caps, on the test's clock.
 func sendCapModule(env *testhelper.TestEnv, c *clock) *outboundmessages.Module {
-	return newModule(env, outboundmessages.WithSendCaps(true), outboundmessages.WithClock(c.now))
+	return newModule(env, c.now, outboundmessages.WithSendCaps(true))
 }
 
 func TestSpentSendCapIsADeferralWithTheWaitUntilTheWorkspaceBucketRefills(t *testing.T) {

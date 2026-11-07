@@ -79,20 +79,10 @@ type Signer struct {
 	now    func() time.Time
 }
 
-// New builds a Signer from the shared JWT secret, on the wall clock.
-func New(secret string) *Signer {
-	return &Signer{secret: []byte(secret), now: time.Now}
-}
-
-// WithClock returns a copy of the Signer that mints and checks expiry against now
-// (tests move it past a token's lifetime instead of sleeping). nil keeps the clock.
-func (s *Signer) WithClock(now func() time.Time) *Signer {
-	if now == nil {
-		return s
-	}
-	c := *s
-	c.now = now
-	return &c
+// New builds a Signer from the shared JWT secret that mints and checks expiry against now, the
+// Instance clock (tests move it past a token's lifetime instead of sleeping).
+func New(secret string, now func() time.Time) *Signer {
+	return &Signer{secret: []byte(secret), now: now}
 }
 
 // Mint signs a token for purpose + userID, keyed to binding (the value that

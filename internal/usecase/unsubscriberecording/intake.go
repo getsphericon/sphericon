@@ -46,7 +46,7 @@ func (u *UseCase) OptOut(ctx context.Context, s *ent.Scoped, in OptOutInput) (*e
 	destination, source := in.Destination, in.Source
 	switch in.Channel {
 	case channels.Telegram:
-		return channelstop.TelegramUnsubscribe(ctx, u.bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
+		return channelstop.TelegramUnsubscribe(ctx, u.bus, s, destination, cmp.Or(source, eligibility.SourceEverything), u.now())
 	case channels.SMS:
 		return channelstop.SMSUnsubscribe(ctx, u.bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
 	case channels.Email:
