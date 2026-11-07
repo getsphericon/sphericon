@@ -123,6 +123,12 @@ func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepexecu
 	return stepexecution.New(bus, mod, e.fence, nil, nil, time.Now)
 }
 
+// enrollments is the Step execution use case over bus for a race that hands it an Event: it ends
+// and makes Enrollments on that bus's own connection, and runs no step.
+func (e *realEnv) enrollments(bus *events.Bus) *stepexecution.UseCase {
+	return stepexecution.New(bus, nil, e.fence, nil, nil, time.Now)
+}
+
 // runRowIsLocked reports whether another writer would have to wait for the Enrollment's row:
 // the lock an exit's update needs is refused at once (NOWAIT) instead of queued.
 func (e *realEnv) runRowIsLocked(t *testing.T, runID int64) bool {

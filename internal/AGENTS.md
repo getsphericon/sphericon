@@ -126,8 +126,8 @@ its driver `internal/api/oauth` serves and tests.
 The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test
 of a race on a new address gives it a `Lookup` whose first lookup misses.
 A use case reads the time from the clock `New` takes (ADR 0104), so a test that needs a moment
-builds it with a clock it controls; `testhelper.Enrollments(bus)` is the Step execution use case
-for a test that only hands it an Event or a Rule's enrollment.
+builds it with a clock it controls; the container's Step execution use case is `env.StepExecution`,
+for a test that hands it an Event or a Rule's enrollment.
 
 ## Fixture catalog
 

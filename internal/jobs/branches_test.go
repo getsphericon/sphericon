@@ -111,7 +111,7 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 	ctx := context.Background()
 
 	// The greeting's trigger is shared by an active and an inactive automation; Bob is in neither.
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactBobID, Event: automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactBobID, Event: automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}}))
 
 	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID), 1)
 	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingInactiveID)).ExistX(ctx), "the inactive one enrolled nobody")

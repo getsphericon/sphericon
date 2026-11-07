@@ -89,7 +89,7 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
 func enrollVia(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
 	t.Helper()
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: contactID, Event: automations.Event{Action: triggerOf(t, env, automationID), OccurredAt: time.Now()}}))
+	require.NoError(t, env.StepExecution.OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: contactID, Event: automations.Event{Action: triggerOf(t, env, automationID), OccurredAt: time.Now()}}))
 	runIDs := enrollmentsOf(t, env, automationID, contactID)
 	require.Len(t, runIDs, 1)
 	return runIDs[0]
@@ -110,7 +110,7 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, alice.ID)
 
 	// Enroll-once: a second matching event creates no new run.
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: alice.ID, Event: automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: alice.ID, Event: automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}}))
 	assert.Equal(t, []int64{runID}, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, alice.ID))
 
 	fs := &fakeSender{}
@@ -181,7 +181,7 @@ func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: triggerOf(t, env, fixtures.AutomationWinBackID), OccurredAt: time.Now()}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: triggerOf(t, env, fixtures.AutomationWinBackID), OccurredAt: time.Now()}}))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationWinBackID, fixtures.ContactAliceID), "the win-back automation is a draft")
 }
 
@@ -444,10 +444,10 @@ func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationOnOpenID}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationOnOpenID}))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), "the open of its own email enrolls nobody")
 
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationWelcomeSeriesID}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationWelcomeSeriesID}))
 	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), 1, "the open of another Automation's email starts On open")
 }
 
@@ -461,11 +461,11 @@ func TestAGoalEventEndsTheEnrollmentBeforeItsNextStep(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	failed := time.Now().Add(-2 * time.Minute)
 	paid := failed.Add(time.Minute)
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_failed", OccurredAt: failed}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_failed", OccurredAt: failed}}))
 	enrolled := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactAliceID)
 	require.Len(t, enrolled, 1)
 
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}, SourceAutomationID: fixtures.AutomationPaymentRecoveryID}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}, SourceAutomationID: fixtures.AutomationPaymentRecoveryID}))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
@@ -485,8 +485,8 @@ func TestAGoalEventHandledBeforeTheTriggerEndsTheEnrollmentWhenItIsMade(t *testi
 	contactID := int64(fixtures.ContactPaidBeforeEnrolledID)
 	failed := time.Now().Add(-4 * 24 * time.Hour) // the fixture's payment_succeeded is 3 days ago
 
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: contactID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: failed.Add(24 * time.Hour)}}))
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: contactID, Event: automations.Event{Action: "payment_failed", OccurredAt: failed}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: contactID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: failed.Add(24 * time.Hour)}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: contactID, Event: automations.Event{Action: "payment_failed", OccurredAt: failed}}))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
@@ -507,7 +507,7 @@ func TestATriggerJobWithoutWhenTheEventOccurredBeginsTheEnrollmentNow(t *testing
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	earliest := time.Now().Add(-time.Microsecond) // began_at is kept to the microsecond
 
-	require.NoError(t, testhelper.Enrollments(env.Bus).OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactPaidBeforeEnrolledID, Event: automations.Event{Action: "payment_failed", OccurredAt: time.Time{}}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: fixtures.ContactPaidBeforeEnrolledID, Event: automations.Event{Action: "payment_failed", OccurredAt: time.Time{}}}))
 	latest := time.Now()
 	runs := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaidBeforeEnrolledID)
 	require.Len(t, runs, 1)

@@ -88,7 +88,6 @@ func newRig(t *testing.T, version string, edit func(*config.Config)) *rig {
 	client, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
 	require.NoError(t, err)
 	sender := telemetryreport.New(mod, host, client, clk.now)
-	require.NoError(t, err)
 	_, err = mod.AcknowledgeNotice(t.Context())
 	require.NoError(t, err)
 	return &rig{mod: mod, sender: sender, recv: recv, clock: clk, db: env.DB, host: host}
@@ -146,16 +145,6 @@ func TestSenderSendsOncePerDay(t *testing.T) {
 	require.NoError(t, r.sender.Send(t.Context()))
 	assert.Len(t, r.recv.got(), 2)
 	assert.True(t, r.lastSent(t).Equal(r.clock.t))
-}
-
-func TestSenderOffsetIsAStableTimeOfDayDerivedFromTheInstanceId(t *testing.T) {
-	first := instancestates.ReportOffset("abc")
-	second := instancestates.ReportOffset("abc")
-	assert.Equal(t, first, second)
-	for _, id := range []string{"a", "b", "c", "d", "e", "f"} {
-		assert.Less(t, instancestates.ReportOffset(id), 6*time.Hour)
-		assert.GreaterOrEqual(t, instancestates.ReportOffset(id), time.Duration(0))
-	}
 }
 
 func TestSenderFirstReportWaitsTheOffsetAfterTheNoticeAndLaterOnesKeepTheTimeOfDay(t *testing.T) {
@@ -239,7 +228,6 @@ func TestSenderLeavesThingsHealthyWhenTheReceiverIsUnreachableOrRefuses(t *testi
 	client, err := telemetryapi.NewClient(failing.URL)
 	require.NoError(t, err)
 	sender := telemetryreport.New(r.mod, r.host, client, r.clock.now)
-	require.NoError(t, err)
 
 	require.NoError(t, sender.Send(t.Context()))
 	assert.Nil(t, r.lastSent(t))

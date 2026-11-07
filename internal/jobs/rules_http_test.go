@@ -33,7 +33,7 @@ func recoverAfterFirstCall(rcv *hookReceiver) {
 }
 
 func ruleRunners(env *testhelper.TestEnv) rules.ActionRunners {
-	return jobs.RuleActionRunners(newMod(env, nil), env.Bus, testhelper.Enrollments(env.Bus))
+	return jobs.RuleActionRunners(newMod(env, nil), env.Bus, env.StepExecution)
 }
 
 // httpRuleHarness works the pending call of a fixture Firing of RuleQuahogHook, whose Actions

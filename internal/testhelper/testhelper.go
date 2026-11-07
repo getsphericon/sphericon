@@ -144,6 +144,9 @@ type TestEnv struct {
 	Instance *instancestates.Module
 	// ReleaseCheck is the Release check the server shares: run it with CheckRelease.
 	ReleaseCheck *releasecheck.UseCase
+	// StepExecution is the Step execution use case the container builds, over the env's bus and
+	// clock: a test hands it an Event (OnEvent) or a Rule's enrollment (EnrollOnRule).
+	StepExecution *stepexecution.UseCase
 	// TelemetryReport is the Telemetry report the server shares: its preview is Report.
 	TelemetryReport *telemetryreport.UseCase
 	// DB is the plain client the modules under test get, transaction-bound and rolled back when
@@ -531,6 +534,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	env := &TestEnv{
 		Instance:          do.MustInvoke[*instancestates.Module](injector),
 		ReleaseCheck:      do.MustInvoke[*releasecheck.UseCase](injector),
+		StepExecution:     do.MustInvoke[*stepexecution.UseCase](injector),
 		TelemetryReport:   do.MustInvoke[*telemetryreport.UseCase](injector),
 		AppURL:            cfg.AppURL,
 		DB:                do.MustInvoke[*ent.Client](injector),

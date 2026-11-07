@@ -41,9 +41,5 @@ func (m *Module) SetSendCap(ctx context.Context, publicID string, by *ent.StaffM
 	if err != nil {
 		return nil, err
 	}
-	ws, err := m.ent.Workspace.Get(ctx, w.ID)
-	if err != nil {
-		return nil, err
-	}
-	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
+	return m.changeOf(ctx, w.ID, changed)
 }

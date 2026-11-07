@@ -25,11 +25,7 @@ func TestLookupIgnoresPaddingAndCase(t *testing.T) {
 
 	rapid.Check(t, func(rt *rapid.T) {
 		pad := rapid.StringMatching(`[ \t]{0,3}`).Draw(rt, "pad")
-		upper := rapid.Bool().Draw(rt, "upper")
-		raw := fixtures.ContactAliceEmail
-		if upper {
-			raw = strings.ToUpper(raw)
-		}
+		raw := rapid.SampledFrom([]string{fixtures.ContactAliceEmail, strings.ToUpper(fixtures.ContactAliceEmail)}).Draw(rt, "case")
 
 		got, err := erasure.Lookup(t.Context(), acme, pad+raw+pad)
 

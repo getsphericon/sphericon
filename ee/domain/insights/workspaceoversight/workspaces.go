@@ -32,6 +32,15 @@ type WorkspaceChange struct {
 	Changed   bool
 }
 
+// changeOf is the WorkspaceChange of the Workspace id after a change: the row as it stands now.
+func (m *Module) changeOf(ctx context.Context, id int64, changed bool) (*WorkspaceChange, error) {
+	ws, err := m.ent.Workspace.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
+}
+
 // SuspendWorkspace freezes the Workspace's outbound sending as the Staff member, through
 // the same Suspender the command line uses (ADR 0007), which tells its owners via the
 // system sender. It reports whether anything changed: an already-suspended
@@ -55,11 +64,7 @@ func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, by *ent.
 	} else if err != nil {
 		return nil, err
 	}
-	ws, err := m.ent.Workspace.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
+	return m.changeOf(ctx, id, changed)
 }
 
 // UnsuspendWorkspace lifts the Workspace's suspension as the Staff member; held sends
@@ -77,11 +82,7 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *en
 	if err != nil {
 		return nil, err
 	}
-	ws, err := m.ent.Workspace.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
+	return m.changeOf(ctx, id, changed)
 }
 
 // workspace loads a Workspace row by its id (ADR 0043), the only address the console and the
@@ -201,11 +202,7 @@ func (m *Module) SetAbuseExempt(ctx context.Context, publicID string, by *ent.St
 	if err != nil {
 		return nil, err
 	}
-	ws, err := m.ent.Workspace.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
+	return m.changeOf(ctx, id, changed)
 }
 
 // WorkspaceAbuse is the Workspace's warning now, by the detector's own computation:
