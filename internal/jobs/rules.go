@@ -22,12 +22,13 @@ import (
 // EvaluateRulesArgs is the evaluation of one Event against the Workspace's Rules (ADR 0054): the
 // Rules consumer queues it, like the Automations consumer queues EvaluateTriggerArgs.
 type EvaluateRulesArgs struct {
-	WorkspaceID int64          `json:"workspace_id"`
-	ContactID   int64          `json:"contact_id"`
-	Action      string         `json:"action"`
-	SourceID    string         `json:"source_id"`
-	RecordedAt  time.Time      `json:"recorded_at"`
-	Properties  map[string]any `json:"properties,omitempty"`
+	jobkind.Workspace
+
+	ContactID  int64          `json:"contact_id"`
+	Action     string         `json:"action"`
+	SourceID   string         `json:"source_id"`
+	RecordedAt time.Time      `json:"recorded_at"`
+	Properties map[string]any `json:"properties,omitempty"`
 }
 
 func (EvaluateRulesArgs) Kind() string { return jobkind.RuleEvaluate.Kind }

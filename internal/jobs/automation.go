@@ -15,9 +15,10 @@ import (
 // --- trigger evaluation: enroll contacts into matching automations ---
 
 type EvaluateTriggerArgs struct {
-	WorkspaceID int64  `json:"workspace_id"`
-	ContactID   int64  `json:"contact_id"`
-	Action      string `json:"action"`
+	jobkind.Workspace
+
+	ContactID int64  `json:"contact_id"`
+	Action    string `json:"action"`
 	// SourceAutomationID is the Automation whose email the Event came from, 0 for any other Event.
 	SourceAutomationID int64 `json:"source_automation_id,omitempty"`
 	// OccurredAt is when the Event happened: it ends only the Enrollments that began by then, and

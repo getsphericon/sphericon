@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -76,6 +77,8 @@ var errUnknownProvider = errors.New("unsupported provider")
 // RefreshQuotaArgs is the job that reads one Integration's provider send quota (ADR 0023); the
 // job runner works it (internal/jobs).
 type RefreshQuotaArgs struct {
+	jobkind.Workspace
+
 	IntegrationID int64 `json:"integration_id"`
 }
 
@@ -524,7 +527,7 @@ func (m *Module) discoverQuota(ctx context.Context, q events.Enqueuer, row *ent.
 	if !m.reportsQuota(row) {
 		return nil
 	}
-	return q.Enqueue(ctx, RefreshQuotaArgs{IntegrationID: row.ID}, nil)
+	return q.Enqueue(ctx, RefreshQuotaArgs{WorkspaceID: row.WorkspaceID, IntegrationID: row.ID}, nil)
 }
 
 // reportsQuota reports whether the Integration's provider can say what it allows: whether its

@@ -1362,6 +1362,7 @@ rules:
         domain-orchestration,
         domain-identity-raw,
         domain-identity-users,
+        domain-identity-base,
         domain-contacts,
         domain-sending-raw,
         domain-sending,

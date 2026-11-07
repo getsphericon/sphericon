@@ -142,3 +142,13 @@ func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) err
 func TombstoneIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
 	return cycleTable(cycleStorage(tx, id, now)).FireCtx(ctx, triggerErase)
 }
+
+// Erased reports whether the Workspace id is erased: its row is a tombstone, or there is none. A
+// job of such a Workspace has nothing left to work on and must write nothing into it.
+func Erased(ctx context.Context, client *ent.Client, id int64) (bool, error) {
+	live, err := client.Workspace.Query().Where(workspace.ID(id), workspace.ErasedAtIsNil()).Exist(ctx)
+	if err != nil {
+		return false, err
+	}
+	return !live, nil
+}

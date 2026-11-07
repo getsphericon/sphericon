@@ -133,7 +133,7 @@ func (h *httpStepHarness) reachHTTPStep(t *testing.T, runID int64) {
 	t.Helper()
 	queueStep(t, h.TestEnv, runID)
 	require.True(t, h.RunNextStep(t, h.stepper()))
-	require.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepexecution.RunHTTPStepArgs{}.Kind()))
+	require.Equal(t, []map[string]any{stepJob(t, h.TestEnv, runID, 0)}, h.JobsOf(t, stepexecution.RunHTTPStepArgs{}.Kind()))
 }
 
 func (h *httpStepHarness) stepper() *stepexecution.UseCase {
@@ -186,7 +186,7 @@ func TestHTTPStepContinuesAfterA2xxSigned(t *testing.T) {
 	r := h.run(runID)
 	assert.Equal(t, automationrun.StatusActive, r.status)
 	assert.Equal(t, 1, r.step, "the Enrollment moved past the HTTP step")
-	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, h.TestEnv), "and its next step is queued")
+	assert.Equal(t, []map[string]any{stepJob(t, h.TestEnv, runID, 1)}, queuedSteps(t, h.TestEnv), "and its next step is queued")
 }
 
 // An HTTP step renders the Event that started the Enrollment as a Rule's http Action does (#752):
@@ -229,7 +229,7 @@ func TestHTTPStepDeliveredAgainAfterSuccessMakesNoNewCallOrNextJob(t *testing.T)
 	r := h.run(runID)
 	assert.Equal(t, 1, r.step)
 	queued := queuedSteps(t, h.TestEnv)
-	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queued)
+	assert.Equal(t, []map[string]any{stepJob(t, h.TestEnv, runID, 1)}, queued)
 }
 
 func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
@@ -390,5 +390,5 @@ func TestAStepJobExecutedTwiceOnAnHTTPStepQueuesTheCallOnce(t *testing.T) {
 
 	require.NoError(t, h.stepper().Step(t.Context(), h.DB.Scoped(fixtures.QuahogID), runID, 0))
 
-	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepexecution.RunHTTPStepArgs{}.Kind()))
+	assert.Equal(t, []map[string]any{stepJob(t, h.TestEnv, runID, 0)}, h.JobsOf(t, stepexecution.RunHTTPStepArgs{}.Kind()))
 }

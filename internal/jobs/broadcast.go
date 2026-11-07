@@ -28,6 +28,8 @@ const recipientMaxAttempts = 3
 // SendRecipientArgs is one per-recipient send. BroadcastID rides along so the
 // worker can finalize without an extra lookup.
 type SendRecipientArgs struct {
+	jobkind.Workspace
+
 	RecipientID int64 `json:"recipient_id"`
 	BroadcastID int64 `json:"broadcast_id"`
 }
@@ -68,7 +70,7 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[broadcast
 	}
 	// RunClaimed refuses a Broadcast unscheduled after the check above: Due is the shortcut
 	// of the usual case, the claim inside the plan decides the race.
-	err = w.del.RunClaimed(ctx, s, job.Args.BroadcastID, riverSends{river.ClientFromContext[*sql.Tx](ctx)})
+	err = w.del.RunClaimed(ctx, s, job.Args.BroadcastID, riverSends{rc: river.ClientFromContext[*sql.Tx](ctx), workspaceID: s.WorkspaceID()})
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return nil // stale: the Broadcast is past its plan (sent or failed), nothing to retry
 	}
@@ -76,8 +78,11 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[broadcast
 }
 
 // riverSends is the river adapter of the module's scheduling seam: one recipient job per send,
-// scheduled at its time.
-type riverSends struct{ rc *river.Client[*sql.Tx] }
+// scheduled at its time, named by the Broadcast's Workspace.
+type riverSends struct {
+	rc          *river.Client[*sql.Tx]
+	workspaceID int64
+}
 
 func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []broadcasts.Send) error {
 	for i := 0; i < len(sends); i += recipientInsertChunk {
@@ -92,7 +97,7 @@ func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []bro
 				opts.ScheduledAt = send.At
 			}
 			params = append(params, river.InsertManyParams{
-				Args:       SendRecipientArgs{RecipientID: send.RecipientID, BroadcastID: broadcastID},
+				Args:       SendRecipientArgs{WorkspaceID: r.workspaceID, RecipientID: send.RecipientID, BroadcastID: broadcastID},
 				InsertOpts: opts,
 			})
 		}

@@ -979,8 +979,8 @@ _Avoid_: Operator (the former name), Admin (that is a workspace Role), superuser
 **Workspace deletion**:
 An Owner's removal of a Workspace, confirmed by typing its name. It is **soft**: for 30 days the
 Workspace is hidden from every Member's list and frozen like a suspension (nothing is sent), and
-the Owner can restore it; after that a background job erases its data, its Memberships go and
-its tracking hosts are released. Users are never deleted with it. Any Workspace can be deleted,
+the Owner can restore it; after that a background job erases its data (its jobs in the queue
+included), its Memberships go and its tracking hosts are released. Users are never deleted with it. Any Workspace can be deleted,
 the last one included: a User with no Workspace is taken to create one.
 _Avoid_: archive, close
 

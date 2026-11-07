@@ -56,6 +56,14 @@ func (env *TestEnv) EnqueueJobs(t *testing.T, args ...river.JobArgs) {
 	require.NoError(t, err)
 }
 
+// EnqueueScheduledJob puts one job of args into the queue scheduled for at, as a job queued for
+// later (a scheduled Broadcast, an Enrollment's wait) waits.
+func (env *TestEnv) EnqueueScheduledJob(t *testing.T, args river.JobArgs, at time.Time) {
+	t.Helper()
+	_, err := env.riverClient(t).Insert(t.Context(), args, &river.InsertOpts{ScheduledAt: at})
+	require.NoError(t, err)
+}
+
 // EnqueueRunningJob puts one job of args into the queue already in the running state, as
 // a worker holds it.
 func (env *TestEnv) EnqueueRunningJob(t *testing.T, args river.JobArgs) {

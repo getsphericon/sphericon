@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -63,6 +64,8 @@ const Queue = "broadcasts"
 // SendArgs is the fan-out (plan) job payload: which Broadcast to dispatch. The worker plans
 // the audience and queues one job per recipient, so no single job carries the whole send.
 type SendArgs struct {
+	jobkind.Workspace
+
 	BroadcastID int64 `json:"broadcast_id"`
 	// ScheduledAt is the time a delayed job was queued for; nil for an immediate send.
 	ScheduledAt *time.Time `json:"scheduled_at,omitempty"`
@@ -184,7 +187,7 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 		if at != nil {
 			opts.ScheduledAt = *at
 		}
-		return q.Enqueue(ctx, SendArgs{BroadcastID: id, ScheduledAt: at}, opts)
+		return q.Enqueue(ctx, SendArgs{WorkspaceID: ts.WorkspaceID(), BroadcastID: id, ScheduledAt: at}, opts)
 	})
 	if err != nil {
 		return nil, err

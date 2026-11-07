@@ -1,0 +1,15 @@
+# A live Workspace and one an earlier release erased (its tombstone).
+- id: 1
+  name: Acme
+  public_id: AcmeWs01
+  collect_key: omck_test_acme_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2
+  name: ''
+  public_id: Erased01
+  collect_key: omck_test_erased_collect_key
+  discarded_at: '2026-01-01 00:00:00'
+  erased_at: '2026-02-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'

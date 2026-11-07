@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/foxcpp/go-mockdns"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
@@ -138,9 +140,10 @@ func TestJoinDomainsDueAreTheVerifiedOnes(t *testing.T) {
 	env := testhelper.Setup(t)
 	mod := joinModule(env, dnstest.NewZone(t))
 
-	ids, err := mod.Due(context.Background(), 100)
+	due, err := mod.Due(context.Background(), 100)
 
 	require.NoError(t, err)
+	ids := lo.Map(due, func(d *ent.JoinDomain, _ int) int64 { return d.ID })
 	verified := env.DB.JoinDomain.Query().Where(joindomain.VerifiedAtNotNil()).IDsX(context.Background())
 	assert.ElementsMatch(t, verified, ids, "the pending domains are not due")
 	assert.Subset(t, ids, []int64{fixtures.JoinDomainVerifiedID, fixtures.JoinDomainHooliID})

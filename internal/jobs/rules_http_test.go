@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
@@ -89,7 +90,7 @@ func TestAnHTTPActionIsPendingWhileTheActionsAfterItRun(t *testing.T) {
 	assert.Nil(t, f.CompletedAt, "the Firing finishes when the call is recorded")
 	assert.Equal(t, []string{"after-hook"}, tagsOf(t, env, fixtures.ContactQuahogQuinnID))
 	assert.Empty(t, rcv.received(), "the Actions job makes no call")
-	assert.Equal(t, []map[string]any{{"firing_id": float64(fixtures.RuleFiringQuahogHookToRunID), "index": float64(0)}}, env.JobsOf(t, jobs.RunRuleHTTPArgs{}.Kind()))
+	assert.Equal(t, []map[string]any{{"firing_id": float64(fixtures.RuleFiringQuahogHookToRunID), "index": float64(0), jobkind.WorkspaceArg: float64(fixtures.QuahogID)}}, env.JobsOf(t, jobs.RunRuleHTTPArgs{}.Kind()))
 }
 
 func TestAnHTTPActionPostsTheContactAndTheEventAndFinishesTheFiring(t *testing.T) {

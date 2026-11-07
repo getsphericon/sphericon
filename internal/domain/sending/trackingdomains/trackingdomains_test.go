@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/foxcpp/go-mockdns"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -459,8 +460,9 @@ func TestARetiredHostWhoseCnameLeftGoes(t *testing.T) {
 func TestDueIsEveryVerifiedHostInAnyRole(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	ids, err := module(t, env, nil, nil).Due(t.Context())
+	due, err := module(t, env, nil, nil).Due(t.Context())
 	require.NoError(t, err)
+	ids := lo.Map(due, func(d *ent.TrackingDomain, _ int) int64 { return d.ID })
 	assert.Contains(t, ids, int64(fixtures.TrackingDomainServingID))
 	assert.Contains(t, ids, int64(fixtures.TrackingDomainDNSVerifiedID))
 	assert.Contains(t, ids, int64(fixtures.TrackingDomainRetiredID))

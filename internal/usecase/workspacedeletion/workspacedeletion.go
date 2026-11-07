@@ -2,8 +2,8 @@
 // deleting a Workspace, restoring it inside its window, and erasing it once the window has passed.
 // The cycle's table and the window with the erase date are the Workspace's own (workspaces.DiscardIn,
 // RestoreIn, TombstoneIn, workspaces.DeletionWindow); the erase removes the Workspace's rows,
-// then, in the last transaction, the OAuth codes that name it (oauthclients.DeleteCodesIn) and
-// writes the tombstone.
+// then, in the last transaction, its jobs in the queue (events.WorkspacePurger), the OAuth codes
+// that name it (oauthclients.DeleteCodesIn) and writes the tombstone.
 //
 // The use case takes the raw client: it lists Workspaces that have no scope yet (the Owners'
 // deleted Workspaces, the ones whose window has passed) and opens a transaction per erase step.

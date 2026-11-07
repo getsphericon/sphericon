@@ -28,7 +28,7 @@ func TestRuleActionEnrollsTheContactInAnAutomation(t *testing.T) {
 		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactBobID)).
 		Only(context.Background())
 	require.NoError(t, err)
-	assert.Contains(t, env.JobsOf(t, jobkind.RunStep.Kind), stepJob(run.ID, 0), "the run starts stepping")
+	assert.Contains(t, env.JobsOf(t, jobkind.RunStep.Kind), stepJob(t, env, run.ID, 0), "the run starts stepping")
 }
 
 func TestRuleActionSkipsAnAutomationThatIsNotActive(t *testing.T) {

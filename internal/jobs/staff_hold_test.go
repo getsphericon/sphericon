@@ -80,7 +80,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	run := env.DB.AutomationRun.GetX(ctx, runIDs[0])
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Zero(t, run.CurrentStep)
-	assert.Equal(t, []map[string]any{stepJob(runIDs[0], 0)}, queuedSteps(t, env), "the same step is queued again")
+	assert.Equal(t, []map[string]any{stepJob(t, env, runIDs[0], 0)}, queuedSteps(t, env), "the same step is queued again")
 	assert.Empty(t, fs.sent)
 
 	clock.t = clock.t.Add(2 * time.Hour)

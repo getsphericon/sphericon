@@ -170,7 +170,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewWebhookEventWorker(entClient, dispatcher))
 
 	logger := slog.Default()
-	cfg := newRiverConfig(workers, logger, extraPeriodic...)
+	cfg := newRiverConfig(entClient, workers, logger, extraPeriodic...)
 	if driver.SupportsListener() {
 		// A notification brings every new job at once; the poll only catches one that was missed
 		// (the listener reconnecting), so it can be slow.
@@ -213,12 +213,22 @@ const (
 //
 // events.JobCorrelation carries the chain of the domain event being handled through the jobs
 // queued while handling it, to the events they publish; logging.JobLogs keeps the lines each job
-// logged on the job, shown on its page in the job queue UI.
+// logged on the job, shown on its page in the job queue UI; workspaceNamed refuses a job of a
+// Workspace queued without its Workspace.
 func BaseConfig() *river.Config {
 	return &river.Config{
 		Plugins:    []rivertype.Plugin{otelriver.NewMiddleware(&otelriver.MiddlewareConfig{EnableTracePropagation: true})},
-		Middleware: []rivertype.Middleware{events.JobCorrelation(), logging.JobLogs()},
+		Middleware: []rivertype.Middleware{events.JobCorrelation(), logging.JobLogs(), &workspaceNamed{}},
 	}
+}
+
+// WorkerConfig is BaseConfig for a client that works jobs, the worker client and the one a test
+// works a job with: it also cancels a job of an erased Workspace before its worker runs
+// (erasedWorkspace), reading the Workspace over client.
+func WorkerConfig(client *ent.Client) *river.Config {
+	cfg := BaseConfig()
+	cfg.Middleware = append(cfg.Middleware, &erasedWorkspace{client: client})
+	return cfg
 }
 
 // Queues are the queues the worker client works, each with its number of workers.
@@ -235,8 +245,8 @@ func Queues() map[string]river.QueueConfig {
 
 // newRiverConfig builds the river config; extra are the Edition's periodic jobs, added to
 // core's.
-func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river.PeriodicJob) *river.Config {
-	cfg := BaseConfig()
+func newRiverConfig(client *ent.Client, workers *river.Workers, logger *slog.Logger, extra ...*river.PeriodicJob) *river.Config {
+	cfg := WorkerConfig(client)
 	cfg.CompletedJobRetentionPeriod = completedJobRetention
 	cfg.CancelledJobRetentionPeriod = cancelledJobRetention
 	cfg.DiscardedJobRetentionPeriod = discardedJobRetention

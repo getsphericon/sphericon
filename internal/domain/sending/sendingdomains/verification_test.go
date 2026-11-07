@@ -7,9 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -28,8 +30,9 @@ func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {
 
 	// Fixtures: the verified domain has last_checked_at set; the unverified one is never
 	// checked (NULL). NULLS FIRST must surface it ahead.
-	ids, err := sendingdomains.Due(context.Background(), env.DB, 100)
+	due, err := sendingdomains.Due(context.Background(), env.DB, 100)
 	require.NoError(t, err)
+	ids := lo.Map(due, func(d *ent.SendingDomain, _ int) int64 { return d.ID })
 	require.Contains(t, ids, int64(fixtures.SendingDomainUnverifiedID))
 	require.Contains(t, ids, int64(fixtures.SendingDomainVerifiedID))
 	assert.Less(t, slices.Index(ids, int64(fixtures.SendingDomainUnverifiedID)), slices.Index(ids, int64(fixtures.SendingDomainVerifiedID)),

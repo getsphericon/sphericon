@@ -7,6 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
@@ -22,11 +23,13 @@ type QueuePurger interface {
 	// PurgeEventJobs deletes the Workspace's event consumer jobs (QueueEvents) whose envelope names
 	// the Contact by id or by one of its destinations, an address (matched case-insensitively) or a
 	// phone number, in any state but running: queued, retrying and discarded ones alike. A running
-	// (or locked) job is left to finish: its worker re-checks that what it refers to still exists.
+	// (or locked) job is left to finish: a consumer that loads the Contact finds it gone, and one
+	// that only writes into the Workspace (the suppression, the orders, the Audit log, the Erasures
+	// stream) runs to its end.
 	PurgeEventJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 	// PurgeJobs deletes the river jobs of kind whose args integer field key is one of ids.
-	// A running job, or one a fetch holds locked to start it, is left to finish: its
-	// worker re-checks that what it refers to still exists.
+	// A running job, or one a fetch holds locked to start it, is left to finish: each of these
+	// kinds' workers loads the row its args name and ends when it is gone.
 	PurgeJobs(ctx context.Context, key jobkind.Key, ids []int64) error
 	// PurgeWebhookJobs deletes the queued deliveries to the Workspace's own webhook
 	// endpoints whose body names the Contact (contactId) or one of its
@@ -99,8 +102,8 @@ func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID
 
 // deleteJobs deletes the jobs params selects through river, on the purge's transaction, a batch
 // at a time until a batch comes back short. river never deletes a running job, nor one that is
-// locked (a fetch about to start it): either is left to finish, and its worker re-checks that
-// what it refers to still exists.
+// locked (a fetch about to start it): either is left to finish, and what its worker does then is
+// for each purge to say (QueuePurger, WorkspacePurger).
 func (p *txPublisher) deleteJobs(ctx context.Context, params *river.JobDeleteManyParams) error {
 	if p.jobs == nil {
 		return ErrNoJobQueue
@@ -126,3 +129,37 @@ func lowerAll(in []string) []string {
 }
 
 var _ QueuePurger = (*txPublisher)(nil)
+
+// WorkspacePurger removes what the river job table still holds of a Workspace. Only
+// WithinWorkspacePurgeTx hands one out: the erase of a deleted Workspace is its one caller, so no
+// producer and no Contact's Erasure can reach it.
+type WorkspacePurger interface {
+	// PurgeWorkspaceJobs deletes every job of the Workspace, whatever its kind or queue, in any
+	// state but running: available, scheduled, retryable, completed, cancelled and discarded
+	// alike. A job's Workspace is the args' top-level jobkind.WorkspaceArg, which every job of a
+	// Workspace carries (jobkind.Workspace, an event job's envelope); a job of the Instance names
+	// none and stays. A running (or locked) job is left to finish, and one that runs again later
+	// (a retry) is cancelled before its worker starts, its Workspace being erased (the job
+	// runner's worker middleware, jobs.WorkerConfig). Only a job already inside its worker when
+	// the tombstone commits can still write a row: a consumer that writes into the envelope's
+	// Workspace without loading a row of it (the suppression, the orders, the Audit log, the
+	// Erasures stream).
+	PurgeWorkspaceJobs(ctx context.Context, workspaceID int64) error
+}
+
+// WithinWorkspacePurgeTx is WithinTx for the last transaction of a deleted Workspace's erase
+// (workspacedeletion), which removes the Workspace's jobs with the rest of what is left of it, so
+// the purge commits (or rolls back) with the tombstone.
+func (b *Bus) WithinWorkspacePurgeTx(ctx context.Context, fn func(tx *ent.Client, purger WorkspacePurger) error) error {
+	return b.within(ctx, func(tx *ent.Client, pub *txPublisher) error { return fn(tx, pub) })
+}
+
+func (p *txPublisher) PurgeWorkspaceJobs(ctx context.Context, workspaceID int64) error {
+	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().
+		// raw sql: a field of the args matched by containment, which river's GIN index on args
+		// serves; river's delete filters stop at a job's own columns.
+		Where("args @> jsonb_build_object(@purge_workspace_arg::text, @purge_workspace_id::bigint)",
+			river.NamedArgs{"purge_workspace_arg": jobkind.WorkspaceArg, "purge_workspace_id": workspaceID}))
+}
+
+var _ WorkspacePurger = (*txPublisher)(nil)

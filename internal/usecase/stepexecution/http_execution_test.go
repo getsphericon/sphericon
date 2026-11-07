@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
@@ -65,7 +66,7 @@ func TestHTTPExecutionAdvancesTheEnrollmentAndQueuesItsNextStep(t *testing.T) {
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, 1, run.CurrentStep)
 	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
-	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1)}}, queued)
+	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
 }
 
 func TestHTTPExecutionKeepsTemporaryFailuresActiveUntilRecovery(t *testing.T) {
@@ -95,7 +96,7 @@ func TestHTTPExecutionKeepsTemporaryFailuresActiveUntilRecovery(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, run.CurrentStep)
 	queued = env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
-	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1)}}, queued)
+	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
 }
 
 func TestHTTPExecutionRecordsPermanentRefusalsAndCancels(t *testing.T) {
@@ -304,7 +305,7 @@ func TestHTTPExecutionIgnoresAnAlreadyAdvancedStep(t *testing.T) {
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, 1, run.CurrentStep)
 	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
-	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1)}}, queued)
+	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
 }
 
 func TestHTTPExecutionIgnoresErasedWork(t *testing.T) {

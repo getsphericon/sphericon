@@ -118,7 +118,7 @@ func TestAHeldIntegrationStopsOnlyTheStepsThatSendThroughIt(t *testing.T) {
 			run := env.DB.AutomationRun.GetX(ctx, runID)
 			assert.Equal(t, automationrun.StatusActive, run.Status)
 			assert.Equal(t, 2, run.CurrentStep, "the Enrollment waits at the held step")
-			assert.Equal(t, []map[string]any{stepJob(runID, 2)}, queuedSteps(t, env), "the held step is asked again later")
+			assert.Equal(t, []map[string]any{stepJob(t, env, runID, 2)}, queuedSteps(t, env), "the held step is asked again later")
 			assert.NotContains(t, tagNames(t, env, fixtures.ContactAliceID), "walked-past")
 		})
 	}

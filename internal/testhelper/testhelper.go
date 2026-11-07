@@ -521,18 +521,18 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		tb.Helper()
 		client := do.MustInvoke[*ent.Client](injector)
 		p := performers{}
-		add(tb, p, txDB, jobs.NewSendNoticeWorker(systemSender))
-		add(tb, p, txDB, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector), st.now))
-		add(tb, p, txDB, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomainverification.UseCase](injector)))
+		add(tb, p, txDB, client, jobs.NewSendNoticeWorker(systemSender))
+		add(tb, p, txDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector), st.now))
+		add(tb, p, txDB, client, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomainverification.UseCase](injector)))
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
-		add(tb, p, txDB, jobs.NewSuppressEventWorker(client))
-		add(tb, p, txDB, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
-		add(tb, p, txDB, jobs.NewBroadcastUnsubscribeEventWorker(client))
-		add(tb, p, txDB, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.UseCase](injector), systemSender))
-		add[recordedArgs](tb, p, txDB, recordedWorker{})
-		add(tb, p, txDB, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
-		add(tb, p, txDB, ee.NewEntryEventWorker(client, lic))
-		add(tb, p, txDB, ee.NewErasureEventWorker(client, lic))
+		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client))
+		add(tb, p, txDB, client, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
+		add(tb, p, txDB, client, jobs.NewBroadcastUnsubscribeEventWorker(client))
+		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.UseCase](injector), systemSender))
+		add[recordedArgs](tb, p, txDB, client, recordedWorker{})
+		add(tb, p, txDB, client, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
+		add(tb, p, txDB, client, ee.NewEntryEventWorker(client, lic))
+		add(tb, p, txDB, client, ee.NewErasureEventWorker(client, lic))
 		return p
 	}
 

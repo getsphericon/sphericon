@@ -1,0 +1,71 @@
+# Jobs the previous release queued: the evaluations named their Workspace at workspace_id, an
+# event job at its envelope's workspaceId, a recipient send only by its row.
+- id: 1
+  kind: automation_evaluate_trigger
+  queue: default
+  state: available
+  args: '{"workspace_id": 1, "contact_id": 5, "action": "page_view"}'
+  max_attempts: 25
+  priority: 1
+  attempt: 0
+- id: 2
+  kind: rule_evaluate_event
+  queue: default
+  state: retryable
+  args: '{"workspace_id": 1, "contact_id": 5, "action": "page_view", "source_id": "evt-1"}'
+  max_attempts: 25
+  priority: 1
+  attempt: 1
+  attempted_at: '2026-03-01 00:00:00'
+- id: 3
+  kind: automation_evaluate_trigger
+  queue: default
+  state: running
+  args: '{"workspace_id": 1, "contact_id": 6, "action": "page_view"}'
+  max_attempts: 25
+  priority: 1
+  attempt: 1
+  attempted_at: '2026-03-01 00:00:00'
+- id: 4
+  kind: automation_evaluate_trigger
+  queue: default
+  state: available
+  args: '{"workspace_id": 2, "contact_id": 7, "action": "page_view"}'
+  max_attempts: 25
+  priority: 1
+  attempt: 0
+- id: 5
+  kind: event_suppress
+  queue: events
+  state: discarded
+  args: '{"workspaceId": 2, "name": "email.bounced", "id": "erased-bounce"}'
+  max_attempts: 25
+  priority: 1
+  attempt: 25
+  attempted_at: '2026-03-01 00:00:00'
+  finalized_at: '2026-03-01 00:00:00'
+- id: 6
+  kind: event_suppress
+  queue: events
+  state: running
+  args: '{"workspaceId": 2, "name": "email.bounced", "id": "erased-running"}'
+  max_attempts: 25
+  priority: 1
+  attempt: 1
+  attempted_at: '2026-03-01 00:00:00'
+- id: 7
+  kind: event_suppress
+  queue: events
+  state: available
+  args: '{"workspaceId": 1, "name": "email.bounced", "id": "live-bounce"}'
+  max_attempts: 25
+  priority: 1
+  attempt: 0
+- id: 8
+  kind: send_broadcast_recipient
+  queue: broadcasts
+  state: available
+  args: '{"recipient_id": 9, "broadcast_id": 3}'
+  max_attempts: 3
+  priority: 1
+  attempt: 0

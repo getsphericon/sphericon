@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -75,8 +77,9 @@ func TestRefreshIntegrationQuotaOfADeletedIntegrationIsNothingToDo(t *testing.T)
 
 func TestIntegrationsDueForQuotaRefreshAreTheSESOnes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ids, err := jobs.IntegrationsDueForQuotaRefresh(t.Context(), env.DB, 100)
+	due, err := jobs.IntegrationsDueForQuotaRefresh(t.Context(), env.DB, 100)
 	require.NoError(t, err)
+	ids := lo.Map(due, func(i *ent.Integration, _ int) int64 { return i.ID })
 	assert.Contains(t, ids, int64(fixtures.IntegrationAcmeSesID))
 	assert.NotContains(t, ids, int64(fixtures.IntegrationAcmeDefaultID))
 }
@@ -87,9 +90,10 @@ func TestIntegrationsDueForQuotaRefreshLeaveADeletedIntegrationOut(t *testing.T)
 	env := testhelper.Setup(t)
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetDiscardedAt(time.Now()).ExecX(t.Context())
 
-	ids, err := jobs.IntegrationsDueForQuotaRefresh(t.Context(), env.DB, 100)
+	due, err := jobs.IntegrationsDueForQuotaRefresh(t.Context(), env.DB, 100)
 
 	require.NoError(t, err)
+	ids := lo.Map(due, func(i *ent.Integration, _ int) int64 { return i.ID })
 	assert.NotContains(t, ids, int64(fixtures.IntegrationAcmeSesID))
 	assert.Contains(t, ids, int64(fixtures.IntegrationAcmeSesImpliedID))
 }
