@@ -254,11 +254,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // rewritten in place; a Rule with none gets one, the version above the newest. A definition equal
 // to the one it starts from stores nothing. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Rule, error) {
-	rename := func(ctx context.Context, ts *ent.Scoped, r *ent.Rule) error {
+	rename := func(r *ent.Rule) func(context.Context, *ent.Scoped) error {
 		if in.Name == nil || *in.Name == r.Name {
 			return nil
 		}
-		return ts.Rule().UpdateOneID(r.ID).SetName(*in.Name).Exec(ctx)
+		return func(ctx context.Context, ts *ent.Scoped) error {
+			return ts.Rule().UpdateOneID(r.ID).SetName(*in.Name).Exec(ctx)
+		}
 	}
 	return m.life.Edit(ctx, s, id, rename, in)
 }
@@ -407,7 +409,7 @@ func LiveAndDraft(r *ent.Rule) (live, draft *ent.RuleVersion) {
 }
 
 // Delete discards a Rule, whether or not it has fired (ADR 0098, ADR 0100), through
-// internal/domain/content/versioneddefinition' Discard: it is deactivated under the lock Publish takes, so it
+// internal/domain/content/versioneddefinition: its conditional write deactivates it and discards it, so it
 // never fires again, and it leaves the lists for good with its versions and Firings kept; Get still
 // reads it. Deleting a deleted Rule changes nothing.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {

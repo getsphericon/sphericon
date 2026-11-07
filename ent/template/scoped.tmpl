@@ -680,6 +680,13 @@ func (x *{{ $N }}ScopedUpdateOne) Where(ps ...predicate.{{ $N }}) *{{ $N }}Scope
 
 // Save verifies the references against the Workspace, then updates the {{ $N }}.
 func (x *{{ $N }}ScopedUpdateOne) Save(ctx context.Context) (*{{ $N }}, error) {
+    {{- if versioned $n }}
+    return x.save(ctx, "update")
+}
+
+// save keeps a machine's deletion verb while sharing the reference checks and audit capture.
+func (x *{{ $N }}ScopedUpdateOne) save(ctx context.Context, verb string) (*{{ $N }}, error) {
+    {{- end }}
 	if err := x.check(ctx); err != nil {
 		return nil, err
 	}
@@ -696,7 +703,7 @@ func (x *{{ $N }}ScopedUpdateOne) Save(ctx context.Context) (*{{ $N }}, error) {
 			if updated, err = x.b.Save(ctx); err != nil {
 				return err
 			}
-			return ts.record(ctx, auditChange{{ $N }}("update", before, updated))
+			return ts.record(ctx, auditChange{{ $N }}({{ if versioned $n }}verb{{ else }}"update"{{ end }}, before, updated))
 		})
 		return updated, err
 	}

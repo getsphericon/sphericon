@@ -63,6 +63,9 @@ or `AGENTS.md`.
       smell: it races with users and needs a timestamp and a conditional write.
    5. A setting the user chooses that does not change by itself (`is_default`) is an attribute, not a
       state.
+   6. A one-way fact is a latch: a conditional write through `lifecycle` records it only while its
+      moment is null, and a miss is `ErrInvalidTransition` (ADR 0109). It is never cleared. In
+      particular, inviting an address whose Invitation was accepted creates a new Invitation.
 8. **The database holds declarative invariants and no logic.** Constraints, keys, checks and indexes
    yes; functions, triggers and views no. Logic that runs on every write lives in Go. Every reference
    to a row is a foreign key with an explicit `ON DELETE` (`SET NULL` for a fact that outlives its

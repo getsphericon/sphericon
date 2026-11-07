@@ -452,11 +452,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		e.steps = &built
 	}
-	rename := func(ctx context.Context, ts *ent.Scoped, a *ent.Automation) error {
+	rename := func(a *ent.Automation) func(context.Context, *ent.Scoped) error {
 		if in.Name == nil || *in.Name == a.Name {
 			return nil
 		}
-		return ts.Automation().UpdateOneID(a.ID).SetName(*in.Name).Exec(ctx)
+		return func(ctx context.Context, ts *ent.Scoped) error {
+			return ts.Automation().UpdateOneID(a.ID).SetName(*in.Name).Exec(ctx)
+		}
 	}
 	return m.life.Edit(ctx, s, id, rename, e)
 }

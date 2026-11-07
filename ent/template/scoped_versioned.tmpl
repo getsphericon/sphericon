@@ -2,7 +2,7 @@
 The storage half of a Versioned definition (ADR 0065, GLOSSARY: Versioned definition). Every
 entity that embeds VersionedMixin (entc.go finds its mixed-in live_version_id) gets
 <N>Pointers on its scoped wrapper: the operations on its live and draft pointers and on its
-state, written through the scoped, audited builders. internal/drafts, the lifecycle shared by
+state, written through the scoped, audited builders. internal/domain/content/versioneddefinition, the lifecycle shared by
 every Versioned definition, is written against VersionedStore and is their one caller; nothing
 is hand-written per entity.
 */}}
@@ -30,54 +30,36 @@ var ErrNotDiscardable = errors.New("ent: an archivable Versioned definition is a
 // never archived (ADR 0100).
 var ErrNotArchivable = errors.New("ent: a discardable Versioned definition is discarded, never archived")
 
-// VersionState is what the lifecycle reads of a Versioned definition's row: its state, its two
-// pointers and the versions they point at, as loaded on the row's edges (nil when there is none
-// or it was not loaded). Archived is set only for an archivable kind (archived_at), Discarded only
-// for a discardable one (discarded_at).
-type VersionState[O, V any] struct {
-	Row         *O
-	ID          int64
-	Active      bool
-	ActivatedAt *time.Time
-	Archived    bool
-	Discarded   bool
-	LiveID      *int64
-	DraftID     *int64
-	Live        *V
-	Draft       *V
+// VersionPosition is the state and pointers written together by a Versioned definition's machine.
+// A zero pointer means that there is no version in that position.
+type VersionPosition struct {
+    Active    bool
+    Archived  bool
+    Discarded bool
+    LiveID    int64
+    DraftID   int64
 }
 
-// VersionedStore is the storage half of one Versioned definition, bound to a scope: the
-// generated <N>Pointers. Every write goes through the scoped wrapper, so a change of the
-// pointers or the state is an audited write of the row.
+// VersionState is a loaded position and its versions. UpdatedAt fences every write, including
+// an edit that rewrites the same draft, so a stale reader cannot accept an unchanged status.
+type VersionState[O, V any] struct {
+    VersionPosition
+    Row         *O
+    ID          int64
+    UpdatedAt   time.Time
+    ActivatedAt *time.Time
+    Live        *V
+    Draft       *V
+}
+
+// VersionedStore is the generated, scoped and audited storage of a Versioned definition.
+// Its one state writer compares the full position and revision before changing anything.
 type VersionedStore[O, V any] interface {
-	// Load returns the row with the id, archived or not, with its live version and draft.
-	Load(ctx context.Context, id int64) (*O, error)
-	// Lock takes the row with the id for the rest of the transaction, archived or not, and
-	// returns its state.
-	Lock(ctx context.Context, id int64) (VersionState[O, V], error)
-	// SetDraft points the row at the version as its draft.
-	SetDraft(ctx context.Context, id, versionID int64) error
-	// ClearDraft leaves the row with no draft.
-	ClearDraft(ctx context.Context, id int64) error
-	// Promote makes the version (the draft) live, clears the draft and makes the row active;
-	// activatedAt, when given, is the moment it moved from inactive to active.
-	Promote(ctx context.Context, id, versionID int64, activatedAt *time.Time) error
-	// Activate makes the row active from the moment at.
-	Activate(ctx context.Context, id int64, at time.Time) error
-	// Deactivate makes the row inactive; activated_at stays.
-	Deactivate(ctx context.Context, id int64) error
-	// Newest returns the number of the row's newest version, 0 when it has none.
-	Newest(ctx context.Context, id int64) (int, error)
-	// DeleteVersion removes a version of the row (a dropped draft, which nothing stands on).
-	DeleteVersion(ctx context.Context, id, versionID int64) error
-	// Archive puts the row aside at `at` and Unarchive brings it back (an archivable kind, ADR 0100); a
-	// discardable kind answers ErrNotArchivable.
-	Archive(ctx context.Context, id int64, at time.Time) error
-	Unarchive(ctx context.Context, id int64) error
-	// Discard removes the row for good at `at`, kept for what refers to it (a discardable kind, ADR
-	// 0100); an archivable kind answers ErrNotDiscardable.
-	Discard(ctx context.Context, id int64, at time.Time) error
+    Load(ctx context.Context, id int64) (*O, error)
+    Read(ctx context.Context, id int64) (VersionState[O, V], error)
+    CompareAndSwap(ctx context.Context, before VersionState[O, V], after VersionPosition, at time.Time) (bool, error)
+    Newest(ctx context.Context, id int64) (int, error)
+    DeleteVersion(ctx context.Context, id, versionID int64) error
 }
 
 {{ range $n := $nodes }}
@@ -92,25 +74,31 @@ var _ VersionedStore[{{ $N }}, {{ $V.Name }}] = (*{{ $N }}Pointers)(nil)
 
 // VersionState returns the {{ $N }}'s state and the versions loaded on its edges.
 func ({{ $n.Receiver }} *{{ $N }}) VersionState() VersionState[{{ $N }}, {{ $V.Name }}] {
-	return VersionState[{{ $N }}, {{ $V.Name }}]{
-		Row:         {{ $n.Receiver }},
-		ID:          {{ $n.Receiver }}.ID,
-		Active:      {{ $n.Receiver }}.Status == {{ $P }}.StatusActive,
-		ActivatedAt: {{ $n.Receiver }}.ActivatedAt,
-		{{- if $R }}
-		Archived:    {{ $n.Receiver }}.ArchivedAt != nil,
-		{{- else }}
-		Discarded:   {{ $n.Receiver }}.DiscardedAt != nil,
-		{{- end }}
-		LiveID:      {{ $n.Receiver }}.LiveVersionID,
-		DraftID:     {{ $n.Receiver }}.DraftVersionID,
-		Live:        {{ $n.Receiver }}.Edges.LiveVersion,
-		Draft:       {{ $n.Receiver }}.Edges.DraftVersion,
-	}
+    st := VersionState[{{ $N }}, {{ $V.Name }}]{
+        Row: {{ $n.Receiver }},
+        ID: {{ $n.Receiver }}.ID,
+        UpdatedAt: {{ $n.Receiver }}.UpdatedAt,
+        ActivatedAt: {{ $n.Receiver }}.ActivatedAt,
+        Live: {{ $n.Receiver }}.Edges.LiveVersion,
+        Draft: {{ $n.Receiver }}.Edges.DraftVersion,
+    }
+    st.Active = {{ $n.Receiver }}.Status == {{ $P }}.StatusActive
+    {{- if $R }}
+    st.Archived = {{ $n.Receiver }}.ArchivedAt != nil
+    {{- else }}
+    st.Discarded = {{ $n.Receiver }}.DiscardedAt != nil
+    {{- end }}
+    if {{ $n.Receiver }}.LiveVersionID != nil {
+        st.LiveID = *{{ $n.Receiver }}.LiveVersionID
+    }
+    if {{ $n.Receiver }}.DraftVersionID != nil {
+        st.DraftID = *{{ $n.Receiver }}.DraftVersionID
+    }
+    return st
 }
 
 // {{ $N }}Pointers are the operations on the live and draft pointers and the state of the
-// Workspace's {{ $N }} rows, a Versioned definition. internal/drafts is their one caller.
+// Workspace's {{ $N }} rows, a Versioned definition. internal/domain/content/versioneddefinition is their one caller.
 type {{ $N }}Pointers struct {
 	t    *{{ $N }}Scoped
 	with []func(*{{ $V.Name }}Query)
@@ -131,45 +119,99 @@ func (p *{{ $N }}Pointers) Load(ctx context.Context, id int64) (*{{ $N }}, error
 	return p.query(id).Only(ctx)
 }
 
-// Lock takes the {{ $N }} row with the id FOR UPDATE, archived or not, and returns its state.
-func (p *{{ $N }}Pointers) Lock(ctx context.Context, id int64) (VersionState[{{ $N }}, {{ $V.Name }}], error) {
-	row, err := p.query(id).ForUpdate().Only(ctx)
-	if err != nil {
-		return VersionState[{{ $N }}, {{ $V.Name }}]{}, err
-	}
-	return row.VersionState(), nil
+// Read loads the position without taking a row lock; CompareAndSwap decides a race.
+func (p *{{ $N }}Pointers) Read(ctx context.Context, id int64) (VersionState[{{ $N }}, {{ $V.Name }}], error) {
+    row, err := p.Load(ctx, id)
+    if err != nil {
+        return VersionState[{{ $N }}, {{ $V.Name }}]{}, err
+    }
+    return row.VersionState(), nil
 }
 
-// SetDraft points the {{ $N }} at the version as its draft.
-func (p *{{ $N }}Pointers) SetDraft(ctx context.Context, id, versionID int64) error {
-	return p.t.UpdateOneID(id).SetDraftVersionID(versionID).Exec(ctx)
-}
-
-// ClearDraft leaves the {{ $N }} with no draft.
-func (p *{{ $N }}Pointers) ClearDraft(ctx context.Context, id int64) error {
-	return p.t.UpdateOneID(id).ClearDraftVersionID().Exec(ctx)
-}
-
-// Promote makes the version live, clears the draft and makes the {{ $N }} active.
-func (p *{{ $N }}Pointers) Promote(ctx context.Context, id, versionID int64, activatedAt *time.Time) error {
-	u := p.t.UpdateOneID(id).
-		SetLiveVersionID(versionID).
-		ClearDraftVersionID().
-		SetStatus({{ $P }}.StatusActive)
-	if activatedAt != nil {
-		u.SetActivatedAt(*activatedAt)
-	}
-	return u.Exec(ctx)
-}
-
-// Activate makes the {{ $N }} active from the moment at.
-func (p *{{ $N }}Pointers) Activate(ctx context.Context, id int64, at time.Time) error {
-	return p.t.UpdateOneID(id).SetStatus({{ $P }}.StatusActive).SetActivatedAt(at).Exec(ctx)
-}
-
-// Deactivate makes the {{ $N }} inactive.
-func (p *{{ $N }}Pointers) Deactivate(ctx context.Context, id int64) error {
-	return p.t.UpdateOneID(id).SetStatus({{ $P }}.StatusInactive).Exec(ctx)
+// CompareAndSwap writes status, pointers and deletion markers in one conditional update.
+// Matching UpdatedAt also fences an edit of an existing draft whose pointers do not change.
+func (p *{{ $N }}Pointers) CompareAndSwap(ctx context.Context, before VersionState[{{ $N }}, {{ $V.Name }}], after VersionPosition, at time.Time) (bool, error) {
+    {{- if $R }}
+    if after.Discarded {
+        return false, ErrNotDiscardable
+    }
+    {{- else }}
+    if after.Archived {
+        return false, ErrNotArchivable
+    }
+    {{- end }}
+    u := p.t.UpdateOneID(before.ID).Where({{ $P }}.UpdatedAtEQ(before.UpdatedAt))
+    if before.Active {
+        u.Where({{ $P }}.StatusEQ({{ $P }}.StatusActive))
+    } else {
+        u.Where({{ $P }}.StatusEQ({{ $P }}.StatusInactive))
+    }
+    if before.LiveID == 0 {
+        u.Where({{ $P }}.LiveVersionIDIsNil())
+    } else {
+        u.Where({{ $P }}.LiveVersionIDEQ(before.LiveID))
+    }
+    if before.DraftID == 0 {
+        u.Where({{ $P }}.DraftVersionIDIsNil())
+    } else {
+        u.Where({{ $P }}.DraftVersionIDEQ(before.DraftID))
+    }
+    {{- if $R }}
+    if before.Archived {
+        u.Where({{ $P }}.ArchivedAtNotNil())
+    } else {
+        u.Where({{ $P }}.ArchivedAtIsNil())
+    }
+    if after.Archived && !before.Archived {
+        u.SetArchivedAt(at)
+    } else if !after.Archived {
+        u.ClearArchivedAt()
+    }
+    {{- else }}
+    if before.Discarded {
+        u.Where({{ $P }}.DiscardedAtNotNil())
+    } else {
+        u.Where({{ $P }}.DiscardedAtIsNil())
+    }
+    if after.Discarded && !before.Discarded {
+        u.SetDiscardedAt(at)
+    }
+    {{- end }}
+    if after.Active {
+        u.SetStatus({{ $P }}.StatusActive)
+        if !before.Active {
+            u.SetActivatedAt(at)
+        }
+    } else {
+        u.SetStatus({{ $P }}.StatusInactive)
+    }
+    if after.LiveID == 0 {
+        u.ClearLiveVersionID()
+    } else {
+        u.SetLiveVersionID(after.LiveID)
+    }
+    if after.DraftID == 0 {
+        u.ClearDraftVersionID()
+    } else {
+        u.SetDraftVersionID(after.DraftID)
+    }
+    verb := "update"
+    {{- if $R }}
+    if after.Archived && !before.Archived {
+        verb = "archive"
+    } else if before.Archived && !after.Archived {
+        verb = "unarchive"
+    }
+    {{- else }}
+    if after.Discarded && !before.Discarded {
+        verb = "discard"
+    }
+    {{- end }}
+    _, err := u.save(ctx, verb)
+    if IsNotFound(err) {
+        return false, nil
+    }
+    return err == nil, err
 }
 
 // Newest returns the number of the {{ $N }}'s newest version, 0 when it has none.
@@ -192,36 +234,5 @@ func (p *{{ $N }}Pointers) DeleteVersion(ctx context.Context, id, versionID int6
 	return p.t.s.{{ $V.Name }}().DeleteOneID(versionID).Where({{ $VP }}.{{ $of.StructField }}(id)).Exec(ctx)
 }
 
-{{- if $R }}
-// Archive puts the {{ $N }} aside.
-func (p *{{ $N }}Pointers) Archive(ctx context.Context, id int64, at time.Time) error {
-	return p.t.Archive(ctx, id, at)
-}
-
-// Unarchive brings the archived {{ $N }} back.
-func (p *{{ $N }}Pointers) Unarchive(ctx context.Context, id int64) error {
-	return p.t.Unarchive(ctx, id)
-}
-
-// Discard answers ErrNotDiscardable: a {{ $N }} is archived, never discarded.
-func (p *{{ $N }}Pointers) Discard(context.Context, int64, time.Time) error {
-	return ErrNotDiscardable
-}
-{{- else }}
-// Archive answers ErrNotArchivable: a {{ $N }} is discarded, never archived.
-func (p *{{ $N }}Pointers) Archive(context.Context, int64, time.Time) error {
-	return ErrNotArchivable
-}
-
-// Unarchive answers ErrNotArchivable: a {{ $N }} is discarded, never archived.
-func (p *{{ $N }}Pointers) Unarchive(context.Context, int64) error {
-	return ErrNotArchivable
-}
-
-// Discard removes the {{ $N }} for good: it leaves the lists and is still read by id.
-func (p *{{ $N }}Pointers) Discard(ctx context.Context, id int64, at time.Time) error {
-	return p.t.Discard(ctx, id, at)
-}
-{{- end }}
 {{ end }}
 {{ end }}

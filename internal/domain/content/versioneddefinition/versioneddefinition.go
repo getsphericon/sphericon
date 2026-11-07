@@ -10,8 +10,9 @@
 // The package owns the moves and their order; each kind of definition supplies its body through
 // Definition (merge and validate an edit, compare, write, the check before Publish and before
 // Archive), and the generated storage half (ent.VersionedStore, the scoped client's <N>Pointers)
-// moves the pointers and the state. Every move runs in one transaction under the row's lock, and
-// each write of the row is audited. Create, Edit, Publish and Archive take the Workspace's lock
+// moves the pointers and the state. Every persisted move runs through the lifecycle table and one
+// conditional write; operations that keep activity use internal transitions, without exit or entry
+// callbacks. Each write of the row is audited. Create, Edit, Publish and Archive take the Workspace's lock
 // first (ADR 0099): a definition names Tags, Segments, Integrations and Automations whose removal
 // checks for it under that lock, a Rule's Condition tests Custom fields whose retype checks for it
 // under the same lock, Publish makes it Live use, and Archive checks what still needs it.
@@ -33,7 +34,7 @@ type Definition[O, V, E, B any] interface {
 	// Store binds the generated pointer operations to the scope.
 	Store(s *ent.Scoped) ent.VersionedStore[O, V]
 	// Merge lays the edit over base (nil for a new object) and validates the result. It runs under
-	// the row's lock, in the transaction of the move.
+	// the Workspace lock, in the transaction of the move.
 	Merge(ctx context.Context, ts *ent.Scoped, base *V, edit E) (B, error)
 	// Equal reports whether body is the definition v holds, compared in the canonical form a
 	// version stores, so that saving a definition unchanged stores nothing.
@@ -46,7 +47,7 @@ type Definition[O, V, E, B any] interface {
 	Publishable(ctx context.Context, ts *ent.Scoped, version *V) error
 	// Archivable refuses to archive the object while live work still needs it.
 	Archivable(ctx context.Context, ts *ent.Scoped, row *O) error
-	// Editable refuses an edit or a Revert of the object as it is under the lock: a deleted Rule,
+	// Editable refuses an edit or a Revert of the object at its loaded position: a deleted Rule,
 	// kept for its Firings, takes neither. An archived object is refused by the lifecycle itself
 	// (Errors.Archived).
 	Editable(row *O) error
@@ -132,7 +133,12 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 		if err != nil {
 			return err
 		}
-		return l.def.Store(ts).SetDraft(ctx, id, versionID)
+		store := l.def.Store(ts)
+		st, err := l.read(ctx, store, id)
+		if err != nil {
+			return err
+		}
+		return l.move(ctx, store, st, Draft, versionID)
 	})
 	if err != nil {
 		return nil, err
@@ -144,21 +150,18 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 // draft's, or the live version's when there is no draft. The live version is never rewritten: the
 // first edit above it makes the draft, the version above the newest, and the next ones rewrite the
 // draft in place. A definition equal to the one it starts from stores nothing. The status is
-// untouched. own, when given, changes the object's own row (its name) under the same lock.
-func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int64, own func(ctx context.Context, ts *ent.Scoped, row *O) error, edit E) (*O, error) {
+// untouched. own, when given, plans a change of the object's own row (its name) from the loaded
+// snapshot: it returns nil if nothing differs, otherwise a writer to run after the conditional
+// move. Planning has no effects; the writer runs in the move's transaction.
+func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int64, own func(row *O) func(ctx context.Context, ts *ent.Scoped) error, edit E) (*O, error) {
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
-		st, err := l.lock(ctx, store, id)
+		st, err := l.read(ctx, store, id)
 		if err != nil {
 			return err
 		}
 		if err := l.editable(st); err != nil {
 			return err
-		}
-		if own != nil {
-			if err := own(ctx, ts, st.Row); err != nil {
-				return err
-			}
 		}
 		base := st.Draft
 		if base == nil {
@@ -171,22 +174,43 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 		if err != nil {
 			return err
 		}
-		if l.def.Equal(base, body) {
+		var writeOwner func(context.Context, *ent.Scoped) error
+		if own != nil {
+			writeOwner = own(st.Row)
+		}
+		unchanged := l.def.Equal(base, body)
+		if unchanged && writeOwner == nil {
 			return nil
 		}
-		if st.Draft != nil {
-			_, err := l.def.Write(ctx, ts, id, 0, st.Draft, body)
+		draftID := st.DraftID
+		if !unchanged && st.Draft == nil {
+			newest, err := store.Newest(ctx, id)
+			if err != nil {
+				return err
+			}
+			draftID, err = l.def.Write(ctx, ts, id, newest+1, nil, body)
+			if err != nil {
+				return err
+			}
+		}
+		event := Edit
+		if !unchanged {
+			event = Draft
+		}
+		// Fence the owner before rewriting an existing draft. A concurrent move cannot
+		// publish or remove that version between this write and the body's write.
+		if err := l.move(ctx, store, st, event, draftID); err != nil {
 			return err
 		}
-		newest, err := store.Newest(ctx, id)
-		if err != nil {
-			return err
+		if !unchanged && st.Draft != nil {
+			if _, err := l.def.Write(ctx, ts, id, 0, st.Draft, body); err != nil {
+				return err
+			}
 		}
-		versionID, err := l.def.Write(ctx, ts, id, newest+1, nil, body)
-		if err != nil {
-			return err
+		if writeOwner != nil {
+			return writeOwner(ctx, ts)
 		}
-		return store.SetDraft(ctx, id, versionID)
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -205,24 +229,19 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
-		st, err := l.lock(ctx, store, id)
+		st, err := l.read(ctx, store, id)
 		if err != nil {
 			return err
 		}
 		if err := l.acting(st); err != nil {
 			return err
 		}
-		now := l.now()
-		var activatedAt *time.Time
-		if !st.Active {
-			activatedAt = &now
-		}
 		switch {
 		case st.Draft != nil:
 			if err := l.def.Publishable(ctx, ts, st.Draft); err != nil {
 				return err
 			}
-			return store.Promote(ctx, id, *st.DraftID, activatedAt)
+			return l.move(ctx, store, st, Publish, 0)
 		case st.Live == nil:
 			return l.errs.NothingToPublish
 		case st.Active:
@@ -231,7 +250,7 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id i
 			if err := l.def.Publishable(ctx, ts, st.Live); err != nil {
 				return err
 			}
-			return store.Activate(ctx, id, now)
+			return l.move(ctx, store, st, Publish, 0)
 		}
 	})
 	if err != nil {
@@ -246,22 +265,22 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id i
 func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
-		st, err := l.lock(ctx, store, id)
+		st, err := l.read(ctx, store, id)
 		if err != nil {
 			return err
 		}
 		if err := l.editable(st); err != nil {
 			return err
 		}
-		if st.LiveID == nil || st.DraftID == nil {
+		if st.LiveID == 0 || st.DraftID == 0 {
 			return l.errs.NothingToRevert
 		}
 		// The pointer is cleared through the audited write first, so the Audit log records the
 		// Revert; the key's SET NULL would leave no trace.
-		if err := store.ClearDraft(ctx, id); err != nil {
+		if err := l.move(ctx, store, st, Revert, 0); err != nil {
 			return err
 		}
-		return store.DeleteVersion(ctx, id, *st.DraftID)
+		return store.DeleteVersion(ctx, id, st.DraftID)
 	})
 	if err != nil {
 		return nil, err
@@ -276,7 +295,7 @@ func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id in
 func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
-		st, err := l.lock(ctx, store, id)
+		st, err := l.read(ctx, store, id)
 		if err != nil {
 			return err
 		}
@@ -286,7 +305,7 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 		if !st.Active {
 			return nil
 		}
-		return store.Deactivate(ctx, id)
+		return l.move(ctx, store, st, Deactivate, 0)
 	})
 	if err != nil {
 		return nil, err
@@ -302,7 +321,7 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
-		st, err := l.lock(ctx, store, id)
+		st, err := l.read(ctx, store, id)
 		if err != nil {
 			return err
 		}
@@ -312,12 +331,7 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 		if err := l.def.Archivable(ctx, ts, st.Row); err != nil {
 			return err
 		}
-		if st.Active {
-			if err := store.Deactivate(ctx, id); err != nil {
-				return err
-			}
-		}
-		return store.Archive(ctx, id, l.now())
+		return l.move(ctx, store, st, Archive, 0)
 	})
 	if err != nil {
 		return nil, err
@@ -331,19 +345,14 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
-		st, err := l.lock(ctx, store, id)
+		st, err := l.read(ctx, store, id)
 		if err != nil {
 			return err
 		}
 		if !st.Archived {
 			return nil
 		}
-		if st.Active {
-			if err := store.Deactivate(ctx, id); err != nil {
-				return err
-			}
-		}
-		return store.Unarchive(ctx, id)
+		return l.move(ctx, store, st, Unarchive, 0)
 	})
 	if err != nil {
 		return nil, err
@@ -353,25 +362,20 @@ func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id
 
 // Discard removes the object for good (ADR 0100): it leaves every list and every new work, is still
 // read by id so what refers to it shows its name, and is never restored. It makes the object
-// inactive first, under the same lock as Publish, so a discarded object never acts again.
+// inactive in the same conditional update, so a discarded object never acts again.
 // Discarding a discarded object changes nothing. It returns the object; an archivable kind is
 // refused (ent.ErrNotDiscardable).
 func (l *Lifecycle[O, V, E, B]) Discard(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
-		st, err := l.lock(ctx, store, id)
+		st, err := l.read(ctx, store, id)
 		if err != nil {
 			return err
 		}
 		if st.Discarded {
 			return nil
 		}
-		if st.Active {
-			if err := store.Deactivate(ctx, id); err != nil {
-				return err
-			}
-		}
-		return store.Discard(ctx, id, l.now())
+		return l.move(ctx, store, st, Discard, 0)
 	})
 	if err != nil {
 		return nil, err
@@ -400,10 +404,9 @@ func (l *Lifecycle[O, V, E, B]) editable(st ent.VersionState[O, V]) error {
 	return l.def.Editable(st.Row)
 }
 
-// lock takes the object's row for the rest of the transaction, archived or not, so the moves of
-// one object take turns.
-func (l *Lifecycle[O, V, E, B]) lock(ctx context.Context, store ent.VersionedStore[O, V], id int64) (ent.VersionState[O, V], error) {
-	st, err := store.Lock(ctx, id)
+// read loads the position the conditional write will compare, archived or not.
+func (l *Lifecycle[O, V, E, B]) read(ctx context.Context, store ent.VersionedStore[O, V], id int64) (ent.VersionState[O, V], error) {
+	st, err := store.Read(ctx, id)
 	return st, l.notFound(err)
 }
 
