@@ -1,4 +1,4 @@
-package abusedetection_test
+package abusedetector_test
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
@@ -42,27 +41,27 @@ var withSupport = testhelper.WithConfig(func(c *config.Config) { c.SupportEmail 
 
 func detector(t *testing.T, env *testhelper.TestEnv) *pass {
 	t.Helper()
-	return newDetector(env, licenseFor(t, licensekey.FeatureStaff), abusedetection.Config{Limits: limits})
+	return newDetector(env, licenseFor(t, licensekey.FeatureStaff), limits)
 }
 
-// pass runs the detector at a moment a test picks: the use case reads the clock it was built
+// pass runs the detector at a moment a test picks: the detector reads the clock it was built
 // with, which Run moves first.
 type pass struct {
-	detector *abusedetection.UseCase
+	detector *abusedetector.Detector
 	now      time.Time
 }
 
 // Run is one pass of the detector at at.
-func (p *pass) Run(ctx context.Context, at time.Time) (abusedetection.Summary, error) {
+func (p *pass) Run(ctx context.Context, at time.Time) (abusedetector.Summary, error) {
 	p.now = at
 	return p.detector.Run(ctx)
 }
 
 // newDetector is the detector over the env's bus, as the Edition builds it: what it publishes
 // tells the owners through the platform sender.
-func newDetector(env *testhelper.TestEnv, lic *licensekey.License, cfg abusedetection.Config) *pass {
+func newDetector(env *testhelper.TestEnv, lic *licensekey.License, limits abusedetector.Limits) *pass {
 	p := &pass{}
-	p.detector = abusedetection.New(env.DB, env.Bus, lic, suspension.NewSuspender(env.Bus, time.Now), cfg,
+	p.detector = abusedetector.NewDetector(env.DB, env.Bus, lic, suspension.NewSuspender(env.Bus, time.Now), limits,
 		func() time.Time { return p.now })
 	return p
 }
@@ -120,10 +119,10 @@ func TestNothingRunsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	for _, lic := range []*licensekey.License{nil, licenseFor(t), licenseFor(t, licensekey.FeatureRetention)} {
-		d := newDetector(env, lic, abusedetection.Config{Limits: limits})
+		d := newDetector(env, lic, limits)
 		summary, err := d.Run(t.Context(), at(overDay))
 		require.NoError(t, err)
-		assert.Equal(t, abusedetection.Summary{}, summary)
+		assert.Equal(t, abusedetector.Summary{}, summary)
 	}
 	assert.False(t, suspended(t, env, fixtures.VandelayID))
 	assert.Empty(t, env.SystemMail.Messages())
@@ -135,7 +134,7 @@ func TestBelowTheVolumeFloorNothingHappensEvenAtAHundredPercent(t *testing.T) {
 	summary, err := detector(t, env).Run(t.Context(), at(floorDay)) // every send bounced hard
 
 	require.NoError(t, err)
-	assert.Equal(t, abusedetection.Summary{}, summary)
+	assert.Equal(t, abusedetector.Summary{}, summary)
 	assert.False(t, suspended(t, env, fixtures.VandelayID))
 	assert.Empty(t, env.SystemMail.Messages())
 }
@@ -186,7 +185,7 @@ func TestWithNoDeliveryNoticesTheComplaintRateIsNotJudged(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, abusedetector.TierNone, breach.Tier)
-	assert.Equal(t, abusedetection.Summary{}, summary)
+	assert.Equal(t, abusedetector.Summary{}, summary)
 	assert.False(t, suspended(t, env, fixtures.VandelayID))
 	assert.Empty(t, env.SystemMail.Messages())
 }
@@ -288,7 +287,7 @@ func TestASuspendedWorkspaceIsSkippedAndKeepsItsFirstActorAndReason(t *testing.T
 	summary, err := detector(t, env).Run(t.Context(), at(unjudgedDay))
 
 	require.NoError(t, err)
-	assert.Equal(t, abusedetection.Summary{}, summary)
+	assert.Equal(t, abusedetector.Summary{}, summary)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.MonarchID)
 	assert.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 	assert.Equal(t, "chargeback", *ws.SuspensionReason)
@@ -391,7 +390,7 @@ func TestAWorkspaceInItsDeletionWindowIsNotJudged(t *testing.T) {
 	summary, err := detector(t, env).Run(t.Context(), at(unjudgedDay))
 
 	require.NoError(t, err)
-	assert.Equal(t, abusedetection.Summary{}, summary)
+	assert.Equal(t, abusedetector.Summary{}, summary)
 	assert.False(t, suspended(t, env, fixtures.BluthID))
 	assert.Empty(t, env.SystemMail.Messages())
 }

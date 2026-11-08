@@ -175,7 +175,7 @@ same `Load` as the other rows; loading a table a second time would wipe the firs
 deletes every table of its files first), so volume never comes from a second loader. The generator
 reads a loop body once and refuses a `# fixture:` name inside one. Every row is one INSERT at the
 start of every test process, so keep the volume small and scale the code under test's thresholds
-down in the test (see `ee/usecase/abusedetection/detector_test.go`, whose scenarios are day offsets in `events.yml`).
+down in the test (see `ee/domain/insights/abusedetector/detector_test.go`, whose scenarios are day offsets in `events.yml`).
 
 ### Credentials and anchor identities
 

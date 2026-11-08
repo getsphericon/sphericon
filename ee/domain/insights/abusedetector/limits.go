@@ -1,9 +1,10 @@
 // Package abusedetector is the Enterprise Abuse detector (ADR 0026, GLOSSARY "Abuse detector"):
 // its limits, its reading of a Workspace's standing against them (the Complaint rate and Bounce
 // rate per Sending domain over the trailing 24 hours, the rates of internal/domain/sending/reputation, no new
-// math) and the console's review filters. The lower tier only warns the owners; the higher one
-// freezes the Workspace. It acts on nothing: the detector's pass, which warns and freezes, is the
-// use case ee/usecase/abusedetection, and the Staff console reads the standing through it too.
+// math), the console's review filters and the detector's hourly pass (Detector, detector.go, ADR
+// 0112). The lower tier only warns the owners; the higher one freezes the Workspace. The Watch
+// only reads the standing, which the Staff console and the dashboard read through it too; the
+// Detector acts on it.
 //
 // Governed by ee/LICENSE, not the AGPL.
 package abusedetector

@@ -6,11 +6,11 @@ import (
 
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
 	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
 	"github.com/getsphericon/sphericon/ee/usecase/auditlogretention"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -128,7 +128,7 @@ func (w *usageRefreshWorker) Work(ctx context.Context, _ *river.Job[UsageRefresh
 	return usages.Refresh(ctx, w.client, w.lic, w.now())
 }
 
-// AbuseDetectionArgs is a pass of the abuse detector (ADR 0026), every abusedetection.Interval.
+// AbuseDetectionArgs is a pass of the abuse detector (ADR 0026), every abusedetector.Interval.
 type AbuseDetectionArgs struct{}
 
 func (AbuseDetectionArgs) Kind() string { return "ee_abuse_detector" }
@@ -136,7 +136,7 @@ func (AbuseDetectionArgs) Kind() string { return "ee_abuse_detector" }
 type abuseDetectionWorker struct {
 	river.WorkerDefaults[AbuseDetectionArgs]
 
-	detector *abusedetection.UseCase
+	detector *abusedetector.Detector
 }
 
 func (w *abuseDetectionWorker) Work(ctx context.Context, _ *river.Job[AbuseDetectionArgs]) error {
@@ -191,7 +191,7 @@ func (e *Edition) Jobs() jobextension.Extension {
 		PeriodicJobs: []*river.PeriodicJob{
 			every(auditlogretention.Interval, RetentionPruneArgs{}),
 			every(usages.Interval, UsageRefreshArgs{}),
-			every(abusedetection.Interval, AbuseDetectionArgs{}),
+			every(abusedetector.Interval, AbuseDetectionArgs{}),
 		},
 	}
 }

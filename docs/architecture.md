@@ -231,7 +231,7 @@ coding standards in `CODING_STANDARDS.md`.
   `ee/domain/identity/servicecredentials` the Service credentials). Any other package, a use case
   included, reads the table and changes it only through a function of its owner: the Workspace's
   standing (`workspaces.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position)
-  for `suspension`, `ee/usecase/abusedetection` and `workspacefeed`; the User's survey marker and feed position
+  for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
   (`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
   Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
   `users`; a provider's quota answer and refusal of an Integration (`integrations.RecordQuota`,
@@ -556,8 +556,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   consumer: its envelope carries only a Workspace id, ADR 0022), `ee/domain/insights/erasures` (the Export streams'
   event consumer, which writes the Erasures rows from `contact.erased`, and their prune job over every
   Workspace's rows, ADR 0045), `ee/usecase/auditlogretention` (the
-  periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/usecase/abusedetection` (the hourly
-  abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
+  periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/domain/insights/abusedetector` (the hourly
+  pass of the Abuse detector, `Detector.Run`, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
   exempt, then scopes to judge each, and writes its notice markers by id through `workspaces`), `ee/domain/insights/usages` (the periodic
   usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `staff` license, that keeps the contacts peak as Contacts change), `ee/domain/insights/workspaceoversight` (the
   Enterprise sections of the Staff console, ADR 0026: the Workspace rows, suspension state and
@@ -629,19 +629,19 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   `ee/usecase/<name>`, its surfaces in `ee/api`, the Edition `ee/ee.go`, and beside them the
   License key's gate `ee/licensekey` (component `ee-licensekey`), which imports nothing of ours.
   The same rule places a package: one that owns a table is a domain module in the context of what
-  it targets, an operation across modules is a use case, and a package that is both is split.
+  it targets, an operation belongs to the module that owns its subject and is a use case only by
+  the test of ADR 0112, and a package that is both is split.
   Identity: `servicecredentials` (the Service credentials, with their scope vocabulary generated
   from the service contract). Insights: `auditentries` (the Audit entries), `erasures` (the Erasures
-  rows), `usages` (the Usage rows), which hold the raw client (`ee-domain-insights-raw`), and
-  `abusedetector` (the Abuse detector's limits and its reading of a Workspace's standing,
-  `ee-domain-insights`), and the Workspace oversight (`workspaceoversight`, `ee-domain-insights-raw`:
+  rows), `usages` (the Usage rows) and `abusedetector` (the Abuse detector: its limits, its reading
+  of a Workspace's standing and its hourly pass, which warns and freezes through `workspaces`,
+  `memberships` and `suspension` across every Workspace, ADR 0112), which hold the raw client
+  (`ee-domain-insights-raw`), and the Workspace oversight (`workspaceoversight`, `ee-domain-insights-raw`:
   the Staff console's Enterprise sections and the service endpoints over suspension, holds, the
   Audit log, Usage, the Abuse detector and the service feeds; a module of the top of insights, since
   each of its operations calls one module and what it owns is the rules of looking across
-  Workspaces). The use cases (`ee-usecase-raw`, each an isolated instance, both holding the raw
-  client): `abusedetection` (the detector's hourly pass, which warns and freezes through
-  `workspaces`, `memberships` and `suspension`) and `auditlogretention` (the advanced-retention prune
-  over `workspaces` and the Audit log). The `export` license gate is the Edition's own (`ee.ExportStreams`).
+  Workspaces). The use case (`ee-usecase-raw`, an isolated instance holding the raw client):
+  `auditlogretention` (the advanced-retention prune over `workspaces` and the Audit log). The `export` license gate is the Edition's own (`ee.ExportStreams`).
   An Enterprise domain module imports the core's modules of its context and the contexts below
   and the Enterprise modules of those contexts, never a module above nor a use case; an Enterprise
   use case imports domain modules only, calls no unchecked removal of the core (unlike a core use

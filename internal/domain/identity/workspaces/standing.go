@@ -11,7 +11,7 @@ import (
 
 // The Workspace's sending standing lives on its row: the suspension, the abuse exemption, the
 // Send cap (internal/domain/identity/suspension says what they mean and audits each change) and the markers of the
-// abuse detector's warning and of the suspension's notice (ee/usecase/abusedetection,
+// abuse detector's warning and of the suspension's notice (ee/domain/insights/abusedetector,
 // internal/usecase/noticedelivery). These functions
 // are their writes; each runs on the client or transaction it is given.
 
