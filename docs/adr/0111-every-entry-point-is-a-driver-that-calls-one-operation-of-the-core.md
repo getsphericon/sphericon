@@ -7,6 +7,11 @@ status: accepted
 > Refines [[0102-the-core-is-layered-and-an-operation-across-modules-is-a-use-case]] and
 > [[0104-a-use-case-has-one-call-contract]]: they said what a driver may call; this says what a
 > driver is, how much it may call, and moves the CLI's operations out of the wiring.
+>
+> **Amended by [[0115-broadcast-unsubscribe-attribution-follows-the-fact-and-survives-erasure]]:**
+> a Telegram opt-out is not routed through `unsubscriberecording`. Its Broadcast attribution, like
+> every Channel's, follows the accepted opt-out through one consumer after the commit, while
+> leaving an Automation, where an opt-out does, stays in the opt-out's transaction.
 
 ## Context
 
@@ -85,8 +90,11 @@ the call, and `releasecheck.LatestRelease` already shows that shape.
     confirms a subscription and builds the scope itself.
   - The Broadcast worker hands the attempt to `broadcasts`, which decides on a retry or giving up
     ([[0107-a-domain-module-checks-every-input-to-its-writes]]: the job runner holds no domain rule).
-  - A Telegram opt-out is recorded through `unsubscriberecording`, with the same effects in the
-    same transaction as any other Unsubscribe.
+  - ~~A Telegram opt-out is recorded through `unsubscriberecording`, with the same effects in the
+    same transaction as any other Unsubscribe.~~ Replaced by
+    [[0115-broadcast-unsubscribe-attribution-follows-the-fact-and-survives-erasure]]: attribution
+    to a Broadcast follows the opt-out through one consumer for every Channel, while leaving an
+    Automation stays synchronous.
 - **A resource is built once below the contracts.** The Integration view and the Segment preview
   are operations of `integrations` and `segments`. The Workspace's view, which reads identity and
   sending, is a read use case named after the report it builds. `/site` and `/api` keep their own
