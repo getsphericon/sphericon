@@ -10,7 +10,6 @@ package instancestates
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -26,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instanceauditentries"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -166,7 +166,8 @@ func (m *Module) Ensure(ctx context.Context) (*ent.InstanceState, error) {
 
 func ensureRow(ctx context.Context, client *ent.Client) (*ent.InstanceState, error) {
 	err := client.InstanceState.Create().SetID(stateID).OnConflictColumns(instancestate.FieldID).DoNothing().Exec(ctx)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	_, err = db.Inserted(err)
+	if err != nil {
 		return nil, err
 	}
 	return client.InstanceState.Get(ctx, stateID)

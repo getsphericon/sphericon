@@ -18,7 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -34,7 +33,7 @@ type UseCase struct {
 // New builds the use case: the bus opens its transactions, states says the Send cap a Workspace
 // starts with (instancestates.Module.StartingSendCapIn, ADR 0067; nil, as in a test, gives a new
 // Workspace none), and newPublicID draws a Workspace id (workspaceid.New; a test gives one that
-// collides to watch creation retry).
+// collides to watch workspaces.CreateIn draw again).
 func New(bus *events.Bus, states *instancestates.Module, newPublicID func() string) *UseCase {
 	return &UseCase{bus: bus, newPublicID: newPublicID, states: states}
 }
@@ -50,32 +49,26 @@ func (u *UseCase) CreateWorkspace(ctx context.Context, userID int64, name string
 	if name == "" {
 		return nil, workspaces.ErrNameEmpty
 	}
-	for {
-		var ws *ent.Workspace
-		err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-			usr, err := tx.User.Get(ctx, userID)
-			if err != nil {
-				return err
-			}
-			if usr.EmailVerifiedAt == nil {
-				return users.ErrEmailNotVerified
-			}
-			if ws, err = u.createIn(ctx, tx, userID, name); err != nil {
-				return err
-			}
-			actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(usr.ID, 10), Name: usr.Name}
-			return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil))
-		})
-		if db.IsUniqueViolation(err) {
-			continue // drew a taken id; the next attempt retries
+	var ws *ent.Workspace
+	err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		usr, err := tx.User.Get(ctx, userID)
+		if err != nil {
+			return err
 		}
-		return ws, err
-	}
+		if usr.EmailVerifiedAt == nil {
+			return users.ErrEmailNotVerified
+		}
+		if ws, err = u.createIn(ctx, tx, userID, name); err != nil {
+			return err
+		}
+		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(usr.ID, 10), Name: usr.Name}
+		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil))
+	})
+	return ws, err
 }
 
 // createIn creates the Workspace and its owner Membership on tx, with a fresh Workspace id and
-// the Send cap a new Workspace starts with. A unique violation (an id already
-// taken) aborts tx, so the caller retries the whole transaction with a fresh id.
+// the Send cap a new Workspace starts with.
 func (u *UseCase) createIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
 	var sendCap *int
 	if u.states != nil {
@@ -84,7 +77,7 @@ func (u *UseCase) createIn(ctx context.Context, tx *ent.Client, userID int64, na
 			return nil, err
 		}
 	}
-	ws, err := workspaces.CreateIn(ctx, tx, name, u.newPublicID(), sendCap)
+	ws, err := workspaces.CreateIn(ctx, tx, name, u.newPublicID, sendCap)
 	if err != nil {
 		return nil, err
 	}

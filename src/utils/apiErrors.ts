@@ -122,18 +122,15 @@ export function getSoleOwnedWorkspaces(error: unknown) {
   return problem.workspaces
 }
 
-// Every message a 422 problem lists, by field (its `errors` member); undefined when it lists none.
+// Every message a problem lists, by field (its `errors` member); undefined when it lists none. A
+// 422 lists the inputs a rule refused, a 409 the field whose value the subject's state refuses (a
+// taken key, ADR 0106).
 export function getFieldErrors(error: unknown) {
-  const problem = asProblem(error)
-  return problem?.status === 422 ? problem.errors : undefined
+  return asProblem(error)?.errors
 }
 
-// The first message a 422 problem lists under one field (its `errors` member), or undefined when
-// the error names no such field.
+// The first message a problem lists under one field (its `errors` member), or undefined when the
+// error names no such field.
 export function getFieldError(error: unknown, field: string) {
-  const problem = asProblem(error)
-  if (problem?.status !== 422) {
-    return undefined
-  }
-  return problem.errors?.[field]?.[0]
+  return asProblem(error)?.errors?.[field]?.[0]
 }

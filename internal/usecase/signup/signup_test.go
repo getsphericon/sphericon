@@ -257,7 +257,7 @@ func TestWithVerificationOffATakenAddressIsTheAnswer(t *testing.T) {
 
 	_, err := r.module.SignUp(t.Context(), signup.SignUpInput{Name: "Mallory", Email: fixtures.OwnerJohnEmail, Password: password})
 
-	require.ErrorIs(t, err, signup.ErrEmailTaken)
+	require.ErrorIs(t, err, users.ErrEmailTaken)
 	assert.Empty(t, r.queue.published(t))
 	assert.Equal(t, john.PasswordHash, r.user(t, fixtures.OwnerJohnEmail).PasswordHash)
 }

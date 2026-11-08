@@ -364,6 +364,18 @@ func IDByPublicID(ctx context.Context, client *ent.Client, publicID string) (int
 // "live" is stated once.
 func Live() predicate.Workspace { return workspace.DiscardedAtIsNil() }
 
+// ErasedIn reports whether the scope's Workspace is erased (ADR 0043): its rows are gone and its
+// tombstone is all that is left, so a write on its behalf that arrives late (a signed link clicked
+// long after) has nothing to record into. A Workspace in its deletion window is not erased: a
+// restore brings it back with what was recorded meanwhile.
+func ErasedIn(ctx context.Context, s *ent.Scoped) (bool, error) {
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return false, err
+	}
+	return ws.ErasedAt != nil, nil
+}
+
 // Deleted is a Workspace in its deletion window or erased (ADR 0043): the complement of Live.
 func Deleted() predicate.Workspace { return workspace.DiscardedAtNotNil() }
 

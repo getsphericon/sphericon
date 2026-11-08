@@ -28,6 +28,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 )
 
@@ -170,6 +171,12 @@ func (d *Detector) Refresh(ctx context.Context) error {
 	d.mu.Unlock()
 	return nil
 }
+
+// The unique constraint of the Private relay ranges (ADR 0106): no client can break it.
+var _ = db.Declare(
+	db.Fault("private_relay_ranges_cidr_key",
+		"the published list is read without repeats (parseRanges) and replaces the whole table in one transaction"),
+)
 
 func (d *Detector) replace(ctx context.Context, prefixes []netip.Prefix) error {
 	tx, err := d.client.Tx(ctx)

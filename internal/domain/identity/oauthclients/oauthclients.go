@@ -28,9 +28,17 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+)
+
+// The unique constraints of the tables this package writes (ADR 0106).
+var _ = db.Declare(
+	db.Fault("oauth_clients_client_id_key", "Register draws the client_id at random, and a client of a metadata document is written with ON CONFLICT on its URL"),
+	db.Fault("oauth_codes_code_hash_key", "the code is drawn at random and stored as its hash"),
+	db.Fault("oauth_refresh_tokens_token_hash_key", "the refresh token is drawn at random and stored as its hash"),
 )
 
 var (

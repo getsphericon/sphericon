@@ -14,7 +14,6 @@ package providerlimit
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"math"
 	"time"
@@ -25,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 )
 
 // daySeconds is the length of the rolling window in seconds.
@@ -302,12 +302,16 @@ func takeOrCreate(update func() (int, error), ensure func() error) (bool, error)
 	return n > 0, err
 }
 
+// The unique constraints of the limiters (ADR 0106): no client can break them.
+var _ = db.Declare(
+	db.Fault("provider_limiters_integration_id_key", "a limiter is written with ON CONFLICT DO NOTHING, then taken from"),
+	db.Fault("sendcaplimiter_workspace_id", "a limiter is written with ON CONFLICT DO NOTHING, then taken from"),
+)
+
 // ignoreConflict treats an insert that did nothing on conflict as done: someone else created the
-// row. DO NOTHING on conflict reports no row.
+// row.
 func ignoreConflict(err error) error {
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil
-	}
+	_, err = db.Inserted(err)
 	return err
 }
 

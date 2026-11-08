@@ -24,17 +24,18 @@ var ErrSMSSource = validation.RefuseField("sendingSource", "consent: an sms opt-
 // Confirmation, so stale consent never reactivates: only a new Confirmation (the START that lifts
 // the opt-out) makes the number reachable again; the sms.confirmed Event stays as proof. It
 // is idempotent: a number already opted out changes nothing, and keeps the way it first stopped.
-// via is how the person stopped, which the Contact card shows. Run it inside the transaction s is
-// bound to.
-func StopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) error {
+// via is how the person stopped, which the Contact card shows. stopped is whether this call
+// stopped the number: false when it was stopped already, so what follows a stop is done already
+// too. Run it inside the transaction s is bound to.
+func StopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (stopped bool, err error) {
 	added, err := unsubscribes.AddSMS(ctx, s, number, via)
 	if err != nil || !added {
-		return err
+		return false, err
 	}
 	if err := confirmations.Withdraw(ctx, s, channels.SMS, number); err != nil {
-		return fmt.Errorf("drop confirmation: %w", err)
+		return false, fmt.Errorf("drop confirmation: %w", err)
 	}
-	return nil
+	return true, nil
 }
 
 // SMSUnsubscribe records an SMS opt-out that reached the Workspace by another route (an email, a
@@ -48,9 +49,10 @@ func SMSUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destina
 	if source != eligibility.SourceEverything {
 		return nil, ErrSMSSource
 	}
-	if err := settled(bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		return StopSMS(ctx, ts, number, unsubscribe.ViaManual)
-	})); err != nil {
+	if err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		_, err := StopSMS(ctx, ts, number, unsubscribe.ViaManual)
+		return err
+	}); err != nil {
 		return nil, err
 	}
 	return unsubscribes.SMSOptOut(ctx, s, number)
@@ -67,14 +69,4 @@ func OptOutContactSMS(ctx context.Context, bus *events.Bus, s *ent.Scoped, conta
 		return confirmations.ContactSMS{}, err
 	}
 	return confirmations.ReadContactSMS(ctx, s, contactID)
-}
-
-// settled reports a write that lost to a database constraint as done: the Workspace
-// is gone (nothing is left to record) or a concurrent request recorded the same row
-// first. Any other failure is a real one and is returned.
-func settled(err error) error {
-	if ent.IsConstraintError(err) {
-		return nil
-	}
-	return err
 }

@@ -49,21 +49,13 @@ func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channe
 	if err != nil {
 		return nil, err
 	}
-	err = settled(bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		_, err := ConfirmSMSIn(ctx, ts, pub, number, ev)
+	var standing *ent.Confirmation
+	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		standing, err = ConfirmSMSIn(ctx, ts, pub, number, ev)
 		return err
-	}))
+	})
 	if err != nil {
 		return nil, err
-	}
-	// Read after the commit, so a concurrent request that recorded the number first answers with
-	// the Confirmation that stands.
-	standing, err := s.Confirmation().Query().Where(
-		confirmation.ChannelEQ(channels.SMS),
-		confirmation.DestinationEQ(number),
-	).Only(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("read confirmation: %w", err)
 	}
 	return standing, nil
 }

@@ -2,8 +2,6 @@ package events
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/samber/lo"
@@ -11,6 +9,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/internal/infra/db"
+)
+
+// The unique constraint of the Event log (ADR 0106): one Event per source id.
+var _ = db.Declare(
+	db.Fault("events_source_id_key", "storeEvent inserts ON CONFLICT (source_id) DO NOTHING, and an Erasure only clears a source id"),
 )
 
 // storeEvent writes the Event row of a projected domain event, on client, the producer's
@@ -54,14 +58,11 @@ func storeEvent(ctx context.Context, client *ent.Client, env Envelope, ev Domain
 			create.SetContactID(p.ContactID)
 		}
 	}
-	// ent reports a conflict skipped by DoNothing as sql.ErrNoRows, which is how a repeat is told
-	// from a first write.
+	// A repeat is told from a first write by the insert its conflict skipped.
 	err := create.OnConflictColumns(event.FieldSourceID).DoNothing().Exec(ctx)
-	if errors.Is(err, sql.ErrNoRows) {
-		return false, nil
-	}
+	stored, err := db.Inserted(err)
 	if err != nil {
 		return false, fmt.Errorf("store event %q: %w", env.Name, err)
 	}
-	return true, nil
+	return stored, nil
 }

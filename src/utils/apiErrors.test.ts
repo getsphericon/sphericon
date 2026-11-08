@@ -72,10 +72,17 @@ describe('getFieldError', () => {
     expect(getFieldError(error, 'signupItems.terms')).toBe('accept the Terms')
   })
 
-  test('is undefined for another field, another status or no problem', () => {
+  // A taken key is the subject's state, answered 409 with the field it concerns (ADR 0106).
+  test('is the message a 409 lists under the field', () => {
+    expect(getFieldError({ status: 409, errors: { key: ['the key is taken'] } }, 'key')).toBe(
+      'the key is taken',
+    )
+  })
+
+  test('is undefined for another field or no problem', () => {
     const error = { status: 422, errors: { name: ['the name is required'] } }
     expect(getFieldError(error, 'signupItems.terms')).toBeUndefined()
-    expect(getFieldError({ status: 409, errors: { name: ['taken'] } }, 'name')).toBeUndefined()
+    expect(getFieldError({ status: 409, detail: 'in use' }, 'name')).toBeUndefined()
     expect(getFieldError(null, 'name')).toBeUndefined()
   })
 })

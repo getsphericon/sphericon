@@ -8,7 +8,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -37,37 +36,30 @@ const (
 // recorded in its Audit log, all in one transaction. landing is the Workspace the User goes to
 // next: the one joined by domain, else the first.
 func (u *UseCase) verified(ctx context.Context, proven bool, write func(tx *ent.Client, pub events.Publisher) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
-	for {
-		var verified *ent.User
-		var landing *ent.Workspace
-		written := false
-		err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-			usr, err := write(tx, pub)
-			if err != nil {
-				return err
-			}
-			written = true
-			var joined *ent.Workspace
-			if proven {
-				if joined, err = users.ApplyDomainJoinIn(ctx, tx, pub, usr); err != nil {
-					return err
-				}
-			}
-			first, err := u.firstWorkspaceIn(ctx, tx, usr.ID)
-			if err != nil {
-				return err
-			}
-			verified, landing = usr, first
-			if joined != nil {
-				landing = joined
-			}
-			return users.RecordUserAction(ctx, tx, pub, usr, events.ActionUserEmailVerify, nil)
-		})
-		if written && db.IsUniqueViolation(err) {
-			continue // drew a taken id; the next attempt retries
+	var verified *ent.User
+	var landing *ent.Workspace
+	err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		usr, err := write(tx, pub)
+		if err != nil {
+			return err
 		}
-		return verified, landing, err
-	}
+		var joined *ent.Workspace
+		if proven {
+			if joined, err = users.ApplyDomainJoinIn(ctx, tx, pub, usr); err != nil {
+				return err
+			}
+		}
+		first, err := u.firstWorkspaceIn(ctx, tx, usr.ID)
+		if err != nil {
+			return err
+		}
+		verified, landing = usr, first
+		if joined != nil {
+			landing = joined
+		}
+		return users.RecordUserAction(ctx, tx, pub, usr, events.ActionUserEmailVerify, nil)
+	})
+	return verified, landing, err
 }
 
 // Verified is a User a step made Verified, and the Workspace they land in next: the one joined by
@@ -174,8 +166,8 @@ func (u *UseCase) ResetPasswordLink(ctx context.Context, token, password string)
 // SignUpVerified is a Sign-up on an install that does not require email verification (ADR
 // 0030): in one transaction it creates a User that is Verified at once with its password and the
 // Consent records of its answers (ADR 0062), and the first Workspace (users.FirstWorkspaceName),
-// exactly as VerifyEmail does. The unique index on the email refuses a taken address (see
-// db.IsUniqueViolation). SurveyDue marks the User as owing the Sign-up survey.
+// exactly as VerifyEmail does. A taken address is users.ErrEmailTaken. SurveyDue marks the User as
+// owing the Sign-up survey.
 func (u *UseCase) SignUpVerified(ctx context.Context, n users.NewUser) (*ent.User, error) {
 	return u.createVerified(ctx, n, signedUp)
 }
@@ -207,8 +199,7 @@ var ErrOwnerEmailInvalid = validation.RefuseField(validation.FieldEmail, "signup
 // CreateOwner is the Instance operator's way to make an Owner from a shell (ADR 0042): a
 // Verified User with a generated password and its first Workspace, named
 // users.FirstWorkspaceName, exactly as SignUpVerified makes them. The password is returned once;
-// an address that does not parse is refused, and the unique index on the email refuses a taken
-// one (see db.IsUniqueViolation).
+// an address that does not parse is refused, and a taken one is users.ErrEmailTaken.
 func (u *UseCase) CreateOwner(ctx context.Context, email, name string) (string, error) {
 	if _, err := mail.ParseAddress(email); err != nil {
 		return "", ErrOwnerEmailInvalid.With(email)

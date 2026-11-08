@@ -36,7 +36,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
+)
+
+// The unique constraints of the tables this package writes (ADR 0106).
+var _ = db.Declare(
+	db.Fault("user_tombstones_user_id_key", "a User row is deleted once, and the deletion's own hook leaves its tombstone"),
 )
 
 // ErrNeedsTransaction is what Guard returns for a change to the feed made on a client that is

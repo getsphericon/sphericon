@@ -457,7 +457,7 @@
       },
       "post": {
         "operationId": "StaffSignupItems_create",
-        "description": "Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional\nconsent, and a second mailings consent are refused (422).",
+        "description": "Add a Sign-up item. A mailings consent on an item that is not an optional consent is refused\n(422); a taken key and a second mailings consent are refused (409).",
         "parameters": [],
         "responses": {
           "201": {
@@ -574,7 +574,7 @@
       },
       "patch": {
         "operationId": "StaffSignupItems_update",
-        "description": "Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional\nconsent, and a second mailings consent are refused (422); a deleted item is not found.",
+        "description": "Change a Sign-up item. A blank title and a mailings consent on an item that is not an\noptional consent are refused (422), a second mailings consent (409); a deleted item is not\nfound.",
         "parameters": [
           {
             "name": "id",
@@ -739,7 +739,7 @@
       },
       "post": {
         "operationId": "StaffSignupItems_publish",
-        "description": "Publish the draft as a new version under a label: it takes effect at once, and is never\nchanged or removed afterwards. A label the item already has, and an item without a draft,\nare refused (422); a deleted item is not found.",
+        "description": "Publish the draft as a new version under a label: it takes effect at once, and is never\nchanged or removed afterwards. An item without a draft is refused (422), a label the item\nalready has (409); a deleted item is not found.",
         "parameters": [
           {
             "name": "id",

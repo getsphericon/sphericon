@@ -20,8 +20,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+)
+
+// The unique constraint of the Audit entries table (ADR 0106): one entry per audit Event.
+var _ = db.Declare(
+	db.Fault("audit_entries_workspace_id_entry_key", "an entry is inserted ON CONFLICT (workspace_id, entry_key), the Event's envelope id"),
 )
 
 // Record stores the Audit entry an event carries, once: deduplicated by the envelope id, so a

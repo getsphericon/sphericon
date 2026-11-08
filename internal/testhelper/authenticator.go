@@ -111,6 +111,17 @@ func (a *Authenticator) Attest(optionsJSON []byte) []byte {
 	return []byte(response)
 }
 
+// AttestHeld answers a registration ceremony's creation options with the first credential this
+// authenticator already holds instead of a new one, as a faulty or hostile authenticator could:
+// the server must refuse a credential it has stored before, whoever it was stored for.
+func (a *Authenticator) AttestHeld(optionsJSON []byte) []byte {
+	a.t.Helper()
+	options, err := virtualwebauthn.ParseAttestationOptions(string(optionsJSON))
+	require.NoError(a.t, err)
+	require.NotEmpty(a.t, a.held, "this authenticator holds no credential")
+	return []byte(virtualwebauthn.CreateAttestationResponse(a.rp, a.auth, a.held[0].cred, *options))
+}
+
 // Assert answers a login ceremony's request options: it picks a held credential (one of the
 // options' allowed credentials, or the first it holds for a usernameless login, where the list is
 // empty), counts the use, and returns the response a browser posts to `finish` (the W3C

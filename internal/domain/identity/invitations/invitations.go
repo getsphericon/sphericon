@@ -16,16 +16,25 @@ import (
 	"strconv"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+)
+
+// The unique constraints of the tables this package writes (ADR 0106).
+var _ = db.Declare(
+	db.Fault("invitations_pending_workspace_email",
+		"Invite writes with ON CONFLICT on it: a second invite of the address renews its pending Invitation"),
 )
 
 // InviteTokenTTL is how long an invitation link stays valid.
@@ -137,25 +146,21 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		if member {
 			return ErrAlreadyMember
 		}
-		existing, err := ts.Invitation().Query().Where(invitation.Email(email), invitation.AcceptedAtIsNil()).Only(ctx)
-		switch {
-		case ent.IsNotFound(err):
-			inv, err = ts.Invitation().Create().
-				SetEmail(email).SetRole(in.Role).SetTokenHash(tokenHash).
-				SetExpiresAt(expiresAt).SetInvitedBy(in.InvitedBy).
-				Save(ctx)
-		case err != nil:
-		default:
-			inv, err = ts.Invitation().UpdateOneID(existing.ID).
-				Where(invitation.AcceptedAtIsNil()).
-				SetRole(in.Role).SetTokenHash(tokenHash).
-				SetExpiresAt(expiresAt).SetInvitedBy(in.InvitedBy).
-				Save(ctx)
-		}
+		// One pending Invitation per address: a second invite renews it (a fresh link, the new role).
+		// An accepted Invitation is outside the pending key, so inviting its address again inserts a
+		// new one and the acceptance stays as it was (ADR 0109).
+		id, err := ts.Invitation().Create().
+			SetEmail(email).SetRole(in.Role).SetTokenHash(tokenHash).
+			SetExpiresAt(expiresAt).SetInvitedBy(in.InvitedBy).
+			OnConflictColumnsWhere(entsql.IsNull(invitation.FieldAcceptedAt), invitation.FieldWorkspaceID, invitation.FieldEmail).
+			Update(func(u *ent.InvitationScopedUpsert) {
+				u.UpdateRole().UpdateTokenHash().UpdateExpiresAt().UpdateInvitedBy().UpdateUpdatedAt()
+			}).
+			ID(ctx)
 		if err != nil {
-			if ent.IsNotFound(err) {
-				return lifecycle.ErrInvalidTransition
-			}
+			return err
+		}
+		if inv, err = ts.Invitation().Get(ctx, id); err != nil {
 			return err
 		}
 		if err := events.RecordAudit(ctx, pub, &events.AuditEntry{

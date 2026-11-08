@@ -54,6 +54,22 @@ var (
 	ErrOwnHost = validation.RefuseField("host", "trackingdomains: the host is the instance's own", i18n.ErrorsTrackingDomainOwnHost)
 )
 
+// errHostTaken means another Workspace verified the host first: a verified host serves one
+// Workspace. It never leaves the module: a check that meets it records ReasonHostTaken on the row
+// and keeps its state, which is what a caller sees.
+var errHostTaken = errors.New("trackingdomains: another workspace holds the host")
+
+// The unique constraints of the Tracking domains (ADR 0106). A verified host serves one Workspace,
+// and another Workspace's check that meets it is refused. The Workspace's own hosts and roles are
+// changed only under the Workspace lock (Set, Remove and a check), each after reading the rows it
+// changes, so no client can break their constraints.
+var constraints = db.Declare(
+	db.Refusal("trackingdomain_host", errHostTaken),
+	db.Fault("trackingdomain_workspace_id_host", "a host is added under the Workspace lock, after the Workspace's hosts are read"),
+	db.Fault("trackingdomain_workspace_id_role",
+		"the current and replacement roles are moved under the Workspace lock, after the Workspace's hosts are read"),
+)
+
 func notFound(err error) error {
 	if ent.IsNotFound(err) {
 		return ErrNotFound
@@ -207,7 +223,7 @@ func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.Track
 		return nil, ErrOwnHost
 	}
 	var row, promoted *ent.TrackingDomain
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		rows, err := ts.TrackingDomain().Query().All(ctx)
 		if err != nil {
 			return err
@@ -263,7 +279,7 @@ func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.Track
 // cancelled; a retired host is forgotten, so links sent on it stop working. An unknown id is
 // ErrNotFound.
 func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	return m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.TrackingDomain().Get(ctx, id)
 		if err != nil {
 			return notFound(err)
@@ -373,11 +389,11 @@ func (m *Module) checkRow(ctx context.Context, s *ent.Scoped, row *ent.TrackingD
 		return err
 	}
 	now := m.now()
-	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err = m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		if next == row.State {
 			return ts.TrackingDomain().UpdateOneID(row.ID).SetCheckedAt(now).ClearReason().Exec(ctx)
 		}
-		if err := stateMachine(ts, row, now).FireCtx(ctx, next); err != nil {
+		if err := constraints.Write(ctx, ts, func() error { return stateMachine(ts, row, now).FireCtx(ctx, next) }); err != nil {
 			return err
 		}
 		if err := pub.Publish(ctx, &events.TrackingDomainChanged{
@@ -394,7 +410,7 @@ func (m *Module) checkRow(ctx context.Context, s *ent.Scoped, row *ent.TrackingD
 		return err
 	})
 	switch {
-	case db.IsUniqueViolation(err):
+	case errors.Is(err, errHostTaken):
 		// Another Workspace verified the host first. Record the check and why, keep the state.
 		slog.InfoContext(ctx, "tracking host held by another workspace",
 			"tracking_domain_id", row.ID, "workspace_id", row.WorkspaceID, "host", row.Host)

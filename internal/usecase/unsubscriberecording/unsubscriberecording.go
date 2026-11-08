@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -59,20 +60,23 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 
 	// The Workspace comes from the signed unsubscribe token (no membership or api
 	// token here), so this is a scope source outside the site/external/job list.
-	return settled(u.bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
+	return u.bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
+		// A link of an erased Workspace has nothing left to record into.
+		erased, err := workspaces.ErasedIn(ctx, sc)
+		if err != nil || erased {
+			return err
+		}
 		if target.Channel == channels.SMS {
 			return recordSMSLink(ctx, sc, target, dest, u.now())
-		}
-		exists, err := unsubscribes.Exists(ctx, sc, channel, dest, target.Source)
-		if err != nil || exists {
-			return err
 		}
 		o := unsubscribes.OptOut{Channel: channel, Destination: dest, Source: target.Source, ContactID: target.ContactID}
 		if target.Channel == channels.Telegram {
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
 			o.Via = unsubscribe.ViaLink
 		}
-		if err := unsubscribes.Add(ctx, sc, o); err != nil {
+		// A repeated or concurrent click finds the opt-out written: the rest is done already.
+		added, err := unsubscribes.Add(ctx, sc, o)
+		if err != nil || !added {
 			return err
 		}
 
@@ -112,7 +116,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			Email: dest, BroadcastID: target.BroadcastID, AutomationID: automationID,
 			OutboundMessageID: target.OutboundMessageID,
 		})
-	}))
+	})
 }
 
 // recordSMSLink records the click on a text's unsubscribe link: on SMS every opt-out is the
@@ -120,11 +124,9 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 // STOP (channelstop.StopSMS), and the Broadcast the text came from counts it. The Automation's Enrollment
 // goes on: its next text is Skipped like any other, and a step on another Channel still runs.
 func recordSMSLink(ctx context.Context, sc *ent.Scoped, target linktarget.Unsubscribe, number string, at time.Time) error {
-	before, err := unsubscribes.SMSOptOut(ctx, sc, number)
-	if err != nil || before != nil {
-		return err
-	}
-	if err := channelstop.StopSMS(ctx, sc, number, unsubscribe.ViaLink); err != nil {
+	// A repeated or concurrent click finds the number stopped: the rest is done already.
+	stopped, err := channelstop.StopSMS(ctx, sc, number, unsubscribe.ViaLink)
+	if err != nil || !stopped {
 		return err
 	}
 	if target.BroadcastID != 0 && target.ContactID != 0 {
@@ -155,14 +157,4 @@ func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events
 		BroadcastID: target.BroadcastID, AutomationID: automationID,
 		DedupID: fmt.Sprintf("link:%s:%s/unsubscribed/%d", target.Source, dest, c.ID),
 	})
-}
-
-// settled reports a write that lost to a database constraint as done: the Workspace
-// is gone (nothing is left to record) or a concurrent request recorded the same row
-// first. Any other failure is a real one and is returned.
-func settled(err error) error {
-	if ent.IsConstraintError(err) {
-		return nil
-	}
-	return err
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
@@ -27,11 +28,16 @@ func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, tar
 
 	// The Workspace comes from the signed confirmation token (no membership or api
 	// token here), so this is a scope source outside the site/external/job list.
-	return settled(bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
-		_, err := recordIn(ctx, sc, pub, grant{
+	return bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
+		// A link of an erased Workspace has nothing left to record into.
+		erased, err := workspaces.ErasedIn(ctx, sc)
+		if err != nil || erased {
+			return err
+		}
+		_, err = recordIn(ctx, sc, pub, grant{
 			channel: channels.Email, destination: dest, provenance: confirmation.ProvenanceDoubleOptIn,
 			contactID: target.ContactID, ip: ip,
 		})
 		return err
-	}))
+	})
 }

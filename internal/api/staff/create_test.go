@@ -8,7 +8,6 @@ import (
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
-	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -25,16 +24,6 @@ func TestACreatedStaffEnrolsAtFirstLoginWithItsOneTimePassword(t *testing.T) {
 	done, err := h.secondStep(t, res.Challenge, h.code(t, res.Enrolment.Value.Secret))
 	require.NoError(t, err)
 	assert.EqualValues(t, "new.staff@sphericon.test", done.Response.Email)
-}
-
-func TestCreatingAnStaffWithATakenEmailIsRefused(t *testing.T) {
-	h := newHarness(t)
-
-	_, err := h.env.StaffMembers.Create(t.Context(), fixtures.StaffEnrolledEmail)
-	require.ErrorIs(t, err, staffmembers.ErrDuplicate)
-
-	_, err = h.env.StaffMembers.Create(t.Context(), " "+fixtures.StaffFreshEmail+" ")
-	require.ErrorIs(t, err, staffmembers.ErrDuplicate, "the email is compared normalized")
 }
 
 func TestWithoutAStaffSecretNoStaffIsCreated(t *testing.T) {

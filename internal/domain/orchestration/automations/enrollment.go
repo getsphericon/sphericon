@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
@@ -143,6 +144,14 @@ func active(a *ent.Automation) bool {
 	return a.ArchivedAt == nil && a.Status == automation.StatusActive
 }
 
+// The unique constraints of the Automation's tables (ADR 0106): no client can break them.
+var _ = db.Declare(
+	db.Fault("automation_runs_automation_id_contact_id",
+		"an Enrollment is written with ON CONFLICT DO NOTHING: a Contact enrolls in an Automation once"),
+	db.Fault("automation_versions_workspace_id_automation_id_version",
+		"a version's number is the next after the newest, read under the Workspace lock (versioneddefinition)"),
+)
+
 // enroll makes the Enrollment that began on the Event of o when admits, called under the share lock
 // with the Automation and its live version, accepts it, and copies o's action and properties onto it
 // (#752). admits answers whether the Enrollment is made: a refusal with an error returns that
@@ -159,15 +168,6 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 		// Another Workspace's Contact is not in this one: the reference check the Create below
 		// would make says so, so keep that answer.
 		return 0, false, ent.ErrNotInWorkspace
-	}
-	// Check first so the common "already enrolled" path does not trip the unique
-	// index (a violation would poison a surrounding transaction); the index stays
-	// as the race safety net.
-	exists, err := s.AutomationRun().Query().
-		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID)).
-		Exist(ctx)
-	if err != nil || exists {
-		return 0, false, err
 	}
 	// Share-lock the Automation row and read its live version under the lock, so a Publish (it
 	// locks the row exclusively) is either finished before the version is read or waits for this
@@ -204,16 +204,16 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 	if len(o.Properties) > 0 {
 		create.SetEventProperties(o.Properties)
 	}
-	run, err := create.Save(ctx)
-	if ent.IsConstraintError(err) {
-		return 0, false, nil // lost an enrollment race
-	}
-	if err != nil {
+	// A Contact enrolls in an Automation once: an Enrollment already there is the answer, and
+	// nothing is written or published.
+	runID, err = create.OnConflictColumns(automationrun.FieldAutomationID, automationrun.FieldContactID).DoNothing().ID(ctx)
+	inserted, err := db.Inserted(err)
+	if err != nil || !inserted {
 		return 0, false, err
 	}
 	// The Enrollment begins (automation.enrolled) and, made already ended, ends in the same
 	// transaction: the Contact entered and left.
-	begun, err := s.AutomationRun().Query().Where(automationrun.ID(run.ID)).WithContact().Only(ctx)
+	begun, err := s.AutomationRun().Query().Where(automationrun.ID(runID)).WithContact().Only(ctx)
 	if err != nil {
 		return 0, false, err
 	}
@@ -221,12 +221,12 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 		return 0, false, err
 	}
 	if !ended {
-		return run.ID, true, nil
+		return runID, true, nil
 	}
-	if err := move(ctx, s, pub, run.ID, ending, endedAt, nil); err != nil {
+	if err := move(ctx, s, pub, runID, ending, endedAt, nil); err != nil {
 		return 0, false, err
 	}
-	return run.ID, false, nil
+	return runID, false, nil
 }
 
 // LockContact locks the Contact's row to the end of the transaction s is bound to (contactlock):

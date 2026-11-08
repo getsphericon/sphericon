@@ -105,7 +105,8 @@ func (sms) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMessage) e
 	}
 	switch {
 	case channelstop.IsStopKeyword(m.Text):
-		return channelstop.StopSMS(ctx, tx.Scoped, number, unsubscribe.ViaKeyword)
+		_, err := channelstop.StopSMS(ctx, tx.Scoped, number, unsubscribe.ViaKeyword)
+		return err
 	case channelstop.IsStartKeyword(m.Text):
 		return confirmations.StartSMSIn(ctx, tx.Scoped, tx.Pub, number)
 	}

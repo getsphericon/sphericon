@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/legaldocumentversion"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/signupitem"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -39,17 +40,17 @@ var (
 	// ErrNotFound: no Sign-up item has this id.
 	ErrNotFound = validation.NotFound("signupitems: not found", i18n.ErrorsSignupItemNotFound)
 	// ErrKeyTaken: another item has the key.
-	ErrKeyTaken = validation.RefuseField("key", "signupitems: key taken", i18n.ErrorsSignupItemKeyTaken)
+	ErrKeyTaken = validation.ConflictField("key", "signupitems: key taken", i18n.ErrorsSignupItemKeyTaken)
 	// ErrTitleBlank: the title is blank once trimmed.
 	ErrTitleBlank = validation.RefuseField("title", "signupitems: title blank", i18n.ErrorsSignupItemTitleBlank)
 	// ErrMailingsKind: only an optional consent can stand for consent to the operator's mailings.
 	ErrMailingsKind = validation.RefuseField("mailingsConsent", "signupitems: mailings consent on another kind", i18n.ErrorsSignupItemMailingsKind)
 	// ErrMailingsTaken: another item stands for consent to the operator's mailings.
-	ErrMailingsTaken = validation.RefuseField("mailingsConsent", "signupitems: mailings consent taken", i18n.ErrorsSignupItemMailingsTaken)
+	ErrMailingsTaken = validation.ConflictField("mailingsConsent", "signupitems: mailings consent taken", i18n.ErrorsSignupItemMailingsTaken)
 	// ErrNoDraft: the item has no draft to publish.
 	ErrNoDraft = validation.Refuse("signupitems: no draft", i18n.ErrorsLegalDocumentNoDraft)
 	// ErrLabelTaken: the item already has a version with the label.
-	ErrLabelTaken = validation.RefuseField("label", "signupitems: label taken", i18n.ErrorsLegalDocumentLabelTaken)
+	ErrLabelTaken = validation.ConflictField("label", "signupitems: label taken", i18n.ErrorsLegalDocumentLabelTaken)
 	// ErrDocumentNotFound: no item in effect has this key, or it has no published version.
 	ErrDocumentNotFound = validation.NotFound("signupitems: no legal document", i18n.ErrorsLegalDocumentNotFound)
 	// ErrDeleteMailings: the item that stands for consent to the operator's mailings is unmarked
@@ -57,6 +58,14 @@ var (
 	ErrDeleteMailings = validation.RefuseField("mailingsConsent", "signupitems: deleting the mailings consent", i18n.ErrorsSignupItemDeleteMailings)
 	// ErrOrder: a new order that is not the id of every item in use exactly once.
 	ErrOrder = validation.RefuseField("ids", "signupitems: order not every item once", i18n.ErrorsSignupItemOrder)
+)
+
+// constraints are the unique constraints of the Sign-up items and their Legal documents (ADR 0106).
+var constraints = db.Declare(
+	db.Refusal("signup_items_key_key", ErrKeyTaken),
+	db.Refusal("signupitem_mailings_consent", ErrMailingsTaken),
+	db.Refusal("legaldocumentversion_item_id_label", ErrLabelTaken),
+	db.Fault("legal_document_drafts_item_id_key", "SaveDraft writes with ON CONFLICT on it: an item has one draft"),
 )
 
 // Item is a Sign-up item as the console shows it: the item, its draft and its current version.
@@ -153,51 +162,34 @@ func (m *Module) Add(ctx context.Context, in Input) (Item, error) {
 	if title == "" {
 		return Item{}, ErrTitleBlank
 	}
-	taken, err := m.ent.SignupItem.Query().Where(signupitem.Key(in.Key)).Exist(ctx)
-	if err != nil {
+	if err := mailingsKind(in.Kind, in.MailingsConsent); err != nil {
 		return Item{}, err
 	}
-	if taken {
-		return Item{}, ErrKeyTaken
-	}
-	if err := m.checkMailings(ctx, 0, in.Kind, in.MailingsConsent); err != nil {
-		return Item{}, err
-	}
-	last, err := m.ent.SignupItem.Query().Order(ent.Desc(signupitem.FieldPosition)).First(ctx)
-	position := 1
-	switch {
-	case err == nil:
-		position = last.Position + 1
-	case !ent.IsNotFound(err):
-		return Item{}, err
-	}
-	row, err := m.ent.SignupItem.Create().
-		SetKey(in.Key).
-		SetTitle(title).
-		SetKind(in.Kind).
-		SetPosition(position).
-		SetMailingsConsent(in.MailingsConsent).
-		Save(ctx)
-	if ent.IsConstraintError(err) {
-		return Item{}, m.lostRace(ctx, in.Key)
-	}
+	var row *ent.SignupItem
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		last, err := tx.SignupItem.Query().Order(ent.Desc(signupitem.FieldPosition)).First(ctx)
+		position := 1
+		switch {
+		case err == nil:
+			position = last.Position + 1
+		case !ent.IsNotFound(err):
+			return err
+		}
+		return constraints.Write(ctx, tx, func() error {
+			row, err = tx.SignupItem.Create().
+				SetKey(in.Key).
+				SetTitle(title).
+				SetKind(in.Kind).
+				SetPosition(position).
+				SetMailingsConsent(in.MailingsConsent).
+				Save(ctx)
+			return err
+		})
+	})
 	if err != nil {
 		return Item{}, err
 	}
 	return item(row, nil), nil
-}
-
-// lostRace is the refusal of an Add that a unique index refused: the key, or else the mailings
-// consent, was taken in between.
-func (m *Module) lostRace(ctx context.Context, key string) error {
-	taken, err := m.ent.SignupItem.Query().Where(signupitem.Key(key)).Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if taken {
-		return ErrKeyTaken
-	}
-	return ErrMailingsTaken
 }
 
 // inEffect is the one definition of an item in effect: not deleted, with a published version.
@@ -337,25 +329,27 @@ func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, err
 		title = &trimmed
 	}
 	if u.MailingsConsent != nil {
-		if err := m.checkMailings(ctx, row.ID, row.Kind, *u.MailingsConsent); err != nil {
+		if err := mailingsKind(row.Kind, *u.MailingsConsent); err != nil {
 			return Item{}, err
 		}
 	}
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		// An item deleted in between is not changed.
-		changed, err := tx.SignupItem.Update().
-			Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).
-			SetNillableTitle(title).
-			SetNillableMailingsConsent(u.MailingsConsent).
-			Save(ctx)
+		var changed int
+		err := constraints.Write(ctx, tx, func() error {
+			var uerr error
+			changed, uerr = tx.SignupItem.Update().
+				Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).
+				SetNillableTitle(title).
+				SetNillableMailingsConsent(u.MailingsConsent).
+				Save(ctx)
+			return uerr
+		})
 		if err == nil && changed == 0 {
 			return ErrNotFound
 		}
 		return err
 	})
-	if ent.IsConstraintError(err) {
-		return Item{}, ErrMailingsTaken
-	}
 	if err != nil {
 		return Item{}, err
 	}
@@ -455,21 +449,11 @@ func (m *Module) Versions(ctx context.Context, id int64) ([]Version, error) {
 	return lo.Map(rows, func(row *ent.LegalDocumentVersion, _ int) Version { return version(row) }), nil
 }
 
-// checkMailings refuses a mailings consent on an item of another kind than an optional consent,
-// and a second item that stands for it. id is the item being changed, 0 for a new one.
-func (m *Module) checkMailings(ctx context.Context, id int64, kind signupitem.Kind, on bool) error {
-	if !on {
-		return nil
-	}
-	if kind != signupitem.KindOptionalConsent {
+// mailingsKind refuses a mailings consent on an item of another kind than an optional consent. A
+// second item that stands for it is refused by signupitem_mailings_consent (ErrMailingsTaken).
+func mailingsKind(kind signupitem.Kind, on bool) error {
+	if on && kind != signupitem.KindOptionalConsent {
 		return ErrMailingsKind
-	}
-	taken, err := m.ent.SignupItem.Query().Where(signupitem.MailingsConsent(true), signupitem.IDNEQ(id)).Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if taken {
-		return ErrMailingsTaken
 	}
 	return nil
 }
@@ -508,25 +492,17 @@ func (m *Module) Publish(ctx context.Context, id int64, label string, staffID in
 	if row.Edges.Draft == nil {
 		return Item{}, ErrNoDraft
 	}
-	taken, err := m.ent.LegalDocumentVersion.Query().
-		Where(legaldocumentversion.ItemID(id), legaldocumentversion.LabelEQ(label)).
-		Exist(ctx)
-	if err != nil {
-		return Item{}, err
-	}
-	if taken {
-		return Item{}, ErrLabelTaken
-	}
-	err = m.ent.LegalDocumentVersion.Create().
-		SetItemID(id).
-		SetLabel(label).
-		SetMarkdown(row.Edges.Draft.Markdown).
-		SetPublishedAt(m.now()).
-		SetPublishedByID(staffID).
-		Exec(ctx)
-	if ent.IsConstraintError(err) {
-		return Item{}, ErrLabelTaken
-	}
+	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		return constraints.Write(ctx, tx, func() error {
+			return tx.LegalDocumentVersion.Create().
+				SetItemID(id).
+				SetLabel(label).
+				SetMarkdown(row.Edges.Draft.Markdown).
+				SetPublishedAt(m.now()).
+				SetPublishedByID(staffID).
+				Exec(ctx)
+		})
+	})
 	if err != nil {
 		return Item{}, err
 	}

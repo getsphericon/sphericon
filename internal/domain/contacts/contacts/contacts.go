@@ -17,12 +17,9 @@ package contacts
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -30,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -66,12 +64,15 @@ var (
 	ErrPhoneExtension       = validation.RefuseField(FieldPhone, "contacts: phone has an extension", i18n.ErrorsPhoneExtension)
 )
 
-// taken is the conflict of each alias key, in the order a unique violation is matched by its
-// constraint's name.
-var taken = []struct {
-	field string
-	err   error
-}{{FieldSubjectID, ErrSubjectIDTaken}, {FieldPhone, ErrPhoneTaken}, {FieldEmail, ErrEmailTaken}}
+// constraints are the unique constraints of the Contact's tables (ADR 0106): an alias key is the
+// Workspace's once, so a key another Contact holds is its conflict; a Custom field definition is
+// written only by EnsureCustomFields, whose insert does nothing on a key the Workspace has.
+var constraints = db.Declare(
+	db.Refusal("contacts_subject_id_workspace_id", ErrSubjectIDTaken),
+	db.Refusal("contacts_email_workspace_id", ErrEmailTaken),
+	db.Refusal("contacts_phone_workspace_id", ErrPhoneTaken),
+	db.Fault("custom_fields_workspace_id_key", "a definition is inserted ON CONFLICT (workspace_id, key) DO NOTHING, and its key never changes"),
+)
 
 // Attributes are the writable attributes of a new Contact. A nil pointer (or nil CustomFields)
 // means "not given": the Contact has none.
@@ -174,8 +175,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if len(typed) > 0 {
 			q = q.SetCustomFields(typed)
 		}
-		c, err = q.Save(ctx)
-		if err != nil {
+		if err := constraints.Write(ctx, ts, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 			return err
 		}
 		if err := publishCreated(ctx, pub, ts.WorkspaceID(), c); err != nil {
@@ -225,8 +225,8 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if in.CustomFields.IsClear() {
 			q.ClearCustomFields()
 		}
-		after, err := q.Save(ctx)
-		if err != nil {
+		var after *ent.Contact
+		if err := constraints.Write(ctx, ts, func() (err error) { after, err = q.Save(ctx); return err }); err != nil {
 			return err
 		}
 		if err := publishFieldChanges(ctx, pub, ts.WorkspaceID(), after, before.CustomFields); err != nil {
@@ -359,8 +359,8 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	if len(typed) > 0 {
 		q.SetCustomFields(typed)
 	}
-	c, err := q.Save(ctx)
-	if err != nil {
+	var c *ent.Contact
+	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 		return Result{}, err
 	}
 	if err := publishCreated(ctx, pub, s.WorkspaceID(), c); err != nil {
@@ -429,8 +429,8 @@ func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, 
 	if len(typed) > 0 {
 		q.SetCustomFields(lo.Assign(existing.CustomFields, typed))
 	}
-	c, err := q.Save(ctx)
-	if err != nil || ch != recordChanges {
+	var c *ent.Contact
+	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil || ch != recordChanges {
 		return c, err
 	}
 	return c, publishFieldChanges(ctx, pub, s.WorkspaceID(), c, existing.CustomFields)
@@ -549,14 +549,6 @@ func trimmed(s *string) *string {
 func domainError(err error) error {
 	if ent.IsNotFound(err) {
 		return ErrNotFound
-	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-		for _, k := range taken {
-			if strings.Contains(pgErr.ConstraintName, k.field) {
-				return k.err
-			}
-		}
 	}
 	return err
 }

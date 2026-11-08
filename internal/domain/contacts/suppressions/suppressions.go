@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -87,6 +88,13 @@ func ValidDestination(channel, dest string) bool {
 	}
 	return dest != ""
 }
+
+// The unique constraint of the Suppression's table (ADR 0106): one active entry per (Channel,
+// Destination).
+var _ = db.Declare(
+	db.Fault("suppressions_workspace_id_channel_destination",
+		"Add inserts ON CONFLICT on the active entry's key, and the Erasure rekeys a number to its hash only where no active entry holds the hash"),
+)
 
 // Add suppresses a destination in the scoped Workspace with one insert. It is
 // idempotent per (channel, destination): an existing active entry keeps its reason. A

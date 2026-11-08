@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
@@ -20,6 +22,9 @@ import (
 // tokenAttempts bounds the draws of a short token that meets an existing one. At 64 random bits a
 // second draw is already a freak, so exhausting them means the storage is failing.
 const tokenAttempts = 4
+
+// errTokensTaken: every draw of a short token met an existing one.
+var errTokensTaken = errors.New("outboundmessages: every short token drawn was taken")
 
 // ShortTokenLength is the length of a short link's token: 8 random bytes in URL-safe base64.
 const ShortTokenLength = 11
@@ -130,25 +135,27 @@ func (l *shortLinks) ofMessage() predicate.TrackedLink {
 }
 
 func (l *shortLinks) create(ctx context.Context, url string) (*ent.TrackedLink, error) {
-	var err error
 	for range tokenAttempts {
-		var token string
-		if token, err = newShortToken(); err != nil {
+		token, err := newShortToken()
+		if err != nil {
 			return nil, err
 		}
-		var row *ent.TrackedLink
 		create := l.s.TrackedLink().Create().SetToken(token).SetURL(url)
 		if l.messageID != 0 {
 			create.SetOutboundMessageID(l.messageID)
 		}
-		if row, err = create.Save(ctx); err == nil {
-			return row, nil
+		// A token drawn twice inserts nothing, and the next attempt draws another.
+		id, err := create.OnConflictColumns(trackedlink.FieldToken).DoNothing().ID(ctx)
+		inserted, err := db.Inserted(err)
+		if err != nil {
+			return nil, err
 		}
-		if !ent.IsConstraintError(err) {
-			break
+		if !inserted {
+			continue
 		}
+		return l.s.TrackedLink().Get(ctx, id)
 	}
-	return nil, err
+	return nil, errTokensTaken
 }
 
 // newShortToken is 8 random bytes in URL-safe base64 without padding: 11 characters.

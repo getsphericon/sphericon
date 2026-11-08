@@ -42,10 +42,13 @@ const DefaultSelector = "sphericon"
 // The refusals of the module, one per meaning.
 var (
 	// ErrAlreadyExists means the Workspace already has this domain (Create).
-	ErrAlreadyExists = validation.Conflict("sendingdomains: this domain is already added", i18n.ErrorsSendingDomainExists)
+	ErrAlreadyExists = validation.ConflictField("domain", "sendingdomains: this domain is already added", i18n.ErrorsSendingDomainExists)
 	// ErrNotFound means no Sending domain of that id is in the Workspace.
 	ErrNotFound = validation.NotFound("sendingdomains: sending domain not found", i18n.ErrorsSendingDomainNotFound)
 )
+
+// The unique constraint of the Sending domains (ADR 0106): a domain is added once per Workspace.
+var constraints = db.Declare(db.Refusal("sendingdomain_workspace_id_domain", ErrAlreadyExists))
 
 // notFound is ErrNotFound for ent's not-found error of the domain's row, err otherwise.
 func notFound(err error) error {
@@ -107,22 +110,19 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		return nil, err
 	}
 
-	// Inside a scoped transaction (a savepoint) so a unique violation rolls back only
-	// this write, and so the change is captured at the scoped client (ADR 0022).
+	// Inside a scoped transaction, so the change is captured at the scoped client (ADR 0022).
 	var row *ent.SendingDomain
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		var cerr error
-		row, cerr = ts.SendingDomain().Create().
-			SetDomain(domain).
-			SetDkimSelector(selector).
-			SetDkimPrivateKeyEncrypted(sealed).
-			SetDkimPublicKey(pubTXT).
-			Save(ctx)
-		return cerr
+		return constraints.Write(ctx, ts, func() (err error) {
+			row, err = ts.SendingDomain().Create().
+				SetDomain(domain).
+				SetDkimSelector(selector).
+				SetDkimPrivateKeyEncrypted(sealed).
+				SetDkimPublicKey(pubTXT).
+				Save(ctx)
+			return err
+		})
 	})
-	if db.IsUniqueViolation(err) {
-		return nil, ErrAlreadyExists
-	}
 	if err != nil {
 		return nil, err
 	}

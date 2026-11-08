@@ -14,14 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 )
 
-func TestIsUniqueViolationRecognizesPostgresCode23505(t *testing.T) {
-	assert.True(t, db.IsUniqueViolation(&pgconn.PgError{Code: "23505"}))
-	assert.True(t, db.IsUniqueViolation(fmt.Errorf("wrapped: %w", &pgconn.PgError{Code: "23505"})))
-	assert.False(t, db.IsUniqueViolation(&pgconn.PgError{Code: "23503"}))
-	assert.False(t, db.IsUniqueViolation(errors.New("plain")))
-	assert.False(t, db.IsUniqueViolation(nil))
-}
-
 func TestIsUnavailableRecognizesALostOrOverloadedDatabase(t *testing.T) {
 	for name, err := range map[string]error{
 		"connect failure":     &pgconn.ConnectError{},

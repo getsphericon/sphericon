@@ -12,6 +12,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
@@ -54,10 +56,17 @@ type grant struct {
 	ip string
 }
 
+// The unique constraint of the Confirmation's table (ADR 0106): one Confirmation
+// per (Channel, Destination), which recordIn writes ON CONFLICT DO NOTHING.
+var _ = db.Declare(
+	db.Fault("confirmations_ws_channel_dest", "recordIn inserts ON CONFLICT (workspace_id, channel, destination) DO NOTHING"),
+)
+
 // recordIn writes g as the Confirmation of its (Channel, Destination) unless one as strong or
 // stronger stands, and publishes its Channel's proof (grant.proof) when it writes, in the
 // transaction s and pub are bound to. A weaker or equal one leaves everything as it was and
-// publishes nothing, so a repeated request is a no-op. It returns the Confirmation that stands.
+// publishes nothing, so a repeated request is a no-op; so does one that a concurrent request beat
+// to the row. It returns the Confirmation that stands.
 func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant) (*ent.Confirmation, error) {
 	standing, err := s.Confirmation().Query().Where(
 		confirmation.ChannelEQ(g.channel),
@@ -76,6 +85,11 @@ func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant)
 			return nil, fmt.Errorf("replace confirmation: %w", err)
 		}
 	}
+	// The Contact may be gone by now (erased between the send and the click): the Confirmation is
+	// keyed by its destination and is recorded unlinked.
+	if g.contactID, err = contactlock.Referenced(ctx, s, g.contactID); err != nil {
+		return nil, fmt.Errorf("lock the confirmation's contact: %w", err)
+	}
 	create := s.Confirmation().Create().
 		SetChannel(g.channel).
 		SetDestination(g.destination).
@@ -90,14 +104,35 @@ func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant)
 	if err != nil {
 		return nil, err
 	}
-	created, err := create.Save(ctx)
+	id, err := create.
+		OnConflictColumns(confirmation.FieldWorkspaceID, confirmation.FieldChannel, confirmation.FieldDestination).
+		DoNothing().
+		ID(ctx)
+	inserted, err := db.Inserted(err)
 	if err != nil {
 		return nil, fmt.Errorf("record confirmation: %w", err)
+	}
+	if !inserted {
+		// A concurrent request recorded the destination first: its Confirmation stands, and its
+		// proof is its own.
+		return standingOf(ctx, s, g.channel, g.destination)
 	}
 	if err := pub.Publish(ctx, proof); err != nil {
 		return nil, err
 	}
-	return created, nil
+	return s.Confirmation().Get(ctx, id)
+}
+
+// standingOf reads the Confirmation of destination on channel.
+func standingOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (*ent.Confirmation, error) {
+	standing, err := s.Confirmation().Query().Where(
+		confirmation.ChannelEQ(channel),
+		confirmation.DestinationEQ(destination),
+	).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("read confirmation: %w", err)
+	}
+	return standing, nil
 }
 
 // proof is the immutable Event of g, its Channel's own: marketing.confirmed for an email address,
@@ -132,15 +167,5 @@ func Withdraw(ctx context.Context, s *ent.Scoped, channel channels.Channel, dest
 		confirmation.ChannelEQ(channel),
 		confirmation.DestinationEQ(destination),
 	).Exec(ctx)
-	return err
-}
-
-// settled reports a write that lost to a database constraint as done: the Workspace
-// is gone (nothing is left to record) or a concurrent request recorded the same row
-// first. Any other failure is a real one and is returned.
-func settled(err error) error {
-	if ent.IsConstraintError(err) {
-		return nil
-	}
 	return err
 }

@@ -146,6 +146,11 @@ func (d *txDriver) Tx(context.Context) (dialect.Tx, error) { return nopTx{d.conn
 func (d *txDriver) BeginTx(context.Context, *entsql.TxOptions) (dialect.Tx, error) {
 	return nopTx{d.conn}, nil
 }
+
+// TxBound marks the driver as bound to the bus's transaction (ent.TxBound), so a write that may be
+// refused runs under a savepoint of it (ent.Client.Savepoint, ADR 0106).
+func (*txDriver) TxBound() {}
+
 func (*txDriver) Close() error    { return nil }
 func (*txDriver) Dialect() string { return dialect.Postgres }
 

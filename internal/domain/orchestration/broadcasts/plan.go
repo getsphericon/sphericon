@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
@@ -114,6 +115,12 @@ func Due(ctx context.Context, s *ent.Scoped, id int64, jobScheduledAt *time.Time
 	// Postgres keeps microseconds; the job payload keeps nanoseconds.
 	return b.ScheduledAt != nil && b.ScheduledAt.Equal(jobScheduledAt.Truncate(time.Microsecond)), nil
 }
+
+// The unique constraint of the Broadcast's recipients (ADR 0106): no client can break it.
+var _ = db.Declare(
+	db.Fault("broadcast_recipients_broadcast_id_contact_id",
+		"the recipients are written with ON CONFLICT: a re-planned Broadcast converges on the rows it has"),
+)
 
 // Plan resolves the Broadcast's eligible audience, creates one pending recipient row per
 // contact (idempotent through the unique (broadcast, contact) index, so a re-planned job

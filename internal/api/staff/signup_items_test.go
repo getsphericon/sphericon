@@ -94,6 +94,13 @@ func refusedFields(t *testing.T, err error) []string {
 	return lo.Keys(p.Errors.Value)
 }
 
+// conflictFields is the fields a 409 of the console names: a taken key, label or mailings consent.
+func conflictFields(t *testing.T, err error) []string {
+	t.Helper()
+	p := testhelper.StaffRefusal(t, err, http.StatusConflict, "not a 409")
+	return lo.Keys(p.Errors.Value)
+}
+
 // unprocessable is the problem of a 422 the console answered with; anything else fails the test.
 func unprocessable(t *testing.T, err error) staffapi.ProblemDetails {
 	t.Helper()
@@ -204,7 +211,7 @@ func TestAPublishedVersionCannotBeRepublishedUnderItsLabel(t *testing.T) {
 
 	_, err := publish(t, c, fixtures.ServiceTermsID, fixtures.ServiceTermsCurrentLabel)
 
-	assert.Equal(t, []string{"label"}, refusedFields(t, err))
+	assert.Equal(t, []string{"label"}, conflictFields(t, err))
 	after := h.readDocument(t, fixtures.ServiceTermsKey)
 	assert.Equal(t, before, after, "the published version is unchanged")
 }
@@ -240,7 +247,7 @@ func TestATakenKeyIsRefused(t *testing.T) {
 
 	_, err := c.StaffSignupItemsCreate(t.Context(), &staffapi.StaffSignupItemInput{Key: fixtures.ServiceTermsKey, Title: "Other terms", Kind: staffapi.SignupItemKindNotice})
 
-	assert.Equal(t, []string{"key"}, refusedFields(t, err))
+	assert.Equal(t, []string{"key"}, conflictFields(t, err))
 }
 
 func TestAMailingsConsentIsOnlyAnOptionalConsent(t *testing.T) {
@@ -264,8 +271,8 @@ func TestASecondMailingsConsentIsRefused(t *testing.T) {
 	_, added := c.StaffSignupItemsCreate(t.Context(), &staffapi.StaffSignupItemInput{Key: "events", Title: "Events", Kind: staffapi.SignupItemKindOptionalConsent, MailingsConsent: staffapi.NewOptBool(true)})
 	_, marked := tryUpdate(t, c, fixtures.PartnerOffersID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
 
-	assert.Equal(t, []string{"mailingsConsent"}, refusedFields(t, added))
-	assert.Equal(t, []string{"mailingsConsent"}, refusedFields(t, marked))
+	assert.Equal(t, []string{"mailingsConsent"}, conflictFields(t, added))
+	assert.Equal(t, []string{"mailingsConsent"}, conflictFields(t, marked))
 	news := getItem(t, c, fixtures.OperatorNewsID)
 	assert.True(t, news.MailingsConsent, "the first item keeps the mark")
 }

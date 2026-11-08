@@ -2,8 +2,6 @@ package orders
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -13,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -33,6 +32,17 @@ type CurrencyAdopter interface {
 func New(currency CurrencyAdopter) *Module { return &Module{currency: currency} }
 
 var _ events.OrderRecorder = (*Module)(nil)
+
+// The unique constraints of the Order's tables (ADR 0106). An Order and a held Event are inserted
+// ON CONFLICT DO NOTHING; a Movement is written by apply, which looks for the Movement of its Event
+// and of its refund under the Order's row lock (ForUpdate), so two deliveries of one Event read
+// one after the other.
+var _ = db.Declare(
+	db.Fault("order_workspace_id_order_id", "Record inserts the Order ON CONFLICT (workspace_id, order_id) DO NOTHING"),
+	db.Fault("heldorderevent_workspace_id_event_id", "hold inserts the held Event ON CONFLICT (workspace_id, event_id) DO NOTHING"),
+	db.Fault("ordermovement_workspace_id_event_id", "apply writes the Movement of an Event once, read under the Order's row lock"),
+	db.Fault("ordermovement_workspace_id_order_id_refund_id", "apply writes the Movement of a refund once, read under the Order's row lock"),
+)
 
 // IsOrderAction reports whether action names one of the four order Events.
 func (m *Module) IsOrderAction(action string) bool { return IsOrderAction(action) }
@@ -108,11 +118,12 @@ func (m *Module) complete(ctx context.Context, s *ent.Scoped, in events.OrderEve
 		}
 	}
 	id, err := create.OnConflictColumns(order.FieldWorkspaceID, order.FieldOrderID).DoNothing().ID(ctx)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil // the same order_id again: nothing changes
-	}
-	if err != nil {
+	inserted, err := db.Inserted(err)
+	switch {
+	case err != nil:
 		return fmt.Errorf("create order %q: %w", parsed.OrderID, err)
+	case !inserted:
+		return nil // the same order_id again: nothing changes
 	}
 	err = s.OrderMovement().Create().
 		SetOrderID(id).
@@ -183,7 +194,8 @@ func (m *Module) hold(ctx context.Context, s *ent.Scoped, in events.OrderEvent) 
 		SetEventID(in.EventID).
 		SetOccurredAt(in.OccurredAt).
 		OnConflictColumns(heldorderevent.FieldWorkspaceID, heldorderevent.FieldEventID).DoNothing().Exec(ctx)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	_, err = db.Inserted(err)
+	if err != nil {
 		return fmt.Errorf("hold an Event of order %q: %w", orderID, err)
 	}
 	return nil

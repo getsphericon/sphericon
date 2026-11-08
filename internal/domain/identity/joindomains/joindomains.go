@@ -37,14 +37,21 @@ const RecordLabel = "_sphericon-join."
 
 var (
 	// ErrAlreadyExists means the Workspace already has this domain.
-	ErrAlreadyExists = validation.Conflict("joindomains: this domain is already added", i18n.ErrorsJoinDomainExists)
+	ErrAlreadyExists = validation.ConflictField("domain", "joindomains: this domain is already added", i18n.ErrorsJoinDomainExists)
 	// ErrRecordNotFound means the TXT record is not published (or carries another value).
 	ErrRecordNotFound = validation.Refuse("joindomains: the TXT record was not found", i18n.ErrorsJoinDomainRecordMissing)
 	// ErrHeldElsewhere means another Workspace has the domain verified and still publishes
 	// its record.
-	ErrHeldElsewhere = validation.Conflict("joindomains: another workspace has verified this domain", i18n.ErrorsJoinDomainHeld)
+	ErrHeldElsewhere = validation.ConflictField("domain", "joindomains: another workspace has verified this domain", i18n.ErrorsJoinDomainHeld)
 	// ErrNotFound means no Join domain of that id is in the Workspace.
 	ErrNotFound = validation.NotFound("joindomains: join domain not found", i18n.ErrorsJoinDomainNotFound)
+)
+
+// constraints are the unique constraints of the Join domains (ADR 0106): a domain is added once
+// per Workspace, and verified by one Workspace at a time.
+var constraints = db.Declare(
+	db.Refusal("joindomain_workspace_id_domain", ErrAlreadyExists),
+	db.Refusal("joindomain_domain", ErrHeldElsewhere),
 )
 
 // notFound is ErrNotFound for ent's not-found error of the domain's row, err otherwise.
@@ -101,16 +108,14 @@ func (m *Module) Add(ctx context.Context, s *ent.Scoped, raw string) (*ent.JoinD
 	}
 	token := "sphericon-join=" + rand.Text()
 
-	// A scoped transaction (a savepoint), so a unique violation rolls back only this write.
 	var row *ent.JoinDomain
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		var cerr error
-		row, cerr = ts.JoinDomain().Create().SetDomain(domain).SetToken(token).Save(ctx)
-		return cerr
+		return constraints.Write(ctx, ts, func() error {
+			var cerr error
+			row, cerr = ts.JoinDomain().Create().SetDomain(domain).SetToken(token).Save(ctx)
+			return cerr
+		})
 	})
-	if db.IsUniqueViolation(err) {
-		return nil, ErrAlreadyExists
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -162,10 +167,14 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 
 	now := m.now()
 	var verified *ent.JoinDomain
+	// Another Workspace that verified the domain between the lookup and the write is
+	// ErrHeldElsewhere (joindomain_domain).
 	markVerified := func(to *ent.Scoped) error {
-		var uerr error
-		verified, uerr = to.JoinDomain().UpdateOneID(row.ID).Where(joindomain.VerifiedAtIsNil()).SetVerifiedAt(now).SetLastCheckedAt(now).Save(ctx)
-		return uerr
+		return constraints.Write(ctx, to, func() error {
+			var uerr error
+			verified, uerr = to.JoinDomain().UpdateOneID(row.ID).Where(joindomain.VerifiedAtIsNil()).SetVerifiedAt(now).SetLastCheckedAt(now).Save(ctx)
+			return uerr
+		})
 	}
 	if holder == nil {
 		err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error { return markVerified(ts) })
@@ -185,10 +194,6 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 			}
 			return markVerified(to)
 		})
-	}
-	if db.IsUniqueViolation(err) {
-		// Another Workspace verified it between the lookup and the write.
-		return nil, ErrHeldElsewhere
 	}
 	if ent.IsNotFound(err) {
 		// A concurrent Verify got there first: the stored row is the answer.

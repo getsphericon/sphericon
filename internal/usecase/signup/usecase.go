@@ -62,8 +62,6 @@ func New(bus *events.Bus, usersModule *users.Module, links *users.Links, passwor
 
 // firstWorkspaceIn creates the User's first Workspace, named users.FirstWorkspaceName, and its
 // owner Membership on tx, with a fresh Workspace id and the Send cap a new Workspace starts with.
-// A unique violation (an id already taken) aborts tx, so the caller retries the whole transaction
-// with a fresh id.
 func (u *UseCase) firstWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.Workspace, error) {
 	var sendCap *int
 	if u.states != nil {
@@ -72,7 +70,7 @@ func (u *UseCase) firstWorkspaceIn(ctx context.Context, tx *ent.Client, userID i
 			return nil, err
 		}
 	}
-	ws, err := workspaces.CreateIn(ctx, tx, users.FirstWorkspaceName, u.newPublicID(), sendCap)
+	ws, err := workspaces.CreateIn(ctx, tx, users.FirstWorkspaceName, u.newPublicID, sendCap)
 	if err != nil {
 		return nil, err
 	}

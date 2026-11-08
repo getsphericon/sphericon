@@ -2,13 +2,28 @@ package outboundmessages
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 )
+
+// The unique constraints of the Outbound messages and their tracked links (ADR 0106): no client can
+// break them.
+var _ = db.Declare(
+	db.Fault("outbound_messages_workspace_id_idempotency_key",
+		"a claim and a failed attempt are written with ON CONFLICT DO NOTHING, and judge the row that holds the key"),
+	db.Fault("tracked_links_token_key",
+		"a short token is drawn at random and written with ON CONFLICT DO NOTHING: a draw that meets one draws again"),
+)
+
+// errKeyVanished: an insert under an idempotency key found the key taken, and then no row under it.
+var errKeyVanished = errors.New("outboundmessages: the idempotency key was taken, then held no row")
 
 // find loads the Outbound message recorded under (workspace, key), or nil.
 func (m *Module) find(ctx context.Context, s *ent.Scoped, key string) (*ent.OutboundMessage, error) {
@@ -72,28 +87,30 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		create.SetTemplateID(ref.TemplateID)
 	}
 
-	msg, err := create.Save(ctx)
-	if err == nil {
-		return msg, nil, nil
-	}
-	if !ent.IsConstraintError(err) {
+	id, err := create.OnConflictColumns(outboundmessage.FieldWorkspaceID, outboundmessage.FieldIdempotencyKey).DoNothing().ID(ctx)
+	inserted, err := db.Inserted(err)
+	switch {
+	case err != nil:
 		return nil, nil, err
+	case inserted:
+		msg, err := s.OutboundMessage().Get(ctx, id)
+		return msg, nil, err
 	}
 	// Lost the insert race: another attempt claimed this key between our replay
 	// check and now. Treat its row exactly like one we found up front.
-	other, ferr := m.find(ctx, s, req.Key)
-	if ferr != nil {
-		return nil, nil, ferr
+	other, err := m.find(ctx, s, req.Key)
+	if err != nil {
+		return nil, nil, err
 	}
 	if other == nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("%w: %q", errKeyVanished, req.Key)
 	}
 	if other.Status != outboundmessage.StatusPending {
 		r := replayResult(other)
 		return nil, &r, nil
 	}
-	msg, terr := m.takeOver(ctx, s, other)
-	return msg, nil, terr
+	msg, err := m.takeOver(ctx, s, other)
+	return msg, nil, err
 }
 
 // takeOver adopts a pending claim, but only when its lease has expired (a crashed

@@ -109,8 +109,8 @@ namespace StaffSignupItems {
   @get
   op list(): StaffSignupItemList | Problem;
 
-  /** Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional
-   * consent, and a second mailings consent are refused (422). */
+  /** Add a Sign-up item. A mailings consent on an item that is not an optional consent is refused
+   * (422); a taken key and a second mailings consent are refused (409). */
   @post
   op create(@body body: StaffSignupItemInput):
     | {
@@ -130,8 +130,9 @@ namespace StaffSignupItems {
   @route("/{id}")
   op get(@path id: EntityId): StaffSignupItemResource | Problem;
 
-  /** Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
-   * consent, and a second mailings consent are refused (422); a deleted item is not found. */
+  /** Change a Sign-up item. A blank title and a mailings consent on an item that is not an
+   * optional consent are refused (422), a second mailings consent (409); a deleted item is not
+   * found. */
   @patch
   @route("/{id}")
   op update(@path id: EntityId, @body body: StaffSignupItemUpdate):
@@ -161,8 +162,8 @@ namespace StaffSignupItems {
     | Problem;
 
   /** Publish the draft as a new version under a label: it takes effect at once, and is never
-   * changed or removed afterwards. A label the item already has, and an item without a draft,
-   * are refused (422); a deleted item is not found. */
+   * changed or removed afterwards. An item without a draft is refused (422), a label the item
+   * already has (409); a deleted item is not found. */
   @post
   @route("/{id}/versions")
   op publish(@path id: EntityId, @body body: StaffLegalDocumentPublishInput):

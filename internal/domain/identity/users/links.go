@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -249,7 +248,7 @@ func (l *Links) EmailChange(ctx context.Context, token string) (EmailChange, err
 // index guards the race) is ErrConfirmLinkInvalid, never "in use" (ADR 0031).
 func (l *Links) ConfirmEmailChange(ctx context.Context, c EmailChange) error {
 	err := l.users.ChangeEmail(ctx, c.UserID, c.NewEmail)
-	if db.IsUniqueViolation(err) {
+	if errors.Is(err, ErrEmailTaken) {
 		return ErrConfirmLinkInvalid
 	}
 	return err

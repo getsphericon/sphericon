@@ -13,7 +13,13 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/erasure"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+)
+
+// The unique constraint of the Erasures table (ADR 0106): one row per erasure.Requested Event.
+var _ = db.Declare(
+	db.Fault("erasures_workspace_id_erasure_key", "a row is inserted ON CONFLICT (workspace_id, erasure_key), the Event's envelope id"),
 )
 
 // Record adds the Erasure a contact.erased event carries to the Erasures stream, once:
