@@ -173,10 +173,12 @@ coding standards in `CODING_STANDARDS.md`.
   `domain-<context>[-<part>]`, one per privilege: `domain-<context>` is the glob of the context's
   directory (the modules that hold no raw client), `domain-<context>-raw` is the closed list of its
   raw-client holders (with the other holders, the `allow` of `ent.Client` in the top-level
-  `forbid_symbol`), and a part a rule binds alone gets a component of its own. Each lists in
-  `may_depend_on` the other components of its context and every component of the contexts below,
-  in context order, and nothing above, so an import against the order fails `check:arch` with the
-  context's reason. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
+  `forbid_symbol`), and a part a rule binds alone gets a component of its own. `layers` in
+  `easement.yml` states the order once, from the drivers through the use cases and the contexts
+  down to the infrastructure and the kernel (ADR 0111): a component imports those below it and
+  none above, so an import against the order fails `check:arch` with the context's reason. Within
+  a context the raw-client holders sit above the rest; where the rest imports them (identity,
+  sending), that edge is the one a rule's `may_depend_on` names. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
   Memberships (`domain-identity-base`, which imports no other domain module: every module may read a
   Workspace, ask a Permission or tell the Owners something), the raw-client holders `apitokens`, `consentrecords`,
   `invitations`, `joindomains`, `oauthclients`, `passkeys`, `secondfactors`, `signupitems`,
@@ -232,8 +234,7 @@ coding standards in `CODING_STANDARDS.md`.
   `.../internal/domain/<context>/<module>`) and the module-relative paths that name it (the
   `forbid_symbol` names in `easement.yml`, the ownership map of `entrywrite`, `.golangci.yml`,
   the ast-grep rules, scopegen's outputs, the docs), put it in the context's component (by name in
-  `domain-<context>-raw` if it holds the raw client), regenerate (`mise run generate:scopes`, goverter, `generate:mocks`) and let
-  `easement suggest --check` trim the `may_depend_on` lists.
+  `domain-<context>-raw` if it holds the raw client), regenerate (`mise run generate:scopes`, goverter, `generate:mocks`).
 - **Only the owner writes a table (ADR 0102, analyzer `entrywrite`).** Each ent entity names the
   package that owns its table in the ownership map (`owners` in `tools/analyzers/entrywrite`, which a
   test holds to `ent/schema` and to the directories of the repository), and a write to it from any
