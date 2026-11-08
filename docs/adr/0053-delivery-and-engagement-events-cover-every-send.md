@@ -6,6 +6,11 @@ status: accepted
 
 > **Amended below:** the rollup of a human open and click moved from the Broadcast recipient to
 > the Outbound message, so it covers every surface.
+>
+> **Amended by [[0113-outbound-message-projections-follow-events-and-keep-the-earliest-observation]]:**
+> human engagement and email delivery projections run asynchronously, retain the earliest observed
+> time regardless of handling order and survive Erasure anonymously. That replaces their
+> same-transaction and set-only-while-empty requirements below.
 
 Opens and clicks were recorded once per Broadcast recipient, only for Broadcasts, and counted
 whatever made the request; delivery was inferred (ADR 0011). We now record the full set a sender

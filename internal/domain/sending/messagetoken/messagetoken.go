@@ -88,7 +88,7 @@ type unsubClaims struct {
 	WorkspaceID int64  `json:"ws,string"`
 	ContactID   int64  `json:"cid,string"`
 	BroadcastID int64  `json:"bid,string"`
-	// MessageID is absent from a link minted before the link named its message.
+	// MessageID is absent when the opt-out names no received message.
 	MessageID int64 `json:"mid,string,omitempty"`
 }
 

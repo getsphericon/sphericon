@@ -13,6 +13,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -68,6 +69,7 @@ func TestAScannerOpenIsAMachineEventAndCountsNowhere(t *testing.T) {
 
 	e := onlyEngagement(t, env, events.NameEmailOpened)
 	assert.True(t, e.Machine)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt, "a machine open stamps nothing")
 	assert.Zero(t, figures(t, env, fixtures.BroadcastSentUntrackedID).Opened)
 }
@@ -82,6 +84,7 @@ func TestAScannerClickRedirectsAndCountsNowhere(t *testing.T) {
 
 	e := onlyEngagement(t, env, events.NameEmailClicked)
 	assert.True(t, e.Machine)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).ClickedAt, "a machine click stamps nothing")
 	assert.Zero(t, figures(t, env, fixtures.BroadcastSentUntrackedID).Clicked)
 
@@ -112,6 +115,7 @@ func TestAPersonsHitIsUnaffected(t *testing.T) {
 
 	assert.False(t, onlyEngagement(t, env, events.NameEmailOpened).Machine)
 	assert.False(t, onlyEngagement(t, env, events.NameEmailClicked).Machine)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID)
 	assert.NotNil(t, msg.OpenedAt)
 	assert.NotNil(t, msg.ClickedAt)

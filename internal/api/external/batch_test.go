@@ -147,7 +147,7 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 	require.Len(t, stored, 1)
 	assert.True(t, stored[0].Backfill)
 	require.NotNil(t, stored[0].SourceID)
-	assert.Equal(t, dedupID, *stored[0].SourceID)
+	assert.Equal(t, events.NameCollected+":"+dedupID, *stored[0].SourceID)
 	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected), "history reaches no consumer")
 }
 

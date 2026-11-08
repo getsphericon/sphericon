@@ -84,6 +84,7 @@ type sendAs struct {
 
 // sentFact is what a Channel's Events of a sent message say.
 type sentFact struct {
+	observedAt  time.Time
 	workspaceID int64
 	req         Request
 	messageID   int64

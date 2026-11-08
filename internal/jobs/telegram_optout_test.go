@@ -352,12 +352,15 @@ func TestAManualTelegramDestinationThatIsNoUserIdIsRefused(t *testing.T) {
 }
 
 // stopFrom is Bob stopping in Telegram from a message of Acme that came from broadcastID or
-// automationID, as a button press or a blocked send records it (channelstop.StopTelegram).
+// automationID, through the button on a received message (channelstop.StopTelegram).
 func stopFrom(t *testing.T, env *testhelper.TestEnv, broadcastID, automationID int64) {
 	t.Helper()
 	msg := &ent.OutboundMessage{ContactID: lo.ToPtr(int64(fixtures.ContactBobID))}
 	if broadcastID != 0 {
-		msg.BroadcastID = &broadcastID
+		// The parked recipient has received its message in this scenario.
+		msg = env.DB.OutboundMessage.UpdateOneID(fixtures.OutboundMessageParkedClaimID).
+			SetStatus(outboundmessage.StatusSent).SetChannel(channels.Telegram).
+			SetContactID(fixtures.ContactBobID).SetDestination(strconv.Itoa(optOutUser)).SaveX(t.Context())
 	}
 	if automationID != 0 {
 		msg.AutomationID = &automationID
@@ -372,7 +375,7 @@ func stopFrom(t *testing.T, env *testhelper.TestEnv, broadcastID, automationID i
 }
 
 // The Broadcast counts a Telegram stop made from its message when the broadcasts consumer works
-// telegram.unsubscribed: the recipient row is the broadcasts module's (ADR 0102), and a repeated
+// message.unsubscribed: the recipient row is the broadcasts module's (ADR 0102), and a repeated
 // job counts nothing more.
 func TestATelegramStopOfABroadcastsMessageCountsTheUnsubscribeOnceItsConsumerRuns(t *testing.T) {
 	env := testhelper.Setup(t)

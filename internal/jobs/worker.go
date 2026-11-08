@@ -152,6 +152,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	// calls for queue it through the client itself, which exists once the workers are registered.
 	river.AddWorker(workers, NewSuppressEventWorker(entClient))
 	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient))
+	river.AddWorker(workers, NewMessageObservationWorker(entClient))
 	river.AddWorker(workers, NewOrderEventWorker(entClient, deps.Orders))
 	dispatcher := NewWebhookDispatcher()
 	if deps.Webhooks != nil {

@@ -4,6 +4,10 @@ status: accepted
 
 # A domain event is a River job for each consumer that wants it
 
+> **Amended by [[0114-mandatory-sms-reactions-run-in-the-publishing-transaction]]:** a mandatory
+> reaction may use a synchronous subscriber in the publishing transaction. The River job rule
+> below describes asynchronous consumers; it no longer describes every subscriber.
+
 Domain events reached their consumers through a transactional outbox (watermill-sql). One row per
 event was read by eight consumer groups (persist, automations, rules, webhooks, suppression,
 orders, audit, export), each through an offset cursor of its own. Three of them only turned the

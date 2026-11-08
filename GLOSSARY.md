@@ -348,6 +348,9 @@ text, and one recorded by hand. Each drops the number's SMS Confirmation. A text
 or UNSTOP lifts it and records a Confirmation with provenance `keyword` (`sms.confirmed`). sphericon
 answers neither. The row keeps how the person stopped (`via`: keyword, refused send, link, manual),
 which the Contact card shows.
+A repeated delivery of the same external fact does not apply that choice again, even after a
+later START or UNSTOP. A new STOP after consent was restored is a new opt-out; another STOP while
+the opt-out already stands creates no second change or attribution.
 On email the opt-out is offered two ways with **identical scope**: the visible footer link and an RFC 8058
 **one-click** `List-Unsubscribe` header (Broadcast + Automation only, never Transactional — see
 ADR 0012), both carrying the same source-scoped token; a mailbox provider's one-click button never
@@ -357,16 +360,19 @@ proxies that GET every email link cannot silently unsubscribe a live subscriber.
 _Avoid_: Opt-out flag, status
 
 **Unsubscribe recording**:
-Writing an **Unsubscribe** with everything it sets off, in one transaction: from the link in a
-message or from an API call, the opt-out, the **Confirmation** an opt-out of everything drops, the
-count on the Broadcast that provoked it and the end of the Enrollment of the Automation it names.
+Writing an **Unsubscribe**, the **Confirmation** an opt-out of everything drops and the end of the
+Enrollment of the Automation it names together: from the link in a message or from an API call.
+Attribution to the Broadcast that provoked it follows separately, so its reported count may lag
+behind the opt-out. Once accepted, that attribution survives the Contact's **Erasure** as anonymous
+reporting data.
 A stop read in the Channel itself (a STOP keyword, a blocked bot) is recorded where it is read.
 _Avoid_: Unsubscription, opt-out flow
 
 The **scope** of an unsubscribe (what the contact is opted out of) is distinct from its
-**attribution** (which sent message provoked it). A broadcast unsubscribe has scope
-"broadcasts" (shared) yet is attributed to the one broadcast whose email triggered it — two
-separate facts, never one field.
+**attribution** (which sent message provoked it). An unsubscribe from a Broadcast's received
+message is attributed to that Broadcast, on any Channel, independently of its scope. Attribution
+requires a link or button on that message: a standalone Channel stop and a provider's refusal of
+a new send are not attributed to the Broadcast attempting that send.
 
 **Channel stop**:
 An opt-out a person makes in the Channel itself: a STOP keyword, `/stop` or a blocked bot, an
@@ -493,9 +499,12 @@ requirement switched off) is not sent. Each Notice is sent and retried on its ow
 **Outbound message**:
 The durable record of one Outbound send — which surface and which of its records it belongs to,
 the Sending source (none for Transactional), the Sending domain, the provider's message id, the
-outcome, and the delivery result: the first Delivery notice of each kind that arrives stamps it once
-(delivered, read and undelivered on any Channel that reports them; bounced and complained on
-email), and a stamp is never removed, so reports of old sends do not shrink when Events expire.
+outcome, and the lasting delivery and human engagement figures. Human opens, clicks and email
+delivery results keep the earliest time the Instance observed each kind, independently of the
+order in which observations are handled; machine engagement contributes nothing. Those figures
+may lag behind the recorded Events, but accepted observations survive the Contact's Erasure as
+anonymous reporting data, and old figures do not shrink when Events expire. Other Channels record
+delivered, read and undelivered where they report them.
 Delivered and undelivered are final: the first of them stamps and the other never follows, so a
 late report cannot move a message backwards, and a message with no final report has neither.
 Claimed before the provider is called, under a per-logical-send idempotency key, so a

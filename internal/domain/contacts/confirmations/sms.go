@@ -88,6 +88,10 @@ func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, numb
 // so a repeated START records nothing twice. The Confirmation names the Contact whose phone the
 // number is, when there is one; a START creates no Contact.
 func StartSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string) error {
+	number, err := unsubscribes.SMSNumber(number)
+	if err != nil {
+		return err
+	}
 	if err := unsubscribes.LiftSMS(ctx, s, number); err != nil {
 		return err
 	}

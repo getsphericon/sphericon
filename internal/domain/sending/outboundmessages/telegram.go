@@ -128,7 +128,7 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 		return nil, err
 	}
 	maps.Copy(vars, start)
-	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, channels.Telegram, content.Text, vars); err != nil {
+	if err := c.m.bindUnsubscribeURL(ctx, s, req, messageID, dest, ws, channels.Telegram, content.Text, vars); err != nil {
 		return nil, err
 	}
 	text, err := telegramrender.Render(content.Text, vars)
@@ -168,7 +168,7 @@ const unsubscribeURLTag = "unsubscribe_url"
 // Destination (a Telegram user id, a phone number) out on the message's Channel only (ADR 0078): of
 // the message's source on Telegram, of everything on SMS, where every opt-out is Channel-wide (ADR
 // 0077). A send with no source has nothing to unsubscribe from, so the tag renders empty there.
-func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Request, dest string, ws *ent.Workspace, onChannel channels.Channel, text string, vars map[string]any) error {
+func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, onChannel channels.Channel, text string, vars map[string]any) error {
 	if !strings.Contains(text, unsubscribeURLTag) {
 		return nil
 	}
@@ -185,12 +185,13 @@ func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Requ
 		source = eligibility.SourceEverything
 	}
 	url, err := tr.UnsubscribeURL(linktarget.Unsubscribe{
-		Channel:     onChannel,
-		Source:      source,
-		Destination: dest,
-		WorkspaceID: ws.ID,
-		ContactID:   req.contactID(),
-		BroadcastID: req.Ref.BroadcastID,
+		Channel:           onChannel,
+		Source:            source,
+		Destination:       dest,
+		WorkspaceID:       ws.ID,
+		ContactID:         req.contactID(),
+		BroadcastID:       req.Ref.BroadcastID,
+		OutboundMessageID: messageID,
 	})
 	if err != nil {
 		return contentError{fmt.Errorf("unsubscribe url: %w", err)}

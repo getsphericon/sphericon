@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -65,6 +66,7 @@ func TestSenderThatConfirmsOnAcceptanceIsStampedDeliveredOnce(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, again.Replayed)
 
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	row := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
 	assert.NotNil(t, row.DeliveredAt)
 	assert.Nil(t, row.BouncedAt)
@@ -79,6 +81,7 @@ func TestSenderThatDoesNotConfirmIsNotStampedDelivered(t *testing.T) {
 	res, err := moduleThrough(env, &keepingSender{}).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:plain", "a@example.com"))
 	require.NoError(t, err)
 
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, res.MessageID).DeliveredAt)
 	assert.Zero(t, env.QueuedCount(t, "email.delivered", map[string]any{"outboundMessageId": res.MessageID}))
 }

@@ -166,6 +166,7 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 	assert.Zero(t, figuresOf(t, env, id).Clicked)
 
 	follow(t, env, buttons[0], browserUA)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.True(t, clicked(), "a person's click sets the recipient's rollup")
 	assert.Equal(t, 1, figuresOf(t, env, id).Clicked)
 	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.LacunaID), id)

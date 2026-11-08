@@ -78,9 +78,9 @@ func TestAnEventIsDeliveredToTheEndpointsThatSelectIt(t *testing.T) {
 	assert.EqualValues(t, fixtures.ContactAliceID, body["contactId"])
 }
 
-// A provider's notification is delivered under its own id, which a repeat of it carries too, so a
-// receiver can drop the repeat; a repeat is not even published.
-func TestAProviderNotificationIsDeliveredUnderItsOwnID(t *testing.T) {
+// A provider notification keeps its semantic source identity across redelivery, so a receiver
+// can distinguish different facts and drop repeats; a repeat is not even published.
+func TestAProviderNotificationKeepsItsSemanticIdentityAcrossRedelivery(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{events.NameEmailBounced}).ExecX(t.Context())
 	bounce := notice(events.NameEmailBounced, events.BounceKindHard, fixtures.ContactAliceEmail)
@@ -91,8 +91,8 @@ func TestAProviderNotificationIsDeliveredUnderItsOwnID(t *testing.T) {
 
 	queued := env.QueuedDeliveries(t)
 	require.Len(t, queued, 1)
-	assert.Equal(t, bounce.DedupID, queued[0].DeliveryID)
-	assert.Equal(t, bounce.DedupID, bodyOf(t, queued[0])["id"])
+	assert.Equal(t, events.NameEmailBounced+":"+bounce.DedupID, queued[0].DeliveryID)
+	assert.Equal(t, events.NameEmailBounced+":"+bounce.DedupID, bodyOf(t, queued[0])["id"])
 }
 
 // The contact.erased webhook payload carries the customer's subject_id; nothing else

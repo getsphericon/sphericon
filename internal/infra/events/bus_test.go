@@ -119,7 +119,7 @@ func TestPublishStoresTheEvent(t *testing.T) {
 		DedupID:     "store-projection",
 	})
 
-	row, err := env.DB.Event.Query().Where(event.SourceID("store-projection")).Only(t.Context())
+	row, err := env.DB.Event.Query().Where(event.SourceID(events.NameCollected + ":store-projection")).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, "page_view", row.Action)
 	assert.Equal(t, "visitor:abc", row.SubjectID)
@@ -148,7 +148,7 @@ func TestPublishStoresAnEventUnlinkedWhenItsContactIsGone(t *testing.T) {
 		"store-foreign": fixtures.ContactGlobexID,
 	} {
 		publishAlone(t, env, &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: contactID, Action: "page_view", DedupID: id})
-		row, err := env.DB.Event.Query().Where(event.SourceID(id)).Only(t.Context())
+		row, err := env.DB.Event.Query().Where(event.SourceID(events.NameCollected + ":" + id)).Only(t.Context())
 		require.NoError(t, err)
 		assert.Nil(t, row.ContactID, id)
 	}
@@ -182,7 +182,7 @@ func TestARepeatedEventIsStoredAndPublishedOnce(t *testing.T) {
 	publishAlone(t, env, bounce)
 	publishAlone(t, env, bounce)
 
-	n, err := env.DB.Event.Query().Where(event.SourceID("sns-1/repeat@example.com")).Count(t.Context())
+	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailBounced + ":sns-1/repeat@example.com")).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "one row")
 	assert.Equal(t, before+1, publishedCount(t, env), "published once")

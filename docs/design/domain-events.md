@@ -1,7 +1,8 @@
 # Design: internal domain-event system
 
 Status: **implemented**. A domain event is published once, inside the transaction that commits the
-state change, and reaches each consumer that wants it as a River job of its own (ADR 0101, which
+state change, and runs mandatory subscribers in that transaction, then reaches asynchronous consumers as
+River jobs (ADRs 0113–0115 extend ADR 0101, which
 replaced the watermill-sql outbox of ADR 0019 and ADR 0022; ADR 0105 lets an event belong to the
 Instance and makes the mail sphericon sends on its own behalf a consumer). This document says how
 the pieces fit; the ADRs say why.
@@ -11,8 +12,8 @@ the pieces fit; the ADRs say why.
 1. **Decoupled fan-out**: one publish, any number of consumers. A producer never learns about a
    consumer: it calls `Publish` and nothing else.
 2. **Transactional with the state change**: an event is published iff the state that produced it
-   commits. Its Event row and its consumers' jobs are written in the producer's transaction, so a
-   rolled-back change leaves neither, and an error while publishing rolls the change back.
+   commits. Its receipt, optional Event row, subscriber writes and consumers' jobs share the producer's
+   transaction. A subscriber error rolls them all back and permits a retry.
 3. **Durable and retried per consumer**: each consumer's job is retried by River with backoff, on its
    own, without holding up the other consumers or the other events, and kept as `discarded` for 30
    days when its attempts run out, for an operator to retry from River UI.
@@ -43,10 +44,11 @@ reaction and log layer beside them.
 ```
 producer (one transaction):
    write state rows
-   Publish(ev) ── stamp the envelope (id, recorded time, chain)
-               ├─ projected event: write its Event row (unique source_id)
-               │      the row exists already → a repeat: stop here, publish nothing
-               └─ InsertManyTx: one River job per consumer whose filter wants the envelope
+   Publish(ev) ── stamp the envelope (id, observation time, recorded time, chain)
+               ├─ claim an externally identified fact: duplicate → stop here
+               ├─ projected event: write its Event row (unique workspace_id + source_id)
+               ├─ run matching synchronous subscribers, including their derived facts
+               └─ InsertManyTx: one River job per matching asynchronous consumer
 commit
 ```
 
@@ -55,13 +57,17 @@ does the rest. A request that changes no state of its own and only asks for some
 password reset, a verification link sent again) publishes in a transaction of its own
 (`events.Bus.Publish`):
 
-- **The Event row** is written for every Projected event (not for an Audit entry, a change told to
-  the Workspace's people or an event of the Instance), with the projection, the resolved Contact
-  link (left empty when the Contact is gone) and the source id: the event's natural upstream id
-  (`DedupKey`: a provider's notification id, a client's event id) or its own envelope id. The
-  insert skips a conflict on `source_id`, so a repeated event (a provider's redelivery, a client's
-  retried event id, within one batch or across requests) is found by the conflict and is not
-  published again: no consumer sees it twice.
+- **The receipt** claims an upstream identity before any subscriber or job runs, including for
+  internal facts without an Event row. Its key is a digest of Workspace, event name and source id;
+  it contains no raw destination or source payload. A failed reaction rolls the receipt back.
+- **The Event row** is written for every Projected event, with its Contact link when available.
+  A natural source id is namespaced by the semantic event name and is unique within a Workspace;
+  storage, trigger lookups, Rule firings and Webhook identity use the same value. Internal SMS observations and state transitions have
+  no Event row and reach no public Rule, Automation or Webhook.
+- **The subscribers** (`events.Subscriber`) run synchronously on the publishing transaction's
+  scoped client. The composition root registers them; the bus imports no domain module. SMS stop
+  and unreachable observations trigger their owners' consent and suppression writes. Only an
+  actual change publishes the corresponding state-transition fact (ADR 0114).
 - **The jobs**: each consumer is an entry of the consumer registry (`events.Consumer`): a filter that
   reads only the envelope and the event decoded from it, never the database, and the args of its
   job kind. The bus inserts the jobs of every entry that wants the event with one `InsertManyTx` on
@@ -77,22 +83,25 @@ password reset, a verification link sent again) publishes in a transaction of it
 A consumer that reads the whole event has args of its own that embed the envelope (`events.EventJob`),
 so it reads the typed event, its version, its times and its chain, and its job runs in the `events`
 queue. A consumer whose work the event alone decides (the automations and the rules) queues that
-work itself: the evaluation, built from the event at publish. There is no ordering promise between jobs: a consumer that writes shared rows takes
+work itself: the evaluation, built from the event at publish. Report measurements instead carry only Workspace, message id, action and observation time,
+without a personal envelope. Their owner keeps the earliest observation, regardless of handling
+order (ADR 0113). There is no ordering promise between jobs: a consumer that writes shared rows takes
 its own lock (orders takes one per Workspace).
 
 ## The consumers
 
-| Consumer    | Job kind                      | Wants                                                                                       | Does                                                                                |
-| ----------- | ----------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| suppression | `event_suppress`              | a hard bounce or a complaint                                                                | suppresses the address, once, keeping the first reason                              |
-| orders      | `event_order`                 | a collected order Event, loaded history included                                            | records the Order and its Movements under the Workspace's lock (ADR 0064)           |
-| automations | `automation_evaluate_trigger` | a live, person-made Event of a Contact (no history, no machine engagement, no Audit entry)  | evaluates the Event against the Automations                                         |
-| rules       | `rule_evaluate_event`         | what automations wants, except an event a Rule's Action published (`CausedBy`)              | evaluates the Event against the Rules; a Firing is unique on the source id          |
-| webhooks    | `event_webhook`               | every live Event and every Audit entry                                                      | queues one delivery per enabled endpoint whose filter matches (ADR 0039)            |
-| notices     | `event_notice`                | an event that calls for Notices: an account's, or a change a Workspace's people are told of | queues one `send_notice` per Notice, unique on the event and the address (ADR 0105) |
-| broadcasts  | `event_broadcast_unsubscribe` | `telegram.unsubscribed` that names a Broadcast and its Contact                              | counts the unsubscribe on the Broadcast's recipient, once (ADR 0102)                |
-| audit (EE)  | `event_audit`                 | an Audit entry                                                                              | stores the entry, once, under the audit license (ADR 0022)                          |
-| export (EE) | `event_export_erasure`        | `contact.erased`                                                                            | adds the Erasure to the Erasures stream under the export license (ADR 0045)         |
+| Consumer    | Job kind                      | Wants                                                                                       | Does                                                                                             |
+| ----------- | ----------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| suppression | `event_suppress`              | a hard bounce or a complaint                                                                | suppresses the address, once, keeping the first reason                                           |
+| orders      | `event_order`                 | a collected order Event, loaded history included                                            | records the Order and its Movements under the Workspace's lock (ADR 0064)                        |
+| automations | `automation_evaluate_trigger` | a live, person-made Event of a Contact (no history, no machine engagement, no Audit entry)  | evaluates the Event against the Automations                                                      |
+| rules       | `rule_evaluate_event`         | what automations wants, except an event a Rule's Action published (`CausedBy`)              | evaluates the Event against the Rules; a Firing is unique on the source id                       |
+| webhooks    | `event_webhook`               | every live Event and every Audit entry                                                      | queues one delivery per enabled endpoint whose filter matches (ADR 0039)                         |
+| notices     | `event_notice`                | an event that calls for Notices: an account's, or a change a Workspace's people are told of | queues one `send_notice` per Notice, unique on the event and the address (ADR 0105)              |
+| broadcasts  | `event_broadcast_unsubscribe` | internal `message.unsubscribed` naming a received message                                   | attributes a link or button opt-out through the delivery row, including after Erasure (ADR 0115) |
+| messages    | `event_message_observation`   | human engagement or an email delivery measurement                                           | updates the anonymous message report stamps with the earliest observation (ADR 0113)             |
+| audit (EE)  | `event_audit`                 | an Audit entry                                                                              | stores the entry, once, under the audit license (ADR 0022)                                       |
+| export (EE) | `event_export_erasure`        | `contact.erased`                                                                            | adds the Erasure to the Erasures stream under the export license (ADR 0045)                      |
 
 The Event row is written before any consumer runs, so an Automation's exit and goal checks and a
 Rule's Condition that counts the Contact's Events see the Event that triggered them (#751).
@@ -129,13 +138,14 @@ from the request to the webhook delivery.
   come from the otelriver plugin.
 - **Erasure** (ADR 0021) deletes, in its own transaction, the event jobs that name the Contact by id,
   address or phone (`QueuePurger.PurgeEventJobs`), in any state but running, and the queued webhook
-  deliveries that name it. A running job finishes and re-checks what it refers to.
+  deliveries that name it. Anonymous report jobs survive: their measurements were accepted before
+  Erasure and restore no personal fields. A running job finishes and re-checks what it refers to.
 
 ## Testing
 
 Under go-txdb no River runtime works the queue, so a test asserts what a publish left: the Event rows
-(`env.StoredEvents`) and the event jobs (`env.QueuedEnvelopes` reads every event job's envelope,
-one per event; `env.EventJobs(kind)` one consumer's). The harness registers a consumer of its own
+(`env.StoredEvents`) and the event jobs (`env.QueuedEnvelopes` reads jobs with an envelope,
+one per event; `env.EventJobs(kind)` one consumer's; `env.JobsOf` also reads anonymous measurement jobs). The harness registers a consumer of its own
 that wants every live event, so the queued jobs show everything a test published, an event no
 consumer wants yet included. `env.SystemMail.Messages()` works the Notices' jobs before a read. A test works a consumer's jobs with `env.PerformEnqueuedJobs(t, kinds...)`, through
 River's test executor with the application's River configuration, so the real middleware run; a

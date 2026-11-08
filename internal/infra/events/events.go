@@ -112,8 +112,8 @@ const (
 	SourceAPI     = "api"
 )
 
-// DedupKey is the Event's source_id for a client event id: source_id is unique across
-// Workspaces and sources, the client's id only within one of each.
+// DedupKey namespaces a client event id by its intake source and Workspace for the public
+// Event source id. The bus independently scopes consumption receipts to the Workspace and fact.
 func DedupKey(source string, workspaceID int64, clientEventID string) string {
 	return fmt.Sprintf("%s:%d:%s", source, workspaceID, clientEventID)
 }
@@ -152,7 +152,7 @@ type Envelope struct {
 	WorkspaceID int64           `json:"workspaceId,omitempty"` // 0: an event of the Instance, no Workspace's
 	OccurredAt  time.Time       `json:"occurredAt"`
 	Data        json.RawMessage `json:"data"` // the typed event, marshaled
-	// DedupKey is the Event row's source id. Empty ⇒ use ID. An event with a
+	// DedupKey is the raw upstream identity. SourceID namespaces it by event name. An event with a
 	// natural upstream id (a provider notification) sets it so a redelivery is a
 	// repeat Publish drops, while ID stays the event's own ULID.
 	DedupKey string `json:"dedupKey,omitempty"`
@@ -171,12 +171,12 @@ type Envelope struct {
 	CausationID   string `json:"causationId,omitempty"`
 }
 
-// SourceID is the id the Event's row is stored under (events.source_id): the DedupKey when the
-// event carries a natural upstream id, else the envelope ULID. A Firing is unique on it, and a
+// SourceID is the id the Event's row is stored under (events.source_id): the event name and
+// natural upstream identity when present, else the envelope ULID. A Firing is unique on it, and a
 // trigger job carries it so an Enrollment can copy the stored Event's properties (#752).
 func (e Envelope) SourceID() string {
 	if e.DedupKey != "" {
-		return e.DedupKey
+		return e.Name + ":" + e.DedupKey
 	}
 	return e.ID
 }
@@ -268,9 +268,9 @@ func IsUnprojected(name string) bool {
 
 // identifiable is an optional DomainEvent capability: an event with a stable
 // upstream id (a provider notification, an external message) implements it so the
-// publisher records that id as the envelope's DedupKey, which its Event row is
-// stored under (source_id): a redelivery finds the row and is not published. The
-// id does NOT become the message id, which stays a short ULID.
+// publisher records that id as the envelope's DedupKey and claims it before reactions, including
+// for a fact with no Event row. A Projected event namespaces it by name for source_id. The envelope id
+// stays a fresh ULID, independent of that upstream identity.
 type identifiable interface {
 	EventID() string
 }
@@ -291,40 +291,46 @@ func IsBackfill(ev DomainEvent) bool {
 // serialized envelope can be decoded back into the right Go type. All variants
 // are ours and finite — there is no catch-all.
 var registry = map[string]func() DomainEvent{
-	NameContactCreated:        func() DomainEvent { return &ContactCreated{} },
-	NameContactErased:         func() DomainEvent { return &ContactErased{} },
-	NameEmailSent:             func() DomainEvent { return &EmailEngagement{} },
-	NameEmailOpened:           func() DomainEvent { return &EmailEngagement{} },
-	NameEmailClicked:          func() DomainEvent { return &EmailEngagement{} },
-	NameEmailUnsubscribed:     func() DomainEvent { return &EmailEngagement{} },
-	NameEmailDelivered:        func() DomainEvent { return &EmailDelivery{} },
-	NameEmailDelayed:          func() DomainEvent { return &EmailDelivery{} },
-	NameEmailDropped:          func() DomainEvent { return &EmailDelivery{} },
-	NameEmailBounced:          func() DomainEvent { return &EmailDelivery{} },
-	NameEmailComplained:       func() DomainEvent { return &EmailDelivery{} },
-	NameMarketingConfirmed:    func() DomainEvent { return &MarketingConfirmed{} },
-	NameSmsConfirmed:          func() DomainEvent { return &SmsConfirmed{} },
-	NameCollected:             func() DomainEvent { return &CollectedEvent{} },
-	NameContactTagged:         func() DomainEvent { return &ContactTagChange{} },
-	NameContactUntagged:       func() DomainEvent { return &ContactTagChange{} },
-	NameContactFieldChanged:   func() DomainEvent { return &ContactFieldChanged{} },
-	NameAutomationEnrolled:    func() DomainEvent { return &EnrollmentChange{} },
-	NameAutomationCompleted:   func() DomainEvent { return &EnrollmentChange{} },
-	NameAutomationGoalReached: func() DomainEvent { return &EnrollmentChange{} },
-	NameAutomationExited:      func() DomainEvent { return &EnrollmentChange{} },
-	NameTelegramBound:         func() DomainEvent { return &BindingChange{} },
-	NameTelegramUnbound:       func() DomainEvent { return &BindingChange{} },
-	NameTelegramReceived:      func() DomainEvent { return &TelegramReceived{} },
-	NameTelegramSent:          func() DomainEvent { return &TelegramSent{} },
-	NameTelegramClicked:       func() DomainEvent { return &TelegramClicked{} },
-	NameTelegramUnsubscribed:  func() DomainEvent { return &TelegramUnsubscribed{} },
-	NameSmsReceived:           func() DomainEvent { return &SmsReceived{} },
-	NameSmsSent:               func() DomainEvent { return &SmsSent{} },
-	NameSmsDelivered:          func() DomainEvent { return &SmsDelivery{} },
-	NameSmsUndelivered:        func() DomainEvent { return &SmsDelivery{} },
-	NameSmsClicked:            func() DomainEvent { return &SmsClicked{} },
-	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
-	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
+	NameSmsStopObserved:           func() DomainEvent { return &SmsStopObserved{} },
+	NameSmsStartObserved:          func() DomainEvent { return &SmsStartObserved{} },
+	NameSmsDestinationUnreachable: func() DomainEvent { return &SmsDestinationUnreachable{} },
+	NameSmsOptOutRecorded:         func() DomainEvent { return &SmsOptOutRecorded{} },
+	NameSmsSuppressionRecorded:    func() DomainEvent { return &SmsSuppressionRecorded{} },
+	NameMessageUnsubscribed:       func() DomainEvent { return &MessageUnsubscribed{} },
+	NameContactCreated:            func() DomainEvent { return &ContactCreated{} },
+	NameContactErased:             func() DomainEvent { return &ContactErased{} },
+	NameEmailSent:                 func() DomainEvent { return &EmailEngagement{} },
+	NameEmailOpened:               func() DomainEvent { return &EmailEngagement{} },
+	NameEmailClicked:              func() DomainEvent { return &EmailEngagement{} },
+	NameEmailUnsubscribed:         func() DomainEvent { return &EmailEngagement{} },
+	NameEmailDelivered:            func() DomainEvent { return &EmailDelivery{} },
+	NameEmailDelayed:              func() DomainEvent { return &EmailDelivery{} },
+	NameEmailDropped:              func() DomainEvent { return &EmailDelivery{} },
+	NameEmailBounced:              func() DomainEvent { return &EmailDelivery{} },
+	NameEmailComplained:           func() DomainEvent { return &EmailDelivery{} },
+	NameMarketingConfirmed:        func() DomainEvent { return &MarketingConfirmed{} },
+	NameSmsConfirmed:              func() DomainEvent { return &SmsConfirmed{} },
+	NameCollected:                 func() DomainEvent { return &CollectedEvent{} },
+	NameContactTagged:             func() DomainEvent { return &ContactTagChange{} },
+	NameContactUntagged:           func() DomainEvent { return &ContactTagChange{} },
+	NameContactFieldChanged:       func() DomainEvent { return &ContactFieldChanged{} },
+	NameAutomationEnrolled:        func() DomainEvent { return &EnrollmentChange{} },
+	NameAutomationCompleted:       func() DomainEvent { return &EnrollmentChange{} },
+	NameAutomationGoalReached:     func() DomainEvent { return &EnrollmentChange{} },
+	NameAutomationExited:          func() DomainEvent { return &EnrollmentChange{} },
+	NameTelegramBound:             func() DomainEvent { return &BindingChange{} },
+	NameTelegramUnbound:           func() DomainEvent { return &BindingChange{} },
+	NameTelegramReceived:          func() DomainEvent { return &TelegramReceived{} },
+	NameTelegramSent:              func() DomainEvent { return &TelegramSent{} },
+	NameTelegramClicked:           func() DomainEvent { return &TelegramClicked{} },
+	NameTelegramUnsubscribed:      func() DomainEvent { return &TelegramUnsubscribed{} },
+	NameSmsReceived:               func() DomainEvent { return &SmsReceived{} },
+	NameSmsSent:                   func() DomainEvent { return &SmsSent{} },
+	NameSmsDelivered:              func() DomainEvent { return &SmsDelivery{} },
+	NameSmsUndelivered:            func() DomainEvent { return &SmsDelivery{} },
+	NameSmsClicked:                func() DomainEvent { return &SmsClicked{} },
+	NameAuditEntry:                func() DomainEvent { return &AuditEntry{} },
+	NameTrackingDomainChanged:     func() DomainEvent { return &TrackingDomainChanged{} },
 
 	NameUserVerificationRequested:  func() DomainEvent { return &LinkRequested{} },
 	NameUserPasswordResetRequested: func() DomainEvent { return &LinkRequested{} },
@@ -423,13 +429,14 @@ func (e *ContactErased) Project() Projection {
 // can't write a second email.sent row; open/click/unsubscribe leave it empty and
 // fall back to the envelope ULID.
 type EmailEngagement struct {
-	Action      string `json:"action"` // email.sent|email.opened|email.clicked|email.unsubscribed
-	WorkspaceID int64  `json:"workspaceId"`
-	ContactID   int64  `json:"contactId"`
-	Email       string `json:"email"`
-	BroadcastID int64  `json:"broadcastId"`
-	URL         string `json:"url,omitempty"`
-	DedupID     string `json:"dedupId,omitempty"`
+	ObservedAt  time.Time `json:"observedAt,omitzero"`
+	Action      string    `json:"action"` // email.sent|email.opened|email.clicked|email.unsubscribed
+	WorkspaceID int64     `json:"workspaceId"`
+	ContactID   int64     `json:"contactId"`
+	Email       string    `json:"email"`
+	BroadcastID int64     `json:"broadcastId"`
+	URL         string    `json:"url,omitempty"`
+	DedupID     string    `json:"dedupId,omitempty"`
 	// Machine is set on an open or click made by software (ADR 0053): it stays in the Event log
 	// but counts toward no figure, sets no rollup and starts no Automation.
 	Machine bool `json:"machine,omitempty"`
@@ -485,7 +492,8 @@ func (e *EmailEngagement) Project() Projection {
 		props[MachineProperty] = true
 	}
 	return Projection{
-		Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID,
+		OccurredAt: e.ObservedAt,
+		Subject:    e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, URL: e.URL, Machine: e.Machine, Captured: e.Captured,
 	}
 }
@@ -497,12 +505,13 @@ func (e *EmailEngagement) Project() Projection {
 // the address has no contact in the workspace; OutboundMessageID is 0 when the notice named no
 // message or none matched, and the Event then stays at the level of the address.
 type EmailDelivery struct {
-	Action      string `json:"action"` // email.delivered|email.delayed|email.dropped|email.bounced|email.complained
-	WorkspaceID int64  `json:"workspaceId"`
-	ContactID   int64  `json:"contactId,omitempty"`
-	Email       string `json:"email"`
-	BounceKind  string `json:"bounceKind,omitempty"` // hard|soft (bounces only)
-	Provider    string `json:"provider,omitempty"`   // ses, ...
+	ObservedAt  time.Time `json:"observedAt,omitzero"`
+	Action      string    `json:"action"` // email.delivered|email.delayed|email.dropped|email.bounced|email.complained
+	WorkspaceID int64     `json:"workspaceId"`
+	ContactID   int64     `json:"contactId,omitempty"`
+	Email       string    `json:"email"`
+	BounceKind  string    `json:"bounceKind,omitempty"` // hard|soft (bounces only)
+	Provider    string    `json:"provider,omitempty"`   // ses, ...
 	// SendingDomain is the domain the failed message was sent from (ADR 0011), so the
 	// complaint/bounce rate can be grained per Sending domain.
 	SendingDomain string `json:"sendingDomain,omitempty"`
@@ -519,7 +528,7 @@ type EmailDelivery struct {
 	BroadcastID       int64  `json:"broadcastId,omitempty"`
 	AutomationID      int64  `json:"automationId,omitempty"`
 	// DedupID is the stable upstream id (e.g. SNS messageId + recipient) used as
-	// the Event's source id, so a redelivered provider notification is dropped as a repeat.
+	// part of the Event's namespaced source identity, so a provider redelivery is a repeat.
 	DedupID string `json:"dedupId,omitempty"`
 	// Captured is set when the message went through a sender that delivers nowhere outside.
 	Captured bool `json:"captured,omitempty"`
@@ -559,7 +568,8 @@ func (e *EmailDelivery) Project() Projection {
 	// A notice of delivery is never a trigger nor an end of an Automation (ADR 0053), so its
 	// AutomationID only marks whose email it was.
 	return Projection{
-		Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID,
+		OccurredAt: e.ObservedAt,
+		Subject:    e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Captured: e.Captured,
 	}
 }
@@ -640,7 +650,7 @@ type CollectedEvent struct {
 	Phone       string         `json:"phone,omitempty"`
 	Properties  map[string]any `json:"properties,omitempty"`
 	OccurredAt  time.Time      `json:"occurredAt,omitzero"`
-	// DedupID is the Event's source id when the client gave it a clientEventId
+	// DedupID is the upstream identity when the client gave it a clientEventId
 	// (DedupKey: the source, the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`
 	// Backfill marks an event loaded from history: it is recorded, but no Automation enrolls

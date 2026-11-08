@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
@@ -129,6 +130,8 @@ type Client struct {
 	Erasure *ErasureClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// EventReceipt is the client for interacting with the EventReceipt builders.
+	EventReceipt *EventReceiptClient
 	// HeldOrderEvent is the client for interacting with the HeldOrderEvent builders.
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
@@ -255,6 +258,7 @@ func (c *Client) init() {
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
 	c.Erasure = NewErasureClient(c.config)
 	c.Event = NewEventClient(c.config)
+	c.EventReceipt = NewEventReceiptClient(c.config)
 	c.HeldOrderEvent = NewHeldOrderEventClient(c.config)
 	c.Hold = NewHoldClient(c.config)
 	c.InstanceAuditEntry = NewInstanceAuditEntryClient(c.config)
@@ -414,6 +418,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EmailTemplate:        NewEmailTemplateClient(cfg),
 		Erasure:              NewErasureClient(cfg),
 		Event:                NewEventClient(cfg),
+		EventReceipt:         NewEventReceiptClient(cfg),
 		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
 		Hold:                 NewHoldClient(cfg),
 		InstanceAuditEntry:   NewInstanceAuditEntryClient(cfg),
@@ -500,6 +505,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EmailTemplate:        NewEmailTemplateClient(cfg),
 		Erasure:              NewErasureClient(cfg),
 		Event:                NewEventClient(cfg),
+		EventReceipt:         NewEventReceiptClient(cfg),
 		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
 		Hold:                 NewHoldClient(cfg),
 		InstanceAuditEntry:   NewInstanceAuditEntryClient(cfg),
@@ -580,18 +586,18 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
-		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
-		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
-		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
-		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
-		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
-		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.EventReceipt,
+		c.HeldOrderEvent, c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.Invitation, c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order,
+		c.OrderMovement, c.OutboundMessage, c.Passkey, c.PasskeyChallenge,
+		c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode,
+		c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger, c.SchemaState,
+		c.Segment, c.SendCapLimiter, c.SendingDomain, c.ServiceCredential,
+		c.SignupItem, c.SignupSurveyResponse, c.StaffMember, c.StartToken,
+		c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain, c.TrackingHostChange,
+		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.UserTombstone, c.Visitor,
+		c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -604,18 +610,18 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
-		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
-		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
-		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
-		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
-		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
-		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.EventReceipt,
+		c.HeldOrderEvent, c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.Invitation, c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order,
+		c.OrderMovement, c.OutboundMessage, c.Passkey, c.PasskeyChallenge,
+		c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode,
+		c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger, c.SchemaState,
+		c.Segment, c.SendCapLimiter, c.SendingDomain, c.ServiceCredential,
+		c.SignupItem, c.SignupSurveyResponse, c.StaffMember, c.StartToken,
+		c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain, c.TrackingHostChange,
+		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.UserTombstone, c.Visitor,
+		c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -662,6 +668,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Erasure.mutate(ctx, m)
 	case *EventMutation:
 		return c.Event.mutate(ctx, m)
+	case *EventReceiptMutation:
+		return c.EventReceipt.mutate(ctx, m)
 	case *HeldOrderEventMutation:
 		return c.HeldOrderEvent.mutate(ctx, m)
 	case *HoldMutation:
@@ -4038,6 +4046,139 @@ func (c *EventClient) mutate(ctx context.Context, m *EventMutation) (Value, erro
 		return (&EventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Event mutation op: %q", m.Op())
+	}
+}
+
+// EventReceiptClient is a client for the EventReceipt schema.
+type EventReceiptClient struct {
+	config
+}
+
+// NewEventReceiptClient returns a client for the EventReceipt from the given config.
+func NewEventReceiptClient(c config) *EventReceiptClient {
+	return &EventReceiptClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `eventreceipt.Hooks(f(g(h())))`.
+func (c *EventReceiptClient) Use(hooks ...Hook) {
+	c.hooks.EventReceipt = append(c.hooks.EventReceipt, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `eventreceipt.Intercept(f(g(h())))`.
+func (c *EventReceiptClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EventReceipt = append(c.inters.EventReceipt, interceptors...)
+}
+
+// Create returns a builder for creating a EventReceipt entity.
+func (c *EventReceiptClient) Create() *EventReceiptCreate {
+	mutation := newEventReceiptMutation(c.config, OpCreate)
+	return &EventReceiptCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EventReceipt entities.
+func (c *EventReceiptClient) CreateBulk(builders ...*EventReceiptCreate) *EventReceiptCreateBulk {
+	return &EventReceiptCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EventReceiptClient) MapCreateBulk(slice any, setFunc func(*EventReceiptCreate, int)) *EventReceiptCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EventReceiptCreateBulk{err: fmt.Errorf("calling to EventReceiptClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EventReceiptCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EventReceiptCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EventReceipt.
+func (c *EventReceiptClient) Update() *EventReceiptUpdate {
+	mutation := newEventReceiptMutation(c.config, OpUpdate)
+	return &EventReceiptUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EventReceiptClient) UpdateOne(_m *EventReceipt) *EventReceiptUpdateOne {
+	mutation := newEventReceiptMutation(c.config, OpUpdateOne, withEventReceipt(_m))
+	return &EventReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EventReceiptClient) UpdateOneID(id int64) *EventReceiptUpdateOne {
+	mutation := newEventReceiptMutation(c.config, OpUpdateOne, withEventReceiptID(id))
+	return &EventReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EventReceipt.
+func (c *EventReceiptClient) Delete() *EventReceiptDelete {
+	mutation := newEventReceiptMutation(c.config, OpDelete)
+	return &EventReceiptDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EventReceiptClient) DeleteOne(_m *EventReceipt) *EventReceiptDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EventReceiptClient) DeleteOneID(id int64) *EventReceiptDeleteOne {
+	builder := c.Delete().Where(eventreceipt.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EventReceiptDeleteOne{builder}
+}
+
+// Query returns a query builder for EventReceipt.
+func (c *EventReceiptClient) Query() *EventReceiptQuery {
+	return &EventReceiptQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEventReceipt},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EventReceipt entity by its id.
+func (c *EventReceiptClient) Get(ctx context.Context, id int64) (*EventReceipt, error) {
+	return c.Query().Where(eventreceipt.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EventReceiptClient) GetX(ctx context.Context, id int64) *EventReceipt {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *EventReceiptClient) Hooks() []Hook {
+	return c.hooks.EventReceipt
+}
+
+// Interceptors returns the client interceptors.
+func (c *EventReceiptClient) Interceptors() []Interceptor {
+	return c.inters.EventReceipt
+}
+
+func (c *EventReceiptClient) mutate(ctx context.Context, m *EventReceiptMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EventReceiptCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EventReceiptUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EventReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EventReceiptDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown EventReceipt mutation op: %q", m.Op())
 	}
 }
 
@@ -12671,31 +12812,31 @@ type (
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		Binding, BrandKit, Broadcast, BroadcastRecipient, CapturedMessage,
 		Confirmation, ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate,
-		Erasure, Event, HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState,
-		Integration, Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion,
-		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, Segment, SendCapLimiter, SendingDomain,
-		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, StartToken,
-		Suppression, Tag, TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe,
-		Usage, User, UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
-		Workspace []ent.Hook
+		Erasure, Event, EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry,
+		InstanceState, Integration, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, Segment,
+		SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		Binding, BrandKit, Broadcast, BroadcastRecipient, CapturedMessage,
 		Confirmation, ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate,
-		Erasure, Event, HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState,
-		Integration, Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion,
-		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, Segment, SendCapLimiter, SendingDomain,
-		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, StartToken,
-		Suppression, Tag, TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe,
-		Usage, User, UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
-		Workspace []ent.Interceptor
+		Erasure, Event, EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry,
+		InstanceState, Integration, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, Segment,
+		SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

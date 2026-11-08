@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -58,6 +59,7 @@ func TestOpeningAndFollowingALinkOfACapturedMessageIsTrackedLikeAnyOther(t *test
 	assert.NotEmpty(t, followed.Header().Get("Location"))
 	assert.Len(t, env.QueuedEvents(t, events.NameEmailOpened), 2, "one email.opened Event per hit")
 	assert.Len(t, env.QueuedEvents(t, events.NameEmailClicked), 1)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	got, err := broadcasts.StatsOf(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastGlobexID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, got[fixtures.BroadcastGlobexID].Opened, "the recipient's rollup counts the open once")

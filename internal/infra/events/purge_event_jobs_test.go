@@ -52,7 +52,7 @@ func TestPurgeEventJobsRemovesTheJobsThatNameTheContact(t *testing.T) {
 	}))
 
 	left := lo.Map(env.EventJobs(t, kind), func(e events.Envelope, _ int) string { return e.SourceID() })
-	assert.ElementsMatch(t, []string{"running", "other-contact", "other-workspace"}, left)
+	assert.ElementsMatch(t, []string{"running", "email.bounced:other-contact", "email.bounced:other-workspace"}, left)
 	fanOuts := lo.Map(env.EventJobs(t, jobs.WebhookEventArgs{}.Kind()), func(e events.Envelope, _ int) string { return e.SourceID() })
-	assert.ElementsMatch(t, []string{"other-contact", "other-workspace"}, fanOuts, "every event kind is purged, the webhooks fan-out included")
+	assert.ElementsMatch(t, []string{"email.bounced:other-contact", "email.bounced:other-workspace"}, fanOuts, "every event kind is purged, the webhooks fan-out included")
 }

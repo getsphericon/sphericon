@@ -38,13 +38,12 @@ func (Event) Fields() []ent.Field {
 			StorageKey("id").
 			Immutable(),
 		// source_id is the event's natural upstream id (its DedupKey), else its envelope id
-		// (ULID), written by Publish. Unique, so a repeated event (a redelivery) finds its row
+		// (ULID), written by Publish. Unique within a Workspace, so a redelivery finds its row
 		// and is not published again. Nillable: rows written outside the bus (fixtures)
 		// leave it null, and Postgres treats nulls as distinct.
 		field.String("source_id").
 			Optional().
-			Nillable().
-			Unique(),
+			Nillable(),
 		// The authoritative link to the Contact, resolved by stable identity at ingest
 		// (never by email). A nullable FK with ON DELETE SET NULL: Events are append-only
 		// and outlive the Contact they were about. Unlike what happened (action, time),
@@ -129,6 +128,8 @@ func (Event) Edges() []ent.Edge {
 
 func (Event) Indexes() []ent.Index {
 	return []ent.Index{
+		// An upstream identifier belongs to its Workspace, not to another customer's source.
+		index.Fields("workspace_id", "source_id").Unique(),
 		// Backs event-based segment conditions: the correlated EXISTS joins the
 		// Contact to its Events by the stable contact_id (not email) and filters by
 		// the event type.

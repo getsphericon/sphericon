@@ -174,7 +174,7 @@ func TestSESHookCountsOutcomesAndDedupesRedelivery(t *testing.T) {
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, bounce).Code)
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, snsNotification(t, "complaint")).Code)
 
-	n, err := env.DB.Event.Query().Where(event.SourceID("sns-msg-1/" + fixtures.ContactAliceEmail)).Count(t.Context())
+	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailBounced + ":sns-msg-1/" + fixtures.ContactAliceEmail)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
 	scrape := metricstest.ScrapeMetrics(t)

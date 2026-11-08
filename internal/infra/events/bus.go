@@ -28,7 +28,8 @@ type Bus struct {
 	hooks []ent.Hook
 	jobs  JobQueue
 	// consumers are the consumers every Publish inserts jobs for (UseConsumers).
-	consumers []Consumer
+	consumers   []Consumer
+	subscribers []Subscriber
 	// stored run for every Event newly stored, once its transaction committed (OnStored).
 	stored []func(context.Context, DomainEvent)
 
@@ -100,8 +101,12 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	txClient := b.newTxClient(newTxDriver(sqlTx))
 	txClient.Use(b.hooks...)
 
-	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers, stored: b.stored, now: b.now}
-	if err := fn(txClient, pub); err != nil {
+	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers, subscribers: b.subscribers, stored: b.stored, now: b.now}
+	err = fn(txClient, pub)
+	if err == nil {
+		err = pub.failed
+	}
+	if err != nil {
 		_ = sqlTx.Rollback()
 		return err
 	}
@@ -172,7 +177,9 @@ type txPublisher struct {
 	// a purge of the queue runs on tx.
 	jobs JobQueue
 	// consumers are the bus's consumers, whose jobs Publish inserts on tx.
-	consumers []Consumer
+	consumers   []Consumer
+	subscribers []Subscriber
+	failed      error
 	// stored are the bus's OnStored functions, run for a newly stored Event after the commit.
 	stored []func(context.Context, DomainEvent)
 	// committed runs once tx has committed, in order.
@@ -181,12 +188,16 @@ type txPublisher struct {
 	now func() time.Time
 }
 
-// Publish stamps the envelope of ev and, for an event that is an Event (Projected), writes its
-// row in the transaction. An event whose row already exists is a repeat, and is not published
-// again: no consumer sees it twice. Otherwise it inserts, in the transaction, the job of every
-// consumer that wants the event. An error leaves the caller to roll back, so no state commits
-// without its event.
-func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
+// Publish claims an external identity, writes the optional Event row, runs mandatory reactions
+// and queues asynchronous consumers in one transaction. A duplicate reaches neither kind of
+// handler. Any publication error prevents the transaction from committing, even if the caller
+// ignores the returned error.
+func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
+	defer func() {
+		if err != nil {
+			p.failed = err
+		}
+	}()
 	data, err := json.Marshal(ev)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
@@ -194,6 +205,9 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	recorded := p.now().UTC()
 	projection, projected := ProjectionOf(ev)
 	occurred := projection.OccurredAt
+	if observation, ok := ev.(interface{ ObservationTime() time.Time }); ok {
+		occurred = observation.ObservationTime()
+	}
 	if occurred.IsZero() {
 		occurred = recorded
 	}
@@ -216,6 +230,10 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		CausedBy:    causeOf(ctx),
 	}
 	stamp(ctx, &env)
+	first, err := p.claimExternal(ctx, env)
+	if err != nil || !first {
+		return err
+	}
 	if projected {
 		first, err := storeEvent(ctx, p.client, env, ev, projection)
 		if err != nil {
@@ -228,7 +246,10 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 			p.committed = append(p.committed, func() { f(context.WithoutCancel(ctx), ev) })
 		}
 	}
-	if err := p.queueConsumers(ctx, env, ev); err != nil {
+	if err := p.react(ctx, env, ev); err != nil {
+		return err
+	}
+	if err := p.queueConsumers(Handling(ctx, env), env, ev); err != nil {
 		return fmt.Errorf("queue the consumers of %q: %w", env.Name, err)
 	}
 	return nil

@@ -21,6 +21,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 )
@@ -54,7 +56,7 @@ func queuedEnvelopes(t *testing.T, rc *river.Client[*sql.Tx], names []string) []
 	var out []events.Envelope
 	for _, args := range listArgs(t, rc, river.NewJobListParams().Queues(events.QueueEvents)) {
 		e := decodeArgs[events.EventJob](t, args).Envelope
-		if seen[e.ID] || (len(names) > 0 && !slices.Contains(names, e.Name)) {
+		if e.ID == "" || seen[e.ID] || (len(names) > 0 && !slices.Contains(names, e.Name)) {
 			continue
 		}
 		seen[e.ID] = true
@@ -175,6 +177,8 @@ func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	bus.UseJobs(inserter)
+	bus.UseSubscribers(channelstop.Subscribers()...)
+	bus.UseSubscribers(suppressions.Subscribers()...)
 	bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
 	bus.UseConsumers(recorder)
 	bus.OnStored(app.RecordSendOutcome)

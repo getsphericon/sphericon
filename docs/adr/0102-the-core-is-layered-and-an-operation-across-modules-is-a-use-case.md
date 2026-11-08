@@ -152,9 +152,10 @@ Other parts of the core are misplaced too:
   moving code and after composing in a package above, since an interface "still creates a relationship of a
   sort". Shopify reports of its monolith that inverted dependencies "often made code harder to understand"
   (https://shopify.engineering/a-packwerk-retrospective).
-- **Domain events between modules.** These cascades must commit with the change that causes them: an
+- **Asynchronous domain events between modules.** These cascades must commit with the change that causes them: an
   unsubscribe and the end of the Enrollment, a Live use check and the removal under one lock. An event
-  consumer runs after the commit.
+  consumer runs after the commit. ADR 0114 adds synchronous subscribers inside the publishing
+  transaction for mandatory SMS reactions; it does not move these invariants to asynchronous work.
 - **A domain free of ent, behind repositories.** Every entity's shape would be stated a second time beside
   its ent schema (review rule 6). What that buys is a domain tested against fakes, which review rule 11
   rejects.

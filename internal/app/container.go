@@ -36,10 +36,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/oauth"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -439,6 +441,8 @@ var editionPackage = do.Package(
 		// is built after the bus, which its Audit log records through.
 		bus.Use(ee.Hooks(do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i))...)
 		bus.UseJobs(do.MustInvoke[*river.Client[*sql.Tx]](i))
+		bus.UseSubscribers(channelstop.Subscribers()...)
+		bus.UseSubscribers(suppressions.Subscribers()...)
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
 		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
 		// A provider's bounce or complaint counts on the send-outcome counter once it is stored.

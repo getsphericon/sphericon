@@ -11,6 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -63,18 +64,21 @@ func TestAnAutomationMessageIsStampedOnceByAHumanHitAndNeverByAMachineOne(t *tes
 
 	hit(t, env, openPath(t, env, id), scannerUA, personAddr)
 	hit(t, env, clickPathTo(t, env, id, linkA), scannerUA, personAddr)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	opened, clicked := stamps()
 	assert.Nil(t, opened, "a machine open stamps nothing")
 	assert.Nil(t, clicked, "a machine click stamps nothing")
 
 	hit(t, env, openPath(t, env, id), personUA, personAddr)
 	hit(t, env, clickPathTo(t, env, id, linkA), personUA, personAddr)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	opened, clicked = stamps()
 	require.NotNil(t, opened, "a person's open stamps the message")
 	require.NotNil(t, clicked, "a person's click stamps the message")
 
 	hit(t, env, openPath(t, env, id), personUA, personAddr)
 	hit(t, env, clickPathTo(t, env, id, linkB), personUA, personAddr)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	again, clickedAgain := stamps()
 	assert.True(t, opened.Equal(*again), "a second open leaves the stamp unchanged")
 	assert.True(t, clicked.Equal(*clickedAgain), "a second click leaves the stamp unchanged")

@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -236,7 +235,6 @@ type engaged struct {
 	msg     *ent.OutboundMessage
 	contact *ent.Contact // nil: the message has no Contact
 	email   string
-	scope   *ent.Scoped
 }
 
 // loadEngaged resolves a token's message to its Workspace scope and Contact. A message whose
@@ -254,14 +252,14 @@ func loadEngaged(ctx context.Context, client *ent.Client, messageID int64) (enga
 		if msg.Destination == "" {
 			return engaged{}, false
 		}
-		return engaged{msg: msg, email: msg.Destination, scope: s}, true
+		return engaged{msg: msg, email: msg.Destination}, true
 	}
 	c, err := s.Contact().Get(ctx, *msg.ContactID)
 	if err != nil {
 		logEngagedLookup(ctx, messageID, err)
 		return engaged{}, false
 	}
-	return engaged{msg: msg, contact: c, email: lo.FromPtr(c.Email), scope: s}, true
+	return engaged{msg: msg, contact: c, email: lo.FromPtr(c.Email)}, true
 }
 
 // logEngagedLookup logs a failed lookup of an engagement's message or Contact, unless the row is
@@ -272,13 +270,13 @@ func logEngagedLookup(ctx context.Context, messageID int64, err error) {
 	}
 }
 
-func (e engaged) engagement(action, dest string, software bool) *events.EmailEngagement {
+func (e engaged) engagement(action, dest string, software bool, at time.Time) *events.EmailEngagement {
 	var contactID int64 // 0: kept by address
 	if e.contact != nil {
 		contactID = e.contact.ID
 	}
 	return &events.EmailEngagement{
-		Action: action, WorkspaceID: e.msg.WorkspaceID, ContactID: contactID,
+		ObservedAt: at, Action: action, WorkspaceID: e.msg.WorkspaceID, ContactID: contactID,
 		Email: e.email, BroadcastID: lo.FromPtr(e.msg.BroadcastID), URL: dest,
 		AutomationID:      lo.FromPtr(e.msg.AutomationID),
 		OutboundMessageID: e.msg.ID,
@@ -293,12 +291,13 @@ func isMachine(r *http.Request, detector *privaterelayranges.Detector) bool {
 }
 
 // click is the Event of a click on dest in the message: the Channel's own, with the same facts.
-func (e engaged) click(dest string, software bool) events.DomainEvent {
+func (e engaged) click(dest string, software bool, at time.Time) events.DomainEvent {
 	var contactID int64
 	if e.contact != nil {
 		contactID = e.contact.ID
 	}
 	click := events.LinkClick{
+		ObservedAt:  at,
 		WorkspaceID: e.msg.WorkspaceID, ContactID: contactID, Email: e.email,
 		IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
 		BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
@@ -310,7 +309,7 @@ func (e engaged) click(dest string, software bool) events.DomainEvent {
 	case channels.SMS:
 		return new(events.SmsClicked(click))
 	default:
-		return e.engagement(events.NameEmailClicked, dest, software)
+		return e.engagement(events.NameEmailClicked, dest, software, at)
 	}
 }
 
@@ -319,14 +318,7 @@ func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messag
 	if !ok {
 		return
 	}
-	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
-		if !software {
-			if _, err := outboundmessages.StampOpened(ctx, ts, e.msg.ID, at); err != nil {
-				return err
-			}
-		}
-		return pub.Publish(ctx, e.engagement(events.NameEmailOpened, "", software))
-	})
+	err := bus.Publish(ctx, e.engagement(events.NameEmailOpened, "", software, at))
 	if err != nil {
 		logging.FromContext(ctx).Error("tracking: record open failed", "message_id", messageID, "err", err)
 	}
@@ -337,14 +329,7 @@ func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, messa
 	if !ok {
 		return
 	}
-	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
-		if !software {
-			if _, err := outboundmessages.StampClicked(ctx, ts, e.msg.ID, at); err != nil {
-				return err
-			}
-		}
-		return pub.Publish(ctx, e.click(dest, software))
-	})
+	err := bus.Publish(ctx, e.click(dest, software, at))
 	if err != nil {
 		logging.FromContext(ctx).Error("tracking: record click failed", "message_id", messageID, "err", err)
 	}
