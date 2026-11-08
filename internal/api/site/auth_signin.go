@@ -123,7 +123,11 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 		}
 		return h.signinHeld(flow, token), nil
 	}
-	if users.HasSecondFactor(signedIn.User) {
+	active, err := h.secondFactor.Active(ctx, signedIn.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	if active {
 		// A provider sign-in replaces only the password step: an enrolled Second factor still
 		// gets the challenge of ADR 0020, finished on the login page through the same second
 		// step (and the same Login throttle) as after a password.

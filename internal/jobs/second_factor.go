@@ -6,9 +6,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 )
 
 // secondFactorReminderInterval is how often the reminder sweep runs: a User is
@@ -16,7 +14,7 @@ import (
 const secondFactorReminderInterval = 15 * time.Minute
 
 // RemindSecondFactorArgs is the periodic tick that reminds Users whose grace under a
-// Two-factor requirement ends within users.ReminderLead (ADR 0020).
+// Two-factor requirement ends within secondfactors.ReminderLead (ADR 0020).
 type RemindSecondFactorArgs struct{}
 
 func (RemindSecondFactorArgs) Kind() string { return "second_factor_remind" }
@@ -26,16 +24,15 @@ func (RemindSecondFactorArgs) Kind() string { return "second_factor_remind" }
 type RemindSecondFactorWorker struct {
 	river.WorkerDefaults[RemindSecondFactorArgs]
 
-	ent *ent.Client
-	bus *events.Bus
-	now func() time.Time
+	factors *secondfactors.Module
+	now     func() time.Time
 }
 
 // NewRemindSecondFactorWorker builds the reminder sweep on the Instance clock now.
-func NewRemindSecondFactorWorker(client *ent.Client, bus *events.Bus, now func() time.Time) *RemindSecondFactorWorker {
-	return &RemindSecondFactorWorker{ent: client, bus: bus, now: now}
+func NewRemindSecondFactorWorker(factors *secondfactors.Module, now func() time.Time) *RemindSecondFactorWorker {
+	return &RemindSecondFactorWorker{factors: factors, now: now}
 }
 
 func (w *RemindSecondFactorWorker) Work(ctx context.Context, _ *river.Job[RemindSecondFactorArgs]) error {
-	return users.RemindSecondFactorDeadlines(ctx, w.ent, w.bus, w.now())
+	return w.factors.RemindDeadlines(ctx, w.now())
 }

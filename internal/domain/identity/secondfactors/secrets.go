@@ -1,4 +1,4 @@
-package users
+package secondfactors
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
@@ -15,15 +15,15 @@ import (
 // (docs/architecture.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	return []secrets.Sweep{{
-		Column: "users.second_factor_secret_encrypted",
+		Column: "second_factors.secret_encrypted",
 		Page: func(ctx context.Context, after int64, n int) ([]secrets.Stored, error) {
-			rs, err := c.User.Query().Where(user.IDGT(after)).Order(ent.Asc(user.FieldID)).Limit(n).All(ctx)
-			return lo.Map(rs, func(e *ent.User, _ int) secrets.Stored {
-				return secrets.Stored{ID: e.ID, Value: e.SecondFactorSecretEncrypted}
+			rs, err := c.SecondFactor.Query().Where(secondfactor.IDGT(after)).Order(ent.Asc(secondfactor.FieldID)).Limit(n).All(ctx)
+			return lo.Map(rs, func(e *ent.SecondFactor, _ int) secrets.Stored {
+				return secrets.Stored{ID: e.ID, Value: e.SecretEncrypted}
 			}), err
 		},
 		Swap: func(ctx context.Context, id int64, prev, next string) (bool, error) {
-			n, err := c.User.Update().Where(user.ID(id), user.SecondFactorSecretEncrypted(prev)).SetSecondFactorSecretEncrypted(next).Save(ctx)
+			n, err := c.SecondFactor.Update().Where(secondfactor.ID(id), secondfactor.SecretEncrypted(prev)).SetSecretEncrypted(next).Save(ctx)
 			return n > 0, err
 		},
 	}}

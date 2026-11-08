@@ -60,6 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schemastate"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -189,6 +190,7 @@ func checkColumn(t, c string) error {
 			ruleversion.Table:          ruleversion.ValidColumn,
 			ruleversiontrigger.Table:   ruleversiontrigger.ValidColumn,
 			schemastate.Table:          schemastate.ValidColumn,
+			secondfactor.Table:         secondfactor.ValidColumn,
 			segment.Table:              segment.ValidColumn,
 			sendcaplimiter.Table:       sendcaplimiter.ValidColumn,
 			sendingdomain.Table:        sendingdomain.ValidColumn,

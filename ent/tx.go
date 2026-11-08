@@ -110,6 +110,8 @@ type Tx struct {
 	RuleVersionTrigger *RuleVersionTriggerClient
 	// SchemaState is the client for interacting with the SchemaState builders.
 	SchemaState *SchemaStateClient
+	// SecondFactor is the client for interacting with the SecondFactor builders.
+	SecondFactor *SecondFactorClient
 	// Segment is the client for interacting with the Segment builders.
 	Segment *SegmentClient
 	// SendCapLimiter is the client for interacting with the SendCapLimiter builders.
@@ -331,6 +333,7 @@ func (tx *Tx) init() {
 	tx.RuleVersion = NewRuleVersionClient(tx.config)
 	tx.RuleVersionTrigger = NewRuleVersionTriggerClient(tx.config)
 	tx.SchemaState = NewSchemaStateClient(tx.config)
+	tx.SecondFactor = NewSecondFactorClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendCapLimiter = NewSendCapLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)

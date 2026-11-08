@@ -126,8 +126,10 @@ the Telemetry report are the Instance state module's: a test builds it with `ins
 …)`, passing its stub of the release source or the receiver's client, or nil where the operation is
 not exercised, and the server's own is `env.Instance`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
-owns holds the raw client: the Second factor's is `env.SecondFactor`
-(`internal/usecase/secondfactorcheck`), the Workspace creation's `env.WorkspaceCreation`
+owns holds the raw client: the Second factor reset's is `env.SecondFactorReset`
+(`internal/usecase/secondfactorreset`, with the races of a reset against the factor's other
+changes; the Second factor check is the module `internal/domain/identity/secondfactors`,
+`env.SecondFactor`, whose `_test` package holds its own), the Workspace creation's `env.WorkspaceCreation`
 (`internal/usecase/workspacecreation`; a test of its id retry builds it with `New` and an id
 generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
 Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle

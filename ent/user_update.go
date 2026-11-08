@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
@@ -151,94 +152,6 @@ func (_u *UserUpdate) AddSessionEpoch(v int64) *UserUpdate {
 	return _u
 }
 
-// SetSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field.
-func (_u *UserUpdate) SetSecondFactorSecretEncrypted(v string) *UserUpdate {
-	_u.mutation.SetSecondFactorSecretEncrypted(v)
-	return _u
-}
-
-// SetNillableSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableSecondFactorSecretEncrypted(v *string) *UserUpdate {
-	if v != nil {
-		_u.SetSecondFactorSecretEncrypted(*v)
-	}
-	return _u
-}
-
-// ClearSecondFactorSecretEncrypted clears the value of the "second_factor_secret_encrypted" field.
-func (_u *UserUpdate) ClearSecondFactorSecretEncrypted() *UserUpdate {
-	_u.mutation.ClearSecondFactorSecretEncrypted()
-	return _u
-}
-
-// SetSecondFactorGeneration sets the "second_factor_generation" field.
-func (_u *UserUpdate) SetSecondFactorGeneration(v int64) *UserUpdate {
-	_u.mutation.ResetSecondFactorGeneration()
-	_u.mutation.SetSecondFactorGeneration(v)
-	return _u
-}
-
-// SetNillableSecondFactorGeneration sets the "second_factor_generation" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableSecondFactorGeneration(v *int64) *UserUpdate {
-	if v != nil {
-		_u.SetSecondFactorGeneration(*v)
-	}
-	return _u
-}
-
-// AddSecondFactorGeneration adds value to the "second_factor_generation" field.
-func (_u *UserUpdate) AddSecondFactorGeneration(v int64) *UserUpdate {
-	_u.mutation.AddSecondFactorGeneration(v)
-	return _u
-}
-
-// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
-func (_u *UserUpdate) ClearSecondFactorGeneration() *UserUpdate {
-	_u.mutation.ClearSecondFactorGeneration()
-	return _u
-}
-
-// SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
-func (_u *UserUpdate) SetSecondFactorConfirmedAt(v time.Time) *UserUpdate {
-	_u.mutation.SetSecondFactorConfirmedAt(v)
-	return _u
-}
-
-// SetNillableSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableSecondFactorConfirmedAt(v *time.Time) *UserUpdate {
-	if v != nil {
-		_u.SetSecondFactorConfirmedAt(*v)
-	}
-	return _u
-}
-
-// ClearSecondFactorConfirmedAt clears the value of the "second_factor_confirmed_at" field.
-func (_u *UserUpdate) ClearSecondFactorConfirmedAt() *UserUpdate {
-	_u.mutation.ClearSecondFactorConfirmedAt()
-	return _u
-}
-
-// SetSecondFactorLastStep sets the "second_factor_last_step" field.
-func (_u *UserUpdate) SetSecondFactorLastStep(v int64) *UserUpdate {
-	_u.mutation.ResetSecondFactorLastStep()
-	_u.mutation.SetSecondFactorLastStep(v)
-	return _u
-}
-
-// SetNillableSecondFactorLastStep sets the "second_factor_last_step" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableSecondFactorLastStep(v *int64) *UserUpdate {
-	if v != nil {
-		_u.SetSecondFactorLastStep(*v)
-	}
-	return _u
-}
-
-// AddSecondFactorLastStep adds value to the "second_factor_last_step" field.
-func (_u *UserUpdate) AddSecondFactorLastStep(v int64) *UserUpdate {
-	_u.mutation.AddSecondFactorLastStep(v)
-	return _u
-}
-
 // SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
 func (_u *UserUpdate) SetSignupSurveyDueAt(v time.Time) *UserUpdate {
 	_u.mutation.SetSignupSurveyDueAt(v)
@@ -348,6 +261,25 @@ func (_u *UserUpdate) AddSentInvitations(v ...*Invitation) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddSentInvitationIDs(ids...)
+}
+
+// SetSecondFactorID sets the "second_factor" edge to the SecondFactor entity by ID.
+func (_u *UserUpdate) SetSecondFactorID(id int64) *UserUpdate {
+	_u.mutation.SetSecondFactorID(id)
+	return _u
+}
+
+// SetNillableSecondFactorID sets the "second_factor" edge to the SecondFactor entity by ID if the given value is not nil.
+func (_u *UserUpdate) SetNillableSecondFactorID(id *int64) *UserUpdate {
+	if id != nil {
+		_u = _u.SetSecondFactorID(*id)
+	}
+	return _u
+}
+
+// SetSecondFactor sets the "second_factor" edge to the SecondFactor entity.
+func (_u *UserUpdate) SetSecondFactor(v *SecondFactor) *UserUpdate {
+	return _u.SetSecondFactorID(v.ID)
 }
 
 // AddRecoveryCodeIDs adds the "recovery_codes" edge to the RecoveryCode entity by IDs.
@@ -474,6 +406,12 @@ func (_u *UserUpdate) RemoveSentInvitations(v ...*Invitation) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSentInvitationIDs(ids...)
+}
+
+// ClearSecondFactor clears the "second_factor" edge to the SecondFactor entity.
+func (_u *UserUpdate) ClearSecondFactor() *UserUpdate {
+	_u.mutation.ClearSecondFactor()
+	return _u
 }
 
 // ClearRecoveryCodes clears all "recovery_codes" edges to the RecoveryCode entity.
@@ -614,11 +552,6 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.SecondFactorGeneration(); ok {
-		if err := user.SecondFactorGenerationValidator(v); err != nil {
-			return &ValidationError{Name: "second_factor_generation", err: fmt.Errorf(`ent: validator failed for field "User.second_factor_generation": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Timezone(); ok {
 		if err := user.TimezoneValidator(v); err != nil {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
@@ -682,33 +615,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedSessionEpoch(); ok {
 		_spec.AddField(user.FieldSessionEpoch, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.SecondFactorSecretEncrypted(); ok {
-		_spec.SetField(user.FieldSecondFactorSecretEncrypted, field.TypeString, value)
-	}
-	if _u.mutation.SecondFactorSecretEncryptedCleared() {
-		_spec.ClearField(user.FieldSecondFactorSecretEncrypted, field.TypeString)
-	}
-	if value, ok := _u.mutation.SecondFactorGeneration(); ok {
-		_spec.SetField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedSecondFactorGeneration(); ok {
-		_spec.AddField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
-	}
-	if _u.mutation.SecondFactorGenerationCleared() {
-		_spec.ClearField(user.FieldSecondFactorGeneration, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.SecondFactorConfirmedAt(); ok {
-		_spec.SetField(user.FieldSecondFactorConfirmedAt, field.TypeTime, value)
-	}
-	if _u.mutation.SecondFactorConfirmedAtCleared() {
-		_spec.ClearField(user.FieldSecondFactorConfirmedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.SecondFactorLastStep(); ok {
-		_spec.SetField(user.FieldSecondFactorLastStep, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedSecondFactorLastStep(); ok {
-		_spec.AddField(user.FieldSecondFactorLastStep, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SignupSurveyDueAt(); ok {
 		_spec.SetField(user.FieldSignupSurveyDueAt, field.TypeTime, value)
@@ -817,6 +723,35 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(invitation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SecondFactorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SecondFactorTable,
+			Columns: []string{user.SecondFactorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(secondfactor.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SecondFactorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SecondFactorTable,
+			Columns: []string{user.SecondFactorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(secondfactor.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1170,94 +1105,6 @@ func (_u *UserUpdateOne) AddSessionEpoch(v int64) *UserUpdateOne {
 	return _u
 }
 
-// SetSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field.
-func (_u *UserUpdateOne) SetSecondFactorSecretEncrypted(v string) *UserUpdateOne {
-	_u.mutation.SetSecondFactorSecretEncrypted(v)
-	return _u
-}
-
-// SetNillableSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableSecondFactorSecretEncrypted(v *string) *UserUpdateOne {
-	if v != nil {
-		_u.SetSecondFactorSecretEncrypted(*v)
-	}
-	return _u
-}
-
-// ClearSecondFactorSecretEncrypted clears the value of the "second_factor_secret_encrypted" field.
-func (_u *UserUpdateOne) ClearSecondFactorSecretEncrypted() *UserUpdateOne {
-	_u.mutation.ClearSecondFactorSecretEncrypted()
-	return _u
-}
-
-// SetSecondFactorGeneration sets the "second_factor_generation" field.
-func (_u *UserUpdateOne) SetSecondFactorGeneration(v int64) *UserUpdateOne {
-	_u.mutation.ResetSecondFactorGeneration()
-	_u.mutation.SetSecondFactorGeneration(v)
-	return _u
-}
-
-// SetNillableSecondFactorGeneration sets the "second_factor_generation" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableSecondFactorGeneration(v *int64) *UserUpdateOne {
-	if v != nil {
-		_u.SetSecondFactorGeneration(*v)
-	}
-	return _u
-}
-
-// AddSecondFactorGeneration adds value to the "second_factor_generation" field.
-func (_u *UserUpdateOne) AddSecondFactorGeneration(v int64) *UserUpdateOne {
-	_u.mutation.AddSecondFactorGeneration(v)
-	return _u
-}
-
-// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
-func (_u *UserUpdateOne) ClearSecondFactorGeneration() *UserUpdateOne {
-	_u.mutation.ClearSecondFactorGeneration()
-	return _u
-}
-
-// SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
-func (_u *UserUpdateOne) SetSecondFactorConfirmedAt(v time.Time) *UserUpdateOne {
-	_u.mutation.SetSecondFactorConfirmedAt(v)
-	return _u
-}
-
-// SetNillableSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableSecondFactorConfirmedAt(v *time.Time) *UserUpdateOne {
-	if v != nil {
-		_u.SetSecondFactorConfirmedAt(*v)
-	}
-	return _u
-}
-
-// ClearSecondFactorConfirmedAt clears the value of the "second_factor_confirmed_at" field.
-func (_u *UserUpdateOne) ClearSecondFactorConfirmedAt() *UserUpdateOne {
-	_u.mutation.ClearSecondFactorConfirmedAt()
-	return _u
-}
-
-// SetSecondFactorLastStep sets the "second_factor_last_step" field.
-func (_u *UserUpdateOne) SetSecondFactorLastStep(v int64) *UserUpdateOne {
-	_u.mutation.ResetSecondFactorLastStep()
-	_u.mutation.SetSecondFactorLastStep(v)
-	return _u
-}
-
-// SetNillableSecondFactorLastStep sets the "second_factor_last_step" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableSecondFactorLastStep(v *int64) *UserUpdateOne {
-	if v != nil {
-		_u.SetSecondFactorLastStep(*v)
-	}
-	return _u
-}
-
-// AddSecondFactorLastStep adds value to the "second_factor_last_step" field.
-func (_u *UserUpdateOne) AddSecondFactorLastStep(v int64) *UserUpdateOne {
-	_u.mutation.AddSecondFactorLastStep(v)
-	return _u
-}
-
 // SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
 func (_u *UserUpdateOne) SetSignupSurveyDueAt(v time.Time) *UserUpdateOne {
 	_u.mutation.SetSignupSurveyDueAt(v)
@@ -1367,6 +1214,25 @@ func (_u *UserUpdateOne) AddSentInvitations(v ...*Invitation) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddSentInvitationIDs(ids...)
+}
+
+// SetSecondFactorID sets the "second_factor" edge to the SecondFactor entity by ID.
+func (_u *UserUpdateOne) SetSecondFactorID(id int64) *UserUpdateOne {
+	_u.mutation.SetSecondFactorID(id)
+	return _u
+}
+
+// SetNillableSecondFactorID sets the "second_factor" edge to the SecondFactor entity by ID if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableSecondFactorID(id *int64) *UserUpdateOne {
+	if id != nil {
+		_u = _u.SetSecondFactorID(*id)
+	}
+	return _u
+}
+
+// SetSecondFactor sets the "second_factor" edge to the SecondFactor entity.
+func (_u *UserUpdateOne) SetSecondFactor(v *SecondFactor) *UserUpdateOne {
+	return _u.SetSecondFactorID(v.ID)
 }
 
 // AddRecoveryCodeIDs adds the "recovery_codes" edge to the RecoveryCode entity by IDs.
@@ -1493,6 +1359,12 @@ func (_u *UserUpdateOne) RemoveSentInvitations(v ...*Invitation) *UserUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSentInvitationIDs(ids...)
+}
+
+// ClearSecondFactor clears the "second_factor" edge to the SecondFactor entity.
+func (_u *UserUpdateOne) ClearSecondFactor() *UserUpdateOne {
+	_u.mutation.ClearSecondFactor()
+	return _u
 }
 
 // ClearRecoveryCodes clears all "recovery_codes" edges to the RecoveryCode entity.
@@ -1646,11 +1518,6 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.SecondFactorGeneration(); ok {
-		if err := user.SecondFactorGenerationValidator(v); err != nil {
-			return &ValidationError{Name: "second_factor_generation", err: fmt.Errorf(`ent: validator failed for field "User.second_factor_generation": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Timezone(); ok {
 		if err := user.TimezoneValidator(v); err != nil {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
@@ -1731,33 +1598,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.AddedSessionEpoch(); ok {
 		_spec.AddField(user.FieldSessionEpoch, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.SecondFactorSecretEncrypted(); ok {
-		_spec.SetField(user.FieldSecondFactorSecretEncrypted, field.TypeString, value)
-	}
-	if _u.mutation.SecondFactorSecretEncryptedCleared() {
-		_spec.ClearField(user.FieldSecondFactorSecretEncrypted, field.TypeString)
-	}
-	if value, ok := _u.mutation.SecondFactorGeneration(); ok {
-		_spec.SetField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedSecondFactorGeneration(); ok {
-		_spec.AddField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
-	}
-	if _u.mutation.SecondFactorGenerationCleared() {
-		_spec.ClearField(user.FieldSecondFactorGeneration, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.SecondFactorConfirmedAt(); ok {
-		_spec.SetField(user.FieldSecondFactorConfirmedAt, field.TypeTime, value)
-	}
-	if _u.mutation.SecondFactorConfirmedAtCleared() {
-		_spec.ClearField(user.FieldSecondFactorConfirmedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.SecondFactorLastStep(); ok {
-		_spec.SetField(user.FieldSecondFactorLastStep, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedSecondFactorLastStep(); ok {
-		_spec.AddField(user.FieldSecondFactorLastStep, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SignupSurveyDueAt(); ok {
 		_spec.SetField(user.FieldSignupSurveyDueAt, field.TypeTime, value)
@@ -1866,6 +1706,35 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(invitation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SecondFactorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SecondFactorTable,
+			Columns: []string{user.SecondFactorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(secondfactor.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SecondFactorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SecondFactorTable,
+			Columns: []string{user.SecondFactorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(secondfactor.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

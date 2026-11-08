@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
@@ -33,6 +34,7 @@ type UserQuery struct {
 	predicates               []predicate.User
 	withMemberships          *MembershipQuery
 	withSentInvitations      *InvitationQuery
+	withSecondFactor         *SecondFactorQuery
 	withRecoveryCodes        *RecoveryCodeQuery
 	withPasskeys             *PasskeyQuery
 	withIdentities           *UserIdentityQuery
@@ -112,6 +114,28 @@ func (_q *UserQuery) QuerySentInvitations() *InvitationQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(invitation.Table, invitation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.SentInvitationsTable, user.SentInvitationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySecondFactor chains the current query on the "second_factor" edge.
+func (_q *UserQuery) QuerySecondFactor() *SecondFactorQuery {
+	query := (&SecondFactorClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(secondfactor.Table, secondfactor.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.SecondFactorTable, user.SecondFactorColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -423,6 +447,7 @@ func (_q *UserQuery) Clone() *UserQuery {
 		predicates:               append([]predicate.User{}, _q.predicates...),
 		withMemberships:          _q.withMemberships.Clone(),
 		withSentInvitations:      _q.withSentInvitations.Clone(),
+		withSecondFactor:         _q.withSecondFactor.Clone(),
 		withRecoveryCodes:        _q.withRecoveryCodes.Clone(),
 		withPasskeys:             _q.withPasskeys.Clone(),
 		withIdentities:           _q.withIdentities.Clone(),
@@ -454,6 +479,17 @@ func (_q *UserQuery) WithSentInvitations(opts ...func(*InvitationQuery)) *UserQu
 		opt(query)
 	}
 	_q.withSentInvitations = query
+	return _q
+}
+
+// WithSecondFactor tells the query-builder to eager-load the nodes that are connected to
+// the "second_factor" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithSecondFactor(opts ...func(*SecondFactorQuery)) *UserQuery {
+	query := (&SecondFactorClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSecondFactor = query
 	return _q
 }
 
@@ -590,9 +626,10 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			_q.withMemberships != nil,
 			_q.withSentInvitations != nil,
+			_q.withSecondFactor != nil,
 			_q.withRecoveryCodes != nil,
 			_q.withPasskeys != nil,
 			_q.withIdentities != nil,
@@ -632,6 +669,12 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadSentInvitations(ctx, query, nodes,
 			func(n *User) { n.Edges.SentInvitations = []*Invitation{} },
 			func(n *User, e *Invitation) { n.Edges.SentInvitations = append(n.Edges.SentInvitations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSecondFactor; query != nil {
+		if err := _q.loadSecondFactor(ctx, query, nodes, nil,
+			func(n *User, e *SecondFactor) { n.Edges.SecondFactor = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -730,6 +773,33 @@ func (_q *UserQuery) loadSentInvitations(ctx context.Context, query *InvitationQ
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "invited_by" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadSecondFactor(ctx context.Context, query *SecondFactorQuery, nodes []*User, init func(*User), assign func(*User, *SecondFactor)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(secondfactor.FieldUserID)
+	}
+	query.Where(predicate.SecondFactor(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.SecondFactorColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

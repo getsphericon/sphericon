@@ -164,7 +164,7 @@ func TestWrongSecondStepCodesFeedTheLoginThrottle(t *testing.T) {
 		require.Equal(t, http.StatusUnauthorized, secondStep(t, env, challenge, "000000").Code, "failure %d", i+1)
 	}
 
-	good, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, clock.now())
+	good, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.now())
 	require.NoError(t, err)
 	rec := secondStep(t, env, challenge, good)
 	assert.Equal(t, http.StatusTooManyRequests, rec.Code, "a correct code during the delay must not log in")
@@ -191,7 +191,7 @@ func TestASuccessfulSecondStepResetsTheCounter(t *testing.T) {
 	for range loginFailures - 1 {
 		require.Equal(t, http.StatusUnauthorized, secondStep(t, env, challenge, "000000").Code)
 	}
-	good, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, clock.now())
+	good, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.now())
 	require.NoError(t, err)
 	rec := secondStep(t, env, challenge, good)
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())

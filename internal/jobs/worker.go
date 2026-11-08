@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -76,12 +77,14 @@ type Deps struct {
 	// with no outbound mail).
 	SystemSender messaging.EmailSender
 	// Notices issues the Notices of the domain events (ADR 0105).
-	Notices  *noticedelivery.UseCase
-	Catalog  *messaging.Catalog
-	Rules    *rules.Module
-	Users    *users.Module
-	Orders   *orders.Module
-	Deletion *workspacedeletion.UseCase
+	Notices *noticedelivery.UseCase
+	Catalog *messaging.Catalog
+	Rules   *rules.Module
+	Users   *users.Module
+	// SecondFactor reminds the Users whose Two-factor grace ends soon (ADR 0020).
+	SecondFactor *secondfactors.Module
+	Orders       *orders.Module
+	Deletion     *workspacedeletion.UseCase
 	// SendingDomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
 	SendingDomainVerification *sendingdomainverification.UseCase
@@ -128,7 +131,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, bus))
 	river.AddWorker(workers, NewNoticeEventWorker(deps.Notices, systemSender))
 	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
-	river.AddWorker(workers, NewRemindSecondFactorWorker(entClient, bus, now))
+	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor, now))
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomainVerification))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))

@@ -585,6 +585,18 @@ func (f SchemaStateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SchemaStateMutation", m)
 }
 
+// The SecondFactorFunc type is an adapter to allow the use of ordinary
+// function as SecondFactor mutator.
+type SecondFactorFunc func(context.Context, *ent.SecondFactorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SecondFactorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SecondFactorMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SecondFactorMutation", m)
+}
+
 // The SegmentFunc type is an adapter to allow the use of ordinary
 // function as Segment mutator.
 type SegmentFunc func(context.Context, *ent.SegmentMutation) (ent.Value, error)

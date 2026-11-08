@@ -3,8 +3,8 @@ package secretreencryption_test
 import (
 	"slices"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
@@ -20,6 +20,6 @@ import (
 func reencryption(env *testhelper.TestEnv, cipher *secrets.Cipher) *secretreencryption.UseCase {
 	return secretreencryption.New(slices.Concat(
 		integrations.SecretSweeps(env.DB), webhookendpoints.SecretSweeps(env.DB), sendingdomains.SecretSweeps(env.DB),
-		users.SecretSweeps(env.DB), staffmembers.SecretSweeps(env.DB), automations.SecretSweeps(env.DB), rules.SecretSweeps(env.DB),
+		secondfactors.SecretSweeps(env.DB), staffmembers.SecretSweeps(env.DB), automations.SecretSweeps(env.DB), rules.SecretSweeps(env.DB),
 	), cipher)
 }

@@ -1,21 +1,24 @@
-// Package secondfactorcheck is the use case of the Second factor check (GLOSSARY, ADR 0020, ADR
-// 0102): the check of a code or of the factor's state that comes before every change of a User's
-// TOTP Second factor and Recovery codes, enrolling, verifying a code, regenerating the codes,
-// disabling and resetting, each an operation across the User (internal/domain/identity/users, which owns the factor's columns
-// and the session epoch), the Recovery codes (internal/domain/identity/recoverycodes) and, for a reset, the
-// Passkeys (internal/domain/identity/passkeys). It checks the code or the state first and writes each row through
-// its owner, in one transaction.
+// Package secondfactors owns a User's TOTP Second factor and its Recovery codes (GLOSSARY, ADR
+// 0020, ADR 0110): the factor's row (its secret, its confirmation, the last accepted step) and
+// the codes, and the Second factor check that comes before every change of them: enrolling,
+// confirming, verifying a code, regenerating the codes and disabling. It reads the factor for
+// everyone who needs it (the login, the sign-in, the notices, the re-encryption), and owns the
+// Second factor deadline of a Workspace that requires one: the grace, its reminders and its part
+// of the admission of a request (Admit).
 //
 // A User enrolls in two phases: a pending secret is created, then confirmed with a valid code
 // before it counts. The secret is sealed with the instance cipher; a TOTP code is single-use (the
 // last accepted time step is stored) and checked against an injected clock. Recovery codes are
-// stored hashed, each single-use, and shown once. Enrolling, regenerating, disabling and
-// resetting bump the User's session epoch inside the change's transaction.
+// stored hashed, each single-use, and shown once. Confirming, regenerating, disabling and
+// resetting bump the User's session epoch inside the change's transaction, so the module sits
+// above internal/domain/identity/users: it reads the User's session epoch and password hash and
+// bumps the epoch through it. A Second factor reset also removes the User's Passkeys, so it is a
+// use case (internal/usecase/secondfactorreset) over ResetIn.
 //
 // The Second factor belongs to the User, not a Workspace, so there is no *ent.Scoped to take:
-// this use case holds the raw *ent.Client (the User is reached by id), one of the closed list of
+// the module holds the raw *ent.Client (the User is reached by id), one of the closed list of
 // docs/architecture.md (Workspace scoping).
-package secondfactorcheck
+package secondfactors
 
 import (
 	"context"
@@ -25,10 +28,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
-	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
-	"github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -47,9 +48,6 @@ var (
 	// ErrNotActive: the User has no confirmed Second factor, so their own step that needs one
 	// (regenerating the Recovery codes, disabling) has nothing to act on.
 	ErrNotActive = validation.Conflict("secondfactor: no active second factor", i18n.ErrorsSecondFactorNotActive)
-	// ErrNothingToReset: the member has neither an active or pending Second factor nor a Passkey, so a reset has
-	// nothing to clear. It refuses the `member` the reset names.
-	ErrNothingToReset = validation.RefuseField("member", "secondfactor: the member has no second factor or passkey", i18n.ErrorsSecondFactorResetNothing)
 	// ErrDeletionCodeInvalid: the code that confirms the User's own deletion is wrong. Like a
 	// wrong password it fails the proof of who asks (403), and the caller counts it on the
 	// Login throttle (ADR 0025).
@@ -72,17 +70,50 @@ const (
 	MethodRecoveryCode Method = "recovery_code"
 )
 
-// UseCase enrolls, verifies and removes Second factors.
-type UseCase struct {
-	ent    *ent.Client
-	bus    *events.Bus
-	cipher *secrets.Cipher
-	now    func() time.Time
+// Acceptance is the User's part of the admission of a request: a required acceptance pending
+// refuses it (users.Module.CheckAcceptance).
+type Acceptance interface {
+	CheckAcceptance(ctx context.Context, userID int64) error
 }
 
-// New builds the use case. now is the Instance clock TOTP codes are checked against.
-func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, now func() time.Time) *UseCase {
-	return &UseCase{ent: client, bus: bus, cipher: cipher, now: now}
+// Module enrolls, verifies and removes Second factors, and reads them.
+type Module struct {
+	ent        *ent.Client
+	bus        *events.Bus
+	cipher     *secrets.Cipher
+	acceptance Acceptance
+	now        func() time.Time
+}
+
+// New builds the module. acceptance is the User's part of Admit; now is the Instance clock TOTP
+// codes and the Two-factor grace are checked against.
+func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, acceptance Acceptance, now func() time.Time) *Module {
+	return &Module{ent: client, bus: bus, cipher: cipher, acceptance: acceptance, now: now}
+}
+
+// factorOf reads the User's factor row on client, nil when the User never enrolled.
+func factorOf(ctx context.Context, client *ent.Client, userID int64) (*ent.SecondFactor, error) {
+	f, err := client.SecondFactor.Query().Where(secondfactor.UserID(userID)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	return f, err
+}
+
+// snapshotIn reads what a change checks on the transaction tx: the User and its factor row.
+func snapshotIn(ctx context.Context, tx *ent.Client, userID int64) (Snapshot, error) {
+	u, err := tx.User.Get(ctx, userID)
+	if err != nil {
+		return Snapshot{}, err
+	}
+	f, err := factorOf(ctx, tx, userID)
+	return Snapshot{User: u, Factor: f}, err
+}
+
+// Active reports whether the User has a confirmed Second factor. A pending enrollment is not one.
+func (m *Module) Active(ctx context.Context, userID int64) (bool, error) {
+	f, err := factorOf(ctx, m.ent, userID)
+	return active(f), err
 }
 
 // CodesIssued is a change that issued a fresh set of Recovery codes: the stored User, whose
@@ -100,15 +131,15 @@ type Status struct {
 }
 
 // Status reads the User's Second factor state.
-func (m *UseCase) Status(ctx context.Context, userID int64) (Status, error) {
-	u, err := m.ent.User.Get(ctx, userID)
+func (m *Module) Status(ctx context.Context, userID int64) (Status, error) {
+	f, err := factorOf(ctx, m.ent, userID)
 	if err != nil {
 		return Status{}, err
 	}
-	if !users.HasSecondFactor(u) {
-		return Status{Pending: u.SecondFactorSecretEncrypted != ""}, nil
+	if !active(f) {
+		return Status{Pending: stateOf(f) == FactorPending}, nil
 	}
-	n, err := recoverycodes.Unused(ctx, m.ent, userID)
+	n, err := unusedCodes(ctx, m.ent, userID)
 	if err != nil {
 		return Status{}, err
 	}
@@ -126,17 +157,17 @@ type Enrollment struct {
 // StartEnrollment creates a pending secret for the User, replacing an earlier
 // pending one. ErrAlreadyActive when a Second factor is active: replacing it takes
 // disabling it first (password and a current code).
-func (m *UseCase) StartEnrollment(ctx context.Context, userID int64) (*Enrollment, error) {
+func (m *Module) StartEnrollment(ctx context.Context, userID int64) (*Enrollment, error) {
 	var enrollment *Enrollment
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		u, err := tx.User.Get(ctx, userID)
+		before, err := snapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
-		if users.HasSecondFactor(u) {
+		if active(before.Factor) {
 			return ErrAlreadyActive
 		}
-		key, err := totp.New(users.Issuer, u.Email)
+		key, err := totp.New(users.Issuer, before.User.Email)
 		if err != nil {
 			return err
 		}
@@ -144,11 +175,11 @@ func (m *UseCase) StartEnrollment(ctx context.Context, userID int64) (*Enrollmen
 		if err != nil {
 			return err
 		}
-		u, err = users.MoveSecondFactorIn(ctx, tx, u, users.SecondFactorChange{Trigger: users.FactorStart, SealedSecret: sealed, At: m.now()})
+		moved, err := move(ctx, tx, before, Change{Trigger: FactorStart, SealedSecret: sealed, At: m.now()})
 		if err != nil {
 			return err
 		}
-		enrollment = &Enrollment{ID: *u.SecondFactorGeneration, Secret: key.Secret, URI: key.URI, QRCode: key.QRCode}
+		enrollment = &Enrollment{ID: moved.Factor.Generation, Secret: key.Secret, URI: key.URI, QRCode: key.QRCode}
 		return nil
 	})
 	return enrollment, err
@@ -165,74 +196,66 @@ type ConfirmInput struct {
 // records `user.second_factor_enroll`, all in one transaction, and returns the
 // stored User for reissuing the acting session with the codes. ErrNoPending without a pending
 // enrollment, ErrInvalidCode on a wrong code.
-func (m *UseCase) ConfirmEnrollment(ctx context.Context, userID int64, in ConfirmInput) (*CodesIssued, error) {
-	var (
-		saved *ent.User
-		codes []string
-	)
+func (m *Module) ConfirmEnrollment(ctx context.Context, userID int64, in ConfirmInput) (*CodesIssued, error) {
+	var issued *CodesIssued
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := tx.User.Get(ctx, userID)
+		before, err := snapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
-		if users.HasSecondFactor(u) {
+		switch stateOf(before.Factor) {
+		case FactorActive:
 			return ErrAlreadyActive
-		}
-		if u.SecondFactorSecretEncrypted == "" {
+		case FactorNone:
 			return ErrNoPending
+		case FactorPending:
 		}
-		if u.SecondFactorGeneration == nil || *u.SecondFactorGeneration != in.EnrollmentID {
+		if before.Factor.Generation != in.EnrollmentID {
 			return lifecycle.ErrInvalidTransition
 		}
-		step, err := m.totpStep(u, in.Code)
+		step, err := m.totpStep(before.Factor, in.Code)
 		if err != nil {
 			return err
 		}
-		u, err = users.MoveSecondFactorIn(ctx, tx, u, users.SecondFactorChange{Trigger: users.FactorConfirm, Step: step, At: m.now()})
+		moved, err := move(ctx, tx, before, Change{Trigger: FactorConfirm, Step: step, At: m.now()})
 		if err != nil {
 			return err
 		}
-		if codes, err = recoverycodes.ReplaceIn(ctx, tx, userID); err != nil {
+		codes, err := replaceCodesIn(ctx, tx, userID)
+		if err != nil {
 			return err
 		}
-		saved = u
-		return users.RecordUserAction(ctx, tx, pub, u, events.ActionUserSecondFactorEnroll, nil)
+		issued = &CodesIssued{User: moved.User, RecoveryCodes: codes}
+		return users.RecordUserAction(ctx, tx, pub, moved.User, events.ActionUserSecondFactorEnroll, nil)
 	})
-	if err != nil {
-		return nil, err
-	}
-	return &CodesIssued{User: saved, RecoveryCodes: codes}, nil
+	return issued, err
 }
 
 // RegenerateRecoveryCodes replaces the User's Recovery codes with a fresh set
 // (returned once; the previous set stops working), bumps the session epoch and
 // records `user.recovery_codes_regenerate`. ErrNotActive without a Second factor.
-func (m *UseCase) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*CodesIssued, error) {
-	var (
-		saved *ent.User
-		codes []string
-	)
+func (m *Module) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*CodesIssued, error) {
+	var issued *CodesIssued
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := tx.User.Get(ctx, userID)
+		before, err := snapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
-		if !users.HasSecondFactor(u) {
+		if !active(before.Factor) {
 			return ErrNotActive
 		}
-		if u, err = users.MoveSecondFactorIn(ctx, tx, u, users.SecondFactorChange{Trigger: users.FactorRegenerate, At: m.now()}); err != nil {
+		moved, err := move(ctx, tx, before, Change{Trigger: FactorRegenerate, At: m.now()})
+		if err != nil {
 			return err
 		}
-		if codes, err = recoverycodes.ReplaceIn(ctx, tx, userID); err != nil {
+		codes, err := replaceCodesIn(ctx, tx, userID)
+		if err != nil {
 			return err
 		}
-		saved = u
-		return users.RecordUserAction(ctx, tx, pub, u, events.ActionUserRecoveryCodesRegenerate, nil)
+		issued = &CodesIssued{User: moved.User, RecoveryCodes: codes}
+		return users.RecordUserAction(ctx, tx, pub, moved.User, events.ActionUserRecoveryCodesRegenerate, nil)
 	})
-	if err != nil {
-		return nil, err
-	}
-	return &CodesIssued{User: saved, RecoveryCodes: codes}, nil
+	return issued, err
 }
 
 // Disable removes the User's Second factor when code is a current TOTP code or an
@@ -240,23 +263,29 @@ func (m *UseCase) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*C
 // and its Recovery codes, bumps the session epoch and records
 // `user.second_factor_disable`. ErrNotActive without a Second factor,
 // ErrInvalidCode on a wrong code.
-func (m *UseCase) Disable(ctx context.Context, userID int64, code string) (*ent.User, error) {
+func (m *Module) Disable(ctx context.Context, userID int64, code string) (*ent.User, error) {
 	var saved *ent.User
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := tx.User.Get(ctx, userID)
+		u, err := users.LockIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
-		if !users.HasSecondFactor(u) {
+		f, err := factorOf(ctx, tx, userID)
+		if err != nil {
+			return err
+		}
+		if !active(f) {
 			return ErrNotActive
 		}
-		_, verified, err := m.verify(ctx, tx, pub, u, code)
+		_, verified, err := m.verify(ctx, tx, pub, Snapshot{User: u, Factor: f}, code)
 		if err != nil {
 			return err
 		}
-		if saved, err = remove(ctx, tx, verified, users.FactorDisable, m.now()); err != nil {
+		removed, err := remove(ctx, tx, verified, FactorDisable)
+		if err != nil {
 			return err
 		}
+		saved = removed.User
 		return users.RecordUserAction(ctx, tx, pub, saved, events.ActionUserSecondFactorDisable, nil)
 	})
 	return saved, err
@@ -273,25 +302,29 @@ func (m *UseCase) Disable(ctx context.Context, userID int64, code string) (*ent.
 // code) the later sees the binding the earlier moved and fails: a challenge starts
 // at most one session. ErrNotActive without a Second factor, ErrBindingMoved when
 // the binding moved, ErrInvalidCode otherwise.
-func (m *UseCase) Verify(ctx context.Context, pending login.Pending[*ent.User], code string) (Method, error) {
+func (m *Module) Verify(ctx context.Context, pending login.Pending[*ent.User], code string) (Method, error) {
 	binding := pending.Binding
 	var method Method
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := tx.User.Query().Where(user.ID(pending.Principal.ID)).ForUpdate().Only(ctx)
+		u, err := users.LockIn(ctx, tx, pending.Principal.ID)
 		if err != nil {
 			return err
 		}
-		if !users.HasSecondFactor(u) {
+		f, err := factorOf(ctx, tx, u.ID)
+		if err != nil {
+			return err
+		}
+		if !active(f) {
 			return ErrNotActive
 		}
-		current, err := challengeBinding(ctx, tx, u)
+		current, err := challengeBinding(ctx, tx, u, f)
 		if err != nil {
 			return err
 		}
 		if subtle.ConstantTimeCompare([]byte(current), []byte(binding)) != 1 {
 			return ErrBindingMoved
 		}
-		method, _, err = m.verify(ctx, tx, pub, u, code)
+		method, _, err = m.verify(ctx, tx, pub, Snapshot{User: u, Factor: f}, code)
 		return err
 	})
 	return method, err
@@ -300,12 +333,13 @@ func (m *UseCase) Verify(ctx context.Context, pending login.Pending[*ent.User], 
 // DeletionCode is the users.DeleteConfirm of User deletion (ADR 0050): with a Second factor
 // it spends code in the deletion's transaction (ErrDeletionCodeInvalid on a wrong one), so the
 // code is spent only if the deletion commits; without one it confirms nothing.
-func (m *UseCase) DeletionCode(code string) users.DeleteConfirm {
+func (m *Module) DeletionCode(code string) users.DeleteConfirm {
 	return func(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User) error {
-		if !users.HasSecondFactor(locked) {
-			return nil
+		f, err := factorOf(ctx, tx, locked.ID)
+		if err != nil || !active(f) {
+			return err
 		}
-		_, _, err := m.verify(ctx, tx, pub, locked, code)
+		_, _, err = m.verify(ctx, tx, pub, Snapshot{User: locked, Factor: f}, code)
 		if errors.Is(err, ErrInvalidCode) {
 			return ErrDeletionCodeInvalid
 		}
@@ -321,101 +355,64 @@ func (m *UseCase) DeletionCode(code string) users.DeleteConfirm {
 // store of spent challenges, so it holds across instances; Verify re-checks it
 // under a lock, so two racing second steps cannot both use it. ErrNotActive
 // without a Second factor.
-func (m *UseCase) ChallengeBinding(ctx context.Context, u *ent.User) (string, error) {
-	if !users.HasSecondFactor(u) {
-		return "", ErrNotActive
-	}
-	return challengeBinding(ctx, m.ent, u)
-}
-
-func challengeBinding(ctx context.Context, client *ent.Client, u *ent.User) (string, error) {
-	unused, err := recoverycodes.Unused(ctx, client, u.ID)
+func (m *Module) ChallengeBinding(ctx context.Context, u *ent.User) (string, error) {
+	f, err := factorOf(ctx, m.ent, u.ID)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%d|%d|%d|%s", u.SessionEpoch, u.SecondFactorLastStep, unused, u.PasswordHash), nil
+	if !active(f) {
+		return "", ErrNotActive
+	}
+	return challengeBinding(ctx, m.ent, u, f)
 }
 
-// Reset clears the User's Second factor, Recovery codes and Passkeys and bumps the session
-// epoch, ending every session of theirs: an Owner or Admin resetting a member of the
-// Workspace behind s. It records `user.second_factor_reset` by actor in that Workspace
-// only. ErrNothingToReset without an active or pending factor or a Passkey (nothing changes).
-func (m *UseCase) Reset(ctx context.Context, s *ent.Scoped, userID int64, actor events.Actor) error {
-	return m.reset(ctx, userID, func(pub events.Publisher, _ *ent.Client, u *ent.User) error {
-		return users.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, s.WorkspaceID())
-	})
+func challengeBinding(ctx context.Context, client *ent.Client, u *ent.User, f *ent.SecondFactor) (string, error) {
+	unused, err := unusedCodes(ctx, client, u.ID)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%d|%d|%d|%s", u.SessionEpoch, f.LastStep, unused, u.PasswordHash), nil
 }
 
-// ResetByStaff is Reset from the staff member command: the platform Staff member `by`
-// (shown to customers as "Sphericon staff") is recorded in every Workspace the User
-// holds a Membership in.
-func (m *UseCase) ResetByStaff(ctx context.Context, userID int64, by string) error {
-	actor := events.Actor{Kind: events.ActorStaff, ID: by}
-	return m.reset(ctx, userID, func(pub events.Publisher, tx *ent.Client, u *ent.User) error {
-		return users.RecordActionOnUser(ctx, tx, pub, actor, u, events.ActionUserSecondFactorReset, nil)
-	})
-}
-
-func (m *UseCase) reset(ctx context.Context, userID int64, record func(events.Publisher, *ent.Client, *ent.User) error) error {
-	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := tx.User.Get(ctx, userID)
-		if err != nil {
-			return err
-		}
-		held, err := passkeys.HeldIn(ctx, tx, userID)
-		if err != nil {
-			return err
-		}
-		if u.SecondFactorSecretEncrypted == "" && !held {
-			return ErrNothingToReset
-		}
-		if u, err = remove(ctx, tx, u, users.FactorReset, m.now()); err != nil {
-			return err
-		}
-		if err := passkeys.DeleteAllIn(ctx, tx, userID); err != nil {
-			return err
-		}
-		return record(pub, tx, u)
-	})
-}
-
-// verify fences the User before touching Recovery codes, keeping the same lock order as
-// enrollment, regeneration, removal and the login challenge check.
-func (m *UseCase) verify(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, code string) (Method, *ent.User, error) {
+// verify fences the factor before touching Recovery codes, keeping the same lock order as
+// enrollment, regeneration, removal and the login challenge check: the User row, the factor row,
+// then the codes.
+func (m *Module) verify(ctx context.Context, tx *ent.Client, pub events.Publisher, before Snapshot, code string) (Method, Snapshot, error) {
 	step := int64(0)
 	if totp.IsCode(code) {
 		var err error
-		step, err = m.totpStep(u, code)
+		step, err = m.totpStep(before.Factor, code)
 		if err != nil {
-			return "", nil, err
+			return "", Snapshot{}, err
 		}
 	}
-	saved, err := users.MoveSecondFactorIn(ctx, tx, u, users.SecondFactorChange{Trigger: users.FactorVerify, Step: step, At: m.now()})
+	moved, err := move(ctx, tx, before, Change{Trigger: FactorVerify, Step: step, At: m.now()})
 	if err != nil {
-		return "", nil, err
+		return "", Snapshot{}, err
 	}
+	verified := Snapshot(moved)
 	if step > 0 {
-		return MethodTOTP, saved, nil
+		return MethodTOTP, verified, nil
 	}
-	spent, err := recoverycodes.SpendIn(ctx, tx, u.ID, code, m.now())
+	spent, err := spendCodeIn(ctx, tx, before.User.ID, code, m.now())
 	if err != nil {
-		return "", nil, err
+		return "", Snapshot{}, err
 	}
 	if !spent {
-		return "", nil, ErrInvalidCode
+		return "", Snapshot{}, ErrInvalidCode
 	}
-	err = users.RecordUserAction(ctx, tx, pub, saved, events.ActionUserRecoveryCodeUse, nil)
-	return MethodRecoveryCode, saved, err
+	err = users.RecordUserAction(ctx, tx, pub, verified.User, events.ActionUserRecoveryCodeUse, nil)
+	return MethodRecoveryCode, verified, err
 }
 
-// totpStep checks the code against this exact secret and replay step. The owner consumes
-// both in its single conditional lifecycle write; no separate acceptance can outlive a reset.
-func (m *UseCase) totpStep(u *ent.User, code string) (int64, error) {
-	raw, err := m.cipher.Decrypt(u.SecondFactorSecretEncrypted)
+// totpStep checks the code against this exact secret and replay step. The move consumes
+// both in its single conditional write; no separate acceptance can outlive a reset.
+func (m *Module) totpStep(f *ent.SecondFactor, code string) (int64, error) {
+	raw, err := m.cipher.Decrypt(f.SecretEncrypted)
 	if err != nil {
 		return 0, err
 	}
-	step, ok, err := totp.Match(string(raw), code, m.now(), u.SecondFactorLastStep)
+	step, ok, err := totp.Match(string(raw), code, m.now(), f.LastStep)
 	if err != nil {
 		return 0, err
 	}
@@ -426,13 +423,13 @@ func (m *UseCase) totpStep(u *ent.User, code string) (int64, error) {
 }
 
 // remove clears the factor before its Recovery codes, and bumps the epoch in the same transaction.
-func remove(ctx context.Context, tx *ent.Client, before *ent.User, trigger users.SecondFactorTrigger, at time.Time) (*ent.User, error) {
-	saved, err := users.MoveSecondFactorIn(ctx, tx, before, users.SecondFactorChange{Trigger: trigger, At: at})
+func remove(ctx context.Context, tx *ent.Client, before Snapshot, trigger Trigger) (Moved, error) {
+	moved, err := move(ctx, tx, before, Change{Trigger: trigger})
 	if err != nil {
-		return nil, err
+		return Moved{}, err
 	}
-	if err := recoverycodes.DeleteIn(ctx, tx, before.ID); err != nil {
-		return nil, err
+	if err := deleteCodesIn(ctx, tx, before.User.ID); err != nil {
+		return Moved{}, err
 	}
-	return saved, nil
+	return moved, nil
 }

@@ -11,6 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
@@ -56,7 +57,10 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 }
 
 // loginStore is the site's side of the login module's seam: Users by address.
-type loginStore struct{ users *users.Module }
+type loginStore struct {
+	users   *users.Module
+	factors *secondfactors.Module
+}
 
 func (s loginStore) Lookup(ctx context.Context, address string) (login.Account[*ent.User], bool, error) {
 	u, err := s.users.UserByLoginAddress(ctx, address)
@@ -66,14 +70,18 @@ func (s loginStore) Lookup(ctx context.Context, address string) (login.Account[*
 	if err != nil {
 		return login.Account[*ent.User]{}, false, err
 	}
-	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: users.HasSecondFactor(u)}, true, nil
+	active, err := s.factors.Active(ctx, u.ID)
+	if err != nil {
+		return login.Account[*ent.User]{}, false, err
+	}
+	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: active}, true, nil
 }
 
 // newLogin builds the login module over the site's adapter (ADR 0020, 0030).
 func (h *Handlers) newLogin() *login.Module[*ent.User] {
 	cfg := login.Config[*ent.User]{
 		Throttle:  h.attempts.For(throttle.KindLogin),
-		Store:     loginStore{h.users},
+		Store:     loginStore{users: h.users, factors: h.secondFactor},
 		Passwords: h.passwords,
 		Challenge: func(ctx context.Context, u *ent.User) (string, error) {
 			return h.mintLoginChallenge(ctx, u, users.LoginPassword, time.Time{})

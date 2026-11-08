@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -105,8 +104,6 @@ type ExportStreams interface {
 // the shared singletons the composition root registers once, so /api and /site
 // cannot diverge on how a module is constructed.
 type Deps struct {
-	// Users admits a User's own token (the security handler, ExternalSecurity).
-	Users        *users.Module
 	Workspaces   *workspaces.Module
 	Bus          *events.Bus
 	Webhooks     *webhookendpoints.Module

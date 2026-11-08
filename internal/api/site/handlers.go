@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
@@ -56,7 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
@@ -117,7 +118,8 @@ type Handlers struct {
 	supportEmail              string
 	analytics                 *analyticsreport.UseCase
 	sessions                  *auth.Sessions
-	secondFactor              *secondfactorcheck.UseCase
+	secondFactor              *secondfactors.Module
+	secondFactorReset         *secondfactorreset.UseCase
 	workspaceCreation         *workspacecreation.UseCase
 	signUp                    *signup.UseCase
 	passkeys                  *passkeys.Module
@@ -237,8 +239,11 @@ type Deps struct {
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
-	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
-	SecondFactor *secondfactorcheck.UseCase
+	// SecondFactor enrolls, verifies and reads a User's TOTP Second factor, and admits a
+	// request under a Workspace's Two-factor requirement (ADR 0020).
+	SecondFactor *secondfactors.Module
+	// SecondFactorReset clears a member's Second factor and Passkeys (a use case, ADR 0102).
+	SecondFactorReset *secondfactorreset.UseCase
 	// WorkspaceCreation creates a Verified User's Workspace (a use case, ADR 0102).
 	WorkspaceCreation *workspacecreation.UseCase
 	// SignUp is the Sign-up and every step that makes a User Verified with its first Workspace (a
@@ -293,7 +298,7 @@ func NewHandlers(d *Deps) *Handlers {
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, secondFactorReset: d.SecondFactorReset, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		challenges: d.Tokens,

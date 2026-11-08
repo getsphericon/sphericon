@@ -12,8 +12,8 @@ import (
 // RecoveryCode is one single-use code that stands in for a TOTP code when the
 // User's authenticator is lost (ADR 0020). Only its SHA-256 hash is stored: the
 // plaintext is shown once, when the set is generated. Regenerating replaces the
-// whole set. It belongs to a User, not a Workspace; only internal/recoverycodes
-// reads and writes it.
+// whole set. It belongs to a User, not a Workspace; only
+// internal/domain/identity/secondfactors, the owner of the Second factor, reads and writes it.
 type RecoveryCode struct {
 	ent.Schema
 }

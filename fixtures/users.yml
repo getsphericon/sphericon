@@ -68,8 +68,6 @@
   name: Sam
   email: sam@globex.test
   password_hash: '{{argonHash "password"}}'
-  second_factor_secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
-  second_factor_confirmed_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
@@ -197,8 +195,6 @@
 - id: 23 # fixture: ProviderOnlyPax
   name: Pax
   email: pax@hooli.test
-  second_factor_secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
-  second_factor_confirmed_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
@@ -225,8 +221,6 @@
   name: 'Ana'
   email: 'ana@brightpath.example'
   password_hash: '{{argonHash "password"}}'
-  second_factor_secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
-  second_factor_confirmed_at: '{{daysAgo 108}}'
   created_at: '{{daysAgo 118}}'
   updated_at: '{{daysAgo 118}}'
   email_verified_at: '{{daysAgo 118}}'
@@ -234,8 +228,6 @@
   name: 'Milo'
   email: 'milo@brightpath.example'
   password_hash: '{{argonHash "password"}}'
-  second_factor_secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
-  second_factor_confirmed_at: '{{daysAgo 105}}'
   created_at: '{{daysAgo 115}}'
   updated_at: '{{daysAgo 115}}'
   email_verified_at: '{{daysAgo 115}}'

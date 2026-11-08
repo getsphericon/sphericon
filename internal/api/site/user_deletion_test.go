@@ -84,7 +84,7 @@ func TestATypedEmailThatIsNotTheirsIsRefused(t *testing.T) {
 
 func totpCode(t *testing.T) string {
 	t.Helper()
-	code, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, time.Now())
+	code, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, time.Now())
 	require.NoError(t, err)
 	return code
 }

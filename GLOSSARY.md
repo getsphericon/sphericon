@@ -1290,7 +1290,8 @@ _Avoid_: Unlock, disable 2FA
 The check that comes before every change of a User's **Second factor**: a current code (or a
 **Recovery code**) to confirm, regenerate the codes or disable, a factor not yet active to enroll, and
 for a **Second factor reset** the resetter's Role; a code accepted at login is single-use. Each change
-then writes the User, its Recovery codes and, for a reset, its Passkeys in one transaction.
+then writes the factor, its Recovery codes, the User's session epoch and, for a reset, its Passkeys
+in one transaction.
 _Avoid_: 2FA flow, MFA verification
 
 **Login**:

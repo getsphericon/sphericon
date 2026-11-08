@@ -68,7 +68,7 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 		return err
 	}
 
-	err = h.secondFactor.Reset(ctx, s, target.UserID, h.actor(ctx))
+	err = h.secondFactorReset.Reset(ctx, s, target.UserID, h.actor(ctx))
 	if err != nil {
 		return err
 	}
