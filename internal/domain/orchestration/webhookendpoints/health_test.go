@@ -87,6 +87,7 @@ func TestASuccessClearsFailuresRecordedWhileTheRequestWasInFlight(t *testing.T) 
 
 type refusingEventQueue struct {
 	testhelper.AcceptingQueue
+
 	fault error
 }
 

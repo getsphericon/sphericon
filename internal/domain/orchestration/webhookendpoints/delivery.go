@@ -46,52 +46,58 @@ func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.Webho
 				return nil
 			}
 			machine := HealthMachine(before, change, func(ctx context.Context, to HealthState) (bool, error) {
-				u := atHealth(ts.WebhookEndpoint().UpdateOneID(before.ID), before)
-				if change.Trigger == Succeed {
-					clearFailures(u)
-				} else {
-					u.AddConsecutiveFailures(1).SetLastErrorKind(change.Failure.Kind).SetLastFailureAt(now)
-					if before.FailingSince == nil {
-						u.SetFailingSince(now)
-					}
-					if change.Failure.Kind == webhook.KindHTTPStatus {
-						u.SetLastErrorStatus(change.Failure.Status)
-					} else {
-						u.ClearLastErrorStatus()
-					}
-				}
-				err := u.Exec(ctx)
-				if ent.IsNotFound(err) {
-					return false, errHealthConflict
-				}
-				if err != nil {
-					return false, err
-				}
-				if to != Disabled {
-					return true, nil
-				}
-				reason, _ := disableReason(before, change.Failure, now)
-				sys := m.bus.Act(ts, events.Actor{Kind: events.ActorSystem})
-				// The first conditional update holds this row until the transaction ends. Audit
-				// only the disable, not the preceding data-plane failure counters.
-				err = sys.WebhookEndpoint().UpdateOneID(before.ID).
-					Where(webhookendpoint.DisabledAtIsNil()).
-					SetDisabledAt(now).SetDisabledReason(reason).Exec(ctx)
-				if ent.IsNotFound(err) {
-					return false, errHealthConflict
-				}
-				if err != nil {
-					return false, err
-				}
-				err = pub.Publish(ctx, &events.WebhookEndpointDisabled{
-					WorkspaceID: before.WorkspaceID, EndpointID: before.ID,
-					Origin: originOf(before.URL), Reason: string(reason),
-				})
-				return err == nil, err
+				return m.persistDelivery(ctx, ts, pub, before, change, to)
 			})
 			return machine.FireCtx(ctx, change.Trigger)
 		})
 	})
+}
+
+// persistDelivery joins RecordDelivery's transaction: the initial CAS holds the row through
+// automatic disabling, its audited write and the publication of its notification event.
+func (m *Module) persistDelivery(ctx context.Context, ts *ent.Scoped, pub events.Publisher, before *ent.WebhookEndpoint, change HealthChange, to HealthState) (bool, error) {
+	u := atHealth(ts.WebhookEndpoint().UpdateOneID(before.ID), before)
+	if change.Trigger == Succeed {
+		clearFailures(u)
+	} else {
+		u.AddConsecutiveFailures(1).SetLastErrorKind(change.Failure.Kind).SetLastFailureAt(change.At)
+		if before.FailingSince == nil {
+			u.SetFailingSince(change.At)
+		}
+		if change.Failure.Kind == webhook.KindHTTPStatus {
+			u.SetLastErrorStatus(change.Failure.Status)
+		} else {
+			u.ClearLastErrorStatus()
+		}
+	}
+	err := u.Exec(ctx)
+	if ent.IsNotFound(err) {
+		return false, errHealthConflict
+	}
+	if err != nil {
+		return false, err
+	}
+	if to != Disabled {
+		return true, nil
+	}
+	reason, _ := disableReason(before, change.Failure, change.At)
+	sys := m.bus.Act(ts, events.Actor{Kind: events.ActorSystem})
+	// The first conditional update holds this row until the transaction ends. Audit
+	// only the disable, not the preceding data-plane failure counters.
+	err = sys.WebhookEndpoint().UpdateOneID(before.ID).
+		Where(webhookendpoint.DisabledAtIsNil()).
+		SetDisabledAt(change.At).SetDisabledReason(reason).Exec(ctx)
+	if ent.IsNotFound(err) {
+		return false, errHealthConflict
+	}
+	if err != nil {
+		return false, err
+	}
+	err = pub.Publish(ctx, &events.WebhookEndpointDisabled{
+		WorkspaceID: before.WorkspaceID, EndpointID: before.ID,
+		Origin: originOf(before.URL), Reason: string(reason),
+	})
+	return err == nil, err
 }
 
 // originOf keeps scheme and host of an endpoint URL for a mail: path and query may carry a secret.
