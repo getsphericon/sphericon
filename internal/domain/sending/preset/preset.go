@@ -112,10 +112,10 @@ type Channel string
 var channels = []Channel{"email", "sms", "whatsapp", "telegram", "web_push", "mobile_push"}
 
 // The kinds a transform names the two facts by that are not Delivery notices; a Delivery notice
-// is named by its own Kind.
+// is named by its own Kind. `sphericon preset test` prints a fact under the same kind.
 const (
-	kindInboundMessage     = "inbound_message"
-	kindReachabilityChange = "reachability_change"
+	KindInboundMessage     = "inbound_message"
+	KindReachabilityChange = "reachability_change"
 )
 
 // Limits of an Inbound message's free text. Longer values are cut, not refused: the person

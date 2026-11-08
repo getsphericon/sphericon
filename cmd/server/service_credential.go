@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
+	"github.com/getsphericon/sphericon/internal/commandline"
 )
 
 // serviceCredentialCommand is `sphericon service-credential create|rotate|revoke|list` (ADR 0026),
@@ -60,7 +61,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 					Scopes:    parseScopes(cmd.StringArg("scopes")),
 					ExpiresAt: expiry(cmd),
 				})
-				return servicecredentials.ReportIssued(out(cmd), issued, err)
+				return commandline.ReportCredentialIssued(out(cmd), issued, err)
 			}),
 		},
 		&cli.Command{
@@ -79,7 +80,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 					return err
 				}
 				issued, err := credentials.RotateServiceCredential(ctx, id, expiry(cmd))
-				return servicecredentials.ReportRotated(out(cmd), id, issued, err)
+				return commandline.ReportCredentialRotated(out(cmd), id, issued, err)
 			}),
 		},
 		&cli.Command{
@@ -97,7 +98,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 					return err
 				}
 				err = credentials.RevokeServiceCredential(ctx, id)
-				return servicecredentials.ReportRevoked(out(cmd), id, err)
+				return commandline.ReportCredentialRevoked(out(cmd), id, err)
 			}),
 		},
 		&cli.Command{
@@ -111,7 +112,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 					return err
 				}
 				list, err := credentials.ServiceCredentials(ctx, cmd.StringArg("name"))
-				return servicecredentials.ReportCredentials(out(cmd), list, d.now(), err)
+				return commandline.ReportCredentials(out(cmd), list, d.now(), err)
 			}),
 		},
 	)

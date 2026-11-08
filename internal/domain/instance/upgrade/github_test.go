@@ -121,11 +121,10 @@ func TestUpgradeDownloadsTheLatestRelease(t *testing.T) {
 	o := s.opts("")
 	o.Source = gh
 
-	res, err := upgrade.Step(t.Context(), o)
+	got, err := drain(upgrade.Step(t.Context(), o))
 
 	require.NoError(t, err)
-	assert.Equal(t, "0.2.0", res.Version)
-	assert.True(t, res.Changed)
+	assert.Equal(t, []string{"0.2.0"}, versions(of[upgrade.Installed](got)))
 	assert.Equal(t, "old binary", s.read(t, "sphericon.old"))
 	assert.True(t, s.exists("migrated"))
 }
@@ -138,10 +137,10 @@ func TestUpgradeDownloadsThePinnedRelease(t *testing.T) {
 	o := s.opts("v0.2.0")
 	o.Source = gh
 
-	res, err := upgrade.Step(t.Context(), o)
+	got, err := drain(upgrade.Step(t.Context(), o))
 
 	require.NoError(t, err)
-	assert.Equal(t, "0.2.0", res.Version)
+	assert.Equal(t, []string{"0.2.0"}, versions(of[upgrade.Installed](got)))
 }
 
 func TestUpgradeRefusesADowngradeFromGitHub(t *testing.T) {
@@ -151,7 +150,7 @@ func TestUpgradeRefusesADowngradeFromGitHub(t *testing.T) {
 	o := s.opts("v0.0.9")
 	o.Source = gh
 
-	_, err := upgrade.Step(t.Context(), o)
+	_, err := drain(upgrade.Step(t.Context(), o))
 
 	assert.ErrorIs(t, err, upgrade.ErrDowngrade)
 }
@@ -164,7 +163,7 @@ func TestUpgradeRejectsATamperedDownload(t *testing.T) {
 	o := s.opts("")
 	o.Source = gh
 
-	_, err := upgrade.Step(t.Context(), o)
+	_, err := drain(upgrade.Step(t.Context(), o))
 
 	require.ErrorContains(t, err, "checksum mismatch")
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))

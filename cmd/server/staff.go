@@ -3,9 +3,8 @@ package main
 import (
 	"context"
 
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/urfave/cli/v3"
-
-	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 )
 
 // staffCommand is `sphericon staff create|reset-totp <email>` (ADR 0026, ADR 0063), on every
@@ -28,7 +27,7 @@ func staffCommand(d deps) *cli.Command {
 				}
 				email := cmd.StringArg("email")
 				password, err := members.Create(ctx, email)
-				return staffmembers.ReportCreated(out(cmd), email, password, err)
+				return commandline.ReportStaffCreated(out(cmd), email, password, err)
 			}),
 		},
 		&cli.Command{
@@ -43,7 +42,7 @@ func staffCommand(d deps) *cli.Command {
 				}
 				email := cmd.StringArg("email")
 				err = members.ResetTOTP(ctx, email)
-				return staffmembers.ReportTOTPReset(out(cmd), email, err)
+				return commandline.ReportTOTPReset(out(cmd), email, err)
 			}),
 		},
 	)
