@@ -30,7 +30,7 @@ func observesMessage(env events.Envelope, ev events.DomainEvent) bool {
 }
 func observeMessage(env events.Envelope, ev events.DomainEvent) river.JobArgs {
 	observation, _ := outboundmessages.ObservationOf(env, ev)
-	return MessageObservationArgs{Workspace: jobkind.Workspace{WorkspaceID: env.WorkspaceID}, Observation: observation}
+	return MessageObservationArgs{WorkspaceID: env.WorkspaceID, Observation: observation}
 }
 
 type MessageObservationWorker struct {
