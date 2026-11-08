@@ -61,7 +61,7 @@ func TestAuthContextsRoundTrip(t *testing.T) {
 	assert.Same(t, collect, auth.GetCollectAuth(withCollect))
 	assert.EqualValues(t, 5, collectWorkspaceID(withCollect))
 
-	site := &auth.SiteAuth{UserID: 9, Email: "u@example.com"}
+	site := &auth.SiteAuth{User: &ent.User{ID: 9, Email: "u@example.com"}}
 	assert.Same(t, site, auth.GetSiteAuth(auth.WithSiteAuth(ctx, site)))
 
 	// The three identities live under distinct keys: one never reads as another.
@@ -193,15 +193,15 @@ func TestSiteAuthResolvesTheDashboardUserByTheIDInTheToken(t *testing.T) {
 	require.NoError(t, err)
 	got := auth.GetSiteAuth(ctx)
 	require.NotNil(t, got)
-	assert.EqualValues(t, fixtures.OwnerJohnID, got.UserID)
-	assert.Equal(t, fixtures.OwnerJohnEmail, got.Email)
+	assert.EqualValues(t, fixtures.OwnerJohnID, got.User.ID)
+	assert.Equal(t, fixtures.OwnerJohnEmail, got.User.Email)
 
 	// The id decides, not the login name the token also carries.
 	ctx, err = h.HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{
 		APIKey: env.SiteToken(t, fixtures.OwnerJaneEmail, func(c *gptoken.Claims) { c.User.Name = fixtures.OwnerJohnEmail }),
 	})
 	require.NoError(t, err)
-	assert.EqualValues(t, fixtures.OwnerJaneID, auth.GetSiteAuth(ctx).UserID)
+	assert.EqualValues(t, fixtures.OwnerJaneID, auth.GetSiteAuth(ctx).User.ID)
 }
 
 func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {

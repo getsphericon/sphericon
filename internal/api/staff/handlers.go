@@ -12,6 +12,7 @@ import (
 	"net/http"
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/staff/resources"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
@@ -123,7 +124,7 @@ func (h *Handlers) StaffAuthSecondFactor(ctx context.Context, req *staffapi.Staf
 // StaffAuthLogout ends the Staff member's sessions server-side (the session epoch is
 // bumped, so a token copied elsewhere stops verifying too) and clears the cookie.
 func (h *Handlers) StaffAuthLogout(ctx context.Context) (*staffapi.StaffAuthLogoutNoContent, error) {
-	if err := h.module.EndSessions(ctx, staffmembers.Current(ctx).ID); err != nil {
+	if err := h.module.EndSessions(ctx, auth.StaffMember(ctx).ID); err != nil {
 		return nil, err
 	}
 	return &staffapi.StaffAuthLogoutNoContent{SetCookie: h.sessions.Cleared().String()}, nil
@@ -131,7 +132,7 @@ func (h *Handlers) StaffAuthLogout(ctx context.Context) (*staffapi.StaffAuthLogo
 
 // StaffMeGet is the current Staff member.
 func (h *Handlers) StaffMeGet(ctx context.Context) (*staffapi.StaffResource, error) {
-	res := mapper.StaffMemberToResource(staffmembers.Current(ctx))
+	res := mapper.StaffMemberToResource(auth.StaffMember(ctx))
 	return &res, nil
 }
 
@@ -150,5 +151,5 @@ var _ staffapi.SecurityHandler = (*SecurityHandler)(nil)
 // HandleApiKeyAuth authenticates the Staff member cookie and puts the Staff member in the
 // context.
 func (h *SecurityHandler) HandleApiKeyAuth(ctx context.Context, _ staffapi.OperationName, t staffapi.ApiKeyAuth) (context.Context, error) {
-	return h.sessions.Authenticate(ctx, t.APIKey)
+	return auth.AuthenticateStaff(ctx, h.sessions, t.APIKey)
 }

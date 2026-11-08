@@ -298,16 +298,11 @@ func (*Handlers) NewError(ctx context.Context, err error) *siteapi.ProblemDetail
 }
 
 // actor is the signed-in User as the actor of an Audit entry (ADR 0022), with the
-// display name snapshotted. A name that cannot be loaded is left empty: the entry is
-// still worth recording.
-func (h *Handlers) actor(ctx context.Context) events.Actor {
+// display name snapshotted from the User the security handler loaded.
+func (*Handlers) actor(ctx context.Context) events.Actor {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
 		return events.Actor{}
 	}
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(a.UserID, 10)}
-	if u, err := h.users.User(ctx, a.UserID); err == nil {
-		actor.Name = u.Name
-	}
-	return actor
+	return events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(a.User.ID, 10), Name: a.User.Name}
 }

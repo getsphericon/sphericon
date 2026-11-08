@@ -24,7 +24,7 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 	if a == nil {
 		return []siteapi.SiteWorkspaceResource{}, nil
 	}
-	members, err := h.workspaceSummary.OfMembers(ctx, a.UserID)
+	members, err := h.workspaceSummary.OfMembers(ctx, a.User.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -90,11 +90,11 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	if a == nil {
 		return nil, &ent.NotFoundError{}
 	}
-	ws, err := h.workspaceCreation.CreateWorkspace(ctx, a.UserID, req.Name)
+	ws, err := h.workspaceCreation.CreateWorkspace(ctx, a.User.ID, req.Name)
 	if err != nil {
 		return nil, err
 	}
-	s, m, err := h.memberships.Scope(ctx, a.UserID, ws.PublicID)
+	s, m, err := h.memberships.Scope(ctx, a.User.ID, ws.PublicID)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 	if a == nil {
 		return []siteapi.SiteDeletedWorkspaceResource{}, nil
 	}
-	items, err := h.deletion.Deleted(ctx, a.UserID)
+	items, err := h.deletion.Deleted(ctx, a.User.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -257,12 +257,12 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 		return nil, workspaces.ErrNotFound
 	}
 	in := inputs.WorkspaceRestore(params)
-	in.UserID, in.Actor = a.UserID, h.actor(ctx)
+	in.UserID, in.Actor = a.User.ID, h.actor(ctx)
 	if _, err := h.deletion.Restore(ctx, in); err != nil {
 		return nil, err
 	}
 	// The Workspace is live again, so the caller's Owner Membership resolves like any other.
-	s, m, err := h.memberships.Scope(ctx, a.UserID, string(params.ID))
+	s, m, err := h.memberships.Scope(ctx, a.User.ID, string(params.ID))
 	if err != nil {
 		return nil, err
 	}

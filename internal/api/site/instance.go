@@ -14,7 +14,7 @@ func (h *Handlers) SiteInstanceGetRelease(ctx context.Context) (*siteapi.SiteIns
 	// The security handler lets no anonymous caller through; one would be no User, refused.
 	var userID int64
 	if a := auth.GetSiteAuth(ctx); a != nil {
-		userID = a.UserID
+		userID = a.User.ID
 	}
 	release, err := h.instance.ReleaseFor(ctx, userID)
 	if err != nil {

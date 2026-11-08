@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"log/slog"
 	"strings"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -44,7 +43,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 
 	a := auth.GetSiteAuth(ctx)
 	in := inputs.InvitationCreate(req)
-	in.InvitedBy = a.UserID
+	in.InvitedBy = a.User.ID
 	// Token, hash, expiry and the upsert are the accounts operation's; the site only
 	// maps its refusals.
 	inv, token, err := h.invitations.Invite(ctx, s, h.actor(ctx), in)
@@ -56,11 +55,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	// invites; the Invitation's event mails the link too.
 	inviteURL := strings.TrimRight(h.appURL, "/") + "/invitations/" + token
 
-	inviter, uerr := h.users.User(ctx, a.UserID)
-	if uerr != nil {
-		slog.WarnContext(ctx, "inviter not loaded for the invitation", "error", uerr, "invitation_id", inv.ID)
-	}
-	inv.Edges.Inviter = inviter
+	inv.Edges.Inviter = a.User
 	return &siteapi.SiteCreateInvitationResponse{
 		InviteUrl: inviteURL,
 		Resource:  mapper.InvitationToResource(inv),
@@ -106,7 +101,7 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	// transaction decides whether the address is one, so the session is always passed.
 	sessionEmail := ""
 	if a := auth.GetSiteAuth(ctx); a != nil {
-		sessionEmail = a.Email
+		sessionEmail = a.User.Email
 	}
 	name, _ := req.Name.Get()
 	password, _ := req.Password.Get()

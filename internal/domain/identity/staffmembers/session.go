@@ -120,20 +120,3 @@ func (s *Sessions) Verify(ctx context.Context, raw string) (*ent.StaffMember, er
 	return op, nil
 }
 
-type contextKey struct{}
-
-// Authenticate verifies a raw session token (Verify) and returns ctx carrying its Staff
-// member, read back with Current: what the security handler of every /staff surface does.
-func (s *Sessions) Authenticate(ctx context.Context, raw string) (context.Context, error) {
-	op, err := s.Verify(ctx, raw)
-	if err != nil {
-		return ctx, err
-	}
-	return context.WithValue(ctx, contextKey{}, op), nil
-}
-
-// Current is the Staff member an authenticated request belongs to.
-func Current(ctx context.Context) *ent.StaffMember {
-	op, _ := ctx.Value(contextKey{}).(*ent.StaffMember)
-	return op
-}

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
-	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 )
 
@@ -13,7 +13,7 @@ import (
 // (ADR 0067); not found on an Instance that has no Send caps.
 func (h *Handlers) StaffInstanceSetDefaultSendCap(ctx context.Context, req *staffapi.StaffDefaultSendCapInput) (*staffapi.StaffDefaultSendCapChange, error) {
 	perDay := int(req.PerDay)
-	change, err := h.instance.SetDefaultSendCap(ctx, staffmembers.Current(ctx), &perDay)
+	change, err := h.instance.SetDefaultSendCap(ctx, auth.StaffMember(ctx), &perDay)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (h *Handlers) StaffInstanceSetDefaultSendCap(ctx context.Context, req *staf
 // StaffInstanceClearDefaultSendCap removes the Send cap of new Workspaces as the signed-in Staff
 // member; not found on an Instance that has no Send caps.
 func (h *Handlers) StaffInstanceClearDefaultSendCap(ctx context.Context) (*staffapi.StaffDefaultSendCapChange, error) {
-	change, err := h.instance.SetDefaultSendCap(ctx, staffmembers.Current(ctx), nil)
+	change, err := h.instance.SetDefaultSendCap(ctx, auth.StaffMember(ctx), nil)
 	if err != nil {
 		return nil, err
 	}

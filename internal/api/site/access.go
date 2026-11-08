@@ -63,14 +63,14 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 	if a.workspace {
 		id, _ := req.Params.Path("workspaceId")
 		publicID, _ := id.(siteapi.WorkspaceId)
-		s, m, err := h.memberships.Scope(req.Context, session.UserID, string(publicID))
+		s, m, err := h.memberships.Scope(req.Context, session.User.ID, string(publicID))
 		if err != nil {
 			return middleware.Response{}, err
 		}
 		c = caller{scoped: s, membership: m}
 	}
 	err := h.secondFactor.Admit(req.Context, secondfactors.Admission{
-		UserID:                 session.UserID,
+		UserID:                 session.User.ID,
 		Membership:             c.membership,
 		StrongSession:          currentSession(req.Context).Method.Strong(),
 		WhileAcceptancePending: a.whileAcceptancePending,

@@ -15,7 +15,7 @@ import (
 // erased.
 func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteContactsEraseParams) error {
 	err := h.erasure.Erase(ctx, workspaceScope(ctx), contacterasure.Identifier{Email: &params.Email},
-		contacterasure.Requester{Kind: contacterasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
+		contacterasure.Requester{Kind: contacterasure.RequesterUser, ID: auth.GetSiteAuth(ctx).User.ID})
 	if err != nil {
 		return err
 	}
