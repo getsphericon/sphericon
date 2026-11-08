@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -299,21 +300,24 @@ func TestEnrollRegenerateAndDisableAreAuditedWithoutSecrets(t *testing.T) {
 
 func TestSecondFactorConfirmRefusesAnEarlierEnrollmentEvenWithTheCurrentCode(t *testing.T) {
 	s := newSecondFactorEnv(t)
-	acting := s.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
-	first := s.start(t, acting)
-	current := s.start(t, acting)
+	actor := s.env.SiteActor(t, fixtures.OwnerJohnEmail)
+	password := siteapi.NewOptString(fixtures.OwnerJohnPassword)
+	first, err := actor.SiteSecondFactorStartEnrollment(t.Context(), &siteapi.SiteSecondFactorStartInput{CurrentPassword: password})
+	require.NoError(t, err)
+	current, err := actor.SiteSecondFactorStartEnrollment(t.Context(), &siteapi.SiteSecondFactorStartInput{CurrentPassword: password})
+	require.NoError(t, err)
 	code := s.code(t, current.Secret)
 
-	status, fresh := s.send(t, http.MethodPost, "/site/me/second-factor/enrollment/confirm", acting,
-		confirmBody(first.EnrollmentID, code), nil)
+	_, err = actor.SiteSecondFactorConfirmEnrollment(t.Context(), &siteapi.SiteSecondFactorConfirmInput{CurrentPassword: password, EnrollmentId: first.EnrollmentId, Code: code})
 
-	require.Equal(t, http.StatusConflict, status)
-	assert.Empty(t, fresh)
-	assert.Equal(t, factorStatus{Pending: true}, s.status(t, acting))
-	var rc recoveryCodesRes
-	status, fresh = s.send(t, http.MethodPost, "/site/me/second-factor/enrollment/confirm", acting,
-		confirmBody(current.EnrollmentID, code), &rc)
-	require.Equal(t, http.StatusOK, status)
-	assert.NotEmpty(t, rc.Codes)
-	assert.NotEmpty(t, fresh)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
+	status, err := actor.SiteSecondFactorGetStatus(t.Context())
+	require.NoError(t, err)
+	assert.True(t, status.Pending)
+	assert.False(t, status.Enabled)
+	assert.Zero(t, status.RecoveryCodesRemaining)
+	issued, err := actor.SiteSecondFactorConfirmEnrollment(t.Context(), &siteapi.SiteSecondFactorConfirmInput{CurrentPassword: password, EnrollmentId: current.EnrollmentId, Code: code})
+	require.NoError(t, err)
+	assert.NotEmpty(t, issued.Response.Codes)
+	assert.NotEmpty(t, issued.SetCookie)
 }
