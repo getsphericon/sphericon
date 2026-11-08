@@ -978,6 +978,9 @@ rules:
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
+        domain-contacts,
+        domain-sending-raw,
+        domain-sending,
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
