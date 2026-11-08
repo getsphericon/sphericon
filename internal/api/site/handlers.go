@@ -61,6 +61,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
+	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
@@ -120,6 +121,7 @@ type Handlers struct {
 	secondFactorReset     *secondfactorreset.UseCase
 	workspaceCreation     *workspacecreation.UseCase
 	signUp                *signup.UseCase
+	userDeletion          *userdeletion.UseCase
 	passkeys              *passkeys.Module
 	now                   func() time.Time
 	accountLink           *accountlink.Link
@@ -247,6 +249,8 @@ type Deps struct {
 	// use case, ADR 0102): the verification and reset links, a Sign-up without verification and
 	// the provider sign-in.
 	SignUp *signup.UseCase
+	// UserDeletion is a User's deletion of themself (a use case, ADR 0050, ADR 0111).
+	UserDeletion *userdeletion.UseCase
 	// Passkeys registers a User's Passkeys (ADR 0052).
 	Passkeys *passkeys.Module
 	// Clock is the Instance clock (app.Clock) the handlers read: the site session's expiry and a
@@ -295,7 +299,7 @@ func NewHandlers(d *Deps) *Handlers {
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, secondFactorReset: d.SecondFactorReset, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceSummary: d.WorkspaceSummary, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, secondFactorReset: d.SecondFactorReset, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceSummary: d.WorkspaceSummary, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		challenges: d.Tokens,

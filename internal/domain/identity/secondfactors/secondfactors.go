@@ -330,21 +330,22 @@ func (m *Module) Verify(ctx context.Context, pending login.Pending[*ent.User], c
 	return method, err
 }
 
-// DeletionCode is the users.DeleteConfirm of User deletion (ADR 0050): with a Second factor
-// it spends code in the deletion's transaction (ErrDeletionCodeInvalid on a wrong one), so the
-// code is spent only if the deletion commits; without one it confirms nothing.
-func (m *Module) DeletionCode(code string) users.DeleteConfirm {
-	return func(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User) error {
-		f, err := factorOf(ctx, tx, locked.ID)
-		if err != nil || !active(f) {
-			return err
-		}
-		_, _, err = m.verify(ctx, tx, pub, Snapshot{User: locked, Factor: f}, code)
-		if errors.Is(err, ErrInvalidCode) {
-			return ErrDeletionCodeInvalid
-		}
+// DeletionCode spends code on the transaction tx of User deletion (ADR 0050, the use case
+// internal/usecase/userdeletion), whose User row locked the caller has locked and freshly read:
+// with a Second factor the code must be a current TOTP code or an unused Recovery code
+// (ErrDeletionCodeInvalid otherwise), and it is spent only if the deletion commits; without one
+// it confirms nothing. It keeps the lock order of every change of the factor: the User row, the
+// factor row, then the codes.
+func (m *Module) DeletionCode(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User, code string) error {
+	f, err := factorOf(ctx, tx, locked.ID)
+	if err != nil || !active(f) {
 		return err
 	}
+	_, _, err = m.verify(ctx, tx, pub, Snapshot{User: locked, Factor: f}, code)
+	if errors.Is(err, ErrInvalidCode) {
+		return ErrDeletionCodeInvalid
+	}
+	return err
 }
 
 // ChallengeBinding is the value a login challenge (ADR 0020) is keyed to: it

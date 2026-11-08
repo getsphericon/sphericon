@@ -135,7 +135,9 @@ changes; the Second factor check is the module `internal/domain/identity/secondf
 `env.SecondFactor`, whose `_test` package holds its own), the Workspace creation's `env.WorkspaceCreation`
 (`internal/usecase/workspacecreation`; a test of its id retry builds it with `New` and an id
 generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
-Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle's
+Verified with its first Workspace and an Owner from a shell), User deletion's `env.UserDeletion`
+(`internal/usecase/userdeletion`, with a proof that no longer fits the User and two co-Owners
+deleting themselves at once; a test of the race builds it with `New` on a real database), the Workspace deletion cycle's
 restore and erase (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange
 of an OAuth grant (`apitokens.Module`, which holds the raw client too) is driven through the
 server's `/oauth` routes, which its driver `internal/api/oauth` serves and tests.

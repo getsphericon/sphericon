@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 )
 
 // controlPlane is a client of the operator's control plane: a Service credential that reads the
@@ -244,7 +245,7 @@ func TestADeletedUserIsATombstone(t *testing.T) {
 	c := controlPlane(t, h)
 	_, saved := usersFrom(t, c, "")
 
-	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now).DeleteUser(t.Context(), fixtures.MemberMaryID, nil)
+	_, err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
 	require.NoError(t, err)
 
 	got, saved := usersFrom(t, c, saved)
@@ -267,7 +268,7 @@ func TestTheFeedPagesFromATombstoneOnToTheUsersChangedAfterIt(t *testing.T) {
 	c := controlPlane(t, h)
 	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now)
 	_, saved := usersFrom(t, c, "")
-	_, err := acc.DeleteUser(t.Context(), fixtures.MemberMaryID, nil)
+	_, err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
 	require.NoError(t, err)
 	john, err := h.env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)

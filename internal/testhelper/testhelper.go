@@ -63,6 +63,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
+	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 
@@ -232,6 +233,8 @@ type TestEnv struct {
 	// SecondFactorReset is the use case the server resets a member's Second factor and
 	// Passkeys with (ADR 0102).
 	SecondFactorReset *secondfactorreset.UseCase
+	// UserDeletion is the use case the server deletes a User with at their own ask (ADR 0050).
+	UserDeletion *userdeletion.UseCase
 
 	// WorkspaceCreation is the use case the server creates a Verified User's Workspaces with
 	// (ADR 0102).
@@ -575,6 +578,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Confirmations:     confirmations,
 		SecondFactor:      do.MustInvoke[*secondfactors.Module](injector),
 		SecondFactorReset: do.MustInvoke[*secondfactorreset.UseCase](injector),
+		UserDeletion:      do.MustInvoke[*userdeletion.UseCase](injector),
 		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
 		SignUp:            do.MustInvoke[*signup.UseCase](injector),
 		StepExecution:     do.MustInvoke[*automations.StepExecution](injector),

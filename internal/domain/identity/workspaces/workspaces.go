@@ -366,6 +366,12 @@ func IDByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (i
 // "live" is stated once.
 func Live() predicate.Workspace { return workspace.DiscardedAtIsNil() }
 
+// LiveIn loads, on the transaction tx, the Workspaces among ids that are Live, in ascending id
+// order.
+func LiveIn(ctx context.Context, tx *ent.Client, ids ...int64) ([]*ent.Workspace, error) {
+	return tx.Workspace.Query().Where(workspace.IDIn(ids...), Live()).Order(ent.Asc(workspace.FieldID)).All(ctx)
+}
+
 // ErasedIn reports whether the scope's Workspace is erased (ADR 0043): its rows are gone and its
 // tombstone is all that is left, so a write on its behalf that arrives late (a signed link clicked
 // long after) has nothing to record into. A Workspace in its deletion window is not erased: a
