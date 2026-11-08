@@ -1,7 +1,6 @@
 package upgrade_test
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,39 +11,35 @@ import (
 
 func TestCheckSucceedsWhenTheInstanceIsCurrent(t *testing.T) {
 	gh := githubFake(t, t.TempDir(), fakeRelease{Tag: "v0.2.0"})
-	var out bytes.Buffer
-
-	err := upgrade.CheckLatest(t.Context(), gh, "v0.2.0", &out)
+	latest, err := upgrade.CheckLatest(t.Context(), gh, "v0.2.0")
 
 	require.NoError(t, err)
-	assert.Contains(t, out.String(), "Up to date: 0.2.0")
+	assert.Equal(t, upgrade.Latest{Release: "0.2.0", Running: "v0.2.0"}, latest)
 }
 
 func TestCheckSignalsANewerRelease(t *testing.T) {
 	gh := githubFake(t, t.TempDir(), fakeRelease{Tag: "v0.3.0"})
-	var out bytes.Buffer
+	latest, err := upgrade.CheckLatest(t.Context(), gh, "v0.2.0")
 
-	err := upgrade.CheckLatest(t.Context(), gh, "v0.2.0", &out)
-
-	require.ErrorIs(t, err, upgrade.ErrNewerRelease)
-	assert.Contains(t, out.String(), "A newer release is available: 0.3.0")
+	require.NoError(t, err)
+	assert.Equal(t, upgrade.Latest{Release: "0.3.0", Running: "v0.2.0", Newer: true}, latest)
 }
 
 func TestCheckIsCurrentWhenTheInstanceIsAheadOfTheLatest(t *testing.T) {
 	gh := githubFake(t, t.TempDir(), fakeRelease{Tag: "v0.1.0"})
 
-	err := upgrade.CheckLatest(t.Context(), gh, "v0.2.0", &bytes.Buffer{})
+	latest, err := upgrade.CheckLatest(t.Context(), gh, "v0.2.0")
 
 	require.NoError(t, err)
+	assert.False(t, latest.Newer)
 }
 
 func TestCheckFailsWhenGitHubDoes(t *testing.T) {
 	gh := githubFake(t, t.TempDir())
 
-	err := upgrade.CheckLatest(t.Context(), gh, "v0.2.0", &bytes.Buffer{})
+	_, err := upgrade.CheckLatest(t.Context(), gh, "v0.2.0")
 
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, upgrade.ErrNewerRelease)
 }
 
 // A check changes nothing, so it takes none of the options of an install.
@@ -55,7 +50,7 @@ func TestCheckRefusesTheOptionsOfAnInstall(t *testing.T) {
 		{Check: true, Yes: true},
 		{Check: true, Restart: true},
 	} {
-		err := upgrade.Run(t.Context(), r)
+		_, err := drain(upgrade.Run(t.Context(), r))
 
 		require.EqualError(t, err, upgrade.Usage, "%+v", r)
 	}

@@ -3,18 +3,13 @@ package upgrade
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
+	"iter"
 	"os"
 
 	"golang.org/x/mod/semver"
 
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 )
-
-// ErrNewerRelease is what a check returns when a newer release exists; the command exits 10 on
-// it (ADR 0034).
-var ErrNewerRelease = errors.New("a newer release is available")
 
 // Usage is how `sphericon upgrade` is called.
 const Usage = "usage: upgrade [--from <dir>] [--version vX.Y.Z] [--yes] [--restart] | upgrade --check"
@@ -32,13 +27,16 @@ type Request struct {
 	// Restart migrates in a transient unit, then restarts the systemd unit Service.
 	Restart bool
 	Service string
-	Out     io.Writer
 }
 
-// Run does what r asks (ADR 0034). With Check it says whether GitHub has a newer stable release
-// (ErrNewerRelease) and takes no other option. Otherwise it walks the running binary to the
-// release, from the directory From or from GitHub.
-func Run(ctx context.Context, r Request) error {
+// Run does what r asks (ADR 0034), yielding its Progress. With Check it yields whether GitHub
+// has a newer stable release (Latest) and takes no other option. Otherwise it walks the running
+// binary to the release, from the directory From or from GitHub.
+func Run(ctx context.Context, r Request) iter.Seq2[Progress, error] {
+	return progressOf(func(emit emitter) error { return r.run(ctx, emit) })
+}
+
+func (r Request) run(ctx context.Context, emit emitter) error {
 	if r.Check {
 		if r.From != "" || r.Version != "" || r.Yes || r.Restart {
 			return errors.New(Usage)
@@ -47,7 +45,11 @@ func Run(ctx context.Context, r Request) error {
 		if err != nil {
 			return err
 		}
-		return CheckLatest(ctx, gh, buildinfo.Current().Version, r.Out)
+		latest, err := CheckLatest(ctx, gh, buildinfo.Current().Version)
+		if err != nil {
+			return err
+		}
+		return emit(latest)
 	}
 	source, err := r.source()
 	if err != nil {
@@ -63,15 +65,13 @@ func Run(ctx context.Context, r Request) error {
 		Current: buildinfo.Current().Version,
 		Version: r.Version,
 		Yes:     r.Yes,
-		Out:     r.Out,
 		Service: r.Service,
 	}
 	if r.Restart {
-		sd := Systemd{Service: r.Service, Out: r.Out}
+		sd := Systemd{Service: r.Service}
 		opts.Run, opts.PostSwap = sd.Run, sd.PostSwap
 	}
-	_, err = Walk(ctx, opts)
-	return err
+	return walk(ctx, opts, emit)
 }
 
 func (r Request) source() (Source, error) {
@@ -81,17 +81,15 @@ func (r Request) source() (Source, error) {
 	return NewGitHub()
 }
 
-// CheckLatest says on w whether gh has a stable release newer than current, changing nothing:
-// ErrNewerRelease when it has.
-func CheckLatest(ctx context.Context, gh *GitHub, current string, w io.Writer) error {
+// CheckLatest says whether gh has a stable release newer than current, changing nothing.
+func CheckLatest(ctx context.Context, gh *GitHub, current string) (Latest, error) {
 	latest, err := gh.LatestRelease(ctx)
 	if err != nil {
-		return err
+		return Latest{}, err
 	}
-	if semver.Compare(buildinfo.Semver(latest), buildinfo.Semver(current)) > 0 {
-		_, err := fmt.Fprintf(w, "A newer release is available: %s (running %s). Run `sphericon upgrade`.\n", latest, current)
-		return errors.Join(err, ErrNewerRelease)
-	}
-	_, err = fmt.Fprintf(w, "Up to date: %s is the latest release.\n", latest)
-	return err
+	return Latest{
+		Release: latest,
+		Running: current,
+		Newer:   semver.Compare(buildinfo.Semver(latest), buildinfo.Semver(current)) > 0,
+	}, nil
 }

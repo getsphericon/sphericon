@@ -12,8 +12,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/doctor"
-	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -29,7 +29,7 @@ func main() {
 	err := newRoot(newDeps(env)).Run(ctx, os.Args)
 	stop()
 	if err != nil {
-		if errors.Is(err, upgrade.ErrNewerRelease) {
+		if errors.Is(err, commandline.ErrNewerRelease) {
 			// `upgrade --check` found a newer release: it already said so on stdout (ADR 0034).
 			os.Exit(exitNewerRelease)
 		}
