@@ -1,4 +1,4 @@
-package server_test
+package tlsask_test
 
 import (
 	"net/http"

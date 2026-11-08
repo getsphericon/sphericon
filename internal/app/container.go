@@ -32,8 +32,11 @@ import (
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
+	apihooks "github.com/getsphericon/sphericon/internal/api/hooks"
 	"github.com/getsphericon/sphericon/internal/api/oauth"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
+	"github.com/getsphericon/sphericon/internal/api/tlsask"
+	apitracking "github.com/getsphericon/sphericon/internal/api/tracking"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
@@ -73,6 +76,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -99,6 +103,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -261,6 +266,16 @@ func (u *JobsUI) Shutdown() {
 // staffHandler is the /staff surface (ADR 0026, ADR 0063); nil inside while the Staff sign-in
 // is off, which server.New mounts as a 404.
 type staffHandler struct{ http.Handler }
+
+// linksHandler serves the tracked links of the messages sent (`/e/`, `/c/`, internal/api/tracking).
+type linksHandler struct{ http.Handler }
+
+// hooksHandler is the Ingest hook (`/hooks/`, ADR 0037, internal/api/hooks).
+type hooksHandler struct{ http.Handler }
+
+// tlsAskHandler answers the edge's on-demand TLS question on the internal listener (ADR 0038,
+// internal/api/tlsask).
+type tlsAskHandler struct{ http.Handler }
 
 // storagePackage provides the Presets, the database and the ent client.
 var storagePackage = do.Package(
@@ -763,6 +778,18 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
+	// The Callback interpretation behind the Ingest hook: it resolves an ingest key to its
+	// Integration and Workspace before any scope exists, so it holds the raw client.
+	do.Lazy(func(i do.Injector) (*callbackinterpretation.UseCase, error) {
+		return callbackinterpretation.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i),
+			do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	// The opens and clicks of the Outbound messages (ADR 0053): a token names a message before any
+	// scope exists, so it holds the raw client.
+	do.Lazy(func(i do.Injector) (*engagement.Recorder, error) {
+		return engagement.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*messagetoken.Tracker](i),
+			do.MustInvoke[*privaterelayranges.Detector](i), do.MustInvoke[Clock](i)), nil
+	}),
 	// Webhooks: the audit.entry rule asks the Edition whether the license is active.
 	do.Lazy(func(i do.Injector) (*webhookendpoints.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -904,11 +931,27 @@ var surfacesPackage = do.Package(
 		}
 		return &JobsUI{Handler: h, stop: stop}, nil
 	}),
+	do.Lazy(func(i do.Injector) (*linksHandler, error) {
+		return &linksHandler{apitracking.New(apitracking.Deps{
+			Engagement:  do.MustInvoke[*engagement.Recorder](i),
+			Tracker:     do.MustInvoke[*messagetoken.Tracker](i),
+			Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
+			Workspaces:  do.MustInvoke[*workspaces.Module](i),
+			Limiter:     do.MustInvoke[*ratelimit.Limiter](i),
+			AppURL:      do.MustInvoke[*config.Config](i).AppURL,
+		})}, nil
+	}),
+	do.Lazy(func(i do.Injector) (*hooksHandler, error) {
+		return &hooksHandler{apihooks.New(do.MustInvoke[*callbackinterpretation.UseCase](i))}, nil
+	}),
+	do.Lazy(func(i do.Injector) (*tlsAskHandler, error) {
+		return &tlsAskHandler{tlsask.New(do.MustInvoke[*trackingdomains.Module](i))}, nil
+	}),
 	// The handler of the internal listener (ADR 0026): the service endpoints of the
 	// Staff surface (with the `staff` license) and the edge's TLS ask (always).
 	do.Lazy(func(i do.Injector) (InternalHandler, error) {
 		surface := do.MustInvoke[*ee.Edition](i).Service()
-		h, err := server.NewInternal(do.MustInvoke[*config.Config](i), do.MustInvoke[*ent.Client](i), do.MustInvoke[*ratelimit.Limiter](i), surface)
+		h, err := server.NewInternal(do.MustInvoke[*config.Config](i), do.MustInvoke[*tlsAskHandler](i).Handler, do.MustInvoke[*ratelimit.Limiter](i), surface)
 		if err != nil {
 			return InternalHandler{}, err
 		}
@@ -917,7 +960,8 @@ var surfacesPackage = do.Package(
 	// The handler every public surface is mounted on.
 	do.Lazy(func(i do.Injector) (Handler, error) {
 		h, err := server.New(do.MustInvoke[*config.Config](i), do.MustInvoke[Database](i).DB, do.MustInvoke[*db.SchemaWatch](i), do.MustInvoke[*ent.Client](i),
-			new(do.MustInvoke[apisite.Deps](i)), do.MustInvoke[*privaterelayranges.Detector](i), do.MustInvoke[*ratelimit.Limiter](i),
+			new(do.MustInvoke[apisite.Deps](i)), do.MustInvoke[*trackingdomains.Module](i), do.MustInvoke[*ratelimit.Limiter](i),
+			do.MustInvoke[*linksHandler](i).Handler, do.MustInvoke[*hooksHandler](i).Handler,
 			do.MustInvoke[*externalAPI](i).Handler, do.MustInvoke[*mcpHandler](i).Handler, do.MustInvoke[*staffHandler](i).Handler)
 		if err != nil {
 			return Handler{}, err
