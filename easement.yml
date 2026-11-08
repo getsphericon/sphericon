@@ -1322,7 +1322,6 @@ rules:
         domain-contacts,
         domain-sending-raw,
         domain-sending,
-        usecase,
         usecase-raw,
       ]
     forbid_external: *no-container
