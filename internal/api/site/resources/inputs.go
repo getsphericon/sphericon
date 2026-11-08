@@ -116,6 +116,10 @@ type Inputs interface {
 	// The Sign-up browser is the request's cookie, a parameter the handler assigns.
 	// goverter:ignore Browser
 	VerifyEmailLink(source *siteapi.SiteVerifyEmailInput) signup.VerifyEmailLinkInput
+	// The flow and the session holder are the request's cookies, which the handler opens and
+	// assigns.
+	// goverter:ignore Flow Session
+	SigninCallback(source siteapi.SiteAuthSigninCallbackParams) signup.ProviderSignInInput
 
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) emailtemplates.CreateInput

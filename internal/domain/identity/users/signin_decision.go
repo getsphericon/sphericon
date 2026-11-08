@@ -5,7 +5,7 @@ import "github.com/getsphericon/sphericon/internal/domain/identity/signinprovide
 // SigninFacts is everything the sign-in decision of a provider callback rests on, read
 // before it is made (ADR 0048). The decision is a pure function of them, so every branch is
 // tested on its inputs alone, and what each branch does to the database is the provider sign-in's
-// (signup.UseCase.SignInWithIdentity).
+// (signup.UseCase.SignInWithProvider).
 type SigninFacts struct {
 	// KnownIdentity: a Linked identity with the provider's subject exists.
 	KnownIdentity bool

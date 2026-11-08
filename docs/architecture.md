@@ -310,7 +310,11 @@ coding standards in `CODING_STANDARDS.md`.
   links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
   completion of a pending sign-up, calling the `users` functions for the User's part
   (`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
-  `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`). A removal (or a change) that a use case guards with a check is the domain module's
+  `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`). The sign-in through a Sign-in provider is
+  its `SignInWithProvider` whole (ADR 0111): the provider's answer, the Invitation, the Sign-up items,
+  the decision, the link of a link flow, the Second factor and `user.login`; it returns what happened
+  (signed in, a Second factor due, a Pending sign-up, an identity linked) and the callback turns that
+  into a cookie or a redirect. A removal (or a change) that a use case guards with a check is the domain module's
   unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into

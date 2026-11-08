@@ -633,7 +633,8 @@ var identityPackage = do.Package(
 		return workspacecreation.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*instancestates.Module](i), workspaceid.New), nil
 	}),
 	// The Sign-up and the steps that make a User Verified with its first Workspace (a use case,
-	// ADR 0102), which starts with the Instance's default Send cap where the Instance has them.
+	// ADR 0102), which starts with the Instance's default Send cap where the Instance has them,
+	// and the sign-in through a Sign-in provider (ADR 0111).
 	do.Lazy(func(i do.Injector) (*signup.UseCase, error) {
 		usersModule := do.MustInvoke[*users.Module](i)
 		links := users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i))
@@ -644,6 +645,12 @@ var identityPackage = do.Package(
 				Budget:              do.MustInvoke[*throttle.Attempts](i).For(throttle.KindSignUp),
 				RequireVerification: do.MustInvoke[*config.Config](i).RequireEmailVerification,
 				SurveyDue:           do.MustInvoke[*signupsurveyresponses.Module](i).Enabled,
+			},
+			signup.SignInConfig{
+				Providers:     do.MustInvoke[*signinprovider.Providers](i),
+				Invitations:   do.MustInvoke[*invitations.Module](i),
+				SignupItems:   do.MustInvoke[*signupitems.Module](i),
+				SecondFactors: do.MustInvoke[*secondfactors.Module](i),
 			},
 			do.MustInvoke[Clock](i)), nil
 	}),

@@ -68,7 +68,7 @@ type ProviderSignin struct {
 // DecideSigninFor reads the facts of the provider's answer in and takes the one decision
 // (DecideSignin): the User of the Linked identity (known) and the User that holds the
 // provider's trusted email (holder), with the decision on them. The provider sign-in
-// (internal/usecase/workspacecreation) applies it.
+// (signup.UseCase.SignInWithProvider) applies it.
 func (a *Module) DecideSigninFor(ctx context.Context, in ProviderLogin) (decision SigninDecision, known, holder *ent.User, err error) {
 	known, holder, err = signinFacts(ctx, a.ent, in)
 	if err != nil {
