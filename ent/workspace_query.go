@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -71,6 +72,7 @@ type WorkspaceQuery struct {
 	withTags                *TagQuery
 	withSegments            *SegmentQuery
 	withEvents              *EventQuery
+	withEventJournalEntries *EventJournalEntryQuery
 	withOrders              *OrderQuery
 	withOrderMovements      *OrderMovementQuery
 	withHeldOrderEvents     *HeldOrderEventQuery
@@ -248,6 +250,28 @@ func (_q *WorkspaceQuery) QueryEvents() *EventQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(event.Table, event.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.EventsTable, workspace.EventsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEventJournalEntries chains the current query on the "event_journal_entries" edge.
+func (_q *WorkspaceQuery) QueryEventJournalEntries() *EventJournalEntryQuery {
+	query := (&EventJournalEntryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(eventjournalentry.Table, eventjournalentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.EventJournalEntriesTable, workspace.EventJournalEntriesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1266,6 +1290,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withTags:                _q.withTags.Clone(),
 		withSegments:            _q.withSegments.Clone(),
 		withEvents:              _q.withEvents.Clone(),
+		withEventJournalEntries: _q.withEventJournalEntries.Clone(),
 		withOrders:              _q.withOrders.Clone(),
 		withOrderMovements:      _q.withOrderMovements.Clone(),
 		withHeldOrderEvents:     _q.withHeldOrderEvents.Clone(),
@@ -1362,6 +1387,17 @@ func (_q *WorkspaceQuery) WithEvents(opts ...func(*EventQuery)) *WorkspaceQuery 
 		opt(query)
 	}
 	_q.withEvents = query
+	return _q
+}
+
+// WithEventJournalEntries tells the query-builder to eager-load the nodes that are connected to
+// the "event_journal_entries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithEventJournalEntries(opts ...func(*EventJournalEntryQuery)) *WorkspaceQuery {
+	query := (&EventJournalEntryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEventJournalEntries = query
 	return _q
 }
 
@@ -1850,12 +1886,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [42]bool{
+		loadedTypes = [43]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
 			_q.withSegments != nil,
 			_q.withEvents != nil,
+			_q.withEventJournalEntries != nil,
 			_q.withOrders != nil,
 			_q.withOrderMovements != nil,
 			_q.withHeldOrderEvents != nil,
@@ -1948,6 +1985,15 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadEvents(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.Events = []*Event{} },
 			func(n *Workspace, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEventJournalEntries; query != nil {
+		if err := _q.loadEventJournalEntries(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.EventJournalEntries = []*EventJournalEntry{} },
+			func(n *Workspace, e *EventJournalEntry) {
+				n.Edges.EventJournalEntries = append(n.Edges.EventJournalEntries, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -2364,6 +2410,39 @@ func (_q *WorkspaceQuery) loadEvents(ctx context.Context, query *EventQuery, nod
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadEventJournalEntries(ctx context.Context, query *EventJournalEntryQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *EventJournalEntry)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(eventjournalentry.FieldWorkspaceID)
+	}
+	query.Where(predicate.EventJournalEntry(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.EventJournalEntriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "workspace_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

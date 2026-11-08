@@ -4,6 +4,10 @@ status: accepted
 
 # A domain event is a River job for each consumer that wants it
 
+> **Extended by [[0116-the-event-journal-retains-explicit-anonymous-replay-inputs]]:** accepted
+> publications also leave journal metadata; explicitly retained anonymous report inputs can be
+> replayed for one consumer. The journal leaves delivery to River and restores no global cursor.
+
 > **Amended by [[0114-mandatory-sms-reactions-run-in-the-publishing-transaction]]:** a mandatory
 > reaction may use a synchronous subscriber in the publishing transaction. The River job rule
 > below describes asynchronous consumers; it no longer describes every subscriber.

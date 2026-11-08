@@ -26,6 +26,7 @@ type commandOps interface {
 	staffOps
 	serviceCredentialOps
 	rekeyOps
+	eventReplayOps
 }
 
 // deps is what the commands reach outside themselves for.
@@ -83,6 +84,7 @@ func newRoot(d deps) *cli.Command {
 			staffCommand(d),
 			serviceCredentialCommand(d),
 			presetCommand(),
+			eventsCommand(d),
 			healthcheckCommand(d),
 		},
 	}

@@ -85,6 +85,7 @@ var owners = map[string]string{
 	"EmailTemplate":        "internal/domain/content/emailtemplates",
 	"Erasure":              "ee/domain/insights/erasures",
 	"Event":                "internal/infra/events",
+	"EventJournalEntry":    "internal/infra/events",
 	"EventReceipt":         "internal/infra/events",
 	"HeldOrderEvent":       "internal/domain/contacts/orders",
 	"Hold":                 "internal/domain/sending/holds",

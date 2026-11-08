@@ -182,6 +182,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("tags", Tag.Type),
 		edge.To("segments", Segment.Type),
 		edge.To("events", Event.Type),
+		edge.To("event_journal_entries", EventJournalEntry.Type).Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("orders", Order.Type),
 		edge.To("order_movements", OrderMovement.Type),
 		edge.To("held_order_events", HeldOrderEvent.Type),

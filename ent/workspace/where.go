@@ -1585,6 +1585,29 @@ func HasEventsWith(preds ...predicate.Event) predicate.Workspace {
 	})
 }
 
+// HasEventJournalEntries applies the HasEdge predicate on the "event_journal_entries" edge.
+func HasEventJournalEntries() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EventJournalEntriesTable, EventJournalEntriesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEventJournalEntriesWith applies the HasEdge predicate on the "event_journal_entries" edge with a given conditions (other predicates).
+func HasEventJournalEntriesWith(preds ...predicate.EventJournalEntry) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newEventJournalEntriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasOrders applies the HasEdge predicate on the "orders" edge.
 func HasOrders() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

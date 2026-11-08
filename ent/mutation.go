@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
@@ -117,6 +118,7 @@ const (
 	TypeEmailTemplate        = "EmailTemplate"
 	TypeErasure              = "Erasure"
 	TypeEvent                = "Event"
+	TypeEventJournalEntry    = "EventJournalEntry"
 	TypeEventReceipt         = "EventReceipt"
 	TypeHeldOrderEvent       = "HeldOrderEvent"
 	TypeHold                 = "Hold"
@@ -22078,6 +22080,918 @@ func (m *EventMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Event edge %s", name)
+}
+
+// EventJournalEntryMutation represents an operation that mutates the EventJournalEntry nodes in the graph.
+type EventJournalEntryMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	event_id         *string
+	name             *string
+	version          *int
+	addversion       *int
+	occurred_at      *time.Time
+	recorded_at      *time.Time
+	inputs           *jsontext.Value
+	appendinputs     jsontext.Value
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*EventJournalEntry, error)
+	predicates       []predicate.EventJournalEntry
+}
+
+var _ ent.Mutation = (*EventJournalEntryMutation)(nil)
+
+// eventjournalentryOption allows management of the mutation configuration using functional options.
+type eventjournalentryOption func(*EventJournalEntryMutation)
+
+// newEventJournalEntryMutation creates new mutation for the EventJournalEntry entity.
+func newEventJournalEntryMutation(c config, op Op, opts ...eventjournalentryOption) *EventJournalEntryMutation {
+	m := &EventJournalEntryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEventJournalEntry,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEventJournalEntryID sets the ID field of the mutation.
+func withEventJournalEntryID(id int64) eventjournalentryOption {
+	return func(m *EventJournalEntryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *EventJournalEntry
+		)
+		m.oldValue = func(ctx context.Context) (*EventJournalEntry, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().EventJournalEntry.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEventJournalEntry sets the old EventJournalEntry of the mutation.
+func withEventJournalEntry(node *EventJournalEntry) eventjournalentryOption {
+	return func(m *EventJournalEntryMutation) {
+		m.oldValue = func(context.Context) (*EventJournalEntry, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EventJournalEntryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EventJournalEntryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of EventJournalEntry entities.
+func (m *EventJournalEntryMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EventJournalEntryMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EventJournalEntryMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().EventJournalEntry.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *EventJournalEntryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *EventJournalEntryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *EventJournalEntryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *EventJournalEntryMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *EventJournalEntryMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *EventJournalEntryMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetEventID sets the "event_id" field.
+func (m *EventJournalEntryMutation) SetEventID(s string) {
+	m.event_id = &s
+}
+
+// EventID returns the value of the "event_id" field in the mutation.
+func (m *EventJournalEntryMutation) EventID() (r string, exists bool) {
+	v := m.event_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventID returns the old "event_id" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldEventID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventID: %w", err)
+	}
+	return oldValue.EventID, nil
+}
+
+// ResetEventID resets all changes to the "event_id" field.
+func (m *EventJournalEntryMutation) ResetEventID() {
+	m.event_id = nil
+}
+
+// SetName sets the "name" field.
+func (m *EventJournalEntryMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *EventJournalEntryMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *EventJournalEntryMutation) ResetName() {
+	m.name = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *EventJournalEntryMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *EventJournalEntryMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *EventJournalEntryMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *EventJournalEntryMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *EventJournalEntryMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *EventJournalEntryMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *EventJournalEntryMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldWorkspaceID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ClearWorkspaceID clears the value of the "workspace_id" field.
+func (m *EventJournalEntryMutation) ClearWorkspaceID() {
+	m.workspace = nil
+	m.clearedFields[eventjournalentry.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceIDCleared returns if the "workspace_id" field was cleared in this mutation.
+func (m *EventJournalEntryMutation) WorkspaceIDCleared() bool {
+	_, ok := m.clearedFields[eventjournalentry.FieldWorkspaceID]
+	return ok
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *EventJournalEntryMutation) ResetWorkspaceID() {
+	m.workspace = nil
+	delete(m.clearedFields, eventjournalentry.FieldWorkspaceID)
+}
+
+// SetOccurredAt sets the "occurred_at" field.
+func (m *EventJournalEntryMutation) SetOccurredAt(t time.Time) {
+	m.occurred_at = &t
+}
+
+// OccurredAt returns the value of the "occurred_at" field in the mutation.
+func (m *EventJournalEntryMutation) OccurredAt() (r time.Time, exists bool) {
+	v := m.occurred_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOccurredAt returns the old "occurred_at" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldOccurredAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOccurredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOccurredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOccurredAt: %w", err)
+	}
+	return oldValue.OccurredAt, nil
+}
+
+// ResetOccurredAt resets all changes to the "occurred_at" field.
+func (m *EventJournalEntryMutation) ResetOccurredAt() {
+	m.occurred_at = nil
+}
+
+// SetRecordedAt sets the "recorded_at" field.
+func (m *EventJournalEntryMutation) SetRecordedAt(t time.Time) {
+	m.recorded_at = &t
+}
+
+// RecordedAt returns the value of the "recorded_at" field in the mutation.
+func (m *EventJournalEntryMutation) RecordedAt() (r time.Time, exists bool) {
+	v := m.recorded_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecordedAt returns the old "recorded_at" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldRecordedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecordedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecordedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecordedAt: %w", err)
+	}
+	return oldValue.RecordedAt, nil
+}
+
+// ResetRecordedAt resets all changes to the "recorded_at" field.
+func (m *EventJournalEntryMutation) ResetRecordedAt() {
+	m.recorded_at = nil
+}
+
+// SetInputs sets the "inputs" field.
+func (m *EventJournalEntryMutation) SetInputs(j jsontext.Value) {
+	m.inputs = &j
+	m.appendinputs = nil
+}
+
+// Inputs returns the value of the "inputs" field in the mutation.
+func (m *EventJournalEntryMutation) Inputs() (r jsontext.Value, exists bool) {
+	v := m.inputs
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInputs returns the old "inputs" field's value of the EventJournalEntry entity.
+// If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventJournalEntryMutation) OldInputs(ctx context.Context) (v jsontext.Value, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInputs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInputs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInputs: %w", err)
+	}
+	return oldValue.Inputs, nil
+}
+
+// AppendInputs adds j to the "inputs" field.
+func (m *EventJournalEntryMutation) AppendInputs(j jsontext.Value) {
+	m.appendinputs = append(m.appendinputs, j...)
+}
+
+// AppendedInputs returns the list of values that were appended to the "inputs" field in this mutation.
+func (m *EventJournalEntryMutation) AppendedInputs() (jsontext.Value, bool) {
+	if len(m.appendinputs) == 0 {
+		return nil, false
+	}
+	return m.appendinputs, true
+}
+
+// ClearInputs clears the value of the "inputs" field.
+func (m *EventJournalEntryMutation) ClearInputs() {
+	m.inputs = nil
+	m.appendinputs = nil
+	m.clearedFields[eventjournalentry.FieldInputs] = struct{}{}
+}
+
+// InputsCleared returns if the "inputs" field was cleared in this mutation.
+func (m *EventJournalEntryMutation) InputsCleared() bool {
+	_, ok := m.clearedFields[eventjournalentry.FieldInputs]
+	return ok
+}
+
+// ResetInputs resets all changes to the "inputs" field.
+func (m *EventJournalEntryMutation) ResetInputs() {
+	m.inputs = nil
+	m.appendinputs = nil
+	delete(m.clearedFields, eventjournalentry.FieldInputs)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *EventJournalEntryMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[eventjournalentry.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *EventJournalEntryMutation) WorkspaceCleared() bool {
+	return m.WorkspaceIDCleared() || m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *EventJournalEntryMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *EventJournalEntryMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the EventJournalEntryMutation builder.
+func (m *EventJournalEntryMutation) Where(ps ...predicate.EventJournalEntry) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EventJournalEntryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EventJournalEntryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.EventJournalEntry, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EventJournalEntryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EventJournalEntryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (EventJournalEntry).
+func (m *EventJournalEntryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EventJournalEntryMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, eventjournalentry.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, eventjournalentry.FieldUpdatedAt)
+	}
+	if m.event_id != nil {
+		fields = append(fields, eventjournalentry.FieldEventID)
+	}
+	if m.name != nil {
+		fields = append(fields, eventjournalentry.FieldName)
+	}
+	if m.version != nil {
+		fields = append(fields, eventjournalentry.FieldVersion)
+	}
+	if m.workspace != nil {
+		fields = append(fields, eventjournalentry.FieldWorkspaceID)
+	}
+	if m.occurred_at != nil {
+		fields = append(fields, eventjournalentry.FieldOccurredAt)
+	}
+	if m.recorded_at != nil {
+		fields = append(fields, eventjournalentry.FieldRecordedAt)
+	}
+	if m.inputs != nil {
+		fields = append(fields, eventjournalentry.FieldInputs)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EventJournalEntryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case eventjournalentry.FieldCreatedAt:
+		return m.CreatedAt()
+	case eventjournalentry.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case eventjournalentry.FieldEventID:
+		return m.EventID()
+	case eventjournalentry.FieldName:
+		return m.Name()
+	case eventjournalentry.FieldVersion:
+		return m.Version()
+	case eventjournalentry.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case eventjournalentry.FieldOccurredAt:
+		return m.OccurredAt()
+	case eventjournalentry.FieldRecordedAt:
+		return m.RecordedAt()
+	case eventjournalentry.FieldInputs:
+		return m.Inputs()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EventJournalEntryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case eventjournalentry.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case eventjournalentry.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case eventjournalentry.FieldEventID:
+		return m.OldEventID(ctx)
+	case eventjournalentry.FieldName:
+		return m.OldName(ctx)
+	case eventjournalentry.FieldVersion:
+		return m.OldVersion(ctx)
+	case eventjournalentry.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case eventjournalentry.FieldOccurredAt:
+		return m.OldOccurredAt(ctx)
+	case eventjournalentry.FieldRecordedAt:
+		return m.OldRecordedAt(ctx)
+	case eventjournalentry.FieldInputs:
+		return m.OldInputs(ctx)
+	}
+	return nil, fmt.Errorf("unknown EventJournalEntry field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EventJournalEntryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case eventjournalentry.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case eventjournalentry.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case eventjournalentry.FieldEventID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventID(v)
+		return nil
+	case eventjournalentry.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case eventjournalentry.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	case eventjournalentry.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case eventjournalentry.FieldOccurredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOccurredAt(v)
+		return nil
+	case eventjournalentry.FieldRecordedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecordedAt(v)
+		return nil
+	case eventjournalentry.FieldInputs:
+		v, ok := value.(jsontext.Value)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInputs(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EventJournalEntry field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EventJournalEntryMutation) AddedFields() []string {
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, eventjournalentry.FieldVersion)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EventJournalEntryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case eventjournalentry.FieldVersion:
+		return m.AddedVersion()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EventJournalEntryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case eventjournalentry.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EventJournalEntry numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EventJournalEntryMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(eventjournalentry.FieldWorkspaceID) {
+		fields = append(fields, eventjournalentry.FieldWorkspaceID)
+	}
+	if m.FieldCleared(eventjournalentry.FieldInputs) {
+		fields = append(fields, eventjournalentry.FieldInputs)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EventJournalEntryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EventJournalEntryMutation) ClearField(name string) error {
+	switch name {
+	case eventjournalentry.FieldWorkspaceID:
+		m.ClearWorkspaceID()
+		return nil
+	case eventjournalentry.FieldInputs:
+		m.ClearInputs()
+		return nil
+	}
+	return fmt.Errorf("unknown EventJournalEntry nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EventJournalEntryMutation) ResetField(name string) error {
+	switch name {
+	case eventjournalentry.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case eventjournalentry.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case eventjournalentry.FieldEventID:
+		m.ResetEventID()
+		return nil
+	case eventjournalentry.FieldName:
+		m.ResetName()
+		return nil
+	case eventjournalentry.FieldVersion:
+		m.ResetVersion()
+		return nil
+	case eventjournalentry.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case eventjournalentry.FieldOccurredAt:
+		m.ResetOccurredAt()
+		return nil
+	case eventjournalentry.FieldRecordedAt:
+		m.ResetRecordedAt()
+		return nil
+	case eventjournalentry.FieldInputs:
+		m.ResetInputs()
+		return nil
+	}
+	return fmt.Errorf("unknown EventJournalEntry field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EventJournalEntryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, eventjournalentry.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EventJournalEntryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case eventjournalentry.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EventJournalEntryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EventJournalEntryMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EventJournalEntryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, eventjournalentry.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EventJournalEntryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case eventjournalentry.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EventJournalEntryMutation) ClearEdge(name string) error {
+	switch name {
+	case eventjournalentry.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown EventJournalEntry unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EventJournalEntryMutation) ResetEdge(name string) error {
+	switch name {
+	case eventjournalentry.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown EventJournalEntry edge %s", name)
 }
 
 // EventReceiptMutation represents an operation that mutates the EventReceipt nodes in the graph.
@@ -66470,6 +67384,9 @@ type WorkspaceMutation struct {
 	events                       map[int64]struct{}
 	removedevents                map[int64]struct{}
 	clearedevents                bool
+	event_journal_entries        map[int64]struct{}
+	removedevent_journal_entries map[int64]struct{}
+	clearedevent_journal_entries bool
 	orders                       map[int64]struct{}
 	removedorders                map[int64]struct{}
 	clearedorders                bool
@@ -68184,6 +69101,60 @@ func (m *WorkspaceMutation) ResetEvents() {
 	m.events = nil
 	m.clearedevents = false
 	m.removedevents = nil
+}
+
+// AddEventJournalEntryIDs adds the "event_journal_entries" edge to the EventJournalEntry entity by ids.
+func (m *WorkspaceMutation) AddEventJournalEntryIDs(ids ...int64) {
+	if m.event_journal_entries == nil {
+		m.event_journal_entries = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.event_journal_entries[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEventJournalEntries clears the "event_journal_entries" edge to the EventJournalEntry entity.
+func (m *WorkspaceMutation) ClearEventJournalEntries() {
+	m.clearedevent_journal_entries = true
+}
+
+// EventJournalEntriesCleared reports if the "event_journal_entries" edge to the EventJournalEntry entity was cleared.
+func (m *WorkspaceMutation) EventJournalEntriesCleared() bool {
+	return m.clearedevent_journal_entries
+}
+
+// RemoveEventJournalEntryIDs removes the "event_journal_entries" edge to the EventJournalEntry entity by IDs.
+func (m *WorkspaceMutation) RemoveEventJournalEntryIDs(ids ...int64) {
+	if m.removedevent_journal_entries == nil {
+		m.removedevent_journal_entries = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.event_journal_entries, ids[i])
+		m.removedevent_journal_entries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEventJournalEntries returns the removed IDs of the "event_journal_entries" edge to the EventJournalEntry entity.
+func (m *WorkspaceMutation) RemovedEventJournalEntriesIDs() (ids []int64) {
+	for id := range m.removedevent_journal_entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EventJournalEntriesIDs returns the "event_journal_entries" edge IDs in the mutation.
+func (m *WorkspaceMutation) EventJournalEntriesIDs() (ids []int64) {
+	for id := range m.event_journal_entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEventJournalEntries resets all changes to the "event_journal_entries" edge.
+func (m *WorkspaceMutation) ResetEventJournalEntries() {
+	m.event_journal_entries = nil
+	m.clearedevent_journal_entries = false
+	m.removedevent_journal_entries = nil
 }
 
 // AddOrderIDs adds the "orders" edge to the Order entity by ids.
@@ -70892,7 +71863,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 42)
+	edges := make([]string, 0, 43)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -70907,6 +71878,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.events != nil {
 		edges = append(edges, workspace.EdgeEvents)
+	}
+	if m.event_journal_entries != nil {
+		edges = append(edges, workspace.EdgeEventJournalEntries)
 	}
 	if m.orders != nil {
 		edges = append(edges, workspace.EdgeOrders)
@@ -71053,6 +72027,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 	case workspace.EdgeEvents:
 		ids := make([]ent.Value, 0, len(m.events))
 		for id := range m.events {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeEventJournalEntries:
+		ids := make([]ent.Value, 0, len(m.event_journal_entries))
+		for id := range m.event_journal_entries {
 			ids = append(ids, id)
 		}
 		return ids
@@ -71284,7 +72264,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 42)
+	edges := make([]string, 0, 43)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -71299,6 +72279,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedevents != nil {
 		edges = append(edges, workspace.EdgeEvents)
+	}
+	if m.removedevent_journal_entries != nil {
+		edges = append(edges, workspace.EdgeEventJournalEntries)
 	}
 	if m.removedorders != nil {
 		edges = append(edges, workspace.EdgeOrders)
@@ -71445,6 +72428,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 	case workspace.EdgeEvents:
 		ids := make([]ent.Value, 0, len(m.removedevents))
 		for id := range m.removedevents {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeEventJournalEntries:
+		ids := make([]ent.Value, 0, len(m.removedevent_journal_entries))
+		for id := range m.removedevent_journal_entries {
 			ids = append(ids, id)
 		}
 		return ids
@@ -71676,7 +72665,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 42)
+	edges := make([]string, 0, 43)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -71691,6 +72680,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedevents {
 		edges = append(edges, workspace.EdgeEvents)
+	}
+	if m.clearedevent_journal_entries {
+		edges = append(edges, workspace.EdgeEventJournalEntries)
 	}
 	if m.clearedorders {
 		edges = append(edges, workspace.EdgeOrders)
@@ -71820,6 +72812,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedsegments
 	case workspace.EdgeEvents:
 		return m.clearedevents
+	case workspace.EdgeEventJournalEntries:
+		return m.clearedevent_journal_entries
 	case workspace.EdgeOrders:
 		return m.clearedorders
 	case workspace.EdgeOrderMovements:
@@ -71924,6 +72918,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeEvents:
 		m.ResetEvents()
+		return nil
+	case workspace.EdgeEventJournalEntries:
+		m.ResetEventJournalEntries()
 		return nil
 	case workspace.EdgeOrders:
 		m.ResetOrders()

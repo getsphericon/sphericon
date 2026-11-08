@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
@@ -515,6 +516,33 @@ func init() {
 	eventDescBackfill := eventFields[15].Descriptor()
 	// event.DefaultBackfill holds the default value on creation for the backfill field.
 	event.DefaultBackfill = eventDescBackfill.Default.(bool)
+	eventjournalentryMixin := schema.EventJournalEntry{}.Mixin()
+	eventjournalentryMixinFields0 := eventjournalentryMixin[0].Fields()
+	_ = eventjournalentryMixinFields0
+	eventjournalentryFields := schema.EventJournalEntry{}.Fields()
+	_ = eventjournalentryFields
+	// eventjournalentryDescCreatedAt is the schema descriptor for created_at field.
+	eventjournalentryDescCreatedAt := eventjournalentryMixinFields0[0].Descriptor()
+	// eventjournalentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	eventjournalentry.DefaultCreatedAt = eventjournalentryDescCreatedAt.Default.(func() time.Time)
+	// eventjournalentryDescUpdatedAt is the schema descriptor for updated_at field.
+	eventjournalentryDescUpdatedAt := eventjournalentryMixinFields0[1].Descriptor()
+	// eventjournalentry.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	eventjournalentry.DefaultUpdatedAt = eventjournalentryDescUpdatedAt.Default.(func() time.Time)
+	// eventjournalentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	eventjournalentry.UpdateDefaultUpdatedAt = eventjournalentryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// eventjournalentryDescEventID is the schema descriptor for event_id field.
+	eventjournalentryDescEventID := eventjournalentryFields[1].Descriptor()
+	// eventjournalentry.EventIDValidator is a validator for the "event_id" field. It is called by the builders before save.
+	eventjournalentry.EventIDValidator = eventjournalentryDescEventID.Validators[0].(func(string) error)
+	// eventjournalentryDescName is the schema descriptor for name field.
+	eventjournalentryDescName := eventjournalentryFields[2].Descriptor()
+	// eventjournalentry.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	eventjournalentry.NameValidator = eventjournalentryDescName.Validators[0].(func(string) error)
+	// eventjournalentryDescVersion is the schema descriptor for version field.
+	eventjournalentryDescVersion := eventjournalentryFields[3].Descriptor()
+	// eventjournalentry.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	eventjournalentry.VersionValidator = eventjournalentryDescVersion.Validators[0].(func(int) error)
 	eventreceiptMixin := schema.EventReceipt{}.Mixin()
 	eventreceiptMixinFields0 := eventreceiptMixin[0].Fields()
 	_ = eventreceiptMixinFields0
