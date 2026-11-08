@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# Mandatory SMS reactions run in the publishing transaction
+# Mandatory SMS and Telegram consent reactions run in the publishing transaction
 
 > **Amended by #1236:** the stop's subscriber also publishes the customer-facing
 > `sms.unsubscribed` when the opt-out is new (ADR 0115). It is a projection of that transition for
@@ -64,6 +64,53 @@ subscriber. Mandatory changes retain their transaction and table ownership.
   Include simultaneous duplicate delivery, a failed first attempt, unknown numbers, distinct
   Workspaces/sources, STOP/START with redelivery in either direction, and a new real transition.
 
+## Telegram consent observations
+
+Telegram callback interpretation and the blocked-send adapter publish internal semantic stop or
+resume observations. The same synchronous consent subscriber invokes the existing atomic owners:
+a stop records the Destination's Channel-wide Unsubscribe, and resume lifts its `everything`
+opt-out. These observations have no customer-facing Event projection or trigger. A new stop
+transition retains `telegram.unsubscribed` and the existing attribution rules (ADR 0077, ADR 0115).
+
+Receipt claiming precedes the consent reaction even when the observation finds the requested
+state already standing or the Destination has no Contact. A repeated STOP cannot undo a later
+START, and a repeated START cannot lift a later STOP; block, unblock and the unsubscribe button
+follow the same rule. A new observation can cause a new transition after a reversal. Source
+identity remains scoped to the Workspace, semantic fact and Integration; callback update ids and
+send verdicts have distinct namespaces, and a send verdict distinguishes its target Destination.
+
+This receipt protects consent changes, not every side effect of a Telegram update. Start token
+redemption keeps its conditional single-use owner operation before the resume observation, in
+the same transaction. A failure of publication rolls back receipt, consent, token/Binding changes
+and queued work together, leaving the observation available for retry. Callback success still
+means the mandatory consent reaction committed; no asynchronous send-eligibility gap is added.
+Deactivation remains a Binding removal rather than an opt-out. Manual opt-out and signed
+unsubscribe links retain their atomic command composition. A fresh link click after resume is
+a new action, not redelivery identified by the permanent link token.
+
+A Telegram callback without a valid `update_id` is malformed input: refuse it with HTTP 400
+before state changes or a receipt claim. Missing, null or invalid ids must not become fabricated
+source identities. This provider-input validation does not change the general failure policy
+for other Presets or turn a genuine transform failure into malformed input.
+
+Button acknowledgement stays outside the receipt-gated consent reaction. After successful
+transaction completion, attempt `answerCallbackQuery` even for a duplicate callback. Its failure
+is logged without failing the HTTP 200 response; it neither retries the consent reaction nor
+queues another domain event or durable acknowledgement job. A failed transaction schedules no
+successful-commit acknowledgement.
+
+The guarantee is consumption of an already accepted observation. It establishes no chronological
+order for distinct observations first delivered late or concurrently, or across bots. Designing
+that ordering is separate. Existing Channel-wide consent scope, source-scoped link opt-outs,
+Contact/Visitor fanout, attribution and receipt Erasure rules remain unchanged. Token rotation
+keeps the Integration's source identity; a newly created Integration is a new source.
+
+Check the HTTP interface before asynchronous work runs: reversals followed by redelivery in
+both directions, block/unblock, button callbacks, unknown Destinations, observations that caused
+no transition, and a fresh stop after resume. Include invalid update identity refusals, token
+redemption with rollback/retry, simultaneous duplicates, distinct bot/Workspace identities,
+duplicate acknowledgements and their best-effort failure behavior.
+
 ## Considered options
 
 - **Only announce changes after direct writes.** This records facts but leaves each producer
@@ -75,4 +122,5 @@ subscriber. Mandatory changes retain their transaction and table ownership.
   neither transactional rollback nor River's durable retry.
 
 The project is greenfield: build one publishing model with explicit synchronous and asynchronous
-subscribers, without a compatibility route through the previous direct SMS writes.
+subscribers, without a compatibility route through the previous direct SMS or Telegram observation
+writes.

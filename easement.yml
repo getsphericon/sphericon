@@ -3,250 +3,163 @@
 # the rule's `because`, so read it before reaching for a baseline entry.
 version: 1
 
-# The rule parts several components share, merged with `<<` or aliased.
-# A domain module's unchecked removal is reachable only from its use case (ADR 0102): each is one
-# anchored item here, aliased into the forbid_symbol list of every component but `usecase` and
-# `usecase-raw` that may reach the core: `x-core-forbids` (the API surfaces, MCP, the Problem mapping, each
-# context's `domain-<context>`, ee-api, the Enterprise `ee-domain-<context>` and `ee-usecase`),
-# `x-raw-holder-forbids` (the runner, each context's raw-client components and the Enterprise
-# `ee-domain-<context>-raw` and `ee-usecase-raw`); api-auth, ee-edition, testsupport and wiring
-# take this list whole. Its definition is not a use; a call even inside its own module fails, and
-# tests are excluded. Name the function as
-# `<import path>.<Name>`: a bare import path matches nothing.
-# An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
-# So do User deletion's removals (the only Owner's Membership of a Workspace in its deletion window,
-# the User row) and the Second factor reset's removals (the User's factor with its Recovery codes, all Passkeys
-# of a User), the restore and the tombstone of a Workspace's deletion cycle (deleting one is the
-# checked workspaces.Module.Delete, ADR 0110), the creation of a Workspace with its
-# creator's Membership, and each owner's step of a Contact's Erasure (the Contact row,
-# contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
-# publisher (events.PurgingPublisher), which a name cannot forbid. The erase of a Workspace's rows
-# has no name here: internal/usecase/workspacedeletion deletes them itself (ADR 0110).
-x-unchecked-removals: &unchecked-removals
-  - &tags-delete-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.DeleteIn
+# Every name below may be used only by the components its `allow` lists: a use anywhere else fails,
+# in a component with no rule of its own, in a file of no component and in the other packages, or
+# the other files, of the module that defines it (only its definition is no use). Tests are
+# excluded. Name a function as `<import path>.<Name>`: a bare import path matches nothing.
+forbid_symbol:
+  # A domain module's unchecked operation is reachable only from its use case (ADR 0102): the Live
+  # use writes, User deletion's removals (the only Owner's Membership of a Workspace in its deletion
+  # window, the User row), the Second factor reset's removals (the User's factor with its Recovery
+  # codes, all Passkeys of a User), the restore and the tombstone of a Workspace's deletion cycle
+  # (deleting one is the checked workspaces.Module.Delete, ADR 0110) with the removal of the OAuth
+  # codes its erase makes, the creation of a Workspace with its creator's Membership, and each
+  # owner's step of a Contact's Erasure (the Contact row, contacts.DeleteIn, among them). The
+  # Erasure's purge of queued jobs is a method of the bus's publisher (events.PurgingPublisher),
+  # which a name cannot forbid. The erase of a Workspace's rows has no name here:
+  # internal/usecase/workspacedeletion deletes them itself (ADR 0110).
+  - name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.DeleteIn
+    allow: &use-cases [usecase, usecase-raw]
     because: deleting a Tag is the use case internal/usecase/tagdeletion, which runs the Removal check, the Tag's Definition use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
-  - &leave-doomed-workspace-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.LeaveDoomedWorkspaceIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.LeaveDoomedWorkspaceIn
+    allow: *use-cases
     because: it lets the only Owner leave, which only User deletion may do, after it has refused a User who solely owns a live Workspace (ADR 0050); call the use case internal/usecase/userdeletion, or memberships.Module.Leave or LeaveIn
-  - &users-delete-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/users.DeleteIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/users.DeleteIn
+    allow: *use-cases
     because: deleting a User is the use case internal/usecase/userdeletion, which proves who asks (the password or the deletion link, the Second factor code), refuses the only Owner of a live Workspace and removes every Membership first (ADR 0050); call the use case
-  - &contacts-update-custom-field-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.UpdateCustomFieldIn
+  - name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.UpdateCustomFieldIn
+    allow: *use-cases
     because: editing a Custom field is the use case internal/usecase/customfieldretyping, which runs the Removal check under the Workspace lock first, refusing a retype while a Segment, a Rule or an armed Broadcast tests the field with a leaf the new type does not take (ADR 0102, ADR 0065, ADR 0099); call the use case
-  - &integrations-delete-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/integrations.DeleteIn
+  - name: github.com/getsphericon/sphericon/internal/domain/sending/integrations.DeleteIn
+    allow: *use-cases
     because: deleting an Integration is the use case internal/usecase/integrationdeletion, which runs the Removal check, the Integration's Live use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
-  - &sendingdomains-delete-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.DeleteIn
+  - name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.DeleteIn
+    allow: *use-cases
     because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which runs the Removal check, the domain's Live use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
-  - &contacts-delete-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
+  - name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
+    allow: *use-cases
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
-  - &secondfactors-reset-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/secondfactors.ResetIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/secondfactors.ResetIn
+    allow: *use-cases
     because: a User's Second factor is cleared without its code only in a Second factor reset, the use case internal/usecase/secondfactorreset, which checks there is something to clear, removes the Passkeys with it and records who reset (ADR 0020, ADR 0102, ADR 0110); call the use case, or secondfactors.Module.Disable for the User's own factor
-  - &passkeys-delete-all-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
+    allow: *use-cases
     because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorreset checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
-  - &workspaces-restore-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.RestoreIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.RestoreIn
+    allow: *use-cases
     because: a deleted Workspace is restored only by the use case internal/usecase/workspacedeletion, for a User whose Role holds workspace:delete there (ADR 0043, ADR 0061, ADR 0102); call the use case
-  - &workspaces-tombstone-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.TombstoneIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.TombstoneIn
+    allow: *use-cases
     because: a Workspace is erased only by the use case internal/usecase/workspacedeletion, after it has removed every row the Workspace owned and the OAuth codes that name it (ADR 0043, ADR 0102); call the use case
-  - &workspaces-create-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.CreateIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.CreateIn
+    allow: *use-cases
     because: a Workspace is created only by the use cases internal/usecase/workspacecreation, which refuses an Unverified User (ADR 0030), and internal/usecase/signup, which creates a User's first one as it makes the User Verified; each writes its Owner Membership on the same transaction and gives it the Send cap it starts with (ADR 0043, ADR 0067, ADR 0102); call a use case
-  - &memberships-add-creator-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.AddCreatorIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.AddCreatorIn
+    allow: *use-cases
     because: the creator's Owner Membership is written only with its Workspace, by the use cases internal/usecase/workspacecreation and internal/usecase/signup (ADR 0043, ADR 0102); call a use case
-  - &oauthclients-delete-codes-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.DeleteCodesIn
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.DeleteCodesIn
+    allow: *use-cases
     because: the OAuth codes that name a Workspace go only in the last transaction of its erase, by the use case internal/usecase/workspacedeletion (ADR 0043, ADR 0102); call the use case
-  - &broadcasts-cancel-pending
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.CancelPending
+  - name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.CancelPending
+    allow: *use-cases
     because: &contact-erase-because a Contact is erased only by the use case internal/usecase/contacterasure, which runs each owner's step in its order, in the one transaction of the Erasure, with the Contact row last (ADR 0021, ADR 0102); call the use case
-  - &automations-cancel-pending
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.CancelPending
+  - name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.CancelPending
+    allow: *use-cases
     because: *contact-erase-because
-  - &rules-cancel-pending
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.CancelPending
+  - name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.CancelPending
+    allow: *use-cases
     because: *contact-erase-because
-  - &outboundmessages-erase-short-links
-    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseShortLinks
+  - name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseShortLinks
+    allow: *use-cases
     because: *contact-erase-because
-  - &events-erase-subject
-    name: github.com/getsphericon/sphericon/internal/infra/events.EraseSubject
+  - name: github.com/getsphericon/sphericon/internal/infra/events.EraseSubject
+    allow: *use-cases
     because: *contact-erase-because
-  - &visitors-erase-subject
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseSubject
+  - name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseSubject
+    allow: *use-cases
     because: *contact-erase-because
-  - &confirmations-erase-number
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseNumber
+  - name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseNumber
+    allow: *use-cases
     because: *contact-erase-because
-  - &unsubscribes-erase-sms
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseSMS
+  - name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseSMS
+    allow: *use-cases
     because: *contact-erase-because
-  - &suppressions-erase-contact
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseContact
+  - name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseContact
+    allow: *use-cases
     because: *contact-erase-because
-  - &outboundmessages-anonymize-contact
-    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeContact
+  - name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeContact
+    allow: *use-cases
     because: *contact-erase-because
-  - &outboundmessages-anonymize-destinations
-    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeDestinations
+  - name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeDestinations
+    allow: *use-cases
     because: *contact-erase-because
-  - &capturedmessages-erase-to
-    name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseTo
+  - name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseTo
+    allow: *use-cases
     because: *contact-erase-because
-# The job runners schedule work (ADR 0102, ADR 0111): a domain module or a use case does the work
-# as a function and may queue a job (its args, river's insert), but it declares no worker and no
-# periodic job; those live in the drivers internal/jobs and ee/jobs, which call the function. Every forbid list of a domain module or a use case takes these.
-x-river-scheduling: &river-scheduling
-  - &river-worker-defaults
-    name: github.com/riverqueue/river.WorkerDefaults
+  # The job runners schedule work (ADR 0102, ADR 0111): a domain module or a use case does the work
+  # as a function and may queue a job (its args, river's insert), but it declares no worker and no
+  # periodic job; those live in the drivers internal/jobs and ee/jobs, which call the function.
+  - name: github.com/riverqueue/river.WorkerDefaults
+    allow: &job-schedulers [runner, ee-runner, wiring]
     because: &river-scheduling-because a domain module or a use case does the work as a function and may queue a job, but its worker and its periodic job belong to a driver (ADR 0102, ADR 0111), the job runner internal/jobs or the Enterprise one ee/jobs, which call the function
-  - &river-add-worker
-    name: github.com/riverqueue/river.AddWorker
+  - name: github.com/riverqueue/river.AddWorker
+    allow: *job-schedulers
     because: *river-scheduling-because
-  - &river-new-periodic-job
-    name: github.com/riverqueue/river.NewPeriodicJob
+  - name: github.com/riverqueue/river.NewPeriodicJob
+    allow: *job-schedulers
     because: *river-scheduling-because
-# The forbid list of every component that may reach the core and holds no raw client (the API
-# surfaces, MCP, the Problem mapping, the non-raw component of each context, `domain-<context>`,
-# and the Enterprise surfaces, use cases and modules that hold none): the raw client and every
-# unchecked removal.
-x-core-forbids: &core-forbids
+  # The raw ent client: its holders are the closed list of docs/architecture.md (Workspace scoping).
   - name: github.com/getsphericon/sphericon/ent.Client
-    because: a handler or a domain module takes a *ent.Scoped so every query is workspace-bound; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in the raw-client component of its context (`domain-<context>-raw`) here, never a field of a module or a handler
-  - *tags-delete-in
-  - *leave-doomed-workspace-in
-  - *users-delete-in
-  - *contacts-update-custom-field-in
-  - *integrations-delete-in
-  - *sendingdomains-delete-in
-  - *contacts-delete-in
-  - *secondfactors-reset-in
-  - *passkeys-delete-all-in
-  - *workspaces-restore-in
-  - *workspaces-tombstone-in
-  - *workspaces-create-in
-  - *memberships-add-creator-in
-  - *oauthclients-delete-codes-in
-  - *broadcasts-cancel-pending
-  - *automations-cancel-pending
-  - *rules-cancel-pending
-  - *outboundmessages-erase-short-links
-  - *events-erase-subject
-  - *visitors-erase-subject
-  - *confirmations-erase-number
-  - *unsubscribes-erase-sms
-  - *suppressions-erase-contact
-  - *outboundmessages-anonymize-contact
-  - *outboundmessages-anonymize-destinations
-  - *capturedmessages-erase-to
-  - *river-worker-defaults
-  - *river-add-worker
-  - *river-new-periodic-job
-# The forbid list of a raw-client holder (the runner, `domain-<context>-raw` and the
-# bottom of identity, `domain-identity-base`): the ent client's hooks and the upgrade types, which
-# only the wiring installs and reads, and every unchecked removal.
-x-raw-holder-forbids: &raw-holder-forbids
-  - &emailcase-hook
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/emailcase.Hook
-    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &workspacefeed-hook
-    name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Hook
-    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &workspacefeed-guard
-    name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Guard
-    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &usertombstones-hook
-    name: github.com/getsphericon/sphericon/internal/domain/identity/usertombstones.Hook
-    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &usertombstones-guard
-    name: github.com/getsphericon/sphericon/internal/domain/identity/usertombstones.Guard
-    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &trackinghostchanges-hook
-    name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges.Hook
-    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &trackinghostchanges-guard
-    name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges.Guard
-    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &upgrade-boundaries
-    name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.Boundaries
-    because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
-  - &upgrade-major-floor
-    name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.MajorFloor
-    because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
-  - *tags-delete-in
-  - *leave-doomed-workspace-in
-  - *users-delete-in
-  - *contacts-update-custom-field-in
-  - *integrations-delete-in
-  - *sendingdomains-delete-in
-  - *contacts-delete-in
-  - *secondfactors-reset-in
-  - *passkeys-delete-all-in
-  - *workspaces-restore-in
-  - *workspaces-tombstone-in
-  - *workspaces-create-in
-  - *memberships-add-creator-in
-  - *oauthclients-delete-codes-in
-  - *broadcasts-cancel-pending
-  - *automations-cancel-pending
-  - *rules-cancel-pending
-  - *outboundmessages-erase-short-links
-  - *events-erase-subject
-  - *visitors-erase-subject
-  - *confirmations-erase-number
-  - *unsubscribes-erase-sms
-  - *suppressions-erase-contact
-  - *outboundmessages-anonymize-contact
-  - *outboundmessages-anonymize-destinations
-  - *capturedmessages-erase-to
-  - *river-worker-defaults
-  - *river-add-worker
-  - *river-new-periodic-job
-# The job runner's list: the raw-holder list without the river scheduling, which is its own.
-x-runner-forbids: &runner-forbids
-  - *emailcase-hook
-  - *workspacefeed-hook
-  - *workspacefeed-guard
-  - *usertombstones-hook
-  - *usertombstones-guard
-  - *trackinghostchanges-hook
-  - *trackinghostchanges-guard
-  - *upgrade-boundaries
-  - *upgrade-major-floor
-  - *tags-delete-in
-  - *leave-doomed-workspace-in
-  - *users-delete-in
-  - *contacts-update-custom-field-in
-  - *integrations-delete-in
-  - *sendingdomains-delete-in
-  - *contacts-delete-in
-  - *secondfactors-reset-in
-  - *passkeys-delete-all-in
-  - *workspaces-restore-in
-  - *workspaces-tombstone-in
-  - *workspaces-create-in
-  - *memberships-add-creator-in
-  - *oauthclients-delete-codes-in
-  - *broadcasts-cancel-pending
-  - *automations-cancel-pending
-  - *rules-cancel-pending
-  - *outboundmessages-erase-short-links
-  - *events-erase-subject
-  - *visitors-erase-subject
-  - *confirmations-erase-number
-  - *unsubscribes-erase-sms
-  - *suppressions-erase-contact
-  - *outboundmessages-anonymize-contact
-  - *outboundmessages-anonymize-destinations
-  - *capturedmessages-erase-to
+    allow:
+      [
+        api-auth,
+        domain-identity-base,
+        domain-identity-raw,
+        domain-instance-raw,
+        domain-orchestration-raw,
+        domain-sending-raw,
+        ee-domain-identity-raw,
+        ee-domain-insights-raw,
+        ee-edition,
+        ee-runner,
+        ee-usecase-raw,
+        ent,
+        infra-raw,
+        runner,
+        testsupport,
+        usecase-raw,
+        wiring,
+      ]
+    because: a handler, a domain module or a use case takes a *ent.Scoped so every query is workspace-bound, a use case the one its driver built; raw access is the closed list of docs/architecture.md (Workspace scoping), a small package in the raw-client component of its context (`domain-<context>-raw`, `infra-raw` for the infrastructure), never a field of a module, a use case or a handler
+  # The ent client's hooks and the upgrade types: only the wiring installs and reads them.
+  - name: github.com/getsphericon/sphericon/internal/domain/contacts/emailcase.Hook
+    allow: &client-builders [wiring]
+    because: &ent-hooks-because the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); no other package installs one
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Hook
+    allow: *client-builders
+    because: *ent-hooks-because
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Guard
+    allow: *client-builders
+    because: *ent-hooks-because
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/usertombstones.Hook
+    allow: *client-builders
+    because: *ent-hooks-because
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/usertombstones.Guard
+    allow: *client-builders
+    because: *ent-hooks-because
+  - name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges.Hook
+    allow: *client-builders
+    because: *ent-hooks-because
+  - name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges.Guard
+    allow: *client-builders
+    because: *ent-hooks-because
+  - name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.Boundaries
+    allow: *client-builders
+    because: &upgrade-because the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no other package knows an upgrade type
+  - name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.MajorFloor
+    allow: *client-builders
+    because: *upgrade-because
+
 # No core tier (kernel, infrastructure, domain) and no Enterprise module or use case imports a
 # surface's generated package: what the core shares with a contract is generated into the kernel
 # (the scope vocabulary, internal/kernel/tokenscope), and an Enterprise vocabulary into the module
@@ -731,7 +644,6 @@ target_only: ['src/generated/**', '**/*.gen.ts', '**/*_gen.go']
 
 rules:
   api-site:
-    forbid_symbol: *core-forbids
     may_depend_on:
       [
         api-auth,
@@ -754,7 +666,6 @@ rules:
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-external:
-    forbid_symbol: *core-forbids
     may_depend_on:
       [
         api-auth,
@@ -774,13 +685,11 @@ rules:
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
-    forbid_symbol: *core-forbids
     may_depend_on:
       [api-auth, api-problem, domain-contacts, domain-sending-raw, gen-surfaces, usecase]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
-    forbid_symbol: *core-forbids
     may_depend_on:
       [
         api-problem,
@@ -793,38 +702,31 @@ rules:
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-oauth:
-    forbid_symbol: *core-forbids
     may_depend_on: [domain-identity-raw]
     forbid_external: *no-container
     because: the OAuth server reads and registers OAuth clients through their module and exchanges a grant for a Connection through the API tokens module, never through another surface
   api-tracking:
-    forbid_symbol: *core-forbids
     may_depend_on:
       [api-auth, domain-contacts, domain-identity-base, domain-sending-raw, domain-sending, usecase]
     forbid_external: *no-container
     because: the tracked links record an open or a click through the Outbound message's engagement and an opt-out through its use case (ADR 0111); the host gate's Workspace comes from the shared auth package, never from the wiring
   api-hooks:
-    forbid_symbol: *core-forbids
     may_depend_on: [api-problem, domain-sending, usecase-raw]
     forbid_external: *no-container
     because: the Ingest hook hands each callback to the Callback interpretation, which finds the Integration and scopes to its Workspace (ADR 0111)
   api-tlsask:
-    forbid_symbol: *core-forbids
     may_depend_on: [domain-sending-raw]
     forbid_external: *no-container
     because: the TLS question asks the Tracking domains whether a host is served (ADR 0038, ADR 0111)
   mcp:
-    forbid_symbol: *core-forbids
     may_depend_on: [api-auth, api-problem, domain-identity-raw, gen-surfaces]
     forbid_external: *no-container
     because: MCP projects the external API's operations as tools over the shared auth handlers and the Problem mapping, never over another surface's handlers
   api-auth:
     may_depend_on: [domain-identity-raw, domain-identity-base, gen-surfaces]
-    forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the security handlers sit below every surface
   api-problem:
-    forbid_symbol: *core-forbids
     may_depend_on: [domain-orchestration, domain-identity-raw, domain-identity-base, gen-surfaces]
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
@@ -832,37 +734,31 @@ rules:
     may_depend_on: [domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: contacts sits above identity in the domain tier (ADR 0102), so a contacts module imports the kernel, the infrastructure, ent, the other contacts modules and identity's (an allowance added with its first import), never a module of a context above (a Template, an Integration, a Broadcast, an Automation, a Rule) nor a use case; an operation that needs one is a use case above both
   domain-content:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: content sits above contacts in the domain tier (ADR 0102), so a content module imports the kernel, the infrastructure, ent, the other content modules and those of identity and contacts (an allowance added with its first import), never a module of a context above (an Integration, an Outbound message, a Broadcast, an Automation, a Rule) nor a use case; an operation that needs one is a use case above both
   domain-sending-raw:
     may_depend_on: [domain-sending, domain-contacts, domain-identity-raw, domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
     because: sending sits above content in the domain tier (ADR 0102), so a sending module imports the kernel, the infrastructure, ent, the other sending modules and those of identity, contacts and content, never a module of a context above (a Broadcast, an Automation, a Rule, a Webhook endpoint) nor a use case; an operation that needs one is a use case above both
   domain-sending:
     may_depend_on: [domain-sending-raw, domain-contacts, domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: sending sits above content in the domain tier (ADR 0102), so a sending module imports the kernel, the infrastructure, ent, the other sending modules and those of identity, contacts and content, never a module of a context above (a Broadcast, an Automation, a Rule, a Webhook endpoint) nor a use case; an operation that needs one is a use case above both
   domain-orchestration-raw:
     may_depend_on: [domain-orchestration, domain-contacts, domain-content, domain-sending]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
     because: orchestration sits above sending in the domain tier (ADR 0102), so an orchestration module imports the kernel, the infrastructure, ent, the other orchestration modules and those of identity, contacts, content and sending, never a module of a context above (the Setup checklist, an Export stream, the Instance state) nor a use case; an operation that needs one is a use case above both
   domain-orchestration:
     may_depend_on: [domain-contacts, domain-sending]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: orchestration sits above sending in the domain tier (ADR 0102), so an orchestration module imports the kernel, the infrastructure, ent, the other orchestration modules and those of identity, contacts, content and sending, never a module of a context above (the Setup checklist, an Export stream, the Instance state) nor a use case; an operation that needs one is a use case above both
   domain-orchestration-removalcheck:
     may_depend_on:
@@ -873,37 +769,31 @@ rules:
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: the Removal check sits at the top of orchestration (ADR 0102), so it imports the readers of the modules that may hold a row and the other orchestration modules, never a module of a context above nor a use case
   domain-contacts-removalcheck-readers:
     may_depend_on: [domain-contacts]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: a reader belongs to its owner's context (ADR 0102), so a contacts reader imports its owner and the modules of contacts and below, never a module of a context above nor a use case
   domain-orchestration-removalcheck-readers:
     may_depend_on: [domain-orchestration-raw, domain-orchestration, domain-contacts]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: a reader belongs to its owner's context (ADR 0102), so an orchestration reader imports its owner, the modules beside it and those below, never a module of a context above nor a use case
   domain-insights:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: insights sits above orchestration in the domain tier (ADR 0102), so an insights package imports the kernel, the infrastructure, ent and the packages of its own context and of the contexts below, (an allowance added with its first import), never a module of the instance context (the Instance state, an upgrade) nor a use case; an operation that needs one is a use case above both
   domain-instance-raw:
     may_depend_on: [domain-identity-base, domain-sending, gen-telemetry]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
     because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import) and the Telemetry contract's client its Telemetry report sends with (ADR 0112), never a use case
   domain-instance:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case
   tools:
     may_depend_on: []
@@ -911,7 +801,6 @@ rules:
     because: a tool package reads files and contracts, never the application's modules; what it needs from the application is the kernel
   testsupport:
     may_depend_on: [domain-identity-raw]
-    forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: test support loads the committed fixtures through the modules' own functions where one exists (an Invitation's token) and knows no driver
   usecase:
@@ -928,12 +817,6 @@ rules:
         domain-sending,
       ]
     must_not_depend_on: [*no-surface-gen]
-    forbid_symbol:
-      - name: github.com/getsphericon/sphericon/ent.Client
-        because: a use case takes the *ent.Scoped its driver built and hands it to the domain modules it calls; it holds no raw client
-      - *river-worker-defaults
-      - *river-add-worker
-      - *river-new-periodic-job
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)
   usecase-raw:
@@ -949,38 +832,22 @@ rules:
         domain-sending,
       ]
     must_not_depend_on: [*no-surface-gen]
-    forbid_symbol:
-      - *emailcase-hook
-      - *workspacefeed-hook
-      - *workspacefeed-guard
-      - *usertombstones-hook
-      - *usertombstones-guard
-      - *trackinghostchanges-hook
-      - *trackinghostchanges-guard
-      - *upgrade-boundaries
-      - *upgrade-major-floor
-      - *river-worker-defaults
-      - *river-add-worker
-      - *river-new-periodic-job
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); these hold the raw client because their rows belong to no Workspace when they start, and like the raw-client holders of the core they install no ent hook
   domain-identity-base:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
   domain-identity-raw:
     may_depend_on: [domain-identity, domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
     because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
   domain-identity:
     may_depend_on: [domain-identity-raw]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
   runner:
     may_depend_on:
@@ -996,7 +863,6 @@ rules:
         usecase-raw,
       ]
     forbid_external: *no-container
-    forbid_symbol: *runner-forbids
     because: the job runner calls the core and the use cases, never a surface or the Enterprise Edition; the Enterprise runner (ee/jobs) hands its jobs in through the wiring
   cli:
     may_depend_on:
@@ -1010,7 +876,6 @@ rules:
         usecase-raw,
       ]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: a command receives its arguments, calls one operation of a domain module or a use case and prints the result (review rule 5, ADR 0111); it takes them from the command app the wiring builds, never the raw client or the container, and of the Enterprise Edition it reaches only the Service credentials
   commands:
     may_depend_on: [tools, testsupport]
@@ -1019,9 +884,6 @@ rules:
   infra:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
-    forbid_symbol:
-      - name: github.com/getsphericon/sphericon/ent.Client
-        because: of the infrastructure only the bus, the database package and the Login throttle hold the raw client (`infra-raw`, the closed list of docs/architecture.md, Workspace scoping)
     forbid_external: *no-container
     because: infrastructure imports only the kernel and never a domain module (ADR 0102); a domain module, a use case, a driver or the wiring reaches it. The bus's consumers are registered by the wiring, and the ent client's hooks are installed there (internal/app/entclient)
   infra-raw:
@@ -1046,7 +908,6 @@ rules:
     may_depend_on: []
     because: the ent schema reads its Go types from the kernel, and the endpoint URL rule of a Webhook endpoint from internal/infra/webhook; it knows no domain module
   ee-api:
-    forbid_symbol: *core-forbids
     may_depend_on:
       [
         api-problem,
@@ -1071,7 +932,6 @@ rules:
         ee-api,
         gen-surfaces,
       ]
-    forbid_symbol: *unchecked-removals
     forbid_external:
       - *no-container-do
       - name: github.com/riverqueue/river
@@ -1080,7 +940,6 @@ rules:
   ee-runner:
     may_depend_on: [ee-licensekey, ee-domain-insights-raw, ee-usecase-raw]
     forbid_external: *no-container
-    forbid_symbol: *runner-forbids
     because: the Enterprise job runner receives a job and calls an Enterprise module or use case (review rule 5, ADR 0111), never a surface, the Edition or the core's runner
   ee-licensekey:
     may_depend_on: []
@@ -1091,25 +950,21 @@ rules:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); unlike a core use case it calls no unchecked removal of the core, which only the core's own use case may call
   ee-usecase-raw:
     may_depend_on: [domain-identity-base, ee-licensekey, ee-domain-insights-raw]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
     because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); these hold the raw client because they work across Workspaces, and unlike a core use case they call no unchecked removal of the core and install no ent hook of the core
   ee-domain-identity-raw:
     may_depend_on: [ee-licensekey]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
     because: an Enterprise identity module sits in the bottom context (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the identity modules of the core and of the Edition, never a module of a context above nor a use case; it reads a contract's vocabulary from what is generated into it, never from a surface's generated package
   ee-domain-identity:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: an Enterprise identity module sits in the bottom context (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the identity modules of the core and of the Edition, never a module of a context above nor a use case; it reads a contract's vocabulary from what is generated into it, never from a surface's generated package
   ee-domain-insights-raw:
     may_depend_on:
@@ -1123,13 +978,11 @@ rules:
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
     because: an Enterprise insights module sits above orchestration (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the modules of the core and of the Edition of its context and the contexts below, never an instance module nor a use case; an operation that needs one is a use case
   ee-domain-insights:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *core-forbids
     because: an Enterprise insights module sits above orchestration (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the modules of the core and of the Edition of its context and the contexts below, never an instance module nor a use case; an operation that needs one is a use case
   wiring:
     may_depend_on:
@@ -1171,7 +1024,6 @@ rules:
         gen-telemetry,
         testsupport,
       ]
-    forbid_symbol: *unchecked-removals
     because: wiring is where the program is assembled; it builds the Telemetry report's client and reads the host the report describes (ADR 0104)
 
   web-generated:

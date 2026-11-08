@@ -31,9 +31,11 @@ type TelegramStop struct {
 	IntegrationID int64
 	// Via is how the person stopped: one of events.UnsubscribedBy*.
 	Via string
-	// Message is the Outbound message a button was pressed on, nil when there is none or it did
-	// not resolve. Attribution follows its delivery row independently of the Contact event.
-	Message *ent.OutboundMessage
+	// Message attribution is the snapshot of the message the observation refers to.
+	OutboundMessageID int64
+	ContactID         int64
+	BroadcastID       int64
+	AutomationID      int64
 	// Now is the clock of the fact.
 	Now time.Time
 	// DedupKey is the key of the fact the stop came from: the events derive theirs from it.
@@ -50,8 +52,8 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 	if err != nil {
 		return err
 	}
-	if st.Message != nil && st.Message.ContactID != nil && !slices.Contains(contactIDs, *st.Message.ContactID) {
-		contactIDs = append([]int64{*st.Message.ContactID}, contactIDs...)
+	if st.ContactID != 0 && !slices.Contains(contactIDs, st.ContactID) {
+		contactIDs = append([]int64{st.ContactID}, contactIDs...)
 	}
 	o := unsubscribes.OptOut{
 		Channel: channels.Telegram, Destination: st.Destination, Source: eligibility.SourceEverything,
@@ -77,9 +79,9 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 			WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
 			IntegrationID: st.IntegrationID, Via: st.Via, DedupID: fmt.Sprintf("%s/unsubscribed/%d", st.DedupKey, c.ID),
 		}
-		if m := st.Message; m != nil && m.ContactID != nil && *m.ContactID == c.ID {
+		if st.ContactID == c.ID {
 			// The public Contact event names the source; anonymous attribution is published below.
-			e.BroadcastID, e.AutomationID = lo.FromPtr(m.BroadcastID), lo.FromPtr(m.AutomationID)
+			e.BroadcastID, e.AutomationID = st.BroadcastID, st.AutomationID
 		}
 		if err := pub.Publish(ctx, e); err != nil {
 			return err
@@ -87,8 +89,8 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 	}
 	// Only an action on a received message attributes the stop; a provider refusing a new send
 	// reports an existing refusal, not a reaction to that new Broadcast.
-	if m := st.Message; st.Via == events.UnsubscribedByButton && m != nil && m.ID != 0 {
-		return pub.Publish(ctx, &events.MessageUnsubscribed{WorkspaceID: s.WorkspaceID(), OutboundMessageID: m.ID, ObservedAt: st.Now})
+	if st.Via == events.UnsubscribedByButton && st.OutboundMessageID != 0 {
+		return pub.Publish(ctx, &events.MessageUnsubscribed{WorkspaceID: s.WorkspaceID(), OutboundMessageID: st.OutboundMessageID, ObservedAt: st.Now})
 	}
 
 	return nil

@@ -369,7 +369,8 @@ func stopFrom(t *testing.T, env *testhelper.TestEnv, broadcastID, automationID i
 	}
 	err := env.Bus.WithinScopedTx(t.Context(), env.DB.Scoped(fixtures.AcmeID), func(ts *ent.Scoped, pub events.Publisher) error {
 		return channelstop.StopTelegram(t.Context(), ts, pub, channelstop.TelegramStop{
-			Destination: strconv.Itoa(optOutUser), Via: events.UnsubscribedByButton, Message: msg,
+			Destination: strconv.Itoa(optOutUser), Via: events.UnsubscribedByButton,
+			OutboundMessageID: msg.ID, ContactID: lo.FromPtr(msg.ContactID), BroadcastID: lo.FromPtr(msg.BroadcastID), AutomationID: lo.FromPtr(msg.AutomationID),
 			Now: time.Now(), DedupKey: "test:stop",
 		})
 	})

@@ -16,7 +16,7 @@ func Subscribers() []events.Subscriber {
 	return []events.Subscriber{{
 		Wants: func(_ events.Envelope, ev events.DomainEvent) bool {
 			switch ev.(type) {
-			case *events.SmsStopObserved, *events.SmsStartObserved:
+			case *events.SmsStopObserved, *events.SmsStartObserved, *events.TelegramStopObserved, *events.TelegramResumeObserved:
 				return true
 			default:
 				return false
@@ -27,6 +27,14 @@ func Subscribers() []events.Subscriber {
 }
 func react(ctx context.Context, s *ent.Scoped, pub events.Publisher, env events.Envelope, ev events.DomainEvent) error {
 	switch e := ev.(type) {
+	case *events.TelegramResumeObserved:
+		return unsubscribes.LiftTelegram(ctx, s, e.Destination)
+	case *events.TelegramStopObserved:
+		return StopTelegram(ctx, s, pub, TelegramStop{
+			Destination: e.Destination, IntegrationID: e.IntegrationID, Via: e.Via,
+			OutboundMessageID: e.OutboundMessageID, ContactID: e.ContactID, BroadcastID: e.BroadcastID, AutomationID: e.AutomationID,
+			Now: env.OccurredAt, DedupKey: e.DedupID,
+		})
 	case *events.SmsStartObserved:
 		return confirmations.StartSMSIn(ctx, s, pub, e.Phone)
 	case *events.SmsStopObserved:

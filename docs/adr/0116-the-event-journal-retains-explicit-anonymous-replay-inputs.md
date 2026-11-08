@@ -40,6 +40,17 @@ cursor. Aggregates remain CRUD rows, not event-sourced state.
 Metadata-only entries cannot reconstruct an original event for an arbitrary future consumer.
 Retaining another input requires an explicit payload, versioning and Erasure decision.
 
+## Inspection
+
+`events list` inspects one Workspace or explicitly the Instance, never an unscoped union of both.
+It returns JSON containing publication metadata and the sorted names of retained consumers,
+without their inputs. Exact name and event-id filters combine with optional inclusive `from`
+and exclusive `before` recording times. Output is newest recorded time first, with insertion id
+breaking ties; that ordering is for inspection, not a commit-order guarantee or replay cursor.
+The default limit is 100 and the maximum 1000. A `truncated` flag reports omitted matches.
+Inspection queues no work and can read a discarded Workspace until erasure removes its history.
+Retained consumer names describe stored data, not whether a consumer is currently enabled.
+
 ## Replay
 
 An operator chooses one allowlisted consumer, an existing Workspace and a half-open interval of

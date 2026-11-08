@@ -1,0 +1,65 @@
+# Retained anonymous history for journal inspection. These types and consumers need not still
+# be registered: reading metadata must not depend on the current event/consumer catalog.
+- id: 81001 # fixture: JournalOldest
+  event_id: 01JC2C40000000000000000001
+  workspace_id: 2
+  name: inspection.example
+  version: 1
+  occurred_at: '2026-11-08 03:55:00'
+  recorded_at: '2026-11-08 04:00:00'
+  created_at: '2026-11-08 04:00:00'
+  updated_at: '2026-11-08 04:00:00'
+- id: 81002 # fixture: JournalMiddle
+  event_id: 01JC2C40000000000000000002
+  workspace_id: 2
+  name: inspection.example
+  version: 1
+  occurred_at: '2026-11-08 03:56:00'
+  recorded_at: '2026-11-08 04:01:00'
+  created_at: '2026-11-08 04:01:00'
+  updated_at: '2026-11-08 04:01:00'
+- id: 81003 # fixture: JournalEarlierTie
+  event_id: 01JC2C40000000000000000003
+  workspace_id: 2
+  name: inspection.example
+  version: 1
+  occurred_at: '2026-11-08 03:57:00'
+  recorded_at: '2026-11-08 04:02:00'
+  created_at: '2026-11-08 04:02:00'
+  updated_at: '2026-11-08 04:02:00'
+- id: 81004 # fixture: JournalLatestTie
+  event_id: 01JC2C40000000000000000004
+  workspace_id: 2
+  name: inspection.example
+  version: 2
+  occurred_at: '2026-11-08 03:58:00'
+  recorded_at: '2026-11-08 04:02:00'
+  inputs: '{"z_retired_report":{"version":1,"args":{"workspaceId":2}},"a_retired_report":{"version":1,"args":{"workspaceId":2}}}'
+  created_at: '2026-11-08 04:02:00'
+  updated_at: '2026-11-08 04:02:00'
+- id: 81005 # fixture: JournalOtherType
+  event_id: 01JC2C40000000000000000005
+  workspace_id: 2
+  name: inspection.other
+  version: 1
+  occurred_at: '2026-11-08 03:59:00'
+  recorded_at: '2026-11-08 04:03:00'
+  created_at: '2026-11-08 04:03:00'
+  updated_at: '2026-11-08 04:03:00'
+- id: 81006 # fixture: JournalOtherWorkspace
+  event_id: 01JC2C40000000000000000006
+  workspace_id: 8
+  name: inspection.example
+  version: 1
+  occurred_at: '2026-11-08 03:59:00'
+  recorded_at: '2026-11-08 04:03:00'
+  created_at: '2026-11-08 04:03:00'
+  updated_at: '2026-11-08 04:03:00'
+- id: 81007 # fixture: JournalInstance
+  event_id: 01JC2C40000000000000000007
+  name: inspection.instance
+  version: 1
+  occurred_at: '2026-11-08 03:59:00'
+  recorded_at: '2026-11-08 04:03:00'
+  created_at: '2026-11-08 04:03:00'
+  updated_at: '2026-11-08 04:03:00'
