@@ -45,11 +45,29 @@ func (m *Module) newLogin(counter login.Throttle) *login.Module[*ent.StaffMember
 	})
 }
 
+// PasswordStep is the answer of the password step: the login module's result and, while the
+// Staff member has no confirmed TOTP, the pending key to enrol.
+type PasswordStep struct {
+	login.Result[*ent.StaffMember]
+
+	// Enrolment is the pending TOTP key of a Staff member that has no confirmed one, nil for
+	// one that has and for every outcome but login.SecondFactor.
+	Enrolment *totp.Key
+}
+
 // CheckPassword is the first login step, run by the login module: the answer is a
-// challenge (a Staff member always has a second step), never a session. The sign-in must
-// be on (Sessions is not nil): the surface is served only then.
-func (m *Module) CheckPassword(ctx context.Context, email, password string) (login.Result[*ent.StaffMember], error) {
-	return m.login.Password(ctx, email, password)
+// challenge (a Staff member always has a second step), never a session, with the key to enrol
+// at first login. The sign-in must be on (Sessions is not nil): the surface is served only then.
+func (m *Module) CheckPassword(ctx context.Context, email, password string) (PasswordStep, error) {
+	res, err := m.login.Password(ctx, email, password)
+	if err != nil || res.Outcome != login.SecondFactor {
+		return PasswordStep{Result: res}, err
+	}
+	key, err := m.enrolment(ctx, res.Principal)
+	if err != nil {
+		return PasswordStep{}, err
+	}
+	return PasswordStep{Result: res, Enrolment: key}, nil
 }
 
 // Complete is the second login step, run by the login module. On Authenticated the
@@ -69,11 +87,11 @@ func Enrolled(op *ent.StaffMember) bool {
 	return op.TotpConfirmedAt != nil && op.TotpSecretEncrypted != ""
 }
 
-// Enrolment is the pending TOTP key of a Staff member that has no confirmed one, nil
+// enrolment is the pending TOTP key of a Staff member that has no confirmed one, nil
 // for one that has. It is minted once and shown unchanged by every password step until
 // confirmed, so a repeated password login can neither swap it nor invalidate the one
 // being enrolled.
-func (m *Module) Enrolment(ctx context.Context, op *ent.StaffMember) (*totp.Key, error) {
+func (m *Module) enrolment(ctx context.Context, op *ent.StaffMember) (*totp.Key, error) {
 	if Enrolled(op) {
 		return nil, nil
 	}

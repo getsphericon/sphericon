@@ -85,11 +85,7 @@ func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginI
 		return nil, throttled(ctx, res.Delay)
 	case login.SecondFactor:
 		out := &staffapi.StaffLoginResult{Outcome: staffapi.StaffLoginOutcomeChallenge, Challenge: res.Challenge}
-		key, err := h.module.Enrolment(ctx, res.Principal)
-		if err != nil {
-			return nil, err
-		}
-		if key != nil {
+		if key := res.Enrolment; key != nil {
 			out.Outcome = staffapi.StaffLoginOutcomeEnrolment
 			out.Enrolment = staffapi.NewOptStaffEnrolment(staffapi.StaffEnrolment{Secret: key.Secret, URI: key.URI, QrCode: key.QRCode})
 		}
