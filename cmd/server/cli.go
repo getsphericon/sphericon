@@ -26,7 +26,7 @@ type commandOps interface {
 	staffOps
 	serviceCredentialOps
 	rekeyOps
-	eventReplayOps
+	eventOps
 }
 
 // deps is what the commands reach outside themselves for.
