@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -57,11 +58,13 @@ func (m *Module) Bootstrap(ctx context.Context, presented string, in Input) (Min
 	if m.bootstrapToken == "" || subtle.ConstantTimeCompare([]byte(presented), []byte(m.bootstrapToken)) != 1 {
 		return Minted{}, ErrBootstrapTokenInvalid
 	}
-	s, err := m.workspaces.BootstrapScope(ctx)
+	id, err := m.workspaces.OldestLiveID(ctx)
 	if err != nil {
-		return Minted{}, fmt.Errorf("apitokens: bootstrap scope: %w", err)
+		return Minted{}, fmt.Errorf("apitokens: bootstrap workspace: %w", err)
 	}
-	return Mint(ctx, s, in)
+	// The bootstrap token names the Workspace rather than a login, so the scope is the ingest
+	// actor's: no one is audited for the first token.
+	return Mint(ctx, events.Ingest(m.ent.Scoped(id)), in)
 }
 
 // nameEmpty refuses a token name that is blank after trimming.

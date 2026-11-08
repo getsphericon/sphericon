@@ -52,14 +52,11 @@ func EraseDate(discardedAt time.Time) time.Time { return discardedAt.Add(Deletio
 // which Workspace ids exist. Every surface answers it alike (review rule 15).
 var ErrNotFound = errors.New("workspaces: workspace not found")
 
-// BootstrapScope is the scoped client of the oldest Workspace, for the bootstrap
-// token (no caller token exists yet to say which Workspace is meant).
-func (m *Module) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
-	id, err := m.client.Workspace.Query().Where(Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return events.Ingest(m.client.Scoped(id)), nil
+// OldestLiveID is the key of the oldest live Workspace, the one the bootstrap token mints the
+// Instance's first token into (apitokens.Module.Bootstrap): no caller token exists yet to say which
+// Workspace is meant.
+func (m *Module) OldestLiveID(ctx context.Context) (int64, error) {
+	return m.client.Workspace.Query().Where(Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
 }
 
 // LinkScope is the scoped client of the Workspace a signed unsubscribe or confirmation link

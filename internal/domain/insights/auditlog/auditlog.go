@@ -1,8 +1,9 @@
 // Package auditlog serves the Audit log (GLOSSARY "Audit entry", ADR 0022) to every surface that
 // reads it: a page of a Workspace's entries, the choices of its filter, its export and its
 // retention window, each refused as unlicensed on an Instance whose License lacks the feature
-// (Log), and the cursor handling and the views of an entry, customer-facing and the Staff
-// console's, so the surfaces map one result and cannot diverge on masking (ADR 0111).
+// (Log), and the cursor handling and the customer-facing view of an entry, so the surfaces map one
+// result and cannot diverge on masking (ADR 0111). The Staff console's view, which names a Service
+// credential, is its own module's (ee/domain/insights/workspaceoversight).
 package auditlog
 
 import (
@@ -56,41 +57,9 @@ type View struct {
 	UserAgent  *string
 }
 
-// ViewOf builds the customer-facing view of a stored entry.
-func ViewOf(e *ent.AuditEntry) View { return viewOf(e, events.IsStaff(e.ActorKind)) }
-
-// Page is one page of a Workspace's Audit log, newest first: its entries as the reader is shown
-// them and the cursor of the next page ("" on the last).
-type Page struct {
-	Entries []View
-	Next    string
-}
-
-// pageOf is the customer-facing Page of a read.
-func pageOf(p pagination.IDPage[*ent.AuditEntry]) Page {
-	return pageWith(p, ViewOf)
-}
-
-// StaffPageOf is the platform console's Page of a read: like the customer's, except that a Service
-// credential is named (the customer sees it as "Sphericon staff").
-func StaffPageOf(p pagination.IDPage[*ent.AuditEntry]) Page {
-	return pageWith(p, func(e *ent.AuditEntry) View {
-		return viewOf(e, events.IsStaff(e.ActorKind) && e.ActorKind != events.ActorService)
-	})
-}
-
-func pageWith(p pagination.IDPage[*ent.AuditEntry], view func(*ent.AuditEntry) View) Page {
-	out := Page{Entries: make([]View, len(p.Items))}
-	for i, e := range p.Items {
-		out.Entries[i] = view(e)
-	}
-	if p.Next > 0 {
-		out.Next = NextCursor(p.Next)
-	}
-	return out
-}
-
-func viewOf(e *ent.AuditEntry, maskActor bool) View {
+// ViewOf builds the customer-facing view of a stored entry: every platform staff identity, a
+// Service credential among them, as events.StaffLabel with no id.
+func ViewOf(e *ent.AuditEntry) View {
 	v := View{
 		ID:         e.ID,
 		OccurredAt: e.OccurredAt,
@@ -105,7 +74,7 @@ func viewOf(e *ent.AuditEntry, maskActor bool) View {
 		IP:         e.IP,
 		UserAgent:  e.UserAgent,
 	}
-	if maskActor {
+	if events.IsStaff(e.ActorKind) {
 		label := events.StaffLabel
 		v.ActorKind, v.ActorID, v.ActorName = events.ActorStaff, nil, &label
 	}
@@ -121,6 +90,25 @@ func viewOf(e *ent.AuditEntry, maskActor bool) View {
 		}
 	}
 	return v
+}
+
+// Page is one page of a Workspace's Audit log, newest first: its entries as the reader is shown
+// them and the cursor of the next page ("" on the last).
+type Page struct {
+	Entries []View
+	Next    string
+}
+
+// pageOf is the customer-facing Page of a read.
+func pageOf(p pagination.IDPage[*ent.AuditEntry]) Page {
+	out := Page{Entries: make([]View, len(p.Items))}
+	for i, e := range p.Items {
+		out.Entries[i] = ViewOf(e)
+	}
+	if p.Next > 0 {
+		out.Next = NextCursor(p.Next)
+	}
+	return out
 }
 
 // unchanged reports a diff entry recorded only to classify the entry (schema.Audited
