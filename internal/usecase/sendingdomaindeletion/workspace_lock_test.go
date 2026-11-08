@@ -45,7 +45,7 @@ func TestAScheduleQueuedFirstRefusesTheDeleteOfTheDomainItSendsFrom(t *testing.T
 	cipher := testhelper.Cipher(t)
 	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
-	domains := sendingdomains.New(bus, cipher, time.Now)
+	domains := sendingdomains.New(bus, cipher, nil, time.Now)
 	deletion := sendingdomaindeletion.New(bus, domains, removalcheck.New(messaging.NewResolver(cipher, registry.Default())), time.Now)
 	from := broadcasts.EmailContentPatch{FromEmail: patch.Set("news@" + fixtures.SendingDomainVerifiedDomain)}
 	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Content: from})

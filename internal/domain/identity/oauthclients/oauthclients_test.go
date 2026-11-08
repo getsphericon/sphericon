@@ -134,6 +134,49 @@ func TestDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 	assert.NotErrorIs(t, err, oauthclients.ErrUnknownClient)
 }
 
+// A code is spent only by the request it was issued for: a refused claim (another client, another
+// redirect URI, a verifier that does not match the challenge) leaves it to the right one, which
+// gets the grant once.
+func TestClaimCodeChecksTheRequestBeforeItSpendsTheCode(t *testing.T) {
+	env := testhelper.Setup(t)
+	owner, err := env.DB.Membership.Get(t.Context(), fixtures.AcmeOwnerMembershipID)
+	require.NoError(t, err)
+	target, err := newModule(env.DB).Decide(t.Context(), oauthclients.Decision{
+		ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI,
+		CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier), Scope: "contacts:read", Membership: owner, Approve: true,
+	})
+	require.NoError(t, err)
+	u, err := url.Parse(target)
+	require.NoError(t, err)
+	good := oauthclients.CodeClaim{
+		Code: u.Query().Get("code"), ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI, Verifier: verifier,
+	}
+	now := time.Now()
+
+	for name, mutate := range map[string]func(*oauthclients.CodeClaim){
+		"unknown code":       func(c *oauthclients.CodeClaim) { c.Code = "nope" },
+		"another client":     func(c *oauthclients.CodeClaim) { c.ClientID = "someone-else" },
+		"another redirect":   func(c *oauthclients.CodeClaim) { c.RedirectURI = fixtureRedirectURI + "/other" },
+		"wrong verifier":     func(c *oauthclients.CodeClaim) { c.Verifier = strings.Repeat("a", 43) },
+		"malformed verifier": func(c *oauthclients.CodeClaim) { c.Verifier = "short" },
+	} {
+		c := good
+		mutate(&c)
+		_, err := oauthclients.ClaimCodeIn(t.Context(), env.DB, c, now)
+		require.ErrorIs(t, err, oauthclients.ErrInvalidGrant, name)
+	}
+
+	grant, err := oauthclients.ClaimCodeIn(t.Context(), env.DB, good, now)
+	require.NoError(t, err, "no refused claim spent the code")
+	assert.EqualValues(t, fixtures.AcmeID, grant.WorkspaceID)
+	assert.EqualValues(t, fixtures.AcmeOwnerMembershipID, grant.MembershipID)
+	assert.Equal(t, []string{"contacts:read"}, grant.Scopes)
+	assert.Equal(t, "Fixture Connector", grant.Edges.Client.Name)
+
+	_, err = oauthclients.ClaimCodeIn(t.Context(), env.DB, good, now)
+	require.ErrorIs(t, err, oauthclients.ErrInvalidGrant, "a code is spent once")
+}
+
 // newModule is the OAuth clients module with the production metadata fetcher.
 func newModule(client *ent.Client) *oauthclients.Module {
 	return oauthclients.New(client, oauthclients.NewFetcher(webhook.Allowlist{}), time.Now)

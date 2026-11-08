@@ -16,6 +16,7 @@ func TestEntrywrite(t *testing.T) {
 		"github.com/getsphericon/sphericon/internal/domain/contacts/tags",
 		"github.com/getsphericon/sphericon/internal/domain/contacts/contacts",
 		"github.com/getsphericon/sphericon/internal/usecase/tagdeletion",
+		"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion",
 		"github.com/getsphericon/sphericon/internal/testhelper",
 		"github.com/getsphericon/sphericon/e2e",
 		"github.com/getsphericon/sphericon/internal/domain/orchestration/automations",

@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
@@ -146,16 +145,13 @@ func TestHTTPExecutionOfAnErasedFiringDoesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	err := rules.EraseFirings(context.Background(), s, fixtures.ContactBobID)
-	require.NoError(t, err)
+	// The Contact's Erasure deletes its Firings by their cascading foreign key.
+	env.DB.RuleFiring.DeleteOneID(f.ID).ExecX(t.Context())
 
 	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(context.Background(), s, f.ID, 0, executionAttempt())
 
 	require.NoError(t, err)
 	assert.Equal(t, rules.HTTPExecution{}, decision)
-	exists, err := s.RuleFiring().Query().Where(rulefiring.ID(f.ID)).Exist(context.Background())
-	require.NoError(t, err)
-	assert.False(t, exists)
 }
 
 func TestHTTPExecutionRecordsAMissingContactAsFailed(t *testing.T) {

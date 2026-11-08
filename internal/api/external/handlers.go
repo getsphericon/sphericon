@@ -35,7 +35,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
@@ -69,19 +68,18 @@ type Handlers struct {
 	tagDeletion      *tagdeletion.UseCase
 	// customFieldRetyping is the use case behind editing a Custom field.
 	customFieldRetyping *customfieldretyping.UseCase
-	// integrationDeletion, sendingDomainDeletion and sendingDomainVerification are the use cases behind
-	// deleting an Integration or a Sending domain and verifying one.
-	integrationDeletion       *integrationdeletion.UseCase
-	sendingDomainDeletion     *sendingdomaindeletion.UseCase
-	sendingDomainVerification *sendingdomainverification.UseCase
-	bindings                  *bindings.Module
-	templates                 *emailtemplates.Module
-	brandKit                  *brandkits.Module
-	automations               *automations.Module
-	rules                     *rules.Module
-	bootstrapToken            string
-	audit                     AuditLog
-	export                    ExportStreams
+	// integrationDeletion and sendingDomainDeletion are the use cases behind deleting an Integration
+	// or a Sending domain.
+	integrationDeletion   *integrationdeletion.UseCase
+	sendingDomainDeletion *sendingdomaindeletion.UseCase
+	bindings              *bindings.Module
+	templates             *emailtemplates.Module
+	brandKit              *brandkits.Module
+	automations           *automations.Module
+	rules                 *rules.Module
+	bootstrapToken        string
+	audit                 AuditLog
+	export                ExportStreams
 	// unsubscribe records an opt-out (a use case, ADR 0102).
 	unsubscribe *unsubscriberecording.UseCase
 }
@@ -128,21 +126,20 @@ type Deps struct {
 	TagDeletion      *tagdeletion.UseCase
 	// CustomFieldRetyping is the use case behind editing a Custom field (ADR 0102).
 	CustomFieldRetyping *customfieldretyping.UseCase
-	// IntegrationDeletion, SendingDomainDeletion and SendingDomainVerification are the use cases behind
-	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
-	IntegrationDeletion       *integrationdeletion.UseCase
-	SendingDomainDeletion     *sendingdomaindeletion.UseCase
-	SendingDomainVerification *sendingdomainverification.UseCase
-	Bindings                  *bindings.Module
-	Templates                 *emailtemplates.Module
-	BrandKit                  *brandkits.Module
-	Automations               *automations.Module
-	Rules                     *rules.Module
-	Broadcasts                *broadcasts.Module
-	Reputation                *reputation.Module
-	BootstrapToken            string
-	Audit                     AuditLog
-	Export                    ExportStreams
+	// IntegrationDeletion and SendingDomainDeletion are the use cases behind deleting an Integration
+	// or a Sending domain (ADR 0102).
+	IntegrationDeletion   *integrationdeletion.UseCase
+	SendingDomainDeletion *sendingdomaindeletion.UseCase
+	Bindings              *bindings.Module
+	Templates             *emailtemplates.Module
+	BrandKit              *brandkits.Module
+	Automations           *automations.Module
+	Rules                 *rules.Module
+	Broadcasts            *broadcasts.Module
+	Reputation            *reputation.Module
+	BootstrapToken        string
+	Audit                 AuditLog
+	Export                ExportStreams
 	// Clock is the Instance clock (app.Clock) the handlers read, and the security handler checks a
 	// Connection's Two-factor requirement against. Required.
 	Clock func() time.Time
@@ -156,7 +153,7 @@ func NewHandlers(d Deps) *Handlers {
 	}
 	return &Handlers{
 		now:        d.Clock,
-		workspaces: d.Workspaces, workspaceSummary: d.WorkspaceSummary, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
+		workspaces: d.Workspaces, workspaceSummary: d.WorkspaceSummary, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,

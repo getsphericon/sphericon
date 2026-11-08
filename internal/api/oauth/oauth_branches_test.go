@@ -18,10 +18,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/internal/api/oauth"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/connectionissuance"
 )
 
 func closedClient(t *testing.T) *ent.Client {
@@ -130,7 +130,7 @@ func TestStorageFailureIsAServerError(t *testing.T) {
 	mux := http.NewServeMux()
 	closed := closedClient(t)
 	clients := oauthclients.New(closed, oauthclients.NewFetcher(webhook.Allowlist{}), time.Now)
-	oauth.New(connectionissuance.New(closed, clients, time.Now), clients, "https://app.test", "https://app.test").Mount(mux)
+	oauth.New(apitokens.New(closed, time.Now), clients, "https://app.test", "https://app.test").Mount(mux)
 	do := func(req *http.Request) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)

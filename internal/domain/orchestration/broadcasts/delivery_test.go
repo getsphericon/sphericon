@@ -2,7 +2,6 @@ package broadcasts_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -226,7 +225,6 @@ func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, holds.ReasonSuspended, held.Reason)
-	assert.True(t, broadcasts.IsRetryLater(err))
 	assert.True(t, d.pending(id))
 	b := d.broadcastRow()
 	require.NotNil(t, b.HoldReason)
@@ -256,7 +254,6 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	var deferred *broadcasts.DeferredError
 	require.ErrorAs(t, err, &deferred)
 	assert.Positive(t, deferred.Delay)
-	assert.True(t, broadcasts.IsRetryLater(err))
 	assert.True(t, d.pending(second))
 	assert.NotNil(t, d.recipientRow(second).DeferredUntil)
 	assert.Nil(t, d.broadcastRow().HoldReason, "busy is not a hold")
@@ -290,80 +287,6 @@ func TestDeferralFollowsTheBroadcastsOwnIntegration(t *testing.T) {
 func TestUnknownRecipientIsNothingToSend(t *testing.T) {
 	d := newDelivery(t, time.Now)
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, 424242))
-}
-
-func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T) {
-	d := newDelivery(t, time.Now)
-	id := d.recipient(fixtures.ContactAliceID)
-
-	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("smtp unavailable")))
-
-	assert.Equal(t, broadcast.StatusSent, d.broadcastRow().Status)
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Failed: 1}, d.stats())
-
-	msg := d.messageOf(id)
-	assert.Equal(t, outboundmessage.StatusFailed, msg.Status, "a give-up before any claim still records the one message")
-	assert.Equal(t, "smtp unavailable", *msg.Reason)
-}
-
-// A live claim is another attempt that may still reach the provider: giving up fails nothing,
-// so the recipient is not left failed while its mail goes out, and the adapter can ask again.
-func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
-	d := newDelivery(t, time.Now)
-	id := d.recipient(fixtures.ContactBobID)
-	d.claim(id, 0)
-
-	err := d.del.GiveUp(d.t.Context(), d.s, id, errors.New("smtp unavailable"))
-
-	require.ErrorIs(t, err, outboundmessages.ErrInProgress)
-	assert.True(t, d.pending(id))
-	assert.Equal(t, outboundmessage.StatusPending, d.messageOf(id).Status)
-	assert.Equal(t, broadcast.StatusSending, d.broadcastRow().Status)
-}
-
-func TestGiveUpFailsAnExpiredClaim(t *testing.T) {
-	d := newDelivery(t, time.Now)
-	id := d.recipient(fixtures.ContactBobID)
-	d.claim(id, time.Hour)
-
-	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("smtp unavailable")))
-
-	assert.False(t, d.pending(id))
-	assert.Equal(t, outboundmessage.StatusFailed, d.messageOf(id).Status)
-}
-
-// A send that reached the provider but whose recipient write was lost is sent, whatever the
-// retries that followed said: the recipient follows its message.
-func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
-	d := newDelivery(t, time.Now)
-	id := d.recipient(fixtures.ContactAliceID)
-	b := d.broadcastRow()
-	rec := d.recipientRow(id)
-	c := d.env.DB.Contact.GetX(d.t.Context(), fixtures.ContactAliceID)
-	req, err := outboundmessages.BroadcastRecipient(b, rec, c)
-	require.NoError(d.t, err)
-	res, err := d.out.Send(d.t.Context(), d.s, req)
-	require.NoError(t, err)
-	require.Equal(t, outboundmessages.Sent, res.Outcome)
-
-	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("late failure")))
-
-	assert.False(t, d.pending(id))
-	assert.Equal(t, outboundmessage.StatusSent, d.messageOf(id).Status)
-	assert.Len(t, d.box.sent, 1)
-}
-
-// A recipient that is already decided keeps its outcome: a late give-up neither fails it nor
-// rewrites its message.
-func TestAGiveUpAfterTheSendKeepsItsOutcome(t *testing.T) {
-	d := newDelivery(t, time.Now)
-	id := d.recipient(fixtures.ContactAliceID)
-	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
-
-	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("late")))
-
-	assert.Equal(t, outboundmessage.StatusSent, d.messageOf(id).Status)
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, d.stats())
 }
 
 func TestHeldErrorMessage(t *testing.T) {

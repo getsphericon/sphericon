@@ -105,7 +105,7 @@ Removal check reads under the Workspace lock, `internal/usecase/customfieldretyp
 edit's, `internal/usecase/integrationdeletion` the Integration's and
 `internal/usecase/sendingdomaindeletion` the Sending domain's, while what the Removal check finds is
 tested in `internal/domain/orchestration/removalcheck` against `env.RemovalCheck`,
-`internal/usecase/sendingdomainverification` the Sending domain checks, `internal/usecase/secretreencryption` the re-encryption of every stored
+`internal/usecase/secretreencryption` the re-encryption of every stored
 secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
 `internal/usecase/visitoridentification` what Identify binds and stitches). An operation that moves
 into the module that owns its subject (ADR 0112) takes its tests to that module's `_test` package:
@@ -114,7 +114,9 @@ into the module that owns its subject (ADR 0112) takes its tests to that module'
 (`SendTransactional`), `internal/domain/instance/instancestates` the Release check and the
 Telemetry report, `internal/domain/contacts/eventrecording` what the Event recording refuses and
 publishes, and `internal/domain/orchestration/automations` the steps of an Enrollment
-(`StepExecution`). The use case is built from the container like a
+(`StepExecution`). A check that needs nothing above its owner moves into the owner the same way
+(ADR 0110): `internal/domain/sending/sendingdomains` holds the Sending domain checks (`Verify`,
+`Recheck`). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step
@@ -131,10 +133,9 @@ owns holds the raw client: the Second factor's is `env.SecondFactor`
 (`internal/usecase/workspacecreation`; a test of its id retry builds it with `New` and an id
 generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
 Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle
-(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables(), clock)`
-(the removals of the Enterprise Edition's tables the wiring hands in), and the exchange of an OAuth
-grant (`internal/usecase/connectionissuance`) is driven through the server's `/oauth` routes, which
-its driver `internal/api/oauth` serves and tests.
+(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange
+of an OAuth grant (`apitokens.Module`, which holds the raw client too) is driven through the
+server's `/oauth` routes, which its driver `internal/api/oauth` serves and tests.
 The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test
 of a race on a new address gives it a `Lookup` whose first lookup misses.
 A use case reads the time from the clock `New` takes (ADR 0104), so a test that needs a moment

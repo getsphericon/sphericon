@@ -160,10 +160,10 @@ coding standards in `CODING_STANDARDS.md`.
   context's reason. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
   Memberships (`domain-identity-base`, which imports no other domain module: every module may read a
   Workspace, ask a Permission or tell the Owners something), the Users (`domain-identity-users`, the
-  one caller of `memberships.LeaveDoomedWorkspaceIn`), the raw-client holders `consentrecords`,
+  one caller of `memberships.LeaveDoomedWorkspaceIn`), the raw-client holders `apitokens`, `consentrecords`,
   `invitations`, `joindomains`, `oauthclients`, `passkeys`, `recoverycodes`, `signupitems`,
   `signupsurveyresponses`, `staffmembers`, `suspension`, `usertombstones` and `workspacefeed`
-  (`domain-identity-raw`), and `apitokens`, `login`, `signinprovider` and `accountlink` (`domain-identity`).
+  (`domain-identity-raw`), and `login`, `signinprovider` and `accountlink` (`domain-identity`).
   An identity module imports no module of another context: not `providerlimit`, not `contacts`.
   Contacts, above it, is one component (`domain-contacts`, the glob of
   `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
@@ -229,8 +229,11 @@ coding standards in `CODING_STANDARDS.md`.
   the log it keeps (`usertombstones` the User tombstones, `trackinghostchanges` the Tracking host changes); the
   Enterprise Edition owns its own tables in its domain modules (`ee/domain/insights/auditentries` the Audit
   entries, `ee/domain/insights/erasures` the Erasures rows, `ee/domain/insights/usages` the Usage rows,
-  `ee/domain/identity/servicecredentials` the Service credentials). Any other package, a use case
-  included, reads the table and changes it only through a function of its owner: the Workspace's
+  `ee/domain/identity/servicecredentials` the Service credentials). The one other writer of a
+  Workspace-owned table is the Workspace erase (`internal/usecase/workspacedeletion`, ADR 0110): it
+  deletes the rows of a Workspace past its deletion window itself, through the scoped client, since no
+  rule of an owner governs them any more; it only deletes, and only through the scoped wrappers. Any
+  other package, a use case included, reads the table and changes it only through a function of its owner: the Workspace's
   standing (`workspaces.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position)
   for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
   (`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
@@ -271,11 +274,11 @@ coding standards in `CODING_STANDARDS.md`.
   case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
   states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
   `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
-  included: the Sending domain re-check jobs call `sendingdomainverification`). It takes the
+  included: the Workspace erase job calls `workspacedeletion`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
   `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Enrollment's exit and anonymous attribution work), reads them, and changes their rows only through their functions
-  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes anonymous attribution for the Broadcast consumer).
+  (Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseNumber`, `unsubscribes.EraseSMS` and the rest, then `contacts.DeleteIn`, whose foreign keys delete or detach the Contact's other rows; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes anonymous attribution for the Broadcast consumer).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
   the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
   `workspaces.Module.LinkScope`). easement
@@ -284,16 +287,15 @@ coding standards in `CODING_STANDARDS.md`.
   for the Ingest hook), lets only the drivers and the wiring import one (`allow_importers`)
   and forbids it the raw client. The exception is a use case whose rows belong to no Workspace
   when it starts, so there is no `*ent.Scoped` to take: the Second factor of a User
-  (`internal/usecase/secondfactorcheck`) and the exchange of an OAuth code or refresh token, a
-  secret that names its grant (`internal/usecase/connectionissuance`). Such a use case holds the
+  (`internal/usecase/secondfactorcheck`). Such a use case holds the
   raw client, opens the raw transaction its modules' `...In(ctx, tx, ...)` functions join and is
   in the closed list of "Workspace scoping"; easement holds it as the `usecase-raw` component,
   one pattern per use case (`internal/usecase/secondfactorcheck*`), isolated like the others.
   Two more are such use cases: the deletion cycle of a Workspace
   (`internal/usecase/workspacedeletion`), which lists the Workspaces that have no scope yet, erases one
-  table at a time, each batch of listed ids through the removal of the table's owner (`tags.EraseTagsIn`,
-  `events.EraseEventsIn` and one more per Workspace-owned table; the Enterprise Edition's three, which
-  no core package may import, the wiring hands in as `workspacedeletion.EditionTables`), and moves the
+  table at a time, each batch of listed ids deleted by itself through `*ent.Scoped`, the Enterprise
+  Edition's tables included (ADR 0110: the one writer of a Workspace-owned table besides its owner,
+  "Only the owner writes a table" above), and moves the
   Workspace row through `workspaces.DiscardIn`, `RestoreIn` and
   `TombstoneIn`, with the OAuth codes that name it removed by `oauthclients.DeleteCodesIn` and every
   job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, "Async"
@@ -307,7 +309,7 @@ coding standards in `CODING_STANDARDS.md`.
   completion of a pending sign-up, calling the `users` functions for the User's part
   (`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
   `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`). A removal (or a change) that a use case guards with a check is the domain module's
-  unchecked removal (and so is the store of a check's outcome, `sendingdomains.RecordDKIM`): a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
+  unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
   the `forbid_symbol` list of every component but `usecase` and `usecase-raw` that may reach the core
@@ -318,15 +320,14 @@ coding standards in `CODING_STANDARDS.md`.
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The Second factor's writes that skip its checks (the User's
-  `users.MoveSecondFactorIn`, `recoverycodes.ReplaceIn` and `DeleteIn`, `passkeys.DeleteAllIn`) and the
-  issue of a grant's credentials (`apitokens.IssueConnection` and `RotateConnection`,
-  `oauthclients.NewRefreshTokenIn`), the moves of a Workspace's deletion cycle
+  `users.MoveSecondFactorIn`, `recoverycodes.ReplaceIn` and `DeleteIn`, `passkeys.DeleteAllIn`), the
+  moves of a Workspace's deletion cycle
   (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the core removals of its erase (each
   `Erase…In` of a Workspace-owned table, one shared reason, and `oauthclients.DeleteCodesIn`; the
   Edition's three are in every list but `x-unchecked-removals`, since the wiring and the Edition, which
   take that one, name them to hand them in), the creation of a Workspace with its creator's Membership
   (`workspaces.CreateIn`, `memberships.AddCreatorIn`) and each owner's step of a Contact's Erasure
-  (`visitors.EraseSubject`, `events.EraseSubject`, `rules.EraseFirings` and the others
+  (`visitors.EraseSubject`, `events.EraseSubject`, `suppressions.EraseContact` and the others
   `internal/usecase/contacterasure` sequences; the purge of its queued jobs is a method of the bus's
   publisher, which a name cannot forbid) are such items too. The tests of the operation live in the use case's own `_test` package
   (`internal/usecase/tagdeletion`, `internal/usecase/customfieldretyping`, `internal/usecase/unsubscriberecording`; a retype's refusal is also tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
@@ -496,11 +497,11 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
      (`workspaces.Module.LinkScope`, which the unsubscribe page and the confirmation page build
      the scope with; the one-click POST in `internal/server/tracking.go` scopes with the raw
      client), `workspaces.Module.BootstrapScope` (the bootstrap token), and the token
-     endpoint of the OAuth server (`internal/api/oauth`, over the use case
-     `internal/usecase/connectionissuance`), where an authorization
-     code or a refresh token names its grant: the use case loads the row through
-     `internal/domain/identity/oauthclients` and scopes the Connection's writes (`apitokens.IssueConnection`,
-     `RotateConnection`, `RevokeGrant`) to the Workspace that row names;
+     endpoint of the OAuth server (`internal/api/oauth`, over `apitokens.Module.ExchangeCode` and
+     `Refresh`), where an authorization code or a refresh token names its grant: `apitokens`
+     claims the code through `oauthclients.ClaimCodeIn`, which checks the client, the redirect URI
+     and the PKCE verifier first, or reads its own refresh token, and scopes the Connection's
+     writes to the Workspace that row names;
   7. the platform Staff member (ADR 0026): `ee/domain/insights/workspaceoversight` scopes over the one Workspace the console
      is looking at, in three reads, each after the Workspace row is loaded and each through
      the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
@@ -528,14 +529,16 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   scope names, and the command line resolves a Workspace id), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
   the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
   several Workspaces), `internal/api/auth` (credentials, token and key lookup),
-  `internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes and refresh tokens,
+  `internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes,
   ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is
-  looked up by its secret before any scope exists), `internal/domain/identity/passkeys` and `internal/domain/identity/recoverycodes`
+  looked up by its secret before any scope exists), `internal/domain/identity/apitokens` (only the
+  token endpoint's exchange of a code or a refresh token, ADR 0110: a Connection's refresh tokens
+  are its own, and a code or a refresh token is looked up by its secret before any scope exists;
+  every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/recoverycodes`
   (a User's Passkeys and Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
   Workspace), the use cases `internal/usecase/secondfactorcheck` (a User's TOTP Second
   factor, ADR 0020: one transaction across the User, the Recovery codes and the Passkeys, none of
-  which a Workspace owns), `internal/usecase/connectionissuance` (the token endpoint's
-  exchange of a code or a refresh token, a secret that names its grant, see list item 6),
+  which a Workspace owns),
   `internal/usecase/workspacecreation` (a Workspace with its Owner Membership, ADR 0043: no Workspace
   exists yet), `internal/usecase/signup` (the steps that make a User Verified with its first
   Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/noticedelivery` (the Notices of
@@ -554,8 +557,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
   loses a domain, by that re-check or by a hand-over, are told by the `join_domain.lost` event the loss publishes in its transaction; `Tokens` reads every Workspace's claim of a domain for the end-to-end
   suite's resolver), `internal/domain/sending/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
-  listed by a river job that then reads each domain by id to learn its Workspace and hands the use case
-  `internal/usecase/sendingdomainverification` that Workspace's scope; `DevTXTLookup`, the end-to-end suite's resolver; and `SecretSweeps`, the DKIM private keys the re-encryption rewrites; every other
+  listed by a river job that then reads each domain by id to learn its Workspace and calls `Module.Recheck`
+  in that Workspace's scope; `DevTXTLookup`, the end-to-end suite's resolver; and `SecretSweeps`, the DKIM private keys the re-encryption rewrites; every other
   function takes a `*ent.Scoped`), `internal/domain/sending/trackingdomains` (the Workspaces' Tracking domains, ADR 0071: the recheck job lists the verified hosts of every
   Workspace with `Module.Due` and loads a row by id in `Module.Recheck` before any scope exists, then writes through that
   Workspace's scope), `internal/domain/orchestration/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row, and `SecretSweeps`, the sealed HTTP step fields of every Automation version the re-encryption rewrites; every other function takes a `*ent.Scoped`), `internal/domain/identity/suspension` (Workspace
@@ -608,12 +611,14 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   `Edition` (extra event consumers + read seams) in `internal/app` and in `testhelper.Setup`
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
   (`site.AuditLog`, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
-  (ent has one schema package) but is written and read only by `ee/domain/insights/auditentries`. An Audit entry is
+  (ent has one schema package) but is written and read only by `ee/domain/insights/auditentries` (the
+  Workspace erase deletes a deleted Workspace's entries too, below). An Audit entry is
   an event that is not Projected (`events.Projected`): it has no Event row, automations skip it,
   and a Webhook endpoint receives it only when it names `audit.entry`.
-  The Audit table's rows are removed only through `ee/domain/insights/auditentries`: by `ee/usecase/auditlogretention`'s prune (the
+  The Audit table's rows are removed only through `ee/domain/insights/auditentries`, by `ee/usecase/auditlogretention`'s prune (the
   `retention` license feature, a Workspace `retention_days` window, one hourly river job registered
-  through `Edition.Jobs()`, which calls `auditentries.PruneBefore`) and by the erase of a deleted Workspace.
+  through `Edition.Jobs()`, which calls `auditentries.PruneBefore`), and by the Workspace erase
+  (`internal/usecase/workspacedeletion`), which deletes a deleted Workspace's entries directly (ADR 0110).
   An explicit entry, one no audited write produces (a Workspace setting, a login, a membership
   change, the Audit log export `auditentries.Log.Export`), is recorded one way: `events.RecordAudit`
   inside the transaction of the change (`bus.WithinTx`, or `bus.WithinScopedTx` with the scope's
@@ -796,6 +801,14 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   failure belongs to the Action's result; it does not cancel the Firing's other Actions or adopt
   Enrollment lifecycle rules. The call retains its stable request identity and existing delivery
   guarantees: a request accepted before a failed result write may be repeated.
+- **Broadcast send jobs** (ADR 0107, ADR 0111): `broadcasts.Delivery.RunQueued` runs a plan job
+  and `DeliverRecipient` one attempt at a recipient's job (`broadcasts.Attempt`, the number and
+  the limit). The module decides what the run comes to, as a `broadcasts.Outcome` without River
+  types: a job superseded by a reschedule or stale (unscheduled, sent or failed meanwhile) is done,
+  a hold, a Deferral or a live claim waits the time it asks for, any other failure spends an
+  attempt, and on the last attempt a failed recipient is given up so the Broadcast settles. The
+  River workers load the row that names the Workspace, hand over the attempt and turn the outcome
+  into a snooze or an error; the synchronous adapter runs every send as its last attempt.
 - `internal/kernel/emaildoc` (ADR 0040) turns an editor document into email HTML inside the binary: the editor's own
   export code, bundled by `packages/emaildoc` (`mise run build:emaildoc`; rerun it after any change to the pinned
   `@react-email/editor`, then `go test ./internal/kernel/emaildoc -update` to accept the new golden HTML) and run in goja,

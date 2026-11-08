@@ -35,7 +35,7 @@ type update func(*ent.BroadcastScopedUpdate)
 // (draft, scheduled) and, as a convergent re-plan, while sending; from sent or failed it is
 // an invalid transition, so a late or retried job cannot regress a finished Broadcast. Resume
 // is the plan of a queued job, enqueued after the claim: it is not legal from draft, so an
-// unschedule that lands after the job's Due check is not undone by it.
+// unschedule that lands after the job was queued is not undone by it.
 func machine(s *ent.Scoped, id int64, set update) *stateless.StateMachine {
 	m := lifecycle.New(lifecycle.Storage[broadcast.Status]{
 		Read: func(ctx context.Context) (broadcast.Status, error) {

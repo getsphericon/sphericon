@@ -1,20 +1,22 @@
 // Package oauthclients owns the OAuth clients of the authorization server for MCP connectors
 // (ADR 0016, phase 2) and what belongs to a client (ADR 0102): the client a connector registers
-// (RFC 7591) or names by its Client ID Metadata Document, the authorization code a signed-in
-// User's consent records, and the refresh tokens of a grant. The consent screen is a SPA route;
-// the signed-in user's decision arrives through the site API and is handled by [Module.Decide].
-// Exchanging a code or a refresh token for a Connection (ADR 0061), the API token the grant
-// issues, is the use case internal/usecase/connectionissuance; the protocol's endpoints are the
-// driver internal/api/oauth.
+// (RFC 7591) or names by its Client ID Metadata Document, and the authorization code a signed-in
+// User's consent records. The consent screen is a SPA route; the signed-in user's decision arrives
+// through the site API and is handled by [Module.Decide]. A code is claimed by [ClaimCodeIn] only
+// after its own check of the client, the redirect URI and the PKCE verifier; exchanging it for a
+// Connection (ADR 0061), the API token the grant issues, and the Connection's refresh tokens are
+// internal/domain/identity/apitokens's (ADR 0110); the protocol's endpoints are the driver
+// internal/api/oauth.
 //
-// A client and its codes and refresh tokens belong to no Workspace before a code is exchanged
-// (a code names the Workspace its consent chose), so the package works on the raw *ent.Client.
+// A client and its codes belong to no Workspace before a code is exchanged (a code names the
+// Workspace its consent chose), so the package works on the raw *ent.Client.
 package oauthclients
 
 import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"maps"
 	"net"
@@ -23,10 +25,11 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
-	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
@@ -38,7 +41,6 @@ import (
 var _ = db.Declare(
 	db.Fault("oauth_clients_client_id_key", "Register draws the client_id at random, and a client of a metadata document is written with ON CONFLICT on its URL"),
 	db.Fault("oauth_codes_code_hash_key", "the code is drawn at random and stored as its hash"),
-	db.Fault("oauth_refresh_tokens_token_hash_key", "the refresh token is drawn at random and stored as its hash"),
 )
 
 var (
@@ -47,13 +49,20 @@ var (
 	// ErrInvalidRequest means the authorization request is malformed or does not
 	// match the client's registration (the message is safe to show).
 	ErrInvalidRequest = validation.Refuse("invalid authorization request", i18n.ErrorsOauthRequestInvalid)
+	// ErrInvalidGrant is a code or a refresh token that names no grant the token request may use:
+	// unknown, expired, already used, or issued to another client or redirect URI (RFC 6749 section
+	// 5.2, invalid_grant). A refresh token's refusal (internal/domain/identity/apitokens) is one too.
+	ErrInvalidGrant = validation.UnknownReference("oauthclients: invalid grant", i18n.ErrorsOauthGrantInvalid)
 )
+
+var errUnknownCode = InvalidGrant("unknown or expired code")
+
+// InvalidGrant is ErrInvalidGrant with what was wrong with the grant.
+func InvalidGrant(description string) error { return ErrInvalidGrant.With(description) }
 
 const (
 	// codeTTL is how long an authorization code can be exchanged.
 	codeTTL = 5 * time.Minute
-	// refreshTokenTTL is how long a refresh token can be exchanged; every rotation starts it anew.
-	refreshTokenTTL = 30 * 24 * time.Hour
 
 	// MaxRedirectURIs bounds the redirect URIs a client registers.
 	MaxRedirectURIs = 10
@@ -66,7 +75,7 @@ const (
 	maxPKCELength = 128
 )
 
-// Module reads and writes the OAuth clients, their codes and their refresh tokens.
+// Module reads and writes the OAuth clients and their codes.
 type Module struct {
 	ent *ent.Client
 	// fetcher downloads Client ID Metadata Documents; it must be an SSRF-hardened client.
@@ -253,25 +262,53 @@ func (s *Module) Register(ctx context.Context, name string, redirectURIs []strin
 		Save(ctx)
 }
 
-// Code is the authorization code whose plaintext is code, with its client loaded; a NotFound
-// error of ent when there is none. It reads the row whatever its state: the exchange claims it
-// with ClaimCodeIn, which refuses a used or expired one.
-func (s *Module) Code(ctx context.Context, code string) (*ent.OAuthCode, error) {
-	return s.ent.OAuthCode.Query().
-		Where(oauthcode.CodeHash(hashSecret(code))).
-		WithClient().
-		Only(ctx)
+// CodeClaim is a token request with an authorization code: the code, the client it was issued
+// to, the redirect URI of the authorization request and the PKCE verifier.
+type CodeClaim struct {
+	Code        string
+	ClientID    string
+	RedirectURI string
+	Verifier    string
 }
 
-// ClaimCodeIn marks the authorization code id used at now on the transaction tx, so it is
-// exchanged once: false when it is already used or expired, or a concurrent request claimed it
-// first.
-func ClaimCodeIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (bool, error) {
+// ClaimCodeIn spends the authorization code of the claim c at now on the transaction tx and returns
+// it with its client loaded: the grant the consent recorded, whose Workspace it names. It checks
+// the request first (the client and the redirect URI of the authorization request, and the PKCE
+// verifier against the code's challenge), so a refused request leaves the code to the right one;
+// then it marks the code used, so it is exchanged once. ErrInvalidGrant for an unknown, expired or
+// used code, one a concurrent request claimed first, or a request it was not issued for.
+func ClaimCodeIn(ctx context.Context, tx *ent.Client, c CodeClaim, now time.Time) (*ent.OAuthCode, error) {
+	grant, err := tx.OAuthCode.Query().
+		Where(oauthcode.CodeHash(hashSecret(c.Code))).
+		WithClient().
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, errUnknownCode
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	switch {
+	case grant.Edges.Client.ClientID != c.ClientID, grant.RedirectURI != c.RedirectURI:
+		return nil, InvalidGrant("client or redirect_uri does not match the authorization request")
+	case !ValidPKCE(c.Verifier),
+		subtle.ConstantTimeCompare([]byte(oauth2.S256ChallengeFromVerifier(c.Verifier)), []byte(grant.CodeChallenge)) != 1:
+		return nil, InvalidGrant("code_verifier does not match")
+	}
+
+	// Single use: only the request that flips used_at wins.
 	claimed, err := tx.OAuthCode.Update().
-		Where(oauthcode.ID(id), oauthcode.UsedAtIsNil(), oauthcode.ExpiresAtGT(now)).
+		Where(oauthcode.ID(grant.ID), oauthcode.UsedAtIsNil(), oauthcode.ExpiresAtGT(now)).
 		SetUsedAt(now).
 		Save(ctx)
-	return claimed > 0, err
+	if err != nil {
+		return nil, err
+	}
+	if claimed == 0 {
+		return nil, errUnknownCode
+	}
+	return grant, nil
 }
 
 // DeleteCodesIn deletes every authorization code that names the Workspace, on the transaction
@@ -279,51 +316,6 @@ func ClaimCodeIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (
 func DeleteCodesIn(ctx context.Context, tx *ent.Client, workspaceID int64) error {
 	_, err := tx.OAuthCode.Delete().Where(oauthcode.WorkspaceID(workspaceID)).Exec(ctx)
 	return err
-}
-
-// RefreshToken is the refresh token whose plaintext is presented, with its client and the API
-// token of its grant loaded; a NotFound error of ent when there is none.
-func (s *Module) RefreshToken(ctx context.Context, presented string) (*ent.OAuthRefreshToken, error) {
-	return s.ent.OAuthRefreshToken.Query().
-		Where(oauthrefreshtoken.TokenHash(hashSecret(presented))).
-		WithClient().
-		WithAPIToken().
-		Only(ctx)
-}
-
-// ClaimRefreshTokenIn marks the refresh token id used at now on the transaction tx, so it is
-// exchanged once: false when it is already used or expired, or a concurrent request claimed it
-// first.
-func ClaimRefreshTokenIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (bool, error) {
-	claimed, err := tx.OAuthRefreshToken.Update().
-		Where(oauthrefreshtoken.ID(id), oauthrefreshtoken.UsedAtIsNil(), oauthrefreshtoken.ExpiresAtGT(now)).
-		SetUsedAt(now).
-		Save(ctx)
-	return claimed > 0, err
-}
-
-// PruneRefreshTokensIn deletes the refresh tokens of the grant of the API token apiTokenID that
-// expired before now, on the transaction tx.
-func PruneRefreshTokensIn(ctx context.Context, tx *ent.Client, apiTokenID int64, now time.Time) error {
-	_, err := tx.OAuthRefreshToken.Delete().
-		Where(oauthrefreshtoken.APITokenID(apiTokenID), oauthrefreshtoken.ExpiresAtLT(now)).
-		Exec(ctx)
-	return err
-}
-
-// NewRefreshTokenIn stores a fresh refresh token of the client clientRowID for the grant of the
-// API token apiTokenID on the transaction tx, valid from now, and returns its plaintext. Only
-// the exchange of a code or a refresh token calls it (internal/usecase/connectionissuance),
-// after it has checked and claimed what was presented.
-func NewRefreshTokenIn(ctx context.Context, tx *ent.Client, clientRowID, apiTokenID int64, now time.Time) (string, error) {
-	plain := rand.Text()
-	_, err := tx.OAuthRefreshToken.Create().
-		SetTokenHash(hashSecret(plain)).
-		SetClientID(clientRowID).
-		SetAPITokenID(apiTokenID).
-		SetExpiresAt(now.Add(refreshTokenTTL)).
-		Save(ctx)
-	return plain, err
 }
 
 // ValidRedirectURI accepts https URLs and http on a loopback host, with no fragment (RFC 6749
