@@ -2021,8 +2021,12 @@ const (
 	GothamOwnerGusPassword = "password"
 	// GothamPublicID is from fixtures/workspaces.
 	GothamPublicID = "GothmW61"
+	// HeldOrderEventAcmeEventID is from fixtures/held_order_events.
+	HeldOrderEventAcmeEventID = "fixture-held-event-1"
 	// HeldOrderEventAcmeID is from fixtures/held_order_events.
 	HeldOrderEventAcmeID = 1
+	// HeldOrderEventGlobexEventID is from fixtures/held_order_events.
+	HeldOrderEventGlobexEventID = "fixture-held-event-globex"
 	// HeldOrderEventGlobexID is from fixtures/held_order_events.
 	HeldOrderEventGlobexID = 900
 	// HoldAcmeLapsedID is from fixtures/holds.
@@ -2559,6 +2563,48 @@ const (
 	JoinDomainVerifiedDomain = "acme.com"
 	// JoinDomainVerifiedID is from fixtures/join_domains.
 	JoinDomainVerifiedID = 1
+	// JournalEarlierTieEventID is from fixtures/event_journal_entries.
+	JournalEarlierTieEventID = "01JC2C40000000000000000003"
+	// JournalEarlierTieID is from fixtures/event_journal_entries.
+	JournalEarlierTieID = 81003
+	// JournalEarlierTieName is from fixtures/event_journal_entries.
+	JournalEarlierTieName = "inspection.example"
+	// JournalInstanceEventID is from fixtures/event_journal_entries.
+	JournalInstanceEventID = "01JC2C40000000000000000007"
+	// JournalInstanceID is from fixtures/event_journal_entries.
+	JournalInstanceID = 81007
+	// JournalInstanceName is from fixtures/event_journal_entries.
+	JournalInstanceName = "inspection.instance"
+	// JournalLatestTieEventID is from fixtures/event_journal_entries.
+	JournalLatestTieEventID = "01JC2C40000000000000000004"
+	// JournalLatestTieID is from fixtures/event_journal_entries.
+	JournalLatestTieID = 81004
+	// JournalLatestTieName is from fixtures/event_journal_entries.
+	JournalLatestTieName = "inspection.example"
+	// JournalMiddleEventID is from fixtures/event_journal_entries.
+	JournalMiddleEventID = "01JC2C40000000000000000002"
+	// JournalMiddleID is from fixtures/event_journal_entries.
+	JournalMiddleID = 81002
+	// JournalMiddleName is from fixtures/event_journal_entries.
+	JournalMiddleName = "inspection.example"
+	// JournalOldestEventID is from fixtures/event_journal_entries.
+	JournalOldestEventID = "01JC2C40000000000000000001"
+	// JournalOldestID is from fixtures/event_journal_entries.
+	JournalOldestID = 81001
+	// JournalOldestName is from fixtures/event_journal_entries.
+	JournalOldestName = "inspection.example"
+	// JournalOtherTypeEventID is from fixtures/event_journal_entries.
+	JournalOtherTypeEventID = "01JC2C40000000000000000005"
+	// JournalOtherTypeID is from fixtures/event_journal_entries.
+	JournalOtherTypeID = 81005
+	// JournalOtherTypeName is from fixtures/event_journal_entries.
+	JournalOtherTypeName = "inspection.other"
+	// JournalOtherWorkspaceEventID is from fixtures/event_journal_entries.
+	JournalOtherWorkspaceEventID = "01JC2C40000000000000000006"
+	// JournalOtherWorkspaceID is from fixtures/event_journal_entries.
+	JournalOtherWorkspaceID = 81006
+	// JournalOtherWorkspaceName is from fixtures/event_journal_entries.
+	JournalOtherWorkspaceName = "inspection.example"
 	// KramericaCollectKey is from fixtures/workspaces.
 	KramericaCollectKey = "omck_test_kramerica_collect_key"
 	// KramericaID is from fixtures/workspaces.

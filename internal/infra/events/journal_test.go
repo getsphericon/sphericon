@@ -128,7 +128,8 @@ func TestJournalErasureIsBatchedAndConfinedToItsWorkspace(t *testing.T) {
 		assert.Equal(t, want, n)
 	}
 	assert.Equal(t, 1, env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.InitechID)).CountX(t.Context()))
-	assert.Equal(t, 1, env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceIDIsNil()).CountX(t.Context()))
+	instanceCount := env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceIDIsNil(), eventjournalentry.Name(events.NameUserPasskeyAdded)).CountX(t.Context())
+	assert.Equal(t, 1, instanceCount)
 }
 
 func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testing.T) {
