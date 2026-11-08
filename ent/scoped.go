@@ -38667,6 +38667,18 @@ func (x *WebhookEndpointScopedCreate) SetNillableDisabledAt(v *time.Time) *Webho
 	return x
 }
 
+// SetHealthGeneration sets the "health_generation" field.
+func (x *WebhookEndpointScopedCreate) SetHealthGeneration(v int64) *WebhookEndpointScopedCreate {
+	x.b.SetHealthGeneration(v)
+	return x
+}
+
+// SetNillableHealthGeneration sets the "health_generation" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableHealthGeneration(v *int64) *WebhookEndpointScopedCreate {
+	x.b.SetNillableHealthGeneration(v)
+	return x
+}
+
 // SetConsecutiveFailures sets the "consecutive_failures" field.
 func (x *WebhookEndpointScopedCreate) SetConsecutiveFailures(v int) *WebhookEndpointScopedCreate {
 	x.b.SetConsecutiveFailures(v)
@@ -38911,6 +38923,30 @@ func (u *WebhookEndpointScopedUpsert) UpdateDisabledAt() *WebhookEndpointScopedU
 // ClearDisabledAt clears the value of the "disabled_at" field.
 func (u *WebhookEndpointScopedUpsert) ClearDisabledAt() *WebhookEndpointScopedUpsert {
 	u.u.SetNull(webhookendpoint.FieldDisabledAt)
+	return u
+}
+
+// SetHealthGeneration sets the "health_generation" field.
+func (u *WebhookEndpointScopedUpsert) SetHealthGeneration(v int64) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldHealthGeneration, v)
+	return u
+}
+
+// AddHealthGeneration adds v to the "health_generation" field.
+func (u *WebhookEndpointScopedUpsert) AddHealthGeneration(v int64) *WebhookEndpointScopedUpsert {
+	u.u.Add(webhookendpoint.FieldHealthGeneration, v)
+	return u
+}
+
+// UpdateHealthGeneration sets the "health_generation" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateHealthGeneration() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldHealthGeneration)
+	return u
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (u *WebhookEndpointScopedUpsert) ClearHealthGeneration() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldHealthGeneration)
 	return u
 }
 
@@ -39278,6 +39314,30 @@ func (x *WebhookEndpointScopedUpdateOne) ClearDisabledAt() *WebhookEndpointScope
 	return x
 }
 
+// SetHealthGeneration sets the "health_generation" field.
+func (x *WebhookEndpointScopedUpdateOne) SetHealthGeneration(v int64) *WebhookEndpointScopedUpdateOne {
+	x.b.SetHealthGeneration(v)
+	return x
+}
+
+// SetNillableHealthGeneration sets the "health_generation" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableHealthGeneration(v *int64) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableHealthGeneration(v)
+	return x
+}
+
+// AddHealthGeneration adds value to the "health_generation" field.
+func (x *WebhookEndpointScopedUpdateOne) AddHealthGeneration(v int64) *WebhookEndpointScopedUpdateOne {
+	x.b.AddHealthGeneration(v)
+	return x
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearHealthGeneration() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearHealthGeneration()
+	return x
+}
+
 // SetConsecutiveFailures sets the "consecutive_failures" field.
 func (x *WebhookEndpointScopedUpdateOne) SetConsecutiveFailures(v int) *WebhookEndpointScopedUpdateOne {
 	x.b.SetConsecutiveFailures(v)
@@ -39533,6 +39593,30 @@ func (x *WebhookEndpointScopedUpdate) SetNillableDisabledAt(v *time.Time) *Webho
 // ClearDisabledAt clears the value of the "disabled_at" field.
 func (x *WebhookEndpointScopedUpdate) ClearDisabledAt() *WebhookEndpointScopedUpdate {
 	x.b.ClearDisabledAt()
+	return x
+}
+
+// SetHealthGeneration sets the "health_generation" field.
+func (x *WebhookEndpointScopedUpdate) SetHealthGeneration(v int64) *WebhookEndpointScopedUpdate {
+	x.b.SetHealthGeneration(v)
+	return x
+}
+
+// SetNillableHealthGeneration sets the "health_generation" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableHealthGeneration(v *int64) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableHealthGeneration(v)
+	return x
+}
+
+// AddHealthGeneration adds value to the "health_generation" field.
+func (x *WebhookEndpointScopedUpdate) AddHealthGeneration(v int64) *WebhookEndpointScopedUpdate {
+	x.b.AddHealthGeneration(v)
+	return x
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (x *WebhookEndpointScopedUpdate) ClearHealthGeneration() *WebhookEndpointScopedUpdate {
+	x.b.ClearHealthGeneration()
 	return x
 }
 

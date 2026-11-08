@@ -30,6 +30,8 @@ const (
 	FieldEventTypes = "event_types"
 	// FieldDisabledAt holds the string denoting the disabled_at field in the database.
 	FieldDisabledAt = "disabled_at"
+	// FieldHealthGeneration holds the string denoting the health_generation field in the database.
+	FieldHealthGeneration = "health_generation"
 	// FieldConsecutiveFailures holds the string denoting the consecutive_failures field in the database.
 	FieldConsecutiveFailures = "consecutive_failures"
 	// FieldFailingSince holds the string denoting the failing_since field in the database.
@@ -65,6 +67,7 @@ var Columns = []string{
 	FieldSecretEncrypted,
 	FieldEventTypes,
 	FieldDisabledAt,
+	FieldHealthGeneration,
 	FieldConsecutiveFailures,
 	FieldFailingSince,
 	FieldLastErrorKind,
@@ -92,6 +95,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// URLValidator is a validator for the "url" field. It is called by the builders before save.
 	URLValidator func(string) error
+	// HealthGenerationValidator is a validator for the "health_generation" field. It is called by the builders before save.
+	HealthGenerationValidator func(int64) error
 )
 
 // LastErrorKindValidator is a validator for the "last_error_kind" field enum values. It is called by the builders before save.
@@ -164,6 +169,11 @@ func BySecretEncrypted(opts ...sql.OrderTermOption) OrderOption {
 // ByDisabledAt orders the results by the disabled_at field.
 func ByDisabledAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDisabledAt, opts...).ToFunc()
+}
+
+// ByHealthGeneration orders the results by the health_generation field.
+func ByHealthGeneration(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthGeneration, opts...).ToFunc()
 }
 
 // ByConsecutiveFailures orders the results by the consecutive_failures field.

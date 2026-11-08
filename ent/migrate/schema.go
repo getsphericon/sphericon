@@ -2901,6 +2901,7 @@ var (
 		{Name: "secret_encrypted", Type: field.TypeString},
 		{Name: "event_types", Type: field.TypeJSON, Nullable: true},
 		{Name: "disabled_at", Type: field.TypeTime, Nullable: true},
+		{Name: "health_generation", Type: field.TypeInt64, Nullable: true},
 		{Name: "consecutive_failures", Type: field.TypeInt, Nullable: true},
 		{Name: "failing_since", Type: field.TypeTime, Nullable: true},
 		{Name: "last_error_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"timeout", "blocked_address", "http_status", "network"}},
@@ -2917,7 +2918,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "webhook_endpoints_workspaces_webhook_endpoints",
-				Columns:    []*schema.Column{WebhookEndpointsColumns[13]},
+				Columns:    []*schema.Column{WebhookEndpointsColumns[14]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2926,7 +2927,7 @@ var (
 			{
 				Name:    "webhookendpoint_workspace_id_disabled_at",
 				Unique:  false,
-				Columns: []*schema.Column{WebhookEndpointsColumns[13], WebhookEndpointsColumns[6]},
+				Columns: []*schema.Column{WebhookEndpointsColumns[14], WebhookEndpointsColumns[6]},
 			},
 		},
 	}

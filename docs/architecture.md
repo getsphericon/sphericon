@@ -398,6 +398,16 @@ it (ADR 0109). An entity with `ArchiveMixin` gets `Archive`, `Unarchive`,
 `QueryArchived`, `QueryWithArchived` and `Purge` in place of `Delete`, one with `DiscardMixin`
 `Discard` and `Purge` (ADR 0100); `internal/scopedclient` tests them on the production entities.
 
+A Webhook endpoint's health is also a `lifecycle` table in its owner, `webhookendpoints`:
+healthy, failing and disabled are derived from its existing moments and failure run. Another
+failure in the same run is an internal transition. An explicit owner enable starts a new durable
+`health_generation` and clears the run, even when the endpoint was already enabled. A delivery
+carries the generation loaded before its HTTP request; a result from an earlier generation, or
+for a disabled/deleted endpoint, changes nothing. Current-generation results reload the position
+inside the transaction and retry a lost conditional write without repeating the HTTP request.
+The health write, automatic disable, audited configuration change and notification event commit
+or roll back together. Failure counters remain unaudited; the HTTP request holds no transaction.
+
 - **Handlers and domain modules hold no `*ent.Client` and no bare `int64` workspace id.**
   They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and never call
   `client.Scoped(<int64>)`. Tests use `env.DB.Scoped(fixtures.AcmeID)`.

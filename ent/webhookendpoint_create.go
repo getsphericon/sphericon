@@ -90,6 +90,20 @@ func (_c *WebhookEndpointCreate) SetNillableDisabledAt(v *time.Time) *WebhookEnd
 	return _c
 }
 
+// SetHealthGeneration sets the "health_generation" field.
+func (_c *WebhookEndpointCreate) SetHealthGeneration(v int64) *WebhookEndpointCreate {
+	_c.mutation.SetHealthGeneration(v)
+	return _c
+}
+
+// SetNillableHealthGeneration sets the "health_generation" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableHealthGeneration(v *int64) *WebhookEndpointCreate {
+	if v != nil {
+		_c.SetHealthGeneration(*v)
+	}
+	return _c
+}
+
 // SetConsecutiveFailures sets the "consecutive_failures" field.
 func (_c *WebhookEndpointCreate) SetConsecutiveFailures(v int) *WebhookEndpointCreate {
 	_c.mutation.SetConsecutiveFailures(v)
@@ -252,6 +266,11 @@ func (_c *WebhookEndpointCreate) check() error {
 	if _, ok := _c.mutation.SecretEncrypted(); !ok {
 		return &ValidationError{Name: "secret_encrypted", err: errors.New(`ent: missing required field "WebhookEndpoint.secret_encrypted"`)}
 	}
+	if v, ok := _c.mutation.HealthGeneration(); ok {
+		if err := webhookendpoint.HealthGenerationValidator(v); err != nil {
+			return &ValidationError{Name: "health_generation", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.health_generation": %w`, err)}
+		}
+	}
 	if v, ok := _c.mutation.LastErrorKind(); ok {
 		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
 			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
@@ -321,6 +340,10 @@ func (_c *WebhookEndpointCreate) createSpec() (*WebhookEndpoint, *sqlgraph.Creat
 	if value, ok := _c.mutation.DisabledAt(); ok {
 		_spec.SetField(webhookendpoint.FieldDisabledAt, field.TypeTime, value)
 		_node.DisabledAt = &value
+	}
+	if value, ok := _c.mutation.HealthGeneration(); ok {
+		_spec.SetField(webhookendpoint.FieldHealthGeneration, field.TypeInt64, value)
+		_node.HealthGeneration = &value
 	}
 	if value, ok := _c.mutation.ConsecutiveFailures(); ok {
 		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
@@ -496,6 +519,30 @@ func (u *WebhookEndpointUpsert) UpdateDisabledAt() *WebhookEndpointUpsert {
 // ClearDisabledAt clears the value of the "disabled_at" field.
 func (u *WebhookEndpointUpsert) ClearDisabledAt() *WebhookEndpointUpsert {
 	u.SetNull(webhookendpoint.FieldDisabledAt)
+	return u
+}
+
+// SetHealthGeneration sets the "health_generation" field.
+func (u *WebhookEndpointUpsert) SetHealthGeneration(v int64) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldHealthGeneration, v)
+	return u
+}
+
+// UpdateHealthGeneration sets the "health_generation" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateHealthGeneration() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldHealthGeneration)
+	return u
+}
+
+// AddHealthGeneration adds v to the "health_generation" field.
+func (u *WebhookEndpointUpsert) AddHealthGeneration(v int64) *WebhookEndpointUpsert {
+	u.Add(webhookendpoint.FieldHealthGeneration, v)
+	return u
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (u *WebhookEndpointUpsert) ClearHealthGeneration() *WebhookEndpointUpsert {
+	u.SetNull(webhookendpoint.FieldHealthGeneration)
 	return u
 }
 
@@ -765,6 +812,34 @@ func (u *WebhookEndpointUpsertOne) UpdateDisabledAt() *WebhookEndpointUpsertOne 
 func (u *WebhookEndpointUpsertOne) ClearDisabledAt() *WebhookEndpointUpsertOne {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.ClearDisabledAt()
+	})
+}
+
+// SetHealthGeneration sets the "health_generation" field.
+func (u *WebhookEndpointUpsertOne) SetHealthGeneration(v int64) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetHealthGeneration(v)
+	})
+}
+
+// AddHealthGeneration adds v to the "health_generation" field.
+func (u *WebhookEndpointUpsertOne) AddHealthGeneration(v int64) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.AddHealthGeneration(v)
+	})
+}
+
+// UpdateHealthGeneration sets the "health_generation" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateHealthGeneration() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateHealthGeneration()
+	})
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (u *WebhookEndpointUpsertOne) ClearHealthGeneration() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearHealthGeneration()
 	})
 }
 
@@ -1220,6 +1295,34 @@ func (u *WebhookEndpointUpsertBulk) UpdateDisabledAt() *WebhookEndpointUpsertBul
 func (u *WebhookEndpointUpsertBulk) ClearDisabledAt() *WebhookEndpointUpsertBulk {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.ClearDisabledAt()
+	})
+}
+
+// SetHealthGeneration sets the "health_generation" field.
+func (u *WebhookEndpointUpsertBulk) SetHealthGeneration(v int64) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetHealthGeneration(v)
+	})
+}
+
+// AddHealthGeneration adds v to the "health_generation" field.
+func (u *WebhookEndpointUpsertBulk) AddHealthGeneration(v int64) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.AddHealthGeneration(v)
+	})
+}
+
+// UpdateHealthGeneration sets the "health_generation" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateHealthGeneration() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateHealthGeneration()
+	})
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (u *WebhookEndpointUpsertBulk) ClearHealthGeneration() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearHealthGeneration()
 	})
 }
 

@@ -1655,6 +1655,10 @@ func init() {
 	webhookendpointDescURL := webhookendpointFields[1].Descriptor()
 	// webhookendpoint.URLValidator is a validator for the "url" field. It is called by the builders before save.
 	webhookendpoint.URLValidator = webhookendpointDescURL.Validators[0].(func(string) error)
+	// webhookendpointDescHealthGeneration is the schema descriptor for health_generation field.
+	webhookendpointDescHealthGeneration := webhookendpointFields[5].Descriptor()
+	// webhookendpoint.HealthGenerationValidator is a validator for the "health_generation" field. It is called by the builders before save.
+	webhookendpoint.HealthGenerationValidator = webhookendpointDescHealthGeneration.Validators[0].(func(int64) error)
 	workspaceMixin := schema.Workspace{}.Mixin()
 	workspaceMixinFields0 := workspaceMixin[0].Fields()
 	_ = workspaceMixinFields0

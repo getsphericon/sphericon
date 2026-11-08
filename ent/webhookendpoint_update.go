@@ -118,6 +118,33 @@ func (_u *WebhookEndpointUpdate) ClearDisabledAt() *WebhookEndpointUpdate {
 	return _u
 }
 
+// SetHealthGeneration sets the "health_generation" field.
+func (_u *WebhookEndpointUpdate) SetHealthGeneration(v int64) *WebhookEndpointUpdate {
+	_u.mutation.ResetHealthGeneration()
+	_u.mutation.SetHealthGeneration(v)
+	return _u
+}
+
+// SetNillableHealthGeneration sets the "health_generation" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableHealthGeneration(v *int64) *WebhookEndpointUpdate {
+	if v != nil {
+		_u.SetHealthGeneration(*v)
+	}
+	return _u
+}
+
+// AddHealthGeneration adds value to the "health_generation" field.
+func (_u *WebhookEndpointUpdate) AddHealthGeneration(v int64) *WebhookEndpointUpdate {
+	_u.mutation.AddHealthGeneration(v)
+	return _u
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (_u *WebhookEndpointUpdate) ClearHealthGeneration() *WebhookEndpointUpdate {
+	_u.mutation.ClearHealthGeneration()
+	return _u
+}
+
 // SetConsecutiveFailures sets the "consecutive_failures" field.
 func (_u *WebhookEndpointUpdate) SetConsecutiveFailures(v int) *WebhookEndpointUpdate {
 	_u.mutation.ResetConsecutiveFailures()
@@ -311,6 +338,11 @@ func (_u *WebhookEndpointUpdate) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.url": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.HealthGeneration(); ok {
+		if err := webhookendpoint.HealthGenerationValidator(v); err != nil {
+			return &ValidationError{Name: "health_generation", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.health_generation": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.LastErrorKind(); ok {
 		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
 			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
@@ -370,6 +402,15 @@ func (_u *WebhookEndpointUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.DisabledAtCleared() {
 		_spec.ClearField(webhookendpoint.FieldDisabledAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.HealthGeneration(); ok {
+		_spec.SetField(webhookendpoint.FieldHealthGeneration, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedHealthGeneration(); ok {
+		_spec.AddField(webhookendpoint.FieldHealthGeneration, field.TypeInt64, value)
+	}
+	if _u.mutation.HealthGenerationCleared() {
+		_spec.ClearField(webhookendpoint.FieldHealthGeneration, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.ConsecutiveFailures(); ok {
 		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
@@ -547,6 +588,33 @@ func (_u *WebhookEndpointUpdateOne) SetNillableDisabledAt(v *time.Time) *Webhook
 // ClearDisabledAt clears the value of the "disabled_at" field.
 func (_u *WebhookEndpointUpdateOne) ClearDisabledAt() *WebhookEndpointUpdateOne {
 	_u.mutation.ClearDisabledAt()
+	return _u
+}
+
+// SetHealthGeneration sets the "health_generation" field.
+func (_u *WebhookEndpointUpdateOne) SetHealthGeneration(v int64) *WebhookEndpointUpdateOne {
+	_u.mutation.ResetHealthGeneration()
+	_u.mutation.SetHealthGeneration(v)
+	return _u
+}
+
+// SetNillableHealthGeneration sets the "health_generation" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableHealthGeneration(v *int64) *WebhookEndpointUpdateOne {
+	if v != nil {
+		_u.SetHealthGeneration(*v)
+	}
+	return _u
+}
+
+// AddHealthGeneration adds value to the "health_generation" field.
+func (_u *WebhookEndpointUpdateOne) AddHealthGeneration(v int64) *WebhookEndpointUpdateOne {
+	_u.mutation.AddHealthGeneration(v)
+	return _u
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (_u *WebhookEndpointUpdateOne) ClearHealthGeneration() *WebhookEndpointUpdateOne {
+	_u.mutation.ClearHealthGeneration()
 	return _u
 }
 
@@ -756,6 +824,11 @@ func (_u *WebhookEndpointUpdateOne) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.url": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.HealthGeneration(); ok {
+		if err := webhookendpoint.HealthGenerationValidator(v); err != nil {
+			return &ValidationError{Name: "health_generation", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.health_generation": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.LastErrorKind(); ok {
 		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
 			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
@@ -832,6 +905,15 @@ func (_u *WebhookEndpointUpdateOne) sqlSave(ctx context.Context) (_node *Webhook
 	}
 	if _u.mutation.DisabledAtCleared() {
 		_spec.ClearField(webhookendpoint.FieldDisabledAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.HealthGeneration(); ok {
+		_spec.SetField(webhookendpoint.FieldHealthGeneration, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedHealthGeneration(); ok {
+		_spec.AddField(webhookendpoint.FieldHealthGeneration, field.TypeInt64, value)
+	}
+	if _u.mutation.HealthGenerationCleared() {
+		_spec.ClearField(webhookendpoint.FieldHealthGeneration, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.ConsecutiveFailures(); ok {
 		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)

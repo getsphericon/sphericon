@@ -279,29 +279,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		return m.open(e)
 	}
-	// Whoever flips the switch decides now: the reason it last turned itself off no longer
-	// applies, and enabling starts the failure run over (ADR 0039).
-	if enabled {
-		e, err := build().ClearDisabledAt().ClearDisabledReason().
-			ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
-			ClearLastErrorStatus().ClearLastFailureAt().Save(ctx)
-		if err != nil {
-			return Endpoint{}, missing(err)
-		}
-		return m.open(e)
-	}
-	// Disabling is the move out of enabled, so it lands only while the endpoint is still
-	// enabled. An endpoint that is already off keeps the moment and the reason it has: the
-	// miss falls back to the plain edit, whose own miss means the endpoint is gone.
-	e, err := build().Where(webhookendpoint.DisabledAtIsNil()).
-		SetDisabledAt(m.now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner).Save(ctx)
-	if ent.IsNotFound(err) {
-		e, err = build().Save(ctx)
-	}
-	if err != nil {
-		return Endpoint{}, missing(err)
-	}
-	return m.open(e)
+	return m.updateHealth(ctx, s, id, in, enabled)
 }
 
 // Delete removes the endpoint. An unknown id is ErrNotFound.
