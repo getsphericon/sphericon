@@ -67,8 +67,8 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
 			o.Via = unsubscribe.ViaLink
 		}
-		added, err := unsubscribes.Add(ctx, sc, o)
-		if err != nil || !added {
+		optOutID, err := unsubscribes.Add(ctx, sc, o)
+		if err != nil || optOutID == 0 {
 			return err
 		}
 
@@ -96,7 +96,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		}
 
 		if target.Channel == channels.Telegram {
-			return publishTelegramUnsubscribed(ctx, sc, pub, target, dest)
+			return publishTelegramUnsubscribed(ctx, sc, pub, target, optOutID)
 		}
 		if target.Channel != channels.Email {
 			return nil
@@ -110,9 +110,11 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 }
 
 // publishTelegramUnsubscribed records telegram.unsubscribed for the Contact a Telegram unsubscribe
-// link was issued to (the opt-out itself is the source-scoped row written above). A link with no
-// Contact, or one whose Contact is gone, has nobody to name.
-func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string) error {
+// link was issued to (the opt-out itself is the row optOutID written above). A link with no
+// Contact, or one whose Contact is gone, has nobody to name. The Event is keyed by the opt-out
+// row, not the link: a `/start` lifts an opt-out of everything, and a later click on the same link
+// is a new opt-out with a new Event, while its source id names neither the user nor the link.
+func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, optOutID int64) error {
 	if target.ContactID == 0 {
 		return nil
 	}
@@ -127,7 +129,7 @@ func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events
 	return pub.Publish(ctx, &events.TelegramUnsubscribed{
 		WorkspaceID: target.WorkspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Via: events.UnsubscribedByLink,
 		BroadcastID: target.BroadcastID, AutomationID: automationID,
-		DedupID: fmt.Sprintf("link:%s:%s/unsubscribed/%d", target.Source, dest, c.ID),
+		DedupID: fmt.Sprintf("opt-out:%d", optOutID),
 	})
 }
 

@@ -32,7 +32,7 @@ func stopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.
 		return false, err
 	}
 	added, err := unsubscribes.AddSMS(ctx, s, number, via)
-	if err != nil || !added {
+	if err != nil || added == 0 {
 		return false, err
 	}
 	if err := confirmations.Withdraw(ctx, s, channels.SMS, number); err != nil {

@@ -62,7 +62,7 @@ func firstOptOut(ctx context.Context, dest string) func(ts *ent.Scoped, _ events
 		added, err := unsubscribes.Add(ctx, ts, unsubscribes.OptOut{
 			Channel: channels.Email, Destination: dest, Source: eligibility.SourceEverything,
 		})
-		if err == nil && !added {
+		if err == nil && added == 0 {
 			return errors.New("the first click found the opt-out already written")
 		}
 		return err

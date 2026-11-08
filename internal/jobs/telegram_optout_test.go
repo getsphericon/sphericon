@@ -26,8 +26,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
+	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 
 // Opting out and back in on Telegram (ADR 0077): every way of stopping is the person's Channel-wide
@@ -403,4 +405,36 @@ func TestATelegramStopOfAMessageWithoutABroadcastCountsNothing(t *testing.T) {
 
 	assert.Empty(t, env.JobsOf(t, jobs.BroadcastUnsubscribeEventArgs{}.Kind()))
 	assert.Nil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt)
+}
+
+// A `/start` lifts an opt-out of everything a Telegram unsubscribe link made, so a second click on
+// the link is a new opt-out: it records telegram.unsubscribed again, attributed to the Broadcast,
+// and its attribution fact, however often the same link was followed before.
+func TestATelegramLinkClickedAgainAfterAStartIsANewOptOut(t *testing.T) {
+	env := testhelper.Setup(t)
+	bot := boundBob(t, env)
+	// The parked recipient has received its message in this scenario.
+	env.DB.OutboundMessage.UpdateOneID(fixtures.OutboundMessageParkedClaimID).
+		SetStatus(outboundmessage.StatusSent).SetChannel(channels.Telegram).
+		SetContactID(fixtures.ContactBobID).SetDestination(strconv.Itoa(optOutUser)).ExecX(t.Context())
+	link := linktarget.Unsubscribe{
+		Channel: channels.Telegram, Source: eligibility.SourceEverything, Destination: strconv.Itoa(optOutUser),
+		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactBobID, BroadcastID: fixtures.BroadcastArchivedID,
+		OutboundMessageID: fixtures.OutboundMessageParkedClaimID,
+	}
+	u := unsubscriberecording.New(env.Bus, time.Now)
+	scope := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, u.RecordLink(t.Context(), scope, link))
+	env.PostTelegramUpdate(t, bot, said(2, optOutUser, "/start"))
+	require.False(t, optedOut(t, env, optOutUser))
+
+	require.NoError(t, u.RecordLink(t.Context(), scope, link))
+
+	assert.True(t, optedOut(t, env, optOutUser))
+	recorded := env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{
+		"contactId": fixtures.ContactBobID, "broadcastId": fixtures.BroadcastArchivedID, "via": events.UnsubscribedByLink,
+	})
+	assert.Equal(t, 2, recorded, "each opt-out records its own Event")
+	attributed := env.JobsOf(t, jobs.BroadcastUnsubscribeEventArgs{}.Kind())
+	assert.Len(t, attributed, 2, "and its own attribution fact")
 }

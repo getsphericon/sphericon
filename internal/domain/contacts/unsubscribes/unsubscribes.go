@@ -63,17 +63,19 @@ var _ = db.Declare(
 		"Add and AddSMS insert ON CONFLICT (workspace_id, channel, destination, sending_source) DO NOTHING, and EraseSMS rekeys a number to its hash under the Contact's Erasure only where no opt-out holds the hash"),
 )
 
-// Add writes o unless it stands already, and reports whether it wrote it: a repeated opt-out
-// (a second click, a concurrent request) changes nothing. A Contact gone by now (erased between a
-// send and the click) leaves the opt-out unlinked: it is keyed by its Destination.
-func Add(ctx context.Context, s *ent.Scoped, o OptOut) (bool, error) {
+// Add writes o unless it stands already, and returns the id of the row it wrote, 0 when it wrote
+// none: a repeated opt-out (a second click, a concurrent request) changes nothing. The id names
+// this opt-out until it is lifted, so a fact keyed by it is new for every new opt-out. A Contact
+// gone by now (erased between a send and the click) leaves the opt-out unlinked: it is keyed by
+// its Destination.
+func Add(ctx context.Context, s *ent.Scoped, o OptOut) (int64, error) {
 	create := s.Unsubscribe().Create().
 		SetChannel(o.Channel).
 		SetDestination(o.Destination).
 		SetSendingSource(o.Source)
 	contactID, err := contactlock.Referenced(ctx, s, o.ContactID)
 	if err != nil {
-		return false, fmt.Errorf("lock the opt-out's contact: %w", err)
+		return 0, fmt.Errorf("lock the opt-out's contact: %w", err)
 	}
 	if contactID != 0 {
 		create.SetContactID(contactID)
@@ -84,18 +86,21 @@ func Add(ctx context.Context, s *ent.Scoped, o OptOut) (bool, error) {
 	return insert(ctx, create)
 }
 
-// insert writes create ON CONFLICT on the Unsubscribe's key DO NOTHING, and reports whether it
-// wrote a row.
-func insert(ctx context.Context, create *ent.UnsubscribeScopedCreate) (bool, error) {
-	err := create.
+// insert writes create ON CONFLICT on the Unsubscribe's key DO NOTHING, and returns the id of the
+// row it wrote, 0 when it wrote none.
+func insert(ctx context.Context, create *ent.UnsubscribeScopedCreate) (int64, error) {
+	id, err := create.
 		OnConflictColumns(unsubscribe.FieldWorkspaceID, unsubscribe.FieldChannel, unsubscribe.FieldDestination, unsubscribe.FieldSendingSource).
 		DoNothing().
-		Exec(ctx)
+		ID(ctx)
 	added, err := db.Inserted(err)
 	if err != nil {
-		return false, fmt.Errorf("record opt-out: %w", err)
+		return 0, fmt.Errorf("record opt-out: %w", err)
 	}
-	return added, nil
+	if !added {
+		return 0, nil
+	}
+	return id, nil
 }
 
 // Get is the opt-out of destination on channel from source.
@@ -109,9 +114,10 @@ func Get(ctx context.Context, s *ent.Scoped, channel channels.Channel, destinati
 
 // AddSMS records the Channel-wide opt-out of a phone number (scope `everything`, Channel `sms`, the
 // number in E.164), naming the Contact whose phone it is, unless it stands already (by the number
-// or by its hash), and reports whether it wrote one: a number already opted out changes nothing,
-// and keeps the way it first stopped. via is how the person stopped, which the Contact card shows.
-func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (bool, error) {
+// or by its hash), and returns the id of the row it wrote, 0 when it wrote none: a number already
+// opted out changes nothing, and keeps the way it first stopped. via is how the person stopped,
+// which the Contact card shows.
+func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (int64, error) {
 	// The opt-out of an erased person is kept by the hash of the number (EraseSMS): a second row by
 	// the number itself would not conflict with it.
 	hashed, err := s.Unsubscribe().Query().Where(
@@ -120,10 +126,10 @@ func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.V
 		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),
 	).Exist(ctx)
 	if err != nil {
-		return false, fmt.Errorf("find opt-out: %w", err)
+		return 0, fmt.Errorf("find opt-out: %w", err)
 	}
 	if hashed {
-		return false, nil
+		return 0, nil
 	}
 	create := s.Unsubscribe().Create().
 		SetChannel(channels.SMS).
@@ -135,7 +141,7 @@ func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.V
 	case err == nil:
 		create.SetContactID(holder)
 	case !ent.IsNotFound(err):
-		return false, fmt.Errorf("find the number's contact: %w", err)
+		return 0, fmt.Errorf("find the number's contact: %w", err)
 	}
 	return insert(ctx, create)
 }

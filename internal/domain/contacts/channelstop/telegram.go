@@ -62,7 +62,7 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 		o.ContactID = contactIDs[0]
 	}
 	added, err := unsubscribes.Add(ctx, s, o)
-	if err != nil || !added {
+	if err != nil || added == 0 {
 		return err
 	}
 	for _, id := range contactIDs {
