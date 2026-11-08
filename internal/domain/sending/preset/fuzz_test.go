@@ -189,3 +189,27 @@ func TestAnInboundMessageTextOverTheLimitIsCut(t *testing.T) {
 	assert.Equal(t, strings.Repeat("é", preset.MaxTextChars), got.Text)
 	assert.Equal(t, "42", got.Destination, "the destination is trimmed")
 }
+
+// Telegram input must be refused or yield valid facts; malformed identities never reach the transform.
+func FuzzTelegramUpdateBecomesValidFactsOrARefusal(f *testing.F) {
+	f.Add(`{"update_id":0,"message":{"chat":{"id":42,"type":"private"},"from":{"id":42},"text":"/stop"}}`)
+	f.Add(`{"update_id":null,"message":{"chat":{"id":42,"type":"private"},"from":{"id":42},"text":"/start"}}`)
+	f.Add(`{"update_id":1.5}`)
+	f.Add(`{"update_id":"1"}`)
+	f.Add(`{}`)
+	f.Add(`[]`)
+	registry, err := preset.Load(nil)
+	if err != nil {
+		f.Fatal(err)
+	}
+	p, ok := registry.Get("telegram")
+	if !ok {
+		f.Fatal("the telegram Preset is not built in")
+	}
+	f.Fuzz(func(t *testing.T, body string) {
+		header := http.Header{}
+		header.Set("X-Telegram-Bot-Api-Secret-Token", "fuzz-secret")
+		res, err := p.Handle(t.Context(), preset.Request{Header: header, Body: []byte(body)}, preset.Params{"secret": "fuzz-secret"}, time.Unix(0, 0))
+		assertValidFactsOrARefusal(t, res, err)
+	})
+}

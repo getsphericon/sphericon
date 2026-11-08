@@ -4,9 +4,10 @@ import (
 	"context"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
@@ -39,7 +40,7 @@ func (t telegram) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMes
 	}
 	switch command(m.Text) {
 	case "/start":
-		return unsubscribes.LiftTelegram(ctx, tx.Scoped, m.Destination)
+		return t.resume(ctx, tx, m.Destination, m.ID)
 	case "/stop":
 		return t.stop(ctx, tx, m, events.UnsubscribedByKeyword, nil)
 	}
@@ -86,24 +87,30 @@ func (t telegram) answer(ctx context.Context, tx Tx, callbackID string) {
 }
 
 func (telegram) stop(ctx context.Context, tx Tx, m preset.InboundMessage, via string, msg *ent.OutboundMessage) error {
-	return channelstop.StopTelegram(ctx, tx.Scoped, tx.Pub, channelstop.TelegramStop{
-		Destination: m.Destination, IntegrationID: tx.Integration.ID, Via: via, Message: msg,
-		Now: tx.Now, DedupKey: tx.DedupKey(m.ID),
-	})
+	e := &events.TelegramStopObserved{
+		WorkspaceID: tx.Scoped.WorkspaceID(), Destination: m.Destination, IntegrationID: tx.Integration.ID, Via: via,
+		ObservedAt: tx.Now, DedupID: tx.DedupKey(m.ID),
+	}
+	if msg != nil {
+		e.OutboundMessageID, e.ContactID = msg.ID, lo.FromPtr(msg.ContactID)
+		e.BroadcastID, e.AutomationID = lo.FromPtr(msg.BroadcastID), lo.FromPtr(msg.AutomationID)
+	}
+	return tx.Pub.Publish(ctx, e)
 }
 
 // ReachabilityChange reads Telegram saying the person blocked the bot (their Channel-wide
 // opt-out), unblocked it (which lifts it) or deleted their account (the Binding goes, no opt-out).
-func (telegram) ReachabilityChange(ctx context.Context, tx Tx, c preset.ReachabilityChange) error {
+func (t telegram) ReachabilityChange(ctx context.Context, tx Tx, c preset.ReachabilityChange) error {
 	switch {
 	case c.Reachable:
-		return unsubscribes.LiftTelegram(ctx, tx.Scoped, c.Destination)
+		return t.resume(ctx, tx, c.Destination, c.ID)
 	case c.Reason == preset.Deactivated:
 		return bindings.Remove(ctx, tx.Scoped, tx.Pub, tx.Integration, c.Destination, tx.DedupKey(c.ID))
 	default:
-		return channelstop.StopTelegram(ctx, tx.Scoped, tx.Pub, channelstop.TelegramStop{
+		return tx.Pub.Publish(ctx, &events.TelegramStopObserved{
+			WorkspaceID: tx.Scoped.WorkspaceID(),
 			Destination: c.Destination, IntegrationID: tx.Integration.ID, Via: events.UnsubscribedByBlock,
-			Now: tx.Now, DedupKey: tx.DedupKey(c.ID),
+			ObservedAt: tx.Now, DedupID: tx.DedupKey(c.ID),
 		})
 	}
 }
@@ -117,4 +124,11 @@ func command(text string) string {
 		return ""
 	}
 	return name
+}
+
+func (telegram) resume(ctx context.Context, tx Tx, destination, id string) error {
+	return tx.Pub.Publish(ctx, &events.TelegramResumeObserved{
+		WorkspaceID: tx.Scoped.WorkspaceID(), Destination: destination, IntegrationID: tx.Integration.ID,
+		DedupID: tx.DedupKey(id), ObservedAt: tx.Now,
+	})
 }

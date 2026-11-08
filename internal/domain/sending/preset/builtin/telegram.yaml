@@ -25,7 +25,7 @@ verify:
 # callback id the query to answer. A my_chat_member in a private chat is a Reachability change:
 # `member` (the person started or unblocked the bot) is reachable, `kicked` (or `left`) is
 # unreachable because the person blocked it. The id is the update_id, unique per bot. Ids are
-# strings: Telegram sends numbers. Groups, channels and edits yield nothing.
+# strings: Telegram sends numbers. The engine validates update_id before this transform. Groups, channels and edits yield nothing.
 transform: |
   def keep: with_entries(select(.value != null and .value != ""));
   def private($chat): ($chat | objects | .type) == "private";
@@ -167,3 +167,21 @@ tests:
       body: '{"update_id":10000,"message":{"message_id":1,"date":1767225600,"chat":{"id":42,"type":"private"},"text":"/start"}}'
     expect:
       refused: unauthentic
+  - name: an update without an identity is malformed
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"message":{"chat":{"id":42,"type":"private"},"from":{"id":42},"text":"/stop"}}'
+    expect:
+      refused: malformed
+  - name: a null identity is malformed even on an ignored update
+    params:
+      secret: telegram-test-secret-0123456789
+    request:
+      headers:
+        X-Telegram-Bot-Api-Secret-Token: telegram-test-secret-0123456789
+      body: '{"update_id":null,"edited_message":{}}'
+    expect:
+      refused: malformed
