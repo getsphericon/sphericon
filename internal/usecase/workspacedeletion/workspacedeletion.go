@@ -2,10 +2,12 @@
 // restoring a deleted Workspace inside its window, and erasing it once the window has passed.
 // Deleting one checks only its typed name, the Workspace's own rule, so it is the module's
 // (workspaces.Module.Delete, ADR 0110). The cycle's table and the window with the erase date are
-// the Workspace's own (workspaces.RestoreIn, TombstoneIn, workspaces.DeletionWindow): a restore
-// needs a Membership that holds the delete Permission, and the erase removes the Workspace's rows,
-// then, in the last transaction, its jobs in the queue (events.WorkspacePurger), the OAuth codes
-// that name it (oauthclients.DeleteCodesIn) and writes the tombstone.
+// the Workspace's own (workspaces.DeletionCycle, workspaces.DeletionWindow), and its restore and
+// erase moves are the module's unchecked operations (workspacesunchecked.RestoreIn and
+// TombstoneIn, ADR 0110): a restore needs a Membership that holds the delete Permission, and the
+// erase removes the Workspace's rows, then, in the last transaction, its jobs in the queue
+// (events.WorkspacePurger), the OAuth codes that name it (oauthclientsunchecked.DeleteCodesIn) and
+// writes the tombstone.
 //
 // The use case takes the raw client: it lists Workspaces that have no scope yet (the Owners'
 // deleted Workspaces, the ones whose window has passed) and opens a transaction per erase step.
@@ -28,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -120,7 +123,7 @@ func (m *UseCase) Restore(ctx context.Context, in RestoreInput) (*ent.Workspace,
 	}
 	var restored *ent.Workspace
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		err := workspaces.RestoreIn(ctx, tx, workspaceID, now)
+		err := workspacesunchecked.RestoreIn(ctx, tx, workspaceID, now)
 		if errors.Is(err, lifecycle.ErrInvalidTransition) {
 			return fmt.Errorf("%w: %w", ErrNotRestorable, err)
 		}

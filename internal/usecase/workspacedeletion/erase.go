@@ -47,8 +47,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients/oauthclientsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
@@ -67,7 +67,7 @@ const maxErasePasses = 10
 // own through the event bus, so the ent hooks run (the tracking host change log records the
 // released hosts, the workspace feed advances) and a crash resumes on the rows that are
 // left. The last transaction removes the Workspace's jobs from the queue and the OAuth codes
-// that name it, and writes the tombstone (workspaces.TombstoneIn). A Workspace that fails does not stop the others; the
+// that name it, and writes the tombstone (workspacesunchecked.TombstoneIn). A Workspace that fails does not stop the others; the
 // errors are joined. The scope of each step is built here, after the
 // Workspace's row is listed; it has no actor, so the deletes are not audited.
 func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
@@ -104,7 +104,7 @@ func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
 // steps publish nothing and no hook of theirs, of the OAuth codes or of the tombstone queues one),
 // so nothing it does queues one after the purge. A job running meanwhile is left to finish, and
 // the job runner cancels any job of the Workspace that starts after the tombstone
-// (events.WorkspacePurger says what is left). The purge runs before TombstoneIn, whose feed hook
+// (events.WorkspacePurger says what is left). The purge runs before workspacesunchecked.TombstoneIn, whose feed hook
 // holds the feed's Instance-wide lock to the commit, so the deletes never hold up another
 // Workspace's change.
 func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) error {
@@ -125,10 +125,10 @@ func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) e
 		if err := purger.PurgeWorkspaceJobs(ctx, id); err != nil {
 			return err
 		}
-		if err := oauthclients.DeleteCodesIn(ctx, tx, id); err != nil {
+		if err := oauthclientsunchecked.DeleteCodesIn(ctx, tx, id); err != nil {
 			return err
 		}
-		return workspaces.TombstoneIn(ctx, tx, id, now)
+		return workspacesunchecked.TombstoneIn(ctx, tx, id, now)
 	})
 }
 

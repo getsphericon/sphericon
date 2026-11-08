@@ -5,14 +5,16 @@
 // metadata. Rendered message bodies are never part of it (no entity read here
 // carries one). Each row is projected onto the contract's typed
 // ContactExportDocument members by a Mapper, never encoded as the stored entity.
-// Large collections are read in keyset pages and written straight to the writer,
-// so the document is never buffered whole.
+// The document is yielded in chunks, a row at a time, and large collections are read
+// in keyset pages, so it is never buffered whole: the HTTP driver streams the chunks
+// (ADR 0111).
 package dataexport
 
 import (
 	"context"
 	"encoding/json"
-	"io"
+	"errors"
+	"iter"
 	"strconv"
 	"strings"
 
@@ -71,9 +73,20 @@ func Find(ctx context.Context, s *ent.Scoped, id *int64, email *string) (*ent.Co
 	return c, err
 }
 
-// Stream writes the export of c to w as one JSON object. The Contact and every
-// member are read through s, so nothing outside the Workspace can appear.
-func Stream(ctx context.Context, s *ent.Scoped, m Mapper, w io.Writer, c *ent.Contact) error {
+// Export yields the export of c as the chunks of one JSON object, in order, and ends
+// with the error that stopped it, if any. The Contact and every member are read
+// through s, so nothing outside the Workspace can appear. The chunks are read as they
+// are asked for, with the context of the request that asks.
+func Export(ctx context.Context, s *ent.Scoped, m Mapper, c *ent.Contact) iter.Seq2[[]byte, error] {
+	return func(yield func([]byte, error) bool) {
+		err := export(ctx, s, m, &streamWriter{yield: yield}, c)
+		if err != nil && !errors.Is(err, errStopped) {
+			yield(nil, err)
+		}
+	}
+}
+
+func export(ctx context.Context, s *ent.Scoped, m Mapper, sw *streamWriter, c *ent.Contact) error {
 	visitors, err := s.Visitor().Query().Where(visitor.ContactID(c.ID)).Order(ent.Asc(visitor.FieldID)).All(ctx)
 	if err != nil {
 		return err
@@ -117,7 +130,6 @@ func Stream(ctx context.Context, s *ent.Scoped, m Mapper, w io.Writer, c *ent.Co
 	}
 
 	// The keys below are the members of the contract's ContactExportDocument.
-	sw := &streamWriter{w: w}
 	sw.raw(`{"contact":`)
 	sw.value(m.Contact(c))
 	sw.raw(`,"tags":`)
@@ -164,19 +176,6 @@ func Stream(ctx context.Context, s *ent.Scoped, m Mapper, w io.Writer, c *ent.Co
 	}
 	sw.raw(`}`)
 	return sw.err
-}
-
-// Open starts the export of c in the background and returns the stream to hand to
-// the HTTP response: the document is produced as the response is read. The
-// producer ends with the request's context, so an abandoned download cannot leak it.
-func Open(ctx context.Context, s *ent.Scoped, m Mapper, c *ent.Contact) io.Reader {
-	pr, pw := io.Pipe()
-	go func() { pw.CloseWithError(Stream(ctx, s, m, pw, c)) }()
-	go func() {
-		<-ctx.Done()
-		_ = pr.CloseWithError(ctx.Err())
-	}()
-	return pr
 }
 
 // Filename is the suggested download name of c's export.
@@ -229,16 +228,25 @@ func streamPages[T any](sw *streamWriter, page func(after int64) ([]T, error), i
 	return sw.err
 }
 
-// streamWriter remembers the first write or encode error so the document code
-// stays linear.
+// errStopped: the reader of the export stopped asking for chunks.
+var errStopped = errors.New("dataexport: the reader stopped")
+
+// streamWriter yields the document's chunks and remembers the first encode error, or
+// that the reader stopped, so the document code stays linear.
 type streamWriter struct {
-	w   io.Writer
-	err error
+	yield func([]byte, error) bool
+	err   error
+}
+
+func (s *streamWriter) emit(chunk []byte) {
+	if !s.yield(chunk, nil) {
+		s.err = errStopped
+	}
 }
 
 func (s *streamWriter) raw(text string) {
 	if s.err == nil {
-		_, s.err = io.WriteString(s.w, text)
+		s.emit([]byte(text))
 	}
 }
 
@@ -263,5 +271,5 @@ func (s *streamWriter) value(v json.Marshaler) {
 		s.err = err
 		return
 	}
-	_, s.err = s.w.Write(b)
+	s.emit(b)
 }

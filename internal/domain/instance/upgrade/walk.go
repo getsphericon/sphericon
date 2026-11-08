@@ -1,11 +1,11 @@
 package upgrade
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"iter"
 	"slices"
 	"strings"
 
@@ -42,62 +42,64 @@ type MajorFloor struct {
 // the target is then installed from the staged copy rather than fetched again.
 //
 // With a directory Source every archive of the walk is checked before the first step, and
-// a missing one refuses the whole Upgrade.
-func Walk(ctx context.Context, o Options) ([]Result, error) {
+// a missing one refuses the whole Upgrade. It yields its Progress as it goes.
+func Walk(ctx context.Context, o Options) iter.Seq2[Progress, error] {
+	return progressOf(func(emit emitter) error { return walk(ctx, o, emit) })
+}
+
+func walk(ctx context.Context, o Options, emit emitter) error {
 	o, current, err := begin(o)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	target, err := chooseVersion(ctx, o)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if semver.Compare(buildinfo.Semver(target), current) <= 0 {
-		res, err := Step(ctx, o) // prints "Already running" or refuses the downgrade
-		return []Result{res}, err
+		_, err := step(ctx, o, emit) // AlreadyRunning, or the refusal of the downgrade
+		return err
 	}
 
 	// The staged target: asked for the Majors and the notes, then installed as the last step
 	// (the rename takes it away; whatever is left is removed here).
 	probe, err := stage(ctx, o, target, o.Target+".plan")
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer cleanup.Remove(probe)
 	b, err := readBoundaries(ctx, o, probe, target)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	plan := planWalk(b, current, target)
 	if err := requireArchives(ctx, o, plan); err != nil {
-		return nil, err
+		return err
 	}
 	if len(plan) > 1 {
-		if _, err := fmt.Fprintf(o.Out, "Crossing %d Majors: installing %s in turn.\n", len(plan)-1, strings.Join(plan, ", ")); err != nil {
-			return nil, err
+		if err := emit(Crossing{Majors: len(plan) - 1, Plan: plan}); err != nil {
+			return err
 		}
 	}
-	if err := confirmNotes(ctx, o, probe, current, target); err != nil {
-		return nil, err
+	if err := confirmNotes(ctx, o, probe, current, target, emit); err != nil {
+		return err
 	}
 
-	var results []Result
 	for i, version := range plan {
-		step := o
-		step.Version = version
-		step.Current = current
-		step.notesConfirmed = true
+		next := o
+		next.Version = version
+		next.Current = current
+		next.notesConfirmed = true
 		if i == len(plan)-1 {
-			step.staged = probe
+			next.staged = probe
 		}
-		res, err := Step(ctx, step)
+		installed, err := step(ctx, next, emit)
 		if err != nil {
-			return results, err
+			return err
 		}
-		results = append(results, res)
-		current = buildinfo.Semver(res.Version)
+		current = buildinfo.Semver(installed)
 	}
-	return results, nil
+	return nil
 }
 
 // planWalk is the releases to install, oldest first, ending with the target: the Floor of
@@ -136,12 +138,12 @@ func requireArchives(ctx context.Context, o Options, plan []string) error {
 
 // readBoundaries asks the staged target which Majors lie between.
 func readBoundaries(ctx context.Context, o Options, staged, target string) (Boundaries, error) {
-	var out bytes.Buffer
-	if err := o.Run(ctx, staged, []string{"migrate", "--status", "--json"}, &out); err != nil {
+	out, err := o.Run(ctx, staged, []string{"migrate", "--status", "--json"})
+	if err != nil {
 		return Boundaries{}, fmt.Errorf("ask %s which Majors lie between (nothing was changed): %w", target, err)
 	}
 	var b Boundaries
-	if err := json.Unmarshal(out.Bytes(), &b); err != nil {
+	if err := json.Unmarshal(out, &b); err != nil {
 		return Boundaries{}, errors.Join(errors.New("read the Majors from the new binary"), err)
 	}
 	return b, nil

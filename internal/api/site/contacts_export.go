@@ -6,6 +6,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
+	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
 
 // SiteContactsExport streams the subject-access Data export of one contact (ADR
@@ -25,7 +26,7 @@ func (h *Handlers) SiteContactsExport(ctx context.Context, params siteapi.SiteCo
 	return &siteapi.SiteContactsExportOKApplicationOctetStreamHeaders{
 		ContentDisposition: `attachment; filename="` + dataexport.Filename(c) + `"`,
 		Response: siteapi.SiteContactsExportOKApplicationOctetStream{
-			Data: dataexport.Open(ctx, scoped, resources.ExportMapper{Converter: mapper}, c),
+			Data: seqreader.New(dataexport.Export(ctx, scoped, resources.ExportMapper{Converter: mapper}, c)),
 		},
 	}, nil
 }

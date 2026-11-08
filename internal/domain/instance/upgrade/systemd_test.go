@@ -50,7 +50,7 @@ exec "$@"
 
 func (s setup) restartOpts(version string) upgrade.Options {
 	o := s.opts(version)
-	sd := upgrade.Systemd{Service: "sphericon", Out: s.out}
+	sd := upgrade.Systemd{Service: "sphericon"}
 	o.Run, o.PostSwap = sd.Run, sd.PostSwap
 	return o
 }
@@ -67,15 +67,17 @@ func TestRestartMigratesInATransientUnitWithTheServicesUserAndEnvironmentThenRes
 	state := fakeSystemd(t, "active", s.target)
 	release(t, s.dir, "0.2.0", "", false)
 
-	_, err := upgrade.Step(t.Context(), s.restartOpts(""))
+	got, err := drain(upgrade.Step(t.Context(), s.restartOpts("")))
 
 	require.NoError(t, err)
 	assert.Equal(t, "ran\n", s.read(t, "migrated"))
 	assert.Equal(t, "old binary", s.read(t, "sphericon.old"))
 	assert.Equal(t, "User=sphericon\nEnvironmentFile=/etc/sphericon/env\nEnvironmentFile=-/etc/sphericon/extra\n", readFile(t, filepath.Join(state, "unit")))
 	assert.Equal(t, s.read(t, "sphericon"), readFile(t, filepath.Join(state, "running")), "the service restarted into the new binary")
-	assert.Contains(t, s.out.String(), "restarted sphericon")
-	assert.NotContains(t, s.out.String(), "Restart to run it")
+	installed := of[upgrade.Installed](got)
+	require.Len(t, installed, 1)
+	assert.Equal(t, "sphericon", installed[0].Service)
+	assert.True(t, installed[0].Restarted)
 }
 
 func TestRestartFailedMigrationLeavesTheOldBinaryServingAndNothingRestarted(t *testing.T) {
@@ -83,7 +85,7 @@ func TestRestartFailedMigrationLeavesTheOldBinaryServingAndNothingRestarted(t *t
 	state := fakeSystemd(t, "active", s.target)
 	release(t, s.dir, "0.2.0", "", true)
 
-	_, err := upgrade.Step(t.Context(), s.restartOpts(""))
+	_, err := drain(upgrade.Step(t.Context(), s.restartOpts("")))
 
 	require.Error(t, err)
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
@@ -95,7 +97,7 @@ func TestRestartFailsWhenTheServiceDoesNotBecomeActive(t *testing.T) {
 	fakeSystemd(t, "failed", s.target)
 	release(t, s.dir, "0.2.0", "", false)
 
-	_, err := upgrade.Step(t.Context(), s.restartOpts(""))
+	_, err := drain(upgrade.Step(t.Context(), s.restartOpts("")))
 
 	require.ErrorContains(t, err, "sphericon is failed")
 	assert.FileExists(t, filepath.Join(s.install, "sphericon.old"))

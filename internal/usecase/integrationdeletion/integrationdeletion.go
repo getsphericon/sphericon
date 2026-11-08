@@ -3,7 +3,7 @@
 // will still send through it (ADR 0099); deleting it runs the Removal check
 // (internal/domain/orchestration/removalcheck), which refuses with a *liveuse.Error naming the work
 // if any sends through it, and otherwise calls the module's unchecked removal,
-// integrations.DeleteIn, which easement forbids every other package to call.
+// integrationsunchecked.DeleteIn, which only a use case may import (ADR 0110).
 package integrationdeletion
 
 import (
@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations/integrationsunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -54,7 +55,7 @@ func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 			return err
 		}
 		released = row
-		return integrations.DeleteIn(ctx, ts, row, u.now())
+		return integrationsunchecked.DeleteIn(ctx, ts, row, u.now())
 	})
 	if err != nil {
 		return err

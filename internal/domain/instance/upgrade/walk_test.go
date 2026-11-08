@@ -70,7 +70,7 @@ func (s setup) installed(t *testing.T) []string {
 	return strings.Fields(string(b))
 }
 
-func versions(rs []upgrade.Result) []string {
+func versions(rs []upgrade.Installed) []string {
 	out := make([]string, 0, len(rs))
 	for _, r := range rs {
 		out = append(out, r.Version)
@@ -85,10 +85,10 @@ func TestWalkInstallsTheLastReleaseOfEachMajorThenTheTarget(t *testing.T) {
 	}
 	o := s.opts("")
 
-	res, err := upgrade.Walk(t.Context(), o)
+	got, err := drain(upgrade.Walk(t.Context(), o))
 
 	require.NoError(t, err)
-	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(res))
+	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(of[upgrade.Installed](got)))
 	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, s.installed(t))
 }
 
@@ -100,10 +100,10 @@ func TestWalkSkipsMajorsTheDatabaseAlreadyPassed(t *testing.T) {
 	o := s.opts("")
 	o.Current = "v0.4.0"
 
-	res, err := upgrade.Walk(t.Context(), o)
+	got, err := drain(upgrade.Walk(t.Context(), o))
 
 	require.NoError(t, err)
-	assert.Equal(t, []string{"0.5.1", "0.6.0"}, versions(res))
+	assert.Equal(t, []string{"0.5.1", "0.6.0"}, versions(of[upgrade.Installed](got)))
 }
 
 func TestWalkInsideAMajorIsOneStep(t *testing.T) {
@@ -114,10 +114,10 @@ func TestWalkInsideAMajorIsOneStep(t *testing.T) {
 	o := s.opts("")
 	o.Current = "v0.5.2"
 
-	res, err := upgrade.Walk(t.Context(), o)
+	got, err := drain(upgrade.Walk(t.Context(), o))
 
 	require.NoError(t, err)
-	assert.Equal(t, []string{"0.6.0"}, versions(res))
+	assert.Equal(t, []string{"0.6.0"}, versions(of[upgrade.Installed](got)))
 }
 
 func TestWalkToAPinnedTargetStopsBeforeLaterBoundaries(t *testing.T) {
@@ -127,10 +127,10 @@ func TestWalkToAPinnedTargetStopsBeforeLaterBoundaries(t *testing.T) {
 	}
 	o := s.opts("v0.4.0")
 
-	res, err := upgrade.Walk(t.Context(), o)
+	got, err := drain(upgrade.Walk(t.Context(), o))
 
 	require.NoError(t, err)
-	assert.Equal(t, []string{"0.3.2", "0.4.0"}, versions(res))
+	assert.Equal(t, []string{"0.3.2", "0.4.0"}, versions(of[upgrade.Installed](got)))
 }
 
 func TestWalkWithAMissingArchiveRefusesBeforeInstallingAnything(t *testing.T) {
@@ -140,7 +140,7 @@ func TestWalkWithAMissingArchiveRefusesBeforeInstallingAnything(t *testing.T) {
 	}
 	o := s.opts("")
 
-	_, err := upgrade.Walk(t.Context(), o)
+	_, err := drain(upgrade.Walk(t.Context(), o))
 
 	require.ErrorContains(t, err, "0.3.2")
 	assert.Empty(t, s.installed(t))
@@ -158,11 +158,10 @@ func TestWalkShowsTheNotesOfEveryReleaseAndWaitsForYesBeforeChangingAnything(t *
 	}
 	walkReleaseWithNotes(t, s.dir, "0.6.0", boundaries(1), notes)
 
-	_, err := upgrade.Walk(t.Context(), s.opts(""))
+	got, err := drain(upgrade.Walk(t.Context(), s.opts("")))
 
 	require.ErrorIs(t, err, upgrade.ErrNeedsConfirmation)
-	assert.Contains(t, s.out.String(), "export your segments")
-	assert.Contains(t, s.out.String(), "set SPHERICON_FOO")
+	assert.Equal(t, []upgrade.Notes{{From: "v0.1.0", To: "0.6.0", Text: notes}}, of[upgrade.Notes](got), "the notes of both Majors, from the target")
 	assert.Empty(t, s.installed(t))
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
 	assert.False(t, s.exists("sphericon.old"))
@@ -171,12 +170,11 @@ func TestWalkShowsTheNotesOfEveryReleaseAndWaitsForYesBeforeChangingAnything(t *
 
 	o := s.opts("")
 	o.Yes = true
-	s.out.Reset()
-	res, err := upgrade.Walk(t.Context(), o)
+	got, err = drain(upgrade.Walk(t.Context(), o))
 
 	require.NoError(t, err)
-	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(res))
-	assert.Equal(t, 1, strings.Count(s.out.String(), "export your segments"), "the notes are shown once, not per step")
+	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(of[upgrade.Installed](got)))
+	assert.Len(t, of[upgrade.Notes](got), 1, "the notes are shown once, not per step")
 	assert.False(t, s.exists("sphericon.plan"))
 }
 
@@ -206,9 +204,9 @@ func TestWalkInstallsTheTargetFromTheCopyItStagedInsteadOfFetchingItAgain(t *tes
 	o := s.opts("")
 	o.Source = &onceSource{Source: o.Source, target: "0.6.0"}
 
-	res, err := upgrade.Walk(t.Context(), o)
+	got, err := drain(upgrade.Walk(t.Context(), o))
 
 	require.NoError(t, err)
-	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(res))
+	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(of[upgrade.Installed](got)))
 	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, s.installed(t))
 }

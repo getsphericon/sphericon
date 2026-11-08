@@ -7,95 +7,11 @@ version: 1
 # in a component with no rule of its own, in a file of no component and in the other packages, or
 # the other files, of the module that defines it (only its definition is no use). Tests are
 # excluded. Name a function as `<import path>.<Name>`: a bare import path matches nothing.
+# The list holds what only the program's builders use (ADR 0110): the raw client, the ent hooks and
+# guards, the upgrade boundaries and river's workers. A module's function that only some callers
+# may call is fenced by place, never here: it lives in a subpackage whose component names its
+# importers, as the unchecked operations do (`domain-unchecked`).
 forbid_symbol:
-  # A domain module's unchecked operation is reachable only from its use case (ADR 0102): the Live
-  # use writes, User deletion's removals (the only Owner's Membership of a Workspace in its deletion
-  # window, the User row), the Second factor reset's removals (the User's factor with its Recovery
-  # codes, all Passkeys of a User), the restore and the tombstone of a Workspace's deletion cycle
-  # (deleting one is the checked workspaces.Module.Delete, ADR 0110) with the removal of the OAuth
-  # codes its erase makes, the creation of a Workspace with its creator's Membership, and each
-  # owner's step of a Contact's Erasure (the Contact row, contacts.DeleteIn, among them). The
-  # Erasure's purge of queued jobs is a method of the bus's publisher (events.PurgingPublisher),
-  # which a name cannot forbid. The erase of a Workspace's rows has no name here:
-  # internal/usecase/workspacedeletion deletes them itself (ADR 0110).
-  - name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.DeleteIn
-    allow: &use-cases [usecase, usecase-raw]
-    because: deleting a Tag is the use case internal/usecase/tagdeletion, which runs the Removal check, the Tag's Definition use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.LeaveDoomedWorkspaceIn
-    allow: *use-cases
-    because: it lets the only Owner leave, which only User deletion may do, after it has refused a User who solely owns a live Workspace (ADR 0050); call the use case internal/usecase/userdeletion, or memberships.Module.Leave or LeaveIn
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/users.DeleteIn
-    allow: *use-cases
-    because: deleting a User is the use case internal/usecase/userdeletion, which proves who asks (the password or the deletion link, the Second factor code), refuses the only Owner of a live Workspace and removes every Membership first (ADR 0050); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.UpdateCustomFieldIn
-    allow: *use-cases
-    because: editing a Custom field is the use case internal/usecase/customfieldretyping, which runs the Removal check under the Workspace lock first, refusing a retype while a Segment, a Rule or an armed Broadcast tests the field with a leaf the new type does not take (ADR 0102, ADR 0065, ADR 0099); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/sending/integrations.DeleteIn
-    allow: *use-cases
-    because: deleting an Integration is the use case internal/usecase/integrationdeletion, which runs the Removal check, the Integration's Live use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.DeleteIn
-    allow: *use-cases
-    because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which runs the Removal check, the domain's Live use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
-    allow: *use-cases
-    because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/secondfactors.ResetIn
-    allow: *use-cases
-    because: a User's Second factor is cleared without its code only in a Second factor reset, the use case internal/usecase/secondfactorreset, which checks there is something to clear, removes the Passkeys with it and records who reset (ADR 0020, ADR 0102, ADR 0110); call the use case, or secondfactors.Module.Disable for the User's own factor
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
-    allow: *use-cases
-    because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorreset checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.RestoreIn
-    allow: *use-cases
-    because: a deleted Workspace is restored only by the use case internal/usecase/workspacedeletion, for a User whose Role holds workspace:delete there (ADR 0043, ADR 0061, ADR 0102); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.TombstoneIn
-    allow: *use-cases
-    because: a Workspace is erased only by the use case internal/usecase/workspacedeletion, after it has removed every row the Workspace owned and the OAuth codes that name it (ADR 0043, ADR 0102); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.CreateIn
-    allow: *use-cases
-    because: a Workspace is created only by the use cases internal/usecase/workspacecreation, which refuses an Unverified User (ADR 0030), and internal/usecase/signup, which creates a User's first one as it makes the User Verified; each writes its Owner Membership on the same transaction and gives it the Send cap it starts with (ADR 0043, ADR 0067, ADR 0102); call a use case
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.AddCreatorIn
-    allow: *use-cases
-    because: the creator's Owner Membership is written only with its Workspace, by the use cases internal/usecase/workspacecreation and internal/usecase/signup (ADR 0043, ADR 0102); call a use case
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.DeleteCodesIn
-    allow: *use-cases
-    because: the OAuth codes that name a Workspace go only in the last transaction of its erase, by the use case internal/usecase/workspacedeletion (ADR 0043, ADR 0102); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.CancelPending
-    allow: *use-cases
-    because: &contact-erase-because a Contact is erased only by the use case internal/usecase/contacterasure, which runs each owner's step in its order, in the one transaction of the Erasure, with the Contact row last (ADR 0021, ADR 0102); call the use case
-  - name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.CancelPending
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.CancelPending
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseShortLinks
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/infra/events.EraseSubject
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseSubject
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseNumber
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseSMS
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseContact
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeContact
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeDestinations
-    allow: *use-cases
-    because: *contact-erase-because
-  - name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseTo
-    allow: *use-cases
-    because: *contact-erase-because
   # The job runners schedule work (ADR 0102, ADR 0111): a domain module or a use case does the work
   # as a function and may queue a job (its args, river's insert), but it declares no worker and no
   # periodic job; those live in the drivers internal/jobs and ee/jobs, which call the function.
@@ -118,6 +34,7 @@ forbid_symbol:
         domain-instance-raw,
         domain-orchestration-raw,
         domain-sending-raw,
+        domain-unchecked,
         ee-domain-identity-raw,
         ee-domain-insights-raw,
         ee-edition,
@@ -329,6 +246,15 @@ components:
     allow_importers:
       [ee-domain-insights-raw, ee-usecase, ee-usecase-raw, ee-api, ee-runner, ee-edition, wiring]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
+  # What stays unchecked in the Enterprise Edition (ADR 0110), as in the core (`domain-unchecked`): a
+  # subpackage `<module>unchecked` of an Enterprise module, imported only by an Enterprise use case.
+  # None exists today.
+  ee-domain-unchecked:
+    in: ['ee/**/*unchecked']
+    priority: 1
+    optional: true
+    allow_importers: [ee-usecase, ee-usecase-raw]
+    because: an unchecked operation leaves its check to the use case that calls it (ADR 0110), so only an Enterprise use case imports it, after the check; call the use case
 
   # Frontend (src/AGENTS.md). Generated clients are leaves; a route file binds a page lazily and
   # never imports it, so a page may import its route's `Route` without a cycle.
@@ -444,7 +370,8 @@ components:
   # `staffmembers` only their `SecretSweeps` for the re-encryption, `apitokens` only the token
   # endpoint's exchange of a code or a refresh token) are left to review. The composition roots, `internal/api/auth`
   # and the job runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`,
-  # which do not forbid the client.
+  # which do not forbid the client, and so are the unchecked operations of the identity modules
+  # that join their use case's raw transaction, which sit in `domain-unchecked`.
   #
   # Identity, the bottom context: the Workspaces, the Memberships, the Users, the Invitations, the
   # Join domains, the API tokens, the Staff members, the OAuth clients, the second step of signing
@@ -577,6 +504,21 @@ components:
   # The rest of instance, which holds no raw client; a new module under internal/domain/instance
   # lands here.
   domain-instance: { in: 'internal/domain/instance/**' }
+
+  # What stays unchecked (ADR 0110): a write whose check needs a module its owner may not call (one
+  # of a higher context, or several at once) lives in a subpackage `<module>unchecked` of its owner,
+  # which may import its owner and which the owner does not import (the Live use writes behind the
+  # Removal check, the steps of a Contact's Erasure, the deletion cycle and the creation of a
+  # Workspace, User deletion's and the Second factor reset's removals). Only a use case of the core
+  # imports one, after its check: no driver, no domain module, no Enterprise package. A new unchecked
+  # operation is a function of its owner's subpackage, which this component takes by its name. Its
+  # packages that take a transaction's raw client are in the closed list of docs/architecture.md
+  # (Workspace scoping). The priority puts a subpackage here rather than in its owner's component.
+  domain-unchecked:
+    in: ['internal/**/*unchecked']
+    priority: 1
+    allow_importers: [usecase, usecase-raw]
+    because: an unchecked operation leaves its check to the use case that calls it (ADR 0110), so only a use case of the core imports it, after the check; call the use case
 
   # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
   # providers, the outbound HTTP calls, the throttles, the ent aggregate functions the reports share
@@ -795,6 +737,18 @@ rules:
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case
+  domain-unchecked:
+    may_depend_on:
+      [
+        domain-orchestration,
+        domain-identity-raw,
+        domain-identity-base,
+        domain-contacts,
+        domain-sending-raw,
+      ]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    because: an unchecked operation belongs to its owner (ADR 0110), so it imports its owner and what its owner may import, never a use case
   tools:
     may_depend_on: []
     forbid_external: *no-container
@@ -807,6 +761,7 @@ rules:
     may_depend_on:
       [
         domain-orchestration-removalcheck,
+        domain-unchecked,
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,
@@ -822,6 +777,7 @@ rules:
   usecase-raw:
     may_depend_on:
       [
+        domain-unchecked,
         domain-orchestration-raw,
         domain-instance-raw,
         domain-identity,
@@ -950,12 +906,12 @@ rules:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); unlike a core use case it calls no unchecked removal of the core, which only the core's own use case may call
+    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); it imports no unchecked operation of the core, which only the core's own use cases import (`domain-unchecked`, ADR 0110)
   ee-usecase-raw:
     may_depend_on: [domain-identity-base, ee-licensekey, ee-domain-insights-raw]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); these hold the raw client because they work across Workspaces, and unlike a core use case they call no unchecked removal of the core and install no ent hook of the core
+    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); these hold the raw client because they work across Workspaces, and they import no unchecked operation of the core (`domain-unchecked`, ADR 0110) and install no ent hook of the core
   ee-domain-identity-raw:
     may_depend_on: [ee-licensekey]
     must_not_depend_on: [*no-surface-gen]
@@ -984,6 +940,11 @@ rules:
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: an Enterprise insights module sits above orchestration (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the modules of the core and of the Edition of its context and the contexts below, never an instance module nor a use case; an operation that needs one is a use case
+  ee-domain-unchecked:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    because: an unchecked operation belongs to its owner (ADR 0110), so it imports its owner and what its owner may import, never a use case
   wiring:
     may_depend_on:
       [

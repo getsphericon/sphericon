@@ -10,6 +10,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 )
 
@@ -65,13 +66,14 @@ func presetTestCommand() *cli.Command {
 				return err
 			}
 			if cmd.String("payload") == "" {
-				return p.WriteTests(ctx, out(cmd))
+				return commandline.WritePresetTests(out(cmd), p.Name(), p.RunTests(ctx))
 			}
 			req, params, now, err := sample(cmd)
 			if err != nil {
 				return err
 			}
-			return p.WriteSample(ctx, out(cmd), req, params, now)
+			res, err := p.Handle(ctx, req, params, now)
+			return commandline.WritePresetSample(out(cmd), res, err)
 		},
 	}
 }

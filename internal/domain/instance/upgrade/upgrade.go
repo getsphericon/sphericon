@@ -6,7 +6,6 @@ package upgrade
 
 import (
 	"archive/tar"
-	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
@@ -14,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"os"
 	"os/exec"
 	"path"
@@ -45,19 +45,19 @@ type Options struct {
 	Version  string   // pinned release; empty = the newest the Source has
 	Platform Platform // zero = this OS and architecture
 	Yes      bool     // go past Upgrade notes
-	Out      io.Writer
 	// Service is the systemd unit the restart hint names; "" = "sphericon".
 	Service string
 
 	// Container names the command to use instead when running inside a container or on
 	// Kubernetes ("docker" or "helm"), "" on a bare host; nil = detect from the environment.
 	Container func() string
-	// Run executes a binary, writing its stdout to stdout; nil = os/exec with the
-	// process environment and stderr passed through.
-	Run func(ctx context.Context, bin string, args []string, stdout io.Writer) error
-	// PostSwap runs after the swap; nil = print the restart command. A later `--restart`
-	// replaces it with one that restarts the systemd service.
-	PostSwap func(ctx context.Context, r Result) error
+	// Run executes a binary and returns its stdout; nil = os/exec with the process environment
+	// and stderr passed through.
+	Run func(ctx context.Context, bin string, args []string) ([]byte, error)
+	// PostSwap runs after the swap and says what was installed; nil = the Installed that leaves
+	// the restart of Service to the Self-hoster. `--restart` replaces it with one that restarts
+	// the systemd service (Systemd.PostSwap).
+	PostSwap func(ctx context.Context, r Result) (Installed, error)
 
 	// notesConfirmed: the Walk has shown the Upgrade notes of every release it installs and
 	// has the go-ahead, so a step neither prints nor asks again.
@@ -67,9 +67,8 @@ type Options struct {
 	staged string
 }
 
-// Result is what a step left on disk.
+// Result is what a step that installed a release left on disk.
 type Result struct {
-	Changed bool   // false when the Instance already runs the release
 	Version string // installed release, without the leading "v"
 	Binary  string // the installed path
 	Old     string // the previous binary, kept next to it
@@ -90,7 +89,9 @@ func (o Options) withDefaults() Options {
 		o.Service = "sphericon"
 	}
 	if o.PostSwap == nil {
-		o.PostSwap = func(_ context.Context, r Result) error { return PrintRestart(o.Out, r, o.Service) }
+		o.PostSwap = func(_ context.Context, r Result) (Installed, error) {
+			return Installed{Result: r, Service: o.Service}, nil
+		}
 	}
 	return o
 }
@@ -109,37 +110,49 @@ func begin(o Options) (Options, string, error) {
 	return o, current, nil
 }
 
-// Step runs one Upgrade: to the pinned release, or to the newest the Source has.
-func Step(ctx context.Context, o Options) (Result, error) {
+// Step runs one Upgrade, yielding its Progress: to the pinned release, or to the newest the
+// Source has.
+func Step(ctx context.Context, o Options) iter.Seq2[Progress, error] {
+	return progressOf(func(emit emitter) error {
+		_, err := step(ctx, o, emit)
+		return err
+	})
+}
+
+// step is Step; it returns the release the Instance runs once it is done.
+func step(ctx context.Context, o Options, emit emitter) (string, error) {
 	o, current, err := begin(o)
 	if err != nil {
-		return Result{}, err
+		return "", err
 	}
 	version, err := chooseVersion(ctx, o)
 	if err != nil {
-		return Result{}, err
+		return "", err
 	}
 	switch semver.Compare(buildinfo.Semver(version), current) {
 	case -1:
-		return Result{}, fmt.Errorf("%w: %s is older than %s", ErrDowngrade, version, o.Current)
+		return "", fmt.Errorf("%w: %s is older than %s", ErrDowngrade, version, o.Current)
 	case 0:
-		_, err := fmt.Fprintf(o.Out, "Already running %s.\n", version)
-		return Result{Version: version, Binary: o.Target}, err
+		return version, emit(AlreadyRunning{Version: version})
 	}
 
 	staged := o.staged
 	if staged == "" {
 		staged, err = stage(ctx, o, version, o.Target+".new")
 		if err != nil {
-			return Result{}, err
+			return "", err
 		}
 	}
-	res, err := install(ctx, o, current, staged, version)
+	res, err := install(ctx, o, current, staged, version, emit)
 	if err != nil {
 		cleanup.Remove(staged)
-		return Result{}, err
+		return "", err
 	}
-	return res, o.PostSwap(ctx, res)
+	installed, err := o.PostSwap(ctx, res)
+	if err != nil {
+		return "", err
+	}
+	return version, emit(installed)
 }
 
 // stage fetches a release, checks its checksum and unpacks its binary to dst. It removes dst
@@ -162,34 +175,38 @@ func stage(ctx context.Context, o Options, version, dst string) (string, error) 
 	return dst, nil
 }
 
-func install(ctx context.Context, o Options, current, staged, version string) (Result, error) {
+func install(ctx context.Context, o Options, current, staged, version string, emit emitter) (Result, error) {
 	if !o.notesConfirmed {
-		if err := confirmNotes(ctx, o, staged, current, version); err != nil {
+		if err := confirmNotes(ctx, o, staged, current, version, emit); err != nil {
 			return Result{}, err
 		}
 	}
-	if err := o.Run(ctx, staged, []string{"migrate"}, o.Out); err != nil {
+	out, err := o.Run(ctx, staged, []string{"migrate"})
+	if err != nil {
 		return Result{}, fmt.Errorf("migrate with %s (nothing was swapped): %w", version, err)
+	}
+	if err := emit(Migrated{Version: version, Output: string(out)}); err != nil {
+		return Result{}, err
 	}
 	old := o.Target + ".old"
 	if err := swap(o.Target, staged, old); err != nil {
 		return Result{}, err
 	}
-	return Result{Changed: true, Version: version, Binary: o.Target, Old: old}, nil
+	return Result{Version: version, Binary: o.Target, Old: old}, nil
 }
 
-// confirmNotes prints the Upgrade notes of every release after current up to the staged
+// confirmNotes yields the Upgrade notes of every release after current up to the staged
 // version (the staged binary carries the changelog up to itself, so this works offline) and
 // refuses with ErrNeedsConfirmation when there are some and --yes was not given.
-func confirmNotes(ctx context.Context, o Options, staged, current, version string) error {
-	var notes bytes.Buffer
-	if err := o.Run(ctx, staged, []string{"upgrade-notes", "--since", current}, &notes); err != nil {
+func confirmNotes(ctx context.Context, o Options, staged, current, version string, emit emitter) error {
+	notes, err := o.Run(ctx, staged, []string{"upgrade-notes", "--since", current})
+	if err != nil {
 		return fmt.Errorf("read the Upgrade notes of %s: %w", version, err)
 	}
-	if notes.Len() == 0 {
+	if len(notes) == 0 {
 		return nil
 	}
-	if _, err := fmt.Fprintf(o.Out, "Upgrade notes between %s and %s:\n\n%s\n", current, version, notes.String()); err != nil {
+	if err := emit(Notes{From: current, To: version, Text: string(notes)}); err != nil {
 		return err
 	}
 	if !o.Yes {
@@ -323,15 +340,9 @@ func containerRefusal(kind string) error {
 	return errors.New("this Instance runs in a container: upgrade it with `docker pull ghcr.io/getsphericon/sphericon:<version>` and recreate the container, not by replacing a binary in an image")
 }
 
-// PrintRestart is the default post-swap step: it names the one command left to the user.
-func PrintRestart(w io.Writer, r Result, service string) error {
-	_, err := fmt.Fprintf(w, "Installed %s at %s (the previous binary is %s).\nRestart to run it: systemctl restart %s\n", r.Version, r.Binary, r.Old, service)
-	return err
-}
-
-func execRun(ctx context.Context, bin string, args []string, stdout io.Writer) error {
+// execRun runs bin and returns its stdout; its stderr passes through to the operator's.
+func execRun(ctx context.Context, bin string, args []string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, bin, args...)
-	cmd.Stdout = stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return cmd.Output()
 }

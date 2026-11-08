@@ -13,7 +13,8 @@
 // resetting bump the User's session epoch inside the change's transaction, so the module sits
 // above internal/domain/identity/users: it reads the User's session epoch and password hash and
 // bumps the epoch through it. A Second factor reset also removes the User's Passkeys, so it is a
-// use case (internal/usecase/secondfactorreset) over ResetIn.
+// use case (internal/usecase/secondfactorreset) over the unchecked secondfactorsunchecked.ResetIn
+// (ADR 0110), which writes the reset move of this module's lifecycle (Machine).
 //
 // The Second factor belongs to the User, not a Workspace, so there is no *ent.Scoped to take:
 // the module holds the raw *ent.Client (the User is reached by id), one of the closed list of
@@ -100,8 +101,8 @@ func factorOf(ctx context.Context, client *ent.Client, userID int64) (*ent.Secon
 	return f, err
 }
 
-// snapshotIn reads what a change checks on the transaction tx: the User and its factor row.
-func snapshotIn(ctx context.Context, tx *ent.Client, userID int64) (Snapshot, error) {
+// SnapshotIn reads what a change checks on the transaction tx: the User and its factor row.
+func SnapshotIn(ctx context.Context, tx *ent.Client, userID int64) (Snapshot, error) {
 	u, err := tx.User.Get(ctx, userID)
 	if err != nil {
 		return Snapshot{}, err
@@ -160,7 +161,7 @@ type Enrollment struct {
 func (m *Module) StartEnrollment(ctx context.Context, userID int64) (*Enrollment, error) {
 	var enrollment *Enrollment
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		before, err := snapshotIn(ctx, tx, userID)
+		before, err := SnapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
@@ -199,7 +200,7 @@ type ConfirmInput struct {
 func (m *Module) ConfirmEnrollment(ctx context.Context, userID int64, in ConfirmInput) (*CodesIssued, error) {
 	var issued *CodesIssued
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := snapshotIn(ctx, tx, userID)
+		before, err := SnapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
@@ -237,7 +238,7 @@ func (m *Module) ConfirmEnrollment(ctx context.Context, userID int64, in Confirm
 func (m *Module) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*CodesIssued, error) {
 	var issued *CodesIssued
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := snapshotIn(ctx, tx, userID)
+		before, err := SnapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
@@ -281,7 +282,7 @@ func (m *Module) Disable(ctx context.Context, userID int64, code string) (*ent.U
 		if err != nil {
 			return err
 		}
-		removed, err := remove(ctx, tx, verified, FactorDisable)
+		removed, err := remove(ctx, tx, verified)
 		if err != nil {
 			return err
 		}
@@ -423,9 +424,10 @@ func (m *Module) totpStep(f *ent.SecondFactor, code string) (int64, error) {
 	return step, nil
 }
 
-// remove clears the factor before its Recovery codes, and bumps the epoch in the same transaction.
-func remove(ctx context.Context, tx *ent.Client, before Snapshot, trigger Trigger) (Moved, error) {
-	moved, err := move(ctx, tx, before, Change{Trigger: trigger})
+// remove disables the factor before its Recovery codes go, and bumps the epoch in the same
+// transaction.
+func remove(ctx context.Context, tx *ent.Client, before Snapshot) (Moved, error) {
+	moved, err := move(ctx, tx, before, Change{Trigger: FactorDisable})
 	if err != nil {
 		return Moved{}, err
 	}

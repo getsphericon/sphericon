@@ -124,6 +124,11 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   fix is the shape the ADR states: a dependency or the clock is a parameter of `New`, a third or an
   optional argument goes into a typed `XInput`, two values into a named result struct, what became of a batch's items
   into `batch.Result` (`internal/kernel/batch`), and a report is written by its driver.
+- **Rule 5, `domainwriter`.** The domain tier writes to no `io.Writer` (ADR 0111). In a package under
+  `internal/domain` or `ee/domain` (test files are not read) the analyzer refuses an `io.Writer`
+  parameter of a function, a method, a function literal or a function type, and a struct field that
+  holds one. The fix is a value or an iterator (`iter.Seq2`) the module returns: the command line
+  prints a report (`internal/commandline`), and an HTTP handler streams an export.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns

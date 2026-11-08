@@ -3,8 +3,9 @@
 // Recovery codes and Passkeys so they can enroll again after losing both their authenticator and
 // their codes. The factor and the codes are internal/domain/identity/secondfactors' and the
 // Passkeys internal/domain/identity/passkeys', so a reset spans two modules: it checks that there
-// is something to clear, then removes each through its owner's unchecked removal and records who
-// reset, in one transaction.
+// is something to clear, then removes each through its owner's unchecked removal
+// (secondfactorsunchecked.ResetIn, passkeysunchecked.DeleteAllIn, ADR 0110) and records who reset,
+// in one transaction.
 //
 // The Second factor belongs to the User, not a Workspace, so there is no *ent.Scoped to take:
 // this use case holds the raw *ent.Client (the User is reached by id, or by email from the
@@ -18,7 +19,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys/passkeysunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors/secondfactorsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -86,11 +89,11 @@ func resetIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, erro
 	if !enrolled && !held {
 		return nil, ErrNothingToReset
 	}
-	u, err := secondfactors.ResetIn(ctx, tx, userID)
+	u, err := secondfactorsunchecked.ResetIn(ctx, tx, userID)
 	if err != nil {
 		return nil, err
 	}
-	if err := passkeys.DeleteAllIn(ctx, tx, userID); err != nil {
+	if err := passkeysunchecked.DeleteAllIn(ctx, tx, userID); err != nil {
 		return nil, err
 	}
 	return u, nil

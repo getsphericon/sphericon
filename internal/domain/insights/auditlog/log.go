@@ -2,7 +2,7 @@ package auditlog
 
 import (
 	"context"
-	"io"
+	"iter"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
@@ -32,9 +32,9 @@ type Reader interface {
 	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error)
 	// Facets returns the actors, actions and target types that occur in the log, sorted.
 	Facets(ctx context.Context, s *ent.Scoped) (Facets, error)
-	// Export records the export as an Audit entry of the scope's actor, then returns the function
-	// that writes the entries matching the filter, newest first, as CSV.
-	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error)
+	// Export records the export as an Audit entry of the scope's actor, then returns the entries
+	// matching the filter, newest first, as CSV chunks the driver streams.
+	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (iter.Seq2[[]byte, error], error)
 }
 
 // Log serves a Workspace's Audit log to the surfaces that show it (/site, /api), refused as
@@ -84,9 +84,9 @@ func (l *Log) Facets(ctx context.Context, s *ent.Scoped) (Facets, error) {
 	return l.reader.Facets(ctx, s)
 }
 
-// Export records the export as an Audit entry of the scope's actor, then returns the function that
-// writes the scoped Workspace's entries matching the filter, newest first, as CSV.
-func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error) {
+// Export records the export as an Audit entry of the scope's actor, then returns the scoped
+// Workspace's entries matching the filter, newest first, as CSV chunks the driver streams.
+func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (iter.Seq2[[]byte, error], error) {
 	if !l.Licensed() {
 		return nil, ErrUnlicensed
 	}

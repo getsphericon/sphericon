@@ -1,10 +1,11 @@
 package auditentries
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
 	"encoding/json"
-	"io"
+	"iter"
 	"strconv"
 	"strings"
 	"time"
@@ -25,10 +26,10 @@ var exportHeader = []string{
 
 // Export records the export of the scoped Workspace's Audit log as an `audit_log.export`
 // entry of the scope's actor, whose diff names the filters it is narrowed by (story 19), and
-// returns the function that writes the entries matching the filter as CSV. The entry is
-// recorded before any row leaves: an error here means nothing was exported. The caller
-// has already checked Licensed and the reader's role.
-func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error) {
+// returns the entries matching the filter as CSV, yielded in chunks the driver streams
+// (ADR 0111). The entry is recorded before any row leaves: an error here means nothing was
+// exported. The caller has already checked Licensed and the reader's role.
+func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (iter.Seq2[[]byte, error], error) {
 	entry := &events.AuditEntry{Action: events.ActionAuditLogExport, TargetType: "audit_log"}
 	if filters := exportFilters(f); len(filters) > 0 {
 		entry.Diff = map[string]any{"filter": filters}
@@ -40,7 +41,7 @@ func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (
 	if err != nil {
 		return nil, err
 	}
-	return func(w io.Writer) error { return l.exportCSV(ctx, s, f, w) }, nil
+	return l.exportCSV(ctx, s, f), nil
 }
 
 // exportFilters names the filters an export is narrowed by; an unset one is left out.
@@ -63,34 +64,43 @@ func exportFilters(f events.AuditFilter) map[string]any {
 	return filters
 }
 
-// exportCSV streams the scoped Workspace's Audit log entries matching the filter, newest first, to w as CSV: a
-// header row, then one row per entry. It pages through Entries, so a long log never
-// sits in memory, and it shows a Staff member as "Sphericon staff" like every read surface.
-func (l *Log) exportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter, w io.Writer) error {
-	cw := csv.NewWriter(w)
-	if err := cw.Write(exportHeader); err != nil {
-		return err
-	}
-	var cursor int64
-	for {
-		page, err := l.Entries(ctx, s, f, cursor, exportPageSize)
-		if err != nil {
-			return err
+// exportCSV yields the scoped Workspace's Audit log entries matching the filter, newest first,
+// as CSV: a header row, then the rows of each page of entries, a chunk per page. It pages
+// through Entries, so a long log never sits in memory, and it shows a Staff member as
+// "Sphericon staff" like every read surface. A failed read ends it with the error.
+func (l *Log) exportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter) iter.Seq2[[]byte, error] {
+	return func(yield func([]byte, error) bool) {
+		if !yieldCSV(yield, [][]string{exportHeader}) {
+			return
 		}
-		for _, e := range page.Items {
-			if err := cw.Write(exportRow(e)); err != nil {
-				return err
+		var cursor int64
+		for {
+			page, err := l.Entries(ctx, s, f, cursor, exportPageSize)
+			if err != nil {
+				yield(nil, err)
+				return
 			}
+			rows := make([][]string, 0, len(page.Items))
+			for _, e := range page.Items {
+				rows = append(rows, exportRow(e))
+			}
+			if !yieldCSV(yield, rows) || page.Next == 0 {
+				return
+			}
+			cursor = page.Next
 		}
-		cw.Flush()
-		if err := cw.Error(); err != nil {
-			return err
-		}
-		if page.Next == 0 {
-			return nil
-		}
-		cursor = page.Next
 	}
+}
+
+// yieldCSV yields rows as one chunk of CSV; false once the reader stopped or the rows could not
+// be encoded.
+func yieldCSV(yield func([]byte, error) bool, rows [][]string) bool {
+	var buf bytes.Buffer
+	if err := csv.NewWriter(&buf).WriteAll(rows); err != nil {
+		yield(nil, err)
+		return false
+	}
+	return yield(buf.Bytes(), nil)
 }
 
 func exportRow(e *ent.AuditEntry) []string {

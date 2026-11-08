@@ -1,7 +1,6 @@
 package signup_test
 
 import (
-	"bytes"
 	"testing"
 	"time"
 
@@ -26,25 +25,24 @@ func TestCreateOwnerRefusesAMalformedEmail(t *testing.T) {
 	assert.False(t, taken, "a refusal creates no User")
 }
 
-func TestReportOwnerCreatedShowsTheFirstWorkspaceAndTheOneTimePassword(t *testing.T) {
+func TestCreateOwnerMakesTheUserAndReturnsItsOneTimePassword(t *testing.T) {
 	env := testhelper.Setup(t)
-	password, err := env.SignUp.CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
-	var out bytes.Buffer
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 
-	err = users.ReportOwnerCreated(&out, "ada@example.com", password, err)
+	password, err := env.SignUp.CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
 
 	require.NoError(t, err)
-	assert.Contains(t, out.String(), `its first workspace "`+users.FirstWorkspaceName+`"`)
-	assert.Contains(t, out.String(), "password (shown once): "+password)
+	assert.NotEmpty(t, password)
+	taken, err := acc.EmailTaken(t.Context(), "ada@example.com")
+	require.NoError(t, err)
+	assert.True(t, taken)
 }
 
-func TestReportOwnerCreatedOfATakenEmailSaysNothingChanged(t *testing.T) {
+func TestCreateOwnerOfATakenEmailIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
+
 	password, err := env.SignUp.CreateOwner(t.Context(), fixtures.OwnerJohnEmail, "John")
-	var out bytes.Buffer
 
-	err = users.ReportOwnerCreated(&out, fixtures.OwnerJohnEmail, password, err)
-
-	require.ErrorContains(t, err, "already exists; nothing changed")
-	assert.Empty(t, out.String())
+	require.ErrorIs(t, err, users.ErrEmailTaken)
+	assert.Empty(t, password)
 }

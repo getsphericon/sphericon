@@ -36,26 +36,35 @@ func openPreset(t *testing.T, arg string) *preset.Preset {
 	return p
 }
 
-func TestWriteTestsPrintsPassForEachCaseOfACustomFile(t *testing.T) {
+// passed names the cases of results that passed, and failed those that did not.
+func outcomes(results []preset.CaseResult) (passed, failed []string) {
+	for _, r := range results {
+		if r.Err != nil {
+			failed = append(failed, r.Name)
+			continue
+		}
+		passed = append(passed, r.Name)
+	}
+	return passed, failed
+}
+
+func TestRunTestsPassesEachCaseOfACustomFile(t *testing.T) {
 	p := openPreset(t, headerHMACPreset)
-	var out bytes.Buffer
 
-	err := p.WriteTests(t.Context(), &out)
+	passed, failed := outcomes(p.RunTests(t.Context()))
 
-	require.NoError(t, err)
-	assert.Contains(t, out.String(), "PASS a signed request passes")
-	assert.Contains(t, out.String(), "PASS a signature over another body is refused")
-	assert.NotContains(t, out.String(), "FAIL")
+	assert.Contains(t, passed, "a signed request passes")
+	assert.Contains(t, passed, "a signature over another body is refused")
+	assert.Empty(t, failed)
 }
 
 func TestOpenFindsABuiltInByName(t *testing.T) {
 	p := openPreset(t, "generic")
-	var out bytes.Buffer
 
-	err := p.WriteTests(t.Context(), &out)
+	passed, failed := outcomes(p.RunTests(t.Context()))
 
-	require.NoError(t, err)
-	assert.Contains(t, out.String(), "PASS a signed notice becomes a Delivery notice")
+	assert.Contains(t, passed, "a signed notice becomes a Delivery notice")
+	assert.Empty(t, failed)
 }
 
 func TestOpenRefusesANameThatIsNeitherAFileNorABuiltIn(t *testing.T) {
@@ -64,20 +73,18 @@ func TestOpenRefusesANameThatIsNeitherAFileNorABuiltIn(t *testing.T) {
 	require.ErrorContains(t, err, "neither a file nor a built-in Preset")
 }
 
-func TestWriteTestsFailsAndNamesTheCaseThatDisagrees(t *testing.T) {
+func TestRunTestsNamesTheCaseThatDisagrees(t *testing.T) {
 	data, err := os.ReadFile(headerHMACPreset)
 	require.NoError(t, err)
 	broken := filepath.Join(t.TempDir(), "broken.yaml")
 	edited := bytes.Replace(data, []byte("expect: { refused: unauthentic }"), []byte("expect: { notices: [] }"), 1)
 	require.NoError(t, os.WriteFile(broken, edited, 0o600))
 	p := openPreset(t, broken)
-	var out bytes.Buffer
 
-	err = p.WriteTests(t.Context(), &out)
+	passed, failed := outcomes(p.RunTests(t.Context()))
 
-	require.Error(t, err)
-	assert.Contains(t, out.String(), "FAIL a signature over another body is refused")
-	assert.Contains(t, out.String(), "PASS a signed request passes")
+	assert.Equal(t, []string{"a signature over another body is refused"}, failed)
+	assert.Contains(t, passed, "a signed request passes")
 }
 
 func TestOpenReportsAFileThatDoesNotLoad(t *testing.T) {
@@ -89,59 +96,59 @@ func TestOpenReportsAFileThatDoesNotLoad(t *testing.T) {
 	require.ErrorContains(t, err, "bad.yaml")
 }
 
-func TestWriteSamplePrintsTheDeliveryNotices(t *testing.T) {
+func TestHandleOfASampleMakesTheDeliveryNotices(t *testing.T) {
 	req, params, now := genericSample("v1,o8DDYiIohO1Z+Or1krVV/dGfR+sT1Gi6NDRUuQ/GbNs=")
 	p := openPreset(t, "generic")
-	var out bytes.Buffer
 
-	err := p.WriteSample(t.Context(), &out, req, params, now)
+	res, err := p.Handle(t.Context(), req, params, now)
 
 	require.NoError(t, err)
-	assert.Contains(t, out.String(), "bounce hard alice@example.com")
-	assert.Contains(t, out.String(), "id=evt_1")
-	assert.Contains(t, out.String(), "sending_domain=news.example.com")
+	require.Len(t, res.Notices, 1)
+	assert.Equal(t, "evt_1", res.Notices[0].ID)
+	assert.Equal(t, "alice@example.com", res.Notices[0].Destination)
+	assert.Equal(t, preset.Bounce, res.Notices[0].Kind)
+	assert.True(t, res.Notices[0].Hard)
+	assert.Equal(t, "news.example.com", res.Notices[0].SendingDomain)
 }
 
 // A sample of the chat Preset (testdata/custom/chat.yaml) carries one fact of each kind it maps.
-func TestWriteSamplePrintsInboundMessagesAndReachabilityChanges(t *testing.T) {
+func TestHandleOfASampleMakesInboundMessagesAndReachabilityChanges(t *testing.T) {
 	p := openPreset(t, "testdata/custom/chat.yaml")
 	header := http.Header{}
 	header.Set("X-Token", "chat-token")
 	body := `{"events":[{"type":"message","event_id":"7","from":42,"chat":43,"message":11,"text":"/stop"},` +
 		`{"type":"button","event_id":"8","from":42,"chat":43,"message":12,"data":"unsubscribe"},` +
 		`{"type":"blocked","event_id":"9","from":42},{"type":"unblocked","event_id":"10","from":44}]}`
-	var out bytes.Buffer
 
-	err := p.WriteSample(t.Context(), &out, preset.Request{Header: header, Body: []byte(body)}, preset.Params{"token": "chat-token"}, time.Now())
+	res, err := p.Handle(t.Context(), preset.Request{Header: header, Body: []byte(body)}, preset.Params{"token": "chat-token"}, time.Now())
 
 	require.NoError(t, err)
-	assert.Equal(t, `inbound_message telegram 42 id=7 chat_id=43 message_id=11 text="/stop" payload=""
-inbound_message telegram 42 id=8 chat_id=43 message_id=12 text="" payload="unsubscribe"
-reachability_change 42 id=9 unreachable reason=blocked
-reachability_change 44 id=10 reachable
-`, out.String())
+	assert.Equal(t, []preset.InboundMessage{
+		{ID: "7", Channel: "telegram", Destination: "42", ChatID: "43", MessageID: "11", Text: "/stop"},
+		{ID: "8", Channel: "telegram", Destination: "42", ChatID: "43", MessageID: "12", Payload: "unsubscribe"},
+	}, res.InboundMessages)
+	assert.Equal(t, []preset.ReachabilityChange{
+		{ID: "9", Destination: "42", Reason: preset.Blocked},
+		{ID: "10", Destination: "44", Reachable: true},
+	}, res.ReachabilityChanges)
 }
 
-func TestWriteSampleSaysWhenAVerifiedRequestCarriesNoFacts(t *testing.T) {
+func TestHandleOfAVerifiedRequestWithoutFactsIsEmpty(t *testing.T) {
 	p := openPreset(t, "testdata/custom/chat.yaml")
 	header := http.Header{}
 	header.Set("X-Token", "chat-token")
-	var out bytes.Buffer
 
-	err := p.WriteSample(t.Context(), &out, preset.Request{Header: header, Body: []byte(`{"events":[]}`)}, preset.Params{"token": "chat-token"}, time.Now())
+	res, err := p.Handle(t.Context(), preset.Request{Header: header, Body: []byte(`{"events":[]}`)}, preset.Params{"token": "chat-token"}, time.Now())
 
 	require.NoError(t, err)
-	assert.Equal(t, "verified, no facts (an event the Preset does not handle)\n", out.String())
+	assert.True(t, res.Empty())
 }
 
-func TestWriteSamplePrintsTheReasonOfARefusal(t *testing.T) {
+func TestHandleRefusesASampleThatIsNotAuthentic(t *testing.T) {
 	req, params, now := genericSample("v1,wrong")
 	p := openPreset(t, "generic")
-	var out bytes.Buffer
 
-	err := p.WriteSample(t.Context(), &out, req, params, now)
+	_, err := p.Handle(t.Context(), req, params, now)
 
-	require.Error(t, err)
-	assert.Contains(t, out.String(), "refused: ")
-	assert.Contains(t, out.String(), "not authentic")
+	require.ErrorContains(t, err, "not authentic")
 }

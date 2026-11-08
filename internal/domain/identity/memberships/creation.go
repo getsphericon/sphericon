@@ -10,22 +10,8 @@ import (
 
 // The unique constraints of the tables this package writes (ADR 0106).
 var _ = db.Declare(
-	db.Fault("membership_user_id_workspace_id", "AddInvitedIn writes with ON CONFLICT DO NOTHING, AddCreatorIn's Workspace is new, and AddByDomainIn runs only for a User the Join decision found without a Membership"),
+	db.Fault("membership_user_id_workspace_id", "AddInvitedIn writes with ON CONFLICT DO NOTHING, membershipsunchecked.AddCreatorIn's Workspace is new, and AddByDomainIn runs only for a User the Join decision found without a Membership"),
 )
-
-// AddCreatorIn writes, in tx, the Owner Membership of the User who creates the Workspace
-// workspaceID (source creator, ADR 0043), on the transaction that creates the Workspace
-// (workspaces.CreateIn): the use case internal/usecase/workspacecreation, which refuses an
-// Unverified User first (ADR 0030).
-func AddCreatorIn(ctx context.Context, tx *ent.Client, userID, workspaceID int64) error {
-	_, err := tx.Membership.Create().
-		SetUserID(userID).
-		SetWorkspaceID(workspaceID).
-		SetRole(membership.RoleOwner).
-		SetSource(membership.SourceCreator).
-		Save(ctx)
-	return err
-}
 
 // AddInvitedIn gives the User userID a Membership with role in the scoped Workspace, the source an
 // accepted Invitation, inside the transaction ts is bound to. A Membership the User already holds
