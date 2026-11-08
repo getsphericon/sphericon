@@ -321,10 +321,9 @@ coding standards in `CODING_STANDARDS.md`.
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The Second factor reset's removals (`secondfactors.ResetIn`, the
   factor with its Recovery codes, and `passkeys.DeleteAllIn`), the moves of a Workspace's deletion cycle
-  (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the core removals of its erase (each
-  `Erase…In` of a Workspace-owned table, one shared reason, and `oauthclients.DeleteCodesIn`; the
-  Edition's three are in every list but `x-unchecked-removals`, since the wiring and the Edition, which
-  take that one, name them to hand them in), the creation of a Workspace with its creator's Membership
+  (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the removal of the OAuth codes its erase
+  makes (`oauthclients.DeleteCodesIn`; the erase deletes a Workspace's rows itself, ADR 0110, so no
+  owner's removal of them has a name), the creation of a Workspace with its creator's Membership
   (`workspaces.CreateIn`, `memberships.AddCreatorIn`) and each owner's step of a Contact's Erasure
   (`visitors.EraseSubject`, `events.EraseSubject`, `suppressions.EraseContact` and the others
   `internal/usecase/contacterasure` sequences; the purge of its queued jobs is a method of the bus's
