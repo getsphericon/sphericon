@@ -8,16 +8,16 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
 // MessageObservationArgs deliberately carries no personal envelope: accepted measurements
 // survive Erasure and only update the anonymous delivery record's report stamps.
 type MessageObservationArgs struct {
-	WorkspaceID int64                        `json:"workspaceId"`
+	jobkind.Workspace
+
 	Observation outboundmessages.Observation `json:"observation"`
 }
-
-func (a MessageObservationArgs) JobWorkspace() int64 { return a.WorkspaceID }
 
 func (MessageObservationArgs) Kind() string { return "event_message_observation" }
 func (MessageObservationArgs) InsertOpts() river.InsertOpts {
@@ -30,7 +30,7 @@ func observesMessage(env events.Envelope, ev events.DomainEvent) bool {
 }
 func observeMessage(env events.Envelope, ev events.DomainEvent) river.JobArgs {
 	observation, _ := outboundmessages.ObservationOf(env, ev)
-	return MessageObservationArgs{WorkspaceID: env.WorkspaceID, Observation: observation}
+	return MessageObservationArgs{Workspace: jobkind.Workspace{WorkspaceID: env.WorkspaceID}, Observation: observation}
 }
 
 type MessageObservationWorker struct {
