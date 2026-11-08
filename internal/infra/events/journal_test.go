@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"entgo.io/ent/dialect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -25,7 +24,7 @@ import (
 func TestJournalKeepsUnconsumedFactsAndInstanceFactsWithoutTheirPersonalPayload(t *testing.T) {
 	env := testhelper.Setup(t)
 	at := time.Date(2026, 11, 8, 1, 0, 0, 0, time.UTC)
-	bus := events.New(env.SQLDB, func(d dialect.Driver) *ent.Client { return entclient.NewTx(d) }, func() time.Time { return at })
+	bus := events.New(env.SQLDB, entclient.NewTx, func() time.Time { return at })
 	ctx := logging.WithRequestID(t.Context(), "request-with-private-data@example.com")
 	for _, fact := range []events.DomainEvent{
 		&events.InvitationCreated{WorkspaceID: fixtures.AcmeID, Email: "invitee@example.com", Token: "secret-invitation-token"},
@@ -33,7 +32,7 @@ func TestJournalKeepsUnconsumedFactsAndInstanceFactsWithoutTheirPersonalPayload(
 	} {
 		require.NoError(t, bus.Publish(ctx, fact), "no consumer and no queue are needed to retain a publication")
 	}
-	rows := env.DB.EventJournalEntry.Query().Order(eventjournalentry.ByID()).AllX(t.Context())
+	rows := env.DB.EventJournalEntry.Query().Where(eventjournalentry.NameIn(events.NameInvitationCreated, events.NameUserPasswordResetRequested)).Order(eventjournalentry.ByID()).AllX(t.Context())
 	require.Len(t, rows, 2)
 	assert.Equal(t, int64(fixtures.AcmeID), *rows[0].WorkspaceID)
 	assert.Nil(t, rows[1].WorkspaceID, "an Instance fact is not assigned to an invented Workspace")
@@ -106,13 +105,14 @@ func TestJournalFailureRollsBackTheProducerAndItsQueuedWork(t *testing.T) {
 		if err := tx.Contact.UpdateOneID(fixtures.ContactAliceID).SetFirstName("Rolled back").Exec(t.Context()); err != nil {
 			return err
 		}
-		_ = pub.Publish(t.Context(), &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID})
+		publishErr := pub.Publish(t.Context(), &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID})
+		assert.ErrorIs(t, publishErr, boom)
 		return nil
 	})
 	require.ErrorIs(t, err, boom, "even an ignored publication failure prevents commit")
 	assert.Equal(t, before.FirstName, env.DB.Contact.GetX(t.Context(), fixtures.ContactAliceID).FirstName)
 	assert.Empty(t, env.QueuedEvents(t, events.NameContactCreated))
-	assert.Zero(t, env.DB.EventJournalEntry.Query().CountX(t.Context()))
+	assert.Empty(t, env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID), eventjournalentry.Name(events.NameContactCreated)).IDsX(t.Context()))
 }
 
 func TestJournalErasureIsBatchedAndConfinedToItsWorkspace(t *testing.T) {
@@ -142,10 +142,50 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 	require.NoError(t, bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		return workspaces.DiscardIn(ctx, tx, fixtures.AcmeID, now.Add(-workspaces.DeletionWindow-time.Hour))
 	}))
+	fact := &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "accepted-before-tombstone"}
+	unblock, published := pauseJournalPublication(ctx, t, bus, fact)
+	results := testhelper.QueuedBehind(t, database, unblock, testhelper.Writer{
+		Name: "final purge", Run: func() error {
+			return bus.WithinWorkspacePurgeTx(ctx, func(tx *ent.Client, purger events.WorkspacePurger) error {
+				if err := purger.PurgeWorkspaceJobs(ctx, fixtures.AcmeID); err != nil {
+					return err
+				}
+				return workspaces.TombstoneIn(ctx, tx, fixtures.AcmeID, now)
+			})
+		},
+	})
+	require.NoError(t, results["final purge"])
+	require.NoError(t, testhelper.Receive(t, published, "publisher committed"))
+	assert.Zero(t, client.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).CountX(ctx))
+	assert.Empty(t, testhelper.QueuedEnvelopesOn(t, database, fact.EventName()))
+	fact.SourceID = "arrived-after-tombstone"
+	require.ErrorIs(t, bus.Publish(ctx, fact), events.ErrWorkspaceErased)
+}
+
+func TestJournalPublicationDoesNotBlockAnOwnersFeedUpdate(t *testing.T) {
+	database := testhelper.RealDB(t)
+	database.SetMaxOpenConns(4)
+	bus := testhelper.BusOn(t, database)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+	unblock, published := pauseJournalPublication(ctx, t, bus, &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "held-during-owner-update"})
+	updated := make(chan error, 1)
+	go func() {
+		updated <- bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+			return tx.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("owner-changed@example.com").Exec(ctx)
+		})
+	}()
+	require.NoError(t, testhelper.Receive(t, updated, "owner email and feed position change while publication is open"))
+	unblock()
+	require.NoError(t, testhelper.Receive(t, published, "publisher committed"))
+}
+
+func pauseJournalPublication(ctx context.Context, t *testing.T, bus *events.Bus, fact events.DomainEvent) (func(), <-chan error) {
+	t.Helper()
 	entered, release := make(chan struct{}), make(chan struct{})
 	var once sync.Once
 	unblock := func() { once.Do(func() { close(release) }) }
-	defer unblock()
+	t.Cleanup(unblock)
 	bus.Use(func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, mutation ent.Mutation) (ent.Value, error) {
 			if mutation.Type() == "EventJournalEntry" && mutation.Op().Is(ent.OpCreate) {
@@ -159,36 +199,8 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 			return next.Mutate(ctx, mutation)
 		})
 	})
-	fact := &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "accepted-before-tombstone"}
 	published := make(chan error, 1)
 	go func() { published <- bus.Publish(ctx, fact) }()
 	testhelper.Receive(t, entered, "publisher reached its journal write")
-	started, purged := make(chan struct{}), make(chan error, 1)
-	go func() {
-		purged <- bus.WithinWorkspacePurgeTx(ctx, func(tx *ent.Client, purger events.WorkspacePurger) error {
-			close(started)
-			if err := purger.PurgeWorkspaceJobs(ctx, fixtures.AcmeID); err != nil {
-				return err
-			}
-			return workspaces.TombstoneIn(ctx, tx, fixtures.AcmeID, now)
-		})
-	}()
-	testhelper.Receive(t, started, "purge started")
-	require.False(t, purgeFinishedBeforeRelease(purged), "the purge cannot pass a publication still writing its journal")
-	unblock()
-	require.NoError(t, testhelper.Receive(t, published, "publisher committed"))
-	require.NoError(t, testhelper.Receive(t, purged, "purge committed"))
-	assert.Zero(t, client.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).CountX(ctx))
-	assert.Empty(t, testhelper.QueuedEnvelopesOn(t, database, fact.EventName()))
-	fact.SourceID = "arrived-after-tombstone"
-	require.ErrorIs(t, bus.Publish(ctx, fact), events.ErrWorkspaceErased)
-}
-
-func purgeFinishedBeforeRelease(done <-chan error) bool {
-	select {
-	case <-done:
-		return true
-	case <-time.After(100 * time.Millisecond):
-		return false
-	}
+	return unblock, published
 }

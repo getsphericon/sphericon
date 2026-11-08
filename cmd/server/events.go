@@ -11,7 +11,7 @@ import (
 )
 
 type eventReplayOps interface {
-	ReplayEvents(context.Context, string, events.ReplayRequest) (events.ReplayResult, error)
+	ReplayEvents(ctx context.Context, workspace string, in events.ReplayRequest) (events.ReplayResult, error)
 }
 
 func eventsCommand(d deps) *cli.Command {

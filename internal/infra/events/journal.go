@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -47,7 +48,7 @@ type retainedInput struct {
 
 func (p *txPublisher) journal(ctx context.Context, env Envelope, inputs map[string]retainedInput) error {
 	if env.WorkspaceID != 0 {
-		_, err := p.client.Workspace.Query().Where(workspace.ID(env.WorkspaceID), workspace.ErasedAtIsNil()).ForShare().Only(ctx)
+		_, err := p.client.Workspace.Query().Where(workspace.ID(env.WorkspaceID), workspace.ErasedAtIsNil()).ForShare(journalLifetimeLock).Only(ctx)
 		if ent.IsNotFound(err) {
 			return ErrWorkspaceErased
 		}
@@ -72,3 +73,7 @@ func (p *txPublisher) journal(ctx context.Context, env Envelope, inputs map[stri
 	}
 	return nil
 }
+
+// Key share fences the final FOR UPDATE purge without blocking ordinary non-key writes,
+// notably workspacefeed's position update while its Instance-wide advisory lock is held.
+func journalLifetimeLock(options *sql.LockOptions) { options.Strength = sql.LockKeyShare }

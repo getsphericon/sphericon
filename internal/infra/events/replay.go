@@ -45,7 +45,7 @@ type ReplayResult struct {
 // Replay queues only the named, explicitly replayable consumer's normal jobs. The selection
 // comes from one SELECT snapshot; there is no journal cursor and no commit-order assumption.
 // It never calls Publish, subscribers or general fan-out. Version, scope, bound and queue
-// errors leave no partial work. The Workspace share lock fences its deletion until commit.
+// errors leave no partial work. The Workspace key-share lock fences its final purge until commit.
 func (b *Bus) Replay(ctx context.Context, s *ent.Scoped, in ReplayRequest) (ReplayResult, error) {
 	var result ReplayResult
 	if in.From.IsZero() || in.Before.IsZero() || !in.From.Before(in.Before) {
@@ -62,7 +62,7 @@ func (b *Bus) Replay(ctx context.Context, s *ent.Scoped, in ReplayRequest) (Repl
 		return result, err
 	}
 	err = b.within(ctx, func(client *ent.Client, pub *txPublisher) error {
-		_, err := client.Workspace.Query().Where(workspace.ID(s.WorkspaceID()), workspace.DiscardedAtIsNil(), workspace.ErasedAtIsNil()).ForShare().Only(ctx)
+		_, err := client.Workspace.Query().Where(workspace.ID(s.WorkspaceID()), workspace.DiscardedAtIsNil(), workspace.ErasedAtIsNil()).ForShare(journalLifetimeLock).Only(ctx)
 		if ent.IsNotFound(err) {
 			return ErrReplayWorkspaceUnavailable
 		}

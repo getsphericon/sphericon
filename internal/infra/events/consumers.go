@@ -55,33 +55,36 @@ func (b *Bus) UseConsumers(cs ...Consumer) {
 	b.consumers = append(b.consumers, cs...)
 }
 
-// queueConsumers inserts, on the publisher's transaction, the job of every consumer that wants
-// the event, in one insert.
-func (p *txPublisher) queueConsumers(ctx context.Context, env Envelope, ev DomainEvent) error {
+// journalAndQueueConsumers retains accepted publication metadata and explicitly replayable
+// inputs, then inserts the selected consumers' jobs on the same transaction.
+func (p *txPublisher) journalAndQueueConsumers(ctx context.Context, env Envelope, ev DomainEvent) error {
 	var params []river.InsertManyParams
 	inputs := map[string]retainedInput{}
 	for _, c := range p.consumers {
-		if c.Wants(env, ev) {
-			args := c.Job(env, ev)
-			params = append(params, river.InsertManyParams{Args: args})
-			if policy := c.Replay; policy != nil {
-				if policy.kind != args.Kind() || policy.version < 1 {
-					return fmt.Errorf("invalid replay policy for %q", args.Kind())
-				}
-				if _, exists := inputs[policy.kind]; exists {
-					return fmt.Errorf("duplicate replay consumer %q", policy.kind)
-				}
-				data, err := json.Marshal(args)
-				if err != nil {
-					return fmt.Errorf("retain %q: %w", policy.kind, err)
-				}
-				var scope jobkind.Workspace
-				if err := json.Unmarshal(data, &scope); err != nil || scope.WorkspaceID == 0 || scope.WorkspaceID != env.WorkspaceID {
-					return fmt.Errorf("retained input of %q must name the publishing Workspace", policy.kind)
-				}
-				inputs[policy.kind] = retainedInput{Version: policy.version, Args: data}
-			}
+		if !c.Wants(env, ev) {
+			continue
 		}
+		args := c.Job(env, ev)
+		params = append(params, river.InsertManyParams{Args: args})
+		policy := c.Replay
+		if policy == nil {
+			continue
+		}
+		if policy.kind != args.Kind() || policy.version < 1 {
+			return fmt.Errorf("invalid replay policy for %q", args.Kind())
+		}
+		if _, exists := inputs[policy.kind]; exists {
+			return fmt.Errorf("duplicate replay consumer %q", policy.kind)
+		}
+		data, err := json.Marshal(args)
+		if err != nil {
+			return fmt.Errorf("retain %q: %w", policy.kind, err)
+		}
+		var scope jobkind.Workspace
+		if err := json.Unmarshal(data, &scope); err != nil || scope.WorkspaceID == 0 || scope.WorkspaceID != env.WorkspaceID {
+			return fmt.Errorf("retained input of %q must name the publishing Workspace", policy.kind)
+		}
+		inputs[policy.kind] = retainedInput{Version: policy.version, Args: data}
 	}
 	if err := p.journal(ctx, env, inputs); err != nil {
 		return err

@@ -4,6 +4,10 @@ status: accepted
 
 # Broadcast unsubscribe attribution follows the fact and survives Erasure
 
+> **Extended by [[0116-the-event-journal-retains-explicit-anonymous-replay-inputs]]:** attribution
+> retains the earliest accepted observation for a received message, so distinct source-specific
+> and everything opt-outs and their replays converge regardless of handling order.
+
 A Broadcast's unsubscribe count is a reaction to an accepted opt-out, independently retried,
 and may lag behind it. The opt-out, the Confirmation it withdraws and the Enrollment it ends
 still commit together (ADR 0102). This replaces the glossary's same-transaction count promise;

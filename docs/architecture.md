@@ -725,7 +725,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   supported consumer and a bounded recorded-time interval, validates versions and scope and
   queues its normal jobs atomically; it never publishes or runs mandatory subscribers. History
   has no automatic expiry. Contact Erasure preserves anonymous report inputs; Workspace erasure
-  drains its history in batches, then fences publication and replay with the Workspace row lock
+  drains its history in batches, then fences publication and replay's `FOR KEY SHARE` locks with
+  the Workspace's `FOR UPDATE` row lock
   while purging any final history and jobs and committing the tombstone.
 - **Async**: one queue, river, for jobs and domain events alike (ADR 0101,
   `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of

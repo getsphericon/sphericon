@@ -28,10 +28,14 @@ cursor. Aggregates remain CRUD rows, not event-sourced state.
   envelopes. Contact Erasure preserves the same anonymous inputs the live report jobs preserve.
   Workspace erasure drains its journal in bounded transactions, then removes any tail with its
   jobs in the final tombstone transaction. Instance history stays.
-- Publication takes a share lock of its Workspace before journaling. The final Workspace purge
+- Publication takes a `FOR KEY SHARE` lock of its Workspace before journaling. The final Workspace purge
   takes the update lock before deleting history and jobs, and holds it through the tombstone:
   earlier publishers finish before the final delete; later ones cannot recreate erased history.
-  Replay holds the share fence and requires a live, undiscarded Workspace.
+  Replay holds the same fence and requires a live, undiscarded Workspace. Key share permits ordinary
+  non-key updates, notably feed-position changes while the Instance-wide feed lock is held; using
+  `FOR SHARE` here can deadlock a multi-Workspace User operation against that feed update. The
+  [PostgreSQL lock matrix](https://www.postgresql.org/docs/18/explicit-locking.html#LOCKING-ROWS)
+  distinguishes the compatible non-key update from the final purge's explicit `FOR UPDATE`.
 
 Metadata-only entries cannot reconstruct an original event for an arbitrary future consumer.
 Retaining another input requires an explicit payload, versioning and Erasure decision.
@@ -50,6 +54,11 @@ report without mailing, calling Webhooks, starting Automations or changing conse
 consumers converge under repetition and arbitrary order, retain the accepted observation time
 and treat a missing or foreign delivery row as a no-op. Repeated commands may queue repeated jobs;
 the owner's conditional writes make them safe.
+
+Broadcast attribution also retains the earliest accepted opt-out for a received message. A
+source-specific opt-out followed by an opt-out of everything can produce two different accepted
+facts for that message. Their order must not choose the report's timestamp; an earlier observation
+may move it earlier without counting the recipient twice.
 
 This is reapplication, not destructive projection reset: an existing earliest timestamp cannot
 move forward. It repairs missing applications of retained facts, not arbitrary erroneous state.

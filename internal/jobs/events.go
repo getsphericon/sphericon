@@ -38,7 +38,7 @@ func EventConsumers() []events.Consumer {
 			return WebhookEventArgs{events.EventJob{Envelope: env}}
 		}},
 		{Wants: countsOnBroadcast, Job: func(env events.Envelope, ev events.DomainEvent) river.JobArgs {
-			e := ev.(*events.MessageUnsubscribed)
+			e, _ := ev.(*events.MessageUnsubscribed) // countsOnBroadcast established the type.
 			return BroadcastUnsubscribeEventArgs{WorkspaceID: env.WorkspaceID, MessageID: e.OutboundMessageID, ObservedAt: e.ObservedAt}
 		}, Replay: events.RetainForReplay[BroadcastUnsubscribeEventArgs](1)},
 		{Wants: callsForNotices, Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
@@ -237,6 +237,7 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 // Channel. It has no envelope or request metadata and survives Contact Erasure.
 type BroadcastUnsubscribeEventArgs struct {
 	jobkind.Workspace
+
 	MessageID  int64     `json:"messageId"`
 	ObservedAt time.Time `json:"observedAt"`
 }

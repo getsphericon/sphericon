@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"entgo.io/ent/dialect"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
@@ -27,6 +26,7 @@ import (
 
 type failAfterReplayInsert struct {
 	events.JobQueue
+
 	failure error
 }
 
@@ -83,7 +83,7 @@ func TestReplayReappliesOnlyTheSelectedReportWithItsOriginalObservation(t *testi
 	now = at.Add(time.Hour)
 	require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: events.NameEmailClicked, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID}))
 	removeReportJobs(t, env.Bus, s, jobs.MessageObservationArgs{})
-	beforeJournal := env.DB.EventJournalEntry.Query().CountX(t.Context())
+	beforeJournal := env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).Order(eventjournalentry.ByID()).IDsX(t.Context())
 	beforeWebhooks := len(env.JobsOf(t, jobs.WebhookEventArgs{}.Kind()))
 	in := events.ReplayRequest{Consumer: jobs.MessageObservationArgs{}.Kind(), From: at, Before: at.Add(time.Hour), DryRun: true}
 	preview, err := env.Bus.Replay(t.Context(), s, in)
@@ -101,7 +101,7 @@ func TestReplayReappliesOnlyTheSelectedReportWithItsOriginalObservation(t *testi
 	require.NotNil(t, msg.OpenedAt)
 	assert.True(t, at.Add(-2*time.Minute).Equal(*msg.OpenedAt))
 	assert.Nil(t, msg.ClickedAt, "the later recording was not replayed")
-	assert.Equal(t, beforeJournal, env.DB.EventJournalEntry.Query().CountX(t.Context()), "replay does not republish")
+	assert.Equal(t, beforeJournal, env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).Order(eventjournalentry.ByID()).IDsX(t.Context()), "replay does not republish")
 	assert.Len(t, env.JobsOf(t, jobs.WebhookEventArgs{}.Kind()), beforeWebhooks, "no general fan-out")
 	assert.NotContains(t, string(env.DB.EventJournalEntry.Query().Where(eventjournalentry.Name(events.NameEmailOpened)).FirstX(t.Context()).Inputs), fixtures.ContactAliceEmail)
 }
@@ -126,7 +126,7 @@ func TestReplayRefusesUnsupportedConsumersVersionsAndOversizedRangesWithoutParti
 
 	// The same consumer after an unsupported input-schema change must refuse the retained
 	// history, rather than silently decoding it under the new schema. Dry runs validate too.
-	bus := events.New(env.SQLDB, func(d dialect.Driver) *ent.Client { return entclient.NewTx(d) }, func() time.Time { return at })
+	bus := events.New(env.SQLDB, entclient.NewTx, func() time.Time { return at })
 	consumers := jobs.EventConsumers()
 	consumers[0].Replay = events.RetainForReplay[jobs.MessageObservationArgs](2)
 	bus.UseConsumers(consumers...)
@@ -202,4 +202,36 @@ func TestReplayAndJournalRespectWorkspacePurge(t *testing.T) {
 	assert.Zero(t, result.Matched)
 	_, err = env.Bus.Replay(t.Context(), env.DB.Scoped(999999), events.ReplayRequest{Consumer: jobs.BroadcastUnsubscribeEventArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
 	require.ErrorIs(t, err, events.ErrReplayWorkspaceUnavailable)
+}
+
+func TestReplayBroadcastAttributionConvergesAcrossDistinctFactsInEitherOrder(t *testing.T) {
+	for name, perform := range map[string]func(*testing.T, *testhelper.TestEnv){
+		"oldest-first": func(t *testing.T, env *testhelper.TestEnv) {
+			t.Helper()
+			env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
+		},
+		"newest-first": func(t *testing.T, env *testhelper.TestEnv) {
+			t.Helper()
+			env.PerformEnqueuedJobsNewestFirst(t, jobs.BroadcastUnsubscribeEventArgs{})
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			at := time.Date(2026, 11, 8, 2, 0, 0, 0, time.UTC)
+			env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
+			s := env.DB.Scoped(fixtures.InitechID)
+			for _, observed := range []time.Time{at.Add(-time.Minute), at} {
+				require.NoError(t, env.Bus.Publish(t.Context(), &events.MessageUnsubscribed{WorkspaceID: fixtures.InitechID, OutboundMessageID: fixtures.OutboundMessageErasableBroadcastID, ObservedAt: observed}))
+			}
+			removeReportJobs(t, env.Bus, s, jobs.BroadcastUnsubscribeEventArgs{})
+			for range 2 {
+				result, err := env.Bus.Replay(t.Context(), s, events.ReplayRequest{Consumer: jobs.BroadcastUnsubscribeEventArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
+				require.NoError(t, err)
+				assert.Equal(t, 2, result.Enqueued)
+				perform(t, env)
+				recipient := env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientErasableID)
+				require.NotNil(t, recipient.UnsubscribedAt)
+				assert.True(t, at.Add(-time.Minute).Equal(*recipient.UnsubscribedAt), "attribution keeps the earliest accepted observation")
+			}
+		})
+	}
 }
