@@ -1,4 +1,4 @@
-package users_test
+package secondfactors_test
 
 import (
 	"testing"
@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -38,15 +37,15 @@ func remindedUsers(t *testing.T, env *testhelper.TestEnv) []int64 {
 func TestRemindDeadlinesClaimsEachGraceOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	require.NoError(t, users.RemindSecondFactorDeadlines(t.Context(), env.DB, env.Bus, ritaGraceEnds.Add(-25*time.Hour)))
+	require.NoError(t, newModule(env).RemindDeadlines(t.Context(), ritaGraceEnds.Add(-25*time.Hour)))
 	assert.Empty(t, remindedUsers(t, env), "more than a day before any deadline")
 
 	for _, at := range []time.Duration{-23 * time.Hour, -22 * time.Hour, -time.Hour} {
-		require.NoError(t, users.RemindSecondFactorDeadlines(t.Context(), env.DB, env.Bus, ritaGraceEnds.Add(at)))
+		require.NoError(t, newModule(env).RemindDeadlines(t.Context(), ritaGraceEnds.Add(at)))
 	}
 	assert.Equal(t, []int64{fixtures.UmbrellaOwnerRitaID}, remindedUsers(t, env), "Rita is reminded once")
 
-	require.NoError(t, users.RemindSecondFactorDeadlines(t.Context(), env.DB, env.Bus, ninaGraceEnds.Add(-12*time.Hour)))
+	require.NoError(t, newModule(env).RemindDeadlines(t.Context(), ninaGraceEnds.Add(-12*time.Hour)))
 	assert.Equal(t, []int64{fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaMemberNinaID}, remindedUsers(t, env),
 		"Nina's later Membership has its own deadline")
 }
@@ -55,7 +54,7 @@ func TestRemindDeadlinesClaimsEachGraceOnce(t *testing.T) {
 func TestRemindDeadlinesPublishesTheDeadline(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	require.NoError(t, users.RemindSecondFactorDeadlines(t.Context(), env.DB, env.Bus, ritaGraceEnds.Add(-12*time.Hour)))
+	require.NoError(t, newModule(env).RemindDeadlines(t.Context(), ritaGraceEnds.Add(-12*time.Hour)))
 
 	due := env.QueuedEvents(t, events.NameMembershipSecondFactorReminderDue)
 	require.Len(t, due, 1)
@@ -67,11 +66,11 @@ func TestRemindDeadlinesPublishesTheDeadline(t *testing.T) {
 
 func TestRemindDeadlinesRemindsAgainForARestartedRequirement(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, users.RemindSecondFactorDeadlines(t.Context(), env.DB, env.Bus, ritaGraceEnds.Add(-12*time.Hour)))
+	require.NoError(t, newModule(env).RemindDeadlines(t.Context(), ritaGraceEnds.Add(-12*time.Hour)))
 
 	restart := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
 	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetSecondFactorRequiredAt(restart).Exec(t.Context()))
-	require.NoError(t, users.RemindSecondFactorDeadlines(t.Context(), env.DB, env.Bus, restart.Add(6*24*time.Hour+time.Hour)))
+	require.NoError(t, newModule(env).RemindDeadlines(t.Context(), restart.Add(6*24*time.Hour+time.Hour)))
 
 	assert.Contains(t, remindedUsers(t, env)[1:], int64(fixtures.UmbrellaOwnerRitaID), "Rita, reminded in the earlier grace, is reminded again")
 }

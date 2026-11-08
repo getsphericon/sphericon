@@ -62,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/schemastate"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -147,6 +148,7 @@ const (
 	TypeRuleVersion          = "RuleVersion"
 	TypeRuleVersionTrigger   = "RuleVersionTrigger"
 	TypeSchemaState          = "SchemaState"
+	TypeSecondFactor         = "SecondFactor"
 	TypeSegment              = "Segment"
 	TypeSendCapLimiter       = "SendCapLimiter"
 	TypeSendingDomain        = "SendingDomain"
@@ -49317,6 +49319,826 @@ func (m *SchemaStateMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown SchemaState edge %s", name)
 }
 
+// SecondFactorMutation represents an operation that mutates the SecondFactor nodes in the graph.
+type SecondFactorMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	secret_encrypted *string
+	generation       *int64
+	addgeneration    *int64
+	confirmed_at     *time.Time
+	last_step        *int64
+	addlast_step     *int64
+	clearedFields    map[string]struct{}
+	user             *int64
+	cleareduser      bool
+	done             bool
+	oldValue         func(context.Context) (*SecondFactor, error)
+	predicates       []predicate.SecondFactor
+}
+
+var _ ent.Mutation = (*SecondFactorMutation)(nil)
+
+// secondfactorOption allows management of the mutation configuration using functional options.
+type secondfactorOption func(*SecondFactorMutation)
+
+// newSecondFactorMutation creates new mutation for the SecondFactor entity.
+func newSecondFactorMutation(c config, op Op, opts ...secondfactorOption) *SecondFactorMutation {
+	m := &SecondFactorMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSecondFactor,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSecondFactorID sets the ID field of the mutation.
+func withSecondFactorID(id int64) secondfactorOption {
+	return func(m *SecondFactorMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SecondFactor
+		)
+		m.oldValue = func(ctx context.Context) (*SecondFactor, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SecondFactor.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSecondFactor sets the old SecondFactor of the mutation.
+func withSecondFactor(node *SecondFactor) secondfactorOption {
+	return func(m *SecondFactorMutation) {
+		m.oldValue = func(context.Context) (*SecondFactor, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SecondFactorMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SecondFactorMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SecondFactor entities.
+func (m *SecondFactorMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SecondFactorMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SecondFactorMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SecondFactor.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SecondFactorMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SecondFactorMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SecondFactor entity.
+// If the SecondFactor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SecondFactorMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SecondFactorMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SecondFactorMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SecondFactorMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SecondFactor entity.
+// If the SecondFactor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SecondFactorMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SecondFactorMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *SecondFactorMutation) SetUserID(i int64) {
+	m.user = &i
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *SecondFactorMutation) UserID() (r int64, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the SecondFactor entity.
+// If the SecondFactor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SecondFactorMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *SecondFactorMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetSecretEncrypted sets the "secret_encrypted" field.
+func (m *SecondFactorMutation) SetSecretEncrypted(s string) {
+	m.secret_encrypted = &s
+}
+
+// SecretEncrypted returns the value of the "secret_encrypted" field in the mutation.
+func (m *SecondFactorMutation) SecretEncrypted() (r string, exists bool) {
+	v := m.secret_encrypted
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSecretEncrypted returns the old "secret_encrypted" field's value of the SecondFactor entity.
+// If the SecondFactor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SecondFactorMutation) OldSecretEncrypted(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSecretEncrypted is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSecretEncrypted requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSecretEncrypted: %w", err)
+	}
+	return oldValue.SecretEncrypted, nil
+}
+
+// ClearSecretEncrypted clears the value of the "secret_encrypted" field.
+func (m *SecondFactorMutation) ClearSecretEncrypted() {
+	m.secret_encrypted = nil
+	m.clearedFields[secondfactor.FieldSecretEncrypted] = struct{}{}
+}
+
+// SecretEncryptedCleared returns if the "secret_encrypted" field was cleared in this mutation.
+func (m *SecondFactorMutation) SecretEncryptedCleared() bool {
+	_, ok := m.clearedFields[secondfactor.FieldSecretEncrypted]
+	return ok
+}
+
+// ResetSecretEncrypted resets all changes to the "secret_encrypted" field.
+func (m *SecondFactorMutation) ResetSecretEncrypted() {
+	m.secret_encrypted = nil
+	delete(m.clearedFields, secondfactor.FieldSecretEncrypted)
+}
+
+// SetGeneration sets the "generation" field.
+func (m *SecondFactorMutation) SetGeneration(i int64) {
+	m.generation = &i
+	m.addgeneration = nil
+}
+
+// Generation returns the value of the "generation" field in the mutation.
+func (m *SecondFactorMutation) Generation() (r int64, exists bool) {
+	v := m.generation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGeneration returns the old "generation" field's value of the SecondFactor entity.
+// If the SecondFactor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SecondFactorMutation) OldGeneration(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGeneration is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGeneration requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGeneration: %w", err)
+	}
+	return oldValue.Generation, nil
+}
+
+// AddGeneration adds i to the "generation" field.
+func (m *SecondFactorMutation) AddGeneration(i int64) {
+	if m.addgeneration != nil {
+		*m.addgeneration += i
+	} else {
+		m.addgeneration = &i
+	}
+}
+
+// AddedGeneration returns the value that was added to the "generation" field in this mutation.
+func (m *SecondFactorMutation) AddedGeneration() (r int64, exists bool) {
+	v := m.addgeneration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetGeneration resets all changes to the "generation" field.
+func (m *SecondFactorMutation) ResetGeneration() {
+	m.generation = nil
+	m.addgeneration = nil
+}
+
+// SetConfirmedAt sets the "confirmed_at" field.
+func (m *SecondFactorMutation) SetConfirmedAt(t time.Time) {
+	m.confirmed_at = &t
+}
+
+// ConfirmedAt returns the value of the "confirmed_at" field in the mutation.
+func (m *SecondFactorMutation) ConfirmedAt() (r time.Time, exists bool) {
+	v := m.confirmed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmedAt returns the old "confirmed_at" field's value of the SecondFactor entity.
+// If the SecondFactor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SecondFactorMutation) OldConfirmedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmedAt: %w", err)
+	}
+	return oldValue.ConfirmedAt, nil
+}
+
+// ClearConfirmedAt clears the value of the "confirmed_at" field.
+func (m *SecondFactorMutation) ClearConfirmedAt() {
+	m.confirmed_at = nil
+	m.clearedFields[secondfactor.FieldConfirmedAt] = struct{}{}
+}
+
+// ConfirmedAtCleared returns if the "confirmed_at" field was cleared in this mutation.
+func (m *SecondFactorMutation) ConfirmedAtCleared() bool {
+	_, ok := m.clearedFields[secondfactor.FieldConfirmedAt]
+	return ok
+}
+
+// ResetConfirmedAt resets all changes to the "confirmed_at" field.
+func (m *SecondFactorMutation) ResetConfirmedAt() {
+	m.confirmed_at = nil
+	delete(m.clearedFields, secondfactor.FieldConfirmedAt)
+}
+
+// SetLastStep sets the "last_step" field.
+func (m *SecondFactorMutation) SetLastStep(i int64) {
+	m.last_step = &i
+	m.addlast_step = nil
+}
+
+// LastStep returns the value of the "last_step" field in the mutation.
+func (m *SecondFactorMutation) LastStep() (r int64, exists bool) {
+	v := m.last_step
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastStep returns the old "last_step" field's value of the SecondFactor entity.
+// If the SecondFactor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SecondFactorMutation) OldLastStep(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastStep is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastStep requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastStep: %w", err)
+	}
+	return oldValue.LastStep, nil
+}
+
+// AddLastStep adds i to the "last_step" field.
+func (m *SecondFactorMutation) AddLastStep(i int64) {
+	if m.addlast_step != nil {
+		*m.addlast_step += i
+	} else {
+		m.addlast_step = &i
+	}
+}
+
+// AddedLastStep returns the value that was added to the "last_step" field in this mutation.
+func (m *SecondFactorMutation) AddedLastStep() (r int64, exists bool) {
+	v := m.addlast_step
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLastStep resets all changes to the "last_step" field.
+func (m *SecondFactorMutation) ResetLastStep() {
+	m.last_step = nil
+	m.addlast_step = nil
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *SecondFactorMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[secondfactor.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *SecondFactorMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *SecondFactorMutation) UserIDs() (ids []int64) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *SecondFactorMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the SecondFactorMutation builder.
+func (m *SecondFactorMutation) Where(ps ...predicate.SecondFactor) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SecondFactorMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SecondFactorMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SecondFactor, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SecondFactorMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SecondFactorMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SecondFactor).
+func (m *SecondFactorMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SecondFactorMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, secondfactor.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, secondfactor.FieldUpdatedAt)
+	}
+	if m.user != nil {
+		fields = append(fields, secondfactor.FieldUserID)
+	}
+	if m.secret_encrypted != nil {
+		fields = append(fields, secondfactor.FieldSecretEncrypted)
+	}
+	if m.generation != nil {
+		fields = append(fields, secondfactor.FieldGeneration)
+	}
+	if m.confirmed_at != nil {
+		fields = append(fields, secondfactor.FieldConfirmedAt)
+	}
+	if m.last_step != nil {
+		fields = append(fields, secondfactor.FieldLastStep)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SecondFactorMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case secondfactor.FieldCreatedAt:
+		return m.CreatedAt()
+	case secondfactor.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case secondfactor.FieldUserID:
+		return m.UserID()
+	case secondfactor.FieldSecretEncrypted:
+		return m.SecretEncrypted()
+	case secondfactor.FieldGeneration:
+		return m.Generation()
+	case secondfactor.FieldConfirmedAt:
+		return m.ConfirmedAt()
+	case secondfactor.FieldLastStep:
+		return m.LastStep()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SecondFactorMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case secondfactor.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case secondfactor.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case secondfactor.FieldUserID:
+		return m.OldUserID(ctx)
+	case secondfactor.FieldSecretEncrypted:
+		return m.OldSecretEncrypted(ctx)
+	case secondfactor.FieldGeneration:
+		return m.OldGeneration(ctx)
+	case secondfactor.FieldConfirmedAt:
+		return m.OldConfirmedAt(ctx)
+	case secondfactor.FieldLastStep:
+		return m.OldLastStep(ctx)
+	}
+	return nil, fmt.Errorf("unknown SecondFactor field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SecondFactorMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case secondfactor.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case secondfactor.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case secondfactor.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case secondfactor.FieldSecretEncrypted:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSecretEncrypted(v)
+		return nil
+	case secondfactor.FieldGeneration:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGeneration(v)
+		return nil
+	case secondfactor.FieldConfirmedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmedAt(v)
+		return nil
+	case secondfactor.FieldLastStep:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastStep(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SecondFactor field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SecondFactorMutation) AddedFields() []string {
+	var fields []string
+	if m.addgeneration != nil {
+		fields = append(fields, secondfactor.FieldGeneration)
+	}
+	if m.addlast_step != nil {
+		fields = append(fields, secondfactor.FieldLastStep)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SecondFactorMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case secondfactor.FieldGeneration:
+		return m.AddedGeneration()
+	case secondfactor.FieldLastStep:
+		return m.AddedLastStep()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SecondFactorMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case secondfactor.FieldGeneration:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGeneration(v)
+		return nil
+	case secondfactor.FieldLastStep:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLastStep(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SecondFactor numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SecondFactorMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(secondfactor.FieldSecretEncrypted) {
+		fields = append(fields, secondfactor.FieldSecretEncrypted)
+	}
+	if m.FieldCleared(secondfactor.FieldConfirmedAt) {
+		fields = append(fields, secondfactor.FieldConfirmedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SecondFactorMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SecondFactorMutation) ClearField(name string) error {
+	switch name {
+	case secondfactor.FieldSecretEncrypted:
+		m.ClearSecretEncrypted()
+		return nil
+	case secondfactor.FieldConfirmedAt:
+		m.ClearConfirmedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown SecondFactor nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SecondFactorMutation) ResetField(name string) error {
+	switch name {
+	case secondfactor.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case secondfactor.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case secondfactor.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case secondfactor.FieldSecretEncrypted:
+		m.ResetSecretEncrypted()
+		return nil
+	case secondfactor.FieldGeneration:
+		m.ResetGeneration()
+		return nil
+	case secondfactor.FieldConfirmedAt:
+		m.ResetConfirmedAt()
+		return nil
+	case secondfactor.FieldLastStep:
+		m.ResetLastStep()
+		return nil
+	}
+	return fmt.Errorf("unknown SecondFactor field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SecondFactorMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, secondfactor.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SecondFactorMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case secondfactor.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SecondFactorMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SecondFactorMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SecondFactorMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, secondfactor.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SecondFactorMutation) EdgeCleared(name string) bool {
+	switch name {
+	case secondfactor.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SecondFactorMutation) ClearEdge(name string) error {
+	switch name {
+	case secondfactor.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown SecondFactor unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SecondFactorMutation) ResetEdge(name string) error {
+	switch name {
+	case secondfactor.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown SecondFactor edge %s", name)
+}
+
 // SegmentMutation represents an operation that mutates the Segment nodes in the graph.
 type SegmentMutation struct {
 	config
@@ -61869,53 +62691,49 @@ func (m *UsageMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                             Op
-	typ                            string
-	id                             *int64
-	created_at                     *time.Time
-	updated_at                     *time.Time
-	name                           *string
-	email                          *string
-	password_hash                  *string
-	email_verified_at              *time.Time
-	email_proven_at                *time.Time
-	session_epoch                  *int64
-	addsession_epoch               *int64
-	second_factor_secret_encrypted *string
-	second_factor_generation       *int64
-	addsecond_factor_generation    *int64
-	second_factor_confirmed_at     *time.Time
-	second_factor_last_step        *int64
-	addsecond_factor_last_step     *int64
-	signup_survey_due_at           *time.Time
-	timezone                       *string
-	regional_format                *string
-	feed_position                  *int64
-	addfeed_position               *int64
-	clearedFields                  map[string]struct{}
-	memberships                    map[int64]struct{}
-	removedmemberships             map[int64]struct{}
-	clearedmemberships             bool
-	sent_invitations               map[int64]struct{}
-	removedsent_invitations        map[int64]struct{}
-	clearedsent_invitations        bool
-	recovery_codes                 map[int64]struct{}
-	removedrecovery_codes          map[int64]struct{}
-	clearedrecovery_codes          bool
-	passkeys                       map[int64]struct{}
-	removedpasskeys                map[int64]struct{}
-	clearedpasskeys                bool
-	identities                     map[int64]struct{}
-	removedidentities              map[int64]struct{}
-	clearedidentities              bool
-	signup_survey_response         *int64
-	clearedsignup_survey_response  bool
-	consent_records                map[int64]struct{}
-	removedconsent_records         map[int64]struct{}
-	clearedconsent_records         bool
-	done                           bool
-	oldValue                       func(context.Context) (*User, error)
-	predicates                     []predicate.User
+	op                            Op
+	typ                           string
+	id                            *int64
+	created_at                    *time.Time
+	updated_at                    *time.Time
+	name                          *string
+	email                         *string
+	password_hash                 *string
+	email_verified_at             *time.Time
+	email_proven_at               *time.Time
+	session_epoch                 *int64
+	addsession_epoch              *int64
+	signup_survey_due_at          *time.Time
+	timezone                      *string
+	regional_format               *string
+	feed_position                 *int64
+	addfeed_position              *int64
+	clearedFields                 map[string]struct{}
+	memberships                   map[int64]struct{}
+	removedmemberships            map[int64]struct{}
+	clearedmemberships            bool
+	sent_invitations              map[int64]struct{}
+	removedsent_invitations       map[int64]struct{}
+	clearedsent_invitations       bool
+	second_factor                 *int64
+	clearedsecond_factor          bool
+	recovery_codes                map[int64]struct{}
+	removedrecovery_codes         map[int64]struct{}
+	clearedrecovery_codes         bool
+	passkeys                      map[int64]struct{}
+	removedpasskeys               map[int64]struct{}
+	clearedpasskeys               bool
+	identities                    map[int64]struct{}
+	removedidentities             map[int64]struct{}
+	clearedidentities             bool
+	signup_survey_response        *int64
+	clearedsignup_survey_response bool
+	consent_records               map[int64]struct{}
+	removedconsent_records        map[int64]struct{}
+	clearedconsent_records        bool
+	done                          bool
+	oldValue                      func(context.Context) (*User, error)
+	predicates                    []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -62369,230 +63187,6 @@ func (m *UserMutation) ResetSessionEpoch() {
 	m.addsession_epoch = nil
 }
 
-// SetSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field.
-func (m *UserMutation) SetSecondFactorSecretEncrypted(s string) {
-	m.second_factor_secret_encrypted = &s
-}
-
-// SecondFactorSecretEncrypted returns the value of the "second_factor_secret_encrypted" field in the mutation.
-func (m *UserMutation) SecondFactorSecretEncrypted() (r string, exists bool) {
-	v := m.second_factor_secret_encrypted
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSecondFactorSecretEncrypted returns the old "second_factor_secret_encrypted" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldSecondFactorSecretEncrypted(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSecondFactorSecretEncrypted is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSecondFactorSecretEncrypted requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSecondFactorSecretEncrypted: %w", err)
-	}
-	return oldValue.SecondFactorSecretEncrypted, nil
-}
-
-// ClearSecondFactorSecretEncrypted clears the value of the "second_factor_secret_encrypted" field.
-func (m *UserMutation) ClearSecondFactorSecretEncrypted() {
-	m.second_factor_secret_encrypted = nil
-	m.clearedFields[user.FieldSecondFactorSecretEncrypted] = struct{}{}
-}
-
-// SecondFactorSecretEncryptedCleared returns if the "second_factor_secret_encrypted" field was cleared in this mutation.
-func (m *UserMutation) SecondFactorSecretEncryptedCleared() bool {
-	_, ok := m.clearedFields[user.FieldSecondFactorSecretEncrypted]
-	return ok
-}
-
-// ResetSecondFactorSecretEncrypted resets all changes to the "second_factor_secret_encrypted" field.
-func (m *UserMutation) ResetSecondFactorSecretEncrypted() {
-	m.second_factor_secret_encrypted = nil
-	delete(m.clearedFields, user.FieldSecondFactorSecretEncrypted)
-}
-
-// SetSecondFactorGeneration sets the "second_factor_generation" field.
-func (m *UserMutation) SetSecondFactorGeneration(i int64) {
-	m.second_factor_generation = &i
-	m.addsecond_factor_generation = nil
-}
-
-// SecondFactorGeneration returns the value of the "second_factor_generation" field in the mutation.
-func (m *UserMutation) SecondFactorGeneration() (r int64, exists bool) {
-	v := m.second_factor_generation
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSecondFactorGeneration returns the old "second_factor_generation" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldSecondFactorGeneration(ctx context.Context) (v *int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSecondFactorGeneration is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSecondFactorGeneration requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSecondFactorGeneration: %w", err)
-	}
-	return oldValue.SecondFactorGeneration, nil
-}
-
-// AddSecondFactorGeneration adds i to the "second_factor_generation" field.
-func (m *UserMutation) AddSecondFactorGeneration(i int64) {
-	if m.addsecond_factor_generation != nil {
-		*m.addsecond_factor_generation += i
-	} else {
-		m.addsecond_factor_generation = &i
-	}
-}
-
-// AddedSecondFactorGeneration returns the value that was added to the "second_factor_generation" field in this mutation.
-func (m *UserMutation) AddedSecondFactorGeneration() (r int64, exists bool) {
-	v := m.addsecond_factor_generation
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
-func (m *UserMutation) ClearSecondFactorGeneration() {
-	m.second_factor_generation = nil
-	m.addsecond_factor_generation = nil
-	m.clearedFields[user.FieldSecondFactorGeneration] = struct{}{}
-}
-
-// SecondFactorGenerationCleared returns if the "second_factor_generation" field was cleared in this mutation.
-func (m *UserMutation) SecondFactorGenerationCleared() bool {
-	_, ok := m.clearedFields[user.FieldSecondFactorGeneration]
-	return ok
-}
-
-// ResetSecondFactorGeneration resets all changes to the "second_factor_generation" field.
-func (m *UserMutation) ResetSecondFactorGeneration() {
-	m.second_factor_generation = nil
-	m.addsecond_factor_generation = nil
-	delete(m.clearedFields, user.FieldSecondFactorGeneration)
-}
-
-// SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
-func (m *UserMutation) SetSecondFactorConfirmedAt(t time.Time) {
-	m.second_factor_confirmed_at = &t
-}
-
-// SecondFactorConfirmedAt returns the value of the "second_factor_confirmed_at" field in the mutation.
-func (m *UserMutation) SecondFactorConfirmedAt() (r time.Time, exists bool) {
-	v := m.second_factor_confirmed_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSecondFactorConfirmedAt returns the old "second_factor_confirmed_at" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldSecondFactorConfirmedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSecondFactorConfirmedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSecondFactorConfirmedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSecondFactorConfirmedAt: %w", err)
-	}
-	return oldValue.SecondFactorConfirmedAt, nil
-}
-
-// ClearSecondFactorConfirmedAt clears the value of the "second_factor_confirmed_at" field.
-func (m *UserMutation) ClearSecondFactorConfirmedAt() {
-	m.second_factor_confirmed_at = nil
-	m.clearedFields[user.FieldSecondFactorConfirmedAt] = struct{}{}
-}
-
-// SecondFactorConfirmedAtCleared returns if the "second_factor_confirmed_at" field was cleared in this mutation.
-func (m *UserMutation) SecondFactorConfirmedAtCleared() bool {
-	_, ok := m.clearedFields[user.FieldSecondFactorConfirmedAt]
-	return ok
-}
-
-// ResetSecondFactorConfirmedAt resets all changes to the "second_factor_confirmed_at" field.
-func (m *UserMutation) ResetSecondFactorConfirmedAt() {
-	m.second_factor_confirmed_at = nil
-	delete(m.clearedFields, user.FieldSecondFactorConfirmedAt)
-}
-
-// SetSecondFactorLastStep sets the "second_factor_last_step" field.
-func (m *UserMutation) SetSecondFactorLastStep(i int64) {
-	m.second_factor_last_step = &i
-	m.addsecond_factor_last_step = nil
-}
-
-// SecondFactorLastStep returns the value of the "second_factor_last_step" field in the mutation.
-func (m *UserMutation) SecondFactorLastStep() (r int64, exists bool) {
-	v := m.second_factor_last_step
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSecondFactorLastStep returns the old "second_factor_last_step" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldSecondFactorLastStep(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSecondFactorLastStep is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSecondFactorLastStep requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSecondFactorLastStep: %w", err)
-	}
-	return oldValue.SecondFactorLastStep, nil
-}
-
-// AddSecondFactorLastStep adds i to the "second_factor_last_step" field.
-func (m *UserMutation) AddSecondFactorLastStep(i int64) {
-	if m.addsecond_factor_last_step != nil {
-		*m.addsecond_factor_last_step += i
-	} else {
-		m.addsecond_factor_last_step = &i
-	}
-}
-
-// AddedSecondFactorLastStep returns the value that was added to the "second_factor_last_step" field in this mutation.
-func (m *UserMutation) AddedSecondFactorLastStep() (r int64, exists bool) {
-	v := m.addsecond_factor_last_step
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetSecondFactorLastStep resets all changes to the "second_factor_last_step" field.
-func (m *UserMutation) ResetSecondFactorLastStep() {
-	m.second_factor_last_step = nil
-	m.addsecond_factor_last_step = nil
-}
-
 // SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
 func (m *UserMutation) SetSignupSurveyDueAt(t time.Time) {
 	m.signup_survey_due_at = &t
@@ -62904,6 +63498,45 @@ func (m *UserMutation) ResetSentInvitations() {
 	m.removedsent_invitations = nil
 }
 
+// SetSecondFactorID sets the "second_factor" edge to the SecondFactor entity by id.
+func (m *UserMutation) SetSecondFactorID(id int64) {
+	m.second_factor = &id
+}
+
+// ClearSecondFactor clears the "second_factor" edge to the SecondFactor entity.
+func (m *UserMutation) ClearSecondFactor() {
+	m.clearedsecond_factor = true
+}
+
+// SecondFactorCleared reports if the "second_factor" edge to the SecondFactor entity was cleared.
+func (m *UserMutation) SecondFactorCleared() bool {
+	return m.clearedsecond_factor
+}
+
+// SecondFactorID returns the "second_factor" edge ID in the mutation.
+func (m *UserMutation) SecondFactorID() (id int64, exists bool) {
+	if m.second_factor != nil {
+		return *m.second_factor, true
+	}
+	return
+}
+
+// SecondFactorIDs returns the "second_factor" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SecondFactorID instead. It exists only for internal usage by the builders.
+func (m *UserMutation) SecondFactorIDs() (ids []int64) {
+	if id := m.second_factor; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSecondFactor resets all changes to the "second_factor" edge.
+func (m *UserMutation) ResetSecondFactor() {
+	m.second_factor = nil
+	m.clearedsecond_factor = false
+}
+
 // AddRecoveryCodeIDs adds the "recovery_codes" edge to the RecoveryCode entity by ids.
 func (m *UserMutation) AddRecoveryCodeIDs(ids ...int64) {
 	if m.recovery_codes == nil {
@@ -63193,7 +63826,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -63217,18 +63850,6 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.session_epoch != nil {
 		fields = append(fields, user.FieldSessionEpoch)
-	}
-	if m.second_factor_secret_encrypted != nil {
-		fields = append(fields, user.FieldSecondFactorSecretEncrypted)
-	}
-	if m.second_factor_generation != nil {
-		fields = append(fields, user.FieldSecondFactorGeneration)
-	}
-	if m.second_factor_confirmed_at != nil {
-		fields = append(fields, user.FieldSecondFactorConfirmedAt)
-	}
-	if m.second_factor_last_step != nil {
-		fields = append(fields, user.FieldSecondFactorLastStep)
 	}
 	if m.signup_survey_due_at != nil {
 		fields = append(fields, user.FieldSignupSurveyDueAt)
@@ -63266,14 +63887,6 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.EmailProvenAt()
 	case user.FieldSessionEpoch:
 		return m.SessionEpoch()
-	case user.FieldSecondFactorSecretEncrypted:
-		return m.SecondFactorSecretEncrypted()
-	case user.FieldSecondFactorGeneration:
-		return m.SecondFactorGeneration()
-	case user.FieldSecondFactorConfirmedAt:
-		return m.SecondFactorConfirmedAt()
-	case user.FieldSecondFactorLastStep:
-		return m.SecondFactorLastStep()
 	case user.FieldSignupSurveyDueAt:
 		return m.SignupSurveyDueAt()
 	case user.FieldTimezone:
@@ -63307,14 +63920,6 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldEmailProvenAt(ctx)
 	case user.FieldSessionEpoch:
 		return m.OldSessionEpoch(ctx)
-	case user.FieldSecondFactorSecretEncrypted:
-		return m.OldSecondFactorSecretEncrypted(ctx)
-	case user.FieldSecondFactorGeneration:
-		return m.OldSecondFactorGeneration(ctx)
-	case user.FieldSecondFactorConfirmedAt:
-		return m.OldSecondFactorConfirmedAt(ctx)
-	case user.FieldSecondFactorLastStep:
-		return m.OldSecondFactorLastStep(ctx)
 	case user.FieldSignupSurveyDueAt:
 		return m.OldSignupSurveyDueAt(ctx)
 	case user.FieldTimezone:
@@ -63388,34 +63993,6 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSessionEpoch(v)
 		return nil
-	case user.FieldSecondFactorSecretEncrypted:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSecondFactorSecretEncrypted(v)
-		return nil
-	case user.FieldSecondFactorGeneration:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSecondFactorGeneration(v)
-		return nil
-	case user.FieldSecondFactorConfirmedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSecondFactorConfirmedAt(v)
-		return nil
-	case user.FieldSecondFactorLastStep:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSecondFactorLastStep(v)
-		return nil
 	case user.FieldSignupSurveyDueAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -63455,12 +64032,6 @@ func (m *UserMutation) AddedFields() []string {
 	if m.addsession_epoch != nil {
 		fields = append(fields, user.FieldSessionEpoch)
 	}
-	if m.addsecond_factor_generation != nil {
-		fields = append(fields, user.FieldSecondFactorGeneration)
-	}
-	if m.addsecond_factor_last_step != nil {
-		fields = append(fields, user.FieldSecondFactorLastStep)
-	}
 	if m.addfeed_position != nil {
 		fields = append(fields, user.FieldFeedPosition)
 	}
@@ -63474,10 +64045,6 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldSessionEpoch:
 		return m.AddedSessionEpoch()
-	case user.FieldSecondFactorGeneration:
-		return m.AddedSecondFactorGeneration()
-	case user.FieldSecondFactorLastStep:
-		return m.AddedSecondFactorLastStep()
 	case user.FieldFeedPosition:
 		return m.AddedFeedPosition()
 	}
@@ -63495,20 +64062,6 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSessionEpoch(v)
-		return nil
-	case user.FieldSecondFactorGeneration:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddSecondFactorGeneration(v)
-		return nil
-	case user.FieldSecondFactorLastStep:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddSecondFactorLastStep(v)
 		return nil
 	case user.FieldFeedPosition:
 		v, ok := value.(int64)
@@ -63533,15 +64086,6 @@ func (m *UserMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(user.FieldEmailProvenAt) {
 		fields = append(fields, user.FieldEmailProvenAt)
-	}
-	if m.FieldCleared(user.FieldSecondFactorSecretEncrypted) {
-		fields = append(fields, user.FieldSecondFactorSecretEncrypted)
-	}
-	if m.FieldCleared(user.FieldSecondFactorGeneration) {
-		fields = append(fields, user.FieldSecondFactorGeneration)
-	}
-	if m.FieldCleared(user.FieldSecondFactorConfirmedAt) {
-		fields = append(fields, user.FieldSecondFactorConfirmedAt)
 	}
 	if m.FieldCleared(user.FieldSignupSurveyDueAt) {
 		fields = append(fields, user.FieldSignupSurveyDueAt)
@@ -63574,15 +64118,6 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldEmailProvenAt:
 		m.ClearEmailProvenAt()
-		return nil
-	case user.FieldSecondFactorSecretEncrypted:
-		m.ClearSecondFactorSecretEncrypted()
-		return nil
-	case user.FieldSecondFactorGeneration:
-		m.ClearSecondFactorGeneration()
-		return nil
-	case user.FieldSecondFactorConfirmedAt:
-		m.ClearSecondFactorConfirmedAt()
 		return nil
 	case user.FieldSignupSurveyDueAt:
 		m.ClearSignupSurveyDueAt()
@@ -63625,18 +64160,6 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldSessionEpoch:
 		m.ResetSessionEpoch()
 		return nil
-	case user.FieldSecondFactorSecretEncrypted:
-		m.ResetSecondFactorSecretEncrypted()
-		return nil
-	case user.FieldSecondFactorGeneration:
-		m.ResetSecondFactorGeneration()
-		return nil
-	case user.FieldSecondFactorConfirmedAt:
-		m.ResetSecondFactorConfirmedAt()
-		return nil
-	case user.FieldSecondFactorLastStep:
-		m.ResetSecondFactorLastStep()
-		return nil
 	case user.FieldSignupSurveyDueAt:
 		m.ResetSignupSurveyDueAt()
 		return nil
@@ -63655,12 +64178,15 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.memberships != nil {
 		edges = append(edges, user.EdgeMemberships)
 	}
 	if m.sent_invitations != nil {
 		edges = append(edges, user.EdgeSentInvitations)
+	}
+	if m.second_factor != nil {
+		edges = append(edges, user.EdgeSecondFactor)
 	}
 	if m.recovery_codes != nil {
 		edges = append(edges, user.EdgeRecoveryCodes)
@@ -63696,6 +64222,10 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeSecondFactor:
+		if id := m.second_factor; id != nil {
+			return []ent.Value{*id}
+		}
 	case user.EdgeRecoveryCodes:
 		ids := make([]ent.Value, 0, len(m.recovery_codes))
 		for id := range m.recovery_codes {
@@ -63730,7 +64260,7 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.removedmemberships != nil {
 		edges = append(edges, user.EdgeMemberships)
 	}
@@ -63798,12 +64328,15 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.clearedmemberships {
 		edges = append(edges, user.EdgeMemberships)
 	}
 	if m.clearedsent_invitations {
 		edges = append(edges, user.EdgeSentInvitations)
+	}
+	if m.clearedsecond_factor {
+		edges = append(edges, user.EdgeSecondFactor)
 	}
 	if m.clearedrecovery_codes {
 		edges = append(edges, user.EdgeRecoveryCodes)
@@ -63831,6 +64364,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedmemberships
 	case user.EdgeSentInvitations:
 		return m.clearedsent_invitations
+	case user.EdgeSecondFactor:
+		return m.clearedsecond_factor
 	case user.EdgeRecoveryCodes:
 		return m.clearedrecovery_codes
 	case user.EdgePasskeys:
@@ -63849,6 +64384,9 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
 	switch name {
+	case user.EdgeSecondFactor:
+		m.ClearSecondFactor()
+		return nil
 	case user.EdgeSignupSurveyResponse:
 		m.ClearSignupSurveyResponse()
 		return nil
@@ -63865,6 +64403,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeSentInvitations:
 		m.ResetSentInvitations()
+		return nil
+	case user.EdgeSecondFactor:
+		m.ResetSecondFactor()
 		return nil
 	case user.EdgeRecoveryCodes:
 		m.ResetRecoveryCodes()

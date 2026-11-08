@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 )
@@ -34,14 +35,6 @@ type User struct {
 	EmailProvenAt *time.Time `json:"email_proven_at,omitempty"`
 	// SessionEpoch holds the value of the "session_epoch" field.
 	SessionEpoch int64 `json:"session_epoch,omitempty"`
-	// SecondFactorSecretEncrypted holds the value of the "second_factor_secret_encrypted" field.
-	SecondFactorSecretEncrypted string `json:"-"`
-	// SecondFactorGeneration holds the value of the "second_factor_generation" field.
-	SecondFactorGeneration *int64 `json:"second_factor_generation,omitempty"`
-	// SecondFactorConfirmedAt holds the value of the "second_factor_confirmed_at" field.
-	SecondFactorConfirmedAt *time.Time `json:"second_factor_confirmed_at,omitempty"`
-	// SecondFactorLastStep holds the value of the "second_factor_last_step" field.
-	SecondFactorLastStep int64 `json:"second_factor_last_step,omitempty"`
 	// SignupSurveyDueAt holds the value of the "signup_survey_due_at" field.
 	SignupSurveyDueAt *time.Time `json:"signup_survey_due_at,omitempty"`
 	// Timezone holds the value of the "timezone" field.
@@ -62,6 +55,8 @@ type UserEdges struct {
 	Memberships []*Membership `json:"memberships,omitempty"`
 	// SentInvitations holds the value of the sent_invitations edge.
 	SentInvitations []*Invitation `json:"sent_invitations,omitempty"`
+	// SecondFactor holds the value of the second_factor edge.
+	SecondFactor *SecondFactor `json:"second_factor,omitempty"`
 	// RecoveryCodes holds the value of the recovery_codes edge.
 	RecoveryCodes []*RecoveryCode `json:"recovery_codes,omitempty"`
 	// Passkeys holds the value of the passkeys edge.
@@ -74,7 +69,7 @@ type UserEdges struct {
 	ConsentRecords []*ConsentRecord `json:"consent_records,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 }
 
 // MembershipsOrErr returns the Memberships value or an error if the edge
@@ -95,10 +90,21 @@ func (e UserEdges) SentInvitationsOrErr() ([]*Invitation, error) {
 	return nil, &NotLoadedError{edge: "sent_invitations"}
 }
 
+// SecondFactorOrErr returns the SecondFactor value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) SecondFactorOrErr() (*SecondFactor, error) {
+	if e.SecondFactor != nil {
+		return e.SecondFactor, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: secondfactor.Label}
+	}
+	return nil, &NotLoadedError{edge: "second_factor"}
+}
+
 // RecoveryCodesOrErr returns the RecoveryCodes value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) RecoveryCodesOrErr() ([]*RecoveryCode, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.RecoveryCodes, nil
 	}
 	return nil, &NotLoadedError{edge: "recovery_codes"}
@@ -107,7 +113,7 @@ func (e UserEdges) RecoveryCodesOrErr() ([]*RecoveryCode, error) {
 // PasskeysOrErr returns the Passkeys value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) PasskeysOrErr() ([]*Passkey, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Passkeys, nil
 	}
 	return nil, &NotLoadedError{edge: "passkeys"}
@@ -116,7 +122,7 @@ func (e UserEdges) PasskeysOrErr() ([]*Passkey, error) {
 // IdentitiesOrErr returns the Identities value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) IdentitiesOrErr() ([]*UserIdentity, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Identities, nil
 	}
 	return nil, &NotLoadedError{edge: "identities"}
@@ -127,7 +133,7 @@ func (e UserEdges) IdentitiesOrErr() ([]*UserIdentity, error) {
 func (e UserEdges) SignupSurveyResponseOrErr() (*SignupSurveyResponse, error) {
 	if e.SignupSurveyResponse != nil {
 		return e.SignupSurveyResponse, nil
-	} else if e.loadedTypes[5] {
+	} else if e.loadedTypes[6] {
 		return nil, &NotFoundError{label: signupsurveyresponse.Label}
 	}
 	return nil, &NotLoadedError{edge: "signup_survey_response"}
@@ -136,7 +142,7 @@ func (e UserEdges) SignupSurveyResponseOrErr() (*SignupSurveyResponse, error) {
 // ConsentRecordsOrErr returns the ConsentRecords value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ConsentRecordsOrErr() ([]*ConsentRecord, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.ConsentRecords, nil
 	}
 	return nil, &NotLoadedError{edge: "consent_records"}
@@ -147,11 +153,11 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldID, user.FieldSessionEpoch, user.FieldSecondFactorGeneration, user.FieldSecondFactorLastStep, user.FieldFeedPosition:
+		case user.FieldID, user.FieldSessionEpoch, user.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
-		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted, user.FieldTimezone, user.FieldRegionalFormat:
+		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldTimezone, user.FieldRegionalFormat:
 			values[i] = new(sql.NullString)
-		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldEmailVerifiedAt, user.FieldEmailProvenAt, user.FieldSecondFactorConfirmedAt, user.FieldSignupSurveyDueAt:
+		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldEmailVerifiedAt, user.FieldEmailProvenAt, user.FieldSignupSurveyDueAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -224,32 +230,6 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SessionEpoch = value.Int64
 			}
-		case user.FieldSecondFactorSecretEncrypted:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field second_factor_secret_encrypted", values[i])
-			} else if value.Valid {
-				_m.SecondFactorSecretEncrypted = value.String
-			}
-		case user.FieldSecondFactorGeneration:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field second_factor_generation", values[i])
-			} else if value.Valid {
-				_m.SecondFactorGeneration = new(int64)
-				*_m.SecondFactorGeneration = value.Int64
-			}
-		case user.FieldSecondFactorConfirmedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field second_factor_confirmed_at", values[i])
-			} else if value.Valid {
-				_m.SecondFactorConfirmedAt = new(time.Time)
-				*_m.SecondFactorConfirmedAt = value.Time
-			}
-		case user.FieldSecondFactorLastStep:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field second_factor_last_step", values[i])
-			} else if value.Valid {
-				_m.SecondFactorLastStep = value.Int64
-			}
 		case user.FieldSignupSurveyDueAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field signup_survey_due_at", values[i])
@@ -298,6 +278,11 @@ func (_m *User) QueryMemberships() *MembershipQuery {
 // QuerySentInvitations queries the "sent_invitations" edge of the User entity.
 func (_m *User) QuerySentInvitations() *InvitationQuery {
 	return NewUserClient(_m.config).QuerySentInvitations(_m)
+}
+
+// QuerySecondFactor queries the "second_factor" edge of the User entity.
+func (_m *User) QuerySecondFactor() *SecondFactorQuery {
+	return NewUserClient(_m.config).QuerySecondFactor(_m)
 }
 
 // QueryRecoveryCodes queries the "recovery_codes" edge of the User entity.
@@ -374,21 +359,6 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("session_epoch=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SessionEpoch))
-	builder.WriteString(", ")
-	builder.WriteString("second_factor_secret_encrypted=<sensitive>")
-	builder.WriteString(", ")
-	if v := _m.SecondFactorGeneration; v != nil {
-		builder.WriteString("second_factor_generation=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.SecondFactorConfirmedAt; v != nil {
-		builder.WriteString("second_factor_confirmed_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	builder.WriteString("second_factor_last_step=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SecondFactorLastStep))
 	builder.WriteString(", ")
 	if v := _m.SignupSurveyDueAt; v != nil {
 		builder.WriteString("signup_survey_due_at=")

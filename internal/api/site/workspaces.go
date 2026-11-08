@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
@@ -59,9 +58,15 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	r.Permissions = mapper.PermissionsToResources(held)
 	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, memberships.PermAccountLinkOpen)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
-	// no grace to count down: this is the decision users.Module.Admit makes.
-	if end, ok := users.SecondFactorDeadline(m); ok && !currentSession(ctx).Method.Strong() {
-		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
+	// no grace to count down: this is the decision secondfactors.Module.Admit makes.
+	if !currentSession(ctx).Method.Strong() {
+		end, ok, err := h.secondFactor.Deadline(ctx, m)
+		if err != nil {
+			return r, err
+		}
+		if ok {
+			r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
+		}
 	}
 	standing, err := h.holds.Standing(ctx, s)
 	if err != nil {

@@ -63,6 +63,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schemastate"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -189,6 +190,8 @@ type Client struct {
 	RuleVersionTrigger *RuleVersionTriggerClient
 	// SchemaState is the client for interacting with the SchemaState builders.
 	SchemaState *SchemaStateClient
+	// SecondFactor is the client for interacting with the SecondFactor builders.
+	SecondFactor *SecondFactorClient
 	// Segment is the client for interacting with the Segment builders.
 	Segment *SegmentClient
 	// SendCapLimiter is the client for interacting with the SendCapLimiter builders.
@@ -290,6 +293,7 @@ func (c *Client) init() {
 	c.RuleVersion = NewRuleVersionClient(c.config)
 	c.RuleVersionTrigger = NewRuleVersionTriggerClient(c.config)
 	c.SchemaState = NewSchemaStateClient(c.config)
+	c.SecondFactor = NewSecondFactorClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
 	c.SendCapLimiter = NewSendCapLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
@@ -451,6 +455,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RuleVersion:          NewRuleVersionClient(cfg),
 		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
 		SchemaState:          NewSchemaStateClient(cfg),
+		SecondFactor:         NewSecondFactorClient(cfg),
 		Segment:              NewSegmentClient(cfg),
 		SendCapLimiter:       NewSendCapLimiterClient(cfg),
 		SendingDomain:        NewSendingDomainClient(cfg),
@@ -539,6 +544,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RuleVersion:          NewRuleVersionClient(cfg),
 		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
 		SchemaState:          NewSchemaStateClient(cfg),
+		SecondFactor:         NewSecondFactorClient(cfg),
 		Segment:              NewSegmentClient(cfg),
 		SendCapLimiter:       NewSendCapLimiterClient(cfg),
 		SendingDomain:        NewSendingDomainClient(cfg),
@@ -599,11 +605,12 @@ func (c *Client) Use(hooks ...Hook) {
 		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
 		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
 		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendCapLimiter,
-		c.SendingDomain, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
-		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
-		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
+		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
+		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -623,11 +630,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
 		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
 		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendCapLimiter,
-		c.SendingDomain, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
-		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
-		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
+		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
+		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -732,6 +740,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RuleVersionTrigger.mutate(ctx, m)
 	case *SchemaStateMutation:
 		return c.SchemaState.mutate(ctx, m)
+	case *SecondFactorMutation:
+		return c.SecondFactor.mutate(ctx, m)
 	case *SegmentMutation:
 		return c.Segment.mutate(ctx, m)
 	case *SendCapLimiterMutation:
@@ -8954,6 +8964,155 @@ func (c *SchemaStateClient) mutate(ctx context.Context, m *SchemaStateMutation) 
 	}
 }
 
+// SecondFactorClient is a client for the SecondFactor schema.
+type SecondFactorClient struct {
+	config
+}
+
+// NewSecondFactorClient returns a client for the SecondFactor from the given config.
+func NewSecondFactorClient(c config) *SecondFactorClient {
+	return &SecondFactorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `secondfactor.Hooks(f(g(h())))`.
+func (c *SecondFactorClient) Use(hooks ...Hook) {
+	c.hooks.SecondFactor = append(c.hooks.SecondFactor, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `secondfactor.Intercept(f(g(h())))`.
+func (c *SecondFactorClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SecondFactor = append(c.inters.SecondFactor, interceptors...)
+}
+
+// Create returns a builder for creating a SecondFactor entity.
+func (c *SecondFactorClient) Create() *SecondFactorCreate {
+	mutation := newSecondFactorMutation(c.config, OpCreate)
+	return &SecondFactorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SecondFactor entities.
+func (c *SecondFactorClient) CreateBulk(builders ...*SecondFactorCreate) *SecondFactorCreateBulk {
+	return &SecondFactorCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SecondFactorClient) MapCreateBulk(slice any, setFunc func(*SecondFactorCreate, int)) *SecondFactorCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SecondFactorCreateBulk{err: fmt.Errorf("calling to SecondFactorClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SecondFactorCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SecondFactorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SecondFactor.
+func (c *SecondFactorClient) Update() *SecondFactorUpdate {
+	mutation := newSecondFactorMutation(c.config, OpUpdate)
+	return &SecondFactorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SecondFactorClient) UpdateOne(_m *SecondFactor) *SecondFactorUpdateOne {
+	mutation := newSecondFactorMutation(c.config, OpUpdateOne, withSecondFactor(_m))
+	return &SecondFactorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SecondFactorClient) UpdateOneID(id int64) *SecondFactorUpdateOne {
+	mutation := newSecondFactorMutation(c.config, OpUpdateOne, withSecondFactorID(id))
+	return &SecondFactorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SecondFactor.
+func (c *SecondFactorClient) Delete() *SecondFactorDelete {
+	mutation := newSecondFactorMutation(c.config, OpDelete)
+	return &SecondFactorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SecondFactorClient) DeleteOne(_m *SecondFactor) *SecondFactorDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SecondFactorClient) DeleteOneID(id int64) *SecondFactorDeleteOne {
+	builder := c.Delete().Where(secondfactor.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SecondFactorDeleteOne{builder}
+}
+
+// Query returns a query builder for SecondFactor.
+func (c *SecondFactorClient) Query() *SecondFactorQuery {
+	return &SecondFactorQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSecondFactor},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SecondFactor entity by its id.
+func (c *SecondFactorClient) Get(ctx context.Context, id int64) (*SecondFactor, error) {
+	return c.Query().Where(secondfactor.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SecondFactorClient) GetX(ctx context.Context, id int64) *SecondFactor {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a SecondFactor.
+func (c *SecondFactorClient) QueryUser(_m *SecondFactor) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(secondfactor.Table, secondfactor.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, secondfactor.UserTable, secondfactor.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SecondFactorClient) Hooks() []Hook {
+	return c.hooks.SecondFactor
+}
+
+// Interceptors returns the client interceptors.
+func (c *SecondFactorClient) Interceptors() []Interceptor {
+	return c.inters.SecondFactor
+}
+
+func (c *SecondFactorClient) mutate(ctx context.Context, m *SecondFactorMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SecondFactorCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SecondFactorUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SecondFactorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SecondFactorDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SecondFactor mutation op: %q", m.Op())
+	}
+}
+
 // SegmentClient is a client for the Segment schema.
 type SegmentClient struct {
 	config
@@ -11425,6 +11584,22 @@ func (c *UserClient) QuerySentInvitations(_m *User) *InvitationQuery {
 	return query
 }
 
+// QuerySecondFactor queries the second_factor edge of a User.
+func (c *UserClient) QuerySecondFactor(_m *User) *SecondFactorQuery {
+	query := (&SecondFactorClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(secondfactor.Table, secondfactor.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.SecondFactorTable, user.SecondFactorColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryRecoveryCodes queries the recovery_codes edge of a User.
 func (c *UserClient) QueryRecoveryCodes(_m *User) *RecoveryCodeQuery {
 	query := (&RecoveryCodeClient{config: c.config}).Query()
@@ -12991,10 +13166,10 @@ type (
 		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
 		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
-		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
@@ -13006,10 +13181,11 @@ type (
 		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
 		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
-		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
+		Workspace []ent.Interceptor
 	}
 )
 

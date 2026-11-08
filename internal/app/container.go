@@ -49,6 +49,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
@@ -101,7 +102,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
@@ -336,7 +337,7 @@ var messagingPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*noticedelivery.UseCase, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		links := users.NewLinks(do.MustInvoke[*users.Module](i), do.MustInvoke[*authtoken.Signer](i))
-		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*signinprovider.Providers](i), noticedelivery.Config{
+		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[*signinprovider.Providers](i), noticedelivery.Config{
 			AppURL:         cfg.AppURL,
 			Support:        cfg.SupportEmail,
 			TrackingTarget: do.MustInvoke[*trackingdomains.Module](i).Target(),
@@ -514,6 +515,7 @@ var jobsPackage = do.Package(
 			Catalog:         do.MustInvoke[*messaging.Catalog](i),
 			Rules:           do.MustInvoke[*rules.Module](i),
 			Users:           do.MustInvoke[*users.Module](i),
+			SecondFactor:    do.MustInvoke[*secondfactors.Module](i),
 			Orders:          do.MustInvoke[*orders.Module](i),
 			Deletion:        do.MustInvoke[*workspacedeletion.UseCase](i),
 			SendingDomains:  do.MustInvoke[*sendingdomains.Module](i),
@@ -668,8 +670,11 @@ var identityPackage = do.Package(
 			do.MustInvoke[Clock](i),
 			throttle.WithRateLimits(do.MustInvoke[*config.Config](i).RateLimits)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*secondfactorcheck.UseCase, error) {
-		return secondfactorcheck.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
+	do.Lazy(func(i do.Injector) (*secondfactors.Module, error) {
+		return secondfactors.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*users.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*secondfactorreset.UseCase, error) {
+		return secondfactorreset.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*passkeys.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -761,7 +766,7 @@ var contentPackage = do.Package(
 		client := do.MustInvoke[*ent.Client](i)
 		return secretreencryption.New(slices.Concat(
 			integrations.SecretSweeps(client), webhookendpoints.SecretSweeps(client), sendingdomains.SecretSweeps(client),
-			users.SecretSweeps(client), staffmembers.SecretSweeps(client), automations.SecretSweeps(client), rules.SecretSweeps(client),
+			secondfactors.SecretSweeps(client), staffmembers.SecretSweeps(client), automations.SecretSweeps(client), rules.SecretSweeps(client),
 		), do.MustInvoke[*secrets.Cipher](i)), nil
 	}),
 	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
@@ -830,7 +835,7 @@ var surfacesPackage = do.Package(
 	// The Bearer-token handler of /api and of /mcp, which rides the same token auth: one, so
 	// both meet the same acceptance gate and the same clock.
 	do.Lazy(func(i do.Injector) (*apiauth.ExternalSecurityHandler, error) {
-		return server.ExternalSecurity(do.MustInvoke[*ent.Client](i), do.MustInvoke[apiexternal.Deps](i)), nil
+		return server.ExternalSecurity(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[apiexternal.Deps](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*externalAPI, error) {
 		h, err := server.NewExternalAPI(do.MustInvoke[apiexternal.Deps](i), do.MustInvoke[*apiauth.ExternalSecurityHandler](i))
@@ -909,7 +914,6 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	edition := do.MustInvoke[*ee.Edition](i)
 	return apiexternal.Deps{
 		Clock:                 do.MustInvoke[Clock](i),
-		Users:                 do.MustInvoke[*users.Module](i),
 		Workspaces:            do.MustInvoke[*workspaces.Module](i),
 		Bus:                   do.MustInvoke[*events.Bus](i),
 		Webhooks:              do.MustInvoke[*webhookendpoints.Module](i),
@@ -998,7 +1002,8 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Tracker:                  do.MustInvoke[*messagetoken.Tracker](i),
 		AppURL:                   cfg.AppURL,
 		Audit:                    edition.Audit,
-		SecondFactor:             do.MustInvoke[*secondfactorcheck.UseCase](i),
+		SecondFactor:             do.MustInvoke[*secondfactors.Module](i),
+		SecondFactorReset:        do.MustInvoke[*secondfactorreset.UseCase](i),
 		WorkspaceCreation:        do.MustInvoke[*workspacecreation.UseCase](i),
 		SignUp:                   do.MustInvoke[*signup.UseCase](i),
 		Passkeys:                 do.MustInvoke[*passkeys.Module](i),

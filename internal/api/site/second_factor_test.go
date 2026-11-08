@@ -80,7 +80,7 @@ func (s *secondFactorEnv) start(t *testing.T, session string) enrollmentRes {
 var johnPassword = `{"currentPassword":"` + fixtures.OwnerJohnPassword + `"}`
 
 // samPassword is the body proving Sam's password; Sam has an active Second factor
-// (fixtures.SecondFactorSamTotpSecret) and an unused Recovery code.
+// (fixtures.SamSecondFactorTotpSecret) and an unused Recovery code.
 var samPassword = `{"currentPassword":"` + fixtures.SecondFactorSamPassword + `"}`
 
 // confirmBody is a confirmation request with John's password and code.
@@ -222,7 +222,7 @@ func TestRegeneratingRecoveryCodesInvalidatesThePreviousSet(t *testing.T) {
 
 func TestDisableRequiresThePasswordAndACurrentCode(t *testing.T) {
 	s := newSecondFactorEnv(t)
-	secret := fixtures.SecondFactorSamTotpSecret
+	secret := fixtures.SamSecondFactorTotpSecret
 	session := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 	other := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 

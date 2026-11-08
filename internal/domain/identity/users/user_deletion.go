@@ -102,8 +102,8 @@ type DeleteProof struct {
 // window (ADR 0043); a sole-owned Workspace in the window does not block and is erased on
 // schedule. Every Membership then goes through its Workspace's scope with the User as actor
 // of a `membership.delete` Audit entry (Audit entries that name the User are never
-// rewritten), and the User row is deleted: Linked identities and Recovery codes follow by
-// cascade, an Invitation the User sent keeps its place with no sender. Sessions need
+// rewritten), and the User row is deleted: Linked identities, the Second factor and its Recovery
+// codes follow by cascade, an Invitation the User sent keeps its place with no sender. Sessions need
 // nothing: the security handler finds no User. The deletion publishes events.UserDeleted, which
 // tells the address (ADR 0105).
 func (a *Module) DeleteUser(ctx context.Context, userID int64, proof *DeleteProof) (*ent.User, error) {

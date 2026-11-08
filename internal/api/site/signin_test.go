@@ -342,7 +342,7 @@ func secondStepStatus(t *testing.T, env *testhelper.TestEnv, challenge, code str
 // samTOTP is the authenticator app's current code for SecondFactorSam, on the env's clock.
 func samTOTP(t *testing.T, clock *movableClock) string {
 	t.Helper()
-	c, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, clock.now())
+	c, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.now())
 	require.NoError(t, err)
 	return c
 }

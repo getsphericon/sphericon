@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -32,7 +33,13 @@ func (s store) Lookup(ctx context.Context, address string) (login.Account[*ent.U
 	if err != nil {
 		return login.Account[*ent.User]{}, false, err
 	}
-	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: users.HasSecondFactor(u)}, true, nil
+	active, err := s.db.SecondFactor.Query().
+		Where(secondfactor.UserID(u.ID), secondfactor.ConfirmedAtNotNil(), secondfactor.SecretEncryptedNEQ("")).
+		Exist(ctx)
+	if err != nil {
+		return login.Account[*ent.User]{}, false, err
+	}
+	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: active}, true, nil
 }
 
 // resetFailing is a throttle whose success reset is broken.

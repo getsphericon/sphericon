@@ -1,9 +1,7 @@
-package secondfactorcheck_test
+package secondfactors_test
 
 import (
 	"errors"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -14,10 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 )
 
 type clock struct{ t time.Time }
@@ -32,13 +30,13 @@ func setup(t *testing.T) (*testhelper.TestEnv, *clock) {
 
 func samCode(t *testing.T, c *clock) string {
 	t.Helper()
-	code, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, c.now())
+	code, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, c.now())
 	require.NoError(t, err)
 	return code
 }
 
 // verify is a second step under the User's current challenge binding.
-func verify(t *testing.T, env *testhelper.TestEnv, userID int64, code string) (secondfactorcheck.Method, error) {
+func verify(t *testing.T, env *testhelper.TestEnv, userID int64, code string) (secondfactors.Method, error) {
 	t.Helper()
 	return env.SecondFactor.Verify(t.Context(), pending(userID, binding(t, env, userID)), code)
 }
@@ -54,7 +52,7 @@ func binding(t *testing.T, env *testhelper.TestEnv, userID int64) string {
 	u, err := env.DB.User.Get(t.Context(), userID)
 	require.NoError(t, err)
 	b, err := env.SecondFactor.ChallengeBinding(t.Context(), u)
-	if errors.Is(err, secondfactorcheck.ErrNotActive) {
+	if errors.Is(err, secondfactors.ErrNotActive) {
 		return ""
 	}
 	require.NoError(t, err)
@@ -65,7 +63,7 @@ func TestTheFixtureUserHasAnActiveSecondFactor(t *testing.T) {
 	env, _ := setup(t)
 	st, err := env.SecondFactor.Status(t.Context(), fixtures.SecondFactorSamID)
 	require.NoError(t, err)
-	assert.Equal(t, secondfactorcheck.Status{Enabled: true, RecoveryCodesRemaining: 1}, st)
+	assert.Equal(t, secondfactors.Status{Enabled: true, RecoveryCodesRemaining: 1}, st)
 }
 
 func TestVerifyAcceptsEachTOTPCodeOnce(t *testing.T) {
@@ -73,20 +71,20 @@ func TestVerifyAcceptsEachTOTPCodeOnce(t *testing.T) {
 
 	m, err := verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
 	require.NoError(t, err)
-	assert.Equal(t, secondfactorcheck.MethodTOTP, m)
+	assert.Equal(t, secondfactors.MethodTOTP, m)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
-	require.ErrorIs(t, err, secondfactorcheck.ErrInvalidCode, "a replay")
+	require.ErrorIs(t, err, secondfactors.ErrInvalidCode, "a replay")
 
 	c.t = c.t.Add(30 * time.Second)
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
 	require.NoError(t, err, "the next step")
 
 	c.t = c.t.Add(10 * time.Minute)
-	old, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, c.t.Add(-5*time.Minute))
+	old, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, c.t.Add(-5*time.Minute))
 	require.NoError(t, err)
 	_, err = verify(t, env, fixtures.SecondFactorSamID, old)
-	require.ErrorIs(t, err, secondfactorcheck.ErrInvalidCode, "a stale code")
+	require.ErrorIs(t, err, secondfactors.ErrInvalidCode, "a stale code")
 }
 
 func TestVerifyAcceptsEachRecoveryCodeOnceAndRecordsItsUse(t *testing.T) {
@@ -94,14 +92,14 @@ func TestVerifyAcceptsEachRecoveryCodeOnceAndRecordsItsUse(t *testing.T) {
 	ctx := t.Context()
 
 	_, err := verify(t, env, fixtures.SecondFactorSamID, fixtures.SecondFactorSamSpentRecoveryCode)
-	require.ErrorIs(t, err, secondfactorcheck.ErrInvalidCode, "an already spent code")
+	require.ErrorIs(t, err, secondfactors.ErrInvalidCode, "an already spent code")
 
 	m, err := verify(t, env, fixtures.SecondFactorSamID, " SAM01-UNUSD ")
 	require.NoError(t, err, "case and spacing do not matter")
-	assert.Equal(t, secondfactorcheck.MethodRecoveryCode, m)
+	assert.Equal(t, secondfactors.MethodRecoveryCode, m)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, fixtures.SecondFactorSamRecoveryCode)
-	require.ErrorIs(t, err, secondfactorcheck.ErrInvalidCode, "a code works once")
+	require.ErrorIs(t, err, secondfactors.ErrInvalidCode, "a code works once")
 
 	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
@@ -129,7 +127,7 @@ func TestVerifyRefusesABindingAnotherSecondStepMoved(t *testing.T) {
 	_, err := env.SecondFactor.Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), fixtures.SecondFactorSamRecoveryCode)
 	require.NoError(t, err)
 	_, err = env.SecondFactor.Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), samCode(t, c))
-	require.ErrorIs(t, err, secondfactorcheck.ErrBindingMoved)
+	require.ErrorIs(t, err, secondfactors.ErrBindingMoved)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
 	require.NoError(t, err, "the refused step spent nothing: the code still works")
@@ -138,80 +136,5 @@ func TestVerifyRefusesABindingAnotherSecondStepMoved(t *testing.T) {
 func TestVerifyWithoutASecondFactor(t *testing.T) {
 	env, _ := setup(t)
 	_, err := verify(t, env, fixtures.OwnerJohnID, "123456")
-	require.ErrorIs(t, err, secondfactorcheck.ErrNotActive)
-}
-
-func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
-	env, c := setup(t)
-	ctx := t.Context()
-	session := env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
-
-	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
-	require.NoError(t, env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SecondFactorSamID, jane))
-
-	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
-	require.NoError(t, err)
-	assert.Equal(t, secondfactorcheck.Status{}, st)
-	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
-	require.ErrorIs(t, err, secondfactorcheck.ErrNotActive)
-
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/site/workspaces", nil)
-	req.AddCookie(testhelper.RequestCookie("JWT", session))
-	env.Server.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusUnauthorized, rec.Code)
-}
-
-func TestResetIsAuditedInTheActingWorkspaceOnly(t *testing.T) {
-	env, _ := setup(t)
-	ctx := t.Context()
-	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
-
-	require.NoError(t, env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SecondFactorSamID, jane))
-
-	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	got, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionUserSecondFactorReset)).All(ctx)
-	require.NoError(t, err)
-	require.Len(t, got, 1)
-	assert.Equal(t, int64(fixtures.GlobexID), got[0].WorkspaceID)
-	assert.Equal(t, "Jane", *got[0].ActorName)
-	assert.Equal(t, "user", got[0].TargetType)
-	assert.Equal(t, "Sam", *got[0].TargetName)
-}
-
-func TestResetWithoutASecondFactorChangesNothing(t *testing.T) {
-	env, _ := setup(t)
-	ctx := t.Context()
-	before, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
-	require.NoError(t, err)
-
-	err = env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.OwnerJohnID, events.Actor{Kind: events.ActorUser, ID: "2"})
-	require.ErrorIs(t, err, secondfactorcheck.ErrNothingToReset)
-
-	after, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
-	require.NoError(t, err)
-	assert.Equal(t, before.SessionEpoch, after.SessionEpoch, "no session ends")
-}
-
-func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
-	env, _ := setup(t)
-	ctx := t.Context()
-
-	require.NoError(t, env.SecondFactor.ResetByStaff(ctx, fixtures.SecondFactorSamID, "cli"))
-
-	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
-	require.NoError(t, err)
-	assert.False(t, st.Enabled)
-	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	got, err := env.DB.AuditEntry.Query().
-		Where(auditentry.Action(events.ActionUserSecondFactorReset)).
-		Order(ent.Asc(auditentry.FieldWorkspaceID)).
-		All(ctx)
-	require.NoError(t, err)
-	require.Len(t, got, 2, "Sam belongs to Globex and Umbrella")
-	assert.Equal(t, int64(fixtures.GlobexID), got[0].WorkspaceID)
-	assert.Equal(t, int64(fixtures.UmbrellaID), got[1].WorkspaceID)
-	for _, e := range got {
-		assert.Equal(t, events.ActorStaff, e.ActorKind)
-	}
+	require.ErrorIs(t, err, secondfactors.ErrNotActive)
 }

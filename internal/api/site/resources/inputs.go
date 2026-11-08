@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
@@ -35,7 +36,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
@@ -106,7 +106,7 @@ import (
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
 type Inputs interface {
-	SecondFactorConfirm(source *siteapi.SiteSecondFactorConfirmInput) secondfactorcheck.ConfirmInput
+	SecondFactorConfirm(source *siteapi.SiteSecondFactorConfirmInput) secondfactors.ConfirmInput
 
 	// The restoring User and the actor the Audit log records come from the session, which the
 	// handler assigns.

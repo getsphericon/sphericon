@@ -53,6 +53,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/schemastate"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -1205,6 +1206,29 @@ func init() {
 	schemastate.DefaultUpdatedAt = schemastateDescUpdatedAt.Default.(func() time.Time)
 	// schemastate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	schemastate.UpdateDefaultUpdatedAt = schemastateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	secondfactorMixin := schema.SecondFactor{}.Mixin()
+	secondfactorMixinFields0 := secondfactorMixin[0].Fields()
+	_ = secondfactorMixinFields0
+	secondfactorFields := schema.SecondFactor{}.Fields()
+	_ = secondfactorFields
+	// secondfactorDescCreatedAt is the schema descriptor for created_at field.
+	secondfactorDescCreatedAt := secondfactorMixinFields0[0].Descriptor()
+	// secondfactor.DefaultCreatedAt holds the default value on creation for the created_at field.
+	secondfactor.DefaultCreatedAt = secondfactorDescCreatedAt.Default.(func() time.Time)
+	// secondfactorDescUpdatedAt is the schema descriptor for updated_at field.
+	secondfactorDescUpdatedAt := secondfactorMixinFields0[1].Descriptor()
+	// secondfactor.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	secondfactor.DefaultUpdatedAt = secondfactorDescUpdatedAt.Default.(func() time.Time)
+	// secondfactor.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	secondfactor.UpdateDefaultUpdatedAt = secondfactorDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// secondfactorDescGeneration is the schema descriptor for generation field.
+	secondfactorDescGeneration := secondfactorFields[3].Descriptor()
+	// secondfactor.GenerationValidator is a validator for the "generation" field. It is called by the builders before save.
+	secondfactor.GenerationValidator = secondfactorDescGeneration.Validators[0].(func(int64) error)
+	// secondfactorDescLastStep is the schema descriptor for last_step field.
+	secondfactorDescLastStep := secondfactorFields[5].Descriptor()
+	// secondfactor.DefaultLastStep holds the default value on creation for the last_step field.
+	secondfactor.DefaultLastStep = secondfactorDescLastStep.Default.(int64)
 	segmentMixin := schema.Segment{}.Mixin()
 	segmentMixinFields0 := segmentMixin[0].Fields()
 	_ = segmentMixinFields0
@@ -1607,24 +1631,16 @@ func init() {
 	userDescSessionEpoch := userFields[6].Descriptor()
 	// user.DefaultSessionEpoch holds the default value on creation for the session_epoch field.
 	user.DefaultSessionEpoch = userDescSessionEpoch.Default.(int64)
-	// userDescSecondFactorGeneration is the schema descriptor for second_factor_generation field.
-	userDescSecondFactorGeneration := userFields[8].Descriptor()
-	// user.SecondFactorGenerationValidator is a validator for the "second_factor_generation" field. It is called by the builders before save.
-	user.SecondFactorGenerationValidator = userDescSecondFactorGeneration.Validators[0].(func(int64) error)
-	// userDescSecondFactorLastStep is the schema descriptor for second_factor_last_step field.
-	userDescSecondFactorLastStep := userFields[10].Descriptor()
-	// user.DefaultSecondFactorLastStep holds the default value on creation for the second_factor_last_step field.
-	user.DefaultSecondFactorLastStep = userDescSecondFactorLastStep.Default.(int64)
 	// userDescTimezone is the schema descriptor for timezone field.
-	userDescTimezone := userFields[12].Descriptor()
+	userDescTimezone := userFields[8].Descriptor()
 	// user.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	user.TimezoneValidator = userDescTimezone.Validators[0].(func(string) error)
 	// userDescRegionalFormat is the schema descriptor for regional_format field.
-	userDescRegionalFormat := userFields[13].Descriptor()
+	userDescRegionalFormat := userFields[9].Descriptor()
 	// user.RegionalFormatValidator is a validator for the "regional_format" field. It is called by the builders before save.
 	user.RegionalFormatValidator = userDescRegionalFormat.Validators[0].(func(string) error)
 	// userDescFeedPosition is the schema descriptor for feed_position field.
-	userDescFeedPosition := userFields[14].Descriptor()
+	userDescFeedPosition := userFields[10].Descriptor()
 	// user.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	user.DefaultFeedPosition = userDescFeedPosition.Default.(int64)
 	useridentityMixin := schema.UserIdentity{}.Mixin()

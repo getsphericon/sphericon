@@ -61,10 +61,11 @@ func TestGenerateExtractsPlaintextOfCredentialTemplateCalls(t *testing.T) {
 
 func TestGenerateExtractsTheSecondFactorSecretAndRecoveryCode(t *testing.T) {
 	dir := writeFixtures(t, map[string]string{
-		"users.yml": "- id: 1 # fixture: Sam\n  email: s@example.com\n" +
-			"  second_factor_secret_encrypted: '{{encrypt \"JBSWY3DPEHPK3PXP\"}}'\n",
-		"recovery_codes.yml": "- id: 1 # fixture: SamRecovery\n  user_id: 1\n  code_hash: '{{recoveryCodeHash \"abcde-fghij\"}}'\n",
-		"integrations.yml":   "- id: 1 # fixture: Smtp\n  config_encrypted: '{{encrypt \"{}\"}}'\n",
+		"second_factors.yml": "- id: 1 # fixture: Sam\n  user_id: 1\n" +
+			"  secret_encrypted: '{{encrypt \"JBSWY3DPEHPK3PXP\"}}'\n",
+		"recovery_codes.yml":    "- id: 1 # fixture: SamRecovery\n  user_id: 1\n  code_hash: '{{recoveryCodeHash \"abcde-fghij\"}}'\n",
+		"integrations.yml":      "- id: 1 # fixture: Smtp\n  config_encrypted: '{{encrypt \"{}\"}}'\n",
+		"webhook_endpoints.yml": "- id: 1 # fixture: Hook\n  secret_encrypted: '{{encrypt \"whsec_x\"}}'\n",
 	})
 
 	src, err := fixturegen.Generate(dir)
@@ -74,6 +75,7 @@ func TestGenerateExtractsTheSecondFactorSecretAndRecoveryCode(t *testing.T) {
 	require.Contains(t, out, `SamTotpSecret = "JBSWY3DPEHPK3PXP"`)
 	require.Contains(t, out, `SamRecoveryCode = "abcde-fghij"`)
 	require.NotContains(t, out, "SmtpTotpSecret", "only the second factor column is lifted")
+	require.NotContains(t, out, "HookTotpSecret", "a Webhook endpoint's secret is no TOTP secret")
 }
 
 func TestGenerateFailsOnDuplicateName(t *testing.T) {

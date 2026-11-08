@@ -1,7 +1,7 @@
 // Package users owns the User (ADR 0102): its credentials, the proof of its address (the
 // verification and the other mailed links), its Linked identities and the Pending sign-up of a
-// Sign-in provider, the sign-in decision, its profile, the admission of its requests (the
-// acceptance gate and the Two-factor grace), its deletion, the acceptance of an Invitation, which
+// Sign-in provider, the sign-in decision, its profile, the acceptance gate of its requests (the
+// Two-factor grace is internal/domain/identity/secondfactors'), its deletion, the acceptance of an Invitation, which
 // makes or completes the User the Invitation names, and the domain-join step of a proven address
 // (ADR 0051). It sits above workspaces, memberships and invitations in identity.
 //
@@ -340,6 +340,36 @@ func (a *Module) EndSessions(ctx context.Context, id int64) error {
 		}
 		return RecordUserAction(ctx, tx, pub, u, events.ActionUserSignOutEverywhere, nil)
 	})
+}
+
+// LockIn reads the User userID on the transaction tx and locks its row until the transaction
+// ends, so a change of its session epoch or password waits for it.
+func LockIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
+	return tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
+}
+
+// BumpSessionEpochIn ends the User's sessions on the transaction tx (a Passkey change).
+func BumpSessionEpochIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
+	return tx.User.UpdateOneID(userID).AddSessionEpoch(1).Save(ctx)
+}
+
+// BumpSessionEpochFromIn ends the User's sessions on the transaction tx only while the User still
+// has the session epoch and password of before, the snapshot a change of the User's Second factor
+// checked (internal/domain/identity/secondfactors). bumped is false, and nothing is written, when
+// either moved since.
+func BumpSessionEpochFromIn(ctx context.Context, tx *ent.Client, before *ent.User) (saved *ent.User, bumped bool, err error) {
+	update := tx.User.UpdateOneID(before.ID).Where(user.SessionEpochEQ(before.SessionEpoch))
+	// A passwordless User stores no password as NULL or an empty optional string.
+	if before.PasswordHash == "" {
+		update.Where(user.Or(user.PasswordHashIsNil(), user.PasswordHashEQ("")))
+	} else {
+		update.Where(user.PasswordHashEQ(before.PasswordHash))
+	}
+	saved, err = update.AddSessionEpoch(1).Save(ctx)
+	if ent.IsNotFound(err) {
+		return nil, false, nil
+	}
+	return saved, err == nil, err
 }
 
 // LoginPassword is the method of a login by email and password in the `user.login` entry.

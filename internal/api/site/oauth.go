@@ -8,7 +8,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 )
 
@@ -49,7 +49,7 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 	if err != nil {
 		return nil, err
 	}
-	err = h.users.Admit(ctx, users.Admission{
+	err = h.secondFactor.Admit(ctx, secondfactors.Admission{
 		UserID:        session.UserID,
 		Membership:    m,
 		StrongSession: currentSession(ctx).Method.Strong(),

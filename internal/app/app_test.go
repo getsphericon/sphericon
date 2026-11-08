@@ -136,8 +136,9 @@ func TestResetSecondFactorByEmail(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, changed)
 	after := client.User.GetX(ctx, fixtures.SecondFactorSamID)
-	assert.Nil(t, after.SecondFactorConfirmedAt)
-	assert.Empty(t, after.SecondFactorSecretEncrypted)
+	factor := client.SecondFactor.GetX(ctx, fixtures.SamSecondFactorID)
+	assert.Nil(t, factor.ConfirmedAt)
+	assert.Empty(t, factor.SecretEncrypted)
 	assert.Greater(t, after.SessionEpoch, before.SessionEpoch, "every session ends")
 
 	envelopes := testhelper.QueuedEnvelopesOn(t, sqlDBOn(t, os.Getenv("SPHERICON_DATABASE_URL")), events.NameAuditEntry)

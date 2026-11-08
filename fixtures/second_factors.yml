@@ -1,0 +1,33 @@
+# The TOTP Second factors of the Users who have one (ADR 0020). Each is confirmed; the secret is
+# sealed with the test cipher at load time, its plaintext lifted into the catalog
+# (fixtures.SamSecondFactorTotpSecret).
+- id: 1 # fixture: SamSecondFactor
+  user_id: 9
+  secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
+  generation: 1
+  confirmed_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2 # fixture: PaxSecondFactor
+  user_id: 23
+  secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
+  generation: 1
+  confirmed_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): Ana and Milo, the two with a Second factor ---
+- id: 20000
+  user_id: 20001
+  secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
+  generation: 1
+  confirmed_at: '{{daysAgo 108}}'
+  created_at: '{{daysAgo 108}}'
+  updated_at: '{{daysAgo 108}}'
+- id: 20001
+  user_id: 20002
+  secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
+  generation: 1
+  confirmed_at: '{{daysAgo 105}}'
+  created_at: '{{daysAgo 105}}'
+  updated_at: '{{daysAgo 105}}'

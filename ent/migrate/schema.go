@@ -2258,6 +2258,31 @@ var (
 		Columns:    SchemaStateColumns,
 		PrimaryKey: []*schema.Column{SchemaStateColumns[0]},
 	}
+	// SecondFactorsColumns holds the columns for the "second_factors" table.
+	SecondFactorsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "secret_encrypted", Type: field.TypeString, Nullable: true},
+		{Name: "generation", Type: field.TypeInt64},
+		{Name: "confirmed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_step", Type: field.TypeInt64, Default: 0},
+		{Name: "user_id", Type: field.TypeInt64, Unique: true},
+	}
+	// SecondFactorsTable holds the schema information for the "second_factors" table.
+	SecondFactorsTable = &schema.Table{
+		Name:       "second_factors",
+		Columns:    SecondFactorsColumns,
+		PrimaryKey: []*schema.Column{SecondFactorsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "second_factors_users_second_factor",
+				Columns:    []*schema.Column{SecondFactorsColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// SegmentsColumns holds the columns for the "segments" table.
 	SegmentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2825,10 +2850,6 @@ var (
 		{Name: "email_verified_at", Type: field.TypeTime, Nullable: true},
 		{Name: "email_proven_at", Type: field.TypeTime, Nullable: true},
 		{Name: "session_epoch", Type: field.TypeInt64, Default: 0},
-		{Name: "second_factor_secret_encrypted", Type: field.TypeString, Nullable: true},
-		{Name: "second_factor_generation", Type: field.TypeInt64, Nullable: true},
-		{Name: "second_factor_confirmed_at", Type: field.TypeTime, Nullable: true},
-		{Name: "second_factor_last_step", Type: field.TypeInt64, Default: 0},
 		{Name: "signup_survey_due_at", Type: field.TypeTime, Nullable: true},
 		{Name: "timezone", Type: field.TypeString, Nullable: true},
 		{Name: "regional_format", Type: field.TypeString, Nullable: true},
@@ -2843,7 +2864,7 @@ var (
 			{
 				Name:    "user_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[16], UsersColumns[0]},
+				Columns: []*schema.Column{UsersColumns[12], UsersColumns[0]},
 			},
 		},
 	}
@@ -3077,6 +3098,7 @@ var (
 		RuleVersionsTable,
 		RuleVersionTriggersTable,
 		SchemaStateTable,
+		SecondFactorsTable,
 		SegmentsTable,
 		SendCapLimitersTable,
 		SendingDomainsTable,
@@ -3403,6 +3425,10 @@ func init() {
 	}
 	SchemaStateTable.Annotation = &entsql.Annotation{
 		Table: "schema_state",
+	}
+	SecondFactorsTable.ForeignKeys[0].RefTable = UsersTable
+	SecondFactorsTable.Annotation = &entsql.Annotation{
+		Table: "second_factors",
 	}
 	SegmentsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SegmentsTable.Annotation = &entsql.Annotation{

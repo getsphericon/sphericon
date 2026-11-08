@@ -17,9 +17,9 @@ version: 1
 # inside its own module fails, and tests are excluded. Name the function as
 # `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
-# So do the Second factor's writes that skip its checks (the User's factor, the Recovery codes, all
-# Passkeys of a User), the moves of a Workspace's deletion cycle, the creation of a Workspace
-# with its creator's Membership, and each owner's step of a Contact's Erasure (the Contact row,
+# So do the Second factor reset's removals (the User's factor with its Recovery codes, all Passkeys
+# of a User), the moves of a Workspace's deletion cycle, the creation of a Workspace with its
+# creator's Membership, and each owner's step of a Contact's Erasure (the Contact row,
 # contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
 # publisher (events.PurgingPublisher), which a name cannot forbid. The erase of a Workspace's rows
 # has no name here: internal/usecase/workspacedeletion deletes them itself (ADR 0110).
@@ -42,18 +42,12 @@ x-unchecked-removals: &unchecked-removals
   - &contacts-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
-  - &users-move-second-factor-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/users.MoveSecondFactorIn
-    because: a Second factor moves only after the use case internal/usecase/secondfactorcheck checks its code or reset authority, and commits Recovery codes and audit in the same transaction (ADR 0020, ADR 0102); call the use case
-  - &recoverycodes-replace-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.ReplaceIn
-    because: Recovery codes are issued only with an active or a just confirmed Second factor, which the use case internal/usecase/secondfactorcheck checks first (ADR 0020, ADR 0102); call the use case
-  - &recoverycodes-delete-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.DeleteIn
-    because: Recovery codes go only with their Second factor, through the use case internal/usecase/secondfactorcheck (ADR 0020, ADR 0102); call the use case
+  - &secondfactors-reset-in
+    name: github.com/getsphericon/sphericon/internal/domain/identity/secondfactors.ResetIn
+    because: a User's Second factor is cleared without its code only in a Second factor reset, the use case internal/usecase/secondfactorreset, which checks there is something to clear, removes the Passkeys with it and records who reset (ADR 0020, ADR 0102, ADR 0110); call the use case, or secondfactors.Module.Disable for the User's own factor
   - &passkeys-delete-all-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
-    because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorcheck checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
+    because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorreset checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
   - &workspaces-discard-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.DiscardIn
     because: a Workspace is deleted only by the use case internal/usecase/workspacedeletion, which checks the typed name first and records the deletion (ADR 0043, ADR 0102); call the use case
@@ -135,9 +129,7 @@ x-core-forbids: &core-forbids
   - *integrations-delete-in
   - *sendingdomains-delete-in
   - *contacts-delete-in
-  - *users-move-second-factor-in
-  - *recoverycodes-replace-in
-  - *recoverycodes-delete-in
+  - *secondfactors-reset-in
   - *passkeys-delete-all-in
   - *workspaces-discard-in
   - *workspaces-restore-in
@@ -197,9 +189,7 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *integrations-delete-in
   - *sendingdomains-delete-in
   - *contacts-delete-in
-  - *users-move-second-factor-in
-  - *recoverycodes-replace-in
-  - *recoverycodes-delete-in
+  - *secondfactors-reset-in
   - *passkeys-delete-all-in
   - *workspaces-discard-in
   - *workspaces-restore-in
@@ -239,9 +229,7 @@ x-runner-forbids: &runner-forbids
   - *integrations-delete-in
   - *sendingdomains-delete-in
   - *contacts-delete-in
-  - *users-move-second-factor-in
-  - *recoverycodes-replace-in
-  - *recoverycodes-delete-in
+  - *secondfactors-reset-in
   - *passkeys-delete-all-in
   - *workspaces-discard-in
   - *workspaces-restore-in
@@ -278,9 +266,7 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *integrations-delete-in
   - *sendingdomains-delete-in
   - *contacts-delete-in
-  - *users-move-second-factor-in
-  - *recoverycodes-replace-in
-  - *recoverycodes-delete-in
+  - *secondfactors-reset-in
   - *passkeys-delete-all-in
   - *workspaces-discard-in
   - *workspaces-restore-in
@@ -502,16 +488,16 @@ components:
     allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
-  # *ent.Scoped to take: the Second factor of a User, the deletion cycle of a Workspace, which
-  # lists the Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the
-  # steps that make a User Verified with its first one, and Notice delivery, which reads a User or
-  # a Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
+  # *ent.Scoped to take: the Second factor reset of a User, the deletion cycle of a Workspace,
+  # which lists the Workspaces that have no scope yet, the creation of a Workspace, the Sign-up
+  # with the steps that make a User Verified with its first one, and Notice delivery, which reads a
+  # User or a Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
   # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
   usecase-raw:
     in:
       [
-        'internal/usecase/secondfactorcheck*',
+        'internal/usecase/secondfactorreset*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/workspacecreation*',
         'internal/usecase/signup*',
@@ -535,7 +521,7 @@ components:
   # docs/architecture.md (Workspace scoping), kept in step with it. A package is the unit, so the
   # doc's narrower grants (`capturedmessages` only `Purge`, `automations` only `FenceOn`,
   # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and
-  # `SecretSweeps`, `integrations`, `webhookendpoints`, `rules`, `automations`, `users` and
+  # `SecretSweeps`, `integrations`, `webhookendpoints`, `rules`, `automations` and
   # `staffmembers` only their `SecretSweeps` for the re-encryption, `apitokens` only the token
   # endpoint's exchange of a code or a refresh token) are left to review. The composition roots, `internal/api/auth`
   # and the job runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`,
@@ -543,9 +529,9 @@ components:
   #
   # Identity, the bottom context: the Workspaces, the Memberships, the Users, the Invitations, the
   # Join domains, the API tokens, the Staff members, the OAuth clients, the second step of signing
-  # in (Passkeys, Recovery codes), sign-in and sign-up (login, signinprovider, Consent records, Sign-up
-  # items, the Sign-up survey responses), suspension, the Account link and the service feeds of Users and
-  # Workspaces.
+  # in (Passkeys, the Second factors with their Recovery codes), sign-in and sign-up (login,
+  # signinprovider, Consent records, Sign-up items, the Sign-up survey responses), suspension, the
+  # Account link and the service feeds of Users and Workspaces.
   # Its bottom: the Workspace with its settings and its deletion window, and the Memberships with the
   # Permissions, the Owners and the notices to them. Every module may read a Workspace, ask a
   # Permission or tell the Owners something, so these two import no domain module; both hold the
@@ -565,7 +551,7 @@ components:
         internal/domain/identity/joindomains,
         internal/domain/identity/oauthclients,
         internal/domain/identity/passkeys,
-        internal/domain/identity/recoverycodes,
+        internal/domain/identity/secondfactors,
         internal/domain/identity/signupitems,
         internal/domain/identity/signupsurveyresponses,
         internal/domain/identity/staffmembers,
@@ -768,7 +754,6 @@ rules:
         domain-orchestration,
         domain-insights,
         domain-identity-raw,
-        domain-identity-users,
         domain-identity-base,
         domain-contacts,
         domain-content,
@@ -809,7 +794,7 @@ rules:
     forbid_external: *no-container
     because: MCP projects the external API's operations as tools over the shared auth handlers and the Problem mapping, never over another surface's handlers
   api-auth:
-    may_depend_on: [domain-identity-raw, domain-identity-users, domain-identity-base, gen-surfaces]
+    may_depend_on: [domain-identity-raw, domain-identity-base, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the security handlers sit below every surface

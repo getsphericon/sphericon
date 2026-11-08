@@ -56,27 +56,6 @@ func (User) Fields() []ent.Field {
 		// rejected. Bumping it ends every session of the User at once.
 		field.Int64("session_epoch").
 			Default(0),
-		// The TOTP Second factor (ADR 0020): the shared secret sealed with the
-		// instance cipher (internal/kernel/secrets). Set while enrollment is pending and
-		// once it is active; empty when the User has no Second factor.
-		field.String("second_factor_secret_encrypted").
-			Sensitive().
-			Optional(),
-		// The enrollment identity advances for each newly issued secret, independently of
-		// session_epoch: displaying a QR code does not end sessions. NULL predates enrollment.
-		field.Int64("second_factor_generation").
-			Optional().
-			Nillable().
-			NonNegative(),
-		// When enrollment was confirmed with a valid code. Nil with a secret set is a
-		// pending enrollment, which is not a Second factor yet.
-		field.Time("second_factor_confirmed_at").
-			Optional().
-			Nillable(),
-		// The last TOTP time step a code was accepted for: a code of that step or an
-		// earlier one is refused, so each code works once.
-		field.Int64("second_factor_last_step").
-			Default(0),
 		// When a public sign-up (password or Sign-in provider) marked the User as owing the
 		// Sign-up survey, with the survey on. Nil is not due: an Invitation, create-owner,
 		// join-domain admission, a pre-existing User, or the survey already answered. The
@@ -121,6 +100,10 @@ func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("memberships", Membership.Type),
 		edge.To("sent_invitations", Invitation.Type),
+		// The User's Second factor and Recovery codes go with the User (ADR 0020).
+		edge.To("second_factor", SecondFactor.Type).
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("recovery_codes", RecoveryCode.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("passkeys", Passkey.Type).

@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
@@ -59,7 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
@@ -220,9 +221,12 @@ type TestEnv struct {
 	// Confirmations records the subscription URLs a Preset's confirm action fetched.
 	Confirmations *Confirmations
 
-	// SecondFactor is the module the server verifies Second factors with, on the
-	// env's clock (ADR 0020).
-	SecondFactor *secondfactorcheck.UseCase
+	// SecondFactor is the module the server enrolls, verifies and reads Second factors with,
+	// on the env's clock (ADR 0020).
+	SecondFactor *secondfactors.Module
+	// SecondFactorReset is the use case the server resets a member's Second factor and
+	// Passkeys with (ADR 0102).
+	SecondFactorReset *secondfactorreset.UseCase
 
 	// WorkspaceCreation is the use case the server creates a Verified User's Workspaces with
 	// (ADR 0102).
@@ -563,7 +567,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Machine:           do.MustInvoke[*privaterelayranges.Detector](injector),
 		PrivateRelay:      relay,
 		Confirmations:     confirmations,
-		SecondFactor:      do.MustInvoke[*secondfactorcheck.UseCase](injector),
+		SecondFactor:      do.MustInvoke[*secondfactors.Module](injector),
+		SecondFactorReset: do.MustInvoke[*secondfactorreset.UseCase](injector),
 		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
 		SignUp:            do.MustInvoke[*signup.UseCase](injector),
 		StepExecution:     do.MustInvoke[*automations.StepExecution](injector),

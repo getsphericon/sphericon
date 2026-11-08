@@ -150,6 +150,9 @@ type RuleVersionTrigger func(*sql.Selector)
 // SchemaState is the predicate function for schemastate builders.
 type SchemaState func(*sql.Selector)
 
+// SecondFactor is the predicate function for secondfactor builders.
+type SecondFactor func(*sql.Selector)
+
 // Segment is the predicate function for segment builders.
 type Segment func(*sql.Selector)
 
