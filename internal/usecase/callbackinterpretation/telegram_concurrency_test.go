@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
@@ -41,7 +42,7 @@ func TestSimultaneousTelegramSTOPCallbacksConsumeOneObservation(t *testing.T) {
 	})
 	bot, err := r.Scope.Integration().Get(t.Context(), fixtures.IntegrationAcmeTelegramID)
 	require.NoError(t, err)
-	u := callbackinterpretation.New(r.Bus, nil, time.Now)
+	u := callbackinterpretation.New(entclient.New(r.DB), r.Bus, nil, time.Now)
 	in := callbackinterpretation.InterpretInput{Integration: bot, Preset: "telegram", Result: preset.Result{
 		InboundMessages: []preset.InboundMessage{{ID: "1", Channel: "telegram", Destination: fixtures.BindingLiamDestination, Text: "/stop"}},
 	}}
