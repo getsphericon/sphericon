@@ -49,8 +49,8 @@ type Edition struct {
 	lic    *licensekey.License
 	client *ent.Client
 
-	// Audit is the read side of the Audit log; unlicensed, it reports so and the
-	// /site page answers 402.
+	// Audit is the read side of the Audit log (auditlog.Reader), which auditlog.Log serves the
+	// surfaces over; unlicensed, it reports so and the Log refuses as unlicensed (402).
 	Audit *auditentries.Log
 	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
 	Export *ExportStreams

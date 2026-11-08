@@ -6,7 +6,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/api/problem"
@@ -18,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -30,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -79,20 +78,10 @@ type Handlers struct {
 	rules                 *rules.Module
 	// tokens mints the first token of the Instance by its bootstrap token.
 	tokens *apitokens.Module
-	audit  AuditLog
+	audit  *auditlog.Log
 	export ExportStreams
 	// unsubscribe records an opt-out (a use case, ADR 0102).
 	unsubscribe *unsubscriberecording.UseCase
-}
-
-// AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
-// ee/domain/insights/auditentries. Core knows only this interface: without a license Licensed is false and
-// the read answers 402.
-type AuditLog interface {
-	Licensed() bool
-	// Entries returns up to limit entries, newest first, preceding the cursor entry
-	// id (0 = from the newest), and the next page's cursor (0 = last page).
-	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error)
 }
 
 // ExportStreams is the license seam of the Enterprise Export streams (ADR 0045),
@@ -138,7 +127,7 @@ type Deps struct {
 	Reputation            *reputation.Module
 	// Tokens mints the first token of the Instance by its bootstrap token (apitokens.Module).
 	Tokens *apitokens.Module
-	Audit  AuditLog
+	Audit  *auditlog.Log
 	Export ExportStreams
 	// Clock is the Instance clock (app.Clock) the handlers read, and the security handler checks a
 	// Connection's Two-factor requirement against. Required.

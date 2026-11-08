@@ -44,8 +44,8 @@ const RenderRetryAfter = "5"
 // database to come back, short enough that a client's events stay fresh.
 const CollectRetryAfter = "5"
 
-// Error is a handler's answer that no refusal kind gives (the 402 of a missing Enterprise
-// license, the 410 of an expired confirmation link): its status and its detail. A refusal a
+// Error is a handler's answer that no refusal kind gives (the 410 of an expired confirmation
+// link): its status and its detail. A refusal a
 // module decides is the module's sentinel, never an Error (ast-grep rule
 // no-hand-written-problem-in-handlers).
 type Error struct {

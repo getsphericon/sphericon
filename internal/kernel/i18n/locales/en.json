@@ -338,6 +338,8 @@
   "errors.tracking_domain_not_found": "tracking domain not found",
   "errors.export_cursor_invalid": "the cursor is not one this stream returned",
   "errors.audit_cursor_invalid": "the cursor is not one the audit log returned",
+  "errors.audit_unlicensed": "the audit log needs an Enterprise license",
+  "errors.audit_retention_unlicensed": "audit retention needs an Enterprise license",
   "errors.not_found": "not found",
   "errors.oauth_client_unknown": "unknown client",
   "errors.oauth_request_invalid": "invalid authorization request",

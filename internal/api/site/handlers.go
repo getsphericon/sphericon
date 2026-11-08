@@ -4,7 +4,6 @@ package site
 
 import (
 	"context"
-	"io"
 	"strconv"
 	"time"
 
@@ -50,7 +49,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
-	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
@@ -111,7 +109,7 @@ type Handlers struct {
 	automations           *automations.Module
 	rules                 *rules.Module
 	oauth                 *oauthclients.Module
-	audit                 AuditLog
+	audit                 *auditlog.Log
 	attention             *needsattentionreport.UseCase
 	setupChecklist        *setupchecklist.Module
 	supportEmail          string
@@ -147,23 +145,6 @@ type Handlers struct {
 	signin *signinprovider.Providers
 	// unsubscribe records an opt-out (a use case, ADR 0102).
 	unsubscribe *unsubscriberecording.UseCase
-}
-
-// AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
-// ee/domain/insights/auditentries. Core knows only this interface: without a license Licensed is false and
-// the page answers 402.
-type AuditLog interface {
-	Licensed() bool
-	// Entries returns up to limit entries matching the filter, newest first, preceding
-	// the cursor entry id (0 = from the newest), and the next page's cursor (0 = last page).
-	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error)
-	// Export records the export as an Audit entry of the scope's actor, then returns the
-	// function that writes the entries matching the filter, newest first, as CSV.
-	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error)
-	// Facets returns the actors, actions and target types that occur in the log, sorted.
-	Facets(ctx context.Context, s *ent.Scoped) (auditlog.Facets, error)
-	// RetentionLicensed reports whether the retention window may be set (ADR 0014).
-	RetentionLicensed() bool
 }
 
 // Origins are the public origins besides the app's own that a Workspace resource names: where an
@@ -225,7 +206,7 @@ type Deps struct {
 	Tokens           *authtoken.Signer
 	Tracker          *messagetoken.Tracker
 	AppURL           string
-	Audit            AuditLog
+	Audit            *auditlog.Log
 	// Attention reads what in a Workspace needs a member's action now.
 	Attention *needsattentionreport.UseCase
 	// SetupChecklist reads the Setup checklist and stamps its first completion.

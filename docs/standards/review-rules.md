@@ -138,7 +138,7 @@ or `AGENTS.md`.
     an undeclared violation stays a 500, with no fallback in `problem`. 401: no credential, or an invalid one (a sign-in that does not hold). 403: a
     valid credential without the scope or Permission, a step the caller did not prove, an address
     not proven yet, or a required acceptance pending (`acceptance_pending`). 428: an input only this
-    case needs is missing. 404: not found, or a Workspace the caller is not a member of. A handler
+    case needs is missing. 402: a capability the Instance's License does not include. 404: not found, or a Workspace the caller is not a member of. A handler
     returns the module's error; the server's error handler turns it into the problem, so no handler
     writes the same mapping again.
     Every access decision is a Permission (ADR 0061): no code, server or client, decides access by

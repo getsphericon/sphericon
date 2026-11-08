@@ -63,6 +63,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
@@ -884,6 +885,11 @@ var surfacesPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*oauthclients.Module, error) {
 		return oauthclients.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer, do.MustInvoke[Clock](i)), nil
 	}),
+	// The Audit log the surfaces read (ADR 0022), over the Enterprise Edition's reader: refused as
+	// unlicensed when the License lacks it.
+	do.Lazy(func(i do.Injector) (*auditlog.Log, error) {
+		return auditlog.New(do.MustInvoke[*ee.Edition](i).Audit, do.MustInvoke[*workspaces.Module](i)), nil
+	}),
 	// The tokens whose request names no Workspace yet: a Connection the token endpoint exchanges a
 	// code or a refresh token for, and the Instance's first token, minted by its bootstrap token.
 	do.Lazy(func(i do.Injector) (*apitokens.Module, error) {
@@ -1035,7 +1041,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		SendingDomainDeletion: do.MustInvoke[*sendingdomaindeletion.UseCase](i),
 		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),
 		Tokens:                do.MustInvoke[*apitokens.Module](i),
-		Audit:                 edition.Audit,
+		Audit:                 do.MustInvoke[*auditlog.Log](i),
 		Export:                edition.Export,
 
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
@@ -1045,7 +1051,6 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 // siteDeps is what the /site handlers are built from.
 func siteDeps(i do.Injector) (apisite.Deps, error) {
 	cfg := do.MustInvoke[*config.Config](i)
-	edition := do.MustInvoke[*ee.Edition](i)
 	bus := do.MustInvoke[*events.Bus](i)
 	accountLink, _, err := accountlink.FromConfig(cfg)
 	if err != nil {
@@ -1097,7 +1102,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Sessions:                 do.MustInvoke[*apiauth.Sessions](i),
 		Tracker:                  do.MustInvoke[*messagetoken.Tracker](i),
 		AppURL:                   cfg.AppURL,
-		Audit:                    edition.Audit,
+		Audit:                    do.MustInvoke[*auditlog.Log](i),
 		SecondFactor:             do.MustInvoke[*secondfactors.Module](i),
 		SecondFactorReset:        do.MustInvoke[*secondfactorreset.UseCase](i),
 		WorkspaceCreation:        do.MustInvoke[*workspacecreation.UseCase](i),

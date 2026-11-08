@@ -20,6 +20,8 @@ var errMissing = validation.NotFound("thing not found", i18n.ErrorsContactNotFou
 
 var errForbidden = validation.Forbidden("not allowed", i18n.ErrorsContactNotFound)
 
+var errUnlicensed = validation.Unlicensed("not licensed", i18n.ErrorsContactNotFound)
+
 // errWait is a budget of a module spent for a minute.
 var errWait = &ratelimit.WaitError{Policy: ratelimit.PolicyTestSend, Wait: time.Minute, Limit: 5, At: time.Now()}
 
@@ -67,8 +69,9 @@ func TestEverySurfaceAnswersARefusalAlike(t *testing.T) {
 	}{
 		"a refusal without a code": {errMissing, answer{http.StatusNotFound, "", "contact not found"}},
 		"a refusal with a code":    {errForbidden, answer{http.StatusForbidden, "permission_required", "contact not found"}},
+		"an unlicensed refusal":    {errUnlicensed, answer{http.StatusPaymentRequired, "", "contact not found"}},
 		"a refusal with a wait":    {errWait, answer{http.StatusTooManyRequests, "", "rate limit exceeded, retry later"}},
-		"an answer of a handler":   {&problem.Error{Status: http.StatusPaymentRequired, Detail: "licensed"}, answer{http.StatusPaymentRequired, "", "licensed"}},
+		"an answer of a handler":   {&problem.Error{Status: http.StatusGone, Detail: "expired"}, answer{http.StatusGone, "", "expired"}},
 		"a fault":                  {errors.New("boom"), answer{http.StatusInternalServerError, "", ""}},
 	} {
 		t.Run(name, func(t *testing.T) {

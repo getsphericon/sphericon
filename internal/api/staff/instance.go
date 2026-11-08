@@ -32,7 +32,7 @@ func (h *Handlers) StaffInstanceClearDefaultSendCap(ctx context.Context) (*staff
 
 // StaffInstanceListAuditEntries is a page of the Instance audit log (ADR 0070), newest first.
 func (h *Handlers) StaffInstanceListAuditEntries(ctx context.Context, params staffapi.StaffInstanceListAuditEntriesParams) (*staffapi.StaffInstanceAuditEntryList, error) {
-	cursor, err := auditlog.Page(params.Cursor.Or(""))
+	cursor, err := auditlog.Cursor(params.Cursor.Or(""))
 	if err != nil {
 		return nil, err
 	}

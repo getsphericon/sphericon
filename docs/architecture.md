@@ -635,7 +635,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   verified by `ee/licensekey`; empty = plain core, a bad key fails boot). `ee.New` builds the
   `Edition` (extra event consumers + read seams) in `internal/app` and in `testhelper.Setup`
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
-  (`site.AuditLog`, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
+  (`auditlog.Reader`, which `auditlog.Log` serves the Audit log over and refuses as unlicensed
+  without it, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
   (ent has one schema package) but is written and read only by `ee/domain/insights/auditentries` (the
   Workspace erase deletes a deleted Workspace's entries too, below). An Audit entry is
   an event that is not Projected (`events.Projected`): it has no Event row, automations skip it,
