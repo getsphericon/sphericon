@@ -4,10 +4,9 @@
 version: 1
 
 # The rule parts several components share, merged with `<<` or aliased.
-# A domain module's unchecked removal, or the store of a check's outcome (a Sending domain's DKIM
-# and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
-# here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
-# that may reach the core: `x-core-forbids` (the API surfaces, MCP, the Problem mapping, each
+# A domain module's unchecked removal is reachable only from its use case (ADR 0102): each is one
+# anchored item here, aliased into the forbid_symbol list of every component but `usecase` and
+# `usecase-raw` that may reach the core: `x-core-forbids` (the API surfaces, MCP, the Problem mapping, each
 # context's `domain-<context>`, ee-api, the Enterprise `ee-domain-<context>` and `ee-usecase`),
 # `x-raw-holder-forbids` (the runner, each context's raw-client components and the Enterprise
 # `ee-domain-<context>-raw` and `ee-usecase-raw`); api-auth, ee-edition, testsupport and wiring
@@ -42,12 +41,6 @@ x-unchecked-removals: &unchecked-removals
   - &sendingdomains-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.DeleteIn
     because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which runs the Removal check, the domain's Live use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
-  - &sendingdomains-record-dkim
-    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDKIM
-    because: a Sending domain becomes verified only by a live DKIM lookup (ADR 0010), which the use case internal/usecase/sendingdomainverification runs before it stores the outcome; call the use case
-  - &sendingdomains-record-dmarc
-    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDMARC
-    because: a Sending domain becomes bulk-ready only by a live DMARC lookup (ADR 0012), which the use case internal/usecase/sendingdomainverification runs before it stores the outcome; call the use case
   - &contacts-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
@@ -213,38 +206,23 @@ x-unchecked-removals: &unchecked-removals
   - &outboundmessages-erase-short-links
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseShortLinks
     because: *contact-erase-because
-  - &bindings-erase-subject
-    name: github.com/getsphericon/sphericon/internal/domain/sending/bindings.EraseSubject
-    because: *contact-erase-because
   - &events-erase-subject
     name: github.com/getsphericon/sphericon/internal/infra/events.EraseSubject
     because: *contact-erase-because
   - &visitors-erase-subject
     name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseSubject
     because: *contact-erase-because
-  - &confirmations-erase-contact
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseContact
-    because: *contact-erase-because
-  - &automations-erase-runs
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseRuns
-    because: *contact-erase-because
-  - &rules-erase-firings
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseFirings
+  - &confirmations-erase-number
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseNumber
     because: *contact-erase-because
   - &unsubscribes-erase-sms
     name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseSMS
-    because: *contact-erase-because
-  - &unsubscribes-detach-contact
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.DetachContact
     because: *contact-erase-because
   - &suppressions-erase-contact
     name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseContact
     because: *contact-erase-because
   - &outboundmessages-anonymize-contact
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeContact
-    because: *contact-erase-because
-  - &broadcasts-detach-recipients
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.DetachRecipients
     because: *contact-erase-because
   - &outboundmessages-anonymize-destinations
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeDestinations
@@ -278,8 +256,6 @@ x-core-forbids: &core-forbids
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
-  - *sendingdomains-record-dkim
-  - *sendingdomains-record-dmarc
   - *contacts-delete-in
   - *users-move-second-factor-in
   - *recoverycodes-replace-in
@@ -335,17 +311,12 @@ x-core-forbids: &core-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - &auditentries-erase-audit-entries-in
@@ -396,8 +367,6 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
-  - *sendingdomains-record-dkim
-  - *sendingdomains-record-dmarc
   - *contacts-delete-in
   - *users-move-second-factor-in
   - *recoverycodes-replace-in
@@ -453,17 +422,12 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in
@@ -488,8 +452,6 @@ x-runner-forbids: &runner-forbids
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
-  - *sendingdomains-record-dkim
-  - *sendingdomains-record-dmarc
   - *contacts-delete-in
   - *users-move-second-factor-in
   - *recoverycodes-replace-in
@@ -545,17 +507,12 @@ x-runner-forbids: &runner-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in
@@ -577,8 +534,6 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
-  - *sendingdomains-record-dkim
-  - *sendingdomains-record-dmarc
   - *contacts-delete-in
   - *users-move-second-factor-in
   - *recoverycodes-replace-in
@@ -634,17 +589,12 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in

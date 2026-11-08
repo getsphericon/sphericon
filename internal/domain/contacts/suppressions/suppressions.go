@@ -216,11 +216,12 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 }
 
 // EraseContact is the Suppression part of the Contact's Erasure: its lifted rows are
-// deleted, since a lifted one refuses nothing any more, and its active rows only lose the
-// Contact reference, because they are keyed by destination and keep refusing the address.
-// On sms a number leaves only its hash (ADR 0021): the rows of the Contact's phone, number ("" when
-// it has none), count as its own, and an active one keeps refusing by phone.Hash of the number. A
-// hashed one already standing (a person erased before with the number) makes it redundant.
+// deleted, since a lifted one refuses nothing any more. Its active rows stay, because they are
+// keyed by destination and keep refusing the address; they lose the Contact reference when the
+// Contact row goes, whose foreign key sets it null. On sms a number leaves only its hash
+// (ADR 0021): the rows of the Contact's phone, number ("" when it has none), count as its own,
+// and an active one keeps refusing by phone.Hash of the number. A hashed one already standing (a
+// person erased before with the number) makes it redundant.
 func EraseContact(ctx context.Context, s *ent.Scoped, contactID int64, number string) error {
 	mine := entsuppression.ContactID(contactID)
 	if number != "" {
@@ -230,11 +231,7 @@ func EraseContact(ctx context.Context, s *ent.Scoped, contactID int64, number st
 	if _, err := s.Suppression().Delete().Where(mine, entsuppression.LiftedAtNotNil()).Exec(ctx); err != nil {
 		return err
 	}
-	if err := hashNumbers(ctx, s, mine); err != nil {
-		return err
-	}
-	_, err := s.Suppression().Update().Where(entsuppression.ContactID(contactID)).ClearContactID().Save(ctx)
-	return err
+	return hashNumbers(ctx, s, mine)
 }
 
 // hashNumbers rekeys the active sms Suppressions mine matches by the hash of their number.

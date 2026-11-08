@@ -58,7 +58,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
@@ -100,33 +99,32 @@ type Handlers struct {
 	tagDeletion     *tagdeletion.UseCase
 	// customFieldRetyping is the use case behind editing a Custom field.
 	customFieldRetyping *customfieldretyping.UseCase
-	// integrationDeletion, sendingDomainDeletion and sendingDomainVerification are the use cases behind
-	// deleting an Integration or a Sending domain and verifying one.
-	integrationDeletion       *integrationdeletion.UseCase
-	sendingDomainDeletion     *sendingdomaindeletion.UseCase
-	sendingDomainVerification *sendingdomainverification.UseCase
-	bindings                  *bindings.Module
-	templates                 *emailtemplates.Module
-	brandKit                  *brandkits.Module
-	automations               *automations.Module
-	rules                     *rules.Module
-	oauth                     *oauthclients.Module
-	audit                     AuditLog
-	attention                 *needsattentionreport.UseCase
-	setupChecklist            *setupchecklist.Module
-	supportEmail              string
-	analytics                 *analyticsreport.UseCase
-	sessions                  *auth.Sessions
-	secondFactor              *secondfactorcheck.UseCase
-	workspaceCreation         *workspacecreation.UseCase
-	signUp                    *signup.UseCase
-	passkeys                  *passkeys.Module
-	now                       func() time.Time
-	accountLink               *accountlink.Link
-	migrations                Migrations
-	instance                  *instancestates.Module
-	holds                     *holds.Holds
-	origins                   Origins
+	// integrationDeletion and sendingDomainDeletion are the use cases behind deleting an Integration
+	// or a Sending domain.
+	integrationDeletion   *integrationdeletion.UseCase
+	sendingDomainDeletion *sendingdomaindeletion.UseCase
+	bindings              *bindings.Module
+	templates             *emailtemplates.Module
+	brandKit              *brandkits.Module
+	automations           *automations.Module
+	rules                 *rules.Module
+	oauth                 *oauthclients.Module
+	audit                 AuditLog
+	attention             *needsattentionreport.UseCase
+	setupChecklist        *setupchecklist.Module
+	supportEmail          string
+	analytics             *analyticsreport.UseCase
+	sessions              *auth.Sessions
+	secondFactor          *secondfactorcheck.UseCase
+	workspaceCreation     *workspacecreation.UseCase
+	signUp                *signup.UseCase
+	passkeys              *passkeys.Module
+	now                   func() time.Time
+	accountLink           *accountlink.Link
+	migrations            Migrations
+	instance              *instancestates.Module
+	holds                 *holds.Holds
+	origins               Origins
 	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
 	// not required in selfhosted (ADR 0060).
 	requireVerification bool
@@ -214,11 +212,10 @@ type Deps struct {
 	TrackingDomains     *trackingdomains.Module
 	JoinDomains         *joindomains.Module
 	Integrations        *integrations.Module
-	// IntegrationDeletion, SendingDomainDeletion and SendingDomainVerification are the use cases behind
-	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
-	IntegrationDeletion       *integrationdeletion.UseCase
-	SendingDomainDeletion     *sendingdomaindeletion.UseCase
-	SendingDomainVerification *sendingdomainverification.UseCase
+	// IntegrationDeletion and SendingDomainDeletion are the use cases behind deleting an Integration
+	// or a Sending domain (ADR 0102).
+	IntegrationDeletion   *integrationdeletion.UseCase
+	SendingDomainDeletion *sendingdomaindeletion.UseCase
 	// CapturedMessages is the store of what the Workspace's Test inbox kept.
 	CapturedMessages *capturedmessages.Module
 	Tokens           *authtoken.Signer
@@ -292,7 +289,7 @@ func NewHandlers(d *Deps) *Handlers {
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts,
-		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
+		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,

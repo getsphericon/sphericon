@@ -16,7 +16,7 @@ import (
 func TestCreateRefusesADomainTheWorkspaceKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := sendingdomains.New(env.Bus, env.Cipher, time.Now).
+	_, err := sendingdomains.New(env.Bus, env.Cipher, nil, time.Now).
 		Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), sendingdomains.CreateInput{Domain: fixtures.SendingDomainLaunchDomain})
 
 	require.ErrorIs(t, err, sendingdomains.ErrAlreadyExists)
