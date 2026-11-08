@@ -304,11 +304,33 @@ export function graphToSteps(graph: AutomationGraph): {
   steps: AutomationStep[]
   dropped: number
 } {
+  const ordered = linearGraphNodes(graph)
+  const [root] = ordered
+  if (!root) {
+    return { triggerEvent: null, exitEvents: [], goalEvent: null, steps: [], dropped: 0 }
+  }
+  const steps = ordered.flatMap((node) => {
+    const step = nodeToStep(node)
+    return step ? [step] : []
+  })
+  const goalEvent = asText(root.data.properties.goalEvent).trim()
+  return {
+    triggerEvent: asText(root.data.properties.triggerEvent),
+    exitEvents: exitEventsOf(asText(root.data.properties.exitEvents)),
+    goalEvent: goalEvent === '' ? null : goalEvent,
+    steps,
+    dropped: graph.nodes.length - ordered.length,
+  }
+}
+
+// The canvas order is its edges, not the order in which nodes were created. Save uses this same
+// walk to attach server-assigned HTTP step identities to the submitted canvas nodes.
+export function linearGraphNodes(graph: AutomationGraph): WorkflowBuilderNode[] {
   const { nodes, edges } = graph
   const triggers = nodes.filter((n) => n.data.type === TRIGGER_NODE_TYPE)
   const [root] = triggers
   if (triggers.length !== 1 || !root) {
-    return { triggerEvent: null, exitEvents: [], goalEvent: null, steps: [], dropped: 0 }
+    return []
   }
 
   const byId = new Map(nodes.map((n) => [n.id, n]))
@@ -319,25 +341,17 @@ export function graphToSteps(graph: AutomationGraph): {
     }
   }
 
-  const steps: AutomationStep[] = []
+  const ordered: WorkflowBuilderNode[] = []
   const visited = new Set<string>()
   let current: string | undefined = root.id
   while (current && !visited.has(current)) {
     visited.add(current)
     const node = byId.get(current)
-    const step = node ? nodeToStep(node) : null
-    if (step) {
-      steps.push(step)
+    if (node) {
+      ordered.push(node)
     }
     current = next.get(current)
   }
 
-  const goalEvent = asText(root.data.properties.goalEvent).trim()
-  return {
-    triggerEvent: asText(root.data.properties.triggerEvent),
-    exitEvents: exitEventsOf(asText(root.data.properties.exitEvents)),
-    goalEvent: goalEvent === '' ? null : goalEvent,
-    steps,
-    dropped: nodes.length - visited.size,
-  }
+  return ordered
 }

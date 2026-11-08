@@ -1,3 +1,4 @@
+import { Fieldset } from '@mantine/core'
 import { formatIs, rankWith, withJsonFormsControlProps } from '@workflowbuilder/sdk'
 import type { ControlProps, JsonFormsRendererExtension } from '@workflowbuilder/sdk'
 import { createElement } from 'react'
@@ -15,6 +16,14 @@ export function appRenderer(
   control: ComponentType<ControlProps>,
 ): JsonFormsRendererExtension {
   const inApp = (props: ControlProps) =>
-    createElement(I18nextProvider, { i18n }, createElement(control, props))
+    createElement(
+      I18nextProvider,
+      { i18n },
+      createElement(
+        Fieldset,
+        { disabled: !props.enabled, variant: 'unstyled' },
+        createElement(control, props),
+      ),
+    )
   return { tester: rankWith(100, formatIs(format)), renderer: withJsonFormsControlProps(inApp) }
 }

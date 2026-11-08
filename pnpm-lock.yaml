@@ -12,6 +12,9 @@ overrides:
   glob: '>=14.0.2'
   minimatch: '>=11.0.1'
 
+patchedDependencies:
+  '@workflowbuilder/sdk@3.0.0': 03f5d7d6efab71694360b8c8eff852e9d3175674b93be4354b7b6dfbc0098012
+
 importers:
 
   .:
@@ -78,7 +81,7 @@ importers:
         version: 3.32.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.2(@tiptap/pm@3.32.2))(@tiptap/pm@3.32.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@workflowbuilder/sdk':
         specifier: ^3.0.0
-        version: 3.0.0(@types/react@19.3.0)(@xyflow/react@12.12.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(class-variance-authority@0.7.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwind-merge@3.7.0)(typescript@7.0.2)(zustand@5.0.16(@types/react@19.3.0)(immer@11.2.9)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))
+        version: 3.0.0(patch_hash=03f5d7d6efab71694360b8c8eff852e9d3175674b93be4354b7b6dfbc0098012)(@types/react@19.3.0)(@xyflow/react@12.12.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(class-variance-authority@0.7.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwind-merge@3.7.0)(typescript@7.0.2)(zustand@5.0.16(@types/react@19.3.0)(immer@11.2.9)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))
       '@xstate/react':
         specifier: ^6.1.0
         version: 6.1.0(@types/react@19.3.0)(react@19.3.1)(xstate@5.33.4)
@@ -7468,7 +7471,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.2.0
 
-  '@workflowbuilder/sdk@3.0.0(@types/react@19.3.0)(@xyflow/react@12.12.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(class-variance-authority@0.7.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwind-merge@3.7.0)(typescript@7.0.2)(zustand@5.0.16(@types/react@19.3.0)(immer@11.2.9)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))':
+  '@workflowbuilder/sdk@3.0.0(patch_hash=03f5d7d6efab71694360b8c8eff852e9d3175674b93be4354b7b6dfbc0098012)(@types/react@19.3.0)(@xyflow/react@12.12.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(immer@11.2.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(class-variance-authority@0.7.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwind-merge@3.7.0)(typescript@7.0.2)(zustand@5.0.16(@types/react@19.3.0)(immer@11.2.9)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))':
     dependencies:
       '@base-ui/react': 1.7.0(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@cfworker/json-schema': 4.1.1

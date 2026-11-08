@@ -39,7 +39,7 @@ import { i18n } from '../../i18n.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
-import { automationSubmission, editorSession } from './editorSession.ts'
+import { applyHttpIdentities, automationSubmission, editorSession } from './editorSession.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { httpBodyRenderer, httpHeadersRenderer } from './httpRenderer.ts'
 import {
@@ -273,7 +273,13 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
   }, [send, automation])
 
   useEffect(() => {
-    const accepted = actor.on('accepted', ({ operation, resource }) => {
+    const accepted = actor.on('accepted', ({ operation, resource, identities }) => {
+      // Reconcile identity only, against the submitted node ID. Newer fields, positions and
+      // edges stay as edited; a node deleted or replaced while saving is left alone.
+      if (identities?.length) {
+        const store = useStore.getState()
+        useStore.setState({ nodes: applyHttpIdentities(store.nodes, identities) })
+      }
       const queryKey = siteAutomationsGetQueryKey({ path: { workspaceId, id: resource.id } })
       // The write's response is authoritative. Cancel an older GET before replacing its cache;
       // background list reconciliation neither delays acknowledgement nor reloads the canvas.
@@ -354,8 +360,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
     [actor, form, notify, t],
   )
 
-  // Custom layouts can call the SDK's imperative save action. It shares the toolbar's protocol;
-  // the SDK's props adapter itself still treats every resolved status string as success.
+  // The SDK's imperative save action shares the toolbar's captured submission and exclusivity.
   const onDataSave = useCallback<OnSaveExternal>(
     async (data: IntegrationDataFormat) => saveGraph({ nodes: data.nodes, edges: data.edges }),
     [saveGraph],

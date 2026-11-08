@@ -1,0 +1,78 @@
+diff --git a/dist/index-DU6Akeew.js b/dist/index-DU6Akeew.js
+index 0059a27738a194fa7f490beb3a67ed1a632504b2..990238202b7c8a7378fa0fe413c0f0029cfbc370 100644
+--- a/dist/index-DU6Akeew.js
++++ b/dist/index-DU6Akeew.js
+@@ -16621,12 +16621,21 @@ const Xr = hn({
+   onSave: async () => (console.error("Missing onSave callback in the context."), "error")
+ });
+ function Ux({ onSave: e, children: n }) {
++  const lifetimeRef = we({ active: false });
++  He(() => {
++    const lifetime = { active: true };
++    lifetimeRef.current = lifetime;
++    return () => { lifetime.active = false; };
++  }, []);
+   const t = E(
+     async (a) => {
++      const lifetime = lifetimeRef.current;
++      if (!lifetime.active) return "error";
+       if (Yx() === "saving")
+         return "alreadyStarted";
+       La("saving");
+       const s = await e(a);
++      if (!lifetime.active) return s;
+       return s === "success" ? (La("saved"), a != null && a.isAutoSave || ht("manualSave")) : La(a != null && a.isAutoSave ? "waiting" : "notSaved"), s;
+     },
+     [e]
+@@ -19255,6 +19264,12 @@ function mM({
+   edges: l,
+   children: c
+ }) {
++  const lifetimeRef = we({ active: false });
++  He(() => {
++    const lifetime = { active: true };
++    lifetimeRef.current = lifetime;
++    return () => { lifetime.active = false; };
++  }, []);
+   const [{ name: d, globalVariables: m, layoutDirection: p, nodes: f, edges: h }, g] = Q(
+     () => ({
+       name: r,
+@@ -19291,12 +19306,14 @@ function mM({
+   }, []);
+   const y = E(
+     async (b) => {
++      const lifetime = lifetimeRef.current;
++      if (!lifetime.active) return "error";
+       const w = od();
+       if (e === "localStorage")
+         try {
+           return localStorage.setItem(Fl, JSON.stringify(w)), new Promise((z) => {
+             setTimeout(() => {
+-              Ha(b), z("success");
++              lifetime.active && Ha(b), z("success");
+             }, 800);
+           });
+         } catch {
+@@ -19308,16 +19325,18 @@ function mM({
+             method: "POST",
+             headers: { "Content-Type": "application/json" }
+           })).ok)
+-            return Ha(b), "success";
++            return lifetime.active && Ha(b), "success";
+         } catch {
+         }
+       else if (e === "props" && t)
+         try {
+-          if (await t(w, b))
+-            return Ha(b), "success";
++          const status = await t(w, b);
++          if (status === "alreadyStarted") return status;
++          if (status === "success")
++            return lifetime.active && Ha(b), "success";
+         } catch {
+         }
+-      return dM(b), "error";
++      return lifetime.active && dM(b), "error";
+     },
+     [e, n == null ? void 0 : n.save, t]
+   );

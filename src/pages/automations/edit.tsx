@@ -47,7 +47,7 @@ function AutomationEdit() {
 
   return (
     <AutomationBuilder
-      key={automation.id}
+      key={`${workspaceId}:${automation.id}`}
       workspaceId={workspaceId}
       automation={automation}
       edited={edited}

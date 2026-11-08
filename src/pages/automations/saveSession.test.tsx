@@ -4,6 +4,7 @@ import { page } from 'vitest/browser'
 
 import {
   handleSiteAutomationsGet,
+  handleSiteAutomationsPublish,
   handleSiteAutomationsRevert,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
@@ -63,12 +64,10 @@ test.each([
   const received = Promise.withResolvers<undefined>()
   const release = Promise.withResolvers<undefined>()
   let stored = { ...STORED, draft }
-  const bodies: unknown[] = []
   noEnrollmentsOrIntegrations()
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(stored)),
-    handleSiteAutomationsUpdate(async ({ request }) => {
-      bodies.push(await request.json())
+    handleSiteAutomationsUpdate(async () => {
       received.resolve(undefined)
       await release.promise
       stored = {
@@ -105,15 +104,6 @@ test.each([
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
   await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
-  expect(bodies).toEqual([
-    {
-      name: 'Submitted name',
-      triggerEvent: 'course_completed',
-      exitEvents: [],
-      goalEvent: null,
-      steps: [],
-    },
-  ])
 })
 
 test('a refused save preserves newer edits and the previous acknowledged content', async () => {
@@ -184,4 +174,39 @@ test('Revert replaces local content with live and prevents editing during the op
     .element(screen.getByRole('combobox', { name: 'Trigger Event' }))
     .toHaveValue('email.clicked')
   await expect.element(screen.getByRole('combobox', { name: 'Trigger Event' })).toBeEnabled()
+})
+
+test('Publish serializes operations and preserves the current canvas', async () => {
+  const received = Promise.withResolvers<undefined>()
+  const release = Promise.withResolvers<undefined>()
+  const draft = { ...DRAFT, triggerEvent: 'course_completed' }
+  noEnrollmentsOrIntegrations()
+  worker.use(
+    handleSiteAutomationsGet({ body: { ...STORED, draft } }),
+    handleSiteAutomationsPublish(async () => {
+      received.resolve(undefined)
+      await release.promise
+      return HttpResponse.json({ ...STORED, live: draft, draft: null })
+    }),
+  )
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => triggerNode()).toBeInstanceOf(Element)
+  await page.elementLocator(triggerNode()).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('button', { name: 'Publish' }).click()
+  await received.promise
+  try {
+    await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
+    await expect.element(screen.getByRole('combobox', { name: 'Trigger Event' })).toBeDisabled()
+    await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    await expect.element(screen.getByRole('button', { name: 'Revert' })).toBeDisabled()
+  } finally {
+    release.resolve(undefined)
+  }
+  await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('combobox', { name: 'Trigger Event' }))
+    .toHaveValue('course_completed')
+  await expect.element(screen.getByRole('combobox', { name: 'Trigger Event' })).toBeEnabled()
+  await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
 })

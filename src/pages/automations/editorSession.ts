@@ -10,14 +10,16 @@ import type {
   SiteAutomationResource,
   SiteAutomationsUpdateData,
 } from '../../generated/site/types.gen.ts'
-import { graphToSteps, stepsToGraph } from './definition.ts'
+import { graphToSteps, linearGraphNodes, stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
+import { HTTP_NODE_TYPE } from './nodes.ts'
 
 type Operation = 'save' | 'publish' | 'revert'
 type Path = SiteAutomationsUpdateData['path']
 interface Submission {
-  body: SiteAutomationsUpdateData['body']
+  body: SiteAutomationsUpdateData['body'] & { name: string }
+  graph: AutomationGraph
   fingerprint: string
   dropped: number
 }
@@ -25,14 +27,71 @@ interface Submission {
 // Capture the persisted representation before any asynchronous work. SDK graph data can contain
 // nested references; neither a later edit nor a query refresh may change this request or its receipt.
 export function automationSubmission(name: string, graph: AutomationGraph): Submission | null {
-  const { dropped, triggerEvent, ...definition } = graphToSteps(graph)
+  const captured = {
+    nodes: graph.nodes.map((node) => ({
+      ...node,
+      data: { ...node.data, properties: structuredClone(node.data.properties) },
+    })),
+    edges: graph.edges.map((edge) => ({ ...edge })),
+  }
+  const { dropped, triggerEvent, ...definition } = graphToSteps(captured)
   if (triggerEvent === null) {
     return null
   }
   return {
     body: structuredClone({ name: name.trim(), triggerEvent, ...definition }),
-    fingerprint: automationSnapshot(name, graph),
+    graph: captured,
+    fingerprint: automationSnapshot(name, captured),
     dropped,
+  }
+}
+
+interface HttpIdentity {
+  nodeId: string
+  previous: unknown
+  assigned: string
+}
+
+// A receipt can enrich still-present submitted nodes, never a replacement node or editable data.
+export function applyHttpIdentities(nodes: AutomationGraph['nodes'], identities: HttpIdentity[]) {
+  const byNode = new Map(identities.map((identity) => [identity.nodeId, identity]))
+  return nodes.map((node) => {
+    const identity = byNode.get(node.id)
+    if (
+      !identity ||
+      node.data.type !== HTTP_NODE_TYPE ||
+      node.data.properties.stepId !== identity.previous
+    ) {
+      return node
+    }
+    return {
+      ...node,
+      data: { ...node.data, properties: { ...node.data.properties, stepId: identity.assigned } },
+    }
+  })
+}
+
+function acknowledge(submission: Submission, resource: SiteAutomationResource) {
+  const version = resource.draft ?? resource.live
+  const httpSteps = version?.steps.filter((step) => step.type === 'http') ?? []
+  const httpNodes = linearGraphNodes(submission.graph).filter(
+    (node) => node.data.type === HTTP_NODE_TYPE,
+  )
+  const identities = httpNodes.flatMap((node, index): HttpIdentity[] => {
+    const assigned = httpSteps[index]?.id
+    return assigned ? [{ nodeId: node.id, previous: node.data.properties.stepId, assigned }] : []
+  })
+  const graph = {
+    ...submission.graph,
+    nodes: applyHttpIdentities(submission.graph.nodes, identities),
+  }
+  return {
+    resource,
+    fingerprint:
+      identities.length === 0
+        ? submission.fingerprint
+        : automationSnapshot(submission.body.name, graph),
+    identities,
   }
 }
 
@@ -53,7 +112,12 @@ type SessionEvent =
   | { type: 'REVERT' }
   | { type: 'REFRESH'; resource: SiteAutomationResource }
 type SessionNotice =
-  | { type: 'accepted'; operation: Operation; resource: SiteAutomationResource }
+  | {
+      type: 'accepted'
+      operation: Operation
+      resource: SiteAutomationResource
+      identities?: HttpIdentity[]
+    }
   | { type: 'failed'; operation: Operation; error: unknown }
 
 const types: {
@@ -82,7 +146,7 @@ export const editorSession = setup({
           signal,
           throwOnError: true,
         })
-        return { resource: data, fingerprint: input.submission.fingerprint }
+        return acknowledge(input.submission, data)
       },
     ),
     publish: fromPromise(async ({ input, signal }: { input: Path; signal: AbortSignal }) => {
@@ -146,6 +210,7 @@ export const editorSession = setup({
               type: 'accepted',
               operation: 'save',
               resource: event.output.resource,
+              identities: event.output.identities,
             })),
           ],
         },
