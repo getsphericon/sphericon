@@ -18,8 +18,7 @@ version: 1
 # `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
 # So do the Second factor's writes that skip its checks (the User's factor, the Recovery codes, all
-# Passkeys of a User), the issue of an OAuth grant's credentials (the Connection, a refresh token),
-# the moves of a Workspace's deletion cycle with each owner's erase of its rows, the creation of a
+# Passkeys of a User), the moves of a Workspace's deletion cycle with each owner's erase of its rows, the creation of a
 # Workspace with its creator's Membership, and each owner's step of a Contact's Erasure (the Contact
 # row, contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
 # publisher (events.PurgingPublisher), which a name cannot forbid. The Enterprise Edition's erase
@@ -56,15 +55,6 @@ x-unchecked-removals: &unchecked-removals
   - &passkeys-delete-all-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
     because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorcheck checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
-  - &apitokens-issue-connection
-    name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.IssueConnection
-    because: a Connection is issued only for an authorization code whose PKCE verifier the use case internal/usecase/connectionissuance has checked and claimed (ADR 0016, ADR 0061, ADR 0102); call the use case
-  - &apitokens-rotate-connection
-    name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.RotateConnection
-    because: a Connection rotates only for a refresh token the use case internal/usecase/connectionissuance has checked and claimed (ADR 0016, ADR 0102); call the use case
-  - &oauthclients-new-refresh-token-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.NewRefreshTokenIn
-    because: a refresh token is issued only with the Connection of a checked and claimed grant, by the use case internal/usecase/connectionissuance (ADR 0016, ADR 0102); call the use case
   - &workspaces-discard-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.DiscardIn
     because: a Workspace is deleted only by the use case internal/usecase/workspacedeletion, which checks the typed name first and records the deletion (ADR 0043, ADR 0102); call the use case
@@ -262,9 +252,6 @@ x-core-forbids: &core-forbids
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
-  - *apitokens-issue-connection
-  - *apitokens-rotate-connection
-  - *oauthclients-new-refresh-token-in
   - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
@@ -373,9 +360,6 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
-  - *apitokens-issue-connection
-  - *apitokens-rotate-connection
-  - *oauthclients-new-refresh-token-in
   - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
@@ -458,9 +442,6 @@ x-runner-forbids: &runner-forbids
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
-  - *apitokens-issue-connection
-  - *apitokens-rotate-connection
-  - *oauthclients-new-refresh-token-in
   - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
@@ -540,9 +521,6 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
-  - *apitokens-issue-connection
-  - *apitokens-rotate-connection
-  - *oauthclients-new-refresh-token-in
   - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
@@ -803,18 +781,16 @@ components:
     allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
-  # *ent.Scoped to take: the Second factor of a User, the exchange of an OAuth code or refresh
-  # token, a secret that names its grant, the deletion cycle of a Workspace, which lists the
-  # Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the steps
-  # that make a User Verified with its first one, and Notice delivery, which reads a User or a
-  # Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
+  # *ent.Scoped to take: the Second factor of a User, the deletion cycle of a Workspace, which
+  # lists the Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the
+  # steps that make a User Verified with its first one, and Notice delivery, which reads a User or
+  # a Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
   # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
   usecase-raw:
     in:
       [
         'internal/usecase/secondfactorcheck*',
-        'internal/usecase/connectionissuance*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/workspacecreation*',
         'internal/usecase/signup*',
@@ -839,7 +815,8 @@ components:
   # doc's narrower grants (`capturedmessages` only `Purge`, `automations` only `FenceOn`,
   # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and
   # `SecretSweeps`, `integrations`, `webhookendpoints`, `rules`, `automations`, `users` and
-  # `staffmembers` only their `SecretSweeps` for the re-encryption) are left to review. The composition roots, `internal/api/auth`
+  # `staffmembers` only their `SecretSweeps` for the re-encryption, `apitokens` only the token
+  # endpoint's exchange of a code or a refresh token) are left to review. The composition roots, `internal/api/auth`
   # and the job runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`,
   # which do not forbid the client.
   #
@@ -861,6 +838,7 @@ components:
   domain-identity-raw:
     in:
       [
+        internal/domain/identity/apitokens,
         internal/domain/identity/consentrecords,
         internal/domain/identity/invitations,
         internal/domain/identity/joindomains,
@@ -1068,7 +1046,7 @@ rules:
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,
-        domain-identity,
+        domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
         domain-contacts,
@@ -1101,16 +1079,16 @@ rules:
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-oauth:
     forbid_symbol: *core-forbids
-    may_depend_on: [domain-identity-raw, usecase-raw]
+    may_depend_on: [domain-identity-raw]
     forbid_external: *no-container
-    because: the OAuth server reads and registers OAuth clients through their module and exchanges a grant through its use case, never through another surface
+    because: the OAuth server reads and registers OAuth clients through their module and exchanges a grant for a Connection through the API tokens module, never through another surface
   mcp:
     forbid_symbol: *core-forbids
-    may_depend_on: [api-auth, api-problem, domain-identity, gen-surfaces]
+    may_depend_on: [api-auth, api-problem, domain-identity-raw, gen-surfaces]
     forbid_external: *no-container
     because: MCP projects the external API's operations as tools over the shared auth handlers and the Problem mapping, never over another surface's handlers
   api-auth:
-    may_depend_on: [domain-identity, domain-identity-users, domain-identity-base, gen-surfaces]
+    may_depend_on: [domain-identity-raw, domain-identity-users, domain-identity-base, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the security handlers sit below every surface
@@ -1279,7 +1257,7 @@ rules:
     forbid_symbol: *raw-holder-forbids
     because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
   domain-identity:
-    may_depend_on: [domain-identity-users, domain-identity-base]
+    may_depend_on: [domain-identity-users]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *core-forbids

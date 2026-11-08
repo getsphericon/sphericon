@@ -160,10 +160,10 @@ coding standards in `CODING_STANDARDS.md`.
   context's reason. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
   Memberships (`domain-identity-base`, which imports no other domain module: every module may read a
   Workspace, ask a Permission or tell the Owners something), the Users (`domain-identity-users`, the
-  one caller of `memberships.LeaveDoomedWorkspaceIn`), the raw-client holders `consentrecords`,
+  one caller of `memberships.LeaveDoomedWorkspaceIn`), the raw-client holders `apitokens`, `consentrecords`,
   `invitations`, `joindomains`, `oauthclients`, `passkeys`, `recoverycodes`, `signupitems`,
   `signupsurveyresponses`, `staffmembers`, `suspension`, `usertombstones` and `workspacefeed`
-  (`domain-identity-raw`), and `apitokens`, `login`, `signinprovider` and `accountlink` (`domain-identity`).
+  (`domain-identity-raw`), and `login`, `signinprovider` and `accountlink` (`domain-identity`).
   An identity module imports no module of another context: not `providerlimit`, not `contacts`.
   Contacts, above it, is one component (`domain-contacts`, the glob of
   `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
@@ -284,8 +284,7 @@ coding standards in `CODING_STANDARDS.md`.
   for the Ingest hook), lets only the drivers and the wiring import one (`allow_importers`)
   and forbids it the raw client. The exception is a use case whose rows belong to no Workspace
   when it starts, so there is no `*ent.Scoped` to take: the Second factor of a User
-  (`internal/usecase/secondfactorcheck`) and the exchange of an OAuth code or refresh token, a
-  secret that names its grant (`internal/usecase/connectionissuance`). Such a use case holds the
+  (`internal/usecase/secondfactorcheck`). Such a use case holds the
   raw client, opens the raw transaction its modules' `...In(ctx, tx, ...)` functions join and is
   in the closed list of "Workspace scoping"; easement holds it as the `usecase-raw` component,
   one pattern per use case (`internal/usecase/secondfactorcheck*`), isolated like the others.
@@ -318,9 +317,8 @@ coding standards in `CODING_STANDARDS.md`.
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The Second factor's writes that skip its checks (the User's
-  `users.MoveSecondFactorIn`, `recoverycodes.ReplaceIn` and `DeleteIn`, `passkeys.DeleteAllIn`) and the
-  issue of a grant's credentials (`apitokens.IssueConnection` and `RotateConnection`,
-  `oauthclients.NewRefreshTokenIn`), the moves of a Workspace's deletion cycle
+  `users.MoveSecondFactorIn`, `recoverycodes.ReplaceIn` and `DeleteIn`, `passkeys.DeleteAllIn`), the
+  moves of a Workspace's deletion cycle
   (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the core removals of its erase (each
   `Erase…In` of a Workspace-owned table, one shared reason, and `oauthclients.DeleteCodesIn`; the
   Edition's three are in every list but `x-unchecked-removals`, since the wiring and the Edition, which
@@ -493,11 +491,11 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
      (`workspaces.Module.LinkScope`, which the unsubscribe page and the confirmation page build
      the scope with; the one-click POST in `internal/server/tracking.go` scopes with the raw
      client), `workspaces.Module.BootstrapScope` (the bootstrap token), and the token
-     endpoint of the OAuth server (`internal/api/oauth`, over the use case
-     `internal/usecase/connectionissuance`), where an authorization
-     code or a refresh token names its grant: the use case loads the row through
-     `internal/domain/identity/oauthclients` and scopes the Connection's writes (`apitokens.IssueConnection`,
-     `RotateConnection`, `RevokeGrant`) to the Workspace that row names;
+     endpoint of the OAuth server (`internal/api/oauth`, over `apitokens.Module.ExchangeCode` and
+     `Refresh`), where an authorization code or a refresh token names its grant: `apitokens`
+     claims the code through `oauthclients.ClaimCodeIn`, which checks the client, the redirect URI
+     and the PKCE verifier first, or reads its own refresh token, and scopes the Connection's
+     writes to the Workspace that row names;
   7. the platform Staff member (ADR 0026): `ee/domain/insights/workspaceoversight` scopes over the one Workspace the console
      is looking at, in three reads, each after the Workspace row is loaded and each through
      the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
@@ -525,14 +523,16 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   scope names, and the command line resolves a Workspace id), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
   the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
   several Workspaces), `internal/api/auth` (credentials, token and key lookup),
-  `internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes and refresh tokens,
+  `internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes,
   ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is
-  looked up by its secret before any scope exists), `internal/domain/identity/passkeys` and `internal/domain/identity/recoverycodes`
+  looked up by its secret before any scope exists), `internal/domain/identity/apitokens` (only the
+  token endpoint's exchange of a code or a refresh token, ADR 0110: a Connection's refresh tokens
+  are its own, and a code or a refresh token is looked up by its secret before any scope exists;
+  every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/recoverycodes`
   (a User's Passkeys and Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
   Workspace), the use cases `internal/usecase/secondfactorcheck` (a User's TOTP Second
   factor, ADR 0020: one transaction across the User, the Recovery codes and the Passkeys, none of
-  which a Workspace owns), `internal/usecase/connectionissuance` (the token endpoint's
-  exchange of a code or a refresh token, a secret that names its grant, see list item 6),
+  which a Workspace owns),
   `internal/usecase/workspacecreation` (a Workspace with its Owner Membership, ADR 0043: no Workspace
   exists yet), `internal/usecase/signup` (the steps that make a User Verified with its first
   Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/noticedelivery` (the Notices of
