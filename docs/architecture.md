@@ -92,12 +92,14 @@ coding standards in `CODING_STANDARDS.md`.
   nor the container, and only the Edition (`ee/ee.go`, component `ee-edition`) builds them: no
   Enterprise module imports a handler (see "Enterprise Edition layout" below). The drivers (ADR 0102) are the API surfaces, their shared security
   handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), MCP (`internal/mcpserver`,
-  component `mcp`, with the surfaces' rules) and the job runner (`internal/jobs`, component `runner`):
+  component `mcp`, with the surfaces' rules), the job runner (`internal/jobs`, component `runner`)
+  and the Enterprise job runner (`ee/jobs`, component `ee-runner`, with the runner's rules, ADR 0111):
   each receives input, calls a domain module or a use case and returns or records the result (review
-  rule 5), and no core tier imports one. Only the wiring imports MCP and the runner, and the Edition hands its jobs in as a
-  `jobextension.Extension` (`ee/jobs.go`). A domain module or a use case does the work as a function
-  and may queue a job (its args, river's insert), but declares no worker and no periodic job: the
-  runner or the Edition calls the function, and easement forbids river's `WorkerDefaults`,
+  rule 5), and no core tier imports one. Only the wiring imports MCP and the runners, and it hands the
+  Enterprise runner's jobs to the core's job client as a `jobextension.Extension`; the Edition
+  (`ee/ee.go`) schedules nothing and imports no river. A domain module or a use case does the work as a function
+  and may queue a job (its args, river's insert), but declares no worker and no periodic job: a
+  runner calls the function, and easement forbids river's `WorkerDefaults`,
   `AddWorker` and `NewPeriodicJob` below them. A new wiring package is added to the `wiring` component, never to a
   baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
   packages that import none of ours, such as the vocabulary every tier shares (`channels`,
@@ -114,7 +116,7 @@ coding standards in `CODING_STANDARDS.md`.
   which stays at the root). Every component may import it, and easement fails its import of
   anything of ours but the kernel and the generated ent client: the bus knows no consumer (the
   wiring registers them; the suppression consumer is a job in `internal/jobs`, and the send-outcome
-  counter of a bounce or a complaint is `app.RecordSendOutcome`, registered with `Bus.OnStored`), and
+  counter of a bounce or a complaint is `jobs.RecordSendOutcome`, registered with `Bus.OnStored`), and
   the database package installs no ent hook (`internal/app/entclient` builds every client). No core
   tier (kernel, infrastructure, domain) imports an API surface's generated package (component
   `gen-surfaces`): what the core shares with a contract is generated into the kernel, as the scope
@@ -576,14 +578,14 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   a Workspace the next feed position when it is created or an owner is added, removed,
   transferred or changes email or verification: it must reach the Workspace a User or
   Membership change belongs to; `ee/domain/insights/workspaceoversight` serves the feed in `Module.WorkspaceFeed`), `internal/domain/identity/usertombstones` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/domain/insights/workspaceoversight` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/domain/sending/trackinghostchanges` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/domain/insights/workspaceoversight` serves it in `Module.TrackingHostFeed`), `internal/infra/db` (the guard's read of the schema state row, on a client of its own before the application's exists), `internal/infra/throttle` (the Login throttle and the mail budgets of an address, ADR 0025: an AuthAttempt belongs to an address, not a Workspace, and the purge river job only calls it) and the composition roots
-  (`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
+  (`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above), and the Enterprise job runner `ee/jobs`, which only hands the client the wiring gives it to those packages. Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`. easement holds the core
   domain modules of the list as the raw-client components of their contexts in `easement.yml` (the
   identity modules of the list as `domain-identity-base`, `domain-identity-users` and
   `domain-identity-raw`, the sending modules as `domain-sending-raw`, the orchestration modules as
   `domain-orchestration-raw`, the instance modules as `domain-instance-raw`, see "Domain
-  contexts"); the job runner as its own `runner` component, which does not forbid the client
-  either, the raw use cases as the `usecase-raw` component, and the bus, the database package and the Login throttle,
+  contexts"); the job runners as their own `runner` and `ee-runner` components, which do not forbid
+  the client either, the raw use cases as the `usecase-raw` component, and the bus, the database package and the Login throttle,
   `internal/infra/events`, `internal/infra/db` and `internal/infra/throttle`, as the `infra-raw` component, and the
   Enterprise packages of the list as `ee-domain-identity-raw`, `ee-domain-insights-raw` and
   `ee-usecase-raw`. It fails a use of
@@ -611,8 +613,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   an event that is not Projected (`events.Projected`): it has no Event row, automations skip it,
   and a Webhook endpoint receives it only when it names `audit.entry`.
   The Audit table's rows are removed only through `ee/domain/insights/auditentries`, by `ee/usecase/auditlogretention`'s prune (the
-  `retention` license feature, a Workspace `retention_days` window, one hourly river job registered
-  through `Edition.Jobs()`, which calls `auditentries.PruneBefore`), and by the Workspace erase
+  `retention` license feature, a Workspace `retention_days` window, one hourly river job
+  of the Enterprise job runner `ee/jobs`, which calls `auditentries.PruneBefore`), and by the Workspace erase
   (`internal/usecase/workspacedeletion`), which deletes a deleted Workspace's entries directly (ADR 0110).
   An explicit entry, one no audited write produces (a Workspace setting, a login, a membership
   change, the Audit log export `auditentries.Log.Export`), is recorded one way: `events.RecordAudit`
@@ -621,9 +623,9 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   have no scope to take the actor from (a User's action goes to each of their Workspaces, a
   suspension names its Staff actor), so the scoped client has no recorder of its own. `ee.New`
   takes the bus for the export: the bus is built first, with the Edition's hooks from `ee.Hooks`.
-  The Edition's consumers of the domain events (`ee.EventConsumers`: the Audit log's and the
-  Erasures stream's) are registered on the bus beside core's; their workers come with
-  `Edition.Jobs()` and `ExportJobs()`. In tests no River runtime works the queue, so call
+  The Enterprise consumers of the domain events (`ee/jobs.EventConsumers`: the Audit log's and the
+  Erasures stream's) are registered on the bus beside core's; their workers come with the
+  Enterprise job runner's `Extension`. In tests no River runtime works the queue, so call
   `env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)` to work the jobs a publish inserted.
   **Audit capture in the scoped client (ADR 0022):** an `*ent.Scoped` carries its actor
   (`s.As(actor, opener)`, set at the construction points: `Accounts.Scope` user,
@@ -637,7 +639,9 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   collide with `ee/LICENSE`.
 - **Enterprise Edition layout (ADR 0102).** `ee/` has the core's shape: its domain modules in
   `ee/domain/<context>/<module>`, in the core's contexts and order, its use cases in
-  `ee/usecase/<name>`, its surfaces in `ee/api`, the Edition `ee/ee.go`, and beside them the
+  `ee/usecase/<name>`, its surfaces in `ee/api`, its job runner in `ee/jobs` (the workers, the
+  periodic schedules and the consumers of the domain events, ADR 0111), the Edition `ee/ee.go`,
+  which builds the modules and surfaces and schedules nothing, and beside them the
   License key's gate `ee/licensekey` (component `ee-licensekey`), which imports nothing of ours.
   The same rule places a package: one that owns a table is a domain module in the context of what
   it targets, an operation belongs to the module that owns its subject and is a use case only by
@@ -738,7 +742,7 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of
   the state change: it writes the Event row (a repeated Workspace-scoped `source_id` publishes nothing) and
   inserts one job per consumer whose filter wants the envelope (`events.Consumer`, registered in
-  `internal/app`: `jobs.EventConsumers` and `ee.EventConsumers`). A producer never names a
+  `internal/app`: `jobs.EventConsumers` and the Enterprise runner's `ee/jobs.EventConsumers`). A producer never names a
   consumer; a new consumer is an args type (embedding `events.EventJob` when the whole envelope
   is needed), a worker and a registry
   entry, its jobs in the `events` queue. Anonymous report jobs carry only Workspace, delivery reference,

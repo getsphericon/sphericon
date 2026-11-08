@@ -25,7 +25,9 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
+	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ee/usecase/auditlogretention"
 	"github.com/getsphericon/sphericon/ent"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
@@ -416,6 +418,14 @@ var editionPackage = do.Package(
 			SendCaps:      do.MustInvoke[providerlimit.SendCaps](i),
 		})
 	}),
+	// The Enterprise jobs' operations (ee/jobs): the abuse detector's hourly pass (ADR 0026) and
+	// the advanced-retention prune (ADR 0014), each of which does nothing unlicensed.
+	do.Lazy(func(i do.Injector) (*abusedetector.Detector, error) {
+		return do.MustInvoke[*ee.Edition](i).Abuse(), nil
+	}),
+	do.Lazy(func(i do.Injector) (*auditlogretention.UseCase, error) {
+		return auditlogretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i)), nil
+	}),
 	// A Workspace's freezes on the send chokepoint (ADR 0009, 0015), gated by the license: one
 	// module for the send path and every read of a hold shown to a Workspace.
 	do.Lazy(func(i do.Injector) (*holds.Holds, error) {
@@ -440,9 +450,9 @@ var editionPackage = do.Package(
 		bus.UseSubscribers(channelstop.Subscribers()...)
 		bus.UseSubscribers(suppressions.Subscribers()...)
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
-		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
+		bus.UseConsumers(append(jobs.EventConsumers(), eejobs.EventConsumers()...)...)
 		// A provider's bounce or complaint counts on the send-outcome counter once it is stored.
-		bus.OnStored(RecordSendOutcome)
+		bus.OnStored(jobs.RecordSendOutcome)
 		return bus, nil
 	}),
 )
@@ -528,7 +538,14 @@ var jobsPackage = do.Package(
 			Retention:       jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
 			Webhooks:        edition.Webhooks,
 			Instance:        do.MustInvoke[*instancestates.Module](i),
-		}, edition.Jobs(), edition.ExportJobs(cfg.EventsRetention))
+		}, eejobs.Extension(eejobs.Deps{
+			Client:          do.MustInvoke[*ent.Client](i),
+			License:         do.MustInvoke[*licensekey.License](i),
+			Retention:       do.MustInvoke[*auditlogretention.UseCase](i),
+			Detector:        do.MustInvoke[*abusedetector.Detector](i),
+			EventsRetention: cfg.EventsRetention,
+			Clock:           do.MustInvoke[Clock](i),
+		}))
 		if err != nil {
 			return nil, err
 		}

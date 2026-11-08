@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
+	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
@@ -531,8 +532,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.UseCase](injector), systemSender))
 		add[recordedArgs](tb, p, txDB, client, recordedWorker{})
 		add(tb, p, txDB, client, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
-		add(tb, p, txDB, client, ee.NewEntryEventWorker(client, lic))
-		add(tb, p, txDB, client, ee.NewErasureEventWorker(client, lic))
+		add(tb, p, txDB, client, eejobs.NewEntryEventWorker(client, lic))
+		add(tb, p, txDB, client, eejobs.NewErasureEventWorker(client, lic))
 		return p
 	}
 

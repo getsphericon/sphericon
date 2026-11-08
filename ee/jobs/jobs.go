@@ -1,4 +1,11 @@
-package ee
+// Package jobs is the Enterprise Edition's job runner (ADR 0111): the workers and periodic
+// schedules of its modules and use cases, and its consumers of the domain events. It is a driver
+// with the core runner's rules (review rule 5): each worker receives a job and calls one operation of
+// an Enterprise module or use case, which checks the License itself. Only the wiring builds it, and
+// hands its Extension to the core's job client.
+//
+// Governed by ee/LICENSE, not the AGPL.
+package jobs
 
 import (
 	"context"
@@ -17,14 +24,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
 
-// The Edition's jobs: the workers and periodic schedules of its modules, and the jobs of its
-// consumers of the domain events. The modules and use cases do the work; how it is scheduled is
-// the Edition's, which hands it to the job client as a jobextension.Extension (ADR 0102).
-
 // EventConsumers are the Edition's consumers of the domain events (ADR 0101): the Audit log's and
 // the Erasures stream's, for the composition root to register on the bus beside core's. They want
-// what they want whatever the license: each job checks the license itself (Jobs, ExportJobs), so
-// a key added later needs no rewiring and an unlicensed instance stores nothing.
+// what they want whatever the license: each job checks the license itself, so a key added later
+// needs no rewiring and an unlicensed instance stores nothing.
 func EventConsumers() []events.Consumer {
 	return []events.Consumer{
 		{
@@ -175,37 +178,44 @@ func every(interval time.Duration, args river.JobArgs) *river.PeriodicJob {
 		&river.PeriodicJobOpts{RunOnStart: true})
 }
 
-// Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),
-// which removes nothing without the retention license, the usage job (ADR 0009) and the
-// abuse detector (ADR 0026), which do nothing without the staff license, and the Audit log's
-// consumer (EventConsumers), which stores nothing without the audit license.
-func (e *Edition) Jobs() jobextension.Extension {
-	detector := e.Abuse()
+// Deps are what the Enterprise jobs call, each built by the wiring for the rest of the instance.
+type Deps struct {
+	// Client is the raw ent client the Enterprise modules work across Workspaces with.
+	Client *ent.Client
+	// License is the runtime license key; nil is the plain core, and every job does nothing.
+	License *licensekey.License
+	// Retention is the advanced-retention prune (ADR 0014).
+	Retention *auditlogretention.UseCase
+	// Detector is the abuse detector (ADR 0026).
+	Detector *abusedetector.Detector
+	// EventsRetention is the instance's Event retention window (0 keeps every row), past which the
+	// Erasures stream is pruned (ADR 0045).
+	EventsRetention time.Duration
+	// Clock is the Instance clock.
+	Clock func() time.Time
+}
+
+// Extension is the Enterprise jobs for the job client: the advanced-retention prune (ADR 0014),
+// which removes nothing without the retention license, the usage job (ADR 0009) and the abuse
+// detector (ADR 0026), which do nothing without the staff license, the prune of the Erasures
+// stream (ADR 0045), which does nothing without the export license, and the workers of the
+// consumers (EventConsumers): the Audit log's, which stores nothing without the audit license,
+// and the Erasures stream's, which stores nothing without the export license.
+func Extension(deps Deps) jobextension.Extension {
 	return jobextension.Extension{
 		Workers: func(w *river.Workers) {
-			river.AddWorker(w, &retentionPruneWorker{retention: auditlogretention.New(e.client, e.lic, e.now)})
-			river.AddWorker(w, newUsageRefreshWorker(e.client, e.lic, e.now))
-			river.AddWorker(w, &abuseDetectionWorker{detector: detector})
-			river.AddWorker(w, NewEntryEventWorker(e.client, e.lic))
+			river.AddWorker(w, &retentionPruneWorker{retention: deps.Retention})
+			river.AddWorker(w, newUsageRefreshWorker(deps.Client, deps.License, deps.Clock))
+			river.AddWorker(w, &abuseDetectionWorker{detector: deps.Detector})
+			river.AddWorker(w, newExportPruneWorker(deps.Client, deps.License, deps.EventsRetention, deps.Clock))
+			river.AddWorker(w, NewEntryEventWorker(deps.Client, deps.License))
+			river.AddWorker(w, NewErasureEventWorker(deps.Client, deps.License))
 		},
 		PeriodicJobs: []*river.PeriodicJob{
 			every(auditlogretention.Interval, RetentionPruneArgs{}),
 			every(usages.Interval, UsageRefreshArgs{}),
 			every(abusedetector.Interval, AbuseDetectionArgs{}),
+			every(erasures.Interval, ExportPruneArgs{}),
 		},
-	}
-}
-
-// ExportJobs is the river extension of the Export streams (ADR 0045): the prune job of the
-// Erasures stream over the instance's Event retention window (0 keeps every row), and the
-// stream's consumer of the domain events (EventConsumers). It is separate from Jobs because the
-// prune needs that window, a core setting; neither does anything without the `export` license.
-func (e *Edition) ExportJobs(eventsRetention time.Duration) jobextension.Extension {
-	return jobextension.Extension{
-		Workers: func(w *river.Workers) {
-			river.AddWorker(w, newExportPruneWorker(e.client, e.lic, eventsRetention, e.now))
-			river.AddWorker(w, NewErasureEventWorker(e.client, e.lic))
-		},
-		PeriodicJobs: []*river.PeriodicJob{every(erasures.Interval, ExportPruneArgs{})},
 	}
 }

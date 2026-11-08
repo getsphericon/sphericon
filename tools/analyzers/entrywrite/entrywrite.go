@@ -64,8 +64,9 @@ var surfaces = []string{
 }
 
 // entryPoints are the packages that receive input from outside (an API surface, MCP, a queue, the
-// ingest hooks) and hand it to a domain module.
-var entryPoints = append(slices.Clone(surfaces), "internal/mcpserver", "internal/jobs", "internal/server")
+// ingest hooks) and hand it to a domain module: the job runners are the core's and the Enterprise
+// Edition's.
+var entryPoints = append(slices.Clone(surfaces), "internal/mcpserver", "internal/jobs", "ee/jobs", "internal/server")
 
 // owners names, for each ent entity, the package that owns its table: the only one that writes it
 // (ADR 0102). A domain module owns the tables of its domain; the infrastructure owns the few that
