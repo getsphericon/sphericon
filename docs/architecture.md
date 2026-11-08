@@ -152,9 +152,9 @@ coding standards in `CODING_STANDARDS.md`.
   context and those of the contexts below, never one above and never a use case; an operation that
   needs a module above is a use case. easement holds a context as a few components named
   `domain-<context>[-<part>]`, one per privilege: `domain-<context>` is the glob of the context's
-  directory (the modules that hold no raw client, forbid list `x-core-forbids`),
-  `domain-<context>-raw` is the closed list of its raw-client holders (forbid list
-  `x-raw-holder-forbids`), and a part a rule binds alone gets a component of its own. Each lists in
+  directory (the modules that hold no raw client), `domain-<context>-raw` is the closed list of its
+  raw-client holders (with the other holders, the `allow` of `ent.Client` in the top-level
+  `forbid_symbol`), and a part a rule binds alone gets a component of its own. Each lists in
   `may_depend_on` the other components of its context and every component of the contexts below,
   in context order, and nothing above, so an import against the order fails `check:arch` with the
   context's reason. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
@@ -309,12 +309,8 @@ coding standards in `CODING_STANDARDS.md`.
   `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`). A removal (or a change) that a use case guards with a check is the domain module's
   unchecked removal (and so is the store of a check's outcome, `sendingdomains.RecordDKIM`): a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
   never a method of the module, since easement matches a method only as a use of its type. Its
-  `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
-  the `forbid_symbol` list of every component but `usecase` and `usecase-raw` that may reach the core
-  (`x-core-forbids` for the API surfaces, MCP, the Problem mapping, each context's `domain-<context>`,
-  `ee-api` and the Enterprise `ee-domain-<context>` and `ee-usecase`, `x-raw-holder-forbids` for the runner, each context's raw-client components and
-  the Enterprise `ee-domain-<context>-raw` and `ee-usecase-raw`, and the whole list
-  in `api-auth`, `ee-edition`, `testsupport` and `wiring`), so
+  `<import path>.<Name>` is an item of the top-level `forbid_symbol` in `easement.yml` with
+  `allow: [usecase, usecase-raw]`, which holds in every other component and in the files of none, so
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The Second factor's writes that skip its checks (the User's
@@ -323,8 +319,8 @@ coding standards in `CODING_STANDARDS.md`.
   `oauthclients.NewRefreshTokenIn`), the moves of a Workspace's deletion cycle
   (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the core removals of its erase (each
   `Erase…In` of a Workspace-owned table, one shared reason, and `oauthclients.DeleteCodesIn`; the
-  Edition's three are in every list but `x-unchecked-removals`, since the wiring and the Edition, which
-  take that one, name them to hand them in), the creation of a Workspace with its creator's Membership
+  Edition's three are allowed only in the wiring and the Edition, which name them to hand them in),
+  the creation of a Workspace with its creator's Membership
   (`workspaces.CreateIn`, `memberships.AddCreatorIn`) and each owner's step of a Contact's Erasure
   (`visitors.EraseSubject`, `events.EraseSubject`, `rules.EraseFirings` and the others
   `internal/usecase/contacterasure` sequences; the purge of its queued jobs is a method of the bus's
@@ -340,7 +336,7 @@ coding standards in `CODING_STANDARDS.md`.
   `staffmembers`, `automations`, `rules`), the columns as `secrets.Sweep` values the wiring builds on
   the raw client in a fixed order, and sweeps them by id and compare-and-swap
   (`secrets.Cipher.Reencrypt`). A sweep only stores the value it read again under the
-  primary key, so no check guards it and it is not in `x-unchecked-removals`.
+  primary key, so no check guards it and it is not in the `forbid_symbol` of `easement.yml`.
   A use case need not guard a removal: an operation whose subject's owner would have to call a
   module above it is one too, and so is one that reads modules of several contexts. A Visitor
   identification (`internal/usecase/visitoridentification`, built in
@@ -366,9 +362,8 @@ coding standards in `CODING_STANDARDS.md`.
   One unchecked removal is called from a domain module until its use case exists:
   `memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its deletion window
   leave, serves User deletion in `internal/domain/identity/users`, which alone is allowed to call it:
-  that module is a component of its own, `domain-identity-users`, whose forbid list
-  (`x-user-deletion-forbids`) is the raw-holder list without it, and every other component that may
-  reach it forbids it, the use cases included.
+  that module is a component of its own, `domain-identity-users`, the only component its
+  `allow` in `easement.yml` names: no other may call it, the use cases included.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
