@@ -957,7 +957,7 @@ components:
   # raw client, so the context is one component; a raw-client holder would get
   # `domain-contacts-raw`. Ending an Enrollment on an unsubscribe is the unsubscribe use case's
   # (internal/usecase/unsubscriberecording), and the Broadcast counts an opt-out from its event (the
-  # broadcasts consumer, ADR 0112): the orchestration modules are above contacts, so a contacts module
+  # broadcasts consumer, ADR 0113): the orchestration modules are above contacts, so a contacts module
   # cannot import them.
   domain-contacts: { in: 'internal/domain/contacts/**' }
 

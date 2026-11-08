@@ -354,7 +354,7 @@ coding standards in `CODING_STANDARDS.md`.
   the Channel) sits in the contacts context, below the Broadcasts and Automations an unsubscribe
   touches: easement fails its import of `broadcasts`, `automations` or a use case as an import
   against the order of the contexts (`domain-contacts`), so only `unsubscriberecording` ends the
-  Enrollment of an unsubscribe link. No opt-out writes a Broadcast row (ADR 0112): the recipient row
+  Enrollment of an unsubscribe link. No opt-out writes a Broadcast row (ADR 0113): the recipient row
   is the `broadcasts` module's (ADR 0102), and an opt-out is also found where no use case runs, by
   `outboundmessages` when a send finds the bot blocked or Twilio refuses a number that stopped
   (21610). Every opt-out publishes its event instead, on every Channel and every path:

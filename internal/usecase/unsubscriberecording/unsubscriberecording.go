@@ -5,7 +5,7 @@
 // that module sits above the opt-out's, so the operation across them lives here. The opt-out's
 // Event (email.unsubscribed, telegram.unsubscribed, sms.unsubscribed) names the Broadcast that
 // provoked it, which counts it from the event, as it counts an opt-out made on any other path
-// (ADR 0112). The link and the API produce identical effects.
+// (ADR 0113). The link and the API produce identical effects.
 package unsubscriberecording
 
 import (

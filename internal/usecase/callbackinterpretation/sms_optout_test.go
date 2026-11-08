@@ -95,7 +95,7 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	assert.Zero(t, replies, "a STOP is no reply")
 }
 
-// A STOP records sms.unsubscribed for the number's Contact (ADR 0112). No text names the Broadcast it
+// A STOP records sms.unsubscribed for the number's Contact (ADR 0113). No text names the Broadcast it
 // answers, so it counts on none.
 func TestASTOPRecordsSmsUnsubscribedAndCountsOnNoBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)

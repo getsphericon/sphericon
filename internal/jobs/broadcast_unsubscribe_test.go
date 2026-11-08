@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// The broadcasts consumer counts an opt-out of any Channel on the Broadcast it names (ADR 0112): an
+// The broadcasts consumer counts an opt-out of any Channel on the Broadcast it names (ADR 0113): an
 // email.unsubscribed, a telegram.unsubscribed or an sms.unsubscribed of Bob from a message of the
 // archived Broadcast, whose parked recipient he is.
 

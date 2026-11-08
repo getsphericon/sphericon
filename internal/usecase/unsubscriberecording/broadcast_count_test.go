@@ -20,7 +20,7 @@ import (
 )
 
 // The Broadcast a link names counts its recipient's opt-out from the opt-out's event, on every
-// Channel (ADR 0112): the link's transaction writes the opt-out and inserts the broadcasts
+// Channel (ADR 0113): the link's transaction writes the opt-out and inserts the broadcasts
 // consumer's job, and working that job sets the recipient's mark, once. The parked recipients of
 // the archived Broadcast are Alice, Bob and Carol.
 

@@ -42,7 +42,7 @@ type SMSStop struct {
 // Confirmation, so stale consent never reactivates: only a new Confirmation (the START that lifts
 // the opt-out) makes the number reachable again; the sms.confirmed Event stays as proof. It records
 // sms.unsubscribed for the Contact whose phone the number is and for the Contact of the text the
-// stop was made from, when that is another (ADR 0112). It is idempotent: a number already opted out
+// stop was made from, when that is another (ADR 0113). It is idempotent: a number already opted out
 // (a repeated or concurrent stop) changes nothing, keeps the way it first stopped and records no
 // second event. Run it inside the transaction s and pub are bound to.
 func StopSMS(ctx context.Context, s *ent.Scoped, pub events.Publisher, st SMSStop) error {

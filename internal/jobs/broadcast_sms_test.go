@@ -57,7 +57,7 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 
 // A text of the Broadcast that Twilio refuses with 21610 (the number texted STOP to the sender
 // there) is the number's opt-out, and its sms.unsubscribed names the Broadcast, which counts it
-// when the event's consumer runs (ADR 0112). Lacuna's Segment Textham freezes Bea alone.
+// when the event's consumer runs (ADR 0113). Lacuna's Segment Textham freezes Bea alone.
 func TestAnSMSBroadcastsTextTwilioRefusesAsOptedOutCountsAsItsUnsubscribe(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()

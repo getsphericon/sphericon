@@ -364,7 +364,7 @@ message or from an API call, the opt-out, the **Confirmation** an opt-out of eve
 opt-out's System event and the end of the Enrollment of the Automation it names. A stop read in the
 Channel itself (a STOP keyword, a blocked bot, a send the provider refuses) is recorded where it is
 read. The Broadcast that provoked an opt-out counts it from that event, whatever the Channel and the
-path (ADR 0112), so the count follows the opt-out shortly, by a job committed with it.
+path (ADR 0113), so the count follows the opt-out shortly, by a job committed with it.
 _Avoid_: Unsubscription, opt-out flow
 
 The **scope** of an unsubscribe (what the contact is opted out of) is distinct from its

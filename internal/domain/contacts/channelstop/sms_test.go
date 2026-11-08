@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// Every new SMS opt-out records sms.unsubscribed (ADR 0112), whatever way the person stopped: for
+// Every new SMS opt-out records sms.unsubscribed (ADR 0113), whatever way the person stopped: for
 // the Contact whose phone the number is, and for the Contact of the text the stop came from when
 // that is another, which alone is attributed to the text's Broadcast or Automation. ContactTexter
 // holds the number below, with neither a Confirmation nor an opt-out.

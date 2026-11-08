@@ -258,7 +258,7 @@ func optOutOfBroadcast(env events.Envelope, ev events.DomainEvent) (broadcastID,
 }
 
 // BroadcastUnsubscribeEventWorker counts an opt-out on the Broadcast whose message it was made from
-// (broadcasts.RecordUnsubscribe), whatever the Channel and the path (ADR 0112): an unsubscribe link,
+// (broadcasts.RecordUnsubscribe), whatever the Channel and the path (ADR 0113): an unsubscribe link,
 // a STOP keyword or button, a blocked bot or a send the provider refused. The opt-out is written
 // below the Broadcasts (internal/domain/contacts, from a use case or from the Outbound send), and the
 // recipient row is the broadcasts module's (ADR 0102: only the owner writes a table), so the count

@@ -8,7 +8,7 @@ status: accepted
 > [[0104-a-use-case-has-one-call-contract]]: they said what a driver may call; this says what a
 > driver is, how much it may call, and moves the CLI's operations out of the wiring.
 >
-> **Amended by [[0112-an-opt-out-is-an-event-on-every-channel-and-the-broadcast-counts-it-from-the-event]]:** the Broadcast counts
+> **Amended by [[0113-an-opt-out-is-an-event-on-every-channel-and-the-broadcast-counts-it-from-the-event]]:** the Broadcast counts
 > an opt-out only from its event, on every Channel, and `unsubscriberecording` no longer counts it.
 > The decision that a Telegram opt-out is recorded through `unsubscriberecording` with the same
 > effects in the same transaction is reversed.
@@ -91,7 +91,7 @@ the call, and `releasecheck.LatestRelease` already shows that shape.
   - The Broadcast worker hands the attempt to `broadcasts`, which decides on a retry or giving up
     ([[0107-a-domain-module-checks-every-input-to-its-writes]]: the job runner holds no domain rule).
   - ~~A Telegram opt-out is recorded through `unsubscriberecording`, with the same effects in the
-    same transaction as any other Unsubscribe.~~ Reversed by ADR 0112: an opt-out is an event on
+    same transaction as any other Unsubscribe.~~ Reversed by ADR 0113: an opt-out is an event on
     every Channel, and the Broadcast counts it from the event.
 - **A resource is built once below the contracts.** The Integration view and the Segment preview
   are operations of `integrations` and `segments`. The Workspace's view, which reads identity and

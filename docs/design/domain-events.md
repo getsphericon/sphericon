@@ -90,7 +90,7 @@ its own lock (orders takes one per Workspace).
 | rules       | `rule_evaluate_event`         | what automations wants, except an event a Rule's Action published (`CausedBy`)              | evaluates the Event against the Rules; a Firing is unique on the source id          |
 | webhooks    | `event_webhook`               | every live Event and every Audit entry                                                      | queues one delivery per enabled endpoint whose filter matches (ADR 0039)            |
 | notices     | `event_notice`                | an event that calls for Notices: an account's, or a change a Workspace's people are told of | queues one `send_notice` per Notice, unique on the event and the address (ADR 0105) |
-| broadcasts  | `event_broadcast_unsubscribe` | an opt-out of any Channel (`*.unsubscribed`) that names a Broadcast and its Contact         | counts the unsubscribe on the Broadcast's recipient, once (ADR 0112)                |
+| broadcasts  | `event_broadcast_unsubscribe` | an opt-out of any Channel (`*.unsubscribed`) that names a Broadcast and its Contact         | counts the unsubscribe on the Broadcast's recipient, once (ADR 0113)                |
 | audit (EE)  | `event_audit`                 | an Audit entry                                                                              | stores the entry, once, under the audit license (ADR 0022)                          |
 | export (EE) | `event_export_erasure`        | `contact.erased`                                                                            | adds the Erasure to the Erasures stream under the export license (ADR 0045)         |
 

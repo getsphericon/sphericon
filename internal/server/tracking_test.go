@@ -239,7 +239,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.False(t, optedOut(), "GET records nothing")
 	assert.Equal(t, 0, figures(t, env, b.ID).Unsubscribed)
 
-	// POST performs the opt-out; the Broadcast counts it once from its event (ADR 0112).
+	// POST performs the opt-out; the Broadcast counts it once from its event (ADR 0113).
 	resp = post(uPath)
 	assert.Equal(t, http.StatusNoContent, resp.Code)
 	assert.True(t, optedOut(), "POST writes a broadcasts-scoped opt-out")
