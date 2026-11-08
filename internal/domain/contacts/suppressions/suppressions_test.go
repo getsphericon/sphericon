@@ -137,7 +137,7 @@ func TestEraseContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {
 
 	row, err := s.Suppression().Get(ctx, fixtures.SuppressionErasableID)
 	require.NoError(t, err)
-	assert.Nil(t, row.ContactID)
+	assert.Nil(t, row.LiftedAt)
 	verdict, err := eligibility.Check(ctx, s, eligibility.ChannelEmail, row.Destination, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.False(t, verdict.Eligible)

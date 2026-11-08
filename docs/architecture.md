@@ -275,7 +275,7 @@ coding standards in `CODING_STANDARDS.md`.
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
   `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Enrollment's exit and anonymous attribution work), reads them, and changes their rows only through their functions
-  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes anonymous attribution for the Broadcast consumer).
+  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseNumber`, `unsubscribes.EraseSMS` and the rest, then `contacts.DeleteIn`, whose foreign keys delete or detach the Contact's other rows; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes anonymous attribution for the Broadcast consumer).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
   the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
   `workspaces.Module.LinkScope`). easement
@@ -326,7 +326,7 @@ coding standards in `CODING_STANDARDS.md`.
   Edition's three are in every list but `x-unchecked-removals`, since the wiring and the Edition, which
   take that one, name them to hand them in), the creation of a Workspace with its creator's Membership
   (`workspaces.CreateIn`, `memberships.AddCreatorIn`) and each owner's step of a Contact's Erasure
-  (`visitors.EraseSubject`, `events.EraseSubject`, `rules.EraseFirings` and the others
+  (`visitors.EraseSubject`, `events.EraseSubject`, `suppressions.EraseContact` and the others
   `internal/usecase/contacterasure` sequences; the purge of its queued jobs is a method of the bus's
   publisher, which a name cannot forbid) are such items too. The tests of the operation live in the use case's own `_test` package
   (`internal/usecase/tagdeletion`, `internal/usecase/customfieldretyping`, `internal/usecase/unsubscriberecording`; a retype's refusal is also tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own

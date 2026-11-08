@@ -213,38 +213,23 @@ x-unchecked-removals: &unchecked-removals
   - &outboundmessages-erase-short-links
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseShortLinks
     because: *contact-erase-because
-  - &bindings-erase-subject
-    name: github.com/getsphericon/sphericon/internal/domain/sending/bindings.EraseSubject
-    because: *contact-erase-because
   - &events-erase-subject
     name: github.com/getsphericon/sphericon/internal/infra/events.EraseSubject
     because: *contact-erase-because
   - &visitors-erase-subject
     name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseSubject
     because: *contact-erase-because
-  - &confirmations-erase-contact
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseContact
-    because: *contact-erase-because
-  - &automations-erase-runs
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseRuns
-    because: *contact-erase-because
-  - &rules-erase-firings
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseFirings
+  - &confirmations-erase-number
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseNumber
     because: *contact-erase-because
   - &unsubscribes-erase-sms
     name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseSMS
-    because: *contact-erase-because
-  - &unsubscribes-detach-contact
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.DetachContact
     because: *contact-erase-because
   - &suppressions-erase-contact
     name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseContact
     because: *contact-erase-because
   - &outboundmessages-anonymize-contact
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeContact
-    because: *contact-erase-because
-  - &broadcasts-detach-recipients
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.DetachRecipients
     because: *contact-erase-because
   - &outboundmessages-anonymize-destinations
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeDestinations
@@ -336,17 +321,12 @@ x-core-forbids: &core-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - &auditentries-erase-audit-entries-in
@@ -454,17 +434,12 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in
@@ -546,17 +521,12 @@ x-runner-forbids: &runner-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in
@@ -635,17 +605,12 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in

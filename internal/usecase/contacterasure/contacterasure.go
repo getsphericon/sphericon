@@ -8,12 +8,15 @@
 // the Contact change, its events and the purge of its queued jobs commit together. Inside it the work
 // is an ordered list of steps (see UseCase.steps), each a call to the module that owns the rows over
 // the resolved Target: the use case reads the tables, and changes each only through its owner's
-// erase function. Extending Erasure (another identifier kind, another dependent table, another
-// signal published in the same transaction) means resolving the new identifier into a Target or
-// adding one step, not a second code path. The Contact row goes last, through the contacts module's
-// unchecked removal contacts.DeleteIn, which easement forbids every other package to call. The
-// record of an Erasure (the Erasures stream, ADR 0045) is written from the contact.erased Event by
-// its own consumer, not here.
+// erase function. What the foreign keys of the Contact row do is no step: deleting the row
+// cascades to its Automation runs, Rule firings, Bindings, Start tokens, Confirmations and Tag
+// links, and sets null the Contact reference of its Broadcast recipients, Unsubscribes and
+// Suppressions. Extending Erasure (another identifier kind, another dependent table, another
+// signal published in the same transaction) means resolving the new identifier into a Target,
+// adding one step, or a foreign key that does the work, not a second code path. The Contact row
+// goes last, through the contacts module's unchecked removal contacts.DeleteIn, which easement
+// forbids every other package to call. The record of an Erasure (the Erasures stream, ADR 0045)
+// is written from the contact.erased Event by its own consumer, not here.
 package contacterasure
 
 import (
@@ -38,7 +41,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -198,9 +200,10 @@ func (u *UseCase) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Re
 // send chokepoint, its Contact gone (ADR 0021).
 //
 // The cancellations come before every step that deletes the rows their ids are read from
-// (the Contact's runs, recipients and the Contact itself) and before the signal, which
-// names no Contact. The Contact row goes last of the deletions: the other steps find the
-// Contact's rows through ids already resolved into the Target.
+// (the Contact's recipients and the Contact itself, whose runs go with it) and before the
+// signal, which names no Contact. The Contact row goes last of the deletions: the other steps find
+// the Contact's rows by its id, and the rows its foreign keys cascade to or detach are what they
+// leave to it.
 func (u *UseCase) steps() []step {
 	return []step{
 		// The Broadcast delivery module cancels the Contact's unsent recipients; a Broadcast left
@@ -209,7 +212,8 @@ func (u *UseCase) steps() []step {
 			return broadcasts.CancelPending(ctx, s, t.ContactID, pub, u.now())
 		},
 		// The Automation module cancels the queued step calls and trigger evaluations that name the
-		// Contact or its runs (a failure's response excerpt sits on the run, which goes below).
+		// Contact or its runs; it reads the run ids before the Contact row goes, which deletes the
+		// runs (a failure's response excerpt sits on one) by their cascading foreign key.
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
 			return automations.CancelPending(ctx, s, t.ContactID, pub)
 		},
@@ -232,29 +236,20 @@ func (u *UseCase) steps() []step {
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 			return outboundmessages.EraseShortLinks(ctx, s, t.ContactID)
 		},
-		// The Binding module deletes the Bindings and Start tokens of the Contact and of its
-		// Visitors, so before the Visitors go. Telegram opt-outs are not here: they are keyed by
-		// the user id and stay (detachOptOuts).
-		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return bindings.EraseSubject(ctx, s, t.ContactID, t.VisitorIDs)
-		},
 		// The bus, which stores the Events, deletes the subject's customer-tracked Events and
 		// anonymizes its system Events in place.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 			return events.EraseSubject(ctx, s, t.ContactID, t.Phone, t.VisitorIDs)
 		},
+		// The Visitors, and with them their Bindings and Start tokens. Telegram opt-outs are not
+		// here: they are keyed by the user id and stay.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 			return visitors.EraseSubject(ctx, s, t.ContactID, t.VisitorIDs)
 		},
-		// The Confirmation and its evidence; losing it fails safe (re-confirmation).
+		// The Confirmation of the Contact's number that names no Contact; the Contact's own go with
+		// its row. Losing one fails safe (re-confirmation).
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return confirmations.EraseContact(ctx, s, t.ContactID, t.Phone)
-		},
-		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return automations.EraseRuns(ctx, s, t.ContactID)
-		},
-		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return rules.EraseFirings(ctx, s, t.ContactID)
+			return confirmations.EraseNumber(ctx, s, t.Phone)
 		},
 		detachOptOuts,
 		anonymizeDelivery,
@@ -262,7 +257,9 @@ func (u *UseCase) steps() []step {
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 			return capturedmessages.EraseTo(ctx, s, t.Destinations)
 		},
-		// The Contact itself; its Tag links and Custom field values go with the row.
+		// The Contact itself. Its Custom field values go with the row, and its foreign keys delete
+		// its Tag links, Automation runs, Rule firings, Bindings, Start tokens and Confirmations and
+		// detach its Broadcast recipients, Unsubscribes and Suppressions.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 			return contacts.DeleteIn(ctx, s, t.ContactID)
 		},
@@ -327,7 +324,7 @@ func findContact(ctx context.Context, s *ent.Scoped, id subject) (*ent.Contact, 
 	if err != nil || c == nil {
 		return nil, err
 	}
-	// Erasure deletes the Contact's Enrollments before the Contact, so it locks the Contact
+	// Erasure deletes the Contact's Enrollments (with the Contact row), so it locks the Contact
 	// first, in the order every writer of both rows takes them (contactlock, #811).
 	locked, err := contactlock.Lock(ctx, s, c.ID)
 	if ent.IsNotFound(err) {

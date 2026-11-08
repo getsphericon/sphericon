@@ -11,14 +11,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
-// The Unsubscribe parts of a Contact's Erasure (ADR 0021). Each runs inside the Erasure's
-// transaction (s comes from it).
-
-// EraseSMS is the SMS opt-out part of a Contact's Erasure: the opt-outs of the Contact on sms and
+// EraseSMS is the SMS opt-out part of a Contact's Erasure (ADR 0021), run inside the Erasure's
+// transaction (s comes from it): the opt-outs of the Contact on sms and
 // those of its number keep refusing the number, but keyed by its hash (phone.Hash) instead of the
 // number. A hashed opt-out of the same scope that already stands (a person erased before with the
 // number) makes the number's own redundant, so that one goes. number is "" for a Contact with no
-// phone. Run it before the Contact reference is cleared (DetachContact).
+// phone. Run it before the Contact row goes, whose foreign key clears the opt-outs' Contact
+// reference.
 func EraseSMS(ctx context.Context, s *ent.Scoped, contactID int64, number string) error {
 	match := []predicate.Unsubscribe{unsubscribe.ContactID(contactID)}
 	if number != "" {
@@ -50,11 +49,4 @@ func EraseSMS(ctx context.Context, s *ent.Scoped, contactID int64, number string
 		}
 	}
 	return nil
-}
-
-// DetachContact keeps the Contact's Unsubscribe rows, which are keyed by Destination and keep
-// honoring the refusal, and only clears their Contact reference.
-func DetachContact(ctx context.Context, s *ent.Scoped, contactID int64) error {
-	_, err := s.Unsubscribe().Update().Where(unsubscribe.ContactID(contactID)).ClearContactID().Save(ctx)
-	return err
 }

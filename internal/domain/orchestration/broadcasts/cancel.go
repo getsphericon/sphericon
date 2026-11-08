@@ -14,8 +14,8 @@ import (
 
 // CancelPending cancels a Contact's pending Broadcast work (Erasure, ADR 0021): the
 // recipients whose send has not ended are removed with their queued send jobs, and each
-// Broadcast left with nothing pending settles. A recipient whose send ended stays as an
-// anonymous record. It runs inside the caller's transaction (s and purger come from the
+// Broadcast left with nothing pending settles. A recipient whose send ended stays, and becomes an
+// anonymous record when the Contact row goes: its foreign key sets the reference null. It runs inside the caller's transaction (s and purger come from the
 // same one); a send job that is already running is not purged, and finds its recipient
 // gone when it starts.
 func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger events.QueuePurger, at time.Time) error {
@@ -45,14 +45,4 @@ func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger e
 		}
 	}
 	return nil
-}
-
-// DetachRecipients is the delivery record part of a Contact's Erasure (ADR 0021): the Contact's
-// recipients that CancelPending left (their send ended) stay as anonymous records, keeping their
-// status and timing, and lose only their Contact reference. Run it inside the Erasure's
-// transaction.
-func DetachRecipients(ctx context.Context, s *ent.Scoped, contactID int64) error {
-	_, err := s.BroadcastRecipient().Update().Where(broadcastrecipient.ContactID(contactID)).
-		ClearContactID().Save(ctx)
-	return err
 }
