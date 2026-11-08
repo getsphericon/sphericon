@@ -127,3 +127,23 @@ claimed.
   timestamps on the recipient, set once each. The figures are live while the Broadcast sends and
   cannot drift from the rows. Only the Broadcast keeps a machine here, and finalizing it is the
   `sending` to `sent` move once no recipient is pending.
+
+## Browser analytics: a submission owns its captured batch
+
+XState v5 declares the browser tracker's `uninitialized`, `running.idle` and `running.sending`
+lifecycle. An initialized tracker owns a recoverable queue and one immutable submitted batch.
+Appending an Event is a targetless transition: it changes the queue without exiting sending or
+restarting the state-scoped request. Completion removes only that batch's members from the latest
+queue. The request's lifetime and completion belong to XState's invoked actor.
+
+A successful HTTP response means accepted; a final non-success response means refused. Both
+remove the submitted batch under the existing delivery policy, including a final 400/422. A client
+result without an HTTP response is unconfirmed and retains the queue. A resolved Promise is not
+itself an acknowledgement. These are explicit submission outcomes, not three persistent tracker
+statuses after it has moved on to the next batch.
+
+Ky owns retries within the submission; es-toolkit owns flush scheduling. Their protocols are
+composed with the delivery machine, not recreated by it. Pagehide cancels the pending flush timer
+and requests an immediate flush; it leaves an active submission running. The newest-100 storage
+bound still applies while a request is active, and only queue payloads are persisted, so a new
+document starts a fresh delivery lifetime with the same Event identities.

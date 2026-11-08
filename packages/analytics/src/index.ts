@@ -1,6 +1,7 @@
 import { range, throttle } from 'es-toolkit'
 import Cookies from 'js-cookie'
 import { v4 as uuid } from 'uuid'
+import { assign, assertEvent, createActor, fromPromise, setup } from 'xstate'
 
 import { createClient } from './generated/collect/client/index.ts'
 import type { Client } from './generated/collect/client/index.ts'
@@ -46,8 +47,6 @@ type QueueApi = QueueCommand[] & {
 interface Runtime {
   client: Client
   visitorId: string
-  pendingEvents: CollectEventInput[]
-  sending: boolean
 }
 
 declare global {
@@ -55,8 +54,6 @@ declare global {
     _omq?: QueueCommand[]
   }
 }
-
-let runtime: Runtime | null = null
 
 function normalizeConfig(config: Partial<TrackerConfig> | null | undefined): TrackerConfig | null {
   const collectKey = config?.collectKey?.trim()
@@ -136,37 +133,123 @@ function saveQueue(events: CollectEventInput[]): void {
   }
 }
 
-// Events tracked close together go out as one batch, FLUSH_DELAY_MS after the first of them.
-const flushSoon = throttle(() => void flushEvents(), FLUSH_DELAY_MS, { edges: ['trailing'] })
+// The existing throttle schedules flush requests independently of an active submission.
+const flushSoon = throttle(requestFlush, FLUSH_DELAY_MS, {
+  edges: ['trailing'],
+})
 
-async function flushEvents(): Promise<void> {
-  if (!runtime || runtime.sending || runtime.pendingEvents.length === 0) {
-    return
-  }
+// A fulfilled client call can mean acceptance, a final refusal, or no HTTP response. Only
+// the first two settle the batch; an unconfirmed result leaves the recoverable queue intact.
+type SubmissionOutcome = 'accepted' | 'refused' | 'unconfirmed'
 
-  const state = runtime
-  const events = [...state.pendingEvents]
+interface DeliveryContext {
+  runtime: Runtime | null
+  pendingEvents: CollectEventInput[]
+  batch: CollectEventInput[]
+}
 
-  state.sending = true
+type DeliveryEvent =
+  | { type: 'initialize'; runtime: Runtime; events: CollectEventInput[] }
+  | { type: 'track'; event: CollectEventInput }
+  | { type: 'flush' }
 
-  // Settles once the instance took the batch or refused it for good; the retries happen inside.
-  const { response } = await collectEventsCreate({ client: state.client, body: { events } })
+interface Submission {
+  client: Client
+  events: CollectEventInput[]
+}
 
-  state.sending = false
+const deliveryTypes: { context?: DeliveryContext; events?: DeliveryEvent } = {}
 
-  // No answer at all (the request could not be made): the batch stays queued for the next flush.
-  if (!response) {
-    return
-  }
+const deliveryMachine = setup({
+  types: deliveryTypes,
+  actors: {
+    submitBatch: fromPromise<SubmissionOutcome, Submission>(async ({ input }) => {
+      // Ky owns all retry attempts for this one captured submission.
+      const { response } = await collectEventsCreate({
+        client: input.client,
+        body: { events: input.events },
+      })
+      if (!response) {
+        return 'unconfirmed'
+      }
+      return response.ok ? 'accepted' : 'refused'
+    }),
+  },
+  guards: {
+    hasPendingEvents: ({ context }) => context.pendingEvents.length > 0,
+  },
+  actions: {
+    initialize: assign(({ event }) => {
+      assertEvent(event, 'initialize')
+      return { runtime: event.runtime, pendingEvents: event.events }
+    }),
+    appendEvent: assign(({ context, event }) => {
+      assertEvent(event, 'track')
+      return { pendingEvents: [...context.pendingEvents, event.event].slice(-MAX_QUEUE) }
+    }),
+    captureBatch: assign(({ context }) => ({ batch: [...context.pendingEvents] })),
+    settleBatch: assign(({ context }) => ({
+      pendingEvents: context.pendingEvents.filter((event) => !context.batch.includes(event)),
+      batch: [],
+    })),
+    releaseBatch: assign({ batch: () => [] }),
+    persistQueue: ({ context }) => saveQueue(context.pendingEvents),
+    scheduleFlush: () => flushSoon(),
+  },
+}).createMachine({
+  id: 'analyticsDelivery',
+  initial: 'uninitialized',
+  context: { runtime: null, pendingEvents: [], batch: [] },
+  states: {
+    uninitialized: {
+      on: { initialize: { target: 'running', actions: 'initialize' } },
+    },
+    running: {
+      initial: 'idle',
+      on: {
+        // Targetless: appending never exits sending or restarts its invoked submission.
+        track: { actions: ['appendEvent', 'persistQueue', 'scheduleFlush'] },
+      },
+      states: {
+        idle: {
+          on: { flush: { guard: 'hasPendingEvents', target: 'sending', actions: 'captureBatch' } },
+        },
+        sending: {
+          on: { flush: {} },
+          invoke: {
+            src: 'submitBatch',
+            input: ({ context }) => {
+              if (!context.runtime) {
+                throw new Error('analytics delivery has no initialized runtime')
+              }
+              return { client: context.runtime.client, events: context.batch }
+            },
+            onDone: [
+              {
+                // Final refusals intentionally discard this batch, unlike an unconfirmed result.
+                guard: ({ event }) => event.output === 'accepted' || event.output === 'refused',
+                target: 'idle',
+                actions: ['settleBatch', 'persistQueue', 'scheduleFlush'],
+              },
+              { target: 'idle', actions: 'releaseBatch' },
+            ],
+            onError: { target: 'idle', actions: 'releaseBatch' },
+          },
+        },
+      },
+    },
+  },
+})
 
-  state.pendingEvents = state.pendingEvents.filter((event) => !events.includes(event))
-  saveQueue(state.pendingEvents)
-  flushSoon()
+const delivery = createActor(deliveryMachine).start()
+
+function requestFlush(): void {
+  delivery.send({ type: 'flush' })
 }
 
 function flushEventsOnPageHide(): void {
   flushSoon.cancel()
-  void flushEvents()
+  requestFlush()
 }
 
 function processQueueCommand(command: QueueCommand): void {
@@ -196,7 +279,8 @@ function createQueueApi(initial: QueueCommand[]): QueueApi {
 }
 
 export function initTracking(config?: TrackerConfig): void {
-  if (!isBrowser || runtime) {
+  const current = delivery.getSnapshot().context.runtime
+  if (!isBrowser || current) {
     return
   }
 
@@ -210,12 +294,10 @@ export function initTracking(config?: TrackerConfig): void {
     return
   }
 
-  runtime = {
-    client: collectClient(resolved),
-    visitorId: getOrCreateVisitorId(),
-    pendingEvents: readQueue(),
-    sending: false,
-  }
+  const client = collectClient(resolved)
+  const visitorId = getOrCreateVisitorId()
+  const events = readQueue()
+  delivery.send({ type: 'initialize', runtime: { client, visitorId }, events })
 
   for (const command of initialQueue) {
     processQueueCommand(command)
@@ -226,6 +308,7 @@ export function initTracking(config?: TrackerConfig): void {
 }
 
 export async function identify(payload: IdentifyInput): Promise<void> {
+  const runtime = delivery.getSnapshot().context.runtime
   if (!runtime) {
     if (isBrowser) {
       window._omq ??= []
@@ -255,6 +338,7 @@ export async function identify(payload: IdentifyInput): Promise<void> {
 // the contact once identify resolves the visitor. null when there is nothing to link to: the
 // tracker is not started, the workspace has no enabled default Telegram bot, or the call failed.
 export async function telegramStartLink(): Promise<string | null> {
+  const runtime = delivery.getSnapshot().context.runtime
   if (!runtime) {
     return null
   }
@@ -281,6 +365,7 @@ function browserContext(): NonNullable<CollectIdentifyInput['context']> {
 }
 
 export function track(action: string, properties?: EventProperties): void {
+  const runtime = delivery.getSnapshot().context.runtime
   if (!runtime) {
     if (isBrowser) {
       window._omq ??= []
@@ -290,17 +375,16 @@ export function track(action: string, properties?: EventProperties): void {
     return
   }
 
-  runtime.pendingEvents.push({
-    visitorId: runtime.visitorId,
-    action,
-    properties: properties ?? null,
-    occurredAt: new Date().toISOString(),
-    clientEventId: uuid(),
+  delivery.send({
+    type: 'track',
+    event: {
+      visitorId: runtime.visitorId,
+      action,
+      properties: properties ?? null,
+      occurredAt: new Date().toISOString(),
+      clientEventId: uuid(),
+    },
   })
-  runtime.pendingEvents = runtime.pendingEvents.slice(-MAX_QUEUE)
-  saveQueue(runtime.pendingEvents)
-
-  flushSoon()
 }
 
 export function trackPageView(input: {
