@@ -112,7 +112,7 @@ func TestUpgradeMigratesWithTheNewBinarySwapsAndKeepsTheOldOne(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, []upgrade.Installed{{
-		Result:  upgrade.Result{Version: "0.2.0", Binary: s.target, Old: s.target + ".old"},
+		Version: "0.2.0", Binary: s.target, Old: s.target + ".old",
 		Service: "sphericon",
 	}}, of[upgrade.Installed](got), "installed, with the service to restart")
 	assert.Equal(t, "old binary", s.read(t, "sphericon.old"))

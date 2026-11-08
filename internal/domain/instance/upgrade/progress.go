@@ -18,11 +18,11 @@ type Latest struct {
 	Newer   bool
 }
 
-// AlreadyRunning: the Instance runs the release already, and nothing was changed.
+// AlreadyRunning says the Instance runs the release already, and nothing was changed.
 type AlreadyRunning struct{ Version string }
 
-// Crossing: the walk installs the release Plan in turn, the last release of each of Majors
-// Majors and then the target.
+// Crossing says the walk installs the releases of Plan in turn: the last release of each Major
+// it crosses (Majors of them), then the target.
 type Crossing struct {
 	Majors int
 	Plan   []string
@@ -35,16 +35,17 @@ type Notes struct {
 	Text     string
 }
 
-// Migrated: the release Version migrated the database; Output is what its `migrate` printed.
+// Migrated says the release Version migrated the database; Output is what its `migrate` printed.
 type Migrated struct {
 	Version string
 	Output  string
 }
 
-// Installed: a release replaced the binary. Restarted says whether the systemd unit Service was
+// Installed says a release replaced the binary. Restarted says whether the systemd unit Service was
 // restarted into it (`--restart`); otherwise restarting it is left to the Self-hoster.
 type Installed struct {
 	Result
+
 	Service   string
 	Restarted bool
 }

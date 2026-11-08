@@ -62,7 +62,7 @@ func TestWriteUpgradeNamesTheRestartLeftToTheSelfHoster(t *testing.T) {
 
 	err := commandline.WriteUpgrade(&out, upgradeOf(nil,
 		upgrade.Migrated{Version: "0.2.0"},
-		upgrade.Installed{Result: upgrade.Result{Version: "0.2.0", Binary: "/usr/local/bin/sphericon", Old: "/usr/local/bin/sphericon.old"}, Service: "sphericon-prod"}))
+		upgrade.Installed{Version: "0.2.0", Binary: "/usr/local/bin/sphericon", Old: "/usr/local/bin/sphericon.old", Service: "sphericon-prod"}))
 
 	require.NoError(t, err)
 	assert.Equal(t, "Installed 0.2.0 at /usr/local/bin/sphericon (the previous binary is /usr/local/bin/sphericon.old).\n"+
@@ -73,7 +73,7 @@ func TestWriteUpgradeOfARestartSaysTheServiceRestarted(t *testing.T) {
 	var out bytes.Buffer
 
 	err := commandline.WriteUpgrade(&out, upgradeOf(nil,
-		upgrade.Installed{Result: upgrade.Result{Version: "0.2.0", Binary: "/usr/local/bin/sphericon"}, Service: "sphericon", Restarted: true}))
+		upgrade.Installed{Version: "0.2.0", Binary: "/usr/local/bin/sphericon", Service: "sphericon", Restarted: true}))
 
 	require.NoError(t, err)
 	assert.Equal(t, "Installed 0.2.0 at /usr/local/bin/sphericon and restarted sphericon.\n", out.String())
@@ -93,7 +93,7 @@ func TestWriteUpgradeOfAFailedStepShowsWhatCameBefore(t *testing.T) {
 	var out bytes.Buffer
 
 	err := commandline.WriteUpgrade(&out, upgradeOf(failed,
-		upgrade.Installed{Result: upgrade.Result{Version: "0.3.2", Binary: "/bin/sphericon", Old: "/bin/sphericon.old"}, Service: "sphericon"}))
+		upgrade.Installed{Version: "0.3.2", Binary: "/bin/sphericon", Old: "/bin/sphericon.old", Service: "sphericon"}))
 
 	require.ErrorIs(t, err, failed)
 	assert.Contains(t, out.String(), "Installed 0.3.2")
