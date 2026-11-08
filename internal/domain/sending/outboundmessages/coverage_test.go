@@ -3,6 +3,7 @@ package outboundmessages_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"testing"
@@ -365,9 +366,7 @@ func TestClaimErrors(t *testing.T) {
 				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").SetClaimedAt(time.Now()).
 					SetStatus(outboundmessage.StatusSent).ExecX(ctx)
-				// The real insert would now violate the unique key; Postgres would also abort the
-				// whole test transaction, so report the violation the way ent does instead.
-				return nil, &ent.ConstraintError{}
+				// The real insert now meets the key and inserts nothing.
 			}
 			return next.Mutate(ctx, m)
 		})
@@ -387,9 +386,7 @@ func TestClaimErrors(t *testing.T) {
 				// test writes: a concurrent write simulated inside a hook is the race under test
 				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").SetClaimedAt(time.Now()).ExecX(ctx)
-				// The real insert would now violate the unique key; Postgres would also abort the
-				// whole test transaction, so report the violation the way ent does instead.
-				return nil, &ent.ConstraintError{}
+				// The real insert now meets the key and inserts nothing.
 			}
 			return next.Mutate(ctx, m)
 		})
@@ -408,9 +405,7 @@ func TestClaimErrors(t *testing.T) {
 				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").
 					SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
-				// The real insert would now violate the unique key; Postgres would also abort the
-				// whole test transaction, so report the violation the way ent does instead.
-				return nil, &ent.ConstraintError{}
+				// The real insert now meets the key and inserts nothing.
 			}
 			return next.Mutate(ctx, m)
 		})
@@ -420,16 +415,18 @@ func TestClaimErrors(t *testing.T) {
 		assert.Len(t, env.CustomerMail.Messages(), 1)
 	})
 
-	t.Run("constraint error but no row under the key", func(t *testing.T) {
+	t.Run("the key is taken but holds no row", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
 			if m.Op().Is(ent.OpCreate) {
-				return nil, &ent.ConstraintError{}
+				// The insert met the key and inserted nothing, and the row is gone by the re-read.
+				return nil, sql.ErrNoRows
 			}
 			return next.Mutate(ctx, m)
 		})
 		_, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:ghost", "a@example.com"))
-		assert.True(t, ent.IsConstraintError(err), "the original insert error is surfaced")
+		require.ErrorContains(t, err, "held no row")
+		assert.Empty(t, env.CustomerMail.Messages())
 	})
 
 	t.Run("re-reading the winner fails", func(t *testing.T) {
@@ -438,7 +435,7 @@ func TestClaimErrors(t *testing.T) {
 		onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
 			if m.Op().Is(ent.OpCreate) {
 				failFind = true
-				return nil, &ent.ConstraintError{}
+				return nil, sql.ErrNoRows
 			}
 			return next.Mutate(ctx, m)
 		})

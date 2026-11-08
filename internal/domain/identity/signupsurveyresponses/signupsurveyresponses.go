@@ -17,9 +17,15 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+)
+
+// The unique constraints of the tables this package writes (ADR 0106).
+var _ = db.Declare(
+	db.Fault("signup_survey_responses_user_id_key", "a response is written only by the transaction that clears the User's survey mark, which a second answer finds cleared (ErrNotDue)"),
 )
 
 // ErrNotDue is the refusal of a submit by a User who does not owe the survey: it was answered

@@ -13,7 +13,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+)
+
+// The unique constraints of the tables this package writes (ADR 0106).
+var _ = db.Declare(
+	db.Fault("recoverycode_user_id_code_hash", "the codes are drawn at random, and ReplaceIn deletes the User's set before it writes the next"),
 )
 
 // Count is the size of a Recovery code set.

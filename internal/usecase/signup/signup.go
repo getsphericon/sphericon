@@ -13,15 +13,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
-
-// ErrEmailTaken refuses a Sign-up of an address that belongs to a User, on an Instance that does
-// not require email verification (ADR 0031's one exception): nothing was created.
-var ErrEmailTaken = validation.ConflictField(validation.FieldEmail, "signup: the address belongs to a user", i18n.ErrorsEmailExists)
 
 // SignUpInput is the Sign-up form as typed.
 type SignUpInput struct {
@@ -170,7 +164,7 @@ func (u *UseCase) signUpUser(ctx context.Context, n users.NewUser) (*ent.User, e
 	}
 	if !found {
 		usr, err = u.users.CreateUnverified(ctx, n)
-		if !db.IsUniqueViolation(err) {
+		if !errors.Is(err, users.ErrEmailTaken) {
 			return usr, err
 		}
 		// Two Sign-ups of one new address raced: the loser finds the winner's User and goes on
@@ -189,18 +183,16 @@ func (u *UseCase) signUpUser(ctx context.Context, n users.NewUser) (*ent.User, e
 // signUpVerified is a Sign-up on an Instance that does not require email verification: the
 // User is Verified with its first Workspace at once, and the Sign-up completes as it does after
 // a verification link (events.UserSignedUp, which welcomes the User). No session starts; the
-// User signs in next.
+// User signs in next. An address that belongs to a User is users.ErrEmailTaken, and nothing is
+// created: with no mail to tell the owner, the Taken address is the answer (ADR 0031's one
+// exception).
 func (u *UseCase) signUpVerified(ctx context.Context, n users.NewUser, password string) (SignUpResult, error) {
 	hash, err := u.passwords.Hash(password)
 	if err != nil {
 		return SignUpResult{}, err
 	}
 	n.PasswordHash = hash
-	_, err = u.createVerified(ctx, n, signedUp)
-	switch {
-	case db.IsUniqueViolation(err):
-		return SignUpResult{}, ErrEmailTaken
-	case err != nil:
+	if _, err := u.createVerified(ctx, n, signedUp); err != nil {
 		return SignUpResult{}, err
 	}
 	return SignUpResult{}, nil

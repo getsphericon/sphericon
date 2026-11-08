@@ -116,6 +116,38 @@ func holdWorkspaceLock(t *testing.T, bus *events.Bus, s *ent.Scoped) (release fu
 	return release
 }
 
+// HoldOpen runs write in a transaction of the race's bus over the scope s and, once write returns,
+// holds the transaction open and uncommitted until the returned release is called, which commits it.
+// A concurrent writer that meets its rows waits for the release, as one that loses a race to a write
+// in flight does. An error of write ends the test. The release runs at cleanup if the test does
+// not call it.
+func (r *WorkspaceRace) HoldOpen(t *testing.T, s *ent.Scoped, write func(ts *ent.Scoped, pub events.Publisher) error) (release func()) {
+	t.Helper()
+	held, let := make(chan struct{}), make(chan struct{})
+	ended := make(chan error, 1)
+	go func() {
+		ended <- r.Bus.WithinScopedTx(context.Background(), s, func(ts *ent.Scoped, pub events.Publisher) error {
+			if err := write(ts, pub); err != nil {
+				return err
+			}
+			close(held)
+			<-let
+			return nil
+		})
+	}()
+	select {
+	case <-held:
+	case err := <-ended:
+		require.NoError(t, err, "the held transaction's write")
+	}
+	release = sync.OnceFunc(func() {
+		close(let)
+		require.NoError(t, <-ended)
+	})
+	t.Cleanup(release)
+	return release
+}
+
 // AcceptingQueue is a job queue for a bus over a RealDB that takes every job and keeps none: a race
 // test asks what the transactions committed, not what they queued.
 type AcceptingQueue struct{ events.JobQueue } // only the inserts are called

@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -93,6 +94,13 @@ func (m *Module) IssueVisitorStartLink(ctx context.Context, s *ent.Scoped, visit
 	}
 	return m.issue(ctx, s, nil, func(c *ent.StartTokenScopedCreate) { c.SetVisitorID(vis.ID) })
 }
+
+// The unique constraints of the Bindings and Start tokens (ADR 0106): no client can break them.
+var _ = db.Declare(
+	db.Fault("bindings_integration_destination",
+		"a Binding is written with ON CONFLICT DO NOTHING, and a redemption that meets one goes on with it"),
+	db.Fault("start_tokens_token_hash", "a Start token is random (newToken), stored by its hash"),
+)
 
 // issue stores a Start token whose owner own sets and returns the link that carries it.
 func (m *Module) issue(ctx context.Context, s *ent.Scoped, integrationID *int64, own func(*ent.StartTokenScopedCreate)) (StartLink, error) {
@@ -269,32 +277,37 @@ func startToken(text string) (string, bool) {
 	return token, tokenPattern.MatchString(token)
 }
 
+// bind gives the chat of r to the token's Contact or Visitor: a new Binding, or the chat's Binding on
+// bot moved to it. A Binding another redemption wrote since the read is found on the second read,
+// which the insert's conflict and the read share the key of.
 func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, now time.Time, tok *ent.StartToken, r Redemption) error {
-	existing, err := s.Binding().Query().
-		Where(binding.IntegrationID(bot.ID), binding.Destination(r.Destination)).
-		WithVisitor().
-		Only(ctx)
-	switch {
-	case ent.IsNotFound(err):
-		create := s.Binding().Create().
-			SetIntegrationID(bot.ID).
-			SetChannel(binding.ChannelTelegram).
-			SetDestination(r.Destination).
-			SetChatID(r.ChatID).
-			SetBoundAt(now).
-			SetAnnounced(tok.ContactID != nil)
-		if tok.ContactID != nil {
-			create.SetContactID(*tok.ContactID)
-		} else {
-			create.SetVisitorID(*tok.VisitorID)
+	for range 2 {
+		existing, err := s.Binding().Query().
+			Where(binding.IntegrationID(bot.ID), binding.Destination(r.Destination)).
+			WithVisitor().
+			Only(ctx)
+		switch {
+		case ent.IsNotFound(err):
+			created, err := createBinding(ctx, s, bot, now, tok, r)
+			switch {
+			case err != nil:
+				return err
+			case created:
+				return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
+			}
+			// Another redemption bound the chat since the read: read its Binding.
+			continue
+		case err != nil:
+			return fmt.Errorf("find binding: %w", err)
 		}
-		if err := create.Exec(ctx); err != nil {
-			return fmt.Errorf("create binding: %w", err)
-		}
-		return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
-	case err != nil:
-		return fmt.Errorf("find binding: %w", err)
+		return rebind(ctx, s, pub, bot, now, tok, r, existing)
 	}
+	return fmt.Errorf("bind: the Binding of the chat on bot %d was neither written nor found", bot.ID)
+}
+
+// rebind moves the chat's existing Binding on bot to the token's Contact or Visitor, and announces
+// what changed hands.
+func rebind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, now time.Time, tok *ent.StartToken, r Redemption, existing *ent.Binding) error {
 	same, err := sameContact(ctx, s, existing, tok)
 	if err != nil {
 		return err
@@ -323,6 +336,29 @@ func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Int
 		return err
 	}
 	return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
+}
+
+// createBinding writes the Binding of the chat; false, with nothing written, when the chat already
+// has a Binding on bot.
+func createBinding(ctx context.Context, s *ent.Scoped, bot *ent.Integration, now time.Time, tok *ent.StartToken, r Redemption) (bool, error) {
+	c := s.Binding().Create().
+		SetIntegrationID(bot.ID).
+		SetChannel(binding.ChannelTelegram).
+		SetDestination(r.Destination).
+		SetChatID(r.ChatID).
+		SetBoundAt(now).
+		SetAnnounced(tok.ContactID != nil)
+	if tok.ContactID != nil {
+		c.SetContactID(*tok.ContactID)
+	} else {
+		c.SetVisitorID(*tok.VisitorID)
+	}
+	_, err := c.OnConflictColumns(binding.FieldIntegrationID, binding.FieldDestination).DoNothing().ID(ctx)
+	created, err := db.Inserted(err)
+	if err != nil {
+		return false, fmt.Errorf("create binding: %w", err)
+	}
+	return created, nil
 }
 
 // Remove deletes the Binding of the Destination on bot, a chat Telegram says no longer reaches a

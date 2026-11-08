@@ -375,8 +375,8 @@ export const staffSignupItemsListOptions = (options?: Options<StaffSignupItemsLi
 export const staffSignupItemsCreateMutationKey = (options?: Partial<Options<StaffSignupItemsCreateData>>) => createMutationKey('staffSignupItemsCreate', options, ['StaffMember Signup Items']);
 
 /**
- * Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional
- * consent, and a second mailings consent are refused (422).
+ * Add a Sign-up item. A mailings consent on an item that is not an optional consent is refused
+ * (422); a taken key and a second mailings consent are refused (409).
  */
 export const staffSignupItemsCreateMutation = (options?: Partial<Options<StaffSignupItemsCreateData>>): UseMutationOptions<StaffSignupItemsCreateResponse, StaffSignupItemsCreateError, Options<StaffSignupItemsCreateData>> => {
   const mutationOptions: UseMutationOptions<StaffSignupItemsCreateResponse, StaffSignupItemsCreateError, Options<StaffSignupItemsCreateData>> = {
@@ -458,8 +458,9 @@ export const staffSignupItemsGetOptions = (options: Options<StaffSignupItemsGetD
 export const staffSignupItemsUpdateMutationKey = (options?: Partial<Options<StaffSignupItemsUpdateData>>) => createMutationKey('staffSignupItemsUpdate', options, ['StaffMember Signup Items']);
 
 /**
- * Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
- * consent, and a second mailings consent are refused (422); a deleted item is not found.
+ * Change a Sign-up item. A blank title and a mailings consent on an item that is not an
+ * optional consent are refused (422), a second mailings consent (409); a deleted item is not
+ * found.
  */
 export const staffSignupItemsUpdateMutation = (options?: Partial<Options<StaffSignupItemsUpdateData>>): UseMutationOptions<StaffSignupItemsUpdateResponse, StaffSignupItemsUpdateError, Options<StaffSignupItemsUpdateData>> => {
   const mutationOptions: UseMutationOptions<StaffSignupItemsUpdateResponse, StaffSignupItemsUpdateError, Options<StaffSignupItemsUpdateData>> = {
@@ -520,8 +521,8 @@ export const staffSignupItemsPublishMutationKey = (options?: Partial<Options<Sta
 
 /**
  * Publish the draft as a new version under a label: it takes effect at once, and is never
- * changed or removed afterwards. A label the item already has, and an item without a draft,
- * are refused (422); a deleted item is not found.
+ * changed or removed afterwards. An item without a draft is refused (422), a label the item
+ * already has (409); a deleted item is not found.
  */
 export const staffSignupItemsPublishMutation = (options?: Partial<Options<StaffSignupItemsPublishData>>): UseMutationOptions<StaffSignupItemsPublishResponse, StaffSignupItemsPublishError, Options<StaffSignupItemsPublishData>> => {
   const mutationOptions: UseMutationOptions<StaffSignupItemsPublishResponse, StaffSignupItemsPublishError, Options<StaffSignupItemsPublishData>> = {

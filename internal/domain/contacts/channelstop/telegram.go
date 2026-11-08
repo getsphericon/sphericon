@@ -47,13 +47,6 @@ type TelegramStop struct {
 // opt-out, and nothing else. It is idempotent: a user already opted out changes nothing and
 // records no second event. Run it inside the transaction s and pub are bound to.
 func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st TelegramStop) error {
-	exists, err := unsubscribes.Exists(ctx, s, channels.Telegram, st.Destination, eligibility.SourceEverything)
-	if err != nil {
-		return fmt.Errorf("find opt-out: %w", err)
-	}
-	if exists {
-		return nil
-	}
 	contactIDs, err := contactsOf(ctx, s, st.Destination)
 	if err != nil {
 		return err
@@ -69,8 +62,9 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 	if len(contactIDs) > 0 {
 		o.ContactID = contactIDs[0]
 	}
-	if err := unsubscribes.Add(ctx, s, o); err != nil {
-		return fmt.Errorf("record opt-out: %w", err)
+	added, err := unsubscribes.Add(ctx, s, o)
+	if err != nil || !added {
+		return err
 	}
 	for _, id := range contactIDs {
 		c, err := s.Contact().Get(ctx, id)

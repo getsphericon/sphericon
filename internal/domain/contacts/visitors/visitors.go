@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/samber/lo"
 )
@@ -36,19 +37,23 @@ func SeeIn(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) 
 // exists is left as it is. A chat started on its behalf binds to it
 // (internal/domain/sending/bindings).
 func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
-	vis, err := s.Visitor().Query().Where(visitor.VisitorID(visitorID)).First(ctx)
-	if err == nil {
-		return vis, nil
-	}
-	if !ent.IsNotFound(err) {
-		return nil, fmt.Errorf("find visitor: %w", err)
-	}
-	vis, err = s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(now).Save(ctx)
+	// A Visitor already there is left as it is, and read below like a new one.
+	err := s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(now).
+		OnConflictColumns(visitor.FieldWorkspaceID, visitor.FieldVisitorID).
+		DoNothing().
+		Exec(ctx)
+	_, err = db.Inserted(err)
 	if err != nil {
 		return nil, fmt.Errorf("create visitor: %w", err)
 	}
-	return vis, nil
+	return s.Visitor().Query().Where(visitor.VisitorID(visitorID)).Only(ctx)
 }
+
+// The unique constraint of the Visitor's table (ADR 0106): one Visitor per Visitor id, which
+// EnsureIn and SeeIn insert ON CONFLICT on.
+var _ = db.Declare(
+	db.Fault("visitors_workspace_id_visitor_id", "a Visitor is inserted ON CONFLICT (workspace_id, visitor_id), and its Visitor id never changes"),
+)
 
 // BindIn binds the Visitor id to the Contact contactID and marks it seen now, inside the
 // transaction s is bound to: the device Identify resolved.
@@ -153,20 +158,17 @@ func resolveIdentity(ctx context.Context, s *ent.Scoped, visitorID string, now t
 	}, nil
 }
 
+// findOrCreateVisitor creates the Visitor visitorID seen now, or marks the one there seen now: one
+// statement, so two batches of a new device do not race to create it.
 func findOrCreateVisitor(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
-	existing, err := s.Visitor().Query().
-		Where(visitor.VisitorID(visitorID)).
-		First(ctx)
-	if err == nil {
-		return s.Visitor().UpdateOneID(existing.ID).
-			SetLastSeenAt(now).
-			Save(ctx)
-	}
-	if !ent.IsNotFound(err) {
-		return nil, err
-	}
-	return s.Visitor().Create().
+	id, err := s.Visitor().Create().
 		SetVisitorID(visitorID).
 		SetLastSeenAt(now).
-		Save(ctx)
+		OnConflictColumns(visitor.FieldWorkspaceID, visitor.FieldVisitorID).
+		Update(func(u *ent.VisitorScopedUpsert) { u.UpdateLastSeenAt().UpdateUpdatedAt() }).
+		ID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.Visitor().Get(ctx, id)
 }

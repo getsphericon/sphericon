@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -745,12 +746,13 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, rec *ent.Broa
 		if rec.ContactID != 0 {
 			create.SetContactID(rec.ContactID)
 		}
-		created, err := create.Save(ctx)
-		if err == nil {
-			return Result{Outcome: Failed, Reason: cause.Error(), MessageID: created.ID}, nil
-		}
-		if !ent.IsConstraintError(err) {
+		id, err := create.OnConflictColumns(outboundmessage.FieldWorkspaceID, outboundmessage.FieldIdempotencyKey).DoNothing().ID(ctx)
+		inserted, err := db.Inserted(err)
+		switch {
+		case err != nil:
 			return Result{}, err
+		case inserted:
+			return Result{Outcome: Failed, Reason: cause.Error(), MessageID: id}, nil
 		}
 		// Lost the insert race to an attempt's claim: judge that row like any other.
 		if msg, err = m.find(ctx, s, key); err != nil || msg == nil {

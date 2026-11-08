@@ -10,12 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// IsUniqueViolation reports whether err is a Postgres unique-constraint violation.
-func IsUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation
-}
-
 // IsUnavailable reports whether err means the database cannot be reached right now: a
 // failed or dropped connection, a server shutting down or out of connections. The
 // request that met it changed nothing and a retry can succeed, unlike any other error.

@@ -8,7 +8,9 @@ import (
 	"unicode"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -91,45 +93,50 @@ func (m *Module) Save(ctx context.Context, s *ent.Scoped, in Input) (Kit, error)
 			return Kit{}, err
 		}
 	}
-	var saved *ent.BrandKit
-	// A second first save that loses the race hits the unique index of the Workspace; it runs again
-	// as an update, so the starters are made once.
-	for attempt := 0; ; attempt++ {
-		saved, err = m.save(ctx, s, in, starters)
-		if ent.IsConstraintError(err) && attempt == 0 {
-			continue
-		}
-		break
-	}
+	saved, err := m.save(ctx, s, in, starters)
 	if err != nil {
 		return Kit{}, err
 	}
 	return kitOf(saved), nil
 }
 
+// The unique constraint of the Brand kit's table (ADR 0106): a Workspace has one Brand kit.
+var _ = db.Declare(
+	db.Fault("brandkit_workspace_id", "save inserts the Brand kit ON CONFLICT (workspace_id) DO NOTHING, then updates the one there"),
+)
+
+// save creates the Brand kit with the starters, or replaces the values of the one there: a first
+// save that a concurrent one beat to the row finds it there, so the starters are made once.
 func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []renderedStarter) (*ent.BrandKit, error) {
 	var saved *ent.BrandKit
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		row, err := ts.BrandKit().Query().Only(ctx)
+		id, err := ts.BrandKit().Create().
+			SetAccentColor(in.AccentColor).
+			SetTextColor(in.TextColor).
+			SetBackgroundColor(in.BackgroundColor).
+			SetHeadingFont(in.HeadingFont).
+			SetBodyFont(in.BodyFont).
+			SetLogoURL(in.LogoURL).
+			SetButtonTextColor(in.ButtonTextColor).
+			SetButtonRadius(in.ButtonRadius).
+			SetFooterText(in.FooterText).
+			OnConflictColumns(brandkit.FieldWorkspaceID).
+			DoNothing().
+			ID(ctx)
+		inserted, err := db.Inserted(err)
 		switch {
-		case ent.IsNotFound(err):
-			saved, err = ts.BrandKit().Create().
-				SetAccentColor(in.AccentColor).
-				SetTextColor(in.TextColor).
-				SetBackgroundColor(in.BackgroundColor).
-				SetHeadingFont(in.HeadingFont).
-				SetBodyFont(in.BodyFont).
-				SetLogoURL(in.LogoURL).
-				SetButtonTextColor(in.ButtonTextColor).
-				SetButtonRadius(in.ButtonRadius).
-				SetFooterText(in.FooterText).
-				Save(ctx)
-			if err != nil {
+		case err != nil:
+			return err
+		case inserted:
+			if _, err := m.createStarters(ctx, ts, starters); err != nil {
 				return err
 			}
-			_, err = m.createStarters(ctx, ts, starters)
+			saved, err = ts.BrandKit().Get(ctx, id)
 			return err
-		case err != nil:
+		}
+		// The Brand kit is there: this save updates it.
+		row, err := ts.BrandKit().Query().Only(ctx)
+		if err != nil {
 			return err
 		}
 		saved, err = ts.BrandKit().UpdateOneID(row.ID).

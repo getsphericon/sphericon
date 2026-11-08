@@ -1187,7 +1187,7 @@ rules:
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   domain-contacts:
-    may_depend_on: []
+    may_depend_on: [domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *core-forbids

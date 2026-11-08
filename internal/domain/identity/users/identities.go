@@ -131,17 +131,22 @@ func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin,
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
 	}
-	u, err := tx.User.Create().
-		SetName(name).
-		SetEmail(email).
-		SetEmailVerifiedAt(now).
-		SetEmailProvenAt(now).
-		SetNillableSignupSurveyDueAt(surveyDueAt(in.SurveyDue, now)).
-		Save(ctx)
+	var u *ent.User
+	err := constraints.Write(ctx, tx, func() error {
+		var err error
+		u, err = tx.User.Create().
+			SetName(name).
+			SetEmail(email).
+			SetEmailVerifiedAt(now).
+			SetEmailProvenAt(now).
+			SetNillableSignupSurveyDueAt(surveyDueAt(in.SurveyDue, now)).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+		return tx.UserIdentity.Create().SetUserID(u.ID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx)
+	})
 	if err != nil {
-		return nil, err
-	}
-	if err := tx.UserIdentity.Create().SetUserID(u.ID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx); err != nil {
 		return nil, err
 	}
 	return u, nil
@@ -177,28 +182,40 @@ func (a *Module) LinkIdentity(ctx context.Context, userID int64, provider, subje
 		if err != nil {
 			return err
 		}
-		holder, err := tx.UserIdentity.Query().
-			Where(useridentity.Provider(provider), useridentity.Subject(subject)).
-			Only(ctx)
-		switch {
-		case err == nil && holder.UserID == userID:
-			saved = u
-			return nil
-		case err == nil:
-			return ErrIdentityInUse
-		case !ent.IsNotFound(err):
-			return err
+		saved = u
+		// A provider account linked already inserts nothing; whose it is decides the answer.
+		err = tx.UserIdentity.Create().SetUserID(userID).SetProvider(provider).SetSubject(subject).
+			OnConflictColumns(useridentity.FieldProvider, useridentity.FieldSubject).DoNothing().
+			Exec(ctx)
+		added, err = db.Inserted(err)
+		if err != nil || !added {
+			return identityHeldBy(ctx, tx, provider, subject, userID, err)
 		}
-		if err := tx.UserIdentity.Create().SetUserID(userID).SetProvider(provider).SetSubject(subject).Exec(ctx); err != nil {
-			return err
-		}
-		saved, added = u, true
 		return RecordUserAction(ctx, tx, pub, saved, events.ActionUserIdentityLink, map[string]any{"provider": provider})
 	})
-	if db.IsUniqueViolation(err) {
-		return nil, false, ErrIdentityInUse
+	if err != nil {
+		return nil, false, err
 	}
-	return saved, added, err
+	return saved, added, nil
+}
+
+// identityHeldBy is the answer to linking a provider account that inserted nothing: err when the
+// insert failed, nothing when the account is already userID's, ErrIdentityInUse when it is another
+// User's.
+func identityHeldBy(ctx context.Context, tx *ent.Client, provider, subject string, userID int64, err error) error {
+	if err != nil {
+		return err
+	}
+	holder, err := tx.UserIdentity.Query().
+		Where(useridentity.Provider(provider), useridentity.Subject(subject)).
+		Only(ctx)
+	switch {
+	case err != nil:
+		return err
+	case holder.UserID != userID:
+		return ErrIdentityInUse
+	}
+	return nil
 }
 
 // UnlinkIdentity removes one of the User's Linked identities and bumps the session epoch.
@@ -261,11 +278,15 @@ func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLo
 				return err
 			}
 		}
-		identity, err := tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Save(ctx)
-		if err != nil {
+		if err := constraints.Write(ctx, tx, func() error {
+			identity, err := tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Save(ctx)
+			if err == nil {
+				identityID = identity.ID
+			}
+			return err
+		}); err != nil {
 			return err
 		}
-		identityID = identity.ID
 		if err := RecordUserAction(ctx, tx, pub, linked, events.ActionUserIdentityLink, map[string]any{"provider": in.Provider}); err != nil {
 			return err
 		}
@@ -297,7 +318,9 @@ func TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in Provider
 	if n == 0 {
 		return nil, ErrAlreadyVerified
 	}
-	if err := tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx); err != nil {
+	if err := constraints.Write(ctx, tx, func() error {
+		return tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx)
+	}); err != nil {
 		return nil, err
 	}
 	return tx.User.Get(ctx, holderID)

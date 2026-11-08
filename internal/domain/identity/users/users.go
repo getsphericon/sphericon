@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -130,22 +131,24 @@ func CheckName(name string) error {
 // CreateUnverified creates the Unverified User of a Sign-up (ADR 0030): its name, email and
 // password hash from the Sign-up form, no Membership, and in the same transaction the Consent
 // records of its answers to the Sign-up items (ADR 0062). The password goes live only when the
-// address is verified from the Sign-up browser, or replaced on the link. The unique index on the
-// email refuses a taken address (see db.IsUniqueViolation). SurveyDue marks the User as owing the
-// Sign-up survey (the Instance asks it).
+// address is verified from the Sign-up browser, or replaced on the link. A taken address is
+// ErrEmailTaken. SurveyDue marks the User as owing the Sign-up survey (the Instance asks it).
 func (a *Module) CreateUnverified(ctx context.Context, n NewUser) (*ent.User, error) {
 	if err := CheckName(n.Name); err != nil {
 		return nil, err
 	}
 	var created *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		u, err := tx.User.Create().SetName(n.Name).SetEmail(n.Email).SetPasswordHash(n.PasswordHash).
-			SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue, a.now())).Save(ctx)
+		err := constraints.Write(ctx, tx, func() error {
+			var err error
+			created, err = tx.User.Create().SetName(n.Name).SetEmail(n.Email).SetPasswordHash(n.PasswordHash).
+				SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue, a.now())).Save(ctx)
+			return err
+		})
 		if err != nil {
 			return err
 		}
-		created = u
-		return consentrecords.Write(ctx, tx, u.ID, n.Consents)
+		return consentrecords.Write(ctx, tx, created.ID, n.Consents)
 	})
 	return created, err
 }
@@ -174,16 +177,18 @@ func (a *Module) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwo
 }
 
 // CreateUser creates a User whose email is already proven, with a password hash: a
-// User made by the platform itself rather than by a Sign-up.
+// User made by the platform itself rather than by a Sign-up. A taken address is ErrEmailTaken.
 func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
 	if err := CheckName(name); err != nil {
 		return nil, err
 	}
 	var u *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		var err error
-		u, err = tx.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(a.now()).Save(ctx)
-		return err
+		return constraints.Write(ctx, tx, func() error {
+			var err error
+			u, err = tx.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(a.now()).Save(ctx)
+			return err
+		})
 	})
 	return u, err
 }
@@ -219,6 +224,17 @@ func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, 
 // completes an Unverified User lost the race to another one.
 var ErrAlreadyVerified = errors.New("users: the email is already verified")
 
+// ErrEmailTaken is an address that belongs to a User already: users_email_key refuses a second.
+var ErrEmailTaken = validation.ConflictField(validation.FieldEmail, "users: the address belongs to a user", i18n.ErrorsEmailExists)
+
+// constraints are the unique constraints of the Users, their Linked identities and the pending
+// sign-ups (ADR 0106).
+var constraints = db.Declare(
+	db.Refusal("users_email_key", ErrEmailTaken),
+	db.Refusal("useridentity_provider_subject", ErrIdentityInUse),
+	db.Fault("pendingsignup_provider_subject", "HoldPending writes with ON CONFLICT DO NOTHING on it, after it deletes the account's pending sign-up"),
+)
+
 // FirstWorkspaceName is the fixed name of the Workspace made for a User at verification.
 const FirstWorkspaceName = "Personal"
 
@@ -226,16 +242,20 @@ const FirstWorkspaceName = "Personal"
 // email verification (ADR 0030): Verified at once with its password, and the Consent records of
 // its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up survey. The caller has
 // checked the name (CheckName) and creates the first Workspace on the same transaction
-// (internal/usecase/workspacecreation). The unique index on the email refuses a taken address
-// (see db.IsUniqueViolation).
+// (internal/usecase/workspacecreation). A taken address is ErrEmailTaken.
 func CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser, at time.Time) (*ent.User, error) {
-	u, err := tx.User.Create().
-		SetName(n.Name).
-		SetEmail(n.Email).
-		SetPasswordHash(n.PasswordHash).
-		SetEmailVerifiedAt(at).
-		SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue, at)).
-		Save(ctx)
+	var u *ent.User
+	err := constraints.Write(ctx, tx, func() error {
+		var err error
+		u, err = tx.User.Create().
+			SetName(n.Name).
+			SetEmail(n.Email).
+			SetPasswordHash(n.PasswordHash).
+			SetEmailVerifiedAt(at).
+			SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue, at)).
+			Save(ctx)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -384,12 +404,16 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 // ChangeEmail swaps the login email for one proven by a confirmation link, so it is
 // stored verified, and bumps the session epoch: every session issued before the
 // change ends (ADR 0020). The new address is proven now, so it is a domain-join step
-// (ADR 0051) in the same transaction. The unique index guards a race on the address (see
-// db.IsUniqueViolation).
+// (ADR 0051) in the same transaction. An address taken meanwhile is ErrEmailTaken.
 func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) error {
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		now := a.now()
-		u, err := tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
+		var u *ent.User
+		err := constraints.Write(ctx, tx, func() error {
+			var err error
+			u, err = tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
+			return err
+		})
 		if err != nil {
 			return err
 		}

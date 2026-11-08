@@ -2,15 +2,14 @@ package contacts
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -44,14 +43,16 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 			return nil, ErrReservedKey
 		}
 		// DO NOTHING, not Ignore: an insert is the audited create of the definition under
-		// a User or API token (ADR 0022); a conflict writes nothing and reports sql.ErrNoRows.
-		if err := s.CustomField().Create().
+		// a User or API token (ADR 0022); a conflict writes nothing.
+		err := s.CustomField().Create().
 			SetKey(key).
 			SetName(key).
 			SetType(inferFieldType(val)).
 			OnConflictColumns(customfield.FieldWorkspaceID, customfield.FieldKey).
 			DoNothing().
-			Exec(ctx); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			Exec(ctx)
+		_, err = db.Inserted(err)
+		if err != nil {
 			return nil, err
 		}
 		out[key] = val

@@ -7,6 +7,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/internal/infra/db"
+)
+
+// The unique constraint of the Holds (ADR 0106): no client can break it.
+var _ = db.Declare(
+	db.Fault("holds_workspace_id_key", "a hold is written with ON CONFLICT DO NOTHING, and a first set that finds one renews it"),
 )
 
 // Input is what a setter states about a hold.
@@ -29,19 +35,25 @@ type Change struct {
 // does both and repeating it is harmless (Changed is false when the stored hold already says
 // what in says). setBy names who set it.
 func Set(ctx context.Context, s *ent.Scoped, key, setBy string, in Input) (Change, error) {
-	// A concurrent first set of the same key loses the unique index once; the retry
-	// then finds the row and renews it.
+	// A concurrent first set of the same key inserts nothing; the retry then finds the row
+	// and renews it.
 	for range 2 {
 		existing, err := s.Hold().Query().Where(enthold.Key(key)).Only(ctx)
 		switch {
 		case ent.IsNotFound(err):
-			created, err := s.Hold().Create().
+			id, err := s.Hold().Create().
 				SetKey(key).SetReasonCode(in.ReasonCode).SetMessage(in.Message).SetNillableActionURL(in.ActionURL).
 				SetExpiresAt(in.ExpiresAt).SetSetBy(setBy).
-				Save(ctx)
-			if ent.IsConstraintError(err) {
+				OnConflictColumns(enthold.FieldWorkspaceID, enthold.FieldKey).DoNothing().
+				ID(ctx)
+			inserted, err := db.Inserted(err)
+			if err != nil {
+				return Change{}, err
+			}
+			if !inserted {
 				continue
 			}
+			created, err := s.Hold().Get(ctx, id)
 			return Change{Hold: created, Changed: err == nil}, err
 		case err != nil:
 			return Change{}, err

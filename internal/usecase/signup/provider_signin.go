@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -67,7 +66,7 @@ func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pr
 			return &users.ProviderSignin{User: known}, nil
 		case users.SigninCreate:
 			created, err := u.createFromProvider(ctx, in)
-			if db.IsUniqueViolation(err) && attempt == 0 {
+			if lostRace(err) && attempt == 0 {
 				// Two sign-ins of one person raced: read the facts again, where the winner's
 				// User and identity are now visible.
 				continue
@@ -78,16 +77,13 @@ func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pr
 			return &users.ProviderSignin{User: created, Created: true}, nil
 		case users.SigninPending:
 			held, err := u.users.HoldPending(ctx, in)
-			if db.IsUniqueViolation(err) && attempt == 0 {
-				continue // the same sign-in raced itself: read the facts again
-			}
 			if err != nil {
 				return nil, err
 			}
 			return &users.ProviderSignin{Pending: held}, nil
 		case users.SigninLink:
 			linked, identityID, err := u.users.LinkToHolder(ctx, holder.ID, in)
-			if db.IsUniqueViolation(err) && attempt == 0 {
+			if lostRace(err) && attempt == 0 {
 				continue // the same sign-in raced itself: read the facts again
 			}
 			if err != nil {
@@ -96,7 +92,7 @@ func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pr
 			return &users.ProviderSignin{User: linked, LinkedIdentityID: identityID}, nil
 		case users.SigninTakeOver:
 			taken, err := u.takeOver(ctx, holder.ID, in)
-			if (errors.Is(err, users.ErrAlreadyVerified) || db.IsUniqueViolation(err)) && attempt == 0 {
+			if (errors.Is(err, users.ErrAlreadyVerified) || lostRace(err)) && attempt == 0 {
 				// The person who signed up verified the address first (it is a Verified User now), or
 				// the sign-in raced itself: read the facts again.
 				continue
@@ -109,6 +105,12 @@ func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pr
 			return nil, &users.SigninRefusedError{Reason: decision.Reason}
 		}
 	}
+}
+
+// lostRace reports whether err is a write of a provider sign-in that another sign-in of the same
+// person won: the address or the provider account is taken now.
+func lostRace(err error) bool {
+	return errors.Is(err, users.ErrEmailTaken) || errors.Is(err, users.ErrIdentityInUse)
 }
 
 // createFromProvider creates a Verified User for a trusted provider email, with the Linked
@@ -153,10 +155,6 @@ func (u *UseCase) CompletePendingSignup(ctx context.Context, id int64, consents 
 		taken = p
 		return usr, err
 	})
-	if db.IsUniqueViolation(err) {
-		// Another sign-up took the address or the provider account first.
-		return nil, users.ErrPendingSignupGone
-	}
 	if err != nil {
 		return nil, err
 	}

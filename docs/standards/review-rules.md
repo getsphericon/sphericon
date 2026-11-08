@@ -71,6 +71,15 @@ or `AGENTS.md`.
    to a row is a foreign key with an explicit `ON DELETE` (`SET NULL` for a fact that outlives its
    target, `CASCADE` for a row that dies with it). A reference without a key is allowed only for a
    tombstone or a snapshot, with the reason written at the field.
+   A violation is read by its class (ADR 0106). The owner of a table declares each of its unique
+   constraints, by exact name, beside the writes: a refusal (its exported `Conflict` sentinel) or a
+   fault with the reason no client can break it (`db.Declare`, `db.Refusal`, `db.Fault`). A write
+   that may be refused runs through `Constraints.Write`, which reads the violation and holds a
+   savepoint so the caller's transaction stays usable; no module inspects `pgconn` or
+   `ent.IsConstraintError`. A foreign key or CHECK violation is a fault, never caught. A write that is
+   done when the row is already there says so in SQL (`ON CONFLICT ... DO NOTHING`), and no read
+   before an insert looks for a duplicate: the constraint is the one check. A test in `internal/app`
+   holds the declarations to the schema and to the owners of the tables.
 
 ## Data
 
@@ -124,7 +133,9 @@ or `AGENTS.md`.
     be decoded, or it names a reference that is unknown or expired (a mailed link that does not
     stand: `validation.LinkInvalid`; a pending sign-up, a feed cursor:
     `validation.UnknownReference`). 422: it was decoded and a module's rule refused it. 409: the
-    subject is in use. 401: no credential, or an invalid one (a sign-in that does not hold). 403: a
+    subject is in use, or its state refuses the request: a taken key is the subject's state, not a
+    bad input (ADR 0109), and is the refusal its owner declares for the unique constraint (ADR 0106);
+    an undeclared violation stays a 500, with no fallback in `problem`. 401: no credential, or an invalid one (a sign-in that does not hold). 403: a
     valid credential without the scope or Permission, a step the caller did not prove, an address
     not proven yet, or a required acceptance pending (`acceptance_pending`). 428: an input only this
     case needs is missing. 404: not found, or a Workspace the caller is not a member of. A handler

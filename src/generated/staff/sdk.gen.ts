@@ -258,8 +258,8 @@ export const staffSignupItemsList = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
- * Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional
- * consent, and a second mailings consent are refused (422).
+ * Add a Sign-up item. A mailings consent on an item that is not an optional consent is refused
+ * (422); a taken key and a second mailings consent are refused (409).
  */
 export const staffSignupItemsCreate = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsCreateData, ThrowOnError>): RequestResult<StaffSignupItemsCreateResponses, StaffSignupItemsCreateErrors, ThrowOnError> => (options.client ?? client).post<StaffSignupItemsCreateResponses, StaffSignupItemsCreateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -343,8 +343,9 @@ export const staffSignupItemsGet = <ThrowOnError extends boolean = false>(option
 });
 
 /**
- * Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
- * consent, and a second mailings consent are refused (422); a deleted item is not found.
+ * Change a Sign-up item. A blank title and a mailings consent on an item that is not an
+ * optional consent are refused (422), a second mailings consent (409); a deleted item is not
+ * found.
  */
 export const staffSignupItemsUpdate = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsUpdateData, ThrowOnError>): RequestResult<StaffSignupItemsUpdateResponses, StaffSignupItemsUpdateErrors, ThrowOnError> => (options.client ?? client).patch<StaffSignupItemsUpdateResponses, StaffSignupItemsUpdateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -409,8 +410,8 @@ export const staffSignupItemsListVersions = <ThrowOnError extends boolean = fals
 
 /**
  * Publish the draft as a new version under a label: it takes effect at once, and is never
- * changed or removed afterwards. A label the item already has, and an item without a draft,
- * are refused (422); a deleted item is not found.
+ * changed or removed afterwards. An item without a draft is refused (422), a label the item
+ * already has (409); a deleted item is not found.
  */
 export const staffSignupItemsPublish = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsPublishData, ThrowOnError>): RequestResult<StaffSignupItemsPublishResponses, StaffSignupItemsPublishErrors, ThrowOnError> => (options.client ?? client).post<StaffSignupItemsPublishResponses, StaffSignupItemsPublishErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

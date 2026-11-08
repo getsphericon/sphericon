@@ -108,8 +108,8 @@ type Invoker interface {
 	StaffMeGet(ctx context.Context) (*StaffResource, error)
 	// StaffSignupItemsCreate invokes StaffSignupItems_create operation.
 	//
-	// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
-	// a second mailings consent are refused (422).
+	// Add a Sign-up item. A mailings consent on an item that is not an optional consent is refused (422);
+	// a taken key and a second mailings consent are refused (409).
 	//
 	// POST /signup-items
 	StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (*StaffSignupItemResource, error)
@@ -144,7 +144,7 @@ type Invoker interface {
 	// StaffSignupItemsPublish invokes StaffSignupItems_publish operation.
 	//
 	// Publish the draft as a new version under a label: it takes effect at once, and is never changed or
-	// removed afterwards. A label the item already has, and an item without a draft, are refused (422); a
+	// removed afterwards. An item without a draft is refused (422), a label the item already has (409); a
 	// deleted item is not found.
 	//
 	// POST /signup-items/{id}/versions
@@ -165,8 +165,8 @@ type Invoker interface {
 	StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (*StaffSignupItemResource, error)
 	// StaffSignupItemsUpdate invokes StaffSignupItems_update operation.
 	//
-	// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
-	// and a second mailings consent are refused (422); a deleted item is not found.
+	// Change a Sign-up item. A blank title and a mailings consent on an item that is not an optional
+	// consent are refused (422), a second mailings consent (409); a deleted item is not found.
 	//
 	// PATCH /signup-items/{id}
 	StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (*StaffSignupItemResource, error)
@@ -1453,8 +1453,8 @@ func (c *Client) sendStaffMeGet(ctx context.Context) (res *StaffResource, err er
 
 // StaffSignupItemsCreate invokes StaffSignupItems_create operation.
 //
-// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
-// a second mailings consent are refused (422).
+// Add a Sign-up item. A mailings consent on an item that is not an optional consent is refused (422);
+// a taken key and a second mailings consent are refused (409).
 //
 // POST /signup-items
 func (c *Client) StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (*StaffSignupItemResource, error) {
@@ -2091,7 +2091,7 @@ func (c *Client) sendStaffSignupItemsListVersions(ctx context.Context, params St
 // StaffSignupItemsPublish invokes StaffSignupItems_publish operation.
 //
 // Publish the draft as a new version under a label: it takes effect at once, and is never changed or
-// removed afterwards. A label the item already has, and an item without a draft, are refused (422); a
+// removed afterwards. An item without a draft is refused (422), a label the item already has (409); a
 // deleted item is not found.
 //
 // POST /signup-items/{id}/versions
@@ -2486,8 +2486,8 @@ func (c *Client) sendStaffSignupItemsSaveDraft(ctx context.Context, request *Sta
 
 // StaffSignupItemsUpdate invokes StaffSignupItems_update operation.
 //
-// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
-// and a second mailings consent are refused (422); a deleted item is not found.
+// Change a Sign-up item. A blank title and a mailings consent on an item that is not an optional
+// consent are refused (422), a second mailings consent (409); a deleted item is not found.
 //
 // PATCH /signup-items/{id}
 func (c *Client) StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (*StaffSignupItemResource, error) {

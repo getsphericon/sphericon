@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -185,13 +185,17 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 		return nil, acceptProof{}, herr
 	}
 	if ent.IsNotFound(err) {
-		u, err = tx.User.Create().
-			SetName(name).
-			SetEmail(inv.Email).
-			SetPasswordHash(hash).
-			SetEmailVerifiedAt(at).
-			SetEmailProvenAt(at).
-			Save(ctx)
+		err = constraints.Write(ctx, tx, func() error {
+			var cerr error
+			u, cerr = tx.User.Create().
+				SetName(name).
+				SetEmail(inv.Email).
+				SetPasswordHash(hash).
+				SetEmailVerifiedAt(at).
+				SetEmailProvenAt(at).
+				Save(ctx)
+			return cerr
+		})
 	} else {
 		u, err = MarkVerifiedIn(ctx, tx, u.ID, name, &hash, at)
 		if err == nil {
@@ -232,13 +236,14 @@ func ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.User, role mem
 	}
 	// DO NOTHING rather than catching a unique violation, which would abort the
 	// transaction. A concurrent accept that inserted first leaves nothing to write
-	// (sql.ErrNoRows); its Membership is read back, so the rules below still apply.
+	// (db.Inserted); its Membership is read back, so the rules below still apply.
 	err = memberships.AddInvitedIn(ctx, ts, u.ID, role)
+	inserted, err := db.Inserted(err)
 	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
 	case err != nil:
 		return nil, err
+	case !inserted:
+		return ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
 	}
 	// Created: nothing was there before, so no earlier Membership to compare with.
 	return nil, nil

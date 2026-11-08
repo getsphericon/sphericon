@@ -21,8 +21,14 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	entcredential "github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+)
+
+// The unique constraints of the tables this package writes (ADR 0106).
+var _ = db.Declare(
+	db.Fault("service_credentials_prefix_key", "the prefix is drawn at random (credentials.GenerateServiceCredential)"),
 )
 
 var (

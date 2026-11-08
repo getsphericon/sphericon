@@ -88,7 +88,8 @@ func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publi
 // 21610: the number texted STOP to the sender): the number's Channel-wide opt-out (ADR 0077), the
 // same as a STOP texted to sphericon, keyed by the number whichever sender found out.
 func (smsChannel) optedOut(ctx context.Context, s *ent.Scoped, _ events.Publisher, _ *ent.Integration, _ *ent.OutboundMessage, to target, _ time.Time) error {
-	return channelstop.StopSMS(ctx, s, to.dest, unsubscribe.ViaRefusedSend)
+	_, err := channelstop.StopSMS(ctx, s, to.dest, unsubscribe.ViaRefusedSend)
+	return err
 }
 
 // smsMessage is a rendered text, as the provider takes it.

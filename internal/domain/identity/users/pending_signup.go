@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -27,7 +28,8 @@ var ErrPendingSignupGone = validation.UnknownReference("users: the pending sign-
 
 // HoldPending keeps what the provider proved as a pending sign-up instead of creating the User
 // (ADR 0062), open until PendingSignupTTL after now. A pending sign-up of the same provider account
-// is replaced, so only the latest flow's reference works.
+// is replaced, so only the latest flow's reference works; of two holds of the account that race,
+// both answer with the one that was written.
 func (a *Module) HoldPending(ctx context.Context, in ProviderLogin) (*ent.PendingSignup, error) {
 	var held *ent.PendingSignup
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
@@ -46,8 +48,14 @@ func (a *Module) HoldPending(ctx context.Context, in ProviderLogin) (*ent.Pendin
 		if in.Invitation != nil {
 			create = create.SetInvitationID(in.Invitation.ID)
 		}
-		var err error
-		held, err = create.Save(ctx)
+		err := create.OnConflictColumns(pendingsignup.FieldProvider, pendingsignup.FieldSubject).DoNothing().Exec(ctx)
+		_, err = db.Inserted(err)
+		if err != nil {
+			return err
+		}
+		held, err = tx.PendingSignup.Query().
+			Where(pendingsignup.Provider(in.Provider), pendingsignup.Subject(in.Subject)).
+			Only(ctx)
 		return err
 	})
 	return held, err
@@ -108,6 +116,10 @@ func (a *Module) CompletePendingSignupIn(ctx context.Context, tx *ent.Client, pu
 		Provider: p.Provider, Subject: p.Subject, Email: p.Email, Name: p.Name,
 		SurveyDue: surveyDue && inv == nil,
 	}, now)
+	if errors.Is(err, ErrEmailTaken) || errors.Is(err, ErrIdentityInUse) {
+		// Another sign-up took the address or the provider account first.
+		return nil, nil, ErrPendingSignupGone
+	}
 	if err != nil {
 		return nil, nil, err
 	}

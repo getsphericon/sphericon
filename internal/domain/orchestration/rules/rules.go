@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
@@ -342,6 +343,14 @@ func (m *Module) merge(ctx context.Context, s *ent.Scoped, base *ent.RuleVersion
 	}
 	return def, nil
 }
+
+// The unique constraints of the Rule's tables (ADR 0106): no client can break them.
+var _ = db.Declare(
+	db.Fault("rule_versions_workspace_id_rule_id_version",
+		"a version's number is the next after the newest, read under the Workspace lock (versioneddefinition)"),
+	db.Fault("rulefiring_rule_id_source_id", "a Firing is written with ON CONFLICT DO NOTHING: an Event fires a Rule once"),
+	db.Fault("ruleversiontrigger_version_id_action", "a version's Trigger events are written once, without repeats (cleanTriggers)"),
+)
 
 // saveVersion stores a new version of the Rule with its Trigger events.
 func saveVersion(ctx context.Context, s *ent.Scoped, ruleID int64, number int, def definition) (*ent.RuleVersion, error) {
@@ -727,31 +736,27 @@ func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev
 		if err != nil || len(still) == 0 {
 			return err
 		}
-		// Check first so a redelivered Event does not trip the unique index (a violation would
-		// poison the transaction); the index stays as the race safety net.
-		exists, err := ts.RuleFiring().Query().
-			Where(rulefiring.RuleID(v.RuleID), rulefiring.SourceID(ev.SourceID)).
-			Exist(ctx)
-		if err != nil || exists {
-			return err
-		}
-		f, err := ts.RuleFiring().Create().
+		// The Rule fires once per Event: a redelivered Event, or the same Event raced, writes
+		// nothing and queues nothing.
+		id, err := ts.RuleFiring().Create().
 			SetRuleID(v.RuleID).
 			SetVersionID(v.ID).
 			SetContactID(ev.ContactID).
 			SetAction(ev.Action).
 			SetSourceID(ev.SourceID).
 			SetNillableProperties(propertiesJSON(ev.Properties)).
-			Save(ctx)
-		if err != nil {
+			OnConflictColumns(rulefiring.FieldRuleID, rulefiring.FieldSourceID).
+			DoNothing().
+			ID(ctx)
+		inserted, err := db.Inserted(err)
+		if err != nil || !inserted {
 			return err
 		}
-		fired = f
-		return q.Enqueue(ctx, ActionsArgs{WorkspaceID: ts.WorkspaceID(), FiringID: f.ID}, &river.InsertOpts{})
+		if fired, err = ts.RuleFiring().Get(ctx, id); err != nil {
+			return err
+		}
+		return q.Enqueue(ctx, ActionsArgs{WorkspaceID: ts.WorkspaceID(), FiringID: id}, &river.InsertOpts{})
 	})
-	if ent.IsConstraintError(err) {
-		return nil, nil // lost a race with the same Event delivered twice
-	}
 	return fired, err
 }
 

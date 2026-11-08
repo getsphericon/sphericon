@@ -28,3 +28,21 @@ func Lock(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Contact, er
 	q.Modify(func(sel *entsql.Selector) { sel.For(entsql.LockNoKeyUpdate) })
 	return q.Only(ctx)
 }
+
+// Referenced is contactID while the Contact is in the Workspace, read under FOR KEY SHARE, the lock
+// the foreign key of a row that references it takes, so the Contact cannot go before that row
+// commits (ADR 0106); 0 when it is gone already (erased between a send and the click on its link).
+// A row keyed by its Destination is then written unlinked, rather than violating the foreign key.
+// contactID 0 is 0.
+func Referenced(ctx context.Context, s *ent.Scoped, contactID int64) (int64, error) {
+	if contactID == 0 {
+		return 0, nil
+	}
+	q := s.Contact().Query().Where(contact.ID(contactID))
+	q.Modify(func(sel *entsql.Selector) { sel.For(entsql.LockKeyShare) })
+	ids, err := q.IDs(ctx)
+	if err != nil || len(ids) == 0 {
+		return 0, err
+	}
+	return contactID, nil
+}

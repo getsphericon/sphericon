@@ -2,8 +2,6 @@ package usages
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -16,6 +14,7 @@ import (
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 )
 
 // Contacts is the peak number of identified Contacts reached during the Usage period:
@@ -175,7 +174,8 @@ func raise(ctx context.Context, c *ent.Client, now time.Time, workspaceIDs ...in
 			SetValue(n).SetComputedAt(now).
 			OnConflictColumns(entusage.FieldWorkspaceID, entusage.FieldPeriodStart, entusage.FieldMetric).
 			DoNothing().Exec(ctx)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		_, err = db.Inserted(err)
+		if err != nil {
 			return fmt.Errorf("record contacts peak: %w", err)
 		}
 	}

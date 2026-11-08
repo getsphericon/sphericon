@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/useridentity"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -55,6 +56,9 @@ var (
 	// signed for this challenge or origin, made without user verification, or for a
 	// credential that is already registered.
 	ErrPasskeyRefused = errors.New("passkeys: passkey response refused")
+	// ErrCredentialRegistered: the authenticator's credential is already registered, to this User
+	// or another one. It is an ErrPasskeyRefused.
+	ErrCredentialRegistered = fmt.Errorf("%w: credential already registered", ErrPasskeyRefused)
 	// ErrPasskeyNotFound: no Passkey of that id belongs to the User (another User's counts as
 	// none).
 	ErrPasskeyNotFound = validation.NotFound("passkeys: passkey not found", i18n.ErrorsPasskeyNotFound)
@@ -66,6 +70,13 @@ var (
 	// ErrLastSignIn: the Passkey is the last way the User can sign in: no password, no Linked
 	// identity and no other Passkey.
 	ErrLastSignIn = validation.Conflict("passkeys: the passkey is the last way to sign in", i18n.ErrorsPasskeyLastSignIn)
+)
+
+// constraints are the unique constraints of the Passkeys and their spent challenges (ADR 0106):
+// a credential is registered once, and a challenge is spent once.
+var constraints = db.Declare(
+	db.Refusal("passkeys_credential_id_key", ErrCredentialRegistered),
+	db.Refusal("passkey_challenges_challenge_key", ErrChallengeSpent),
 )
 
 type ceremonyPurpose string
@@ -336,10 +347,11 @@ func (p *Module) finishRegistration(ctx context.Context, userID int64, ceremony 
 			}
 			create.SetTransports(transports)
 		}
-		if row, err = create.Save(ctx); err != nil {
-			if ent.IsConstraintError(err) {
-				return fmt.Errorf("%w: credential already registered", ErrPasskeyRefused)
-			}
+		if err := constraints.Write(ctx, tx, func() error {
+			var cerr error
+			row, cerr = create.Save(ctx)
+			return cerr
+		}); err != nil {
 			return err
 		}
 		saved = u
@@ -353,11 +365,9 @@ func (p *Module) finishRegistration(ctx context.Context, userID int64, ceremony 
 
 // spend records a challenge as used; ErrChallengeSpent when it already was.
 func (p *Module) spend(ctx context.Context, tx *ent.Client, challenge string) error {
-	err := tx.PasskeyChallenge.Create().SetChallenge(challenge).Exec(ctx)
-	if ent.IsConstraintError(err) {
-		return ErrChallengeSpent
-	}
-	return err
+	return constraints.Write(ctx, tx, func() error {
+		return tx.PasskeyChallenge.Create().SetChallenge(challenge).Exec(ctx)
+	})
 }
 
 // HeldIn reports whether the User holds a Passkey, read on the transaction tx.

@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 )
 
@@ -139,6 +140,11 @@ func (a *Attempts) Limit(kind Kind) int {
 
 // Now is the module's clock, so callers compute reset times on the same time base.
 func (a *Attempts) Now() time.Time { return a.now() }
+
+// The unique constraint of the attempts' table (ADR 0106): one counter per address and Kind.
+var _ = db.Declare(
+	db.Fault("authattempt_email_kind", "a counter is inserted ON CONFLICT (email, kind) DO UPDATE"),
+)
 
 // RecordFailure counts one failed attempt. Failures older than the Rule's window
 // start a new count.

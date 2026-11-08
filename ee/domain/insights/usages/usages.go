@@ -28,6 +28,7 @@ import (
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -155,6 +156,11 @@ func refreshWorkspace(ctx context.Context, s *ent.Scoped, first, current, now ti
 	return nil
 }
 
+// The unique constraint of the Usage table (ADR 0106): one row per period and metric.
+var _ = db.Declare(
+	db.Fault("usage_workspace_id_period_start_metric", "a row is inserted ON CONFLICT (workspace_id, period_start, metric): materialize updates it, raise does nothing"),
+)
+
 // materialize measures one metric and stores it: Live usage while the period is open,
 // the Usage snapshot (final) once it has closed.
 func materialize(ctx context.Context, s *ent.Scoped, p Period, metric Metric, measure measurer, open bool, prior *ent.Usage, now time.Time) error {
@@ -167,9 +173,13 @@ func materialize(ctx context.Context, s *ent.Scoped, p Period, metric Metric, me
 		closed = &now
 	}
 	if prior == nil {
+		// The contacts peak (raise) may have inserted the row since it was read: the measure
+		// stored here replaces it.
 		return s.Usage().Create().
 			SetPeriodStart(p.Start).SetMetric(string(metric)).
 			SetValue(value).SetNillableFinalizedAt(closed).SetComputedAt(now).
+			OnConflictColumns(entusage.FieldWorkspaceID, entusage.FieldPeriodStart, entusage.FieldMetric).
+			UpdateNewValues().
 			Exec(ctx)
 	}
 	return s.Usage().UpdateOneID(prior.ID).

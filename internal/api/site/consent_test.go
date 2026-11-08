@@ -5,15 +5,19 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -154,24 +158,35 @@ func TestSitePublicConsentWriteFailureIsAnError(t *testing.T) {
 	require.Error(t, err, "a failed confirmation write must not answer 204")
 }
 
-// A token for a Workspace that no longer exists has nothing left to record: that is
-// not a failure the person (or a retrying mailbox provider) can do anything about.
-func TestSitePublicConsentForDeletedWorkspaceIsNoOp(t *testing.T) {
+// A link of an erased Workspace has nothing left to record into: both buttons answer 204 and write
+// nothing, so a late click never puts an address back into a Workspace whose rows are gone.
+func TestSitePublicConsentOfAnErasedWorkspaceRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	anon := env.SiteAnonymous(t)
-	const goneWorkspace = 999999
-
-	unsubURL, err := env.Tracker.UnsubscribeURL(linktarget.Unsubscribe{
-		Channel: channels.Email,
-		Source:  eligibility.SourceBroadcasts, Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace,
+	const address = "late-click@example.com"
+	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		return workspaces.TombstoneIn(ctx, tx, fixtures.BluthID, time.Now())
 	})
 	require.NoError(t, err)
-	err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
+
+	unsubURL, err := env.Tracker.UnsubscribeURL(linktarget.Unsubscribe{
+		Channel: channels.Email, Source: eligibility.SourceBroadcasts, Destination: address, WorkspaceID: fixtures.BluthID,
+	})
+	require.NoError(t, err)
+	unsubErr := anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
+	confirmURL, err := env.Tracker.ConfirmURL(linktarget.Confirmation{Destination: address, WorkspaceID: fixtures.BluthID})
+	require.NoError(t, err)
+	confirmErr := anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: tokenAfter(t, confirmURL, "/e/confirm/")})
+
+	bluth := env.DB.Scoped(fixtures.BluthID)
+	optOuts, err := bluth.Unsubscribe().Query().Where(unsubscribe.DestinationEQ(address)).Count(ctx)
+	require.NoError(t, err)
+	confirmed, err := bluth.Confirmation().Query().Where(confirmation.DestinationEQ(address)).Count(ctx)
 	require.NoError(t, err)
 
-	confirmURL, err := env.Tracker.ConfirmURL(linktarget.Confirmation{Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace})
-	require.NoError(t, err)
-	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: tokenAfter(t, confirmURL, "/e/confirm/")})
-	require.NoError(t, err)
+	require.NoError(t, unsubErr)
+	require.NoError(t, confirmErr)
+	assert.Zero(t, optOuts)
+	assert.Zero(t, confirmed)
 }

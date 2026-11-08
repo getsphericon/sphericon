@@ -236,7 +236,16 @@ coding standards in `CODING_STANDARDS.md`.
   Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
   `users`; a provider's quota answer and refusal of an Integration (`integrations.RecordQuota`,
   `RecordRefused`) for `providerlimit` and `outboundmessages`. A write through a generic helper counts where
-  the helper is instantiated with an ent write builder.
+  the helper is instantiated with an ent write builder. The owner also declares each unique
+  constraint of its tables beside those writes (ADR 0106): `var constraints = db.Declare(...)`, each
+  constraint by exact name a `db.Refusal` with the module's sentinel or a `db.Fault` with its reason,
+  and a write that may be refused runs through `constraints.Write`, under a savepoint of whatever
+  transaction it is in. A use case that answers a refusal differently matches the owner's sentinel
+  with `errors.Is`; it never reads the violation itself. `TestEveryUniqueConstraintIsDeclaredByItsOwner`
+  (`internal/app`) fails on an undeclared constraint, a declaration the schema lacks, one made outside
+  the table's owner in this map, and a refusal no test of its owner asserts with `ErrorIs`. A refusal
+  that never leaves its owner, which records it as the row's state (`trackingdomains`' host held by
+  another Workspace), is unexported and caught there with `errors.Is` instead.
 - **Use cases (ADR 0102, component `usecase`).** An operation that spans several domain modules is a
   use case, `internal/usecase/<subject><action>` in glossary words (`tagdeletion`), never a call from
   one domain module into the modules above it: a base module knows no module that uses it. The use

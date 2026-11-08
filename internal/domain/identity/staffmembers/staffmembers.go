@@ -19,10 +19,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entstaffmember "github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // Issuer names the instance in the authenticator app.
@@ -40,10 +43,13 @@ var (
 	// Staff member can sign in and none is created.
 	ErrSignInOff = errors.New("staff: sign-in is off without SPHERICON_STAFF_JWT_SECRET")
 	// ErrDuplicate: a Staff member with this email exists.
-	ErrDuplicate = errors.New("staff: email already in use")
+	ErrDuplicate = validation.ConflictField("email", "staff: email already in use", i18n.ErrorsEmailExists)
 	// ErrNotFound: no Staff member has this email.
 	ErrNotFound = errors.New("staff: not found")
 )
+
+// constraints are the unique constraints of the Staff members (ADR 0106): an email names one.
+var constraints = db.Declare(db.Refusal("staff_members_email_key", ErrDuplicate))
 
 // Config is what the Staff member needs from the instance.
 type Config struct {
@@ -135,23 +141,18 @@ func (m *Module) Create(ctx context.Context, email string) (password string, err
 	if email == "" {
 		return "", errors.New("staff: email is required")
 	}
-	exists, err := m.ent.StaffMember.Query().Where(entstaffmember.Email(email)).Exist(ctx)
-	if err != nil {
-		return "", err
-	}
-	if exists {
-		return "", ErrDuplicate
-	}
 	password = rand.Text()
 	hash, err := m.passwords.Hash(password)
 	if err != nil {
 		return "", err
 	}
-	err = m.ent.StaffMember.Create().SetEmail(email).SetPasswordHash(hash).Exec(ctx)
-	if ent.IsConstraintError(err) {
-		return "", ErrDuplicate
+	err = constraints.Write(ctx, m.ent, func() error {
+		return m.ent.StaffMember.Create().SetEmail(email).SetPasswordHash(hash).Exec(ctx)
+	})
+	if err != nil {
+		return "", err
 	}
-	return password, err
+	return password, nil
 }
 
 // EndSessions ends every session of the Staff member by bumping its session epoch (and

@@ -16,8 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgconn"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
@@ -48,7 +46,7 @@ const fieldPreset = "preset"
 const detailKey = "Detail"
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
-var ErrDefaultConflict = validation.Conflict("a default provider already exists for this channel", i18n.ErrorsIntegrationDefaultConflict)
+var ErrDefaultConflict = validation.ConflictField("isDefault", "a default provider already exists for this channel", i18n.ErrorsIntegrationDefaultConflict)
 
 // ErrNotFound means there is no such Integration in this Workspace.
 var ErrNotFound = validation.NotFound("integrations: integration not found", i18n.ErrorsIntegrationNotFound)
@@ -56,21 +54,13 @@ var ErrNotFound = validation.NotFound("integrations: integration not found", i18
 // ErrOneInbox means the Workspace already keeps a Test inbox: it has at most one (ADR 0058).
 var ErrOneInbox = validation.Conflict("a workspace has at most one Test inbox", i18n.ErrorsIntegrationOneInbox)
 
-// oneInboxIndex is the partial unique index that keeps at most one kept Test inbox per Workspace.
-const oneInboxIndex = "integrations_one_inbox_per_workspace"
-
-// conflictOf names which rule a unique violation broke: the one Test inbox per Workspace, else
-// the one default per channel. Any other error is returned as it is.
-func conflictOf(err error) error {
-	if !db.IsUniqueViolation(err) {
-		return err
-	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.ConstraintName == oneInboxIndex {
-		return ErrOneInbox
-	}
-	return ErrDefaultConflict
-}
+// The unique constraints of the Integrations (ADR 0106): one default per channel and one kept
+// Test inbox per Workspace are refused; the ingest key is random.
+var constraints = db.Declare(
+	db.Refusal("integration_workspace_id_channel", ErrDefaultConflict),
+	db.Refusal("integrations_one_inbox_per_workspace", ErrOneInbox),
+	db.Fault("integrations_ingest_key_key", "an ingest key is random (credentials.GenerateIngestKey)"),
+)
 
 var errUnknownProvider = errors.New("unsupported provider")
 
@@ -287,7 +277,6 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 				return err
 			}
 		}
-		var err error
 		create := ts.Integration().Create().
 			SetName(name).
 			SetChannel(channel).
@@ -303,7 +292,10 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		if inb.sealed != nil {
 			create.SetParamsEncrypted(*inb.sealed)
 		}
-		if row, err = create.Save(ctx); err != nil {
+		if err := constraints.Write(ctx, ts, func() (err error) {
+			row, err = create.Save(ctx)
+			return err
+		}); err != nil {
 			return err
 		}
 		return m.discoverQuota(ctx, q, row)
@@ -313,7 +305,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 			// The bot was pointed at a hook that was never saved.
 			m.releaseToken(ctx, 0, tokenOf(in.Config.Telegram))
 		}
-		return nil, conflictOf(err)
+		return nil, err
 	}
 	return row, nil
 }
@@ -379,15 +371,18 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if tg.connected {
 			upd.SetProviderMaxPerSecond(telegramPerSecond)
 		}
-		var err error
-		if updated, err = upd.Save(ctx); err != nil || sealed == nil {
+		err := constraints.Write(ctx, ts, func() (err error) {
+			updated, err = upd.Save(ctx)
+			return err
+		})
+		if err != nil || sealed == nil {
 			return err
 		}
 		// New credentials or endpoint: what the provider allows may have changed.
 		return m.discoverQuota(ctx, q, updated)
 	})
 	if err != nil {
-		return nil, missing(conflictOf(err))
+		return nil, missing(err)
 	}
 	if tg.release {
 		m.release(ctx, updated)

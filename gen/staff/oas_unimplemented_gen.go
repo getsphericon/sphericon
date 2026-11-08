@@ -125,8 +125,8 @@ func (UnimplementedHandler) StaffMeGet(ctx context.Context) (r *StaffResource, _
 
 // StaffSignupItemsCreate implements StaffSignupItems_create operation.
 //
-// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
-// a second mailings consent are refused (422).
+// Add a Sign-up item. A mailings consent on an item that is not an optional consent is refused (422);
+// a taken key and a second mailings consent are refused (409).
 //
 // POST /signup-items
 func (UnimplementedHandler) StaffSignupItemsCreate(ctx context.Context, req *StaffSignupItemInput) (r *StaffSignupItemResource, _ error) {
@@ -176,7 +176,7 @@ func (UnimplementedHandler) StaffSignupItemsListVersions(ctx context.Context, pa
 // StaffSignupItemsPublish implements StaffSignupItems_publish operation.
 //
 // Publish the draft as a new version under a label: it takes effect at once, and is never changed or
-// removed afterwards. A label the item already has, and an item without a draft, are refused (422); a
+// removed afterwards. An item without a draft is refused (422), a label the item already has (409); a
 // deleted item is not found.
 //
 // POST /signup-items/{id}/versions
@@ -206,8 +206,8 @@ func (UnimplementedHandler) StaffSignupItemsSaveDraft(ctx context.Context, req *
 
 // StaffSignupItemsUpdate implements StaffSignupItems_update operation.
 //
-// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
-// and a second mailings consent are refused (422); a deleted item is not found.
+// Change a Sign-up item. A blank title and a mailings consent on an item that is not an optional
+// consent are refused (422), a second mailings consent (409); a deleted item is not found.
 //
 // PATCH /signup-items/{id}
 func (UnimplementedHandler) StaffSignupItemsUpdate(ctx context.Context, req *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (r *StaffSignupItemResource, _ error) {

@@ -5,6 +5,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/internal/infra/db"
+)
+
+// The unique constraints of the tables this package writes (ADR 0106).
+var _ = db.Declare(
+	db.Fault("membership_user_id_workspace_id", "AddInvitedIn writes with ON CONFLICT DO NOTHING, AddCreatorIn's Workspace is new, and AddByDomainIn runs only for a User the Join decision found without a Membership"),
 )
 
 // AddCreatorIn writes, in tx, the Owner Membership of the User who creates the Workspace

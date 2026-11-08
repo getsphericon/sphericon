@@ -11,12 +11,11 @@ package tags
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -55,16 +54,23 @@ func (m *Module) ForContact(ctx context.Context, s *ent.Scoped, contactID int64)
 		All(ctx)
 }
 
+// The unique constraint of the Tag's table (ADR 0106): a name is the Workspace's once.
+var _ = db.Declare(
+	db.Fault("tags_workspace_id_name", "a Tag is created only by EnsureIn, ON CONFLICT (name, workspace_id) DO NOTHING, and is never renamed"),
+)
+
 // EnsureIn returns the Tag named name, creating it on first use, inside the transaction s is
 // bound to: applying a Tag to a Contact (contacts.ApplyTagIn) auto-creates it, like a Custom field.
 func EnsureIn(ctx context.Context, s *ent.Scoped, name string) (*ent.Tag, error) {
 	// DO NOTHING, not Ignore: an insert is the audited create of the Tag (ADR 0022),
-	// a conflict writes nothing and reports sql.ErrNoRows.
-	if err := s.Tag().Create().
+	// a conflict writes nothing.
+	err := s.Tag().Create().
 		SetName(name).
 		OnConflictColumns(tag.FieldName, tag.FieldWorkspaceID).
 		DoNothing().
-		Exec(ctx); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		Exec(ctx)
+	_, err = db.Inserted(err)
+	if err != nil {
 		return nil, err
 	}
 	return s.Tag().Query().Where(tag.Name(name)).Only(ctx)
