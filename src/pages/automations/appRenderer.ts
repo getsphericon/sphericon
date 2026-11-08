@@ -21,7 +21,8 @@ export function appRenderer(
       { i18n },
       createElement(
         Fieldset,
-        { disabled: !props.enabled, variant: 'unstyled' },
+        // Convey disabled without native fieldset spacing changing the properties panel's size.
+        { disabled: !props.enabled, variant: 'unstyled', m: 0, miw: 0 },
         createElement(control, props),
       ),
     )
