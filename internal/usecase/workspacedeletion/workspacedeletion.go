@@ -1,7 +1,9 @@
 // Package workspacedeletion is the use case of the Workspace deletion cycle (ADR 0043, ADR 0102):
-// deleting a Workspace, restoring it inside its window, and erasing it once the window has passed.
-// The cycle's table and the window with the erase date are the Workspace's own (workspaces.DiscardIn,
-// RestoreIn, TombstoneIn, workspaces.DeletionWindow); the erase removes the Workspace's rows,
+// restoring a deleted Workspace inside its window, and erasing it once the window has passed.
+// Deleting one checks only its typed name, the Workspace's own rule, so it is the module's
+// (workspaces.Module.Delete, ADR 0110). The cycle's table and the window with the erase date are
+// the Workspace's own (workspaces.RestoreIn, TombstoneIn, workspaces.DeletionWindow): a restore
+// needs a Membership that holds the delete Permission, and the erase removes the Workspace's rows,
 // then, in the last transaction, its jobs in the queue (events.WorkspacePurger), the OAuth codes
 // that name it (oauthclients.DeleteCodesIn) and writes the tombstone.
 //
@@ -31,9 +33,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
-
-// ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
-var ErrNameMismatch = validation.RefuseField("name", "workspacedeletion: the typed name does not match the workspace name", i18n.ErrorsWorkspaceNameMismatch)
 
 // ErrNotRestorable refuses restoring a Workspace past its deletion window or already erased. It
 // wraps the lifecycle.ErrInvalidTransition the cycle refused the move with.
@@ -71,42 +70,6 @@ func (m *UseCase) due(ctx context.Context, now time.Time) ([]int64, error) {
 		Where(workspace.DiscardedAtLTE(now.Add(-workspaces.DeletionWindow)), workspace.ErasedAtIsNil()).
 		Order(workspace.ByID()).
 		IDs(ctx)
-}
-
-// deletedDiff is the audit diff of the Workspace's deleted state changing.
-func deletedDiff(wasDeleted, isDeleted bool) map[string]any {
-	return map[string]any{"deleted": events.Change(wasDeleted, isDeleted)}
-}
-
-// Delete deletes the scoped Workspace (ADR 0043): it sets discarded_at, which the send path
-// reads as the pending-deletion Hold and the lookups read as "not found". The typed name
-// must equal the stored name (ErrNameMismatch otherwise). Deleting an already deleted
-// Workspace keeps its first discarded_at. The caller has checked the Owner role. Recorded as
-// `workspace.delete` in the same transaction.
-func (m *UseCase) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, typedName string) (*ent.Workspace, error) {
-	now := m.now()
-	var deleted *ent.Workspace
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		if typedName != ws.Name {
-			return ErrNameMismatch
-		}
-		if ws.DiscardedAt != nil {
-			deleted = ws
-			return nil
-		}
-		if err := workspaces.DiscardIn(ctx, tx, ws.ID, now); err != nil {
-			return err
-		}
-		if deleted, err = tx.Workspace.Get(ctx, ws.ID); err != nil {
-			return err
-		}
-		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceDelete, deletedDiff(false, true)))
-	})
-	return deleted, err
 }
 
 // Deleted lists the Workspaces in their deletion window whose User's Role holds workspace:delete
@@ -169,7 +132,7 @@ func (m *UseCase) Restore(ctx context.Context, in RestoreInput) (*ent.Workspace,
 			return err
 		}
 		restored = ws
-		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceRestore, deletedDiff(true, false)))
+		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceRestore, map[string]any{"deleted": events.Change(true, false)}))
 	})
 	if err != nil {
 		return nil, err

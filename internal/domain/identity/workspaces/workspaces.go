@@ -1,6 +1,7 @@
 // Package workspaces owns the Workspace (ADR 0043, ADR 0102): the tenant every other row belongs
-// to, its settings, whether it is live, and the deletion window with the erase date. It sits at
-// the bottom of identity, so every module can read a Workspace's settings and its window.
+// to, its settings, whether it is live, its deletion (checked by its typed name, ADR 0110) and the
+// deletion window with the erase date. It sits at the bottom of identity, so every module can read
+// a Workspace's settings and its window.
 //
 // The Workspace is the tenant root, not a tenant-owned entity, so the scoped client has no
 // wrapper for it: the module writes the row with the raw client, always the row of the
@@ -30,12 +31,13 @@ import (
 type Module struct {
 	client *ent.Client
 	bus    *events.Bus
+	now    func() time.Time
 }
 
 // New builds the module over the ent client; the bus opens the transactions that write a
-// setting with its Audit entry.
-func New(client *ent.Client, bus *events.Bus) *Module {
-	return &Module{client: client, bus: bus}
+// setting with its Audit entry, and now is the Instance clock a deletion is dated by.
+func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, now: now}
 }
 
 // DeletionWindow is how long a deleted Workspace stays restorable before its data is

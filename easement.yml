@@ -18,7 +18,8 @@ version: 1
 # `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
 # So do the Second factor reset's removals (the User's factor with its Recovery codes, all Passkeys
-# of a User), the moves of a Workspace's deletion cycle, the creation of a Workspace with its
+# of a User), the restore and the tombstone of a Workspace's deletion cycle (deleting one is the
+# checked workspaces.Module.Delete, ADR 0110), the creation of a Workspace with its
 # creator's Membership, and each owner's step of a Contact's Erasure (the Contact row,
 # contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
 # publisher (events.PurgingPublisher), which a name cannot forbid. The erase of a Workspace's rows
@@ -48,9 +49,6 @@ x-unchecked-removals: &unchecked-removals
   - &passkeys-delete-all-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
     because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorreset checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
-  - &workspaces-discard-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.DiscardIn
-    because: a Workspace is deleted only by the use case internal/usecase/workspacedeletion, which checks the typed name first and records the deletion (ADR 0043, ADR 0102); call the use case
   - &workspaces-restore-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.RestoreIn
     because: a deleted Workspace is restored only by the use case internal/usecase/workspacedeletion, for a User whose Role holds workspace:delete there (ADR 0043, ADR 0061, ADR 0102); call the use case
@@ -130,7 +128,6 @@ x-core-forbids: &core-forbids
   - *contacts-delete-in
   - *secondfactors-reset-in
   - *passkeys-delete-all-in
-  - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
   - *workspaces-create-in
@@ -190,7 +187,6 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *contacts-delete-in
   - *secondfactors-reset-in
   - *passkeys-delete-all-in
-  - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
   - *workspaces-create-in
@@ -230,7 +226,6 @@ x-runner-forbids: &runner-forbids
   - *contacts-delete-in
   - *secondfactors-reset-in
   - *passkeys-delete-all-in
-  - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
   - *workspaces-create-in
@@ -267,7 +262,6 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *contacts-delete-in
   - *secondfactors-reset-in
   - *passkeys-delete-all-in
-  - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
   - *workspaces-create-in

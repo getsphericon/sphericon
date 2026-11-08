@@ -10,13 +10,18 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // The deletion cycle of a Workspace (ADR 0043) is a lifecycle table (ADR 0046): active,
-// pending_deletion, erased. The use case internal/usecase/workspacedeletion moves a Workspace
-// through it; the row's moves are this module's, as the row is.
+// pending_deletion, erased. Deleting is this module's operation, checked by the typed name (Delete);
+// the use case internal/usecase/workspacedeletion restores and erases a Workspace, through RestoreIn
+// and TombstoneIn, since a restore needs a Membership and an erase every owner's rows. The row's
+// moves are this module's, as the row is.
 //
 // The state is derived from two columns, so no column is added: active is a Workspace with no
 // discarded_at, pending_deletion has discarded_at and no erased_at, erased has erased_at. The
@@ -122,10 +127,40 @@ func cycleTable(s lifecycle.Storage[deletionState]) *stateless.StateMachine {
 	return sm
 }
 
-// DiscardIn moves the Workspace id from active to pending deletion inside tx: it sets
-// discarded_at to now. A Workspace that is not active is lifecycle.ErrInvalidTransition.
-func DiscardIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
-	return cycleTable(cycleStorage(tx, id, now)).FireCtx(ctx, triggerDelete)
+// ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
+var ErrNameMismatch = validation.RefuseField("name", "workspaces: the typed name does not match the workspace name", i18n.ErrorsWorkspaceNameMismatch)
+
+// Delete deletes the scoped Workspace (ADR 0043): it moves it from active to pending deletion,
+// setting discarded_at, which the send path reads as the pending-deletion Hold and the lookups
+// read as "not found". The typed name must equal the stored name (ErrNameMismatch otherwise).
+// Deleting an already deleted Workspace keeps its first discarded_at, so its window does not
+// restart. The caller has checked the Owner role. Recorded as `workspace.delete` in the same
+// transaction. It returns the deleted Workspace.
+func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, typedName string) (*ent.Workspace, error) {
+	now := m.now()
+	var deleted *ent.Workspace
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		if err != nil {
+			return err
+		}
+		if typedName != ws.Name {
+			return ErrNameMismatch
+		}
+		if ws.DiscardedAt != nil {
+			deleted = ws
+			return nil
+		}
+		if err := cycleTable(cycleStorage(tx, ws.ID, now)).FireCtx(ctx, triggerDelete); err != nil {
+			return err
+		}
+		if deleted, err = tx.Workspace.Get(ctx, ws.ID); err != nil {
+			return err
+		}
+		diff := map[string]any{"deleted": events.Change(false, true)}
+		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceDelete, diff))
+	})
+	return deleted, err
 }
 
 // RestoreIn moves the Workspace id from pending deletion back to active inside tx, only while

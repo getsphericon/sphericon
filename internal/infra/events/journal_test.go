@@ -140,7 +140,7 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 	defer cancel()
 	now := time.Now()
 	require.NoError(t, bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return workspaces.DiscardIn(ctx, tx, fixtures.AcmeID, now.Add(-workspaces.DeletionWindow-time.Hour))
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now.Add(-workspaces.DeletionWindow - time.Hour)).Exec(ctx)
 	}))
 	fact := &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "accepted-before-tombstone"}
 	unblock, published := pauseJournalPublication(ctx, t, bus, fact)

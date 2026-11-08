@@ -617,7 +617,7 @@ var identityPackage = do.Package(
 	// The Workspace with its settings (ADR 0102), over the raw client: the tenant row has no scoped
 	// wrapper.
 	do.Lazy(func(i do.Injector) (*workspaces.Module, error) {
-		return workspaces.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
+		return workspaces.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Memberships (ADR 0102): the lookup of a Workspace's scope and the changes of a Role.
 	do.Lazy(func(i do.Injector) (*memberships.Module, error) {

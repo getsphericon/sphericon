@@ -12,6 +12,7 @@ import (
 	entmembership "github.com/getsphericon/sphericon/ent/membership"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -249,7 +250,7 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	assert.False(t, live.DiscardedAt.IsSet())
 	assert.False(t, live.ErasedAt.IsSet())
 
-	_, err = deletion.Delete(t.Context(), initech, actor, ws.Name)
+	_, err = workspaces.New(h.env.DB, h.env.Bus, func() time.Time { return now }).Delete(t.Context(), initech, actor, ws.Name)
 	require.NoError(t, err)
 	got, afterDelete := feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))

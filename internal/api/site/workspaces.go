@@ -232,7 +232,7 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 // SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
 func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, _ siteapi.SiteWorkspacesDeleteParams) (*siteapi.SiteDeletedWorkspaceResource, error) {
 	s := workspaceScope(ctx)
-	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name)
+	w, err := h.workspaces.Delete(ctx, s, h.actor(ctx), req.Name)
 	if err != nil {
 		return nil, err
 	}
