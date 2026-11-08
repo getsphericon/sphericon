@@ -2,6 +2,7 @@ package webhookendpoints_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"sync"
@@ -9,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -82,21 +85,23 @@ func TestASuccessClearsFailuresRecordedWhileTheRequestWasInFlight(t *testing.T) 
 	assert.Nil(t, stored.FailingSince)
 }
 
-func refuseEvents(fault error) ent.Hook {
-	return func(next ent.Mutator) ent.Mutator {
-		return ent.MutateFunc(func(ctx context.Context, mutation ent.Mutation) (ent.Value, error) {
-			if _, ok := mutation.(*ent.EventMutation); ok {
-				return nil, fault
-			}
-			return next.Mutate(ctx, mutation)
-		})
-	}
+type refusingEventQueue struct {
+	testhelper.AcceptingQueue
+	fault error
+}
+
+func (q refusingEventQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.InsertOpts) (*rivertype.JobInsertResult, error) {
+	return nil, q.fault
+}
+
+func (q refusingEventQueue) InsertManyTx(context.Context, *sql.Tx, []river.InsertManyParams) ([]*rivertype.JobInsertResult, error) {
+	return nil, q.fault
 }
 
 func TestFailureCountersRollbackWhenTheDisableEventCannotBeRecorded(t *testing.T) {
 	r := newRecording(t)
-	fault := errors.New("event storage unavailable")
-	r.env.Bus.Use(refuseEvents(fault))
+	fault := errors.New("event queue unavailable")
+	r.env.Bus.UseJobs(refusingEventQueue{fault: fault})
 
 	err := r.mod.RecordDelivery(t.Context(), r.scope(), r.endpoint(), status(http.StatusGone), r.now)
 

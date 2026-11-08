@@ -86,6 +86,11 @@ func DisabledAt(v time.Time) predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldEQ(FieldDisabledAt, v))
 }
 
+// HealthGeneration applies equality check predicate on the "health_generation" field. It's identical to HealthGenerationEQ.
+func HealthGeneration(v int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldEQ(FieldHealthGeneration, v))
+}
+
 // ConsecutiveFailures applies equality check predicate on the "consecutive_failures" field. It's identical to ConsecutiveFailuresEQ.
 func ConsecutiveFailures(v int) predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldEQ(FieldConsecutiveFailures, v))
@@ -394,6 +399,56 @@ func DisabledAtIsNil() predicate.WebhookEndpoint {
 // DisabledAtNotNil applies the NotNil predicate on the "disabled_at" field.
 func DisabledAtNotNil() predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldDisabledAt))
+}
+
+// HealthGenerationEQ applies the EQ predicate on the "health_generation" field.
+func HealthGenerationEQ(v int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldEQ(FieldHealthGeneration, v))
+}
+
+// HealthGenerationNEQ applies the NEQ predicate on the "health_generation" field.
+func HealthGenerationNEQ(v int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldHealthGeneration, v))
+}
+
+// HealthGenerationIn applies the In predicate on the "health_generation" field.
+func HealthGenerationIn(vs ...int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldIn(FieldHealthGeneration, vs...))
+}
+
+// HealthGenerationNotIn applies the NotIn predicate on the "health_generation" field.
+func HealthGenerationNotIn(vs ...int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldHealthGeneration, vs...))
+}
+
+// HealthGenerationGT applies the GT predicate on the "health_generation" field.
+func HealthGenerationGT(v int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldGT(FieldHealthGeneration, v))
+}
+
+// HealthGenerationGTE applies the GTE predicate on the "health_generation" field.
+func HealthGenerationGTE(v int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldGTE(FieldHealthGeneration, v))
+}
+
+// HealthGenerationLT applies the LT predicate on the "health_generation" field.
+func HealthGenerationLT(v int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldLT(FieldHealthGeneration, v))
+}
+
+// HealthGenerationLTE applies the LTE predicate on the "health_generation" field.
+func HealthGenerationLTE(v int64) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldLTE(FieldHealthGeneration, v))
+}
+
+// HealthGenerationIsNil applies the IsNil predicate on the "health_generation" field.
+func HealthGenerationIsNil() predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldIsNull(FieldHealthGeneration))
+}
+
+// HealthGenerationNotNil applies the NotNil predicate on the "health_generation" field.
+func HealthGenerationNotNil() predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldHealthGeneration))
 }
 
 // ConsecutiveFailuresEQ applies the EQ predicate on the "consecutive_failures" field.

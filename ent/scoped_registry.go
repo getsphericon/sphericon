@@ -2646,6 +2646,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.DisabledAt != nil {
 					b.SetDisabledAt(*src.DisabledAt)
 				}
+				if src.HealthGeneration != nil {
+					b.SetHealthGeneration(*src.HealthGeneration)
+				}
 				if src.ConsecutiveFailures != nil {
 					b.SetConsecutiveFailures(*src.ConsecutiveFailures)
 				}

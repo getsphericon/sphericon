@@ -34,6 +34,8 @@ type WebhookEndpoint struct {
 	EventTypes []string `json:"event_types,omitempty"`
 	// DisabledAt holds the value of the "disabled_at" field.
 	DisabledAt *time.Time `json:"disabled_at,omitempty"`
+	// HealthGeneration holds the value of the "health_generation" field.
+	HealthGeneration *int64 `json:"health_generation,omitempty"`
 	// ConsecutiveFailures holds the value of the "consecutive_failures" field.
 	ConsecutiveFailures *int `json:"consecutive_failures,omitempty"`
 	// FailingSince holds the value of the "failing_since" field.
@@ -79,7 +81,7 @@ func (*WebhookEndpoint) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case webhookendpoint.FieldEventTypes:
 			values[i] = new([]byte)
-		case webhookendpoint.FieldID, webhookendpoint.FieldWorkspaceID, webhookendpoint.FieldConsecutiveFailures, webhookendpoint.FieldLastErrorStatus:
+		case webhookendpoint.FieldID, webhookendpoint.FieldWorkspaceID, webhookendpoint.FieldHealthGeneration, webhookendpoint.FieldConsecutiveFailures, webhookendpoint.FieldLastErrorStatus:
 			values[i] = new(sql.NullInt64)
 		case webhookendpoint.FieldURL, webhookendpoint.FieldSecretEncrypted, webhookendpoint.FieldLastErrorKind, webhookendpoint.FieldDisabledReason:
 			values[i] = new(sql.NullString)
@@ -150,6 +152,13 @@ func (_m *WebhookEndpoint) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DisabledAt = new(time.Time)
 				*_m.DisabledAt = value.Time
+			}
+		case webhookendpoint.FieldHealthGeneration:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field health_generation", values[i])
+			} else if value.Valid {
+				_m.HealthGeneration = new(int64)
+				*_m.HealthGeneration = value.Int64
 			}
 		case webhookendpoint.FieldConsecutiveFailures:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -254,6 +263,11 @@ func (_m *WebhookEndpoint) String() string {
 	if v := _m.DisabledAt; v != nil {
 		builder.WriteString("disabled_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.HealthGeneration; v != nil {
+		builder.WriteString("health_generation=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	if v := _m.ConsecutiveFailures; v != nil {

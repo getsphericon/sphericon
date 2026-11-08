@@ -64498,6 +64498,8 @@ type WebhookEndpointMutation struct {
 	event_types             *[]string
 	appendevent_types       []string
 	disabled_at             *time.Time
+	health_generation       *int64
+	addhealth_generation    *int64
 	consecutive_failures    *int
 	addconsecutive_failures *int
 	failing_since           *time.Time
@@ -64912,6 +64914,76 @@ func (m *WebhookEndpointMutation) ResetDisabledAt() {
 	delete(m.clearedFields, webhookendpoint.FieldDisabledAt)
 }
 
+// SetHealthGeneration sets the "health_generation" field.
+func (m *WebhookEndpointMutation) SetHealthGeneration(i int64) {
+	m.health_generation = &i
+	m.addhealth_generation = nil
+}
+
+// HealthGeneration returns the value of the "health_generation" field in the mutation.
+func (m *WebhookEndpointMutation) HealthGeneration() (r int64, exists bool) {
+	v := m.health_generation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHealthGeneration returns the old "health_generation" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldHealthGeneration(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHealthGeneration is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHealthGeneration requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHealthGeneration: %w", err)
+	}
+	return oldValue.HealthGeneration, nil
+}
+
+// AddHealthGeneration adds i to the "health_generation" field.
+func (m *WebhookEndpointMutation) AddHealthGeneration(i int64) {
+	if m.addhealth_generation != nil {
+		*m.addhealth_generation += i
+	} else {
+		m.addhealth_generation = &i
+	}
+}
+
+// AddedHealthGeneration returns the value that was added to the "health_generation" field in this mutation.
+func (m *WebhookEndpointMutation) AddedHealthGeneration() (r int64, exists bool) {
+	v := m.addhealth_generation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearHealthGeneration clears the value of the "health_generation" field.
+func (m *WebhookEndpointMutation) ClearHealthGeneration() {
+	m.health_generation = nil
+	m.addhealth_generation = nil
+	m.clearedFields[webhookendpoint.FieldHealthGeneration] = struct{}{}
+}
+
+// HealthGenerationCleared returns if the "health_generation" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) HealthGenerationCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldHealthGeneration]
+	return ok
+}
+
+// ResetHealthGeneration resets all changes to the "health_generation" field.
+func (m *WebhookEndpointMutation) ResetHealthGeneration() {
+	m.health_generation = nil
+	m.addhealth_generation = nil
+	delete(m.clearedFields, webhookendpoint.FieldHealthGeneration)
+}
+
 // SetConsecutiveFailures sets the "consecutive_failures" field.
 func (m *WebhookEndpointMutation) SetConsecutiveFailures(i int) {
 	m.consecutive_failures = &i
@@ -65309,7 +65381,7 @@ func (m *WebhookEndpointMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WebhookEndpointMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, webhookendpoint.FieldCreatedAt)
 	}
@@ -65330,6 +65402,9 @@ func (m *WebhookEndpointMutation) Fields() []string {
 	}
 	if m.disabled_at != nil {
 		fields = append(fields, webhookendpoint.FieldDisabledAt)
+	}
+	if m.health_generation != nil {
+		fields = append(fields, webhookendpoint.FieldHealthGeneration)
 	}
 	if m.consecutive_failures != nil {
 		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
@@ -65371,6 +65446,8 @@ func (m *WebhookEndpointMutation) Field(name string) (ent.Value, bool) {
 		return m.EventTypes()
 	case webhookendpoint.FieldDisabledAt:
 		return m.DisabledAt()
+	case webhookendpoint.FieldHealthGeneration:
+		return m.HealthGeneration()
 	case webhookendpoint.FieldConsecutiveFailures:
 		return m.ConsecutiveFailures()
 	case webhookendpoint.FieldFailingSince:
@@ -65406,6 +65483,8 @@ func (m *WebhookEndpointMutation) OldField(ctx context.Context, name string) (en
 		return m.OldEventTypes(ctx)
 	case webhookendpoint.FieldDisabledAt:
 		return m.OldDisabledAt(ctx)
+	case webhookendpoint.FieldHealthGeneration:
+		return m.OldHealthGeneration(ctx)
 	case webhookendpoint.FieldConsecutiveFailures:
 		return m.OldConsecutiveFailures(ctx)
 	case webhookendpoint.FieldFailingSince:
@@ -65476,6 +65555,13 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDisabledAt(v)
 		return nil
+	case webhookendpoint.FieldHealthGeneration:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHealthGeneration(v)
+		return nil
 	case webhookendpoint.FieldConsecutiveFailures:
 		v, ok := value.(int)
 		if !ok {
@@ -65526,6 +65612,9 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *WebhookEndpointMutation) AddedFields() []string {
 	var fields []string
+	if m.addhealth_generation != nil {
+		fields = append(fields, webhookendpoint.FieldHealthGeneration)
+	}
 	if m.addconsecutive_failures != nil {
 		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
 	}
@@ -65540,6 +65629,8 @@ func (m *WebhookEndpointMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *WebhookEndpointMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case webhookendpoint.FieldHealthGeneration:
+		return m.AddedHealthGeneration()
 	case webhookendpoint.FieldConsecutiveFailures:
 		return m.AddedConsecutiveFailures()
 	case webhookendpoint.FieldLastErrorStatus:
@@ -65553,6 +65644,13 @@ func (m *WebhookEndpointMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *WebhookEndpointMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case webhookendpoint.FieldHealthGeneration:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHealthGeneration(v)
+		return nil
 	case webhookendpoint.FieldConsecutiveFailures:
 		v, ok := value.(int)
 		if !ok {
@@ -65580,6 +65678,9 @@ func (m *WebhookEndpointMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(webhookendpoint.FieldDisabledAt) {
 		fields = append(fields, webhookendpoint.FieldDisabledAt)
+	}
+	if m.FieldCleared(webhookendpoint.FieldHealthGeneration) {
+		fields = append(fields, webhookendpoint.FieldHealthGeneration)
 	}
 	if m.FieldCleared(webhookendpoint.FieldConsecutiveFailures) {
 		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
@@ -65618,6 +65719,9 @@ func (m *WebhookEndpointMutation) ClearField(name string) error {
 		return nil
 	case webhookendpoint.FieldDisabledAt:
 		m.ClearDisabledAt()
+		return nil
+	case webhookendpoint.FieldHealthGeneration:
+		m.ClearHealthGeneration()
 		return nil
 	case webhookendpoint.FieldConsecutiveFailures:
 		m.ClearConsecutiveFailures()
@@ -65665,6 +65769,9 @@ func (m *WebhookEndpointMutation) ResetField(name string) error {
 		return nil
 	case webhookendpoint.FieldDisabledAt:
 		m.ResetDisabledAt()
+		return nil
+	case webhookendpoint.FieldHealthGeneration:
+		m.ResetHealthGeneration()
 		return nil
 	case webhookendpoint.FieldConsecutiveFailures:
 		m.ResetConsecutiveFailures()

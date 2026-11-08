@@ -60,7 +60,7 @@ func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.Webho
 						u.ClearLastErrorStatus()
 					}
 				}
-				updated, err := u.Save(ctx)
+				err := u.Exec(ctx)
 				if ent.IsNotFound(err) {
 					return false, errHealthConflict
 				}
@@ -75,7 +75,7 @@ func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.Webho
 				// The first conditional update holds this row until the transaction ends. Audit
 				// only the disable, not the preceding data-plane failure counters.
 				err = sys.WebhookEndpoint().UpdateOneID(before.ID).
-					Where(webhookendpoint.UpdatedAtEQ(updated.UpdatedAt), webhookendpoint.DisabledAtIsNil()).
+					Where(webhookendpoint.DisabledAtIsNil()).
 					SetDisabledAt(now).SetDisabledReason(reason).Exec(ctx)
 				if ent.IsNotFound(err) {
 					return false, errHealthConflict
