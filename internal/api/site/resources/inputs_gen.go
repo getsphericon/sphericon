@@ -596,7 +596,7 @@ func (c *InputsImpl) RuleCreate(source *site.SiteCreateRuleInput) (rules.CreateI
 				rulesCreateInput.TriggerEvents[i] = (*source).TriggerEvents[i]
 			}
 		}
-		pString, err := ruleConditionIn((*source).Condition)
+		pString, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesCreateInput, err
 		}
@@ -610,7 +610,7 @@ func (c *InputsImpl) RuleUpdate(source *site.SiteUpdateRuleInput) (rules.UpdateI
 	if source != nil {
 		rulesUpdateInput.Name = stringPtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
-		pString, err := ruleConditionIn((*source).Condition)
+		pString, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesUpdateInput, err
 		}
@@ -638,6 +638,19 @@ func (c *InputsImpl) SegmentCreate(source *site.SiteCreateSegmentInput) (segment
 		segmentsCreateInput.Condition = pString
 	}
 	return segmentsCreateInput, nil
+}
+func (c *InputsImpl) SegmentPreview(source *site.SitePreviewSegmentInput) (segments.PreviewInput, error) {
+	var segmentsPreviewInput segments.PreviewInput
+	if source != nil {
+		pString, err := conditionIn((*source).Condition)
+		if err != nil {
+			return segmentsPreviewInput, err
+		}
+		segmentsPreviewInput.Condition = pString
+		segmentsPreviewInput.Channel = broadcastChannelPtrIn(c, (*source).Channel)
+		segmentsPreviewInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
+	}
+	return segmentsPreviewInput, nil
 }
 func (c *InputsImpl) SegmentUpdate(source *site.SiteUpdateSegmentInput) (segments.UpdateInput, error) {
 	var segmentsUpdateInput segments.UpdateInput

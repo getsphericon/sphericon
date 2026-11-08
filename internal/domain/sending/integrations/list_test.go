@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -15,12 +14,12 @@ import (
 
 func TestListPagesTheWorkspaceIntegrationsAscendingByID(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := new(integrations.Module)
+	m := env.Integrations
 
 	first, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 1})
 	require.NoError(t, err)
 	require.Len(t, first.Items, 1)
-	assert.Equal(t, int64(fixtures.IntegrationAcmeDefaultID), first.Items[0].ID)
+	assert.Equal(t, int64(fixtures.IntegrationAcmeDefaultID), first.Items[0].Row.ID)
 	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, total, first.TotalItems)
@@ -29,5 +28,5 @@ func TestListPagesTheWorkspaceIntegrationsAscendingByID(t *testing.T) {
 	second, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 2, PageSize: 1})
 	require.NoError(t, err)
 	require.Len(t, second.Items, 1)
-	assert.Equal(t, int64(fixtures.IntegrationAcmeSesID), second.Items[0].ID)
+	assert.Equal(t, int64(fixtures.IntegrationAcmeSesID), second.Items[0].Row.ID)
 }

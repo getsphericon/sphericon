@@ -160,6 +160,8 @@ type Inputs interface {
 	SegmentCreate(source *siteapi.SiteCreateSegmentInput) (segments.CreateInput, error)
 	// goverter:map Condition | segmentConditionPatch
 	SegmentUpdate(source *siteapi.SiteUpdateSegmentInput) (segments.UpdateInput, error)
+	// goverter:map Condition | conditionIn
+	SegmentPreview(source *siteapi.SitePreviewSegmentInput) (segments.PreviewInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
@@ -170,9 +172,9 @@ type Inputs interface {
 	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
 
 	RuleActions(source []siteapi.SiteRuleAction) []rules.Action
-	// goverter:map Condition | ruleConditionIn
+	// goverter:map Condition | conditionIn
 	RuleCreate(source *siteapi.SiteCreateRuleInput) (rules.CreateInput, error)
-	// goverter:map Condition | ruleConditionIn
+	// goverter:map Condition | conditionIn
 	RuleUpdate(source *siteapi.SiteUpdateRuleInput) (rules.UpdateInput, error)
 
 	TokenCreate(source *siteapi.SiteCreateTokenInput) apitokens.Input
@@ -350,7 +352,9 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleAction) *[]rules.Actio
 	return &out
 }
 
-func ruleConditionIn(o siteapi.OptSiteConditionGroup) (*string, error) {
+// conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
+// it is absent.
+func conditionIn(o siteapi.OptSiteConditionGroup) (*string, error) {
 	return condition.EncodeOptional(o)
 }
 

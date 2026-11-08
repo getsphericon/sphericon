@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 )
 
 // SiteWorkspacesList returns the workspaces the authenticated user is a member of.
@@ -24,36 +25,39 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 	if a == nil {
 		return []siteapi.SiteWorkspaceResource{}, nil
 	}
-
-	items, err := h.memberships.OfUser(ctx, a.UserID)
+	members, err := h.workspaceSummary.OfMembers(ctx, a.UserID)
 	if err != nil {
 		return nil, err
 	}
-
-	resources := make([]siteapi.SiteWorkspaceResource, len(items))
-	for i, m := range items {
-		if resources[i], err = h.workspaceResource(ctx, h.memberships.ScopeOf(m), m); err != nil {
-			return nil, err
-		}
-	}
-	return resources, nil
+	return lo.Map(members, func(m workspacesummary.Member, _ int) siteapi.SiteWorkspaceResource {
+		return h.workspaceResource(ctx, m.Membership, m.Summary)
+	}), nil
 }
 
-// workspaceResource is the Membership's Workspace as the Membership's User sees it,
-// with their grace end under the Two-factor requirement (ADR 0020) and the Staff member
-// holds active now (ADR 0009) and the Send cap the send path enforces with the last 24 hours of
-// sends (ADR 0067; null when none applies), read through s, the Workspace's scope. The Membership's
-// User and Workspace edges must be loaded.
-func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
-	r := mapper.WorkspaceToResource(m.Edges.Workspace)
+// summarizedWorkspace is the Workspace of s, whose Membership m the caller holds, as the
+// Membership's User sees it after a change of it.
+func (h *Handlers) summarizedWorkspace(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
+	sum, err := h.workspaceSummary.Of(ctx, s)
+	if err != nil {
+		return siteapi.SiteWorkspaceResource{}, err
+	}
+	return h.workspaceResource(ctx, m, sum), nil
+}
+
+// workspaceResource maps the Workspace summary as the Membership's User sees it, with their Role
+// and Permissions, their grace end under the Two-factor requirement (ADR 0020) and the Instance's
+// addresses besides the app's own. The Membership's User edge must be loaded.
+func (h *Handlers) workspaceResource(ctx context.Context, m *ent.Membership, sum workspacesummary.Summary) siteapi.SiteWorkspaceResource {
+	m = withWorkspace(m, sum.Workspace)
+	r := mapper.WorkspaceToResource(sum.Workspace)
 	r.Role = mapper.MembershipRoleToResource(m.Role)
-	if suspension.Is(m.Edges.Workspace) && h.supportEmail != "" {
+	if suspension.Is(sum.Workspace) && h.supportEmail != "" {
 		r.SupportEmail = siteapi.NewOptNilString(h.supportEmail)
 	}
 	r.McpUrl = h.origins.MCP
 	r.TrackerUrl = h.origins.Tracker
-	if target := h.trackingDomains.Target(); target != "" {
-		r.TrackingTarget = siteapi.NewOptString(target)
+	if sum.TrackingTarget != "" {
+		r.TrackingTarget = siteapi.NewOptString(sum.TrackingTarget)
 	}
 	held := memberships.Permissions(m.Role)
 	r.Permissions = mapper.PermissionsToResources(held)
@@ -63,23 +67,11 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	if end, ok := users.SecondFactorDeadline(m); ok && !currentSession(ctx).Method.Strong() {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
-	standing, err := h.holds.Standing(ctx, s)
-	if err != nil {
-		return r, err
-	}
-	r.Holds = mapper.HoldsToResources(standing.Holds())
-	sendCap, err := h.outbound.SendCapStatus(ctx, s, m.Edges.Workspace)
-	if err != nil {
-		return r, err
-	}
-	r.SendCap = mapper.SendCapStatusToResource(sendCap)
-	linkLength, err := h.outbound.ShortLinkLength(ctx, s)
-	if err != nil {
-		return r, err
-	}
-	r.ShortLinkLength = narrow.Int32(linkLength)
-	r.SmsMaxLength = mapper.SmsLengthLimitToResource(h.outbound.SMSLengthLimit())
-	return r, nil
+	r.Holds = mapper.HoldsToResources(sum.Holds)
+	r.SendCap = mapper.SendCapStatusToResource(sum.SendCap)
+	r.ShortLinkLength = narrow.Int32(sum.ShortLinkLength)
+	r.SmsMaxLength = mapper.SmsLengthLimitToResource(sum.SMSMaxLength)
+	return r
 }
 
 // SiteWorkspacesCreate creates a Workspace for the authenticated User, who becomes its
@@ -97,7 +89,7 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	if err != nil {
 		return nil, err
 	}
-	r, err := h.workspaceResource(ctx, s, m)
+	r, err := h.summarizedWorkspace(ctx, s, m)
 	if err != nil {
 		return nil, err
 	}
@@ -153,11 +145,10 @@ func (h *Handlers) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context
 // without a Second factor (workspaces.Module.SetSecondFactorRequirement publishes it).
 func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required bool) (siteapi.SiteWorkspaceResource, error) {
 	s, m := workspaceScope(ctx), callerMembership(ctx)
-	w, err := h.workspaces.SetSecondFactorRequirement(ctx, s, h.actor(ctx), required, h.now())
-	if err != nil {
+	if _, err := h.workspaces.SetSecondFactorRequirement(ctx, s, h.actor(ctx), required, h.now()); err != nil {
 		return siteapi.SiteWorkspaceResource{}, err
 	}
-	return h.workspaceResource(ctx, s, withWorkspace(m, w))
+	return h.summarizedWorkspace(ctx, s, m)
 }
 
 // SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
@@ -171,11 +162,10 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		v := strings.TrimSpace(req.PostalAddress.Value)
 		postal = &v
 	}
-	w, err := h.workspaces.Update(ctx, s, h.actor(ctx), req.Name, postal)
-	if err != nil {
+	if _, err := h.workspaces.Update(ctx, s, h.actor(ctx), req.Name, postal); err != nil {
 		return nil, err
 	}
-	resource, err := h.workspaceResource(ctx, s, withWorkspace(m, w))
+	resource, err := h.summarizedWorkspace(ctx, s, m)
 	if err != nil {
 		return nil, err
 	}
@@ -185,11 +175,10 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 // SiteWorkspacesSetTimezone sets the Workspace time zone (Permission workspace:timezone, ADR 0057).
 func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, _ siteapi.SiteWorkspacesSetTimezoneParams) (*siteapi.SiteWorkspaceResource, error) {
 	s, m := workspaceScope(ctx), callerMembership(ctx)
-	w, err := h.workspaces.SetTimezone(ctx, s, h.actor(ctx), string(req.Timezone))
-	if err != nil {
+	if _, err := h.workspaces.SetTimezone(ctx, s, h.actor(ctx), string(req.Timezone)); err != nil {
 		return nil, err
 	}
-	resource, err := h.workspaceResource(ctx, s, withWorkspace(m, w))
+	resource, err := h.summarizedWorkspace(ctx, s, m)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +257,7 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	r, err := h.workspaceResource(ctx, s, m)
+	r, err := h.summarizedWorkspace(ctx, s, m)
 	if err != nil {
 		return nil, err
 	}
