@@ -379,8 +379,9 @@ type SiteAuth struct {
 	// the time of that login.
 	Session
 
-	UserID int64
-	Email  string
+	// User is the session's User as the security handler loaded it: the actor of the request,
+	// which a handler reads here rather than loading it again (ADR 0111).
+	User *ent.User
 }
 
 var siteAuthKey = struct{ name string }{"siteAuth"}
@@ -430,7 +431,7 @@ func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, op siteapi.O
 		return ctx, err
 	}
 	sess, _ := sessionOf(claims)
-	return WithSiteAuth(ctx, &SiteAuth{UserID: u.ID, Email: u.Email, Session: sess}), nil
+	return WithSiteAuth(ctx, &SiteAuth{User: u, Session: sess}), nil
 }
 
 // Verify checks a raw session token (signature, expiry, User id and epoch) and

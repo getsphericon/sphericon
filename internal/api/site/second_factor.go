@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -13,15 +14,11 @@ import (
 // SiteSecondFactorGetStatus answers whether the User has a Second factor, a pending
 // enrollment, and how many Recovery codes are left (never the codes).
 func (h *Handlers) SiteSecondFactorGetStatus(ctx context.Context) (*siteapi.SiteSecondFactorStatus, error) {
-	userID, err := sessionUserID(ctx)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	st, err := h.secondFactor.Status(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	u, err := h.users.User(ctx, userID)
+	st, err := h.secondFactor.Status(ctx, u.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +99,21 @@ func (h *Handlers) SiteSecondFactorDisable(ctx context.Context, req *siteapi.Sit
 
 // sessionUserID is the id of the User the request's session belongs to.
 func sessionUserID(ctx context.Context) (int64, error) {
+	u, err := sessionUser(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return u.ID, nil
+}
+
+// sessionUser is the User the request's session belongs to, as the security handler loaded it:
+// the actor is read from the context, never loaded again (ADR 0111).
+func sessionUser(ctx context.Context) (*ent.User, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
-		return 0, auth.ErrUnauthorized
+		return nil, auth.ErrUnauthorized
 	}
-	return a.UserID, nil
+	return a.User, nil
 }
 
 // identityProofTTL is how long a Sign-in provider login (ADR 0048) or a Passkey check (ADR 0052)
@@ -120,18 +127,14 @@ const identityProofTTL = 5 * time.Minute
 // identityProofTTL, carried by the session. It returns the User's id once the proof holds, and
 // the refusal otherwise.
 func (h *Handlers) proveIdentity(ctx context.Context, password siteapi.OptString) (int64, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return 0, err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return 0, err
 	}
 	if err := users.ProveIdentity(ctx, u, password.Value, h.identityProofFresh(ctx), h.proveCurrentPassword); err != nil {
 		return 0, err
 	}
-	return userID, nil
+	return u.ID, nil
 }
 
 // identityProofFresh is whether the request's session holds a Sign-in provider login or a

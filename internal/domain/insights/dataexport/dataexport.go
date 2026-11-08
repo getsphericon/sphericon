@@ -45,7 +45,7 @@ var ErrNotFound = validation.NotFound("contactexport: contact not found", i18n.E
 var ErrIdentifier = validation.Refuse("contactexport: exactly one of id or email is required", i18n.ErrorsContactExportIdentifier)
 
 // Ref is the optional string of a query parameter read as "(value, present)": nil
-// when absent. It lets a handler pass its generated Opt parameters straight to Find.
+// when absent. It lets a handler pass its generated Opt parameters straight to Open.
 func Ref[T ~string](v T, ok bool) *string {
 	if !ok {
 		return nil
@@ -53,10 +53,29 @@ func Ref[T ~string](v T, ok bool) *string {
 	return new(string(v))
 }
 
-// Find resolves the Contact to export by exactly one of its id or email, inside
-// the Workspace of s: another Workspace's Contact is not found. Its two refusals
-// (ErrIdentifier, ErrNotFound) answer alike on both surfaces.
-func Find(ctx context.Context, s *ent.Scoped, id *int64, email *string) (*ent.Contact, error) {
+// Download is the Data export of one Contact: the name to save it under and its chunks.
+type Download struct {
+	Filename string
+	// Chunks yields the export as the chunks of one JSON object, in order, and ends with the
+	// error that stopped it, if any. They are read as they are asked for, with the context of
+	// the request that asks.
+	Chunks iter.Seq2[[]byte, error]
+}
+
+// Open is the Data export of the Contact named by exactly one of its id or email, inside the
+// Workspace of s: another Workspace's Contact is not found. Its two refusals (ErrIdentifier,
+// ErrNotFound) come before any chunk and answer alike on both surfaces. The Contact and every
+// member are read through s, so nothing outside the Workspace can appear.
+func Open(ctx context.Context, s *ent.Scoped, m Mapper, id *int64, email *string) (Download, error) {
+	c, err := find(ctx, s, id, email)
+	if err != nil {
+		return Download{}, err
+	}
+	return Download{Filename: filename(c), Chunks: chunks(ctx, s, m, c)}, nil
+}
+
+// find resolves the Contact to export.
+func find(ctx context.Context, s *ent.Scoped, id *int64, email *string) (*ent.Contact, error) {
 	if (id == nil) == (email == nil) {
 		return nil, ErrIdentifier
 	}
@@ -73,11 +92,8 @@ func Find(ctx context.Context, s *ent.Scoped, id *int64, email *string) (*ent.Co
 	return c, err
 }
 
-// Export yields the export of c as the chunks of one JSON object, in order, and ends
-// with the error that stopped it, if any. The Contact and every member are read
-// through s, so nothing outside the Workspace can appear. The chunks are read as they
-// are asked for, with the context of the request that asks.
-func Export(ctx context.Context, s *ent.Scoped, m Mapper, c *ent.Contact) iter.Seq2[[]byte, error] {
+// chunks yields the export of c.
+func chunks(ctx context.Context, s *ent.Scoped, m Mapper, c *ent.Contact) iter.Seq2[[]byte, error] {
 	return func(yield func([]byte, error) bool) {
 		err := export(ctx, s, m, &streamWriter{yield: yield}, c)
 		if err != nil && !errors.Is(err, errStopped) {
@@ -178,8 +194,8 @@ func export(ctx context.Context, s *ent.Scoped, m Mapper, sw *streamWriter, c *e
 	return sw.err
 }
 
-// Filename is the suggested download name of c's export.
-func Filename(c *ent.Contact) string {
+// filename is the suggested download name of c's export.
+func filename(c *ent.Contact) string {
 	return "contact-" + strconv.FormatInt(c.ID, 10) + "-export.json"
 }
 

@@ -86,6 +86,11 @@ func (m *Module) ActiveHolds(ctx context.Context, workspaceID string) ([]*ent.Ho
 	if err != nil {
 		return nil, err
 	}
+	return m.holdsOf(ctx, s)
+}
+
+// holdsOf lists the holds of the Workspace of s that are active now, by key.
+func (m *Module) holdsOf(ctx context.Context, s *ent.Scoped) ([]*ent.Hold, error) {
 	st, err := holds.Read(ctx, s, m.now(), true)
 	if err != nil {
 		return nil, err

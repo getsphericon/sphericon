@@ -45,12 +45,12 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 	if session == nil {
 		return nil, workspaces.ErrNotFound
 	}
-	_, m, err := h.memberships.Scope(ctx, session.UserID, string(req.WorkspaceId))
+	_, m, err := h.memberships.Scope(ctx, session.User.ID, string(req.WorkspaceId))
 	if err != nil {
 		return nil, err
 	}
 	err = h.secondFactor.Admit(ctx, secondfactors.Admission{
-		UserID:        session.UserID,
+		UserID:        session.User.ID,
 		Membership:    m,
 		StrongSession: currentSession(ctx).Method.Strong(),
 		At:            h.now(),

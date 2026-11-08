@@ -15,11 +15,7 @@ import (
 // SiteUserGetMe returns the authenticated user's profile. Auth is enforced by
 // the security handler, so SiteAuth is always present here.
 func (h *Handlers) SiteUserGetMe(ctx context.Context) (*siteapi.SiteUserResource, error) {
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		return nil, auth.ErrUnauthorized
-	}
-	u, err := h.users.User(ctx, a.UserID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,15 +40,11 @@ func (h *Handlers) userResource(ctx context.Context, u *ent.User) (*siteapi.Site
 // SiteUserAcceptPending accepts every required acceptance pending for the signed-in User at the
 // versions the screen showed (ADR 0062), and is their profile after it.
 func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteAcceptPendingInput) (*siteapi.SiteUserResource, error) {
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		return nil, auth.ErrUnauthorized
-	}
-	if err := h.consentRecords.AcceptPending(ctx, a.UserID, inputs.ReAcceptances(req.Items)); err != nil {
+	u, err := sessionUser(ctx)
+	if err != nil {
 		return nil, err
 	}
-	u, err := h.users.User(ctx, a.UserID)
-	if err != nil {
+	if err := h.consentRecords.AcceptPending(ctx, u.ID, inputs.ReAcceptances(req.Items)); err != nil {
 		return nil, err
 	}
 	return h.userResource(ctx, u)
@@ -62,11 +54,7 @@ func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteA
 // which holds the profile rules. The email is the login identity and is not editable here. A
 // password change ended every session; the acting one continues under a fresh cookie.
 func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdateMeInput) (*siteapi.SiteUserResourceHeaders, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,11 +91,7 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 // address is Taken, a notice to its owner: the answer is the same) — the change only
 // takes effect once that link is confirmed (SiteAuthConfirmEmailChange). Returns 202.
 func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEmailChangeInput) error {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return err
 	}
@@ -130,7 +114,7 @@ func (h *Handlers) SiteUserSignOutEverywhere(ctx context.Context) (*siteapi.Site
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	if err := h.users.EndSessions(ctx, a.UserID); err != nil {
+	if err := h.users.EndSessions(ctx, a.User.ID); err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteUserSignOutEverywhereNoContent{SetCookie: h.sessions.Cleared().String()}, nil

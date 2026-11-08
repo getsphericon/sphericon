@@ -13,15 +13,11 @@ import (
 
 // SitePasskeysList lists the session User's Passkeys, oldest first (ADR 0052).
 func (h *Handlers) SitePasskeysList(ctx context.Context) (*siteapi.SitePasskeyList, error) {
-	userID, err := sessionUserID(ctx)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.users.User(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := h.passkeys.List(ctx, userID)
+	rows, err := h.passkeys.List(ctx, u.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -34,11 +30,7 @@ func (h *Handlers) SitePasskeysList(ctx context.Context) (*siteapi.SitePasskeyLi
 // SitePasskeysBeginRegistration answers the creation options for the browser and sets the
 // ceremony cookie. It writes nothing.
 func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.SitePasskeyRegistrationBegunHeaders, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +75,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 // SitePasskeysBeginCheck answers the request options of a fresh Passkey check of the session
 // User, who holds at least one Passkey, and sets the ceremony cookie.
 func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (*siteapi.SitePasskeyCheckBegunHeaders, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +98,7 @@ func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (*siteapi.SitePas
 // with the time of the check, which stands in for the password for a few minutes
 // (identityProofTTL).
 func (h *Handlers) SitePasskeysFinishCheck(ctx context.Context, req *siteapi.SitePasskeyCheckInput, params siteapi.SitePasskeysFinishCheckParams) (*siteapi.SitePasskeysFinishCheckNoContent, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
