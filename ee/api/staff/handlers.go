@@ -89,35 +89,20 @@ func review(p staffeeapi.OptStaffWorkspaceReview) abusedetector.Review {
 
 // StaffWorkspacesGet is one Workspace's metadata and suspension state.
 func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.StaffWorkspacesGetParams) (*staffeeapi.StaffWorkspaceDetailResource, error) {
-	w, err := h.module.GetWorkspace(ctx, string(params.WorkspaceId))
+	d, err := h.module.GetWorkspace(ctx, string(params.WorkspaceId))
 	if err != nil {
 		return nil, err
 	}
-	d, err := h.module.WorkspaceDeliverability(ctx, w)
-	if err != nil {
-		return nil, err
-	}
-	active, err := h.module.ActiveHolds(ctx, w.PublicID)
-	if err != nil {
-		return nil, err
-	}
-	breach, err := h.module.WorkspaceAbuse(ctx, w)
-	if err != nil {
-		return nil, err
-	}
+	w := d.Workspace
 	res := staffMapper.WorkspaceDetailToResource(w)
-	res.Holds = staffMapper.HoldsToResources(active)
+	res.Holds = staffMapper.HoldsToResources(d.Holds)
 	res.Abuse = staffMapper.AbuseToResource(w)
-	if breach.Tier != abusedetector.TierNone {
-		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(breach))
+	if d.Breach.Tier != abusedetector.TierNone {
+		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(d.Breach))
 	}
-	res.Deliverability = staffMapper.DeliverabilityToResource(d)
-	if h.module.SendCaps() {
-		sendCap, err := h.sendCap(ctx, w)
-		if err != nil {
-			return nil, err
-		}
-		res.SendCap = staffeeapi.NewOptStaffSendCap(sendCap)
+	res.Deliverability = staffMapper.DeliverabilityToResource(d.Deliverability)
+	if d.SentLast24h != nil {
+		res.SendCap = staffeeapi.NewOptStaffSendCap(sendCap(w, *d.SentLast24h))
 	}
 	return &res, nil
 }
@@ -139,22 +124,14 @@ func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, 
 	if err != nil {
 		return nil, err
 	}
-	sendCap, err := h.sendCap(ctx, done.Workspace)
-	if err != nil {
-		return nil, err
-	}
-	return &staffeeapi.StaffSendCapChange{Changed: done.Changed, SendCap: sendCap}, nil
+	return &staffeeapi.StaffSendCapChange{Changed: done.Changed, SendCap: sendCap(done.Workspace, done.SentLast24h)}, nil
 }
 
 // sendCap is the Workspace's Send cap with its sends over the last 24 hours.
-func (h *Handlers) sendCap(ctx context.Context, w *ent.Workspace) (staffeeapi.StaffSendCap, error) {
-	sent, err := h.module.SentLast24h(ctx, w)
-	if err != nil {
-		return staffeeapi.StaffSendCap{}, err
-	}
+func sendCap(w *ent.Workspace, sent int) staffeeapi.StaffSendCap {
 	res := staffMapper.SendCapToResource(w)
 	res.SentLast24h = narrow.Int32(sent)
-	return res, nil
+	return res
 }
 
 func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.StaffSuspensionChange {
