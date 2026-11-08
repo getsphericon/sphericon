@@ -117,6 +117,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -546,6 +547,7 @@ var jobsPackage = do.Package(
 			SendingDomains:  do.MustInvoke[*sendingdomains.Module](i),
 			StepExecution:   do.MustInvoke[*automations.StepExecution](i),
 			JoinDomains:     do.MustInvoke[*joindomains.Module](i),
+			Integrations:    do.MustInvoke[*integrations.Module](i),
 			TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
 			Machine:         do.MustInvoke[*privaterelayranges.Detector](i),
 			Clock:           do.MustInvoke[Clock](i),
@@ -730,7 +732,7 @@ var audiencePackage = do.Package(
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i),
-			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
+			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[Clock](i), do.MustInvoke[IntegrationOptions](i)...), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrationdeletion.UseCase, error) {
 		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*integrations.Module](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[Clock](i)), nil
@@ -829,6 +831,10 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*needsattentionreport.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
 		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*workspacesummary.UseCase, error) {
+		return workspacesummary.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*memberships.Module](i), do.MustInvoke[*holds.Holds](i),
+			do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*trackingdomains.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
 		return analyticsreport.New(do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil
@@ -976,6 +982,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	return apiexternal.Deps{
 		Clock:                 do.MustInvoke[Clock](i),
 		Workspaces:            do.MustInvoke[*workspaces.Module](i),
+		WorkspaceSummary:      do.MustInvoke[*workspacesummary.UseCase](i),
 		Bus:                   do.MustInvoke[*events.Bus](i),
 		Webhooks:              do.MustInvoke[*webhookendpoints.Module](i),
 		Outbound:              do.MustInvoke[*outboundmessages.Module](i),
@@ -1023,7 +1030,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Instance:                 do.MustInvoke[*instancestates.Module](i),
 		Deletion:                 do.MustInvoke[*workspacedeletion.UseCase](i),
 		AccountLink:              accountLink,
-		Holds:                    do.MustInvoke[*holds.Holds](i),
+		WorkspaceSummary:         do.MustInvoke[*workspacesummary.UseCase](i),
 		Attention:                do.MustInvoke[*needsattentionreport.UseCase](i),
 		SetupChecklist:           do.MustInvoke[*setupchecklist.Module](i),
 		SupportEmail:             cfg.SupportEmail,

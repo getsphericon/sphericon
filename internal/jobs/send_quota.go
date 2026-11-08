@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	stdsql "database/sql"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/riverqueue/river"
@@ -11,10 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // quotaRefreshBatchSize bounds how many Integrations one hourly tick refreshes, like
@@ -71,28 +67,21 @@ func IntegrationsDueForQuotaRefresh(ctx context.Context, client *ent.Client, lim
 type RefreshIntegrationQuotaWorker struct {
 	river.WorkerDefaults[integrations.RefreshQuotaArgs]
 
-	ent     *ent.Client
-	cipher  *secrets.Cipher
-	catalog *messaging.Catalog
-	now     func() time.Time
+	ent          *ent.Client
+	integrations *integrations.Module
 }
 
-// NewRefreshIntegrationQuotaWorker builds the worker that reads one Integration's provider send quota,
-// stamped by the Instance clock now.
-func NewRefreshIntegrationQuotaWorker(client *ent.Client, cipher *secrets.Cipher, catalog *messaging.Catalog, now func() time.Time) *RefreshIntegrationQuotaWorker {
-	return &RefreshIntegrationQuotaWorker{ent: client, cipher: cipher, catalog: catalog, now: now}
+// NewRefreshIntegrationQuotaWorker builds the worker that reads one Integration's provider send quota
+// through its module.
+func NewRefreshIntegrationQuotaWorker(client *ent.Client, mod *integrations.Module) *RefreshIntegrationQuotaWorker {
+	return &RefreshIntegrationQuotaWorker{ent: client, integrations: mod}
 }
 
+// Work reads the Integration's provider quota and stores it (integrations.Module.RefreshQuota). The
+// Integration may have been deleted since the tick queued it, which is nothing to do: the job
+// checks again when it runs (ADR 0099).
 func (w *RefreshIntegrationQuotaWorker) Work(ctx context.Context, job *river.Job[integrations.RefreshQuotaArgs]) error {
-	return RefreshIntegrationQuotaByID(ctx, w.ent, w.cipher, w.catalog, job.Args.IntegrationID, w.now())
-}
-
-// RefreshIntegrationQuotaByID reads one Integration's provider quota and stores it
-// (see providerlimit.RefreshQuota). The Integration may have been deleted since the
-// tick queued it, which is nothing to do: the job checks again when it runs (ADR 0099).
-// Pure of the queue so tests call it directly.
-func RefreshIntegrationQuotaByID(ctx context.Context, client *ent.Client, cipher *secrets.Cipher, catalog *messaging.Catalog, id int64, now time.Time) error {
-	row, err := client.Integration.Get(ctx, id)
+	row, err := w.ent.Integration.Get(ctx, job.Args.IntegrationID)
 	if ent.IsNotFound(err) {
 		return nil
 	}
@@ -102,5 +91,5 @@ func RefreshIntegrationQuotaByID(ctx context.Context, client *ent.Client, cipher
 	if row.DiscardedAt != nil {
 		return nil
 	}
-	return providerlimit.RefreshQuota(ctx, client.Scoped(row.WorkspaceID), cipher, catalog, row, now)
+	return w.integrations.RefreshQuota(ctx, w.ent.Scoped(row.WorkspaceID), row)
 }

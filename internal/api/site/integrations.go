@@ -3,70 +3,44 @@ package site
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent"
+	"github.com/samber/lo"
+
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 )
 
 // SiteIntegrationsList returns the workspace's sending-provider integrations
 // with secrets redacted.
 func (h *Handlers) SiteIntegrationsList(ctx context.Context, _ siteapi.SiteIntegrationsListParams) ([]siteapi.SiteIntegrationResource, error) {
-	s := workspaceScope(ctx)
-
-	rows, err := h.integrations.All(ctx, s)
+	views, err := h.integrations.All(ctx, workspaceScope(ctx))
 	if err != nil {
 		return nil, err
 	}
-
-	limits, err := providerlimit.Statuses(ctx, s, rows, h.now())
-	if err != nil {
-		return nil, err
-	}
-	items := make([]siteapi.SiteIntegrationResource, len(rows))
-	for i, row := range rows {
-		res, err := h.integrationToResource(row, limits[row.ID])
-		if err != nil {
-			return nil, err
-		}
-		items[i] = res
-	}
-	return items, nil
+	return lo.Map(views, func(v integrations.View, _ int) siteapi.SiteIntegrationResource { return integrationResource(v) }), nil
 }
 
 // SiteIntegrationsCreate stores a new provider integration; credentials are
 // encrypted at rest and never returned. Owners and admins only.
 func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.CreateIntegrationInput, _ siteapi.SiteIntegrationsCreateParams) (*siteapi.SiteIntegrationResource, error) {
-	s := workspaceScope(ctx)
-
 	in, err := inputs.IntegrationCreate(req)
 	if err != nil {
 		return nil, err
 	}
-	row, err := h.integrations.Create(ctx, s, in)
+	v, err := h.integrations.Create(ctx, workspaceScope(ctx), in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := h.integrationResource(ctx, s, row)
-	if err != nil {
-		return nil, err
-	}
+	res := integrationResource(v)
 	return &res, nil
 }
 
 // SiteIntegrationsGet returns one integration with secrets redacted.
 func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteIntegrationsGetParams) (*siteapi.SiteIntegrationResource, error) {
-	s := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	row, err := h.integrations.Get(ctx, s, id)
+	v, err := h.integrations.View(ctx, workspaceScope(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
-	res, err := h.integrationResource(ctx, s, row)
-	if err != nil {
-		return nil, err
-	}
+	res := integrationResource(v)
 	return &res, nil
 }
 
@@ -76,37 +50,26 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 // keep the stored secret rather than clearing it, since secrets are never echoed
 // back on read — so a partial edit cannot accidentally wipe a credential.
 func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.UpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (*siteapi.SiteIntegrationResource, error) {
-	s := workspaceScope(ctx)
-
-	id := int64(params.ID)
-
 	in, err := inputs.IntegrationUpdate(req)
 	if err != nil {
 		return nil, err
 	}
-	updated, err := h.integrations.Update(ctx, s, id, in)
+	v, err := h.integrations.Update(ctx, workspaceScope(ctx), int64(params.ID), in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := h.integrationResource(ctx, s, updated)
-	if err != nil {
-		return nil, err
-	}
+	res := integrationResource(v)
 	return &res, nil
 }
 
 // SiteIntegrationsRegenerateKey gives the integration a new hook key; the old hook URL
 // stops working at once. Owners and admins only.
 func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params siteapi.SiteIntegrationsRegenerateKeyParams) (*siteapi.SiteIntegrationResource, error) {
-	s := workspaceScope(ctx)
-	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
+	v, err := h.integrations.RegenerateKey(ctx, workspaceScope(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
-	res, err := h.integrationResource(ctx, s, row)
-	if err != nil {
-		return nil, err
-	}
+	res := integrationResource(v)
 	return &res, nil
 }
 
@@ -129,24 +92,16 @@ func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.Si
 	return h.integrationDeletion.Delete(ctx, workspaceScope(ctx), int64(params.ID))
 }
 
-// integrationToResource maps the row with goverter, then attaches what the mapper cannot
-// see: the decrypted config and params (redacted), the hook URL and the Provider limit.
-func (h *Handlers) integrationToResource(row *ent.Integration, limit providerlimit.Status) (siteapi.SiteIntegrationResource, error) {
-	res := mapper.IntegrationToResource(row)
-	res.ProviderLimit = mapper.ProviderLimitToStatus(limit)
-	res.HookUrl = h.integrations.HookURL(row)
-	view, err := h.integrations.View(row)
-	if err != nil {
-		return res, err
-	}
-	res.Params = siteapi.JsonObject(integrations.RawOf(view.Values))
-	res.SecretsRetiring = view.SecretsRetiring
-
-	cfg, err := h.integrations.Redact(row)
-	if err != nil {
-		return res, err
-	}
+// integrationResource maps the Integration's View: the row with goverter, then what the module
+// built beside it (the redacted config and params, the hook URL and the Provider limit).
+func integrationResource(v integrations.View) siteapi.SiteIntegrationResource {
+	res := mapper.IntegrationToResource(v.Row)
+	res.ProviderLimit = mapper.ProviderLimitToStatus(v.ProviderLimit)
+	res.HookUrl = v.HookURL
+	res.Params = siteapi.JsonObject(v.Params)
+	res.SecretsRetiring = v.SecretsRetiring
 	// The config is a oneOf per provider, which goverter cannot express.
+	cfg := v.Config
 	switch {
 	case cfg.SMTP != nil:
 		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSmtpConfigSiteIntegrationConfigSum(mapper.SmtpConfigToResource(*cfg.SMTP))}
@@ -159,15 +114,5 @@ func (h *Handlers) integrationToResource(row *ent.Integration, limit providerlim
 	case cfg.Twilio != nil:
 		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteTwilioConfigSiteIntegrationConfigSum(mapper.TwilioConfigToResource(*cfg.Twilio))}
 	}
-	return res, nil
-}
-
-// integrationResource renders one Integration with its 24-hour usage, for the
-// single-row responses (get, create, update).
-func (h *Handlers) integrationResource(ctx context.Context, s *ent.Scoped, row *ent.Integration) (siteapi.SiteIntegrationResource, error) {
-	limits, err := providerlimit.Statuses(ctx, s, []*ent.Integration{row}, h.now())
-	if err != nil {
-		return siteapi.SiteIntegrationResource{}, err
-	}
-	return h.integrationToResource(row, limits[row.ID])
+	return res
 }

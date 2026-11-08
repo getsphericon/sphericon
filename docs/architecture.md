@@ -245,8 +245,8 @@ coding standards in `CODING_STANDARDS.md`.
   for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
   (`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
   Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
-  `users`; a provider's quota answer and refusal of an Integration (`integrations.RecordQuota`,
-  `RecordRefused`) for `providerlimit` and `outboundmessages`. A write through a generic helper counts where
+  `users`; a provider's refusal of an Integration (`integrations.RecordRefused`) for
+  `outboundmessages`. A write through a generic helper counts where
   the helper is instantiated with an ent write builder. The owner also declares each unique
   constraint of its tables beside those writes (ADR 0106): `var constraints = db.Declare(...)`, each
   constraint by exact name a `db.Refusal` with the module's sentinel or a `db.Fault` with its reason,
@@ -354,8 +354,8 @@ coding standards in `CODING_STANDARDS.md`.
   Visitor through `visitors`, announces its chats through `bindings` (sending, above the Contact)
   and stitches its Events through the bus, in one transaction. The Ingest hook's reading of a provider's callbacks
   (`callbackinterpretation`) opens the request's transaction and changes Outbound messages, Suppressions,
-  Unsubscribes, Confirmations and Bindings through their modules; the Analytics reports (`analyticsreport`) and what Needs
-  attention (`needsattentionreport`) only read.
+  Unsubscribes, Confirmations and Bindings through their modules; the Analytics reports (`analyticsreport`), what Needs
+  attention (`needsattentionreport`) and the Workspace summary (`workspacesummary`) only read.
   The consent of a Destination (`internal/domain/contacts/confirmations`,
   `internal/domain/contacts/unsubscribes` and `internal/domain/contacts/channelstop`, the stops read in
   the Channel) sits in the contacts context, below the Broadcasts and Automations an unsubscribe
@@ -381,7 +381,10 @@ coding standards in `CODING_STANDARDS.md`.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
-  (marked `goverter:ignore` with the reason). Hand-built values are limited to response wrappers
+  (marked `goverter:ignore` with the reason). A resource `/site` and `/api` both answer is built once
+  below them (ADR 0111): the Integration's `integrations.View`, the Segment preview of `segments`,
+  the Workspace summary of `workspacesummary`; each surface maps the same values into its own
+  contract. Hand-built values are limited to response wrappers
   (`*ListOK`, `*Headers`) and aggregates with no single source (setup checklist, lint findings,
   the integration config `oneOf`).
 - Auth security handlers live in `internal/api/auth/auth.go`. External requests carry a

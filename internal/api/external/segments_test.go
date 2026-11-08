@@ -74,11 +74,11 @@ func TestExternalSegmentsPreview(t *testing.T) {
 	c := env.ExternalScoped(t, "segments:read")
 
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
-	want, err := segments.New(env.Bus, time.Now).Preview(ctx, env.DB.Scoped(1), def)
+	want, err := segments.New(env.Bus, time.Now).Preview(ctx, env.DB.Scoped(1), segments.PreviewInput{Condition: new(def)})
 	require.NoError(t, err)
 	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))})
 	require.NoError(t, err)
-	assert.EqualValues(t, want, res.Count)
+	assert.EqualValues(t, want.Count, res.Count)
 
 	_, err = c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
