@@ -61,7 +61,7 @@ func newFactorRace(t *testing.T) factorRace {
 
 // Pause the matching write after its operation loaded and checked the User. Register on both
 // clients: the pre-fix Start writes directly, while transactional moves use the Bus client.
-func (r factorRace) pause(t *testing.T, matches func(*ent.UserMutation) bool) (<-chan struct{}, func()) {
+func (r factorRace) pause(t *testing.T, matches func(*ent.UserMutation) bool) (paused <-chan struct{}, unblock func()) {
 	t.Helper()
 	ready, resume := make(chan struct{}, 1), make(chan struct{})
 	release := sync.OnceFunc(func() { close(resume) })
