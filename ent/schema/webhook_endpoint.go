@@ -51,6 +51,13 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		field.Time("disabled_at").
 			Optional().
 			Nillable(),
+		// An explicit owner enable starts a new health generation. A delivery loaded before
+		// that reset can finish its HTTP request, but its result cannot change this run.
+		// Null is the initial generation, so existing endpoints need no backfill.
+		field.Int64("health_generation").
+			Optional().
+			Nillable().
+			NonNegative(),
 		// Failure state (ADR 0039), written by the delivery worker with no actor so it
 		// is not audited. All nil while the endpoint is healthy; a 2xx clears them.
 		// Failed deliveries in a row.
