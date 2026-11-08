@@ -342,7 +342,8 @@ components:
   # ee/domain/<context>/<module>, its use cases in ee/usecase/<name>, its surfaces in ee/api and
   # the Edition ee/ee.go, with the License key's gate (ee/licensekey) beside them. Its boundary with
   # the core is unchanged: the core never imports it (no core component lists an ee component, and
-  # each ee component names its importers), and only the wiring assembles it.
+  # each ee component names its importers; the command line, `cli`, reaches the Service credentials,
+  # which only it issues), and only the wiring assembles it.
   #
   # The handlers of the Enterprise surfaces (the Staff console's Enterprise sections and the service
   # endpoints), over the modules ee/domain/insights/workspaceoversight and ee/domain/identity/servicecredentials.
