@@ -1,9 +1,11 @@
 package jobs_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -197,6 +200,19 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 	dec, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, fixtures.ContactTexterConfirmedPhone, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason, "a Broadcast's text does not go either")
+	// The link of a received text attributes the opt-out to its Automation (ADR 0115), which the
+	// link itself does not name: an SMS link is for everything.
+	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunJobsSMSStopLinkConfirmedID)
+	unsubscribed := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	require.Len(t, unsubscribed, 1)
+	data := unsubscribed[0].Data
+	assert.Equal(t, strconv.Itoa(fixtures.ContactTexterConfirmedID), fmt.Sprint(data["contactId"]))
+	assert.Equal(t, fixtures.ContactTexterConfirmedPhone, data["phone"])
+	assert.Equal(t, events.UnsubscribedByLink, data["via"])
+	assert.Equal(t, strconv.FormatInt(run.AutomationID, 10), fmt.Sprint(data["automationId"]))
+	assert.NotContains(t, data, "broadcastId")
+	attributions := env.JobsOf(t, jobs.BroadcastUnsubscribeEventArgs{}.Kind())
+	assert.Len(t, attributions, 1, "the public Event is no second attribution fact")
 }
 
 // Opening a text's unsubscribe link lands on the confirmation page told the link is a text's, so

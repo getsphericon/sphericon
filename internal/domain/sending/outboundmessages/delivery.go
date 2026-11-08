@@ -86,6 +86,22 @@ func FindSMSMessage(ctx context.Context, s *ent.Scoped, integrationID int64, pro
 	return m, nil
 }
 
+// FindOrigin is the Ref of the Outbound message id whose Broadcast or Automation it came from (only
+// BroadcastID and AutomationID are set), the zero Ref when the message is not the scope's: an SMS
+// unsubscribe link carries only the message, since its source is everything (ADR 0077).
+func FindOrigin(ctx context.Context, s *ent.Scoped, id int64) (Ref, error) {
+	m, err := s.OutboundMessage().Query().Where(outboundmessage.ID(id)).
+		Select(outboundmessage.FieldBroadcastID, outboundmessage.FieldAutomationID).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return Ref{}, nil
+	}
+	if err != nil {
+		return Ref{}, fmt.Errorf("find the message's origin: %w", err)
+	}
+	return Ref{BroadcastID: lo.FromPtr(m.BroadcastID), AutomationID: lo.FromPtr(m.AutomationID)}, nil
+}
+
 // StampFinal sets a message's final delivery state, delivered or undelivered (ADR 0079), and
 // reports whether it did. A message moves only forward: the first final report stamps it, and a
 // later one of either kind, a redelivery included, changes nothing. An undelivered stamp keeps the

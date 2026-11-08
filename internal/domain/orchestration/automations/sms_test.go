@@ -64,6 +64,26 @@ func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
 	assert.NotZero(t, onDelivered.ID)
 }
 
+// A new SMS opt-out of a Contact's number (sms.unsubscribed) may start and end an Automation, as
+// telegram.unsubscribed and email.unsubscribed may.
+func TestSmsUnsubscribedTriggersAndExits(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	unsubscribed, confirmed := "sms.unsubscribed", "sms.confirmed"
+
+	onStop, err := m.Create(t.Context(), s, automations.CreateInput{
+		Name: "Unsubscribed", TriggerEvent: unsubscribed, ExitEvents: []string{confirmed},
+	})
+	require.NoError(t, err)
+	assert.NotZero(t, onStop.ID)
+	onConsent, err := m.Create(t.Context(), s, automations.CreateInput{
+		Name: "Confirmed", TriggerEvent: confirmed, ExitEvents: []string{unsubscribed},
+	})
+	require.NoError(t, err)
+	assert.NotZero(t, onConsent.ID)
+}
+
 func smsVia(id *int64, text string) automationstep.Step {
 	return automationstep.Step{Type: automationstep.SMS, IntegrationID: id, Text: text}
 }

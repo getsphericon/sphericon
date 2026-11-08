@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
@@ -60,15 +61,15 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			return err
 		}
 		if target.Channel == channels.SMS {
-			return pub.Publish(ctx, &events.SmsStopObserved{WorkspaceID: target.WorkspaceID, Phone: dest, Via: events.UnsubscribedByLink, OutboundMessageID: target.OutboundMessageID, ObservedAt: at})
+			return publishSMSStop(ctx, sc, pub, target, dest, at)
 		}
 		o := unsubscribes.OptOut{Channel: channel, Destination: dest, Source: target.Source, ContactID: target.ContactID}
 		if target.Channel == channels.Telegram {
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
 			o.Via = unsubscribe.ViaLink
 		}
-		added, err := unsubscribes.Add(ctx, sc, o)
-		if err != nil || !added {
+		optOutID, err := unsubscribes.Add(ctx, sc, o)
+		if err != nil || optOutID == 0 {
 			return err
 		}
 
@@ -96,7 +97,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		}
 
 		if target.Channel == channels.Telegram {
-			return publishTelegramUnsubscribed(ctx, sc, pub, target, dest)
+			return publishTelegramUnsubscribed(ctx, sc, pub, target, optOutID)
 		}
 		if target.Channel != channels.Email {
 			return nil
@@ -110,9 +111,11 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 }
 
 // publishTelegramUnsubscribed records telegram.unsubscribed for the Contact a Telegram unsubscribe
-// link was issued to (the opt-out itself is the source-scoped row written above). A link with no
-// Contact, or one whose Contact is gone, has nobody to name.
-func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string) error {
+// link was issued to (the opt-out itself is the row optOutID written above). A link with no
+// Contact, or one whose Contact is gone, has nobody to name. The Event is keyed by the opt-out
+// row, not the link: a `/start` lifts an opt-out of everything, and a later click on the same link
+// is a new opt-out with a new Event, while its source id names neither the user nor the link.
+func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, optOutID int64) error {
 	if target.ContactID == 0 {
 		return nil
 	}
@@ -127,8 +130,27 @@ func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events
 	return pub.Publish(ctx, &events.TelegramUnsubscribed{
 		WorkspaceID: target.WorkspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Via: events.UnsubscribedByLink,
 		BroadcastID: target.BroadcastID, AutomationID: automationID,
-		DedupID: fmt.Sprintf("link:%s:%s/unsubscribed/%d", target.Source, dest, c.ID),
+		DedupID: fmt.Sprintf("opt-out:%d", optOutID),
 	})
+}
+
+// publishSMSStop reports the stop of the number whose text's link was followed; the opt-out and its
+// effects are its subscriber's (ADR 0114). The link names the Contact the text was sent to and the
+// text's Broadcast but not its Automation, since an SMS link is for everything, so the Broadcast and
+// the Automation are read from the text.
+func publishSMSStop(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string, at time.Time) error {
+	stop := &events.SmsStopObserved{
+		WorkspaceID: target.WorkspaceID, Phone: dest, Via: events.UnsubscribedByLink,
+		OutboundMessageID: target.OutboundMessageID, ContactID: target.ContactID, ObservedAt: at,
+	}
+	if target.OutboundMessageID != 0 {
+		origin, err := outboundmessages.FindOrigin(ctx, sc, target.OutboundMessageID)
+		if err != nil {
+			return err
+		}
+		stop.BroadcastID, stop.AutomationID = origin.BroadcastID, origin.AutomationID
+	}
+	return pub.Publish(ctx, stop)
 }
 
 // publishAttribution records a real opt-out attributed to the message whose signed link was

@@ -11,12 +11,17 @@ const (
 )
 
 // SmsStopObserved is a semantic stop, not a public Event or a command naming a registry writer.
-// Only a link on a received message supplies OutboundMessageID for independent attribution.
+// Only a link on a received message supplies OutboundMessageID for independent attribution, and
+// the Contact the message was sent to and its Broadcast or Automation, which the public
+// sms.unsubscribed names when that Contact still holds the number.
 type SmsStopObserved struct {
 	WorkspaceID       int64     `json:"workspaceId"`
 	Phone             string    `json:"phone"`
 	Via               string    `json:"via"`
 	OutboundMessageID int64     `json:"outboundMessageId,omitempty"`
+	ContactID         int64     `json:"contactId,omitempty"`
+	BroadcastID       int64     `json:"broadcastId,omitempty"`
+	AutomationID      int64     `json:"automationId,omitempty"`
 	DedupID           string    `json:"dedupId,omitempty"`
 	ObservedAt        time.Time `json:"observedAt,omitzero"`
 }

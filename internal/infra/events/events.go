@@ -89,6 +89,10 @@ const (
 	NameSmsConfirmed = "sms.confirmed"
 	// NameSmsClicked is a click on a short tracked link of an SMS (ADR 0083).
 	NameSmsClicked = "sms.clicked"
+	// NameSmsUnsubscribed is a Contact's number opting out of all of the Workspace's SMS marketing
+	// (ADR 0077): a STOP keyword, the unsubscribe link, a send the provider refused because the
+	// number had stopped, or by hand. Only a new opt-out records it, never a repeated stop (ADR 0114).
+	NameSmsUnsubscribed = "sms.unsubscribed"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
@@ -329,6 +333,7 @@ var registry = map[string]func() DomainEvent{
 	NameSmsDelivered:              func() DomainEvent { return &SmsDelivery{} },
 	NameSmsUndelivered:            func() DomainEvent { return &SmsDelivery{} },
 	NameSmsClicked:                func() DomainEvent { return &SmsClicked{} },
+	NameSmsUnsubscribed:           func() DomainEvent { return &SmsUnsubscribed{} },
 	NameAuditEntry:                func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged:     func() DomainEvent { return &TrackingDomainChanged{} },
 

@@ -347,7 +347,9 @@ number texted STOP to the sender there; the message is Skipped), the `{{ unsubsc
 text, and one recorded by hand. Each drops the number's SMS Confirmation. A text that is exactly START
 or UNSTOP lifts it and records a Confirmation with provenance `keyword` (`sms.confirmed`). sphericon
 answers neither. The row keeps how the person stopped (`via`: keyword, refused send, link, manual),
-which the Contact card shows.
+which the Contact card shows. A new opt-out of a Contact's number is recorded with the
+`sms.unsubscribed` System event, which carries the `via` and the number and names the text's Broadcast
+or Automation only when the person followed its link.
 A repeated delivery of the same external fact does not apply that choice again, even after a
 later START or UNSTOP. A new STOP after consent was restored is a new opt-out; another STOP while
 the opt-out already stands creates no second change or attribution.

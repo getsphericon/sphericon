@@ -66,7 +66,9 @@ password reset, a verification link sent again) publishes in a transaction of it
 - **The Event row** is written for every Projected event, with its Contact link when available.
   A natural source id is namespaced by the semantic event name and is unique within a Workspace;
   storage, trigger lookups, Rule firings and Webhook identity use the same value. Internal SMS observations and state transitions have
-  no Event row and reach no public Rule, Automation or Webhook.
+  no Event row and reach no public Rule, Automation or Webhook; a new SMS opt-out of a Contact's
+  number is projected as the public `sms.unsubscribed`, like `email.unsubscribed` and
+  `telegram.unsubscribed`.
 - **The subscribers** (`events.Subscriber`) run synchronously on the publishing transaction's
   scoped client. The composition root registers them; the bus imports no domain module. SMS stop
   and unreachable observations trigger their owners' consent and suppression writes. Only an

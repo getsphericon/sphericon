@@ -354,13 +354,16 @@ coding standards in `CODING_STANDARDS.md`.
   `internal/domain/contacts/unsubscribes` and `internal/domain/contacts/channelstop`, the stops read in
   the Channel) sits in the contacts context, below the Broadcasts and Automations an unsubscribe
   touches: easement fails its import of `broadcasts`, `automations` or a use case as an import
-  against the order of the contexts (`domain-contacts`), so only `unsubscriberecording` calls
-  `broadcasts.RecordUnsubscribe` and ends the Enrollment. A Telegram stop (`channelstop.StopTelegram`, from the
-  Ingest hook's button press or a send that finds the bot blocked) writes no Broadcast row: the
-  recipient row is the `broadcasts` module's (ADR 0102), and neither `channelstop` nor `outboundmessages`, where a
-  blocked send records the stop in its own transaction, may reach it. Its `telegram.unsubscribed`
-  names the Broadcast, and the broadcasts consumer (`event_broadcast_unsubscribe`, a job per ADR 0101) counts the unsubscribe with `broadcasts.RecordUnsubscribe` after the opt-out commits. Nothing
-  is lost: the job is inserted in the opt-out's transaction, and the count is set once.
+  against the order of the contexts (`domain-contacts`), so only `unsubscriberecording` ends the
+  Enrollment, in the opt-out's transaction. No opt-out writes a Broadcast row: the recipient row is the
+  `broadcasts` module's (ADR 0102). Every new opt-out made on a received message, by a link on any
+  Channel or a Telegram button, publishes the internal `message.unsubscribed` in its transaction
+  (`unsubscriberecording`, or `channelstop` for an SMS link and a Telegram button), and the broadcasts
+  consumer (`event_broadcast_unsubscribe`, a job per ADR 0101) is the one caller of
+  `broadcasts.RecordUnsubscribe`, after the opt-out commits (ADR 0115). The public
+  `email.unsubscribed`, `telegram.unsubscribed` and `sms.unsubscribed` name the Broadcast on the
+  Contact's Event only and count nothing. Nothing is lost: the job is inserted in the opt-out's
+  transaction, and the count is set once.
   `unsubscribes` is the lowest of the three: `confirmations` imports it (a START lifts the opt-out),
   and `channelstop` composes both (a stop drops the Confirmation).
   One unchecked removal is called from a domain module until its use case exists:

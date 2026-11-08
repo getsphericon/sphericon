@@ -340,7 +340,8 @@ func (e *TelegramClicked) Workspace() int64    { return e.WorkspaceID }
 func (e *TelegramClicked) EventID() string     { return e.DedupID }
 func (e *TelegramClicked) Project() Projection { return (*LinkClick)(e).project(NameTelegramClicked) }
 
-// Ways a Contact stops Telegram marketing, the `via` property of telegram.unsubscribed.
+// Ways a Contact stops marketing on a Channel, the `via` property of telegram.unsubscribed and
+// sms.unsubscribed.
 const (
 	// UnsubscribedByKeyword is `/stop` or a STOP keyword.
 	UnsubscribedByKeyword = "keyword"
@@ -389,6 +390,41 @@ func (e *TelegramUnsubscribed) Project() Projection {
 	}
 	return Projection{
 		Subject: e.Email, Action: NameTelegramUnsubscribed, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
+	}
+}
+
+// SmsUnsubscribed is the Channel-wide SMS opt-out of a Contact's number (sms.unsubscribed),
+// recorded with the opt-out in one transaction, only when the opt-out is new: a stop of a number
+// already opted out records nothing (ADR 0114). Via says how. Only the unsubscribe link of a text
+// the number received names that text's Broadcast or Automation (ADR 0115). DedupID names the
+// opt-out, not the number, so a redelivery records nothing twice, a stop after a START records
+// again, and an erased Event's source id keeps no number.
+type SmsUnsubscribed struct {
+	WorkspaceID  int64  `json:"workspaceId"`
+	ContactID    int64  `json:"contactId"`
+	Email        string `json:"email,omitempty"`
+	Phone        string `json:"phone"`
+	Via          string `json:"via"`
+	BroadcastID  int64  `json:"broadcastId,omitempty"`
+	AutomationID int64  `json:"automationId,omitempty"`
+	DedupID      string `json:"dedupId,omitempty"`
+}
+
+func (*SmsUnsubscribed) EventName() string  { return NameSmsUnsubscribed }
+func (*SmsUnsubscribed) EventVersion() int  { return 1 }
+func (e *SmsUnsubscribed) Workspace() int64 { return e.WorkspaceID }
+func (e *SmsUnsubscribed) EventID() string  { return e.DedupID }
+func (e *SmsUnsubscribed) Project() Projection {
+	props := map[string]any{"via": e.Via}
+	if e.BroadcastID != 0 {
+		props["broadcastId"] = e.BroadcastID
+	}
+	if e.AutomationID != 0 {
+		props["automationId"] = e.AutomationID
+	}
+	return Projection{
+		Subject: e.Email, Action: NameSmsUnsubscribed, Email: e.Email, Phone: e.Phone, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
 	}
 }
