@@ -10,14 +10,12 @@ version: 1
 # context's `domain-<context>`, ee-api, the Enterprise `ee-domain-<context>` and `ee-usecase`),
 # `x-raw-holder-forbids` (the runner, each context's raw-client components and the Enterprise
 # `ee-domain-<context>-raw` and `ee-usecase-raw`); api-auth, ee-edition, testsupport and wiring
-# take this list whole. The removal of the only Owner's Membership of a Workspace in its deletion
-# window serves User deletion in `internal/domain/identity/users` (`domain-identity-users`), which
-# alone may call it: its forbid list is `x-user-deletion-forbids`, the raw-holder list without it,
-# and `usecase` and `usecase-raw` forbid it by name. Its definition is not a use; a call even
-# inside its own module fails, and tests are excluded. Name the function as
+# take this list whole. Its definition is not a use; a call even inside its own module fails, and
+# tests are excluded. Name the function as
 # `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
-# So do the Second factor reset's removals (the User's factor with its Recovery codes, all Passkeys
+# So do User deletion's removals (the only Owner's Membership of a Workspace in its deletion window,
+# the User row) and the Second factor reset's removals (the User's factor with its Recovery codes, all Passkeys
 # of a User), the moves of a Workspace's deletion cycle, the creation of a Workspace with its
 # creator's Membership, and each owner's step of a Contact's Erasure (the Contact row,
 # contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
@@ -29,7 +27,10 @@ x-unchecked-removals: &unchecked-removals
     because: deleting a Tag is the use case internal/usecase/tagdeletion, which runs the Removal check, the Tag's Definition use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &leave-doomed-workspace-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.LeaveDoomedWorkspaceIn
-    because: it lets the only Owner leave, which only User deletion may do, after it has refused a User who solely owns a live Workspace (ADR 0050); call memberships.Module.Leave or LeaveIn
+    because: it lets the only Owner leave, which only User deletion may do, after it has refused a User who solely owns a live Workspace (ADR 0050); call the use case internal/usecase/userdeletion, or memberships.Module.Leave or LeaveIn
+  - &users-delete-in
+    name: github.com/getsphericon/sphericon/internal/domain/identity/users.DeleteIn
+    because: deleting a User is the use case internal/usecase/userdeletion, which proves who asks (the password or the deletion link, the Second factor code), refuses the only Owner of a live Workspace and removes every Membership first (ADR 0050); call the use case
   - &contacts-update-custom-field-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.UpdateCustomFieldIn
     because: editing a Custom field is the use case internal/usecase/customfieldretyping, which runs the Removal check under the Workspace lock first, refusing a retype while a Segment, a Rule or an armed Broadcast tests the field with a leaf the new type does not take (ADR 0102, ADR 0065, ADR 0099); call the use case
@@ -124,6 +125,7 @@ x-core-forbids: &core-forbids
     because: a handler or a domain module takes a *ent.Scoped so every query is workspace-bound; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in the raw-client component of its context (`domain-<context>-raw`) here, never a field of a module or a handler
   - *tags-delete-in
   - *leave-doomed-workspace-in
+  - *users-delete-in
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
@@ -184,6 +186,7 @@ x-raw-holder-forbids: &raw-holder-forbids
     because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
   - *tags-delete-in
   - *leave-doomed-workspace-in
+  - *users-delete-in
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
@@ -224,6 +227,7 @@ x-runner-forbids: &runner-forbids
   - *upgrade-major-floor
   - *tags-delete-in
   - *leave-doomed-workspace-in
+  - *users-delete-in
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
@@ -248,46 +252,6 @@ x-runner-forbids: &runner-forbids
   - *outboundmessages-anonymize-contact
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
-# The same list less memberships.LeaveDoomedWorkspaceIn, for its one caller: User deletion, in
-# `internal/domain/identity/users` (component `domain-identity-users`).
-x-user-deletion-forbids: &user-deletion-forbids
-  - *emailcase-hook
-  - *workspacefeed-hook
-  - *workspacefeed-guard
-  - *usertombstones-hook
-  - *usertombstones-guard
-  - *trackinghostchanges-hook
-  - *trackinghostchanges-guard
-  - *upgrade-boundaries
-  - *upgrade-major-floor
-  - *tags-delete-in
-  - *contacts-update-custom-field-in
-  - *integrations-delete-in
-  - *sendingdomains-delete-in
-  - *contacts-delete-in
-  - *secondfactors-reset-in
-  - *passkeys-delete-all-in
-  - *workspaces-discard-in
-  - *workspaces-restore-in
-  - *workspaces-tombstone-in
-  - *workspaces-create-in
-  - *memberships-add-creator-in
-  - *oauthclients-delete-codes-in
-  - *broadcasts-cancel-pending
-  - *automations-cancel-pending
-  - *rules-cancel-pending
-  - *outboundmessages-erase-short-links
-  - *events-erase-subject
-  - *visitors-erase-subject
-  - *confirmations-erase-number
-  - *unsubscribes-erase-sms
-  - *suppressions-erase-contact
-  - *outboundmessages-anonymize-contact
-  - *outboundmessages-anonymize-destinations
-  - *capturedmessages-erase-to
-  - *river-worker-defaults
-  - *river-add-worker
-  - *river-new-periodic-job
 # No core tier (kernel, infrastructure, domain) and no Enterprise module or use case imports a
 # surface's generated package: what the core shares with a contract is generated into the kernel
 # (the scope vocabulary, internal/kernel/tokenscope), and an Enterprise vocabulary into the module
@@ -499,8 +463,9 @@ components:
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
   # *ent.Scoped to take: the Second factor reset of a User, the deletion cycle of a Workspace,
   # which lists the Workspaces that have no scope yet, the creation of a Workspace, the Sign-up
-  # with the steps that make a User Verified with its first one, and Notice delivery, which reads a
-  # User or a Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
+  # with the steps that make a User Verified with its first one, Notice delivery, which reads a
+  # User or a Workspace's Owners by the ids an event names, and User deletion, which reaches the
+  # User by id and leaves each of their Workspaces in turn. They hold the raw client (the closed list of
   # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
   usecase-raw:
@@ -511,6 +476,7 @@ components:
         'internal/usecase/workspacecreation*',
         'internal/usecase/signup*',
         'internal/usecase/noticedelivery*',
+        'internal/usecase/userdeletion*',
       ]
     isolated: true
     allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
@@ -547,9 +513,6 @@ components:
   # raw client (the closed list of docs/architecture.md, Workspace scoping).
   domain-identity-base:
     { in: [internal/domain/identity/workspaces, internal/domain/identity/memberships] }
-  # User deletion's module: the one caller of memberships.LeaveDoomedWorkspaceIn (the only Owner
-  # leaving a Workspace in its deletion window), which every other component is forbidden.
-  domain-identity-users: { in: internal/domain/identity/users }
   # The raw-client holders of identity (docs/architecture.md, Workspace scoping).
   domain-identity-raw:
     in:
@@ -565,6 +528,7 @@ components:
         internal/domain/identity/signupsurveyresponses,
         internal/domain/identity/staffmembers,
         internal/domain/identity/suspension,
+        internal/domain/identity/users,
         internal/domain/identity/usertombstones,
         internal/domain/identity/workspacefeed,
       ]
@@ -741,7 +705,6 @@ rules:
         domain-instance-raw,
         domain-identity,
         domain-identity-raw,
-        domain-identity-users,
         domain-identity-base,
         domain-contacts,
         domain-content,
@@ -809,7 +772,7 @@ rules:
     because: the security handlers sit below every surface
   api-problem:
     forbid_symbol: *core-forbids
-    may_depend_on: [domain-orchestration, domain-identity-users, domain-identity-base, gen-surfaces]
+    may_depend_on: [domain-orchestration, domain-identity-raw, domain-identity-base, gen-surfaces]
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   domain-contacts:
@@ -915,7 +878,6 @@ rules:
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client
         because: a use case takes the *ent.Scoped its driver built and hands it to the domain modules it calls; it holds no raw client
-      - *leave-doomed-workspace-in
       - *river-worker-defaults
       - *river-add-worker
       - *river-new-periodic-job
@@ -928,7 +890,6 @@ rules:
         domain-instance-raw,
         domain-identity,
         domain-identity-raw,
-        domain-identity-users,
         domain-identity-base,
       ]
     must_not_depend_on: [*no-surface-gen]
@@ -942,7 +903,6 @@ rules:
       - *trackinghostchanges-guard
       - *upgrade-boundaries
       - *upgrade-major-floor
-      - *leave-doomed-workspace-in
       - *river-worker-defaults
       - *river-add-worker
       - *river-new-periodic-job
@@ -954,20 +914,14 @@ rules:
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
-  domain-identity-users:
-    may_depend_on: [domain-identity, domain-identity-raw, domain-identity-base]
-    must_not_depend_on: [*no-surface-gen]
-    forbid_external: *no-container
-    forbid_symbol: *user-deletion-forbids
-    because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
   domain-identity-raw:
-    may_depend_on: [domain-identity, domain-identity-users, domain-identity-base]
+    may_depend_on: [domain-identity, domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
     because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
   domain-identity:
-    may_depend_on: [domain-identity-users]
+    may_depend_on: [domain-identity-raw]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *core-forbids
@@ -979,7 +933,6 @@ rules:
         domain-orchestration,
         domain-instance-raw,
         domain-identity-raw,
-        domain-identity-users,
         domain-identity-base,
         domain-contacts,
         domain-sending-raw,
@@ -1116,7 +1069,6 @@ rules:
         domain-instance,
         domain-identity,
         domain-identity-raw,
-        domain-identity-users,
         domain-identity-base,
         domain-contacts,
         domain-content,

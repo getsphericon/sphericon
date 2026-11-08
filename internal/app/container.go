@@ -110,6 +110,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
+	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 
@@ -693,6 +694,13 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*secondfactorreset.UseCase, error) {
 		return secondfactorreset.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
+	// User deletion (a use case, ADR 0050, ADR 0111): the proof feeds the Users' Login throttle.
+	do.Lazy(func(i do.Injector) (*userdeletion.UseCase, error) {
+		usersModule := do.MustInvoke[*users.Module](i)
+		return userdeletion.New(do.MustInvoke[*events.Bus](i), usersModule,
+			users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i)), do.MustInvoke[*secondfactors.Module](i),
+			do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), do.MustInvoke[*credentials.Hasher](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*passkeys.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		return passkeys.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), cfg.AppURL, cfg.JWTSecret, do.MustInvoke[Clock](i))
@@ -1023,6 +1031,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		SecondFactorReset:        do.MustInvoke[*secondfactorreset.UseCase](i),
 		WorkspaceCreation:        do.MustInvoke[*workspacecreation.UseCase](i),
 		SignUp:                   do.MustInvoke[*signup.UseCase](i),
+		UserDeletion:             do.MustInvoke[*userdeletion.UseCase](i),
 		Passkeys:                 do.MustInvoke[*passkeys.Module](i),
 		Analytics:                do.MustInvoke[*analyticsreport.UseCase](i),
 		Clock:                    do.MustInvoke[Clock](i),

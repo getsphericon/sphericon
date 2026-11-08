@@ -1,9 +1,11 @@
 // Package users owns the User (ADR 0102): its credentials, the proof of its address (the
 // verification and the other mailed links), its Linked identities and the Pending sign-up of a
 // Sign-in provider, the sign-in decision, its profile, the acceptance gate of its requests (the
-// Two-factor grace is internal/domain/identity/secondfactors'), its deletion, the acceptance of an Invitation, which
-// makes or completes the User the Invitation names, and the domain-join step of a proven address
-// (ADR 0051). It sits above workspaces, memberships and invitations in identity.
+// Two-factor grace is internal/domain/identity/secondfactors'), the refusals of its deletion and
+// the removal of its row (User deletion itself is the use case internal/usecase/userdeletion), the
+// acceptance of an Invitation, which makes or completes the User the Invitation names, and the
+// domain-join step of a proven address (ADR 0051). It sits above workspaces, memberships and
+// invitations in identity.
 //
 // The module takes the raw client: a User belongs to no Workspace, and the actors it serves (a
 // sign-up, a link, a provider callback, an Invitation's token) have no Workspace known up front

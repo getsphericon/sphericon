@@ -61,7 +61,9 @@ coding standards in `CODING_STANDARDS.md`.
   gate (ADR 0030), failure counting and the challenge. It holds no database client; an adapter
   supplies the `Store`, `Throttle`, challenge `Parse`/`Verify` and issues the session. `/site`
   (`internal/api/site/auth_login.go`) and `internal/domain/identity/staffmembers` (`login.go`, the second adapter, ADR 0026) are
-  the two adapters: add sign-in rules in the module, not in a handler. The throttle is
+  the two adapters: add sign-in rules in the module, not in a handler. User deletion
+  (`internal/usecase/userdeletion`) proves the password through the same module's `Prove`, over the
+  Users' throttle and the same hasher, and counts a wrong Second factor code with `CountFailure`. The throttle is
   `throttle.Attempts.For(kind)` (`internal/infra/throttle`), a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
   which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
   `login.SecondOutcome`).
@@ -161,10 +163,9 @@ coding standards in `CODING_STANDARDS.md`.
   in context order, and nothing above, so an import against the order fails `check:arch` with the
   context's reason. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
   Memberships (`domain-identity-base`, which imports no other domain module: every module may read a
-  Workspace, ask a Permission or tell the Owners something), the Users (`domain-identity-users`, the
-  one caller of `memberships.LeaveDoomedWorkspaceIn`), the raw-client holders `apitokens`, `consentrecords`,
+  Workspace, ask a Permission or tell the Owners something), the raw-client holders `apitokens`, `consentrecords`,
   `invitations`, `joindomains`, `oauthclients`, `passkeys`, `secondfactors`, `signupitems`,
-  `signupsurveyresponses`, `staffmembers`, `suspension`, `usertombstones` and `workspacefeed`
+  `signupsurveyresponses`, `staffmembers`, `suspension`, `users`, `usertombstones` and `workspacefeed`
   (`domain-identity-raw`), and `login`, `signinprovider` and `accountlink` (`domain-identity`).
   An identity module imports no module of another context: not `providerlimit`, not `contacts`.
   Contacts, above it, is one component (`domain-contacts`, the glob of
@@ -310,7 +311,14 @@ coding standards in `CODING_STANDARDS.md`.
   links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
   completion of a pending sign-up, calling the `users` functions for the User's part
   (`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
-  `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`). A removal (or a change) that a use case guards with a check is the domain module's
+  `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`); and User deletion
+  (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
+  or the Login throttle and the deletion link, then the Second factor code through
+  `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),
+  locks the User row and the Owner rows of its Workspaces (`memberships.SoleOwnershipIn`), refuses
+  the only Owner of a live Workspace, leaves each Workspace (`memberships.LeaveIn`, or
+  `LeaveDoomedWorkspaceIn` for one in its deletion window) and deletes the row with
+  `users.DeleteIn`, which publishes `UserDeleted`. A removal (or a change) that a use case guards with a check is the domain module's
   unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
@@ -321,7 +329,9 @@ coding standards in `CODING_STANDARDS.md`.
   in `api-auth`, `ee-edition`, `testsupport` and `wiring`), so
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
-  checked). The Second factor reset's removals (`secondfactors.ResetIn`, the
+  checked). User deletion's removals (`memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner
+  of a Workspace in its deletion window leave, and the User row, `users.DeleteIn`), the Second
+  factor reset's removals (`secondfactors.ResetIn`, the
   factor with its Recovery codes, and `passkeys.DeleteAllIn`), the moves of a Workspace's deletion cycle
   (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the removal of the OAuth codes its erase
   makes (`oauthclients.DeleteCodesIn`; the erase deletes a Workspace's rows itself, ADR 0110, so no
@@ -367,12 +377,6 @@ coding standards in `CODING_STANDARDS.md`.
   transaction, and the count is set once.
   `unsubscribes` is the lowest of the three: `confirmations` imports it (a START lifts the opt-out),
   and `channelstop` composes both (a stop drops the Confirmation).
-  One unchecked removal is called from a domain module until its use case exists:
-  `memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its deletion window
-  leave, serves User deletion in `internal/domain/identity/users`, which alone is allowed to call it:
-  that module is a component of its own, `domain-identity-users`, whose forbid list
-  (`x-user-deletion-forbids`) is the raw-holder list without it, and every other component that may
-  reach it forbids it, the use cases included.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
@@ -480,7 +484,7 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
      `internal/domain/identity/users/join.go`, ADR 0051), which builds `tx.Scoped(...)` for the Workspace a
      verified Join domain names, right after `joindomains.HolderIn` has loaded that row, to add
      the joining User's Membership (every step that proves an address calls it explicitly); and
-     `users.Module.DeleteUser` (User deletion, ADR 0050) scopes its one transaction in turn to each
+     `userdeletion.UseCase.Delete` (User deletion, ADR 0050, `internal/usecase/userdeletion`) scopes its one transaction in turn to each
      Workspace the User belongs to (`tx.Scoped(m.WorkspaceID)`, from the User's own Memberships),
      to lock the Owner rows and remove the Membership;
   6. the Workspace comes from a secret rather than a login: the ingest hook
@@ -538,7 +542,9 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   which a Workspace owns),
   `internal/usecase/workspacecreation` (a Workspace with its Owner Membership, ADR 0043: no Workspace
   exists yet), `internal/usecase/signup` (the steps that make a User Verified with its first
-  Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/noticedelivery` (the Notices of
+  Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/userdeletion` (User deletion,
+  ADR 0050: the User belongs to no Workspace, and its one transaction is scoped in turn to each
+  Workspace the User leaves), `internal/usecase/noticedelivery` (the Notices of
   the domain events, ADR 0105: an event of a User's account belongs to no Workspace, and a
   Workspace's Owners and Members are read by the id an event names) and
   `internal/usecase/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the
@@ -581,7 +587,7 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   (`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above), and the Enterprise job runner `ee/jobs`, which only hands the client the wiring gives it to those packages. Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`. easement holds the core
   domain modules of the list as the raw-client components of their contexts in `easement.yml` (the
-  identity modules of the list as `domain-identity-base`, `domain-identity-users` and
+  identity modules of the list as `domain-identity-base` and
   `domain-identity-raw`, the sending modules as `domain-sending-raw`, the orchestration modules as
   `domain-orchestration-raw`, the instance modules as `domain-instance-raw`, see "Domain
   contexts"); the job runners as their own `runner` and `ee-runner` components, which do not forbid
