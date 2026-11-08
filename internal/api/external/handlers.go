@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -76,9 +77,10 @@ type Handlers struct {
 	brandKit              *brandkits.Module
 	automations           *automations.Module
 	rules                 *rules.Module
-	bootstrapToken        string
-	audit                 AuditLog
-	export                ExportStreams
+	// tokens mints the first token of the Instance by its bootstrap token.
+	tokens *apitokens.Module
+	audit  AuditLog
+	export ExportStreams
 	// unsubscribe records an opt-out (a use case, ADR 0102).
 	unsubscribe *unsubscriberecording.UseCase
 }
@@ -134,9 +136,10 @@ type Deps struct {
 	Rules                 *rules.Module
 	Broadcasts            *broadcasts.Module
 	Reputation            *reputation.Module
-	BootstrapToken        string
-	Audit                 AuditLog
-	Export                ExportStreams
+	// Tokens mints the first token of the Instance by its bootstrap token (apitokens.Module).
+	Tokens *apitokens.Module
+	Audit  AuditLog
+	Export ExportStreams
 	// Clock is the Instance clock (app.Clock) the handlers read, and the security handler checks a
 	// Connection's Two-factor requirement against. Required.
 	Clock func() time.Time
@@ -152,7 +155,7 @@ func NewHandlers(d Deps) *Handlers {
 		now:        d.Clock,
 		workspaces: d.Workspaces, workspaceSummary: d.WorkspaceSummary, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
-		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
+		broadcasts: d.Broadcasts, reputation: d.Reputation, tokens: d.Tokens,
 		audit: d.Audit, export: d.Export,
 		unsubscribe: d.Unsubscribe,
 	}

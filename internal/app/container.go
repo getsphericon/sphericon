@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
@@ -882,6 +883,16 @@ var surfacesPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*oauthclients.Module, error) {
 		return oauthclients.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer, do.MustInvoke[Clock](i)), nil
 	}),
+	// The tokens whose request names no Workspace yet: a Connection the token endpoint exchanges a
+	// code or a refresh token for, and the Instance's first token, minted by its bootstrap token.
+	do.Lazy(func(i do.Injector) (*apitokens.Module, error) {
+		return apitokens.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*config.Config](i).BootstrapToken, do.MustInvoke[Clock](i)), nil
+	}),
+	// The OAuth server's protocol endpoints (internal/api/oauth), which the router mounts.
+	do.Lazy(func(i do.Injector) (*oauth.Server, error) {
+		cfg := do.MustInvoke[*config.Config](i)
+		return oauth.New(do.MustInvoke[*apitokens.Module](i), do.MustInvoke[*oauthclients.Module](i), cfg.AppURL, cfg.MCPOrigin()), nil
+	}),
 	// The Sign-in providers the Instance enabled (ADR 0048).
 	do.Lazy(func(i do.Injector) (*signinprovider.Providers, error) {
 		return signinprovider.FromConfig(do.MustInvoke[*config.Config](i), do.MustInvoke[Clock](i), do.MustInvoke[SigninOptions](i)...), nil
@@ -983,7 +994,8 @@ var surfacesPackage = do.Package(
 		h, err := server.New(do.MustInvoke[*config.Config](i), do.MustInvoke[Database](i).DB, do.MustInvoke[*db.SchemaWatch](i), do.MustInvoke[*ent.Client](i),
 			new(do.MustInvoke[apisite.Deps](i)), do.MustInvoke[*trackingdomains.Module](i), do.MustInvoke[*ratelimit.Limiter](i),
 			do.MustInvoke[*linksHandler](i).Handler, do.MustInvoke[*hooksHandler](i).Handler,
-			do.MustInvoke[*externalAPI](i).Handler, do.MustInvoke[*mcpHandler](i).Handler, do.MustInvoke[*staffHandler](i).Handler)
+			do.MustInvoke[*externalAPI](i).Handler, do.MustInvoke[*mcpHandler](i).Handler, do.MustInvoke[*staffHandler](i).Handler,
+			do.MustInvoke[*oauth.Server](i))
 		if err != nil {
 			return Handler{}, err
 		}
@@ -1021,7 +1033,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		IntegrationDeletion:   do.MustInvoke[*integrationdeletion.UseCase](i),
 		SendingDomainDeletion: do.MustInvoke[*sendingdomaindeletion.UseCase](i),
 		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),
-		BootstrapToken:        do.MustInvoke[*config.Config](i).BootstrapToken,
+		Tokens:                do.MustInvoke[*apitokens.Module](i),
 		Audit:                 edition.Audit,
 		Export:                edition.Export,
 

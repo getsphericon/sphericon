@@ -40,19 +40,12 @@ func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.Create
 	return mintedResponse(minted), nil
 }
 
+// AuthTokensBootstrap mints the Instance's first token, which no caller token can mint yet: the
+// request presents the bootstrap token instead (apitokens.Module.Bootstrap).
 func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.CreateApiTokenInput, params externalapi.AuthTokensBootstrapParams) (*externalapi.CreateApiTokenResponse, error) {
-	if err := apitokens.CheckBootstrap(h.bootstrapToken, params.XBootstrapToken); err != nil {
+	minted, err := h.tokens.Bootstrap(ctx, params.XBootstrapToken, inputs.ApiTokenCreate(req))
+	if err != nil {
 		return nil, err
-	}
-
-	// Bootstrap has no caller token: the first token goes to the oldest workspace.
-	s, err := h.workspaces.BootstrapScope(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("bootstrap scope: %w", err)
-	}
-	minted, err := apitokens.Mint(ctx, s, inputs.ApiTokenCreate(req))
-	if err != nil {
-		return nil, fmt.Errorf("create token: %w", err)
 	}
 	return mintedResponse(minted), nil
 }

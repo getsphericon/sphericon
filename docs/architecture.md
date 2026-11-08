@@ -514,7 +514,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
      `tracked_links` row that it reads with the raw client for the message and the Workspace it
      belongs to; signed unsubscribe/confirm tokens (`workspaces.Module.LinkScope`, which the
      unsubscribe page, the confirmation page and the one-click POST of the tracked links build
-     the scope with), `workspaces.Module.BootstrapScope` (the bootstrap token), and the token
+     the scope with), `workspaces.Module.BootstrapScope` (the bootstrap token, which `apitokens.Module.Bootstrap`
+     checks before it mints into that scope), and the token
      endpoint of the OAuth server (`internal/api/oauth`, over `apitokens.Module.ExchangeCode` and
      `Refresh`), where an authorization code or a refresh token names its grant: `apitokens`
      claims the code through `oauthclients.ClaimCodeIn`, which checks the client, the redirect URI
