@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,10 +11,49 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
-// eventsCommand is `sphericon events replay`: it queues one report consumer's jobs again for the
-// events a Workspace recorded in a bounded interval.
+// eventsCommand is `sphericon events`: `list` inspects the publication metadata one Workspace or
+// the Instance retained, and `replay` queues one report consumer's jobs again for the events a
+// Workspace recorded in a bounded interval.
 func eventsCommand(d deps) *cli.Command {
-	return group("events", "reapply retained anonymous report inputs",
+	return group("events", "inspect publication metadata and reapply retained report inputs",
+		&cli.Command{
+			Name:  "list",
+			Usage: "inspect retained publication metadata as JSON; no payloads or queued work",
+			MutuallyExclusiveFlags: []cli.MutuallyExclusiveFlags{{
+				Required: true,
+				Flags: [][]cli.Flag{
+					{&cli.StringFlag{Name: "workspace", Usage: "Workspace public id"}},
+					{&cli.BoolFlag{Name: "instance", Usage: "only Instance facts, never Workspace facts"}},
+				},
+			}},
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "name", Usage: "exact domain-event name"},
+				&cli.StringFlag{Name: "event-id", Usage: "exact journal event id"},
+				&cli.TimestampFlag{Name: "from", Usage: "inclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
+				&cli.TimestampFlag{Name: "before", Usage: "exclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
+				&cli.IntFlag{Name: "limit", Value: events.DefaultJournalLimit, Usage: "maximum entries in newest-first output; truncated reports omitted matches"},
+			},
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+				bus, err := c.Bus()
+				if err != nil {
+					return err
+				}
+				query := events.JournalQuery{
+					Name: cmd.String("name"), EventID: cmd.String("event-id"),
+					From: cmd.Timestamp("from"), Before: cmd.Timestamp("before"), Limit: cmd.Int("limit"),
+				}
+				var page events.JournalPage
+				if cmd.Bool("instance") {
+					page, err = bus.InstanceJournal(ctx, query)
+				} else {
+					page, err = bus.WorkspaceJournal(ctx, cmd.String("workspace"), query)
+				}
+				if err != nil {
+					return err
+				}
+				return json.NewEncoder(out(cmd)).Encode(page)
+			}),
+		},
 		&cli.Command{
 			Name:  "replay",
 			Usage: "queue one report consumer for a bounded recorded-time interval; no publication or external actions",

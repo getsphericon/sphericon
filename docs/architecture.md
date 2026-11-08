@@ -171,9 +171,9 @@ coding standards in `CODING_STANDARDS.md`.
   context and those of the contexts below, never one above and never a use case; an operation that
   needs a module above is a use case. easement holds a context as a few components named
   `domain-<context>[-<part>]`, one per privilege: `domain-<context>` is the glob of the context's
-  directory (the modules that hold no raw client, forbid list `x-core-forbids`),
-  `domain-<context>-raw` is the closed list of its raw-client holders (forbid list
-  `x-raw-holder-forbids`), and a part a rule binds alone gets a component of its own. Each lists in
+  directory (the modules that hold no raw client), `domain-<context>-raw` is the closed list of its
+  raw-client holders (with the other holders, the `allow` of `ent.Client` in the top-level
+  `forbid_symbol`), and a part a rule binds alone gets a component of its own. Each lists in
   `may_depend_on` the other components of its context and every component of the contexts below,
   in context order, and nothing above, so an import against the order fails `check:arch` with the
   context's reason. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
@@ -341,12 +341,8 @@ coding standards in `CODING_STANDARDS.md`.
   `users.DeleteIn`, which publishes `UserDeleted`. A removal (or a change) that a use case guards with a check is the domain module's
   unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
   never a method of the module, since easement matches a method only as a use of its type. Its
-  `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
-  the `forbid_symbol` list of every component but `usecase` and `usecase-raw` that may reach the core
-  (`x-core-forbids` for the API surfaces, MCP, the Problem mapping, each context's `domain-<context>`,
-  `ee-api` and the Enterprise `ee-domain-<context>` and `ee-usecase`, `x-raw-holder-forbids` for the runner, each context's raw-client components and
-  the Enterprise `ee-domain-<context>-raw` and `ee-usecase-raw`, and the whole list
-  in `api-auth`, `ee-edition`, `testsupport` and `wiring`), so
+  `<import path>.<Name>` is an item of the top-level `forbid_symbol` in `easement.yml` with
+  `allow: [usecase, usecase-raw]`, which holds in every other component and in the files of none, so
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). User deletion's removals (`memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner
@@ -371,7 +367,7 @@ coding standards in `CODING_STANDARDS.md`.
   `staffmembers`, `automations`, `rules`), the columns as `secrets.Sweep` values the wiring builds on
   the raw client in a fixed order, and sweeps them by id and compare-and-swap
   (`secrets.Cipher.Reencrypt`). A sweep only stores the value it read again under the
-  primary key, so no check guards it and it is not in `x-unchecked-removals`.
+  primary key, so no check guards it and it is not in the `forbid_symbol` of `easement.yml`.
   A use case need not guard a removal: an operation whose subject's owner would have to call a
   module above it is one too, and so is one that reads modules of several contexts. A Visitor
   identification (`internal/usecase/visitoridentification`, built in

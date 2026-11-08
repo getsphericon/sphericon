@@ -10,10 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/visitor"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -278,9 +279,11 @@ func (telegramChannel) optedOut(ctx context.Context, s *ent.Scoped, pub events.P
 	if integ != nil {
 		integrationID = integ.ID
 	}
-	return channelstop.StopTelegram(ctx, s, pub, channelstop.TelegramStop{
-		Destination: to.dest, IntegrationID: integrationID, Via: events.UnsubscribedByBlock, Message: msg,
-		Now: now, DedupKey: fmt.Sprintf("send:%d:%s", msg.ID, to.dest),
+	return pub.Publish(ctx, &events.TelegramStopObserved{
+		WorkspaceID: s.WorkspaceID(),
+		Destination: to.dest, IntegrationID: integrationID, Via: events.UnsubscribedByBlock,
+		OutboundMessageID: msg.ID, ContactID: lo.FromPtr(msg.ContactID), BroadcastID: lo.FromPtr(msg.BroadcastID), AutomationID: lo.FromPtr(msg.AutomationID),
+		ObservedAt: now, DedupID: fmt.Sprintf("telegram:%d:send:%d:%s", integrationID, msg.ID, to.dest),
 	})
 }
 

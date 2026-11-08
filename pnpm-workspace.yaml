@@ -126,3 +126,7 @@ permissions:
 skills:
   dirs:
     - .agents/skills
+patchedDependencies:
+  # Remove after an SDK release includes https://github.com/synergycodes/workflowbuilder/pull/266.
+  # v3 also needs the context-unmount guard already present upstream (PR #236).
+  '@workflowbuilder/sdk@3.0.0': patches/@workflowbuilder__sdk@3.0.0.patch

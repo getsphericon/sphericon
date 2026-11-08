@@ -9,7 +9,6 @@ import { siteAutomationsGetOptions } from '../../generated/site/@tanstack/react-
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { AutomationBuilder } from './AutomationBuilder.tsx'
-import { editedVersionKey } from './editedVersion.ts'
 
 export function AutomationEditPage() {
   const { t } = useTranslation()
@@ -48,7 +47,7 @@ function AutomationEdit() {
 
   return (
     <AutomationBuilder
-      key={editedVersionKey(automation)}
+      key={`${workspaceId}:${automation.id}`}
       workspaceId={workspaceId}
       automation={automation}
       edited={edited}

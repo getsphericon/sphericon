@@ -1,3 +1,4 @@
+import { Fieldset } from '@mantine/core'
 import { formatIs, rankWith, withJsonFormsControlProps } from '@workflowbuilder/sdk'
 import type { ControlProps, JsonFormsRendererExtension } from '@workflowbuilder/sdk'
 import { createElement } from 'react'
@@ -15,6 +16,15 @@ export function appRenderer(
   control: ComponentType<ControlProps>,
 ): JsonFormsRendererExtension {
   const inApp = (props: ControlProps) =>
-    createElement(I18nextProvider, { i18n }, createElement(control, props))
+    createElement(
+      I18nextProvider,
+      { i18n },
+      createElement(
+        Fieldset,
+        // Convey disabled without native fieldset spacing changing the properties panel's size.
+        { disabled: !props.enabled, variant: 'unstyled', m: 0, miw: 0 },
+        createElement(control, props),
+      ),
+    )
   return { tester: rankWith(100, formatIs(format)), renderer: withJsonFormsControlProps(inApp) }
 }
