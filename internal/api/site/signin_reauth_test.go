@@ -66,7 +66,7 @@ func (r *reauthEnv) enroll(t *testing.T, session string) (next, secret string) {
 	require.Equal(t, http.StatusOK, code, raw)
 	var e enrollmentRes
 	require.NoError(t, json.Unmarshal([]byte(raw), &e))
-	code, next, raw = r.call(t, http.MethodPost, confirmPath, session, `{"code":"`+r.totp(t, e.Secret)+`"}`)
+	code, next, raw = r.call(t, http.MethodPost, confirmPath, session, `{"enrollmentId":"`+e.EnrollmentID+`","code":"`+r.totp(t, e.Secret)+`"}`)
 	require.Equal(t, http.StatusOK, code, raw)
 	return next, e.Secret
 }
@@ -109,7 +109,7 @@ func TestReauthTheProofDoesNotOutliveItsWindowWhileEnrolling(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(raw), &e))
 	r.clock.t = r.clock.t.Add(time.Hour)
 
-	code, _, _ = r.call(t, http.MethodPost, confirmPath, session, `{"code":"`+r.totp(t, e.Secret)+`"}`)
+	code, _, _ = r.call(t, http.MethodPost, confirmPath, session, `{"enrollmentId":"`+e.EnrollmentID+`","code":"`+r.totp(t, e.Secret)+`"}`)
 
 	assert.Equal(t, http.StatusForbidden, code)
 }

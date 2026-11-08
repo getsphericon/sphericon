@@ -62,6 +62,12 @@ func (User) Fields() []ent.Field {
 		field.String("second_factor_secret_encrypted").
 			Sensitive().
 			Optional(),
+		// The enrollment identity advances for each newly issued secret, independently of
+		// session_epoch: displaying a QR code does not end sessions. NULL predates enrollment.
+		field.Int64("second_factor_generation").
+			Optional().
+			Nillable().
+			NonNegative(),
 		// When enrollment was confirmed with a valid code. Nil with a secret set is a
 		// pending enrollment, which is not a Second factor yet.
 		field.Time("second_factor_confirmed_at").

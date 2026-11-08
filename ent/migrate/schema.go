@@ -2792,6 +2792,7 @@ var (
 		{Name: "email_proven_at", Type: field.TypeTime, Nullable: true},
 		{Name: "session_epoch", Type: field.TypeInt64, Default: 0},
 		{Name: "second_factor_secret_encrypted", Type: field.TypeString, Nullable: true},
+		{Name: "second_factor_generation", Type: field.TypeInt64, Nullable: true},
 		{Name: "second_factor_confirmed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "second_factor_last_step", Type: field.TypeInt64, Default: 0},
 		{Name: "signup_survey_due_at", Type: field.TypeTime, Nullable: true},
@@ -2808,7 +2809,7 @@ var (
 			{
 				Name:    "user_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[15], UsersColumns[0]},
+				Columns: []*schema.Column{UsersColumns[16], UsersColumns[0]},
 			},
 		},
 	}

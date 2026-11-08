@@ -171,6 +171,33 @@ func (_u *UserUpdate) ClearSecondFactorSecretEncrypted() *UserUpdate {
 	return _u
 }
 
+// SetSecondFactorGeneration sets the "second_factor_generation" field.
+func (_u *UserUpdate) SetSecondFactorGeneration(v int64) *UserUpdate {
+	_u.mutation.ResetSecondFactorGeneration()
+	_u.mutation.SetSecondFactorGeneration(v)
+	return _u
+}
+
+// SetNillableSecondFactorGeneration sets the "second_factor_generation" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableSecondFactorGeneration(v *int64) *UserUpdate {
+	if v != nil {
+		_u.SetSecondFactorGeneration(*v)
+	}
+	return _u
+}
+
+// AddSecondFactorGeneration adds value to the "second_factor_generation" field.
+func (_u *UserUpdate) AddSecondFactorGeneration(v int64) *UserUpdate {
+	_u.mutation.AddSecondFactorGeneration(v)
+	return _u
+}
+
+// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
+func (_u *UserUpdate) ClearSecondFactorGeneration() *UserUpdate {
+	_u.mutation.ClearSecondFactorGeneration()
+	return _u
+}
+
 // SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
 func (_u *UserUpdate) SetSecondFactorConfirmedAt(v time.Time) *UserUpdate {
 	_u.mutation.SetSecondFactorConfirmedAt(v)
@@ -587,6 +614,11 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SecondFactorGeneration(); ok {
+		if err := user.SecondFactorGenerationValidator(v); err != nil {
+			return &ValidationError{Name: "second_factor_generation", err: fmt.Errorf(`ent: validator failed for field "User.second_factor_generation": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Timezone(); ok {
 		if err := user.TimezoneValidator(v); err != nil {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
@@ -656,6 +688,15 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SecondFactorSecretEncryptedCleared() {
 		_spec.ClearField(user.FieldSecondFactorSecretEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.SecondFactorGeneration(); ok {
+		_spec.SetField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSecondFactorGeneration(); ok {
+		_spec.AddField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
+	}
+	if _u.mutation.SecondFactorGenerationCleared() {
+		_spec.ClearField(user.FieldSecondFactorGeneration, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.SecondFactorConfirmedAt(); ok {
 		_spec.SetField(user.FieldSecondFactorConfirmedAt, field.TypeTime, value)
@@ -1149,6 +1190,33 @@ func (_u *UserUpdateOne) ClearSecondFactorSecretEncrypted() *UserUpdateOne {
 	return _u
 }
 
+// SetSecondFactorGeneration sets the "second_factor_generation" field.
+func (_u *UserUpdateOne) SetSecondFactorGeneration(v int64) *UserUpdateOne {
+	_u.mutation.ResetSecondFactorGeneration()
+	_u.mutation.SetSecondFactorGeneration(v)
+	return _u
+}
+
+// SetNillableSecondFactorGeneration sets the "second_factor_generation" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableSecondFactorGeneration(v *int64) *UserUpdateOne {
+	if v != nil {
+		_u.SetSecondFactorGeneration(*v)
+	}
+	return _u
+}
+
+// AddSecondFactorGeneration adds value to the "second_factor_generation" field.
+func (_u *UserUpdateOne) AddSecondFactorGeneration(v int64) *UserUpdateOne {
+	_u.mutation.AddSecondFactorGeneration(v)
+	return _u
+}
+
+// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
+func (_u *UserUpdateOne) ClearSecondFactorGeneration() *UserUpdateOne {
+	_u.mutation.ClearSecondFactorGeneration()
+	return _u
+}
+
 // SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
 func (_u *UserUpdateOne) SetSecondFactorConfirmedAt(v time.Time) *UserUpdateOne {
 	_u.mutation.SetSecondFactorConfirmedAt(v)
@@ -1578,6 +1646,11 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SecondFactorGeneration(); ok {
+		if err := user.SecondFactorGenerationValidator(v); err != nil {
+			return &ValidationError{Name: "second_factor_generation", err: fmt.Errorf(`ent: validator failed for field "User.second_factor_generation": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Timezone(); ok {
 		if err := user.TimezoneValidator(v); err != nil {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
@@ -1664,6 +1737,15 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.SecondFactorSecretEncryptedCleared() {
 		_spec.ClearField(user.FieldSecondFactorSecretEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.SecondFactorGeneration(); ok {
+		_spec.SetField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSecondFactorGeneration(); ok {
+		_spec.AddField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
+	}
+	if _u.mutation.SecondFactorGenerationCleared() {
+		_spec.ClearField(user.FieldSecondFactorGeneration, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.SecondFactorConfirmedAt(); ok {
 		_spec.SetField(user.FieldSecondFactorConfirmedAt, field.TypeTime, value)

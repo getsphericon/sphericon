@@ -61,9 +61,10 @@ func (s *secondFactorEnv) status(t *testing.T, session string) factorStatus {
 }
 
 type enrollmentRes struct {
-	Secret     string `json:"secret"`
-	OtpauthURI string `json:"otpauthUri"`
-	QRCode     string `json:"qrCode"`
+	EnrollmentID string `json:"enrollmentId"`
+	Secret       string `json:"secret"`
+	OtpauthURI   string `json:"otpauthUri"`
+	QRCode       string `json:"qrCode"`
 }
 
 func (s *secondFactorEnv) start(t *testing.T, session string) enrollmentRes {
@@ -82,8 +83,8 @@ var johnPassword = `{"currentPassword":"` + fixtures.OwnerJohnPassword + `"}`
 var samPassword = `{"currentPassword":"` + fixtures.SecondFactorSamPassword + `"}`
 
 // confirmBody is a confirmation request with John's password and code.
-func confirmBody(code string) string {
-	return `{"currentPassword":"` + fixtures.OwnerJohnPassword + `","code":"` + code + `"}`
+func confirmBody(id, code string) string {
+	return `{"currentPassword":"` + fixtures.OwnerJohnPassword + `","enrollmentId":"` + id + `","code":"` + code + `"}`
 }
 
 type recoveryCodesRes struct {
@@ -97,7 +98,7 @@ func (s *secondFactorEnv) enroll(t *testing.T, session string) (secret string, c
 	e := s.start(t, session)
 	var rc recoveryCodesRes
 	status, fresh := s.send(t, http.MethodPost, "/site/me/second-factor/enrollment/confirm", session,
-		confirmBody(s.code(t, e.Secret)), &rc)
+		confirmBody(e.EnrollmentID, s.code(t, e.Secret)), &rc)
 	require.Equal(t, http.StatusOK, status)
 	require.NotEmpty(t, fresh)
 	return e.Secret, rc.Codes, fresh
@@ -116,7 +117,7 @@ func TestEnrollmentIsPendingUntilConfirmedWithAValidCode(t *testing.T) {
 	assert.Equal(t, factorStatus{Pending: true}, s.status(t, acting), "an unconfirmed secret is not a Second factor")
 
 	status, fresh := s.send(t, http.MethodPost, "/site/me/second-factor/enrollment/confirm", acting,
-		confirmBody(wrong(s.code(t, e.Secret))), nil)
+		confirmBody(e.EnrollmentID, wrong(s.code(t, e.Secret))), nil)
 	assert.Equal(t, http.StatusUnprocessableEntity, status, "a wrong code")
 	assert.Empty(t, fresh)
 	assert.False(t, s.status(t, acting).Enabled, "a wrong code does not activate it")
@@ -124,7 +125,7 @@ func TestEnrollmentIsPendingUntilConfirmedWithAValidCode(t *testing.T) {
 
 	var rc recoveryCodesRes
 	status, fresh = s.send(t, http.MethodPost, "/site/me/second-factor/enrollment/confirm", acting,
-		confirmBody(s.code(t, e.Secret)), &rc)
+		confirmBody(e.EnrollmentID, s.code(t, e.Secret)), &rc)
 	require.Equal(t, http.StatusOK, status)
 	assert.Len(t, rc.Codes, 10)
 	assert.Len(t, uniq(rc.Codes), 10)
@@ -150,7 +151,7 @@ func TestEnrollmentRequiresThePasswordOnBothSteps(t *testing.T) {
 
 	e := s.start(t, acting)
 	status, fresh := s.send(t, http.MethodPost, "/site/me/second-factor/enrollment/confirm", acting,
-		`{"currentPassword":"wrong-password","code":"`+s.code(t, e.Secret)+`"}`, nil)
+		`{"currentPassword":"wrong-password","enrollmentId":"`+e.EnrollmentID+`","code":"`+s.code(t, e.Secret)+`"}`, nil)
 	assert.Equal(t, http.StatusForbidden, status, "confirming with a wrong password")
 	assert.Empty(t, fresh)
 	assert.Equal(t, factorStatus{Pending: true}, s.status(t, acting), "still only pending")
@@ -294,4 +295,25 @@ func TestEnrollRegenerateAndDisableAreAuditedWithoutSecrets(t *testing.T) {
 			assert.NotContains(t, raw, c)
 		}
 	}
+}
+
+func TestSecondFactorConfirmRefusesAnEarlierEnrollmentEvenWithTheCurrentCode(t *testing.T) {
+	s := newSecondFactorEnv(t)
+	acting := s.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
+	first := s.start(t, acting)
+	current := s.start(t, acting)
+	code := s.code(t, current.Secret)
+
+	status, fresh := s.send(t, http.MethodPost, "/site/me/second-factor/enrollment/confirm", acting,
+		confirmBody(first.EnrollmentID, code), nil)
+
+	require.Equal(t, http.StatusConflict, status)
+	assert.Empty(t, fresh)
+	assert.Equal(t, factorStatus{Pending: true}, s.status(t, acting))
+	var rc recoveryCodesRes
+	status, fresh = s.send(t, http.MethodPost, "/site/me/second-factor/enrollment/confirm", acting,
+		confirmBody(current.EnrollmentID, code), &rc)
+	require.Equal(t, http.StatusOK, status)
+	assert.NotEmpty(t, rc.Codes)
+	assert.NotEmpty(t, fresh)
 }

@@ -60968,6 +60968,8 @@ type UserMutation struct {
 	session_epoch                  *int64
 	addsession_epoch               *int64
 	second_factor_secret_encrypted *string
+	second_factor_generation       *int64
+	addsecond_factor_generation    *int64
 	second_factor_confirmed_at     *time.Time
 	second_factor_last_step        *int64
 	addsecond_factor_last_step     *int64
@@ -61500,6 +61502,76 @@ func (m *UserMutation) SecondFactorSecretEncryptedCleared() bool {
 func (m *UserMutation) ResetSecondFactorSecretEncrypted() {
 	m.second_factor_secret_encrypted = nil
 	delete(m.clearedFields, user.FieldSecondFactorSecretEncrypted)
+}
+
+// SetSecondFactorGeneration sets the "second_factor_generation" field.
+func (m *UserMutation) SetSecondFactorGeneration(i int64) {
+	m.second_factor_generation = &i
+	m.addsecond_factor_generation = nil
+}
+
+// SecondFactorGeneration returns the value of the "second_factor_generation" field in the mutation.
+func (m *UserMutation) SecondFactorGeneration() (r int64, exists bool) {
+	v := m.second_factor_generation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSecondFactorGeneration returns the old "second_factor_generation" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldSecondFactorGeneration(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSecondFactorGeneration is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSecondFactorGeneration requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSecondFactorGeneration: %w", err)
+	}
+	return oldValue.SecondFactorGeneration, nil
+}
+
+// AddSecondFactorGeneration adds i to the "second_factor_generation" field.
+func (m *UserMutation) AddSecondFactorGeneration(i int64) {
+	if m.addsecond_factor_generation != nil {
+		*m.addsecond_factor_generation += i
+	} else {
+		m.addsecond_factor_generation = &i
+	}
+}
+
+// AddedSecondFactorGeneration returns the value that was added to the "second_factor_generation" field in this mutation.
+func (m *UserMutation) AddedSecondFactorGeneration() (r int64, exists bool) {
+	v := m.addsecond_factor_generation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
+func (m *UserMutation) ClearSecondFactorGeneration() {
+	m.second_factor_generation = nil
+	m.addsecond_factor_generation = nil
+	m.clearedFields[user.FieldSecondFactorGeneration] = struct{}{}
+}
+
+// SecondFactorGenerationCleared returns if the "second_factor_generation" field was cleared in this mutation.
+func (m *UserMutation) SecondFactorGenerationCleared() bool {
+	_, ok := m.clearedFields[user.FieldSecondFactorGeneration]
+	return ok
+}
+
+// ResetSecondFactorGeneration resets all changes to the "second_factor_generation" field.
+func (m *UserMutation) ResetSecondFactorGeneration() {
+	m.second_factor_generation = nil
+	m.addsecond_factor_generation = nil
+	delete(m.clearedFields, user.FieldSecondFactorGeneration)
 }
 
 // SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
@@ -62207,7 +62279,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -62234,6 +62306,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.second_factor_secret_encrypted != nil {
 		fields = append(fields, user.FieldSecondFactorSecretEncrypted)
+	}
+	if m.second_factor_generation != nil {
+		fields = append(fields, user.FieldSecondFactorGeneration)
 	}
 	if m.second_factor_confirmed_at != nil {
 		fields = append(fields, user.FieldSecondFactorConfirmedAt)
@@ -62279,6 +62354,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.SessionEpoch()
 	case user.FieldSecondFactorSecretEncrypted:
 		return m.SecondFactorSecretEncrypted()
+	case user.FieldSecondFactorGeneration:
+		return m.SecondFactorGeneration()
 	case user.FieldSecondFactorConfirmedAt:
 		return m.SecondFactorConfirmedAt()
 	case user.FieldSecondFactorLastStep:
@@ -62318,6 +62395,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldSessionEpoch(ctx)
 	case user.FieldSecondFactorSecretEncrypted:
 		return m.OldSecondFactorSecretEncrypted(ctx)
+	case user.FieldSecondFactorGeneration:
+		return m.OldSecondFactorGeneration(ctx)
 	case user.FieldSecondFactorConfirmedAt:
 		return m.OldSecondFactorConfirmedAt(ctx)
 	case user.FieldSecondFactorLastStep:
@@ -62402,6 +62481,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSecondFactorSecretEncrypted(v)
 		return nil
+	case user.FieldSecondFactorGeneration:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSecondFactorGeneration(v)
+		return nil
 	case user.FieldSecondFactorConfirmedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -62455,6 +62541,9 @@ func (m *UserMutation) AddedFields() []string {
 	if m.addsession_epoch != nil {
 		fields = append(fields, user.FieldSessionEpoch)
 	}
+	if m.addsecond_factor_generation != nil {
+		fields = append(fields, user.FieldSecondFactorGeneration)
+	}
 	if m.addsecond_factor_last_step != nil {
 		fields = append(fields, user.FieldSecondFactorLastStep)
 	}
@@ -62471,6 +62560,8 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldSessionEpoch:
 		return m.AddedSessionEpoch()
+	case user.FieldSecondFactorGeneration:
+		return m.AddedSecondFactorGeneration()
 	case user.FieldSecondFactorLastStep:
 		return m.AddedSecondFactorLastStep()
 	case user.FieldFeedPosition:
@@ -62490,6 +62581,13 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSessionEpoch(v)
+		return nil
+	case user.FieldSecondFactorGeneration:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSecondFactorGeneration(v)
 		return nil
 	case user.FieldSecondFactorLastStep:
 		v, ok := value.(int64)
@@ -62524,6 +62622,9 @@ func (m *UserMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(user.FieldSecondFactorSecretEncrypted) {
 		fields = append(fields, user.FieldSecondFactorSecretEncrypted)
+	}
+	if m.FieldCleared(user.FieldSecondFactorGeneration) {
+		fields = append(fields, user.FieldSecondFactorGeneration)
 	}
 	if m.FieldCleared(user.FieldSecondFactorConfirmedAt) {
 		fields = append(fields, user.FieldSecondFactorConfirmedAt)
@@ -62562,6 +62663,9 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldSecondFactorSecretEncrypted:
 		m.ClearSecondFactorSecretEncrypted()
+		return nil
+	case user.FieldSecondFactorGeneration:
+		m.ClearSecondFactorGeneration()
 		return nil
 	case user.FieldSecondFactorConfirmedAt:
 		m.ClearSecondFactorConfirmedAt()
@@ -62609,6 +62713,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldSecondFactorSecretEncrypted:
 		m.ResetSecondFactorSecretEncrypted()
+		return nil
+	case user.FieldSecondFactorGeneration:
+		m.ResetSecondFactorGeneration()
 		return nil
 	case user.FieldSecondFactorConfirmedAt:
 		m.ResetSecondFactorConfirmedAt()

@@ -22707,11 +22707,18 @@ type SiteSchemaApplyMigrationsNoContent struct{}
 // authenticator app.
 // Ref: #/components/schemas/SiteSecondFactorConfirmInput
 type SiteSecondFactorConfirmInput struct {
+	// Identity returned with the secret being confirmed. A replaced or reset enrollment is refused.
+	EnrollmentId EntityId `json:"enrollmentId"`
 	// Current password. Left out by a User with no password, who proves a provider or Passkey sign-in of
 	// the last few minutes instead (ADR 0048).
 	CurrentPassword OptString `json:"currentPassword"`
 	// The current 6-digit TOTP code.
 	Code string `json:"code"`
+}
+
+// GetEnrollmentId returns the value of EnrollmentId.
+func (s *SiteSecondFactorConfirmInput) GetEnrollmentId() EntityId {
+	return s.EnrollmentId
 }
 
 // GetCurrentPassword returns the value of CurrentPassword.
@@ -22722,6 +22729,11 @@ func (s *SiteSecondFactorConfirmInput) GetCurrentPassword() OptString {
 // GetCode returns the value of Code.
 func (s *SiteSecondFactorConfirmInput) GetCode() string {
 	return s.Code
+}
+
+// SetEnrollmentId sets the value of EnrollmentId.
+func (s *SiteSecondFactorConfirmInput) SetEnrollmentId(val EntityId) {
+	s.EnrollmentId = val
 }
 
 // SetCurrentPassword sets the value of CurrentPassword.
@@ -22783,12 +22795,19 @@ func (s *SiteSecondFactorDisableNoContent) SetSetCookie(val string) {
 // A pending enrollment: the TOTP secret to add to an authenticator app.
 // Ref: #/components/schemas/SiteSecondFactorEnrollment
 type SiteSecondFactorEnrollment struct {
+	// Identity of this enrollment, echoed when confirming it. A new start replaces it.
+	EnrollmentId EntityId `json:"enrollmentId"`
 	// The secret as a base32 key, for typing it into the app.
 	Secret string `json:"secret"`
 	// The otpauth:// URI the QR code encodes.
 	OtpauthUri string `json:"otpauthUri"`
 	// The QR code of the otpauth URI, as a PNG data URI.
 	QrCode string `json:"qrCode"`
+}
+
+// GetEnrollmentId returns the value of EnrollmentId.
+func (s *SiteSecondFactorEnrollment) GetEnrollmentId() EntityId {
+	return s.EnrollmentId
 }
 
 // GetSecret returns the value of Secret.
@@ -22804,6 +22823,11 @@ func (s *SiteSecondFactorEnrollment) GetOtpauthUri() string {
 // GetQrCode returns the value of QrCode.
 func (s *SiteSecondFactorEnrollment) GetQrCode() string {
 	return s.QrCode
+}
+
+// SetEnrollmentId sets the value of EnrollmentId.
+func (s *SiteSecondFactorEnrollment) SetEnrollmentId(val EntityId) {
+	s.EnrollmentId = val
 }
 
 // SetSecret sets the value of Secret.

@@ -108,7 +108,11 @@ function Enrollment({
 
   return (
     <form
-      onSubmit={form.onSubmit((v) => confirm.mutate({ body: { ...proof, code: v.code.trim() } }))}
+      onSubmit={form.onSubmit((v) =>
+        confirm.mutate({
+          body: { ...proof, enrollmentId: enrollment.enrollmentId, code: v.code.trim() },
+        }),
+      )}
     >
       <Stack>
         <Text size="sm">{t(($) => $.security.scanHint)}</Text>

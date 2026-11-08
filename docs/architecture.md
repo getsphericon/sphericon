@@ -316,8 +316,7 @@ coding standards in `CODING_STANDARDS.md`.
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The Second factor's writes that skip its checks (the User's
-  `users.SetPendingSecondFactor`, `AcceptSecondFactorStepIn`, `ConfirmSecondFactorIn` and
-  `ClearSecondFactorIn`, `recoverycodes.ReplaceIn` and `DeleteIn`, `passkeys.DeleteAllIn`) and the
+  `users.MoveSecondFactorIn`, `recoverycodes.ReplaceIn` and `DeleteIn`, `passkeys.DeleteAllIn`) and the
   issue of a grant's credentials (`apitokens.IssueConnection` and `RotateConnection`,
   `oauthclients.NewRefreshTokenIn`), the moves of a Workspace's deletion cycle
   (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the core removals of its erase (each

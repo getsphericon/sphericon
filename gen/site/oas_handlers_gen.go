@@ -19357,9 +19357,10 @@ func (s *Server) handleSiteMembershipsListRequest(args [1]string, argsEscaped bo
 
 // handleSiteMembershipsResetSecondFactorRequest handles SiteMemberships_resetSecondFactor operation.
 //
-// Reset the member's Second factor (owner/admin only; owner-only for an owner): clears the factor and
-// its Recovery codes and ends every session of theirs. The acting session is untouched. 422 when the
-// member has no Second factor or is the caller (who disables their own with a password and a code).
+// Reset the member's Second factor (owner/admin only; owner-only for an owner): clears an active or
+// pending factor, its Recovery codes and Passkeys, and ends every session of theirs. The acting
+// session is untouched. 422 when the member has neither an active or pending Second factor nor a
+// Passkey, or is the caller (who disables their own with a password and a code).
 //
 // POST /workspaces/{workspaceId}/memberships/{id}/reset-second-factor
 func (s *Server) handleSiteMembershipsResetSecondFactorRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26269,7 +26270,8 @@ func (s *Server) handleSiteSchemaApplyMigrationsRequest(args [0]string, argsEsca
 // factor is active, every other session ends and the acting one continues under the cookie set here;
 // the Recovery codes are returned once. 403 on a wrong password (or, for a User with no password, no
 // provider sign-in or Passkey check in the last few minutes) (it feeds the Login throttle: 429 while
-// its delay runs), 422 on a wrong code, 409 without a pending enrollment.
+// its delay runs), 422 on a wrong code, 409 without a pending enrollment or when that enrollment was
+// replaced or reset.
 //
 // POST /me/second-factor/enrollment/confirm
 func (s *Server) handleSiteSecondFactorConfirmEnrollmentRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

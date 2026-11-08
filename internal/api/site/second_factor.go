@@ -42,7 +42,7 @@ func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *sit
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteSecondFactorEnrollment{Secret: e.Secret, OtpauthUri: e.URI, QrCode: e.QRCode}, nil
+	return &siteapi.SiteSecondFactorEnrollment{EnrollmentId: siteapi.EntityId(e.ID), Secret: e.Secret, OtpauthUri: e.URI, QrCode: e.QRCode}, nil
 }
 
 // SiteSecondFactorConfirmEnrollment activates the pending secret with the password
@@ -53,7 +53,7 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 	if err != nil {
 		return nil, err
 	}
-	issued, err := h.secondFactor.ConfirmEnrollment(ctx, userID, req.Code)
+	issued, err := h.secondFactor.ConfirmEnrollment(ctx, userID, inputs.SecondFactorConfirm(req))
 	if err != nil {
 		return nil, err
 	}

@@ -36,6 +36,8 @@ type User struct {
 	SessionEpoch int64 `json:"session_epoch,omitempty"`
 	// SecondFactorSecretEncrypted holds the value of the "second_factor_secret_encrypted" field.
 	SecondFactorSecretEncrypted string `json:"-"`
+	// SecondFactorGeneration holds the value of the "second_factor_generation" field.
+	SecondFactorGeneration *int64 `json:"second_factor_generation,omitempty"`
 	// SecondFactorConfirmedAt holds the value of the "second_factor_confirmed_at" field.
 	SecondFactorConfirmedAt *time.Time `json:"second_factor_confirmed_at,omitempty"`
 	// SecondFactorLastStep holds the value of the "second_factor_last_step" field.
@@ -145,7 +147,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldID, user.FieldSessionEpoch, user.FieldSecondFactorLastStep, user.FieldFeedPosition:
+		case user.FieldID, user.FieldSessionEpoch, user.FieldSecondFactorGeneration, user.FieldSecondFactorLastStep, user.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted, user.FieldTimezone, user.FieldRegionalFormat:
 			values[i] = new(sql.NullString)
@@ -227,6 +229,13 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field second_factor_secret_encrypted", values[i])
 			} else if value.Valid {
 				_m.SecondFactorSecretEncrypted = value.String
+			}
+		case user.FieldSecondFactorGeneration:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field second_factor_generation", values[i])
+			} else if value.Valid {
+				_m.SecondFactorGeneration = new(int64)
+				*_m.SecondFactorGeneration = value.Int64
 			}
 		case user.FieldSecondFactorConfirmedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -367,6 +376,11 @@ func (_m *User) String() string {
 	builder.WriteString(fmt.Sprintf("%v", _m.SessionEpoch))
 	builder.WriteString(", ")
 	builder.WriteString("second_factor_secret_encrypted=<sensitive>")
+	builder.WriteString(", ")
+	if v := _m.SecondFactorGeneration; v != nil {
+		builder.WriteString("second_factor_generation=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.SecondFactorConfirmedAt; v != nil {
 		builder.WriteString("second_factor_confirmed_at=")

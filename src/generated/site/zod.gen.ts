@@ -1915,6 +1915,7 @@ export const zSiteSaveBrandKitInput = z.object({
  * Proof of the User's password (or a fresh provider login or Passkey check) and a code from the authenticator app
  */
 export const zSiteSecondFactorConfirmInput = z.object({
+  enrollmentId: zEntityId,
   currentPassword: z.exactOptional(z.string()),
   code: z.string()
 });
@@ -1931,6 +1932,7 @@ export const zSiteSecondFactorDisableInput = z.object({
  * A pending enrollment: the TOTP secret to add to an authenticator app
  */
 export const zSiteSecondFactorEnrollment = z.object({
+  enrollmentId: zEntityId,
   secret: z.string(),
   otpauthUri: z.string(),
   qrCode: z.string()

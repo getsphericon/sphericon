@@ -48,3 +48,23 @@ session cannot enroll a factor of its own and sign the real User out elsewhere).
   Login throttle counter: resetting it on the password step would let a password holder guess codes
   without end.
 - SMS and trusted-device ("remember me") factors are deliberately absent.
+
+## Enrollment lifecycle
+
+The User owns a `lifecycle`/`stateless` machine projected from the sealed secret and confirmation
+moment: none, pending and active. Start moves none to pending or replaces pending; Confirm moves
+pending to active. Verify and Regenerate are internal transitions of active. Disable clears active;
+Reset clears pending or active, and can stay at none when removing Passkeys. Closing the enrollment
+form leaves its pending secret on the server.
+
+Each Start advances a separate enrollment identity, returned with the QR and required by Confirm.
+Displaying a QR does not change `session_epoch`, so it does not end sessions. The identity is never
+cleared on removal: the next Start cannot reuse an earlier one. Confirm must match that identity
+and atomically compare the secret, confirmation moment, enrollment identity, accepted TOTP step,
+password hash and session epoch that were checked. A stale operation fails; it is never retried
+against a different enrollment. This prevents a delayed Start from replacing an active factor and
+a delayed Confirm from activating a replacement secret or undoing a Reset.
+
+Every operation fences the User row before changing Recovery codes. The factor move, code writes,
+epoch bump and audit publication commit together. Login keeps its User row lock while checking the
+challenge binding and consuming the code, including when TOTP races a Recovery code.

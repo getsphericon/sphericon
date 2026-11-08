@@ -5640,6 +5640,10 @@ export type SiteSaveBrandKitInput = {
  */
 export type SiteSecondFactorConfirmInput = {
   /**
+   * Identity returned with the secret being confirmed. A replaced or reset enrollment is refused.
+   */
+  enrollmentId: EntityId;
+  /**
    * Current password. Left out by a User with no password, who proves a provider or Passkey
    * sign-in of the last few minutes instead (ADR 0048).
    */
@@ -5669,6 +5673,10 @@ export type SiteSecondFactorDisableInput = {
  * A pending enrollment: the TOTP secret to add to an authenticator app
  */
 export type SiteSecondFactorEnrollment = {
+  /**
+   * Identity of this enrollment, echoed when confirming it. A new start replaces it.
+   */
+  enrollmentId: EntityId;
   /**
    * The secret as a base32 key, for typing it into the app
    */

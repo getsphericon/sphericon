@@ -33,6 +33,7 @@ import (
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	secondfactorcheck "github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
 	workspacedeletion "github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
@@ -617,6 +618,14 @@ func (c *InputsImpl) RuleUpdate(source *site.SiteUpdateRuleInput) (rules.UpdateI
 		rulesUpdateInput.Actions = ruleActionsPtrIn(c, (*source).Actions)
 	}
 	return rulesUpdateInput, nil
+}
+func (c *InputsImpl) SecondFactorConfirm(source *site.SiteSecondFactorConfirmInput) secondfactorcheck.ConfirmInput {
+	var secondfactorcheckConfirmInput secondfactorcheck.ConfirmInput
+	if source != nil {
+		secondfactorcheckConfirmInput.EnrollmentID = int64((*source).EnrollmentId)
+		secondfactorcheckConfirmInput.Code = (*source).Code
+	}
+	return secondfactorcheckConfirmInput
 }
 func (c *InputsImpl) SegmentCreate(source *site.SiteCreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput

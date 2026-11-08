@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/totp"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -46,7 +47,7 @@ var (
 	// ErrNotActive: the User has no confirmed Second factor, so their own step that needs one
 	// (regenerating the Recovery codes, disabling) has nothing to act on.
 	ErrNotActive = validation.Conflict("secondfactor: no active second factor", i18n.ErrorsSecondFactorNotActive)
-	// ErrNothingToReset: the member has neither a Second factor nor a Passkey, so a reset has
+	// ErrNothingToReset: the member has neither an active or pending Second factor nor a Passkey, so a reset has
 	// nothing to clear. It refuses the `member` the reset names.
 	ErrNothingToReset = validation.RefuseField("member", "secondfactor: the member has no second factor or passkey", i18n.ErrorsSecondFactorResetNothing)
 	// ErrDeletionCodeInvalid: the code that confirms the User's own deletion is wrong. Like a
@@ -116,6 +117,7 @@ func (m *UseCase) Status(ctx context.Context, userID int64) (Status, error) {
 
 // Enrollment is a pending secret, shown so the User can add it to an app.
 type Enrollment struct {
+	ID     int64  // identity of the pending enrollment
 	Secret string // base32 key
 	URI    string // otpauth:// URI
 	QRCode string // PNG data URI of the URI
@@ -125,25 +127,37 @@ type Enrollment struct {
 // pending one. ErrAlreadyActive when a Second factor is active: replacing it takes
 // disabling it first (password and a current code).
 func (m *UseCase) StartEnrollment(ctx context.Context, userID int64) (*Enrollment, error) {
-	u, err := m.ent.User.Get(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	if users.HasSecondFactor(u) {
-		return nil, ErrAlreadyActive
-	}
-	key, err := totp.New(users.Issuer, u.Email)
-	if err != nil {
-		return nil, err
-	}
-	sealed, err := m.cipher.Encrypt([]byte(key.Secret))
-	if err != nil {
-		return nil, err
-	}
-	if err := users.SetPendingSecondFactor(ctx, m.ent, userID, sealed); err != nil {
-		return nil, err
-	}
-	return &Enrollment{Secret: key.Secret, URI: key.URI, QRCode: key.QRCode}, nil
+	var enrollment *Enrollment
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		u, err := tx.User.Get(ctx, userID)
+		if err != nil {
+			return err
+		}
+		if users.HasSecondFactor(u) {
+			return ErrAlreadyActive
+		}
+		key, err := totp.New(users.Issuer, u.Email)
+		if err != nil {
+			return err
+		}
+		sealed, err := m.cipher.Encrypt([]byte(key.Secret))
+		if err != nil {
+			return err
+		}
+		u, err = users.MoveSecondFactorIn(ctx, tx, u, users.SecondFactorChange{Trigger: users.FactorStart, SealedSecret: sealed, At: m.now()})
+		if err != nil {
+			return err
+		}
+		enrollment = &Enrollment{ID: *u.SecondFactorGeneration, Secret: key.Secret, URI: key.URI, QRCode: key.QRCode}
+		return nil
+	})
+	return enrollment, err
+}
+
+// ConfirmInput binds the code to the enrollment whose secret the caller received.
+type ConfirmInput struct {
+	EnrollmentID int64
+	Code         string
 }
 
 // ConfirmEnrollment activates the pending secret when code is a current code for
@@ -151,7 +165,7 @@ func (m *UseCase) StartEnrollment(ctx context.Context, userID int64) (*Enrollmen
 // records `user.second_factor_enroll`, all in one transaction, and returns the
 // stored User for reissuing the acting session with the codes. ErrNoPending without a pending
 // enrollment, ErrInvalidCode on a wrong code.
-func (m *UseCase) ConfirmEnrollment(ctx context.Context, userID int64, code string) (*CodesIssued, error) {
+func (m *UseCase) ConfirmEnrollment(ctx context.Context, userID int64, in ConfirmInput) (*CodesIssued, error) {
 	var (
 		saved *ent.User
 		codes []string
@@ -167,10 +181,14 @@ func (m *UseCase) ConfirmEnrollment(ctx context.Context, userID int64, code stri
 		if u.SecondFactorSecretEncrypted == "" {
 			return ErrNoPending
 		}
-		if err := m.useTOTP(ctx, tx, u, code); err != nil {
+		if u.SecondFactorGeneration == nil || *u.SecondFactorGeneration != in.EnrollmentID {
+			return lifecycle.ErrInvalidTransition
+		}
+		step, err := m.totpStep(u, in.Code)
+		if err != nil {
 			return err
 		}
-		u, err = users.ConfirmSecondFactorIn(ctx, tx, userID, m.now())
+		u, err = users.MoveSecondFactorIn(ctx, tx, u, users.SecondFactorChange{Trigger: users.FactorConfirm, Step: step, At: m.now()})
 		if err != nil {
 			return err
 		}
@@ -202,10 +220,10 @@ func (m *UseCase) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*C
 		if !users.HasSecondFactor(u) {
 			return ErrNotActive
 		}
-		if codes, err = recoverycodes.ReplaceIn(ctx, tx, userID); err != nil {
+		if u, err = users.MoveSecondFactorIn(ctx, tx, u, users.SecondFactorChange{Trigger: users.FactorRegenerate, At: m.now()}); err != nil {
 			return err
 		}
-		if u, err = users.BumpSessionEpochIn(ctx, tx, userID); err != nil {
+		if codes, err = recoverycodes.ReplaceIn(ctx, tx, userID); err != nil {
 			return err
 		}
 		saved = u
@@ -232,10 +250,11 @@ func (m *UseCase) Disable(ctx context.Context, userID int64, code string) (*ent.
 		if !users.HasSecondFactor(u) {
 			return ErrNotActive
 		}
-		if _, err := m.verify(ctx, tx, pub, u, code); err != nil {
+		_, verified, err := m.verify(ctx, tx, pub, u, code)
+		if err != nil {
 			return err
 		}
-		if saved, err = remove(ctx, tx, userID); err != nil {
+		if saved, err = remove(ctx, tx, verified, users.FactorDisable, m.now()); err != nil {
 			return err
 		}
 		return users.RecordUserAction(ctx, tx, pub, saved, events.ActionUserSecondFactorDisable, nil)
@@ -272,7 +291,7 @@ func (m *UseCase) Verify(ctx context.Context, pending login.Pending[*ent.User], 
 		if subtle.ConstantTimeCompare([]byte(current), []byte(binding)) != 1 {
 			return ErrBindingMoved
 		}
-		method, err = m.verify(ctx, tx, pub, u, code)
+		method, _, err = m.verify(ctx, tx, pub, u, code)
 		return err
 	})
 	return method, err
@@ -286,7 +305,7 @@ func (m *UseCase) DeletionCode(code string) users.DeleteConfirm {
 		if !users.HasSecondFactor(locked) {
 			return nil
 		}
-		_, err := m.verify(ctx, tx, pub, locked, code)
+		_, _, err := m.verify(ctx, tx, pub, locked, code)
 		if errors.Is(err, ErrInvalidCode) {
 			return ErrDeletionCodeInvalid
 		}
@@ -320,7 +339,7 @@ func challengeBinding(ctx context.Context, client *ent.Client, u *ent.User) (str
 // Reset clears the User's Second factor, Recovery codes and Passkeys and bumps the session
 // epoch, ending every session of theirs: an Owner or Admin resetting a member of the
 // Workspace behind s. It records `user.second_factor_reset` by actor in that Workspace
-// only. ErrNothingToReset without a Second factor or a Passkey (nothing changes).
+// only. ErrNothingToReset without an active or pending factor or a Passkey (nothing changes).
 func (m *UseCase) Reset(ctx context.Context, s *ent.Scoped, userID int64, actor events.Actor) error {
 	return m.reset(ctx, userID, func(pub events.Publisher, _ *ent.Client, u *ent.User) error {
 		return users.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, s.WorkspaceID())
@@ -347,66 +366,73 @@ func (m *UseCase) reset(ctx context.Context, userID int64, record func(events.Pu
 		if err != nil {
 			return err
 		}
-		if !users.HasSecondFactor(u) && !held {
+		if u.SecondFactorSecretEncrypted == "" && !held {
 			return ErrNothingToReset
 		}
-		if err := passkeys.DeleteAllIn(ctx, tx, userID); err != nil {
+		if u, err = remove(ctx, tx, u, users.FactorReset, m.now()); err != nil {
 			return err
 		}
-		if u, err = remove(ctx, tx, userID); err != nil {
+		if err := passkeys.DeleteAllIn(ctx, tx, userID); err != nil {
 			return err
 		}
 		return record(pub, tx, u)
 	})
 }
 
-func (m *UseCase) verify(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, code string) (Method, error) {
+// verify fences the User before touching Recovery codes, keeping the same lock order as
+// enrollment, regeneration, removal and the login challenge check.
+func (m *UseCase) verify(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, code string) (Method, *ent.User, error) {
+	step := int64(0)
 	if totp.IsCode(code) {
-		if err := m.useTOTP(ctx, tx, u, code); err != nil {
-			return "", err
+		var err error
+		step, err = m.totpStep(u, code)
+		if err != nil {
+			return "", nil, err
 		}
-		return MethodTOTP, nil
+	}
+	saved, err := users.MoveSecondFactorIn(ctx, tx, u, users.SecondFactorChange{Trigger: users.FactorVerify, Step: step, At: m.now()})
+	if err != nil {
+		return "", nil, err
+	}
+	if step > 0 {
+		return MethodTOTP, saved, nil
 	}
 	spent, err := recoverycodes.SpendIn(ctx, tx, u.ID, code, m.now())
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	if !spent {
-		return "", ErrInvalidCode
+		return "", nil, ErrInvalidCode
 	}
-	return MethodRecoveryCode, users.RecordUserAction(ctx, tx, pub, u, events.ActionUserRecoveryCodeUse, nil)
+	err = users.RecordUserAction(ctx, tx, pub, saved, events.ActionUserRecoveryCodeUse, nil)
+	return MethodRecoveryCode, saved, err
 }
 
-// useTOTP accepts code when it is the User's code for a time step within the skew
-// of now and later than the last step accepted, and stores that step, so the code
-// cannot be replayed. The conditional write makes two concurrent uses of one code
-// accept only one.
-func (m *UseCase) useTOTP(ctx context.Context, tx *ent.Client, u *ent.User, code string) error {
+// totpStep checks the code against this exact secret and replay step. The owner consumes
+// both in its single conditional lifecycle write; no separate acceptance can outlive a reset.
+func (m *UseCase) totpStep(u *ent.User, code string) (int64, error) {
 	raw, err := m.cipher.Decrypt(u.SecondFactorSecretEncrypted)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	step, ok, err := totp.Match(string(raw), code, m.now(), u.SecondFactorLastStep)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if !ok {
-		return ErrInvalidCode
+		return 0, ErrInvalidCode
 	}
-	accepted, err := users.AcceptSecondFactorStepIn(ctx, tx, u.ID, step)
-	if err != nil {
-		return err
-	}
-	if !accepted {
-		return ErrInvalidCode
-	}
-	return nil
+	return step, nil
 }
 
-// remove clears the Second factor and the Recovery codes and bumps the epoch.
-func remove(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
-	if err := recoverycodes.DeleteIn(ctx, tx, userID); err != nil {
+// remove clears the factor before its Recovery codes, and bumps the epoch in the same transaction.
+func remove(ctx context.Context, tx *ent.Client, before *ent.User, trigger users.SecondFactorTrigger, at time.Time) (*ent.User, error) {
+	saved, err := users.MoveSecondFactorIn(ctx, tx, before, users.SecondFactorChange{Trigger: trigger, At: at})
+	if err != nil {
 		return nil, err
 	}
-	return users.ClearSecondFactorIn(ctx, tx, userID)
+	if err := recoverycodes.DeleteIn(ctx, tx, before.ID); err != nil {
+		return nil, err
+	}
+	return saved, nil
 }
