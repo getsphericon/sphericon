@@ -104,27 +104,6 @@ func (in CustomFieldUpdateInput) Retype(field *ent.CustomField) (customfield.Typ
 	return customfield.Type(raw), true
 }
 
-// UpdateCustomFieldIn renames field or changes its type, an audited change (ADR 0022). A type
-// change rewrites no stored value: the leaves of the new type read the values as they are, and are
-// false on one of another shape. It is the unchecked retype (ADR 0102): it does not ask whether a
-// Segment, a Rule or a Broadcast tests the field with a leaf the new type does not take. Editing a
-// Custom field is the use case internal/usecase/customfieldretyping, which runs the Removal check
-// first; easement forbids every other package to call UpdateCustomFieldIn. A blank new name is
-// ErrCustomFieldNameRequired.
-func UpdateCustomFieldIn(ctx context.Context, s *ent.Scoped, field *ent.CustomField, in CustomFieldUpdateInput) (*ent.CustomField, error) {
-	if err := in.Check(); err != nil {
-		return nil, err
-	}
-	upd := s.CustomField().UpdateOneID(field.ID)
-	if raw, ok := in.Name.Get(); ok {
-		upd.SetName(strings.TrimSpace(raw))
-	}
-	if t, ok := in.Retype(field); ok {
-		upd.SetType(t)
-	}
-	return upd.Save(ctx)
-}
-
 // CustomFields returns the Workspace's whole Custom field catalogue, ascending by key.
 // The catalogue is small and unpaginated.
 func CustomFields(ctx context.Context, s *ent.Scoped) ([]*ent.CustomField, error) {

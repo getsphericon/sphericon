@@ -14,9 +14,10 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships/membershipsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -33,7 +34,7 @@ type UseCase struct {
 // New builds the use case: the bus opens its transactions, states says the Send cap a Workspace
 // starts with (instancestates.Module.StartingSendCapIn, ADR 0067; nil, as in a test, gives a new
 // Workspace none), and newPublicID draws a Workspace id (workspaceid.New; a test gives one that
-// collides to watch workspaces.CreateIn draw again).
+// collides to watch workspacesunchecked.CreateIn draw again).
 func New(bus *events.Bus, states *instancestates.Module, newPublicID func() string) *UseCase {
 	return &UseCase{bus: bus, newPublicID: newPublicID, states: states}
 }
@@ -77,11 +78,11 @@ func (u *UseCase) createIn(ctx context.Context, tx *ent.Client, userID int64, na
 			return nil, err
 		}
 	}
-	ws, err := workspaces.CreateIn(ctx, tx, name, u.newPublicID, sendCap)
+	ws, err := workspacesunchecked.CreateIn(ctx, tx, name, u.newPublicID, sendCap)
 	if err != nil {
 		return nil, err
 	}
-	if err := memberships.AddCreatorIn(ctx, tx, userID, ws.ID); err != nil {
+	if err := membershipsunchecked.AddCreatorIn(ctx, tx, userID, ws.ID); err != nil {
 		return nil, err
 	}
 	return ws, nil

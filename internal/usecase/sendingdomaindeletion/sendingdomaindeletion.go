@@ -3,7 +3,7 @@
 // sendingdomains module will still send email from an address on it (ADR 0099); deleting it runs
 // the Removal check (internal/domain/orchestration/removalcheck), which refuses with a
 // *liveuse.Error naming the work if any sends from it, and otherwise calls the module's unchecked
-// removal, sendingdomains.DeleteIn, which easement forbids every other package to call.
+// removal, sendingdomainsunchecked.DeleteIn, which only a use case may import (ADR 0110).
 package sendingdomaindeletion
 
 import (
@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains/sendingdomainsunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -52,6 +53,6 @@ func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		if err := u.check.SendingDomain(ctx, ts, row.Domain); err != nil {
 			return err
 		}
-		return sendingdomains.DeleteIn(ctx, ts, id, u.now())
+		return sendingdomainsunchecked.DeleteIn(ctx, ts, id, u.now())
 	})
 }

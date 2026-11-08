@@ -175,15 +175,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return row, nil
 }
 
-// DeleteIn discards the Sending domain row for good (ADR 0049) on the transaction's scoped client,
-// without asking whether work still sends from it: the unchecked removal behind the Sending domain
-// deletion use case (internal/usecase/sendingdomaindeletion), which runs the Removal check (its
-// Live use) under the Workspace lock first and is the only caller easement allows. The record of mail sent from it
-// stays.
-func DeleteIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
-	return ts.SendingDomain().Discard(ctx, id, at)
-}
-
 // Record is one DNS TXT record to publish.
 type Record struct {
 	Host  string

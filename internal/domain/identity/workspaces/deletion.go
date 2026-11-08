@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -19,31 +18,36 @@ import (
 
 // The deletion cycle of a Workspace (ADR 0043) is a lifecycle table (ADR 0046): active,
 // pending_deletion, erased. Deleting is this module's operation, checked by the typed name (Delete);
-// the use case internal/usecase/workspacedeletion restores and erases a Workspace, through RestoreIn
-// and TombstoneIn, since a restore needs a Membership and an erase every owner's rows. The row's
-// moves are this module's, as the row is.
+// restoring needs a Membership that holds the delete Permission and erasing every owner's rows, so
+// those two moves are unchecked operations of internal/domain/identity/workspaces/workspacesunchecked
+// (RestoreIn and TombstoneIn, ADR 0110), which the use case internal/usecase/workspacedeletion calls.
+// The table of legal moves is declared here once (DeletionCycle), and each package writes only its
+// own moves: a storage's Write is the compare-and-swap of its moves, and the Workspace table is
+// written only in this module and its subpackage.
 //
 // The state is derived from two columns, so no column is added: active is a Workspace with no
 // discarded_at, pending_deletion has discarded_at and no erased_at, erased has erased_at. The
 // window is not a state: restoring is legal only while discarded_at is inside it, and that is
 // part of the update's condition, so the database decides a race with the erase job.
 
-// deletionState is where a Workspace is in the deletion cycle.
-type deletionState string
+// DeletionState is where a Workspace is in the deletion cycle.
+type DeletionState string
 
+// The states of the deletion cycle.
 const (
-	stateActive          deletionState = "active"
-	statePendingDeletion deletionState = "pending_deletion"
-	stateErased          deletionState = "erased"
+	StateActive          DeletionState = "active"
+	StatePendingDeletion DeletionState = "pending_deletion"
+	StateErased          DeletionState = "erased"
 )
 
-// deletionTrigger is a move of the cycle.
-type deletionTrigger string
+// DeletionTrigger is a move of the cycle.
+type DeletionTrigger string
 
+// The moves of the deletion cycle.
 const (
-	triggerDelete  deletionTrigger = "delete"
-	triggerRestore deletionTrigger = "restore"
-	triggerErase   deletionTrigger = "erase"
+	TriggerDelete  DeletionTrigger = "delete"
+	TriggerRestore DeletionTrigger = "restore"
+	TriggerErase   DeletionTrigger = "erase"
 )
 
 // pendingDeletion is a Workspace deleted and not yet erased, whatever the window says.
@@ -56,75 +60,66 @@ func InsideDeletionWindow(now time.Time) predicate.Workspace {
 	return workspace.And(workspace.DiscardedAtGT(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil())
 }
 
-// stateOf is the cycle state a Workspace row is in.
-func stateOf(ws *ent.Workspace) deletionState {
+// DeletionStateOf is the cycle state a Workspace row is in.
+func DeletionStateOf(ws *ent.Workspace) DeletionState {
 	switch {
 	case ws.ErasedAt != nil:
-		return stateErased
+		return StateErased
 	case ws.DiscardedAt != nil:
-		return statePendingDeletion
+		return StatePendingDeletion
 	default:
-		return stateActive
+		return StateActive
 	}
 }
 
-// inState is the condition a row is in the state.
-func inState(state deletionState) predicate.Workspace {
+// InDeletionState is the condition a row is in the state: the WHERE of a move's compare-and-swap.
+func InDeletionState(state DeletionState) predicate.Workspace {
 	switch state {
-	case stateActive:
+	case StateActive:
 		return Live()
-	case statePendingDeletion:
+	case StatePendingDeletion:
 		return pendingDeletion()
 	default:
 		return workspace.ErasedAtNotNil()
 	}
 }
 
-// cycleStorage is the cycle's storage over c (the raw client or a transaction's) for Workspace id.
-// Each write is the compare-and-swap: one conditional UPDATE whose WHERE is the state read,
-// plus, for a restore, the window.
-func cycleStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[deletionState] {
-	return lifecycle.Storage[deletionState]{
-		Read: func(ctx context.Context) (deletionState, error) {
-			ws, err := c.Workspace.Get(ctx, id)
-			if err != nil {
-				return "", err
-			}
-			return stateOf(ws), nil
-		},
-		Write: func(ctx context.Context, was, to deletionState) (bool, error) {
-			u := c.Workspace.Update().Where(workspace.ID(id), inState(was))
-			switch {
-			case was == stateActive && to == statePendingDeletion:
-				u.SetDiscardedAt(now)
-			case was == statePendingDeletion && to == stateActive:
-				u.Where(InsideDeletionWindow(now)).ClearDiscardedAt()
-			case was == statePendingDeletion && to == stateErased:
-				// The tombstone: the row stays, with nothing that identifies the Workspace
-				// and a fresh collect key.
-				key, err := credentials.GenerateCollectKey()
-				if err != nil {
-					return false, err
-				}
-				u.SetName("").SetPostalAddress("").SetCollectKey(key).ClearRetentionDays().SetErasedAt(now)
-			default:
-				return false, fmt.Errorf("workspaces: no move from %s to %s", was, to)
-			}
-			n, err := u.Save(ctx)
-			return n == 1, err
-		},
+// ReadDeletionState is the Read of a cycle's storage over c (the raw client or a transaction's)
+// for Workspace id.
+func ReadDeletionState(c *ent.Client, id int64) func(context.Context) (DeletionState, error) {
+	return func(ctx context.Context) (DeletionState, error) {
+		ws, err := c.Workspace.Get(ctx, id)
+		if err != nil {
+			return "", err
+		}
+		return DeletionStateOf(ws), nil
 	}
 }
 
-// cycleTable is the table of legal moves over a storage.
-func cycleTable(s lifecycle.Storage[deletionState]) *stateless.StateMachine {
+// DeletionCycle is the table of legal moves over a storage.
+func DeletionCycle(s lifecycle.Storage[DeletionState]) *stateless.StateMachine {
 	sm := lifecycle.New(s)
-	sm.Configure(stateActive).Permit(triggerDelete, statePendingDeletion)
-	sm.Configure(statePendingDeletion).
-		Permit(triggerRestore, stateActive).
-		Permit(triggerErase, stateErased)
-	sm.Configure(stateErased)
+	sm.Configure(StateActive).Permit(TriggerDelete, StatePendingDeletion)
+	sm.Configure(StatePendingDeletion).
+		Permit(TriggerRestore, StateActive).
+		Permit(TriggerErase, StateErased)
+	sm.Configure(StateErased)
 	return sm
+}
+
+// deleteStorage is the cycle's storage of this module's one move, the delete, over c for Workspace
+// id: one conditional UPDATE whose WHERE is the state read.
+func deleteStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[DeletionState] {
+	return lifecycle.Storage[DeletionState]{
+		Read: ReadDeletionState(c, id),
+		Write: func(ctx context.Context, was, to DeletionState) (bool, error) {
+			if was != StateActive || to != StatePendingDeletion {
+				return false, fmt.Errorf("workspaces: no move from %s to %s", was, to)
+			}
+			n, err := c.Workspace.Update().Where(workspace.ID(id), InDeletionState(was)).SetDiscardedAt(now).Save(ctx)
+			return n == 1, err
+		},
+	}
 }
 
 // ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
@@ -151,7 +146,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 			deleted = ws
 			return nil
 		}
-		if err := cycleTable(cycleStorage(tx, ws.ID, now)).FireCtx(ctx, triggerDelete); err != nil {
+		if err := DeletionCycle(deleteStorage(tx, ws.ID, now)).FireCtx(ctx, TriggerDelete); err != nil {
 			return err
 		}
 		if deleted, err = tx.Workspace.Get(ctx, ws.ID); err != nil {
@@ -161,21 +156,6 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceDelete, diff))
 	})
 	return deleted, err
-}
-
-// RestoreIn moves the Workspace id from pending deletion back to active inside tx, only while
-// it is inside its deletion window at now. One past it, already erased or not deleted is
-// lifecycle.ErrInvalidTransition and nothing changes.
-func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
-	return cycleTable(cycleStorage(tx, id, now)).FireCtx(ctx, triggerRestore)
-}
-
-// TombstoneIn moves the Workspace id from pending deletion to erased inside tx: it writes the
-// tombstone and erased_at in one conditional update. A Workspace that is not deleted, or is
-// already erased, is lifecycle.ErrInvalidTransition and nothing changes. The caller has
-// removed what the Workspace owned.
-func TombstoneIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
-	return cycleTable(cycleStorage(tx, id, now)).FireCtx(ctx, triggerErase)
 }
 
 // Erased reports whether the Workspace id is erased: its row is a tombstone, or there is none. A

@@ -375,14 +375,6 @@ func HeldIn(ctx context.Context, tx *ent.Client, userID int64) (bool, error) {
 	return tx.Passkey.Query().Where(passkey.UserID(userID)).Exist(ctx)
 }
 
-// DeleteAllIn deletes every Passkey of the User on the transaction tx. Only a Second factor
-// reset calls it (internal/usecase/secondfactorreset), which checks who resets first and
-// ends the User's sessions in the same transaction.
-func DeleteAllIn(ctx context.Context, tx *ent.Client, userID int64) error {
-	_, err := tx.Passkey.Delete().Where(passkey.UserID(userID)).Exec(ctx)
-	return err
-}
-
 // PruneSpentChallenges deletes the spent challenges recorded before cutoff and returns how many
 // went. The cutoff must be older than a ceremony can live (SpentChallengeRetention is).
 func PruneSpentChallenges(ctx context.Context, client *ent.Client, cutoff time.Time) (int, error) {

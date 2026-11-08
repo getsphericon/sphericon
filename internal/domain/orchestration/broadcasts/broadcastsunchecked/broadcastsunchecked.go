@@ -1,4 +1,9 @@
-package broadcasts
+// Package broadcastsunchecked holds the cancellation of a Contact's pending Broadcast work. It is a
+// step of a Contact's Erasure (ADR 0021), which harms a live Contact when it runs alone: the use
+// case internal/usecase/contacterasure runs each owner's step in its order, in the one transaction
+// of the Erasure; only a use case may import this one (ADR 0110). The broadcasts module does not
+// import it.
+package broadcastsunchecked
 
 import (
 	"context"
@@ -8,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
@@ -20,7 +26,7 @@ import (
 // gone when it starts.
 func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger events.QueuePurger, at time.Time) error {
 	unsent, err := s.BroadcastRecipient().Query().
-		Where(broadcastrecipient.ContactID(contactID), Pending()).
+		Where(broadcastrecipient.ContactID(contactID), broadcasts.Pending()).
 		All(ctx)
 	if err != nil {
 		return err
@@ -40,7 +46,7 @@ func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger e
 	for _, id := range affected {
 		// The Broadcast's figures are read from its rows, so removing the recipients is all
 		// they need; one left with nothing pending settles.
-		if err := Finalize(ctx, s, id, at); err != nil {
+		if err := broadcasts.Finalize(ctx, s, id, at); err != nil {
 			return err
 		}
 	}

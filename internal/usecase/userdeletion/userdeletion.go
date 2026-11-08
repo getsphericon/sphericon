@@ -17,8 +17,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships/membershipsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users/usersunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -168,7 +170,7 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 		ts := tx.Scoped(m.WorkspaceID)
 		// Only a sole-owned Workspace still standing here is in its deletion window.
 		if slices.Contains(soleOwned, m.WorkspaceID) {
-			err = memberships.LeaveDoomedWorkspaceIn(ctx, ts, pub, userID)
+			err = membershipsunchecked.LeaveDoomedWorkspaceIn(ctx, ts, pub, userID)
 		} else {
 			err = memberships.LeaveIn(ctx, ts, pub, userID)
 		}
@@ -176,5 +178,5 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 			return err
 		}
 	}
-	return users.DeleteIn(ctx, tx, pub, u)
+	return usersunchecked.DeleteIn(ctx, tx, pub, u)
 }

@@ -1,4 +1,4 @@
-package broadcasts_test
+package broadcastsunchecked_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts/broadcastsunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -22,7 +22,7 @@ import (
 func cancelFor(t *testing.T, env *testhelper.TestEnv, contactID int64) error {
 	t.Helper()
 	return env.CancelPendingFor(t, contactID, func(ctx context.Context, s *ent.Scoped, id int64, purger events.QueuePurger) error {
-		return broadcasts.CancelPending(ctx, s, id, purger, time.Now())
+		return broadcastsunchecked.CancelPending(ctx, s, id, purger, time.Now())
 	})
 }
 

@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships/membershipsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -77,11 +77,11 @@ func (u *UseCase) firstWorkspaceIn(ctx context.Context, tx *ent.Client, userID i
 			return nil, err
 		}
 	}
-	ws, err := workspaces.CreateIn(ctx, tx, users.FirstWorkspaceName, u.newPublicID, sendCap)
+	ws, err := workspacesunchecked.CreateIn(ctx, tx, users.FirstWorkspaceName, u.newPublicID, sendCap)
 	if err != nil {
 		return nil, err
 	}
-	if err := memberships.AddCreatorIn(ctx, tx, userID, ws.ID); err != nil {
+	if err := membershipsunchecked.AddCreatorIn(ctx, tx, userID, ws.ID); err != nil {
 		return nil, err
 	}
 	return ws, nil

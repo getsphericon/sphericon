@@ -8,7 +8,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -64,18 +63,4 @@ func (a *Module) DeletionSubject(ctx context.Context, userID int64, typedEmail s
 		return nil, refuseDeletion(ErrDeletionEmailMismatch)
 	}
 	return u, nil
-}
-
-// DeleteIn deletes the User u on the transaction tx and publishes events.UserDeleted, which tells
-// the address (ADR 0105), for User deletion (ADR 0050, the use case internal/usecase/userdeletion):
-// it checks nothing. The use case has proven who asks, refused the only Owner of a live Workspace
-// and removed every Membership first. Linked identities, the Second factor and its Recovery codes
-// follow by cascade, an Invitation the User sent keeps its place with no sender, and Audit
-// entries that name the User are never rewritten. Sessions need nothing: the security handler
-// finds no User.
-func DeleteIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) error {
-	if err := tx.User.DeleteOneID(u.ID).Exec(ctx); err != nil {
-		return err
-	}
-	return pub.Publish(ctx, &events.UserDeleted{UserID: u.ID, Email: u.Email})
 }

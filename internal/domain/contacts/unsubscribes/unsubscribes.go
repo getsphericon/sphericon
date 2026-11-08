@@ -56,11 +56,11 @@ type OptOut struct {
 }
 
 // The unique constraint of the Unsubscribe's table (ADR 0106): one opt-out per (Channel,
-// Destination, Sending source), which Add and AddSMS insert ON CONFLICT DO NOTHING and EraseSMS
-// rekeys to a hash only where no opt-out holds it.
+// Destination, Sending source), which Add and AddSMS insert ON CONFLICT DO NOTHING and
+// unsubscribesunchecked.EraseSMS rekeys to a hash only where no opt-out holds it.
 var _ = db.Declare(
 	db.Fault("unsubscribes_ws_channel_dest_source",
-		"Add and AddSMS insert ON CONFLICT (workspace_id, channel, destination, sending_source) DO NOTHING, and EraseSMS rekeys a number to its hash under the Contact's Erasure only where no opt-out holds the hash"),
+		"Add and AddSMS insert ON CONFLICT (workspace_id, channel, destination, sending_source) DO NOTHING, and unsubscribesunchecked.EraseSMS rekeys a number to its hash under the Contact's Erasure only where no opt-out holds the hash"),
 )
 
 // Add writes o unless it stands already, and returns the id of the row it wrote, 0 when it wrote
@@ -118,7 +118,7 @@ func Get(ctx context.Context, s *ent.Scoped, channel channels.Channel, destinati
 // opted out changes nothing, and keeps the way it first stopped. via is how the person stopped,
 // which the Contact card shows.
 func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (int64, error) {
-	// The opt-out of an erased person is kept by the hash of the number (EraseSMS): a second row by
+	// The opt-out of an erased person is kept by the hash of the number (unsubscribesunchecked.EraseSMS): a second row by
 	// the number itself would not conflict with it.
 	hashed, err := s.Unsubscribe().Query().Where(
 		unsubscribe.ChannelEQ(channels.SMS),
@@ -168,7 +168,7 @@ func SMSOptOut(ctx context.Context, s *ent.Scoped, number string) (*ent.Unsubscr
 }
 
 // smsEverything is the Channel-wide opt-out of the number: kept by the number, or by its hash once
-// the Contact whose phone it was is erased (EraseSMS), so a STOP, a START and the Contact card find
+// the Contact whose phone it was is erased (unsubscribesunchecked.EraseSMS), so a STOP, a START and the Contact card find
 // an erased person's opt-out when the number comes back.
 func smsEverything(number string) []predicate.Unsubscribe {
 	return []predicate.Unsubscribe{

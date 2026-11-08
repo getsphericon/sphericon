@@ -1,4 +1,10 @@
-package events
+// Package eventsunchecked holds the Events part of a Contact's Erasure: deleting the subject's
+// customer-tracked Events and anonymizing its system Events. It is a step of a Contact's Erasure
+// (ADR 0021), which harms a live Contact when it runs alone: the use case
+// internal/usecase/contacterasure runs each owner's step in its order, in the one transaction of
+// the Erasure; only a use case may import this one (ADR 0110). The events module does not import
+// it.
+package eventsunchecked
 
 import (
 	"context"
@@ -9,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
 // eraseChunk bounds how many ids go into one IN (...) list of an Erasure, well below the driver's
@@ -32,13 +39,13 @@ var anonymousKeep = []string{"sendingDomain", "bounceKind"}
 // sms.undelivered like email's delivery notices, and sms.unsubscribed like email.unsubscribed.
 func anonymized(action string) bool {
 	switch action {
-	case NameEmailSent, NameEmailOpened, NameEmailClicked,
-		NameEmailDelivered, NameEmailDelayed, NameEmailDropped,
-		NameEmailBounced, NameEmailComplained, NameEmailUnsubscribed,
-		NameContactCreated,
-		NameTelegramSent, NameTelegramClicked, NameTelegramUnsubscribed,
-		NameTelegramBound, NameTelegramUnbound,
-		NameSmsSent, NameSmsDelivered, NameSmsUndelivered, NameSmsClicked, NameSmsUnsubscribed:
+	case events.NameEmailSent, events.NameEmailOpened, events.NameEmailClicked,
+		events.NameEmailDelivered, events.NameEmailDelayed, events.NameEmailDropped,
+		events.NameEmailBounced, events.NameEmailComplained, events.NameEmailUnsubscribed,
+		events.NameContactCreated,
+		events.NameTelegramSent, events.NameTelegramClicked, events.NameTelegramUnsubscribed,
+		events.NameTelegramBound, events.NameTelegramUnbound,
+		events.NameSmsSent, events.NameSmsDelivered, events.NameSmsUndelivered, events.NameSmsClicked, events.NameSmsUnsubscribed:
 		return true
 	}
 	return false
@@ -58,7 +65,7 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 	}
 	if phone != "" {
 		matches = append(matches, event.And(
-			event.ContactIDIsNil(), event.Action(NameSmsConfirmed), event.Phone(phone)))
+			event.ContactIDIsNil(), event.Action(events.NameSmsConfirmed), event.Phone(phone)))
 	}
 	if len(visitorIDs) > 0 {
 		matches = append(matches, event.VisitorIDIn(visitorIDs...))
@@ -82,7 +89,7 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 			doomed = append(doomed, e.ID)
 			continue
 		}
-		if e.Action == NameSmsDelivered || e.Action == NameSmsUndelivered {
+		if e.Action == events.NameSmsDelivered || e.Action == events.NameSmsUndelivered {
 			reported = append(reported, e.ID)
 		}
 		props := map[string]any{}

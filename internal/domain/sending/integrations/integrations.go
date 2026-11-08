@@ -445,20 +445,6 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	patch.ApplySet(in.IsDefault, upd.SetIsDefault)
 }
 
-// DeleteIn discards the Integration row for good (ADR 0049) on the transaction's scoped client,
-// without asking whether work still sends through it: the unchecked removal behind the Integration
-// deletion use case (internal/usecase/integrationdeletion), which runs the Removal check (its Live
-// use) under the Workspace lock first and is the only caller easement allows. A deleted Integration gives up the
-// default: its channel has none until another is picked. A missing row is ErrNotFound.
-func DeleteIn(ctx context.Context, ts *ent.Scoped, row *ent.Integration, at time.Time) error {
-	if row.IsDefault {
-		if err := ts.Integration().UpdateOneID(row.ID).SetIsDefault(false).Exec(ctx); err != nil {
-			return missing(err)
-		}
-	}
-	return missing(ts.Integration().Discard(ctx, row.ID, at))
-}
-
 // ReleaseDeleted lets the bot of a Telegram Integration that held its webhook go of it, best
 // effort, once the Integration's deletion has committed; row is the Integration as the deletion
 // read it. Any other Integration holds nothing to release.

@@ -6,9 +6,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/visitor"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -20,10 +20,10 @@ func visitorOf(contactID int64) predicate.Visitor { return visitor.ContactID(con
 // sms the rows keep refusing the number by its hash, never by the number itself (ADR 0021): the
 // phone leaves only its hash.
 func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	if err := unsubscribes.EraseSMS(ctx, s, t.ContactID, t.Phone); err != nil {
+	if err := unsubscribesunchecked.EraseSMS(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}
-	return suppressions.EraseContact(ctx, s, t.ContactID, t.Phone)
+	return suppressionsunchecked.EraseContact(ctx, s, t.ContactID, t.Phone)
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep
@@ -32,10 +32,10 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 // transactional send may have made without a Contact. Its Broadcast recipients name it only by
 // the Contact reference, which their foreign key sets null when the Contact row goes.
 func anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	if err := outboundmessages.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
+	if err := outboundmessagesunchecked.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}
-	return outboundmessages.AnonymizeDestinations(ctx, s, t.destinations())
+	return outboundmessagesunchecked.AnonymizeDestinations(ctx, s, t.destinations())
 }
 
 // publishErased emits the PII-free contact.erased Event in the erasure's transaction,

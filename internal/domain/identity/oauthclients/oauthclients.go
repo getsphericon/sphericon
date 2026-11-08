@@ -311,13 +311,6 @@ func ClaimCodeIn(ctx context.Context, tx *ent.Client, c CodeClaim, now time.Time
 	return grant, nil
 }
 
-// DeleteCodesIn deletes every authorization code that names the Workspace, on the transaction
-// tx: the last step of erasing a Workspace (ADR 0043), whose codes are not Workspace-scoped rows.
-func DeleteCodesIn(ctx context.Context, tx *ent.Client, workspaceID int64) error {
-	_, err := tx.OAuthCode.Delete().Where(oauthcode.WorkspaceID(workspaceID)).Exec(ctx)
-	return err
-}
-
 // ValidRedirectURI accepts https URLs and http on a loopback host, with no fragment (RFC 6749
 // 3.1.2, OAuth 2.1).
 func ValidRedirectURI(raw string) bool {

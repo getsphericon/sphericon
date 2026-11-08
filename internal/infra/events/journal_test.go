@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -151,7 +152,7 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 				if err := purger.PurgeWorkspaceJobs(ctx, fixtures.AcmeID); err != nil {
 					return err
 				}
-				return workspaces.TombstoneIn(ctx, tx, fixtures.AcmeID, now)
+				return workspacesunchecked.TombstoneIn(ctx, tx, fixtures.AcmeID, now)
 			})
 		},
 	})
