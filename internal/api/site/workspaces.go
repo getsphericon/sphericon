@@ -28,9 +28,13 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 	if err != nil {
 		return nil, err
 	}
-	return lo.Map(members, func(m workspacesummary.Member, _ int) siteapi.SiteWorkspaceResource {
-		return h.workspaceResource(ctx, m.Membership, m.Summary)
-	}), nil
+	resources := make([]siteapi.SiteWorkspaceResource, len(members))
+	for i, m := range members {
+		if resources[i], err = h.workspaceResource(ctx, m.Membership, m.Summary); err != nil {
+			return nil, err
+		}
+	}
+	return resources, nil
 }
 
 // summarizedWorkspace is the Workspace of s, whose Membership m the caller holds, as the
@@ -40,13 +44,13 @@ func (h *Handlers) summarizedWorkspace(ctx context.Context, s *ent.Scoped, m *en
 	if err != nil {
 		return siteapi.SiteWorkspaceResource{}, err
 	}
-	return h.workspaceResource(ctx, m, sum), nil
+	return h.workspaceResource(ctx, m, sum)
 }
 
 // workspaceResource maps the Workspace summary as the Membership's User sees it, with their Role
 // and Permissions, their grace end under the Two-factor requirement (ADR 0020) and the Instance's
 // addresses besides the app's own. The Membership's User edge must be loaded.
-func (h *Handlers) workspaceResource(ctx context.Context, m *ent.Membership, sum workspacesummary.Summary) siteapi.SiteWorkspaceResource {
+func (h *Handlers) workspaceResource(ctx context.Context, m *ent.Membership, sum workspacesummary.Summary) (siteapi.SiteWorkspaceResource, error) {
 	m = withWorkspace(m, sum.Workspace)
 	r := mapper.WorkspaceToResource(sum.Workspace)
 	r.Role = mapper.MembershipRoleToResource(m.Role)
@@ -76,7 +80,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, m *ent.Membership, sum
 	r.SendCap = mapper.SendCapStatusToResource(sum.SendCap)
 	r.ShortLinkLength = narrow.Int32(sum.ShortLinkLength)
 	r.SmsMaxLength = mapper.SmsLengthLimitToResource(sum.SMSMaxLength)
-	return r
+	return r, nil
 }
 
 // SiteWorkspacesCreate creates a Workspace for the authenticated User, who becomes its
