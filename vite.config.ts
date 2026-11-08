@@ -84,6 +84,7 @@ export default defineConfig({
       '@sphericon/analytics > js-cookie',
       '@sphericon/analytics > ky',
       '@sphericon/analytics > uuid',
+      '@sphericon/analytics > xstate',
       '@tiptap/react',
       'ahooks',
       'ajv/dist/2020.js',

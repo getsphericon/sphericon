@@ -577,8 +577,8 @@ run = [
 ["generate:check"]
 description = "Review rule 1: fail when committed generated output differs from what `generate` produces (CI gate, needs a clean tree)"
 # `git status --porcelain` lists a modified, deleted or new file. A generated path that is not
-# checked in is excluded by .gitignore and nowhere else, each for its reason: internal/server/assets/t.js
-# and packages/*/dist (the tracker bundle, built by `build:tracker`), internal/server/assets/spa/ and
+# checked in is excluded by .gitignore and nowhere else, each for its reason: packages/*/dist
+# (the package builds), internal/server/assets/spa/ and
 # internal/domain/instance/upgradenote/CHANGELOG.md (release-only copies); none is produced by `generate`.
 run = [
   { task = "generate" },

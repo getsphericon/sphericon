@@ -103,6 +103,7 @@ minimumReleaseAgeExclude:
   - '@react-email/editor@1.7.18 || 1.7.19'
   - '@tanstack/query-devtools@5.105.3'
   - '@tanstack/react-query-devtools@5.105.3'
+  - xstate@5.33.4
 # Transitive dependencies of the build tooling that an advisory has fixed; pnpm picks the fixed
 # release whichever package asks for them.
 overrides:

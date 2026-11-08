@@ -65,7 +65,10 @@ beforeEach(() => {
   fetchStub = vi.fn<typeof fetch>(async () => Promise.resolve(new Response(null, { status: 204 })))
   sentRequests = []
   vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
-    sentRequests.push(new Request(input, init).clone())
+    // Constructing a Request from another Request transfers its body. Copy first so the
+    // collector still receives a readable body, just as a real fetch implementation would.
+    const copy = input instanceof Request ? input.clone() : input
+    sentRequests.push(new Request(copy, init))
     return fetchStub(input, init)
   })
   clearVisitorCookie()
@@ -208,6 +211,43 @@ async function sentEvents(): Promise<Sent[][]> {
 function storedQueue(): Sent[] {
   const raw: Sent[] = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]')
   return raw
+}
+
+// The collector records accepted Events by their id, as the real collector does. A deferred
+// response keeps a submission unresolved while the browser accepts more Events or hides the page.
+function collector(...responses: Promise<Response>[]) {
+  const received = Promise.withResolvers<undefined>()
+  const firstFinished = Promise.withResolvers<undefined>()
+  const nextFinished = Promise.withResolvers<undefined>()
+  const accepted = new Map<string | undefined, Sent>()
+  let next = 0
+  fetchStub.mockImplementation(async (input, init) => {
+    const request = new Request(input, init)
+    const body: SentBody = await request.json()
+    const sequence = next++
+    if (sequence === 0) {
+      received.resolve(undefined)
+    }
+    try {
+      const response = await (responses[sequence] ??
+        Promise.resolve(new Response(null, { status: 204 })))
+      if (response.ok) {
+        for (const event of body.events) {
+          accepted.set(event.clientEventId, event)
+        }
+      }
+      return response
+    } finally {
+      const finished = sequence === 0 ? firstFinished : nextFinished
+      finished.resolve(undefined)
+    }
+  })
+  return {
+    accepted,
+    received: received.promise,
+    firstFinished: firstFinished.promise,
+    nextFinished: nextFinished.promise,
+  }
 }
 
 beforeEach(() => {
@@ -428,6 +468,155 @@ test('pagehide flushes pending events without waiting for the timer', async () =
   const batches = await sentEvents()
   const sent = batches.flat().filter((e) => e.action === 'leaving')
   expect(sent).toHaveLength(1)
+})
+
+test('appending during a submission preserves its batch and delivers the newer events afterward', async () => {
+  const first = Promise.withResolvers<Response>()
+  const server = collector(first.promise)
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+  track('first')
+  await vi.advanceTimersByTimeAsync(200)
+  await server.received
+
+  track('newer')
+  await vi.advanceTimersByTimeAsync(200)
+
+  const awaiting = storedQueue().map((event) => event.action)
+  const acceptedBeforeResponse = [...server.accepted.values()]
+  expect(awaiting).toEqual(['first', 'newer'])
+  expect(acceptedBeforeResponse).toEqual([])
+
+  first.resolve(new Response(null, { status: 204 }))
+  await server.firstFinished
+  await vi.advanceTimersByTimeAsync(200)
+  await server.nextFinished
+  await vi.advanceTimersByTimeAsync(0)
+
+  const delivered = [...server.accepted.values()].map((event) => event.action)
+  const remaining = storedQueue()
+  expect(delivered).toEqual(['first', 'newer'])
+  expect(remaining).toEqual([])
+})
+
+test('a final refusal discards only the refused batch and preserves newer events', async () => {
+  const first = Promise.withResolvers<Response>()
+  const server = collector(first.promise)
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+  track('refused')
+  await vi.advanceTimersByTimeAsync(200)
+  await server.received
+  track('newer')
+  await vi.advanceTimersByTimeAsync(200)
+
+  first.resolve(new Response(null, { status: 400 }))
+  await server.firstFinished
+  await vi.advanceTimersByTimeAsync(0)
+
+  const awaiting = storedQueue().map((event) => event.action)
+  const acceptedBeforeNextFlush = [...server.accepted.values()]
+  expect(awaiting).toEqual(['newer'])
+  expect(acceptedBeforeNextFlush).toEqual([])
+
+  await vi.advanceTimersByTimeAsync(200)
+  await server.nextFinished
+  await vi.advanceTimersByTimeAsync(0)
+
+  const delivered = [...server.accepted.values()].map((event) => event.action)
+  const remaining = storedQueue()
+  expect(delivered).toEqual(['newer'])
+  expect(remaining).toEqual([])
+})
+
+test('a result without an HTTP response retains the queue for a later flush', async () => {
+  const first = Promise.withResolvers<Response>()
+  const server = collector(first.promise)
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+  track('unconfirmed')
+  await vi.advanceTimersByTimeAsync(200)
+  await server.received
+
+  // An error Ky cannot retry settles the generated client without an HTTP response.
+  first.reject(new Error('request could not be prepared'))
+  await server.firstFinished
+  await vi.advanceTimersByTimeAsync(1000)
+
+  const awaiting = storedQueue().map((event) => event.action)
+  const acceptedBeforeTrigger = [...server.accepted.values()]
+  expect(awaiting).toEqual(['unconfirmed'])
+  expect(acceptedBeforeTrigger).toEqual([])
+
+  track('later')
+  await vi.advanceTimersByTimeAsync(200)
+  await server.nextFinished
+  await vi.advanceTimersByTimeAsync(0)
+
+  const delivered = [...server.accepted.values()].map((event) => event.action)
+  const remaining = storedQueue()
+  expect(delivered).toEqual(['unconfirmed', 'later'])
+  expect(remaining).toEqual([])
+})
+
+test('pagehide during a submission leaves it active and keeps newer events recoverable', async () => {
+  const first = Promise.withResolvers<Response>()
+  const server = collector(first.promise)
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+  track('first')
+  await vi.advanceTimersByTimeAsync(200)
+  await server.received
+  track('newer')
+
+  window.dispatchEvent(new Event('pagehide'))
+  await vi.advanceTimersByTimeAsync(1000)
+
+  const awaiting = storedQueue().map((event) => event.action)
+  const acceptedBeforeResponse = [...server.accepted.values()]
+  expect(awaiting).toEqual(['first', 'newer'])
+  expect(acceptedBeforeResponse).toEqual([])
+
+  first.resolve(new Response(null, { status: 204 }))
+  await server.firstFinished
+  await vi.advanceTimersByTimeAsync(200)
+  await server.nextFinished
+  await vi.advanceTimersByTimeAsync(0)
+
+  const delivered = [...server.accepted.values()].map((event) => event.action)
+  const remaining = storedQueue()
+  expect(delivered).toEqual(['first', 'newer'])
+  expect(remaining).toEqual([])
+})
+
+test('queue overflow does not change the batch already being submitted', async () => {
+  const first = Promise.withResolvers<Response>()
+  const server = collector(first.promise)
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+  track('in flight')
+  await vi.advanceTimersByTimeAsync(200)
+  await server.received
+
+  const newer = Array.from({ length: 100 }, (_, index) => `newer ${index}`)
+  for (const action of newer) {
+    track(action)
+  }
+  await vi.advanceTimersByTimeAsync(200)
+
+  const awaiting = storedQueue().map((event) => event.action)
+  expect(awaiting).toEqual(newer)
+
+  first.resolve(new Response(null, { status: 204 }))
+  await server.firstFinished
+  await vi.advanceTimersByTimeAsync(200)
+  await server.nextFinished
+  await vi.advanceTimersByTimeAsync(0)
+
+  const delivered = [...server.accepted.values()].map((event) => event.action)
+  const remaining = storedQueue()
+  expect(delivered).toEqual(['in flight', ...newer])
+  expect(remaining).toEqual([])
 })
 
 test('trackPageView sends a page.view event with the page details', async () => {

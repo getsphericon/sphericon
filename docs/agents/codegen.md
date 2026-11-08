@@ -130,4 +130,5 @@ DO NOT EDIT.`, or `// @ts-nocheck` on the frontend).
 `check:generated` (`mise/scripts/check-generated.ts`, part of `mise run check`) fails on a file with
 the header that no pattern marks and on a pattern that matches no file. Generated code lives in
 dedicated dirs (`gen/`, `ent/`, `openapi/`, the `generated/` dirs); `internal/` and `ee/` are
-hand-written but for the `*_gen.go` and `*_gen_test.go` files and `internal/kernel/emaildoc/assets/`.
+hand-written but for the `*_gen.go` and `*_gen_test.go` files, `internal/kernel/emaildoc/assets/`,
+and the tracker bundle `internal/server/assets/t.js` (`mise run build:tracker`).
