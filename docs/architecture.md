@@ -229,8 +229,11 @@ coding standards in `CODING_STANDARDS.md`.
   the log it keeps (`usertombstones` the User tombstones, `trackinghostchanges` the Tracking host changes); the
   Enterprise Edition owns its own tables in its domain modules (`ee/domain/insights/auditentries` the Audit
   entries, `ee/domain/insights/erasures` the Erasures rows, `ee/domain/insights/usages` the Usage rows,
-  `ee/domain/identity/servicecredentials` the Service credentials). Any other package, a use case
-  included, reads the table and changes it only through a function of its owner: the Workspace's
+  `ee/domain/identity/servicecredentials` the Service credentials). The one other writer of a
+  Workspace-owned table is the Workspace erase (`internal/usecase/workspacedeletion`, ADR 0110): it
+  deletes the rows of a Workspace past its deletion window itself, through the scoped client, since no
+  rule of an owner governs them any more; it only deletes, and only through the scoped wrappers. Any
+  other package, a use case included, reads the table and changes it only through a function of its owner: the Workspace's
   standing (`workspaces.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position)
   for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
   (`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
@@ -290,9 +293,9 @@ coding standards in `CODING_STANDARDS.md`.
   one pattern per use case (`internal/usecase/secondfactorcheck*`), isolated like the others.
   Two more are such use cases: the deletion cycle of a Workspace
   (`internal/usecase/workspacedeletion`), which lists the Workspaces that have no scope yet, erases one
-  table at a time, each batch of listed ids through the removal of the table's owner (`tags.EraseTagsIn`,
-  `events.EraseEventsIn` and one more per Workspace-owned table; the Enterprise Edition's three, which
-  no core package may import, the wiring hands in as `workspacedeletion.EditionTables`), and moves the
+  table at a time, each batch of listed ids deleted by itself through `*ent.Scoped`, the Enterprise
+  Edition's tables included (ADR 0110: the one writer of a Workspace-owned table besides its owner,
+  "Only the owner writes a table" above), and moves the
   Workspace row through `workspaces.DiscardIn`, `RestoreIn` and
   `TombstoneIn`, with the OAuth codes that name it removed by `oauthclients.DeleteCodesIn` and every
   job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, "Async"
@@ -605,12 +608,14 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   `Edition` (extra event consumers + read seams) in `internal/app` and in `testhelper.Setup`
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
   (`site.AuditLog`, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
-  (ent has one schema package) but is written and read only by `ee/domain/insights/auditentries`. An Audit entry is
+  (ent has one schema package) but is written and read only by `ee/domain/insights/auditentries` (the
+  Workspace erase deletes a deleted Workspace's entries too, below). An Audit entry is
   an event that is not Projected (`events.Projected`): it has no Event row, automations skip it,
   and a Webhook endpoint receives it only when it names `audit.entry`.
-  The Audit table's rows are removed only through `ee/domain/insights/auditentries`: by `ee/usecase/auditlogretention`'s prune (the
+  The Audit table's rows are removed only through `ee/domain/insights/auditentries`, by `ee/usecase/auditlogretention`'s prune (the
   `retention` license feature, a Workspace `retention_days` window, one hourly river job registered
-  through `Edition.Jobs()`, which calls `auditentries.PruneBefore`) and by the erase of a deleted Workspace.
+  through `Edition.Jobs()`, which calls `auditentries.PruneBefore`), and by the Workspace erase
+  (`internal/usecase/workspacedeletion`), which deletes a deleted Workspace's entries directly (ADR 0110).
   An explicit entry, one no audited write produces (a Workspace setting, a login, a membership
   change, the Audit log export `auditentries.Log.Export`), is recorded one way: `events.RecordAudit`
   inside the transaction of the change (`bus.WithinTx`, or `bus.WithinScopedTx` with the scope's

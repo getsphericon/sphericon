@@ -7,33 +7,48 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
-	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
-	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
-	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
-	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/ent/apitoken"
+	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/brandkit"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
+	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
+	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
+	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
+	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
+	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackedlink"
+	"github.com/getsphericon/sphericon/ent/trackingdomain"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
+	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
-	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
-	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
@@ -160,7 +175,7 @@ func (m *UseCase) erasePass(ctx context.Context, id int64) (int, error) {
 // to limit of the Workspace's rows, remove deletes those by id.
 type eraseStep struct {
 	ids    func(ctx context.Context, s *ent.Scoped, limit int) ([]int64, error)
-	remove RowEraser
+	remove func(ctx context.Context, s *ent.Scoped, ids []int64) error
 }
 
 // rowQuery is the scoped Query builder of one entity: the part an erase step needs.
@@ -169,88 +184,90 @@ type rowQuery[Q any] interface {
 	IDs(ctx context.Context) ([]int64, error)
 }
 
-// RowEraser removes the scoped Workspace's rows of one entity with the ids, inside the
-// transaction s is bound to: the removal of the module that owns the table (ADR 0102: only the
-// owner writes a table).
-type RowEraser func(ctx context.Context, s *ent.Scoped, ids []int64) error
-
-// EditionTables are the removals of the Workspace-owned tables the Enterprise Edition owns: the
-// Audit entries (ee/domain/insights/auditentries), the Erasures rows (ee/domain/insights/erasures) and the Usage rows (ee/domain/insights/usages). No core
-// package imports the Edition, so the wiring hands them in; they run at their place in the order
-// like every other step, whatever the license.
-type EditionTables struct {
-	AuditEntries, Erasures, Usage RowEraser
+// rowDelete is the scoped delete builder of one entity, whose predicates are P: the part an erase
+// step needs.
+type rowDelete[D, P any] interface {
+	Where(ps ...P) D
+	Exec(ctx context.Context) (int, error)
 }
 
-// stepOf is the erase step of one entity: table is its scoped wrapper (a method expression such
-// as (*ent.Scoped).Contact), whose Query lists the rows, and remove its owner's removal.
-func stepOf[W interface{ Query() Q }, Q rowQuery[Q]](table func(*ent.Scoped) W, remove RowEraser) eraseStep {
-	return eraseStepOf(func(s *ent.Scoped) Q { return table(s).Query() }, remove)
+// stepOf is the erase step of one entity: table is its scoped wrapper (a method expression such as
+// (*ent.Scoped).Contact), whose Query lists the rows and whose Delete removes the ones idIn names
+// (contact.IDIn).
+func stepOf[W interface {
+	Query() Q
+	Delete() D
+}, Q rowQuery[Q], D rowDelete[D, P], P any](table func(*ent.Scoped) W, idIn func(...int64) P) eraseStep {
+	return eraseStepOf(func(s *ent.Scoped) Q { return table(s).Query() }, func(s *ent.Scoped) D { return table(s).Delete() }, idIn)
 }
 
 // keptStepOf is the erase step of a discardable or an archivable entity (ADR 0100): every names
 // the query that sees its discarded or archived rows too ((*ent.RuleScoped).QueryWithDiscarded,
-// QueryWithArchived), and its owner's removal purges them all.
-func keptStepOf[W any, Q rowQuery[Q]](table func(*ent.Scoped) W, every func(W) Q, remove RowEraser) eraseStep {
-	return eraseStepOf(func(s *ent.Scoped) Q { return every(table(s)) }, remove)
+// QueryWithArchived), and purge the delete that removes them all ((*ent.RuleScoped).Purge).
+func keptStepOf[W any, Q rowQuery[Q], D rowDelete[D, P], P any](table func(*ent.Scoped) W, every func(W) Q, purge func(W) D, idIn func(...int64) P) eraseStep {
+	return eraseStepOf(func(s *ent.Scoped) Q { return every(table(s)) }, func(s *ent.Scoped) D { return purge(table(s)) }, idIn)
 }
 
-func eraseStepOf[Q rowQuery[Q]](query func(*ent.Scoped) Q, remove RowEraser) eraseStep {
+func eraseStepOf[Q rowQuery[Q], D rowDelete[D, P], P any](query func(*ent.Scoped) Q, remove func(*ent.Scoped) D, idIn func(...int64) P) eraseStep {
 	return eraseStep{
 		ids: func(ctx context.Context, s *ent.Scoped, limit int) ([]int64, error) {
 			return query(s).Limit(limit).IDs(ctx)
 		},
-		remove: remove,
+		remove: func(ctx context.Context, s *ent.Scoped, ids []int64) error {
+			_, err := remove(s).Where(idIn(ids...)).Exec(ctx)
+			return err
+		},
 	}
 }
 
 // eraseSteps is every Workspace-owned entity in dependency order (children before the
 // rows they reference): the foreign keys are not cascading. A test checks it covers every
-// entity of ent.ScopedEntities. Each step removes through the owner of its table; the
-// Edition's own tables are ed's.
-func eraseSteps(ed EditionTables) []eraseStep {
+// entity of ent.ScopedEntities. The erase removes the rows itself, whichever module owns the
+// table (ADR 0110): no rule of an owner governs the rows of a Workspace past its window. It
+// deletes through the client, so the ent hooks run.
+func eraseSteps() []eraseStep {
 	return []eraseStep{
-		stepOf((*ent.Scoped).AuditEntry, ed.AuditEntries),
-		stepOf((*ent.Scoped).Erasure, ed.Erasures),
-		stepOf((*ent.Scoped).Event, events.EraseEventsIn),
-		stepOf((*ent.Scoped).HeldOrderEvent, orders.EraseHeldOrderEventsIn),
-		stepOf((*ent.Scoped).OrderMovement, orders.EraseOrderMovementsIn),
-		stepOf((*ent.Scoped).Order, orders.EraseOrdersIn),
-		stepOf((*ent.Scoped).CapturedMessage, capturedmessages.EraseCapturedMessagesIn),
-		stepOf((*ent.Scoped).TrackedLink, outboundmessages.EraseTrackedLinksIn),
-		stepOf((*ent.Scoped).OutboundMessage, outboundmessages.EraseOutboundMessagesIn),
-		stepOf((*ent.Scoped).BroadcastRecipient, broadcasts.EraseBroadcastRecipientsIn),
-		stepOf((*ent.Scoped).RuleFiring, rules.EraseRuleFiringsIn),
-		stepOf((*ent.Scoped).RuleVersionTrigger, rules.EraseRuleVersionTriggersIn),
-		stepOf((*ent.Scoped).RuleVersion, rules.EraseRuleVersionsIn),
-		keptStepOf((*ent.Scoped).Rule, (*ent.RuleScoped).QueryWithDiscarded, rules.EraseRulesIn),
-		stepOf((*ent.Scoped).AutomationRun, automations.EraseAutomationRunsIn),
-		stepOf((*ent.Scoped).AutomationVersion, automations.EraseAutomationVersionsIn),
-		stepOf((*ent.Scoped).Visitor, visitors.EraseVisitorsIn),
-		stepOf((*ent.Scoped).Confirmation, confirmations.EraseConfirmationsIn),
-		stepOf((*ent.Scoped).Unsubscribe, unsubscribes.EraseUnsubscribesIn),
-		stepOf((*ent.Scoped).Suppression, suppressions.EraseSuppressionsIn),
-		stepOf((*ent.Scoped).Usage, ed.Usage),
-		stepOf((*ent.Scoped).Hold, holds.EraseHoldsIn),
-		stepOf((*ent.Scoped).ProviderLimiter, providerlimit.EraseProviderLimitersIn),
-		stepOf((*ent.Scoped).SendCapLimiter, providerlimit.EraseSendCapLimitersIn),
-		stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoints.EraseWebhookEndpointsIn),
-		stepOf((*ent.Scoped).Invitation, invitations.EraseInvitationsIn),
-		stepOf((*ent.Scoped).ApiToken, apitokens.EraseAPITokensIn),
-		keptStepOf((*ent.Scoped).Broadcast, (*ent.BroadcastScoped).QueryWithArchived, broadcasts.EraseBroadcastsIn),
-		keptStepOf((*ent.Scoped).Automation, (*ent.AutomationScoped).QueryWithArchived, automations.EraseAutomationsIn),
-		keptStepOf((*ent.Scoped).Segment, (*ent.SegmentScoped).QueryWithArchived, segments.EraseSegmentsIn),
-		stepOf((*ent.Scoped).EmailTemplate, emailtemplates.EraseEmailTemplatesIn),
-		stepOf((*ent.Scoped).BrandKit, brandkits.EraseBrandKitsIn),
-		stepOf((*ent.Scoped).Contact, contacts.EraseContactsIn),
-		stepOf((*ent.Scoped).Tag, tags.EraseTagsIn),
-		stepOf((*ent.Scoped).CustomField, contacts.EraseCustomFieldsIn),
+		stepOf((*ent.Scoped).AuditEntry, auditentry.IDIn),
+		stepOf((*ent.Scoped).Erasure, erasure.IDIn),
+		stepOf((*ent.Scoped).Event, event.IDIn),
+		stepOf((*ent.Scoped).HeldOrderEvent, heldorderevent.IDIn),
+		stepOf((*ent.Scoped).OrderMovement, ordermovement.IDIn),
+		stepOf((*ent.Scoped).Order, order.IDIn),
+		stepOf((*ent.Scoped).CapturedMessage, capturedmessage.IDIn),
+		stepOf((*ent.Scoped).TrackedLink, trackedlink.IDIn),
+		stepOf((*ent.Scoped).OutboundMessage, outboundmessage.IDIn),
+		stepOf((*ent.Scoped).BroadcastRecipient, broadcastrecipient.IDIn),
+		stepOf((*ent.Scoped).RuleFiring, rulefiring.IDIn),
+		stepOf((*ent.Scoped).RuleVersionTrigger, ruleversiontrigger.IDIn),
+		stepOf((*ent.Scoped).RuleVersion, ruleversion.IDIn),
+		keptStepOf((*ent.Scoped).Rule, (*ent.RuleScoped).QueryWithDiscarded, (*ent.RuleScoped).Purge, rule.IDIn),
+		stepOf((*ent.Scoped).AutomationRun, automationrun.IDIn),
+		stepOf((*ent.Scoped).AutomationVersion, automationversion.IDIn),
+		stepOf((*ent.Scoped).Visitor, visitor.IDIn),
+		stepOf((*ent.Scoped).Confirmation, confirmation.IDIn),
+		stepOf((*ent.Scoped).Unsubscribe, unsubscribe.IDIn),
+		stepOf((*ent.Scoped).Suppression, suppression.IDIn),
+		stepOf((*ent.Scoped).Usage, usage.IDIn),
+		stepOf((*ent.Scoped).Hold, hold.IDIn),
+		stepOf((*ent.Scoped).ProviderLimiter, providerlimiter.IDIn),
+		stepOf((*ent.Scoped).SendCapLimiter, sendcaplimiter.IDIn),
+		stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoint.IDIn),
+		stepOf((*ent.Scoped).Invitation, invitation.IDIn),
+		stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),
+		keptStepOf((*ent.Scoped).Broadcast, (*ent.BroadcastScoped).QueryWithArchived, (*ent.BroadcastScoped).Purge, broadcast.IDIn),
+		keptStepOf((*ent.Scoped).Automation, (*ent.AutomationScoped).QueryWithArchived, (*ent.AutomationScoped).Purge, automation.IDIn),
+		keptStepOf((*ent.Scoped).Segment, (*ent.SegmentScoped).QueryWithArchived, (*ent.SegmentScoped).Purge, segment.IDIn),
+		stepOf((*ent.Scoped).EmailTemplate, emailtemplate.IDIn),
+		stepOf((*ent.Scoped).BrandKit, brandkit.IDIn),
+		stepOf((*ent.Scoped).Contact, contact.IDIn),
+		stepOf((*ent.Scoped).Tag, tag.IDIn),
+		stepOf((*ent.Scoped).CustomField, customfield.IDIn),
 		// The tracking host change log hook records each released host here.
-		stepOf((*ent.Scoped).TrackingDomain, trackingdomains.EraseTrackingDomainsIn),
-		keptStepOf((*ent.Scoped).SendingDomain, (*ent.SendingDomainScoped).QueryWithDiscarded, sendingdomains.EraseSendingDomainsIn),
-		keptStepOf((*ent.Scoped).Integration, (*ent.IntegrationScoped).QueryWithDiscarded, integrations.EraseIntegrationsIn),
-		stepOf((*ent.Scoped).JoinDomain, joindomains.EraseJoinDomainsIn),
+		stepOf((*ent.Scoped).TrackingDomain, trackingdomain.IDIn),
+		keptStepOf((*ent.Scoped).SendingDomain, (*ent.SendingDomainScoped).QueryWithDiscarded, (*ent.SendingDomainScoped).Purge, sendingdomain.IDIn),
+		keptStepOf((*ent.Scoped).Integration, (*ent.IntegrationScoped).QueryWithDiscarded, (*ent.IntegrationScoped).Purge, integration.IDIn),
+		stepOf((*ent.Scoped).JoinDomain, joindomain.IDIn),
 		// Owner Memberships last: the owner hook advances the feed as they go.
-		stepOf((*ent.Scoped).Membership, memberships.EraseMembershipsIn),
+		stepOf((*ent.Scoped).Membership, membership.IDIn),
 	}
 }

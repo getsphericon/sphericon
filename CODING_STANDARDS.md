@@ -99,7 +99,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `OnConflictColumnsWhere`), a soft-delete move (`Archive`, `Unarchive`, `Discard`, `Purge`, `PurgeOneID`)
   or a Versioned definition's `Pointers` and their moves, on a type of the `ent` package (the raw client, a
   transaction, the scoped client and its wrappers); a generic function instantiated with an ent write
-  builder writes that builder's entity where it is instantiated. The moves of `ent.VersionedStore` are not
+  builder writes that builder's entity where it is instantiated. The one writer besides the owner is the
+  Workspace erase (`internal/usecase/workspacedeletion`, ADR 0110), which may delete or purge a
+  Workspace-owned table's rows through its scoped wrapper and write nothing else. The moves of `ent.VersionedStore` are not
   read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/versioneddefinition`. Not
   read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
   function of the owner that makes the write, which the writer calls. An entry point does not write through

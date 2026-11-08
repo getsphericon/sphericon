@@ -18,12 +18,11 @@ version: 1
 # `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
 # So do the Second factor's writes that skip its checks (the User's factor, the Recovery codes, all
-# Passkeys of a User), the moves of a Workspace's deletion cycle with each owner's erase of its rows, the creation of a
-# Workspace with its creator's Membership, and each owner's step of a Contact's Erasure (the Contact
-# row, contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
-# publisher (events.PurgingPublisher), which a name cannot forbid. The Enterprise Edition's erase
-# of its own rows is in every list but this one: the wiring and the Edition, which take this list,
-# hand it to the use case.
+# Passkeys of a User), the moves of a Workspace's deletion cycle, the creation of a Workspace
+# with its creator's Membership, and each owner's step of a Contact's Erasure (the Contact row,
+# contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
+# publisher (events.PurgingPublisher), which a name cannot forbid. The erase of a Workspace's rows
+# has no name here: internal/usecase/workspacedeletion deletes them itself (ADR 0110).
 x-unchecked-removals: &unchecked-removals
   - &tags-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.DeleteIn
@@ -70,117 +69,6 @@ x-unchecked-removals: &unchecked-removals
   - &memberships-add-creator-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.AddCreatorIn
     because: the creator's Owner Membership is written only with its Workspace, by the use cases internal/usecase/workspacecreation and internal/usecase/signup (ADR 0043, ADR 0102); call a use case
-  - &events-erase-events-in
-    name: github.com/getsphericon/sphericon/internal/infra/events.EraseEventsIn
-    because: &workspace-erase-because a deleted Workspace is erased only by the use case internal/usecase/workspacedeletion, once its deletion window has passed, one batch of listed ids at a time and in the order of the foreign keys (ADR 0043, ADR 0102); call the use case
-  - &orders-erase-held-order-events-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/orders.EraseHeldOrderEventsIn
-    because: *workspace-erase-because
-  - &orders-erase-order-movements-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/orders.EraseOrderMovementsIn
-    because: *workspace-erase-because
-  - &orders-erase-orders-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/orders.EraseOrdersIn
-    because: *workspace-erase-because
-  - &capturedmessages-erase-captured-messages-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseCapturedMessagesIn
-    because: *workspace-erase-because
-  - &outboundmessages-erase-tracked-links-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseTrackedLinksIn
-    because: *workspace-erase-because
-  - &outboundmessages-erase-outbound-messages-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseOutboundMessagesIn
-    because: *workspace-erase-because
-  - &broadcasts-erase-broadcast-recipients-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.EraseBroadcastRecipientsIn
-    because: *workspace-erase-because
-  - &rules-erase-rule-firings-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseRuleFiringsIn
-    because: *workspace-erase-because
-  - &rules-erase-rule-version-triggers-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseRuleVersionTriggersIn
-    because: *workspace-erase-because
-  - &rules-erase-rule-versions-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseRuleVersionsIn
-    because: *workspace-erase-because
-  - &rules-erase-rules-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseRulesIn
-    because: *workspace-erase-because
-  - &automations-erase-automation-runs-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseAutomationRunsIn
-    because: *workspace-erase-because
-  - &automations-erase-automation-versions-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseAutomationVersionsIn
-    because: *workspace-erase-because
-  - &visitors-erase-visitors-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseVisitorsIn
-    because: *workspace-erase-because
-  - &confirmations-erase-confirmations-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseConfirmationsIn
-    because: *workspace-erase-because
-  - &unsubscribes-erase-unsubscribes-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseUnsubscribesIn
-    because: *workspace-erase-because
-  - &suppressions-erase-suppressions-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseSuppressionsIn
-    because: *workspace-erase-because
-  - &holds-erase-holds-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/holds.EraseHoldsIn
-    because: *workspace-erase-because
-  - &providerlimit-erase-provider-limiters-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/providerlimit.EraseProviderLimitersIn
-    because: *workspace-erase-because
-  - &providerlimit-erase-send-cap-limiters-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/providerlimit.EraseSendCapLimitersIn
-    because: *workspace-erase-because
-  - &webhookendpoints-erase-webhook-endpoints-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints.EraseWebhookEndpointsIn
-    because: *workspace-erase-because
-  - &invitations-erase-invitations-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/invitations.EraseInvitationsIn
-    because: *workspace-erase-because
-  - &apitokens-erase-api-tokens-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.EraseAPITokensIn
-    because: *workspace-erase-because
-  - &broadcasts-erase-broadcasts-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.EraseBroadcastsIn
-    because: *workspace-erase-because
-  - &automations-erase-automations-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseAutomationsIn
-    because: *workspace-erase-because
-  - &segments-erase-segments-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/segments.EraseSegmentsIn
-    because: *workspace-erase-because
-  - &emailtemplates-erase-email-templates-in
-    name: github.com/getsphericon/sphericon/internal/domain/content/emailtemplates.EraseEmailTemplatesIn
-    because: *workspace-erase-because
-  - &brandkits-erase-brand-kits-in
-    name: github.com/getsphericon/sphericon/internal/domain/content/brandkits.EraseBrandKitsIn
-    because: *workspace-erase-because
-  - &contacts-erase-contacts-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.EraseContactsIn
-    because: *workspace-erase-because
-  - &tags-erase-tags-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.EraseTagsIn
-    because: *workspace-erase-because
-  - &contacts-erase-custom-fields-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.EraseCustomFieldsIn
-    because: *workspace-erase-because
-  - &trackingdomains-erase-tracking-domains-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains.EraseTrackingDomainsIn
-    because: *workspace-erase-because
-  - &sendingdomains-erase-sending-domains-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.EraseSendingDomainsIn
-    because: *workspace-erase-because
-  - &integrations-erase-integrations-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/integrations.EraseIntegrationsIn
-    because: *workspace-erase-because
-  - &joindomains-erase-join-domains-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/joindomains.EraseJoinDomainsIn
-    because: *workspace-erase-because
-  - &memberships-erase-memberships-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.EraseMembershipsIn
-    because: *workspace-erase-because
   - &oauthclients-delete-codes-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.DeleteCodesIn
     because: the OAuth codes that name a Workspace go only in the last transaction of its erase, by the use case internal/usecase/workspacedeletion (ADR 0043, ADR 0102); call the use case
@@ -236,9 +124,8 @@ x-river-scheduling: &river-scheduling
     because: *river-scheduling-because
 # The forbid list of every component that may reach the core and holds no raw client (the API
 # surfaces, MCP, the Problem mapping, the non-raw component of each context, `domain-<context>`,
-# and the Enterprise surfaces, use cases and modules that hold none): the raw client, every
-# unchecked removal, and the Enterprise Edition's own erase of a deleted Workspace, which only the
-# wiring and the Edition hand to the use case.
+# and the Enterprise surfaces, use cases and modules that hold none): the raw client and every
+# unchecked removal.
 x-core-forbids: &core-forbids
   - name: github.com/getsphericon/sphericon/ent.Client
     because: a handler or a domain module takes a *ent.Scoped so every query is workspace-bound; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in the raw-client component of its context (`domain-<context>-raw`) here, never a field of a module or a handler
@@ -257,43 +144,6 @@ x-core-forbids: &core-forbids
   - *workspaces-tombstone-in
   - *workspaces-create-in
   - *memberships-add-creator-in
-  - *events-erase-events-in
-  - *orders-erase-held-order-events-in
-  - *orders-erase-order-movements-in
-  - *orders-erase-orders-in
-  - *capturedmessages-erase-captured-messages-in
-  - *outboundmessages-erase-tracked-links-in
-  - *outboundmessages-erase-outbound-messages-in
-  - *broadcasts-erase-broadcast-recipients-in
-  - *rules-erase-rule-firings-in
-  - *rules-erase-rule-version-triggers-in
-  - *rules-erase-rule-versions-in
-  - *rules-erase-rules-in
-  - *automations-erase-automation-runs-in
-  - *automations-erase-automation-versions-in
-  - *visitors-erase-visitors-in
-  - *confirmations-erase-confirmations-in
-  - *unsubscribes-erase-unsubscribes-in
-  - *suppressions-erase-suppressions-in
-  - *holds-erase-holds-in
-  - *providerlimit-erase-provider-limiters-in
-  - *providerlimit-erase-send-cap-limiters-in
-  - *webhookendpoints-erase-webhook-endpoints-in
-  - *invitations-erase-invitations-in
-  - *apitokens-erase-api-tokens-in
-  - *broadcasts-erase-broadcasts-in
-  - *automations-erase-automations-in
-  - *segments-erase-segments-in
-  - *emailtemplates-erase-email-templates-in
-  - *brandkits-erase-brand-kits-in
-  - *contacts-erase-contacts-in
-  - *tags-erase-tags-in
-  - *contacts-erase-custom-fields-in
-  - *trackingdomains-erase-tracking-domains-in
-  - *sendingdomains-erase-sending-domains-in
-  - *integrations-erase-integrations-in
-  - *joindomains-erase-join-domains-in
-  - *memberships-erase-memberships-in
   - *oauthclients-delete-codes-in
   - *broadcasts-cancel-pending
   - *automations-cancel-pending
@@ -307,15 +157,6 @@ x-core-forbids: &core-forbids
   - *outboundmessages-anonymize-contact
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
-  - &auditentries-erase-audit-entries-in
-    name: github.com/getsphericon/sphericon/ee/domain/insights/auditentries.EraseAuditEntriesIn
-    because: *workspace-erase-because
-  - &erasures-erase-erasures-in
-    name: github.com/getsphericon/sphericon/ee/domain/insights/erasures.EraseErasuresIn
-    because: *workspace-erase-because
-  - &usages-erase-usage-in
-    name: github.com/getsphericon/sphericon/ee/domain/insights/usages.EraseUsageIn
-    because: *workspace-erase-because
   - *river-worker-defaults
   - *river-add-worker
   - *river-new-periodic-job
@@ -365,43 +206,6 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *workspaces-tombstone-in
   - *workspaces-create-in
   - *memberships-add-creator-in
-  - *events-erase-events-in
-  - *orders-erase-held-order-events-in
-  - *orders-erase-order-movements-in
-  - *orders-erase-orders-in
-  - *capturedmessages-erase-captured-messages-in
-  - *outboundmessages-erase-tracked-links-in
-  - *outboundmessages-erase-outbound-messages-in
-  - *broadcasts-erase-broadcast-recipients-in
-  - *rules-erase-rule-firings-in
-  - *rules-erase-rule-version-triggers-in
-  - *rules-erase-rule-versions-in
-  - *rules-erase-rules-in
-  - *automations-erase-automation-runs-in
-  - *automations-erase-automation-versions-in
-  - *visitors-erase-visitors-in
-  - *confirmations-erase-confirmations-in
-  - *unsubscribes-erase-unsubscribes-in
-  - *suppressions-erase-suppressions-in
-  - *holds-erase-holds-in
-  - *providerlimit-erase-provider-limiters-in
-  - *providerlimit-erase-send-cap-limiters-in
-  - *webhookendpoints-erase-webhook-endpoints-in
-  - *invitations-erase-invitations-in
-  - *apitokens-erase-api-tokens-in
-  - *broadcasts-erase-broadcasts-in
-  - *automations-erase-automations-in
-  - *segments-erase-segments-in
-  - *emailtemplates-erase-email-templates-in
-  - *brandkits-erase-brand-kits-in
-  - *contacts-erase-contacts-in
-  - *tags-erase-tags-in
-  - *contacts-erase-custom-fields-in
-  - *trackingdomains-erase-tracking-domains-in
-  - *sendingdomains-erase-sending-domains-in
-  - *integrations-erase-integrations-in
-  - *joindomains-erase-join-domains-in
-  - *memberships-erase-memberships-in
   - *oauthclients-delete-codes-in
   - *broadcasts-cancel-pending
   - *automations-cancel-pending
@@ -415,9 +219,6 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *outboundmessages-anonymize-contact
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
-  - *auditentries-erase-audit-entries-in
-  - *erasures-erase-erasures-in
-  - *usages-erase-usage-in
   - *river-worker-defaults
   - *river-add-worker
   - *river-new-periodic-job
@@ -447,43 +248,6 @@ x-runner-forbids: &runner-forbids
   - *workspaces-tombstone-in
   - *workspaces-create-in
   - *memberships-add-creator-in
-  - *events-erase-events-in
-  - *orders-erase-held-order-events-in
-  - *orders-erase-order-movements-in
-  - *orders-erase-orders-in
-  - *capturedmessages-erase-captured-messages-in
-  - *outboundmessages-erase-tracked-links-in
-  - *outboundmessages-erase-outbound-messages-in
-  - *broadcasts-erase-broadcast-recipients-in
-  - *rules-erase-rule-firings-in
-  - *rules-erase-rule-version-triggers-in
-  - *rules-erase-rule-versions-in
-  - *rules-erase-rules-in
-  - *automations-erase-automation-runs-in
-  - *automations-erase-automation-versions-in
-  - *visitors-erase-visitors-in
-  - *confirmations-erase-confirmations-in
-  - *unsubscribes-erase-unsubscribes-in
-  - *suppressions-erase-suppressions-in
-  - *holds-erase-holds-in
-  - *providerlimit-erase-provider-limiters-in
-  - *providerlimit-erase-send-cap-limiters-in
-  - *webhookendpoints-erase-webhook-endpoints-in
-  - *invitations-erase-invitations-in
-  - *apitokens-erase-api-tokens-in
-  - *broadcasts-erase-broadcasts-in
-  - *automations-erase-automations-in
-  - *segments-erase-segments-in
-  - *emailtemplates-erase-email-templates-in
-  - *brandkits-erase-brand-kits-in
-  - *contacts-erase-contacts-in
-  - *tags-erase-tags-in
-  - *contacts-erase-custom-fields-in
-  - *trackingdomains-erase-tracking-domains-in
-  - *sendingdomains-erase-sending-domains-in
-  - *integrations-erase-integrations-in
-  - *joindomains-erase-join-domains-in
-  - *memberships-erase-memberships-in
   - *oauthclients-delete-codes-in
   - *broadcasts-cancel-pending
   - *automations-cancel-pending
@@ -497,9 +261,6 @@ x-runner-forbids: &runner-forbids
   - *outboundmessages-anonymize-contact
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
-  - *auditentries-erase-audit-entries-in
-  - *erasures-erase-erasures-in
-  - *usages-erase-usage-in
 # The same list less memberships.LeaveDoomedWorkspaceIn, for its one caller: User deletion, in
 # `internal/domain/identity/users` (component `domain-identity-users`).
 x-user-deletion-forbids: &user-deletion-forbids
@@ -526,43 +287,6 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *workspaces-tombstone-in
   - *workspaces-create-in
   - *memberships-add-creator-in
-  - *events-erase-events-in
-  - *orders-erase-held-order-events-in
-  - *orders-erase-order-movements-in
-  - *orders-erase-orders-in
-  - *capturedmessages-erase-captured-messages-in
-  - *outboundmessages-erase-tracked-links-in
-  - *outboundmessages-erase-outbound-messages-in
-  - *broadcasts-erase-broadcast-recipients-in
-  - *rules-erase-rule-firings-in
-  - *rules-erase-rule-version-triggers-in
-  - *rules-erase-rule-versions-in
-  - *rules-erase-rules-in
-  - *automations-erase-automation-runs-in
-  - *automations-erase-automation-versions-in
-  - *visitors-erase-visitors-in
-  - *confirmations-erase-confirmations-in
-  - *unsubscribes-erase-unsubscribes-in
-  - *suppressions-erase-suppressions-in
-  - *holds-erase-holds-in
-  - *providerlimit-erase-provider-limiters-in
-  - *providerlimit-erase-send-cap-limiters-in
-  - *webhookendpoints-erase-webhook-endpoints-in
-  - *invitations-erase-invitations-in
-  - *apitokens-erase-api-tokens-in
-  - *broadcasts-erase-broadcasts-in
-  - *automations-erase-automations-in
-  - *segments-erase-segments-in
-  - *emailtemplates-erase-email-templates-in
-  - *brandkits-erase-brand-kits-in
-  - *contacts-erase-contacts-in
-  - *tags-erase-tags-in
-  - *contacts-erase-custom-fields-in
-  - *trackingdomains-erase-tracking-domains-in
-  - *sendingdomains-erase-sending-domains-in
-  - *integrations-erase-integrations-in
-  - *joindomains-erase-join-domains-in
-  - *memberships-erase-memberships-in
   - *oauthclients-delete-codes-in
   - *broadcasts-cancel-pending
   - *automations-cancel-pending
@@ -576,9 +300,6 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *outboundmessages-anonymize-contact
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
-  - *auditentries-erase-audit-entries-in
-  - *erasures-erase-erasures-in
-  - *usages-erase-usage-in
   - *river-worker-defaults
   - *river-add-worker
   - *river-new-periodic-job
@@ -1210,16 +931,11 @@ rules:
     may_depend_on:
       [
         domain-orchestration-raw,
-        domain-orchestration,
         domain-instance-raw,
         domain-identity,
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
-        domain-contacts,
-        domain-content,
-        domain-sending-raw,
-        domain-sending,
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:

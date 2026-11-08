@@ -26,7 +26,7 @@ var actor = events.Actor{Kind: events.ActorUser}
 func setup(t *testing.T) (*testhelper.TestEnv, *workspacedeletion.UseCase) {
 	t.Helper()
 	env := testhelper.Setup(t)
-	return env, workspacedeletion.New(env.DB, env.Bus, testhelper.EditionTables(), func() time.Time { return now })
+	return env, workspacedeletion.New(env.DB, env.Bus, func() time.Time { return now })
 }
 
 // deletedAgo puts Initech into deletion, deleted ago before now.
@@ -95,7 +95,7 @@ func TestEraseDueLeavesALiveWorkspace(t *testing.T) {
 func TestDeletingTwiceKeepsTheFirstDeletionTime(t *testing.T) {
 	env := testhelper.Setup(t)
 	at := now
-	m := workspacedeletion.New(env.DB, env.Bus, testhelper.EditionTables(), func() time.Time { return at })
+	m := workspacedeletion.New(env.DB, env.Bus, func() time.Time { return at })
 	s := env.DB.Scoped(fixtures.InitechID)
 	name := initech(t, env).Name
 

@@ -7,9 +7,9 @@
 //
 // The use case takes the raw client: it lists Workspaces that have no scope yet (the Owners'
 // deleted Workspaces, the ones whose window has passed) and opens a transaction per erase step.
-// Each erase step lists a batch of the Workspace's rows of one entity and removes them through the
-// module that owns the table (ADR 0102); the Enterprise Edition's tables through the removals the
-// wiring hands in (EditionTables).
+// Each erase step lists a batch of the Workspace's rows of one entity and deletes them itself
+// through *ent.Scoped, whichever module owns the table, the Enterprise Edition's included
+// (ADR 0110): no rule of an owner governs the rows of a Workspace past its window.
 package workspacedeletion
 
 import (
@@ -48,10 +48,9 @@ type UseCase struct {
 	steps  []eraseStep
 }
 
-// New returns the use case; edition are the removals of the Enterprise Edition's own tables, and
-// now is the Instance clock the window is measured on.
-func New(client *ent.Client, bus *events.Bus, edition EditionTables, now func() time.Time) *UseCase {
-	return &UseCase{client: client, bus: bus, now: now, batch: eraseBatch, steps: eraseSteps(edition)}
+// New returns the use case; now is the Instance clock the window is measured on.
+func New(client *ent.Client, bus *events.Bus, now func() time.Time) *UseCase {
+	return &UseCase{client: client, bus: bus, now: now, batch: eraseBatch, steps: eraseSteps()}
 }
 
 // RestoreInput is a restore of a deleted Workspace: the Workspace by its public id, the User who

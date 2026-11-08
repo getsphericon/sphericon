@@ -24,9 +24,6 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
-	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
-	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
-	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
@@ -642,12 +639,10 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
 		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
-	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; the
-	// Enterprise Edition's tables go through their owners' removals.
+	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; its
+	// erase removes every Workspace-owned table's rows itself, the Enterprise Edition's too (ADR 0110).
 	do.Lazy(func(i do.Injector) (*workspacedeletion.UseCase, error) {
-		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspacedeletion.EditionTables{
-			AuditEntries: auditentries.EraseAuditEntriesIn, Erasures: erasures.EraseErasuresIn, Usage: usages.EraseUsageIn,
-		}, do.MustInvoke[Clock](i)), nil
+		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
 	// client, with its Release check (a daily job, the line at start and the banner of an owner)
