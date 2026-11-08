@@ -272,8 +272,8 @@ coding standards in `CODING_STANDARDS.md`.
   Enrollment `stepexecution`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
-  `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Broadcast's count and the Enrollment's exit), reads them, and changes their rows only through their functions
-  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, then calls `broadcasts.RecordUnsubscribe` and `automations.Exit`).
+  `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, its event and the Enrollment's exit), reads them, and changes their rows only through their functions
+  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes the opt-out's event, from which the Broadcast counts it).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
   the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
   `workspaces.Module.LinkScope`). easement
@@ -353,13 +353,17 @@ coding standards in `CODING_STANDARDS.md`.
   `internal/domain/contacts/unsubscribes` and `internal/domain/contacts/channelstop`, the stops read in
   the Channel) sits in the contacts context, below the Broadcasts and Automations an unsubscribe
   touches: easement fails its import of `broadcasts`, `automations` or a use case as an import
-  against the order of the contexts (`domain-contacts`), so only `unsubscriberecording` calls
-  `broadcasts.RecordUnsubscribe` and ends the Enrollment. A Telegram stop (`channelstop.StopTelegram`, from the
-  Ingest hook's button press or a send that finds the bot blocked) writes no Broadcast row: the
-  recipient row is the `broadcasts` module's (ADR 0102), and neither `channelstop` nor `outboundmessages`, where a
-  blocked send records the stop in its own transaction, may reach it. Its `telegram.unsubscribed`
-  names the Broadcast, and the broadcasts consumer (`event_broadcast_unsubscribe`, a job per ADR 0101) counts the unsubscribe with `broadcasts.RecordUnsubscribe` after the opt-out commits. Nothing
-  is lost: the job is inserted in the opt-out's transaction, and the count is set once.
+  against the order of the contexts (`domain-contacts`), so only `unsubscriberecording` ends the
+  Enrollment of an unsubscribe link. No opt-out writes a Broadcast row (ADR 0112): the recipient row
+  is the `broadcasts` module's (ADR 0102), and an opt-out is also found where no use case runs, by
+  `outboundmessages` when a send finds the bot blocked or Twilio refuses a number that stopped
+  (21610). Every opt-out publishes its event instead, on every Channel and every path:
+  `email.unsubscribed` from the link, `telegram.unsubscribed` from `channelstop.StopTelegram` and
+  the Telegram link, `sms.unsubscribed` from `channelstop.StopSMS` (a STOP keyword, the link of a
+  text, a refused send, one recorded by hand). The event names the Broadcast of the message it was
+  made from, and the broadcasts consumer (`event_broadcast_unsubscribe`, a job per ADR 0101) counts
+  the unsubscribe with `broadcasts.RecordUnsubscribe`, the only caller. Nothing is lost: the job is
+  inserted in the opt-out's transaction, and the count is set once.
   `unsubscribes` is the lowest of the three: `confirmations` imports it (a START lifts the opt-out),
   and `channelstop` composes both (a stop drops the Confirmation).
   One unchecked removal is called from a domain module until its use case exists:

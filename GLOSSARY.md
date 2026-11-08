@@ -344,7 +344,9 @@ On SMS the Destination is the phone number in E.164, never the sender's, so chan
 reactivates nobody. Every SMS opt-out is Channel-wide: a text that is exactly a STOP keyword (from any
 number, a Contact's or not; "please don't stop" is a reply), a send Twilio refuses with 21610 (the
 number texted STOP to the sender there; the message is Skipped), the `{{ unsubscribe_url }}` link of a
-text, and one recorded by hand. Each drops the number's SMS Confirmation. A text that is exactly START
+text, and one recorded by hand. Each drops the number's SMS Confirmation and is recorded with the
+`sms.unsubscribed` System event, for the Contact whose phone the number is and for the Contact of the
+text it was made from, attributed to that text's Broadcast or Automation. A text that is exactly START
 or UNSTOP lifts it and records a Confirmation with provenance `keyword` (`sms.confirmed`). sphericon
 answers neither. The row keeps how the person stopped (`via`: keyword, refused send, link, manual),
 which the Contact card shows.
@@ -359,8 +361,10 @@ _Avoid_: Opt-out flag, status
 **Unsubscribe recording**:
 Writing an **Unsubscribe** with everything it sets off, in one transaction: from the link in a
 message or from an API call, the opt-out, the **Confirmation** an opt-out of everything drops, the
-count on the Broadcast that provoked it and the end of the Enrollment of the Automation it names.
-A stop read in the Channel itself (a STOP keyword, a blocked bot) is recorded where it is read.
+opt-out's System event and the end of the Enrollment of the Automation it names. A stop read in the
+Channel itself (a STOP keyword, a blocked bot, a send the provider refuses) is recorded where it is
+read. The Broadcast that provoked an opt-out counts it from that event, whatever the Channel and the
+path (ADR 0112), so the count follows the opt-out shortly, by a job committed with it.
 _Avoid_: Unsubscription, opt-out flow
 
 The **scope** of an unsubscribe (what the contact is opted out of) is distinct from its
@@ -420,7 +424,7 @@ _Avoid_: Campaign, newsletter blast, mailshot, email blast
 The per-(Broadcast, Contact) record — the frozen audience snapshot taken at send
 time. It holds no delivery or engagement state of its own: its send ends in exactly one Outbound message
 (sent / skipped / failed), and it is _pending_ until then. Its only stamp is the unsubscribe
-(set once). The first human open and click are stamps of the Outbound message too (`opened_at`,
+(set once, from the opt-out's System event). The first human open and click are stamps of the Outbound message too (`opened_at`,
 `clicked_at`, set once, a machine hit sets nothing), whatever surface sent it; they are also the
 `email.opened` / `email.clicked` Events, so the stamps are a convenience view that does not
 shrink when the Events expire. Delivery figures (delivered, bounced, complained) are read from
