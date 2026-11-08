@@ -4,15 +4,14 @@ import (
 	"cmp"
 	"context"
 	"errors"
-	"log/slog"
+	"fmt"
 	"net/url"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 // The pages the callback sends the browser to. The SPA owns both routes.
@@ -57,7 +56,8 @@ func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAut
 // answers with a redirect: to the page the flow began from with the session cookie, or to
 // the login page with the Reason, which the SPA renders. A callback that is not for a flow
 // this browser began (no cookie, another state) is refused before the provider is asked
-// anything.
+// anything. The sign-in itself is the use case's (signup.UseCase.SignInWithProvider); what it
+// did becomes the cookie or the redirect here.
 func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.SiteAuthSigninCallbackParams) (*siteapi.SiteAuthSigninCallbackFound, error) {
 	if !h.signin.Has(params.Provider) {
 		return h.signinRefused(signinprovider.Flow{}, signinprovider.ReasonProviderUnavailable), nil
@@ -73,65 +73,29 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 		return h.signinRefused(flow, signinprovider.ReasonProviderError), nil
 	}
 
-	profile, err := h.signin.Complete(ctx, flow, params.Code.Value)
-	if err != nil {
-		// The error names the provider's failure, never a token or the subject.
-		slog.WarnContext(ctx, "signin: the provider's answer was not usable", "provider", params.Provider, "error", err)
-		return h.signinRefused(flow, signinprovider.ReasonProviderError), nil
+	session := params.JWT.Or("")
+	in := inputs.SigninCallback(params)
+	in.Flow = flow
+	if id, epoch, ok := h.sessions.Holder(session); ok {
+		in.Session = signup.SessionHolder{UserID: id, Epoch: epoch}
 	}
-
-	if flow.LinkUserID != 0 {
-		return h.linkProvider(ctx, flow, params.JWT.Or(""), profile)
-	}
-
-	var invite *ent.Invitation
-	if flow.Invitation != "" {
-		invite, err = h.invitations.PendingInvitation(ctx, flow.Invitation)
-		if errors.Is(err, invitations.ErrInvitationLinkNotFound) {
-			return h.signinRefused(flow, signinprovider.ReasonInvitationInvalid), nil
-		}
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	asked, err := h.signupItems.Asked(ctx)
-	if err != nil {
-		return nil, err
-	}
-	signedIn, err := h.signUp.SignInWithIdentity(ctx, users.ProviderLogin{
-		Provider:            params.Provider,
-		Subject:             profile.Subject,
-		Email:               profile.Email,
-		Name:                profile.Name,
-		TrustFailure:        h.signin.Trust(params.Provider, profile),
-		Invitation:          invite,
-		SurveyDue:           h.signupSurvey.Enabled(),
-		SignupItemsInEffect: asked,
-		Now:                 h.now(),
-	})
+	res, err := h.signUp.SignInWithProvider(ctx, in)
 	if refused, ok := errors.AsType[*users.SigninRefusedError](err); ok {
 		return h.signinRefused(flow, refused.Reason), nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	if signedIn.Pending != nil {
-		token, err := h.pendingReference(signedIn.Pending)
+	switch res.Outcome {
+	case signup.PendingSignupKept:
+		token, err := h.pendingReference(res.Pending)
 		if err != nil {
 			return nil, err
 		}
 		return h.signinHeld(flow, token), nil
-	}
-	active, err := h.secondFactor.Active(ctx, signedIn.User.ID)
-	if err != nil {
-		return nil, err
-	}
-	if active {
-		// A provider sign-in replaces only the password step: an enrolled Second factor still
-		// gets the challenge of ADR 0020, finished on the login page through the same second
-		// step (and the same Login throttle) as after a password.
-		challenge, err := h.mintLoginChallenge(ctx, signedIn.User, params.Provider, h.now())
+	case signup.SecondFactorDue:
+		// The login page finishes it through the same second step as after a password.
+		challenge, err := h.signLoginChallenge(res.User, res.ChallengeBinding, flow.Provider, res.At)
 		if err != nil {
 			return nil, err
 		}
@@ -144,21 +108,34 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 			Location:  signinLoginPath + "?" + next.Encode(),
 			SetCookie: siteapi.NewOptString(h.sessions.ClearedSigninFlow().String()),
 		}, nil
+	case signup.IdentityLinked:
+		// Signing in again with a provider account the User already had is a fresh provider
+		// login. A provider account added now proves nothing about the person (a stolen session
+		// could add its own), so the session keeps the login time it had; every other session
+		// goes on.
+		sess, _ := h.sessions.SessionOf(session)
+		if !res.Added {
+			sess.ProviderLoginAt = res.At
+		}
+		return h.signinLanded(flow, sess, res)
+	case signup.SignedIn:
+		return h.signinLanded(flow, auth.Session{Method: auth.MethodProvider, ProviderLoginAt: res.At}, res)
 	}
-	cookie, err := h.issueSession(ctx, signedIn.User, params.Provider, auth.Session{Method: auth.MethodProvider, ProviderLoginAt: h.now()})
+	return nil, fmt.Errorf("signin: unhandled outcome %d", res.Outcome)
+}
+
+// signinLanded is the redirect of a flow that succeeded: the session sess of the User the
+// sign-in landed on, to the page the flow began from, or to the home page (the settings page
+// for a link).
+func (h *Handlers) signinLanded(flow signinprovider.Flow, sess auth.Session, res *signup.ProviderSignInResult) (*siteapi.SiteAuthSigninCallbackFound, error) {
+	cookie, err := h.sessions.Issue(res.User, sess)
 	if err != nil {
 		return nil, err
 	}
-	return h.signinLanded(flow, cookie.String()), nil
-}
-
-// signinLanded is the redirect of a flow that succeeded: to the page it began from, or to the
-// home page (the settings page for a link), with the session cookie.
-func (h *Handlers) signinLanded(flow signinprovider.Flow, sessionCookie string) *siteapi.SiteAuthSigninCallbackFound {
 	return &siteapi.SiteAuthSigninCallbackFound{
 		Location:  cmp.Or(flow.ReturnTo, flowPage(flow, signinHomePath)),
-		SetCookie: siteapi.NewOptString(sessionCookie),
-	}
+		SetCookie: siteapi.NewOptString(cookie.String()),
+	}, nil
 }
 
 // flowPage is the page a flow lands on by default: the settings page for a link, home for

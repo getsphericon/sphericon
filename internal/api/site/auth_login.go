@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -80,12 +79,10 @@ func (s loginStore) Lookup(ctx context.Context, address string) (login.Account[*
 // newLogin builds the login module over the site's adapter (ADR 0020, 0030).
 func (h *Handlers) newLogin() *login.Module[*ent.User] {
 	cfg := login.Config[*ent.User]{
-		Throttle:  h.attempts.For(throttle.KindLogin),
-		Store:     loginStore{users: h.users, factors: h.secondFactor},
-		Passwords: h.passwords,
-		Challenge: func(ctx context.Context, u *ent.User) (string, error) {
-			return h.mintLoginChallenge(ctx, u, users.LoginPassword, time.Time{})
-		},
+		Throttle:      h.attempts.For(throttle.KindLogin),
+		Store:         loginStore{users: h.users, factors: h.secondFactor},
+		Passwords:     h.passwords,
+		Challenge:     h.mintLoginChallenge,
 		Parse:         h.parseLoginChallenge,
 		Verify:        h.verifyLoginCode,
 		PasskeyFind:   h.findPasskeyLogin,

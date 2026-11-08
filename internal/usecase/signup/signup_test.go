@@ -114,7 +114,7 @@ func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, bud
 	for _, o := range opts {
 		o(acc, &cfg)
 	}
-	module := signup.New(bus, acc, nil, testhelper.Passwords(), nil, cfg, time.Now)
+	module := signup.New(bus, acc, nil, testhelper.Passwords(), nil, cfg, signup.SignInConfig{}, time.Now)
 	return rig{db: client, queue: q, module: module, consents: consents}
 }
 

@@ -324,7 +324,11 @@ coding standards in `CODING_STANDARDS.md`.
   links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
   completion of a pending sign-up, calling the `users` functions for the User's part
   (`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
-  `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`); and User deletion
+  `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`), the sign-in through a Sign-in provider
+  being its `SignInWithProvider` whole (ADR 0111: the provider's answer, the Invitation, the Sign-up
+  items, the decision, the link of a link flow, the Second factor and `user.login`; it returns what
+  happened, signed in, a Second factor due, a Pending sign-up or an identity linked, and the callback
+  turns that into a cookie or a redirect); and User deletion
   (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
   or the Login throttle and the deletion link, then the Second factor code through
   `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),

@@ -24,19 +24,24 @@ const loginMethodClaim = "method"
 // loginChallengeTTL is how long the password step's challenge stays valid.
 const loginChallengeTTL = 5 * time.Minute
 
-// mintLoginChallenge signs the challenge the password step answers with: bound to
-// the User and to secondfactors.ChallengeBinding, so it stops verifying after one
-// successful second step (or any epoch bump or password change), with no store.
+// mintLoginChallenge signs the challenge the password step answers with (signLoginChallenge).
+func (h *Handlers) mintLoginChallenge(ctx context.Context, u *ent.User) (string, error) {
+	binding, err := h.secondFactor.ChallengeBinding(ctx, u)
+	if err != nil {
+		return "", err
+	}
+	return h.signLoginChallenge(u, binding, users.LoginPassword, time.Time{})
+}
+
+// signLoginChallenge signs a login challenge: bound to the User and to binding
+// (secondfactors.Module.ChallengeBinding), so it stops verifying after one successful second
+// step (or any epoch bump or password change), with no store.
 //
 // method (users.LoginPassword or a provider's name) rides in the signed claims, so the
 // second step records the login with the method that began it. A provider login also passes
 // its time (providerLoginAt, zero for a password login), which the challenge carries to the
 // session the second step starts (ADR 0048).
-func (h *Handlers) mintLoginChallenge(ctx context.Context, u *ent.User, method string, providerLoginAt time.Time) (string, error) {
-	binding, err := h.secondFactor.ChallengeBinding(ctx, u)
-	if err != nil {
-		return "", err
-	}
+func (h *Handlers) signLoginChallenge(u *ent.User, binding, method string, providerLoginAt time.Time) (string, error) {
 	extra := map[string]string{loginMethodClaim: method}
 	if !providerLoginAt.IsZero() {
 		extra[challengeProviderLogin] = strconv.FormatInt(providerLoginAt.Unix(), 10)

@@ -682,6 +682,13 @@ func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.SignUpInput {
 	}
 	return signupSignUpInput
 }
+func (c *InputsImpl) SigninCallback(source site.SiteAuthSigninCallbackParams) signup.ProviderSignInInput {
+	var signupProviderSignInInput signup.ProviderSignInInput
+	// signupProviderSignInInput.Flow: ignore
+	signupProviderSignInInput.Code = stringIn(source.Code)
+	// signupProviderSignInInput.Session: ignore
+	return signupProviderSignInInput
+}
 func (c *InputsImpl) SignupAnswers(source []site.SiteSignupItemAnswer) []consentrecords.Answer {
 	var consentrecordsAnswerList []consentrecords.Answer
 	if source != nil {
