@@ -15,13 +15,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net/url"
+	"slices"
 	"time"
 
 	"github.com/aws/smithy-go"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
@@ -138,10 +140,7 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 		return messaging.Receipt{}, fmt.Errorf("ses: render message: %w", err)
 	}
 
-	client, err := s.client(ctx)
-	if err != nil {
-		return messaging.Receipt{}, err
-	}
+	client := s.client()
 	out, err := client.SendEmail(ctx, &sesv2.SendEmailInput{
 		// FromEmailAddress is the envelope sender; the MIME From header carries the
 		// display name. It must match a verified SES identity.
@@ -150,10 +149,16 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 		Content:          &types.EmailContent{Raw: &types.RawMessage{Data: raw.Bytes()}},
 	})
 	if err != nil {
-		if busy := messaging.ClassifyReply(err.Error()); busy != nil {
-			// SES Throttling (rate or daily quota): the provider is busy, not the
-			// message bad (ADR 0023).
-			return messaging.Receipt{}, fmt.Errorf("ses: send: %w: %w", busy, err)
+		// Only the daily quota needs wording: SES uses the same code for it and
+		// the per-second rate. Other capacity replies are identified by code.
+		quota := messaging.ClassifyReply(err.Error())
+		if errors.Is(quota, messaging.ErrQuotaExceeded) {
+			return messaging.Receipt{}, fmt.Errorf("ses: send: %w: %w", quota, err)
+		}
+		throttle := retry.ThrottleErrorCode{Codes: retry.DefaultThrottleErrorCodes}
+		throttled := throttle.IsErrorThrottle(err)
+		if throttled == aws.TrueTernary {
+			return messaging.Receipt{}, fmt.Errorf("ses: send: %w: %w", messaging.ErrBusy, err)
 		}
 		if refused(err) {
 			return messaging.Receipt{}, fmt.Errorf("ses: send: %w: %w", messaging.ErrRefused, err)
@@ -188,10 +193,7 @@ func refused(err error) bool {
 // The sandbox is AWS's own: an SES-compatible service (an Endpoint of its own) is never in it,
 // as an answer that leaves ProductionAccessEnabled out reads as false.
 func (s *sender) SendQuota(ctx context.Context) (messaging.Quota, error) {
-	client, err := s.client(ctx)
-	if err != nil {
-		return messaging.Quota{}, err
-	}
+	client := s.client()
 	out, err := client.GetAccount(ctx, &sesv2.GetAccountInput{})
 	if err != nil {
 		return messaging.Quota{}, fmt.Errorf("ses: get send quota: %w", err)
@@ -228,19 +230,23 @@ func quotaValue(v float64) *int {
 	return &n
 }
 
-func (s *sender) client(ctx context.Context) (*sesv2.Client, error) {
-	creds := credentials.NewStaticCredentialsProvider(s.cfg.AccessKeyID, s.cfg.SecretAccessKey, "")
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithCredentialsProvider(creds),
-		config.WithRegion(s.cfg.Region),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("ses: load config: %w", err)
+func (s *sender) client() *sesv2.Client {
+	retryer := retry.NewStandard(func(o *retry.StandardOptions) {
+		// Transient transport and server failures stay with the SDK; capacity
+		// errors reach our Deferral path immediately (ADR 0023).
+		o.Retryables = slices.DeleteFunc(o.Retryables, func(check retry.IsErrorRetryable) bool {
+			codes, ok := check.(retry.RetryableErrorCode)
+			return ok && maps.Equal(codes.Codes, retry.DefaultThrottleErrorCodes)
+		})
+	})
+	opts := sesv2.Options{
+		Region:      s.cfg.Region,
+		Credentials: credentials.NewStaticCredentialsProvider(s.cfg.AccessKeyID, s.cfg.SecretAccessKey, ""),
+		HTTPClient:  s.http,
+		Retryer:     retryer,
 	}
-	return sesv2.NewFromConfig(cfg, func(o *sesv2.Options) {
-		o.HTTPClient = s.http
-		if s.cfg.Endpoint != "" {
-			o.BaseEndpoint = aws.String(s.cfg.Endpoint)
-		}
-	}), nil
+	if s.cfg.Endpoint != "" {
+		opts.BaseEndpoint = aws.String(s.cfg.Endpoint)
+	}
+	return sesv2.New(opts)
 }
