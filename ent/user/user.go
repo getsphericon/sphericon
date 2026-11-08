@@ -32,6 +32,8 @@ const (
 	FieldSessionEpoch = "session_epoch"
 	// FieldSecondFactorSecretEncrypted holds the string denoting the second_factor_secret_encrypted field in the database.
 	FieldSecondFactorSecretEncrypted = "second_factor_secret_encrypted"
+	// FieldSecondFactorGeneration holds the string denoting the second_factor_generation field in the database.
+	FieldSecondFactorGeneration = "second_factor_generation"
 	// FieldSecondFactorConfirmedAt holds the string denoting the second_factor_confirmed_at field in the database.
 	FieldSecondFactorConfirmedAt = "second_factor_confirmed_at"
 	// FieldSecondFactorLastStep holds the string denoting the second_factor_last_step field in the database.
@@ -123,6 +125,7 @@ var Columns = []string{
 	FieldEmailProvenAt,
 	FieldSessionEpoch,
 	FieldSecondFactorSecretEncrypted,
+	FieldSecondFactorGeneration,
 	FieldSecondFactorConfirmedAt,
 	FieldSecondFactorLastStep,
 	FieldSignupSurveyDueAt,
@@ -154,6 +157,8 @@ var (
 	EmailValidator func(string) error
 	// DefaultSessionEpoch holds the default value on creation for the "session_epoch" field.
 	DefaultSessionEpoch int64
+	// SecondFactorGenerationValidator is a validator for the "second_factor_generation" field. It is called by the builders before save.
+	SecondFactorGenerationValidator func(int64) error
 	// DefaultSecondFactorLastStep holds the default value on creation for the "second_factor_last_step" field.
 	DefaultSecondFactorLastStep int64
 	// TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
@@ -215,6 +220,11 @@ func BySessionEpoch(opts ...sql.OrderTermOption) OrderOption {
 // BySecondFactorSecretEncrypted orders the results by the second_factor_secret_encrypted field.
 func BySecondFactorSecretEncrypted(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSecondFactorSecretEncrypted, opts...).ToFunc()
+}
+
+// BySecondFactorGeneration orders the results by the second_factor_generation field.
+func BySecondFactorGeneration(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSecondFactorGeneration, opts...).ToFunc()
 }
 
 // BySecondFactorConfirmedAt orders the results by the second_factor_confirmed_at field.

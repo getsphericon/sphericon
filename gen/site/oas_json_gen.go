@@ -38763,6 +38763,10 @@ func (s *SiteSecondFactorConfirmInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteSecondFactorConfirmInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("enrollmentId")
+		s.EnrollmentId.Encode(e)
+	}
+	{
 		if s.CurrentPassword.Set {
 			e.FieldStart("currentPassword")
 			s.CurrentPassword.Encode(e)
@@ -38774,9 +38778,10 @@ func (s *SiteSecondFactorConfirmInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSecondFactorConfirmInput = [2]string{
-	0: "currentPassword",
-	1: "code",
+var jsonFieldsNameOfSiteSecondFactorConfirmInput = [3]string{
+	0: "enrollmentId",
+	1: "currentPassword",
+	2: "code",
 }
 
 // Decode decodes SiteSecondFactorConfirmInput from json.
@@ -38788,6 +38793,16 @@ func (s *SiteSecondFactorConfirmInput) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "enrollmentId":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.EnrollmentId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"enrollmentId\"")
+			}
 		case "currentPassword":
 			if err := func() error {
 				s.CurrentPassword.Reset()
@@ -38799,7 +38814,7 @@ func (s *SiteSecondFactorConfirmInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"currentPassword\"")
 			}
 		case "code":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Code = string(v)
@@ -38820,7 +38835,7 @@ func (s *SiteSecondFactorConfirmInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000010,
+		0b00000101,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -38989,6 +39004,10 @@ func (s *SiteSecondFactorEnrollment) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteSecondFactorEnrollment) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("enrollmentId")
+		s.EnrollmentId.Encode(e)
+	}
+	{
 		e.FieldStart("secret")
 		e.Str(s.Secret)
 	}
@@ -39002,10 +39021,11 @@ func (s *SiteSecondFactorEnrollment) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSecondFactorEnrollment = [3]string{
-	0: "secret",
-	1: "otpauthUri",
-	2: "qrCode",
+var jsonFieldsNameOfSiteSecondFactorEnrollment = [4]string{
+	0: "enrollmentId",
+	1: "secret",
+	2: "otpauthUri",
+	3: "qrCode",
 }
 
 // Decode decodes SiteSecondFactorEnrollment from json.
@@ -39017,8 +39037,18 @@ func (s *SiteSecondFactorEnrollment) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "secret":
+		case "enrollmentId":
 			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.EnrollmentId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"enrollmentId\"")
+			}
+		case "secret":
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.Secret = string(v)
@@ -39030,7 +39060,7 @@ func (s *SiteSecondFactorEnrollment) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"secret\"")
 			}
 		case "otpauthUri":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.OtpauthUri = string(v)
@@ -39042,7 +39072,7 @@ func (s *SiteSecondFactorEnrollment) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"otpauthUri\"")
 			}
 		case "qrCode":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.QrCode = string(v)
@@ -39063,7 +39093,7 @@ func (s *SiteSecondFactorEnrollment) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

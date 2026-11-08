@@ -100,6 +100,11 @@ func SecondFactorSecretEncrypted(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSecondFactorSecretEncrypted, v))
 }
 
+// SecondFactorGeneration applies equality check predicate on the "second_factor_generation" field. It's identical to SecondFactorGenerationEQ.
+func SecondFactorGeneration(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSecondFactorGeneration, v))
+}
+
 // SecondFactorConfirmedAt applies equality check predicate on the "second_factor_confirmed_at" field. It's identical to SecondFactorConfirmedAtEQ.
 func SecondFactorConfirmedAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSecondFactorConfirmedAt, v))
@@ -628,6 +633,56 @@ func SecondFactorSecretEncryptedEqualFold(v string) predicate.User {
 // SecondFactorSecretEncryptedContainsFold applies the ContainsFold predicate on the "second_factor_secret_encrypted" field.
 func SecondFactorSecretEncryptedContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldSecondFactorSecretEncrypted, v))
+}
+
+// SecondFactorGenerationEQ applies the EQ predicate on the "second_factor_generation" field.
+func SecondFactorGenerationEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSecondFactorGeneration, v))
+}
+
+// SecondFactorGenerationNEQ applies the NEQ predicate on the "second_factor_generation" field.
+func SecondFactorGenerationNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldSecondFactorGeneration, v))
+}
+
+// SecondFactorGenerationIn applies the In predicate on the "second_factor_generation" field.
+func SecondFactorGenerationIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldSecondFactorGeneration, vs...))
+}
+
+// SecondFactorGenerationNotIn applies the NotIn predicate on the "second_factor_generation" field.
+func SecondFactorGenerationNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldSecondFactorGeneration, vs...))
+}
+
+// SecondFactorGenerationGT applies the GT predicate on the "second_factor_generation" field.
+func SecondFactorGenerationGT(v int64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldSecondFactorGeneration, v))
+}
+
+// SecondFactorGenerationGTE applies the GTE predicate on the "second_factor_generation" field.
+func SecondFactorGenerationGTE(v int64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldSecondFactorGeneration, v))
+}
+
+// SecondFactorGenerationLT applies the LT predicate on the "second_factor_generation" field.
+func SecondFactorGenerationLT(v int64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldSecondFactorGeneration, v))
+}
+
+// SecondFactorGenerationLTE applies the LTE predicate on the "second_factor_generation" field.
+func SecondFactorGenerationLTE(v int64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldSecondFactorGeneration, v))
+}
+
+// SecondFactorGenerationIsNil applies the IsNil predicate on the "second_factor_generation" field.
+func SecondFactorGenerationIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldSecondFactorGeneration))
+}
+
+// SecondFactorGenerationNotNil applies the NotNil predicate on the "second_factor_generation" field.
+func SecondFactorGenerationNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldSecondFactorGeneration))
 }
 
 // SecondFactorConfirmedAtEQ applies the EQ predicate on the "second_factor_confirmed_at" field.

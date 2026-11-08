@@ -2038,7 +2038,7 @@
     "/me/second-factor/enrollment/confirm": {
       "post": {
         "operationId": "SiteSecondFactor_confirmEnrollment",
-        "description": "Confirm the pending enrollment with the password and a code from the app. On\nsuccess the Second factor is active, every other session ends and the acting\none continues under the cookie set here; the Recovery codes are returned once.\n403 on a wrong password (or, for a User with no password, no provider sign-in or Passkey check in the last few minutes) (it feeds the Login throttle: 429 while its delay\nruns), 422 on a wrong code, 409 without a pending enrollment.",
+        "description": "Confirm the pending enrollment with the password and a code from the app. On\nsuccess the Second factor is active, every other session ends and the acting\none continues under the cookie set here; the Recovery codes are returned once.\n403 on a wrong password (or, for a User with no password, no provider sign-in or Passkey check in the last few minutes) (it feeds the Login throttle: 429 while its delay\nruns), 422 on a wrong code, 409 without a pending enrollment or when that enrollment was replaced or reset.",
         "parameters": [],
         "responses": {
           "200": {
@@ -6807,7 +6807,7 @@
     "/workspaces/{workspaceId}/memberships/{id}/reset-second-factor": {
       "post": {
         "operationId": "SiteMemberships_resetSecondFactor",
-        "description": "Reset the member's Second factor (owner/admin only; owner-only for an owner):\nclears the factor and its Recovery codes and ends every session of theirs. The\nacting session is untouched. 422 when the member has no Second factor or is the\ncaller (who disables their own with a password and a code).",
+        "description": "Reset the member's Second factor (owner/admin only; owner-only for an owner):\nclears an active or pending factor, its Recovery codes and Passkeys, and ends every session of theirs. The\nacting session is untouched. 422 when the member has neither an active or pending Second factor nor a Passkey, or is the\ncaller (who disables their own with a password and a code).",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteMembershipResourceKey.workspaceId"
@@ -17876,8 +17876,16 @@
       },
       "SiteSecondFactorConfirmInput": {
         "type": "object",
-        "required": ["code"],
+        "required": ["enrollmentId", "code"],
         "properties": {
+          "enrollmentId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Identity returned with the secret being confirmed. A replaced or reset enrollment is refused."
+          },
           "currentPassword": {
             "type": "string",
             "description": "Current password. Left out by a User with no password, who proves a provider or Passkey\nsign-in of the last few minutes instead (ADR 0048)."
@@ -17906,8 +17914,16 @@
       },
       "SiteSecondFactorEnrollment": {
         "type": "object",
-        "required": ["secret", "otpauthUri", "qrCode"],
+        "required": ["enrollmentId", "secret", "otpauthUri", "qrCode"],
         "properties": {
+          "enrollmentId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Identity of this enrollment, echoed when confirming it. A new start replaces it."
+          },
           "secret": {
             "type": "string",
             "description": "The secret as a base32 key, for typing it into the app"

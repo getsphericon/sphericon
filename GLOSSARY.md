@@ -1280,8 +1280,8 @@ is withheld.
 _Avoid_: Enforced 2FA, mandatory MFA
 
 **Second factor reset**:
-An Owner or Admin removing another User's Second factor and Passkeys so they can re-enroll after losing both
-authenticator and Recovery codes. Recorded as an Audit entry.
+An Owner or Admin removing another User's Second factor, including a pending enrollment, and
+Passkeys so they can re-enroll after losing both authenticator and Recovery codes. Recorded as an Audit entry.
 _Avoid_: Unlock, disable 2FA
 
 **Second factor check**:

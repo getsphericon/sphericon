@@ -245,7 +245,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 	code, err := totp.GenerateCode(started.Secret, time.Now())
 	require.NoError(t, err)
-	_, err = owner.SiteSecondFactorConfirmEnrollment(ctx, &siteapi.SiteSecondFactorConfirmInput{CurrentPassword: siteapi.NewOptString("another-pass-1"), Code: code}) // user.second_factor_enroll
+	_, err = owner.SiteSecondFactorConfirmEnrollment(ctx, &siteapi.SiteSecondFactorConfirmInput{EnrollmentId: started.EnrollmentId, CurrentPassword: siteapi.NewOptString("another-pass-1"), Code: code}) // user.second_factor_enroll
 	require.NoError(t, err)
 	regenerated, err := owner.SiteSecondFactorRegenerateRecoveryCodes(ctx, // user.recovery_codes_regenerate
 		&siteapi.SiteRecoveryCodesInput{CurrentPassword: siteapi.NewOptString("another-pass-1")})

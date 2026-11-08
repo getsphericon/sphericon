@@ -29,6 +29,7 @@ interface Call {
 type Handler = (req: Request) => Response | Promise<Response>
 
 const enrollment: SiteSecondFactorEnrollment = {
+  enrollmentId: '1',
   secret: 'JBSWY3DPEHPK3PXP',
   otpauthUri:
     'otpauth://totp/sphericon:info@getsphericon.com?secret=JBSWY3DPEHPK3PXP&issuer=sphericon',
@@ -121,7 +122,10 @@ test('enrolls an authenticator app and shows the recovery codes once', async () 
   )
   expect(calls).toEqual([
     { op: 'start', body: { currentPassword: 'pw-123456' } },
-    { op: 'confirm', body: { currentPassword: 'pw-123456', code: '123456' } },
+    {
+      op: 'confirm',
+      body: { currentPassword: 'pw-123456', enrollmentId: enrollment.enrollmentId, code: '123456' },
+    },
   ])
 
   await screen.getByRole('button', { name: 'I have saved them' }).click()
@@ -204,7 +208,7 @@ test('a User with no password enrolls with a fresh provider login and no passwor
   await expect.element(screen.getByText('Save your recovery codes')).toBeInTheDocument()
   expect(calls).toEqual([
     { op: 'start', body: {} },
-    { op: 'confirm', body: { code: '123456' } },
+    { op: 'confirm', body: { enrollmentId: enrollment.enrollmentId, code: '123456' } },
   ])
 })
 

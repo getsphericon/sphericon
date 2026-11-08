@@ -51,18 +51,9 @@ x-unchecked-removals: &unchecked-removals
   - &contacts-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
-  - &users-set-pending-second-factor
-    name: github.com/getsphericon/sphericon/internal/domain/identity/users.SetPendingSecondFactor
-    because: enrolling a Second factor is the use case internal/usecase/secondfactorcheck, which refuses a User whose factor is already active (ADR 0020, ADR 0102); call the use case
-  - &users-accept-second-factor-step-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/users.AcceptSecondFactorStepIn
-    because: a TOTP time step is accepted only for a code the use case internal/usecase/secondfactorcheck has matched against the User's secret (ADR 0020, ADR 0102); call the use case
-  - &users-confirm-second-factor-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/users.ConfirmSecondFactorIn
-    because: a Second factor is confirmed only by a current code, which the use case internal/usecase/secondfactorcheck checks first (ADR 0020, ADR 0102); call the use case
-  - &users-clear-second-factor-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/users.ClearSecondFactorIn
-    because: a Second factor is cleared only by its User with a code or by a reset, which the use case internal/usecase/secondfactorcheck checks first and records (ADR 0020, ADR 0102); call the use case
+  - &users-move-second-factor-in
+    name: github.com/getsphericon/sphericon/internal/domain/identity/users.MoveSecondFactorIn
+    because: a Second factor moves only after the use case internal/usecase/secondfactorcheck checks its code or reset authority, and commits Recovery codes and audit in the same transaction (ADR 0020, ADR 0102); call the use case
   - &recoverycodes-replace-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.ReplaceIn
     because: Recovery codes are issued only with an active or a just confirmed Second factor, which the use case internal/usecase/secondfactorcheck checks first (ADR 0020, ADR 0102); call the use case
@@ -291,10 +282,7 @@ x-core-forbids: &core-forbids
   - *sendingdomains-record-dkim
   - *sendingdomains-record-dmarc
   - *contacts-delete-in
-  - *users-set-pending-second-factor
-  - *users-accept-second-factor-step-in
-  - *users-confirm-second-factor-in
-  - *users-clear-second-factor-in
+  - *users-move-second-factor-in
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
@@ -412,10 +400,7 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *sendingdomains-record-dkim
   - *sendingdomains-record-dmarc
   - *contacts-delete-in
-  - *users-set-pending-second-factor
-  - *users-accept-second-factor-step-in
-  - *users-confirm-second-factor-in
-  - *users-clear-second-factor-in
+  - *users-move-second-factor-in
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
@@ -507,10 +492,7 @@ x-runner-forbids: &runner-forbids
   - *sendingdomains-record-dkim
   - *sendingdomains-record-dmarc
   - *contacts-delete-in
-  - *users-set-pending-second-factor
-  - *users-accept-second-factor-step-in
-  - *users-confirm-second-factor-in
-  - *users-clear-second-factor-in
+  - *users-move-second-factor-in
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
@@ -599,10 +581,7 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *sendingdomains-record-dkim
   - *sendingdomains-record-dmarc
   - *contacts-delete-in
-  - *users-set-pending-second-factor
-  - *users-accept-second-factor-step-in
-  - *users-confirm-second-factor-in
-  - *users-clear-second-factor-in
+  - *users-move-second-factor-in
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in

@@ -88,8 +88,8 @@ namespace SiteMemberships {
     | Problem;
 
   /** Reset the member's Second factor (owner/admin only; owner-only for an owner):
-   * clears the factor and its Recovery codes and ends every session of theirs. The
-   * acting session is untouched. 422 when the member has no Second factor or is the
+   * clears an active or pending factor, its Recovery codes and Passkeys, and ends every session of theirs. The
+   * acting session is untouched. 422 when the member has neither an active or pending Second factor nor a Passkey, or is the
    * caller (who disables their own with a password and a code). */
   @action("reset-second-factor")
   @autoRoute

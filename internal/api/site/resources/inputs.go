@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
@@ -105,6 +106,8 @@ import (
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
 type Inputs interface {
+	SecondFactorConfirm(source *siteapi.SiteSecondFactorConfirmInput) secondfactorcheck.ConfirmInput
+
 	// The restoring User and the actor the Audit log records come from the session, which the
 	// handler assigns.
 	// goverter:map ID PublicID

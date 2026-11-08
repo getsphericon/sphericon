@@ -1579,20 +1579,24 @@ func init() {
 	userDescSessionEpoch := userFields[6].Descriptor()
 	// user.DefaultSessionEpoch holds the default value on creation for the session_epoch field.
 	user.DefaultSessionEpoch = userDescSessionEpoch.Default.(int64)
+	// userDescSecondFactorGeneration is the schema descriptor for second_factor_generation field.
+	userDescSecondFactorGeneration := userFields[8].Descriptor()
+	// user.SecondFactorGenerationValidator is a validator for the "second_factor_generation" field. It is called by the builders before save.
+	user.SecondFactorGenerationValidator = userDescSecondFactorGeneration.Validators[0].(func(int64) error)
 	// userDescSecondFactorLastStep is the schema descriptor for second_factor_last_step field.
-	userDescSecondFactorLastStep := userFields[9].Descriptor()
+	userDescSecondFactorLastStep := userFields[10].Descriptor()
 	// user.DefaultSecondFactorLastStep holds the default value on creation for the second_factor_last_step field.
 	user.DefaultSecondFactorLastStep = userDescSecondFactorLastStep.Default.(int64)
 	// userDescTimezone is the schema descriptor for timezone field.
-	userDescTimezone := userFields[11].Descriptor()
+	userDescTimezone := userFields[12].Descriptor()
 	// user.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	user.TimezoneValidator = userDescTimezone.Validators[0].(func(string) error)
 	// userDescRegionalFormat is the schema descriptor for regional_format field.
-	userDescRegionalFormat := userFields[12].Descriptor()
+	userDescRegionalFormat := userFields[13].Descriptor()
 	// user.RegionalFormatValidator is a validator for the "regional_format" field. It is called by the builders before save.
 	user.RegionalFormatValidator = userDescRegionalFormat.Validators[0].(func(string) error)
 	// userDescFeedPosition is the schema descriptor for feed_position field.
-	userDescFeedPosition := userFields[13].Descriptor()
+	userDescFeedPosition := userFields[14].Descriptor()
 	// user.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	user.DefaultFeedPosition = userDescFeedPosition.Default.(int64)
 	useridentityMixin := schema.UserIdentity{}.Mixin()

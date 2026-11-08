@@ -961,7 +961,7 @@ export const siteSecondFactorStartEnrollment = <ThrowOnError extends boolean = f
  * success the Second factor is active, every other session ends and the acting
  * one continues under the cookie set here; the Recovery codes are returned once.
  * 403 on a wrong password (or, for a User with no password, no provider sign-in or Passkey check in the last few minutes) (it feeds the Login throttle: 429 while its delay
- * runs), 422 on a wrong code, 409 without a pending enrollment.
+ * runs), 422 on a wrong code, 409 without a pending enrollment or when that enrollment was replaced or reset.
  */
 export const siteSecondFactorConfirmEnrollment = <ThrowOnError extends boolean = false>(options: Options<SiteSecondFactorConfirmEnrollmentData, ThrowOnError>): RequestResult<SiteSecondFactorConfirmEnrollmentResponses, SiteSecondFactorConfirmEnrollmentErrors, ThrowOnError> => (options.client ?? client).post<SiteSecondFactorConfirmEnrollmentResponses, SiteSecondFactorConfirmEnrollmentErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2968,8 +2968,8 @@ export const siteMembershipsUpdate = <ThrowOnError extends boolean = false>(opti
 
 /**
  * Reset the member's Second factor (owner/admin only; owner-only for an owner):
- * clears the factor and its Recovery codes and ends every session of theirs. The
- * acting session is untouched. 422 when the member has no Second factor or is the
+ * clears an active or pending factor, its Recovery codes and Passkeys, and ends every session of theirs. The
+ * acting session is untouched. 422 when the member has neither an active or pending Second factor nor a Passkey, or is the
  * caller (who disables their own with a password and a code).
  */
 export const siteMembershipsResetSecondFactor = <ThrowOnError extends boolean = false>(options: Options<SiteMembershipsResetSecondFactorData, ThrowOnError>): RequestResult<SiteMembershipsResetSecondFactorResponses, SiteMembershipsResetSecondFactorErrors, ThrowOnError> => (options.client ?? client).post<SiteMembershipsResetSecondFactorResponses, SiteMembershipsResetSecondFactorErrors, ThrowOnError>({

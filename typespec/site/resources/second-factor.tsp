@@ -28,6 +28,9 @@ model SiteSecondFactorStatus {
 
 /** A pending enrollment: the TOTP secret to add to an authenticator app */
 model SiteSecondFactorEnrollment {
+  /** Identity of this enrollment, echoed when confirming it. A new start replaces it. */
+  enrollmentId: EntityId;
+
   /** The secret as a base32 key, for typing it into the app */
   secret: string;
 
@@ -47,6 +50,9 @@ model SiteSecondFactorStartInput {
 
 /** Proof of the User's password (or a fresh provider login or Passkey check) and a code from the authenticator app */
 model SiteSecondFactorConfirmInput {
+  /** Identity returned with the secret being confirmed. A replaced or reset enrollment is refused. */
+  enrollmentId: EntityId;
+
   /** Current password. Left out by a User with no password, who proves a provider or Passkey
    * sign-in of the last few minutes instead (ADR 0048). */
   currentPassword?: string;
@@ -110,7 +116,7 @@ namespace SiteSecondFactor {
    * success the Second factor is active, every other session ends and the acting
    * one continues under the cookie set here; the Recovery codes are returned once.
    * 403 on a wrong password (or, for a User with no password, no provider sign-in or Passkey check in the last few minutes) (it feeds the Login throttle: 429 while its delay
-   * runs), 422 on a wrong code, 409 without a pending enrollment. */
+   * runs), 422 on a wrong code, 409 without a pending enrollment or when that enrollment was replaced or reset. */
   @post
   @route("/enrollment/confirm")
   op confirmEnrollment(@body body: SiteSecondFactorConfirmInput):
