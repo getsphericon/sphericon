@@ -252,14 +252,13 @@ x-unchecked-removals: &unchecked-removals
   - &capturedmessages-erase-to
     name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseTo
     because: *contact-erase-because
-# The job runner and the Edition schedule work (ADR 0102): a domain module or a use case does the
-# work as a function and may queue a job (its args, river's insert), but it declares no worker and
-# no periodic job; those live in internal/jobs and in the Edition's ee/jobs.go, which call the
-# function. Every forbid list of a domain module or a use case takes these.
+# The job runners schedule work (ADR 0102, ADR 0111): a domain module or a use case does the work
+# as a function and may queue a job (its args, river's insert), but it declares no worker and no
+# periodic job; those live in the drivers internal/jobs and ee/jobs, which call the function. Every forbid list of a domain module or a use case takes these.
 x-river-scheduling: &river-scheduling
   - &river-worker-defaults
     name: github.com/riverqueue/river.WorkerDefaults
-    because: &river-scheduling-because a domain module or a use case does the work as a function and may queue a job, but its worker and its periodic job belong to a driver (ADR 0102), internal/jobs or the Edition's ee/jobs.go, which call the function
+    because: &river-scheduling-because a domain module or a use case does the work as a function and may queue a job, but its worker and its periodic job belong to a driver (ADR 0102, ADR 0111), the job runner internal/jobs or the Enterprise one ee/jobs, which call the function
   - &river-add-worker
     name: github.com/riverqueue/river.AddWorker
     because: *river-scheduling-because
@@ -662,7 +661,8 @@ x-no-surface-gen: &no-surface-gen
   name: gen-surfaces
   because: no core tier and no Enterprise module or use case imports an API surface's generated package (ADR 0102); a vocabulary shared with a contract is generated into the kernel, as the user scope vocabulary is into internal/kernel/tokenscope, or into the module that owns it, as the Service credential scopes are into ee/domain/identity/servicecredentials
 x-no-container: &no-container
-  - name: github.com/samber/do
+  - &no-container-do
+    name: github.com/samber/do
     because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture.md, Backend architecture)
 # The global i18next instance belongs to @workflowbuilder/sdk, which re-initialises it at import time;
 # the app runs on its own instance (src/i18n.ts). The types (`TFunction`, `i18n`) stay allowed.
@@ -722,6 +722,13 @@ components:
     in: 'ee/*.go'
     allow_importers: [wiring]
     because: only the wiring assembles the Enterprise Edition
+  # The Enterprise job runner (ee/jobs, ADR 0111): the workers, periodic schedules and event
+  # consumers of the Enterprise modules and use cases, a driver with the core runner's rules. Only
+  # the wiring builds it and hands its jobextension.Extension to the core's job client.
+  ee-runner:
+    in: ee/jobs
+    allow_importers: [wiring]
+    because: the Enterprise job runner is a driver (ADR 0111) that only the wiring builds; no Enterprise module, use case or the Edition imports it
   # The runtime License key's gate (ee/licensekey): it imports nothing of ours, and every Enterprise
   # package asks it what the License switches on.
   ee-licensekey:
@@ -731,6 +738,7 @@ components:
         wiring,
         ee-edition,
         ee-api,
+        ee-runner,
         ee-usecase,
         ee-usecase-raw,
         ee-domain-identity,
@@ -748,13 +756,13 @@ components:
     in: ee/usecase/*
     isolated: true
     optional: true
-    allow_importers: [ee-api, ee-edition, wiring]
-    because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
+    allow_importers: [ee-api, ee-runner, ee-edition, wiring]
+    because: an Enterprise use case is called by an Enterprise driver (a surface, a job of ee/jobs) and built by the Edition or the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   ee-usecase-raw:
     in: ['ee/usecase/auditlogretention*']
     isolated: true
-    allow_importers: [ee-api, ee-edition, wiring]
-    because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
+    allow_importers: [ee-api, ee-runner, ee-edition, wiring]
+    because: an Enterprise use case is called by an Enterprise driver (a surface, a job of ee/jobs) and built by the Edition or the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The Enterprise domain modules (ADR 0102), in the core's contexts: an Enterprise module of a
   # context imports the core's modules of its context and of the contexts below, and the Enterprise
   # modules of those contexts, never one above. Identity: the Service credentials (the machine
@@ -804,13 +812,14 @@ components:
         ee/domain/insights/usages,
         ee/domain/insights/workspaceoversight,
       ]
-    allow_importers: [ee-domain-insights, ee-usecase, ee-usecase-raw, ee-api, ee-edition, wiring]
+    allow_importers:
+      [ee-domain-insights, ee-usecase, ee-usecase-raw, ee-api, ee-runner, ee-edition, wiring]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
   ee-domain-insights:
     in: 'ee/domain/insights/**'
     optional: true
     allow_importers:
-      [ee-domain-insights-raw, ee-usecase, ee-usecase-raw, ee-api, ee-edition, wiring]
+      [ee-domain-insights-raw, ee-usecase, ee-usecase-raw, ee-api, ee-runner, ee-edition, wiring]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
 
   # Frontend (src/AGENTS.md). Generated clients are leaves; a route file binds a page lazily and
@@ -1351,7 +1360,7 @@ rules:
       ]
     forbid_external: *no-container
     forbid_symbol: *runner-forbids
-    because: the job runner calls the core and the use cases, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
+    because: the job runner calls the core and the use cases, never a surface or the Enterprise Edition; the Enterprise runner (ee/jobs) hands its jobs in through the wiring
   infra:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
@@ -1404,13 +1413,20 @@ rules:
         ee-licensekey,
         ee-domain-identity-raw,
         ee-domain-insights-raw,
-        ee-usecase-raw,
         ee-api,
         gen-surfaces,
       ]
     forbid_symbol: *unchecked-removals
-    forbid_external: *no-container
+    forbid_external:
+      - *no-container-do
+      - name: github.com/riverqueue/river
+        because: the Edition schedules nothing; the Enterprise workers, schedules and event consumers are the Enterprise job runner's (ee/jobs, ADR 0111)
     because: the Edition builds the Enterprise modules and their surfaces on the core, never on the open surfaces' handlers
+  ee-runner:
+    may_depend_on: [ee-licensekey, ee-domain-insights-raw, ee-usecase-raw]
+    forbid_external: *no-container
+    forbid_symbol: *runner-forbids
+    because: the Enterprise job runner receives a job and calls an Enterprise module or use case (review rule 5, ADR 0111), never a surface, the Edition or the core's runner
   ee-licensekey:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
@@ -1480,6 +1496,8 @@ rules:
         ee-licensekey,
         ee-domain-identity-raw,
         ee-domain-insights-raw,
+        ee-usecase-raw,
+        ee-runner,
         ee-edition,
         api-site,
         api-external,

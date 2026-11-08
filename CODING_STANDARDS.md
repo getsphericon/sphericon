@@ -109,7 +109,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
   transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
   is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the Enterprise
-  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The helpers the
+  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs`, `ee/jobs` and `internal/server`. The helpers the
   analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
   `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function
