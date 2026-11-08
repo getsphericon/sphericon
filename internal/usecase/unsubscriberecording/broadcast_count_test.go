@@ -7,7 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -94,4 +96,34 @@ func TestATelegramLinkCountsOnItsBroadcastOnceFromTheEvent(t *testing.T) {
 	assert.True(t, counted.Equal(*again), "counted once")
 	recorded := env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{"broadcastId": fixtures.BroadcastArchivedID})
 	assert.Equal(t, 1, recorded, "a second click records no second event")
+}
+
+// An opt-out of everything by a Telegram link is lifted by a `/start` (unsubscribes.LiftTelegram);
+// a link of another Broadcast clicked after it is a new opt-out, which that Broadcast counts. The
+// unengaged Contact 105 is a recipient of the sent Broadcast and of the one sent before it.
+func TestATelegramLinkClickedAgainAfterAStartCountsOnItsBroadcast(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	first := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUnengagedFirstID)
+	earlier := env.DB.BroadcastRecipient.Query().Where(
+		broadcastrecipient.ContactID(first.ContactID), broadcastrecipient.BroadcastIDNEQ(first.BroadcastID),
+	).FirstX(ctx)
+	const user = "434343"
+	link := func(broadcastID int64) linktarget.Unsubscribe {
+		return linktarget.Unsubscribe{
+			Channel: channels.Telegram, Source: eligibility.SourceEverything, Destination: user,
+			WorkspaceID: fixtures.AcmeID, ContactID: first.ContactID, BroadcastID: broadcastID,
+		}
+	}
+	recordLink(t, env, link(first.BroadcastID))
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
+	require.NoError(t, unsubscribes.LiftTelegram(ctx, env.DB.Scoped(fixtures.AcmeID), user))
+
+	recordLink(t, env, link(earlier.BroadcastID))
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
+
+	counted := unsubscribedAt(t, env, earlier.ID)
+	assert.NotNil(t, counted, "the second opt-out counts on its own Broadcast")
+	recorded := env.QueuedCount(t, events.NameTelegramUnsubscribed, nil)
+	assert.Equal(t, 2, recorded, "each opt-out records its event")
 }

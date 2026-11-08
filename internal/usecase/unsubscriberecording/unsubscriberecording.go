@@ -128,10 +128,16 @@ func recordSMSLink(ctx context.Context, sc *ent.Scoped, pub events.Publisher, ta
 
 // publishTelegramUnsubscribed records telegram.unsubscribed for the Contact a Telegram unsubscribe
 // link was issued to (the opt-out itself is the source-scoped row written above). A link with no
-// Contact, or one whose Contact is gone, has nobody to name.
+// Contact, or one whose Contact is gone, has nobody to name. The event is keyed by the opt-out row,
+// new with every opt-out: a key of the source and the Destination alone would make an opt-out made
+// again after a `/start` lifted it a repeat, which the bus drops with its count.
 func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string) error {
 	if target.ContactID == 0 {
 		return nil
+	}
+	row, err := unsubscribes.Get(ctx, sc, channels.Telegram, dest, target.Source)
+	if err != nil {
+		return fmt.Errorf("read the opt-out: %w", err)
 	}
 	c, err := sc.Contact().Get(ctx, target.ContactID)
 	if ent.IsNotFound(err) {
@@ -144,6 +150,6 @@ func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events
 	return pub.Publish(ctx, &events.TelegramUnsubscribed{
 		WorkspaceID: target.WorkspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Via: events.UnsubscribedByLink,
 		BroadcastID: target.BroadcastID, AutomationID: automationID,
-		DedupID: fmt.Sprintf("link:%s:%s/unsubscribed/%d", target.Source, dest, c.ID),
+		DedupID: fmt.Sprintf("%s:%d/%d", events.NameTelegramUnsubscribed, row.ID, c.ID),
 	})
 }
