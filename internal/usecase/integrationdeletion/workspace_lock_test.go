@@ -80,7 +80,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	check := removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default()))
-	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, ""), check, time.Now)
+	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, "", time.Now), check, time.Now)
 
 	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)

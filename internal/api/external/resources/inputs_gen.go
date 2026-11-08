@@ -431,7 +431,7 @@ func (c *InputsImpl) RuleCreate(source *external.CreateRuleInput) (rules.CreateI
 				rulesCreateInput.TriggerEvents[i] = (*source).TriggerEvents[i]
 			}
 		}
-		pString, err := ruleConditionIn((*source).Condition)
+		pString, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesCreateInput, err
 		}
@@ -445,7 +445,7 @@ func (c *InputsImpl) RuleUpdate(source *external.UpdateRuleInput) (rules.UpdateI
 	if source != nil {
 		rulesUpdateInput.Name = stringPtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
-		pString, err := ruleConditionIn((*source).Condition)
+		pString, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesUpdateInput, err
 		}
@@ -465,6 +465,19 @@ func (c *InputsImpl) SegmentCreate(source *external.CreateSegmentInput) (segment
 		segmentsCreateInput.Condition = pString
 	}
 	return segmentsCreateInput, nil
+}
+func (c *InputsImpl) SegmentPreview(source *external.PreviewSegmentInput) (segments.PreviewInput, error) {
+	var segmentsPreviewInput segments.PreviewInput
+	if source != nil {
+		pString, err := conditionIn((*source).Condition)
+		if err != nil {
+			return segmentsPreviewInput, err
+		}
+		segmentsPreviewInput.Condition = pString
+		// segmentsPreviewInput.Channel: ignore
+		// segmentsPreviewInput.IntegrationID: ignore
+	}
+	return segmentsPreviewInput, nil
 }
 func (c *InputsImpl) SegmentUpdate(source *external.UpdateSegmentInput) (segments.UpdateInput, error) {
 	var segmentsUpdateInput segments.UpdateInput
