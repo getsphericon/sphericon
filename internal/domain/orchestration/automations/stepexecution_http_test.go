@@ -1,4 +1,4 @@
-package stepexecution_test
+package automations_test
 
 import (
 	"context"
@@ -22,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 type httpResponse struct {
@@ -57,15 +56,15 @@ func TestHTTPExecutionAdvancesTheEnrollmentAndQueuesItsNextStep(t *testing.T) {
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, stepexecution.HTTPExecution{}, decision)
+	assert.Equal(t, automations.HTTPExecution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, 1, run.CurrentStep)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
 }
 
@@ -74,7 +73,7 @@ func TestHTTPExecutionKeepsTemporaryFailuresActiveUntilRecovery(t *testing.T) {
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	require.Error(t, decision.Retry)
@@ -84,18 +83,18 @@ func TestHTTPExecutionKeepsTemporaryFailuresActiveUntilRecovery(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, 0, run.CurrentStep)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 
 	attempt := executionAttempt()
 	attempt.Number = 2
-	decision, err = stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: attempt})
+	decision, err = automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: attempt})
 	require.NoError(t, err)
-	assert.Equal(t, stepexecution.HTTPExecution{}, decision)
+	assert.Equal(t, automations.HTTPExecution{}, decision)
 	run, err = s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, run.CurrentStep)
-	queued = env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued = env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
 }
 
@@ -104,7 +103,7 @@ func TestHTTPExecutionRecordsPermanentRefusalsAndCancels(t *testing.T) {
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound, body: "gone"}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound, body: "gone"}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	require.Error(t, decision.Cancel)
@@ -120,7 +119,7 @@ func TestHTTPExecutionRecordsPermanentRefusalsAndCancels(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, *run.FailureStatus)
 	require.NotNil(t, run.FailureExcerpt)
 	assert.Equal(t, "gone", *run.FailureExcerpt)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -131,7 +130,7 @@ func TestHTTPExecutionRecordsTheExhaustedFailureAndReturnsItsRetry(t *testing.T)
 	attempt := executionAttempt()
 	attempt.Number = attempt.Limit
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: attempt})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: attempt})
 
 	require.NoError(t, err)
 	require.Error(t, decision.Retry)
@@ -142,7 +141,7 @@ func TestHTTPExecutionRecordsTheExhaustedFailureAndReturnsItsRetry(t *testing.T)
 	assert.Equal(t, automationrun.StatusFailed, run.Status)
 	require.NotNil(t, run.FailureStatus)
 	assert.Equal(t, http.StatusServiceUnavailable, *run.FailureStatus)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -151,15 +150,15 @@ func TestHTTPExecutionRateLimitWaitsWithTheEnrollmentStillActive(t *testing.T) {
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusTooManyRequests, retryAfter: "120"}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusTooManyRequests, retryAfter: "120"}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, stepexecution.HTTPExecution{Wait: 120 * time.Second}, decision)
+	assert.Equal(t, automations.HTTPExecution{Wait: 120 * time.Second}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, 0, run.CurrentStep)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -177,7 +176,7 @@ func TestHTTPExecutionCancelsAnInvalidRenderedBody(t *testing.T) {
 	require.NoError(t, err)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	require.Error(t, decision.Cancel)
@@ -188,7 +187,7 @@ func TestHTTPExecutionCancelsAnInvalidRenderedBody(t *testing.T) {
 	assert.Equal(t, automationrun.StatusFailed, run.Status)
 	require.NotNil(t, run.FailureKind)
 	assert.Equal(t, automationrun.FailureKindInvalidBody, *run.FailureKind)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -203,10 +202,10 @@ func TestHTTPExecutionKeepsTheEnrollmentsPinnedVersionAfterPublish(t *testing.T)
 	_, err = a.Publish(t.Context(), s, fixtures.AutomationHTTPExecutionID)
 	require.NoError(t, err)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, stepexecution.HTTPExecution{}, decision)
+	assert.Equal(t, automations.HTTPExecution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, run.CurrentStep, "the original HTTP Step still ran")
@@ -219,15 +218,15 @@ func TestHTTPExecutionCannotAdvanceWithoutItsNextQueuedStep(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	env.Bus.UseJobs(nil)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.ErrorIs(t, err, events.ErrNoJobQueue)
-	assert.Equal(t, stepexecution.HTTPExecution{}, decision)
+	assert.Equal(t, automations.HTTPExecution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, 0, run.CurrentStep, "the move rolled back with its missing job")
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -235,18 +234,20 @@ func TestHTTPExecutionIgnoresAnExitedEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	err := automations.ExitRun(t.Context(), s, env.Publisher(), runID, time.Now())
+	pending, err := s.AutomationRun().Get(t.Context(), runID)
+	require.NoError(t, err)
+	_, err = automations.Exit(t.Context(), s, env.Publisher(), pending.AutomationID, pending.ContactID, time.Now())
 	require.NoError(t, err)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, stepexecution.HTTPExecution{}, decision)
+	assert.Equal(t, automations.HTTPExecution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
 	assert.Equal(t, 0, run.CurrentStep)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -255,15 +256,15 @@ func TestHTTPExecutionIgnoresAJobForAnotherStep(t *testing.T) {
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 1, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 1, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, stepexecution.HTTPExecution{}, decision)
+	assert.Equal(t, automations.HTTPExecution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, 0, run.CurrentStep)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -271,18 +272,18 @@ func TestHTTPExecutionIgnoresAnAlreadyAdvancedStep(t *testing.T) {
 	env := testhelper.Setup(t)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	_, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	_, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 	require.NoError(t, err)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, stepexecution.HTTPExecution{}, decision)
+	assert.Equal(t, automations.HTTPExecution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, 1, run.CurrentStep)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
 }
 
@@ -293,13 +294,13 @@ func TestHTTPExecutionIgnoresErasedWork(t *testing.T) {
 	err := s.Contact().DeleteOneID(fixtures.ContactAliceID).Exec(t.Context())
 	require.NoError(t, err)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, stepexecution.HTTPExecution{}, decision)
+	assert.Equal(t, automations.HTTPExecution{}, decision)
 	_, err = s.AutomationRun().Get(t.Context(), runID)
 	assert.True(t, ent.IsNotFound(err))
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -310,7 +311,7 @@ func TestHTTPExecutionCancelsADamagedStoredDefinition(t *testing.T) {
 	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHTTPExecutionVersionID).SetSteps("[").Exec(t.Context())
 	require.NoError(t, err)
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	require.Error(t, decision.Cancel)
@@ -321,7 +322,7 @@ func TestHTTPExecutionCancelsADamagedStoredDefinition(t *testing.T) {
 	assert.Equal(t, automationrun.StatusFailed, run.Status)
 	require.NotNil(t, run.FailureKind)
 	assert.Equal(t, automationrun.FailureKindInvalidBody, *run.FailureKind)
-	queued := env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
+	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
 
@@ -332,7 +333,7 @@ func TestHTTPExecutionStopsWhenTheResponseCrossesTheRateLimitHorizon(t *testing.
 	now := attempt.CreatedAt.Add(webhook.HookRetryHorizon - time.Second)
 	response := httpResponse{status: http.StatusTooManyRequests, returned: func() { now = now.Add(2 * time.Second) }}
 
-	decision, err := stepexecution.New(env.Bus, env.OutboundModule(), noFence, env.Cipher, response, func() time.Time { return now }).ExecuteHTTP(t.Context(), s, stepexecution.ExecuteHTTPInput{RunID: fixtures.AutomationRunHTTPPendingID, Step: 0, Attempt: attempt})
+	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, response, func() time.Time { return now }).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: fixtures.AutomationRunHTTPPendingID, Step: 0, Attempt: attempt})
 
 	require.NoError(t, err)
 	require.Error(t, decision.Cancel)

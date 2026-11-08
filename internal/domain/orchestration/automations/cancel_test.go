@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // cancelFor runs CancelPending for a Contact the way Erasure does.
@@ -32,8 +31,8 @@ func TestCancelPendingRemovesTheContactsQueuedCallsAndKeepsOthers(t *testing.T) 
 		fixtures.AutomationRunErasableID, fixtures.AutomationRunErasableHTTPFailedID,
 		fixtures.AutomationRunBystanderHTTPFailedID,
 	} {
-		env.EnqueueJob(t, stepexecution.RunStepArgs{RunID: id})
-		env.EnqueueJob(t, stepexecution.RunHTTPStepArgs{RunID: id})
+		env.EnqueueJob(t, automations.RunStepArgs{RunID: id})
+		env.EnqueueJob(t, automations.RunHTTPStepArgs{RunID: id})
 	}
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Action: "x"})

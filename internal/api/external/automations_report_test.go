@@ -4,13 +4,11 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -33,7 +31,9 @@ func TestExternalAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *t
 	}
 	before := automationReport(t, c, params)
 
-	require.NoError(t, automations.Complete(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationRunTagOnEngagementAliceID, time.Now()))
+	// The Enrollment walks its two tag steps and completes.
+	require.NoError(t, env.StepExecution.Step(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunTagOnEngagementAliceID, 0))
+	env.RunQueuedSteps(t, env.StepExecution)
 	after := automationReport(t, c, params)
 
 	assert.Equal(t, externalapi.AutomationReportPeriod14d, after.Results.Period)

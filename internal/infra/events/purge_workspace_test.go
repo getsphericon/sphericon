@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // workspacesOfJobs is the Workspace each queued job of kind names, oldest first; 0 for a job that
@@ -40,7 +40,7 @@ func TestPurgeWorkspaceJobsRemovesEveryJobOfTheWorkspace(t *testing.T) {
 		env.EnqueueDiscardedJob(t, jobs.DeliverWebhookArgs{WorkspaceID: ws, EndpointID: 1, EventName: "x", DeliveryID: "d", Body: []byte(`{"data":{"email":"bounced@example.com"}}`)})
 		env.EnqueueScheduledJob(t, broadcasts.SendArgs{WorkspaceID: ws, BroadcastID: 1}, later)
 	}
-	env.EnqueueRunningJob(t, stepexecution.RunStepArgs{WorkspaceID: fixtures.InitechID, RunID: 1})
+	env.EnqueueRunningJob(t, automations.RunStepArgs{WorkspaceID: fixtures.InitechID, RunID: 1})
 	env.EnqueueJob(t, jobs.PruneEventsArgs{})
 
 	require.NoError(t, env.Bus.WithinWorkspacePurgeTx(ctx, func(_ *ent.Client, purger events.WorkspacePurger) error {
@@ -50,7 +50,7 @@ func TestPurgeWorkspaceJobsRemovesEveryJobOfTheWorkspace(t *testing.T) {
 	suppress := workspacesOfJobs(t, env, jobs.SuppressEventArgs{}.Kind())
 	deliveries := workspacesOfJobs(t, env, jobs.DeliverWebhookArgs{}.Kind())
 	sends := workspacesOfJobs(t, env, broadcasts.SendArgs{}.Kind())
-	steps := workspacesOfJobs(t, env, stepexecution.RunStepArgs{}.Kind())
+	steps := workspacesOfJobs(t, env, automations.RunStepArgs{}.Kind())
 	prunes := env.JobsOf(t, jobs.PruneEventsArgs{}.Kind())
 	assert.Equal(t, []int64{fixtures.AcmeID}, suppress, "a waiting event job goes")
 	assert.Equal(t, []int64{fixtures.AcmeID}, deliveries, "a discarded delivery goes")

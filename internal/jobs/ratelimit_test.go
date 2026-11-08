@@ -21,7 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // driveRecipients works the recipient jobs the way river does: a snoozed job is not run again before
@@ -144,7 +143,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
-		require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+		require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 		runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
 
 		for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
@@ -161,7 +160,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		step := stepperWith(env, mod)
 		require.True(t, env.RunNextStep(t, step), "a Deferral is not a failure, so no attempt is consumed")
 		require.Equal(t, []map[string]any{stepJob(t, env, runID, 0)}, queuedSteps(t, env), "the same step is queued again")
-		assert.GreaterOrEqual(t, env.JobSchedules(t, stepexecution.RunStepArgs{}.Kind())[0].Sub(before), 3*time.Second, "pushed out by the Transactional debt")
+		assert.GreaterOrEqual(t, env.JobSchedules(t, automations.RunStepArgs{}.Kind())[0].Sub(before), 3*time.Second, "pushed out by the Transactional debt")
 		run := env.DB.AutomationRun.GetX(ctx, runID)
 		assert.Equal(t, automationrun.StatusActive, run.Status)
 		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
@@ -187,7 +186,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		// The day's one token went to another send just now.
 		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(time.Now()).ExecX(ctx)
 
-		require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+		require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 		runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
 
 		before := time.Now()
@@ -195,7 +194,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		require.True(t, ran, "a Deferral is not a failure")
 		queued := queuedSteps(t, env)
 		require.Equal(t, []map[string]any{stepJob(t, env, runID, 0)}, queued, "the same step is queued again")
-		wait := env.JobSchedules(t, stepexecution.RunStepArgs{}.Kind())[0].Sub(before)
+		wait := env.JobSchedules(t, automations.RunStepArgs{}.Kind())[0].Sub(before)
 		assert.Positive(t, wait)
 		assert.LessOrEqual(t, wait, 10*time.Minute, "asks again within the bound, not after a day")
 		run := env.DB.AutomationRun.GetX(ctx, runID)
@@ -213,7 +212,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
-		require.NoError(t, e.StepExecution.OnEvent(ctx, e.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+		require.NoError(t, e.StepExecution.OnEvent(ctx, e.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 		runID := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
 		require.True(t, e.RunNextStep(t, stepperWith(e.TestEnv, mod)))
 		require.Equal(t, []map[string]any{stepJob(t, e.TestEnv, runID, 1)}, queuedSteps(t, e.TestEnv), "the first send takes the only token and the Enrollment moves on")

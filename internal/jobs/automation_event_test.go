@@ -3,7 +3,6 @@ package jobs_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // storedEventOf is a stored fixture Event as its trigger job hands it on (#752).
@@ -29,7 +27,7 @@ func TestAnAutomationEmailRendersTheTriggeringEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 	ev := storedEventOf(t, env, fixtures.EventPaymentFailedID)
 
-	require.NoError(t, env.StepExecution.OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}))
+	require.NoError(t, env.StepExecution.OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
@@ -38,13 +36,14 @@ func TestAnAutomationEmailRendersTheTriggeringEventsProperties(t *testing.T) {
 	assert.NotContains(t, fs.sent[0].HTML, "<b>Pro</b>", "the value is escaped, not markup")
 }
 
-// An Enrollment no Event began renders every `event` tag empty.
+// An Enrollment no Event began (a Rule's whose Event is no longer stored) renders every `event` tag
+// empty.
 func TestAnAutomationEmailOfAnEnrollmentNoEventBeganRendersTheEventEmpty(t *testing.T) {
 	env := testhelper.Setup(t)
-	runID, enrolled, err := automations.Enroll(t.Context(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID, time.Now())
+	in := automations.EnrollOnRuleInput{AutomationID: fixtures.AutomationPaymentRecoveryID, ContactID: fixtures.ContactPaymentFailedID}
+	enrolled, err := env.StepExecution.EnrollOnRule(t.Context(), env.DB.Scoped(fixtures.AcmeID), in)
 	require.NoError(t, err)
 	require.True(t, enrolled)
-	queueStep(t, env, runID)
 
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))

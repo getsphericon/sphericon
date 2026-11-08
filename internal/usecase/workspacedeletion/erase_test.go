@@ -19,13 +19,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -252,7 +252,7 @@ func TestEraseDueRemovesTheWorkspacesJobs(t *testing.T) {
 		env.EnqueueDiscardedJob(t, jobs.DeliverWebhookArgs{WorkspaceID: ws, EndpointID: 1, EventName: "email.bounced", DeliveryID: "d", Body: []byte(`{"data":{"email":"bounced@example.com"}}`)})
 		env.EnqueueScheduledJob(t, broadcasts.SendArgs{WorkspaceID: ws, BroadcastID: 1}, later)
 	}
-	env.EnqueueRunningJob(t, stepexecution.RunStepArgs{WorkspaceID: fixtures.UmbrellaID, RunID: 1})
+	env.EnqueueRunningJob(t, automations.RunStepArgs{WorkspaceID: fixtures.UmbrellaID, RunID: 1})
 	env.EnqueueJob(t, jobs.PruneEventsArgs{})
 	require.Equal(t, []int64{fixtures.UmbrellaID, fixtures.AcmeID}, workspacesOfJobs(t, env, jobs.SuppressEventArgs{}.Kind()), "the publish queued the suppression")
 
@@ -262,7 +262,7 @@ func TestEraseDueRemovesTheWorkspacesJobs(t *testing.T) {
 	fanOuts := workspacesOfJobs(t, env, jobs.WebhookEventArgs{}.Kind())
 	deliveries := workspacesOfJobs(t, env, jobs.DeliverWebhookArgs{}.Kind())
 	sends := workspacesOfJobs(t, env, broadcasts.SendArgs{}.Kind())
-	steps := workspacesOfJobs(t, env, stepexecution.RunStepArgs{}.Kind())
+	steps := workspacesOfJobs(t, env, automations.RunStepArgs{}.Kind())
 	prunes := env.JobsOf(t, jobs.PruneEventsArgs{}.Kind())
 	assert.Equal(t, []int64{fixtures.AcmeID}, suppress)
 	assert.Equal(t, []int64{fixtures.AcmeID}, fanOuts)

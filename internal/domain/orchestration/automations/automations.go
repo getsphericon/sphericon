@@ -3,7 +3,8 @@
 // adapters over it. internal/domain/orchestration/automationstep owns the stored Step format and its reader,
 // shared by authoring, live-use checks and execution. The definition (Trigger, exit and goal events and
 // steps, each send step with its own Integration, ADR 0081) lives in versions (ADR 0049): an edit
-// writes the draft, Publish makes it live (ADR 0065).
+// writes the draft, Publish makes it live (ADR 0065). StepExecution walks the Enrollments through
+// their steps (ADR 0112).
 package automations
 
 import (
@@ -73,7 +74,7 @@ var (
 	// be enrolled in it.
 	ErrNoVersion = errors.New("automations: automation has no live version")
 	// ErrInactive: the Automation a Rule enrolls into is inactive or archived by the time the
-	// Enrollment is made, so it enrolls nobody (EnrollOnRule).
+	// Enrollment is made, so it enrolls nobody (StepExecution.EnrollOnRule).
 	ErrInactive = errors.New("automations: automation is not active")
 
 	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")

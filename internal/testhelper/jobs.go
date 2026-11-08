@@ -14,11 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // The jobs a test queues wait in its transaction until PerformEnqueuedJobs (perform.go) works
@@ -174,11 +174,11 @@ func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(
 // queue. It reports whether there was a job. The job is run whatever its schedule says: a step
 // that is early for its Enrollment's resume time queues itself again, so a test that lets
 // waits pass gives the module a clock past them.
-func (env *TestEnv) RunNextStep(t *testing.T, mod *stepexecution.UseCase) bool {
+func (env *TestEnv) RunNextStep(t *testing.T, mod *automations.StepExecution) bool {
 	t.Helper()
 	rc := env.riverClient(t)
 	res, err := rc.JobList(t.Context(), river.NewJobListParams().
-		Kinds(stepexecution.RunStepArgs{}.Kind()).
+		Kinds(automations.RunStepArgs{}.Kind()).
 		States(rivertype.JobStateAvailable, rivertype.JobStateScheduled, rivertype.JobStateRetryable).
 		OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(1))
 	require.NoError(t, err)
@@ -186,9 +186,9 @@ func (env *TestEnv) RunNextStep(t *testing.T, mod *stepexecution.UseCase) bool {
 		return false
 	}
 	row := res.Jobs[0]
-	var args stepexecution.RunStepArgs
+	var args automations.RunStepArgs
 	require.NoError(t, json.Unmarshal(row.EncodedArgs, &args))
-	require.NoError(t, jobs.NewRunStepWorker(env.DB, mod).Work(t.Context(), &river.Job[stepexecution.RunStepArgs]{JobRow: row, Args: args}))
+	require.NoError(t, jobs.NewRunStepWorker(env.DB, mod).Work(t.Context(), &river.Job[automations.RunStepArgs]{JobRow: row, Args: args}))
 	_, err = rc.JobDelete(t.Context(), row.ID)
 	require.NoError(t, err)
 	return true
@@ -216,7 +216,7 @@ func (env *TestEnv) JobSchedules(t *testing.T, kind string) []time.Time {
 // RunQueuedSteps runs the waiting step jobs through mod, oldest first, until none is left: the
 // steps an Enrollment's own jobs queue are run too, so an Automation is driven to its end
 // (or to the HTTP step job, which this does not run).
-func (env *TestEnv) RunQueuedSteps(t *testing.T, mod *stepexecution.UseCase) {
+func (env *TestEnv) RunQueuedSteps(t *testing.T, mod *automations.StepExecution) {
 	t.Helper()
 	for range maxQueuedJobs {
 		if !env.RunNextStep(t, mod) {

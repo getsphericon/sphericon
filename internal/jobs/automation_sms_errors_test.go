@@ -14,13 +14,13 @@ import (
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // What Twilio answers at send time is sorted by whom it concerns (ADR 0079): the account, the rate,
@@ -156,7 +156,7 @@ func TestATwilioRateSignalDefersTheStepAndItSendsLater(t *testing.T) {
 			assert.Equal(t, automationrun.StatusActive, deferred.Status)
 			recorded := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).CountX(ctx)
 			assert.Zero(t, recorded, "nothing is recorded")
-			jobs := env.JobRowsOf(t, stepexecution.RunStepArgs{}.Kind())
+			jobs := env.JobRowsOf(t, automations.RunStepArgs{}.Kind())
 			require.Len(t, jobs, 1)
 			assert.GreaterOrEqual(t, jobs[0].ScheduledAt.Sub(before), outboundmessages.DeferralBackoff)
 

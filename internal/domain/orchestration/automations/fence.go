@@ -10,7 +10,7 @@ import (
 )
 
 // Fencer runs a step's side effect (a mail, an HTTP call) so that it is ordered against an
-// exit of the Enrollment: automations.Stale(err) when the Enrollment was no longer active
+// exit of the Enrollment: lifecycle.ErrInvalidTransition when the Enrollment was no longer active
 // when the effect would have started (then effect did not run), otherwise effect's own error.
 type Fencer func(ctx context.Context, s *ent.Scoped, runID int64, effect func(context.Context) error) error
 
@@ -24,8 +24,8 @@ type Fencer func(ctx context.Context, s *ent.Scoped, runID int64, effect func(co
 //     concurrent update commits), so the effect never starts.
 //
 // The lock lives on a transaction of its own that does nothing else, and effect runs on the
-// pool's other connections as it always did: the step's compare-and-swap that follows (Advance,
-// Complete, Fail) is made after the lock is released, so it cannot wait on itself, and the
+// pool's other connections as it always did: the step's compare-and-swap that follows (advanceRun,
+// completeRun, failRun) is made after the lock is released, so it cannot wait on itself, and the
 // outbound claim, lease and idempotency key are untouched. The hold lasts as long as effect
 // runs, which the job's context, the provider's and the HTTP client's timeouts bound; the
 // transaction ends when effect returns or ctx is done. Only the lock is read-only, so there is

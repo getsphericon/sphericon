@@ -19,7 +19,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // writer is one side of a race over a Contact: a transaction the test starts and names.
@@ -71,13 +70,11 @@ func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers ...wr
 func enrolledForTheExit(t *testing.T, e *realEnv) (int64, writer) {
 	t.Helper()
 	ctx := context.Background()
-	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationJobsTagWithExitID, fixtures.ContactAliceID, time.Now())
-	require.NoError(t, err)
-	require.True(t, enrolled)
+	runID := e.enrolledNow(t, fixtures.AutomationJobsTagWithExitID, fixtures.ContactAliceID)
 	ending := e.bus(t)
 	return runID, writer{name: "exit", run: func() error {
 		left := automations.Event{Action: "job_tag_exit_left", OccurredAt: time.Now()}
-		return e.enrollments(ending).OnEvent(ctx, e.scoped, stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: left})
+		return e.enrollments(ending).OnEvent(ctx, e.scoped, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: left})
 	}}
 }
 

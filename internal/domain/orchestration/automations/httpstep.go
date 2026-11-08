@@ -34,9 +34,6 @@ var (
 	ErrInvalidBody = httpcall.ErrInvalidBody
 )
 
-// OpenedHTTP is an HTTP step's secrets in the clear, for the executor.
-type OpenedHTTP = httpcall.Opened
-
 // DryRunResult is a body rendered for one Contact, or the kind of error that
 // stopped it. Nothing is called.
 type DryRunResult struct {
@@ -45,12 +42,12 @@ type DryRunResult struct {
 	Detail    string
 }
 
-// RenderBody renders an HTTP step's Liquid body for a Contact (nil: no Contact bindings) and an
+// renderBody renders an HTTP step's Liquid body for a Contact (nil: no Contact bindings) and an
 // Enrollment run (nil: an empty `event`), and checks the result is valid JSON within the size
 // limit. It binds the Contact's fields and `event`, the copy of the Event the Enrollment began on
 // (#752), as a Rule's http Action binds the Event it fired on. Their strings are JSON-escaped in
 // the bindings themselves, so a value holding quotes cannot change the structure.
-func RenderBody(body string, c *ent.Contact, run *ent.AutomationRun) (string, error) {
+func renderBody(body string, c *ent.Contact, run *ent.AutomationRun) (string, error) {
 	return httpcall.RenderBody(body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(run)))
 }
 
@@ -68,16 +65,16 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, bod
 	if err != nil {
 		return DryRunResult{}, err
 	}
-	out, err := RenderBody(body, c, nil)
+	out, err := renderBody(body, c, nil)
 	if err != nil {
 		return DryRunResult{ErrorKind: ErrorKindInvalidBody, Detail: bodyDetail(err)}, nil
 	}
 	return DryRunResult{Body: out}, nil
 }
 
-// OpenHTTP decrypts a stored HTTP step's URL, header values and secret with the cipher that sealed
+// openHTTP decrypts a stored HTTP step's URL, header values and secret with the cipher that sealed
 // them.
-func OpenHTTP(cipher *secrets.Cipher, s automationstep.Step) (OpenedHTTP, error) {
+func openHTTP(cipher *secrets.Cipher, s automationstep.Step) (httpcall.Opened, error) {
 	return httpcall.Open(cipher, spec(s))
 }
 

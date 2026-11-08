@@ -132,7 +132,7 @@ func (env *TestEnv) StoredEvents(t *testing.T, actions ...string) []*ent.Event {
 }
 
 // Publisher is a Publisher onto this test's bus, for a test that calls a function taking the
-// Publisher of a transaction it owns (automations.Enroll) without opening one: each event is
+// Publisher of a transaction it owns (automations.Exit) without opening one: each event is
 // published in a bus transaction of its own, which rides the test's.
 func (env *TestEnv) Publisher() events.Publisher { return PublisherOn(env.Bus) }
 

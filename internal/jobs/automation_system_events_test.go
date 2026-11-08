@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // enrollmentEvents counts the System events of the Contact's Enrollment in the Automation, by
@@ -57,7 +56,7 @@ func TestAnEnrollmentRecordsReachingItsGoalAndLeaving(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	on := func(contactID int64, action string) {
 		t.Helper()
-		require.NoError(t, env.StepExecution.OnEvent(ctx, acme, stepexecution.OnEventInput{ContactID: contactID, Event: automations.Event{Action: action, OccurredAt: time.Now()}}))
+		require.NoError(t, env.StepExecution.OnEvent(ctx, acme, automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: action, OccurredAt: time.Now()}}))
 	}
 
 	on(fixtures.ContactAliceID, "payment_failed")

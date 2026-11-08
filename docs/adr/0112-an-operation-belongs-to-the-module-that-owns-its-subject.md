@@ -95,8 +95,11 @@ context gets a package of its own by the same test.
 - **Others move by the same test in the changes their issues describe:** the verification of a
   Sending domain into `sendingdomains` (#1202), the exchange and refresh of a Connection into
   `apitokens` (#1204), and the Second factor check but its reset into a `secondfactors` module
-  (#1203). `stepexecution`, `callbackinterpretation` and `secretreencryption` are weighed by the
-  changes that rework them (the hooks driver, #1209; the CLI driver, #1210).
+  (#1203). `stepexecution` moves into `automations` as `automations.StepExecution`: it composes
+  `contacts`, `eligibility` and `outboundmessages`, all below orchestration, beside the Enrollment's
+  lifecycle it moves, as the Broadcast's delivery is `broadcasts.Delivery`. `callbackinterpretation`
+  and `secretreencryption` are weighed by the changes that rework them (the hooks driver, #1209;
+  the CLI driver, #1210).
 - **A moved operation follows the domain module's conventions.** It reads the Instance clock its
   module holds, never `time.Now`, opens its own transaction and checks every input to its writes
   (ADR 0107). The call contract of ADR 0104 binds the use case tiers only, so `usecaseshape` stops
@@ -116,9 +119,16 @@ context gets a package of its own by the same test.
 
 ## Consequences
 
-- Six packages leave the tiers, in five changes after this one: their tests move to the owner's
+- Seven packages leave the tiers, in six changes after this one (the Step execution's included): their tests move to the owner's
   `_test` package with their assertions, and their callers in the API surfaces, the job runner, the
   Edition and the wiring call the owner.
+- The Step execution leaves the use case tier the same way. What `automations` exported only for
+  it becomes unexported: the moves of an Enrollment (`Advance`, `Complete`, `Fail`, `ExitRun`), the
+  steps an Event or a Rule takes (`EndOnEvent`, `TriggeredBy`, `OriginOf`, `EnrollOnTrigger`,
+  `EnrollOnRule`), `LockContact`, `IsActive`, `Stale` and the HTTP step's `OpenHTTP`, `RenderBody`
+  and failure record. `Enroll`, which only tests called, goes. Their tests run through
+  `StepExecution`, the race of a Deactivate or a Publish with an Event's enrollment included;
+  `Exit` stays exported for the unsubscribe use case.
 - `easement.yml` changes with them: `domain-instance-raw` may import the Telemetry contract's
   client, `abusedetector` joins `ee-domain-insights-raw`, and `ee-usecase-raw` keeps one use case.
   The Outbound send reads the Template a Transactional send references through ent, as a module

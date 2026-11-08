@@ -109,7 +109,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
@@ -522,7 +521,7 @@ var jobsPackage = do.Package(
 			Orders:                    do.MustInvoke[*orders.Module](i),
 			Deletion:                  do.MustInvoke[*workspacedeletion.UseCase](i),
 			SendingDomainVerification: do.MustInvoke[*sendingdomainverification.UseCase](i),
-			StepExecution:             do.MustInvoke[*stepexecution.UseCase](i),
+			StepExecution:             do.MustInvoke[*automations.StepExecution](i),
 			JoinDomains:               do.MustInvoke[*joindomains.Module](i),
 			TrackingDomains:           do.MustInvoke[*trackingdomains.Module](i),
 			Machine:                   do.MustInvoke[*privaterelayranges.Detector](i),
@@ -777,8 +776,8 @@ var contentPackage = do.Package(
 	}),
 	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
 	// exit of its Enrollment on the raw client.
-	do.Lazy(func(i do.Injector) (*stepexecution.UseCase, error) {
-		return stepexecution.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i)),
+	do.Lazy(func(i do.Injector) (*automations.StepExecution, error) {
+		return automations.NewStepExecution(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i)),
 			do.MustInvoke[*secrets.Cipher](i), webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*eventrecording.Module, error) {
