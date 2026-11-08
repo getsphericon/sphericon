@@ -3,7 +3,6 @@ package workspaceoversight
 import (
 	"context"
 	"strconv"
-	"strings"
 
 	"github.com/samber/lo"
 
@@ -17,8 +16,6 @@ import (
 )
 
 var (
-	// ErrReasonRequired refuses a suspension with no reason: the owner is told why.
-	ErrReasonRequired = validation.RefuseField("reason", "staff: a suspension needs a reason", i18n.ErrorsSuspensionReasonRequired)
 	// ErrWorkspaceNotFound is an id no Workspace has, on the console and the service endpoints alike.
 	ErrWorkspaceNotFound = validation.NotFound("staff: workspace not found", i18n.ErrorsWorkspaceNotFound)
 )
@@ -43,13 +40,10 @@ func (m *Module) changeOf(ctx context.Context, id int64, changed bool) (*Workspa
 // the same Suspender the command line uses (ADR 0007), which tells its owners via the
 // system sender. It reports whether anything changed: an already-suspended
 // Workspace is left as it was and its owners are not told twice. A failed notice does
-// not undo the suspension; it is logged. A blank reason is ErrReasonRequired.
+// not undo the suspension; it is logged. A blank reason is suspension.ErrReasonRequired.
 func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, by *ent.StaffMember, reason string) (*WorkspaceChange, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err
-	}
-	if strings.TrimSpace(reason) == "" {
-		return nil, ErrReasonRequired
 	}
 	w, err := m.workspace(ctx, publicID)
 	if err != nil {

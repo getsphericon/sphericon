@@ -16,7 +16,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
+
+// ErrReasonRequired refuses a suspension with no reason, whoever asks for it: the owners are told
+// why their sending stopped.
+var ErrReasonRequired = validation.RefuseField("reason", "suspension: a suspension needs a reason", i18n.ErrorsSuspensionReasonRequired)
 
 // Actor is who suspends or lifts a suspension (ADR 0026): the automated abuse detector
 // (System), the staff member command (CLI) or a platform Staff member, whose real id is kept on
@@ -61,7 +67,7 @@ func (a Actor) auditActor() events.Actor {
 }
 
 // SuspendWorkspace freezes all outbound sending for a Workspace (ADR 0007): it sets
-// suspended_at together with who did it and why. The send path reads it as a reversible Hold
+// suspended_at together with who did it and why; a blank reason is ErrReasonRequired. The send path reads it as a reversible Hold
 // (ADR 0015); login, reads and /collect are unaffected. It reports whether anything
 // changed: suspending an already-suspended Workspace is a no-op, so the first actor
 // and reason — the ones the owner was told about — are never overwritten. A change is
@@ -82,7 +88,7 @@ func suspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Ac
 		return false, err
 	}
 	if reason == "" {
-		return false, errors.New("an actor and a reason are required")
+		return false, ErrReasonRequired
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
