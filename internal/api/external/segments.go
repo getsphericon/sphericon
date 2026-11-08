@@ -5,7 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -82,18 +81,15 @@ func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.Seg
 	return &res, nil
 }
 
+// SegmentsPreview counts the contacts matching an unsaved rule definition.
 func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.PreviewSegmentInput) (*externalapi.PreviewSegmentResult, error) {
-	ws := auth.TokenScoped(ctx)
-	def := ""
-	if group, ok := req.Condition.Get(); ok {
-		var err error
-		if def, err = condition.Encode(&group); err != nil {
-			return nil, err
-		}
-	}
-	count, err := h.segments.Preview(ctx, ws, def)
+	in, err := inputs.SegmentPreview(req)
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.PreviewSegmentResult{Count: narrow.Int32(count)}, nil
+	preview, err := h.segments.Preview(ctx, auth.TokenScoped(ctx), in)
+	if err != nil {
+		return nil, err
+	}
+	return &externalapi.PreviewSegmentResult{Count: narrow.Int32(preview.Count)}, nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -92,9 +93,10 @@ func TestPreviewAndCountAgree(t *testing.T) {
 	require.NoError(t, err)
 	require.Positive(t, want, "fixture segment should match someone")
 
-	preview, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), *stored.Condition)
+	preview, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: stored.Condition})
 	require.NoError(t, err)
-	assert.Equal(t, want, preview)
+	assert.Equal(t, want, preview.Count)
+	assert.Nil(t, preview.Recipients, "no Channel was asked for")
 
 	count, err := m.Count(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID)
 	require.NoError(t, err)
@@ -106,11 +108,35 @@ func TestPreviewAndCountErrors(t *testing.T) {
 	m := segments.New(env.Bus, time.Now)
 	ctx := context.Background()
 
-	_, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), badCondition)
+	_, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(badCondition)})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
+
+	_, err = m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(badCondition), Channel: new(channels.Email)})
+	require.ErrorIs(t, err, segments.ErrInvalidCondition, "a Channel asked for changes nothing about a bad condition")
 
 	_, err = m.Count(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID)
 	require.ErrorIs(t, err, segments.ErrNotFound)
+}
+
+// With a Channel the preview also counts the recipients a Broadcast there would take: on Telegram
+// the Contacts with an eligible Binding on the routed Integration. Duff's bot has two Contacts
+// bound, one of them in two chats; a preview without a condition matches every Contact.
+func TestPreviewCountsTheRecipientsOfABroadcastOnTheChannel(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := segments.New(env.Bus, time.Now)
+	ctx := context.Background()
+	ws := env.DB.Scoped(fixtures.DuffID)
+
+	preview, err := m.Preview(ctx, ws, segments.PreviewInput{
+		Channel: new(channels.Telegram), IntegrationID: new(int64(fixtures.IntegrationDuffTelegramID)),
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, preview.Recipients)
+	assert.Equal(t, 2, *preview.Recipients, "the two bound Contacts, whatever the chats each has")
+	all, err := ws.Contact().Query().Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, all, preview.Count, "no condition matches every Contact")
 }
 
 // A stored Segment "can be texted" counts and lists, live, the Contacts whose phone has an SMS

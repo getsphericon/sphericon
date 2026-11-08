@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
@@ -89,8 +90,10 @@ type Deps struct {
 	// (ADR 0010, ADR 0071); verified is a live property.
 	SendingDomains *sendingdomains.Module
 	// StepExecution executes the steps of the Enrollments (the run_step and http_step jobs).
-	StepExecution   *automations.StepExecution
-	JoinDomains     *joindomains.Module
+	StepExecution *automations.StepExecution
+	JoinDomains   *joindomains.Module
+	// Integrations reads an Integration's provider send quota (ADR 0023).
+	Integrations    *integrations.Module
 	TrackingDomains *trackingdomains.Module
 	Machine         *privaterelayranges.Detector
 	// Clock is the Instance's clock (app.Clock), which every worker reads; NewClient refuses none.
@@ -141,7 +144,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
 	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
-	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, cipher, deps.Catalog, now))
+	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, deps.Integrations))
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events, now))
