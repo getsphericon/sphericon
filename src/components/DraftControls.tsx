@@ -28,7 +28,6 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   revertMutation: UseMutationOptions<TReverted, TRevertError, IdPath>
   messages: { published: string; reverted: string; errorTitle: string }
 }) {
-  const { t } = useTranslation()
   const path = { workspaceId, id: resource.id }
   const publish = useResourceMutation({
     mutation: publishMutation,
@@ -48,6 +47,37 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   })
 
   return (
+    <DraftActions
+      pending={pending}
+      publishable={publishable}
+      publishing={publish.isPending}
+      reverting={revert.isPending}
+      onPublish={() => publish.mutate({ path })}
+      onRevert={() => revert.mutate({ path })}
+    />
+  )
+}
+
+// The same draft actions can be owned by a resource mutation or by an editor session.
+export function DraftActions({
+  pending,
+  publishable,
+  publishing,
+  reverting,
+  disabled = false,
+  onPublish,
+  onRevert,
+}: {
+  pending: boolean
+  publishable: boolean
+  publishing: boolean
+  reverting: boolean
+  disabled?: boolean
+  onPublish: () => void
+  onRevert: () => void
+}) {
+  const { t } = useTranslation()
+  return (
     <Group gap="xs" wrap="nowrap">
       {pending && (
         <Badge color="yellow" variant="light">
@@ -55,19 +85,11 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
         </Badge>
       )}
       {pending && (
-        <Button
-          variant="default"
-          loading={revert.isPending}
-          onClick={() => revert.mutate({ path })}
-        >
+        <Button variant="default" loading={reverting} disabled={disabled} onClick={onRevert}>
           {t(($) => $.draft.revert)}
         </Button>
       )}
-      <Button
-        disabled={!publishable}
-        loading={publish.isPending}
-        onClick={() => publish.mutate({ path })}
-      >
+      <Button disabled={disabled || !publishable} loading={publishing} onClick={onPublish}>
         {t(($) => $.draft.publish)}
       </Button>
     </Group>

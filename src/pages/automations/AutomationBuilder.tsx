@@ -1,6 +1,6 @@
 import { Box, Button, Group, Modal, Paper, TextInput, useComputedColorScheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   closeSnackbar,
   registerComponentDecorator,
@@ -15,29 +15,31 @@ import type {
   WorkflowBuilderPlugin,
   WorkflowBuilderIsValidConnection,
 } from '@workflowbuilder/sdk'
+import { useMachine } from '@xstate/react'
 // easement:disable-next-line symbol -- the builder subtree runs on the SDK's global instance (src/i18n.ts)
 import i18next from 'i18next'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
+import { waitFor } from 'xstate'
+import type { ActorRefFrom, SnapshotFrom } from 'xstate'
 
-import { DraftControls } from '../../components/DraftControls.tsx'
+import { DraftActions } from '../../components/DraftControls.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAutomationsGetQueryKey,
   siteAutomationsListQueryKey,
-  siteAutomationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteAutomationResource,
   SiteAutomationVersion,
 } from '../../generated/site/types.gen.ts'
+import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { i18n } from '../../i18n.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
-import { getApiErrorMessage } from '../../utils/apiErrors.ts'
-import { graphToSteps, stepsToGraph } from './definition.ts'
+import { stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
-import { automationDraftActions } from './draftActions.ts'
+import { automationSubmission, editorSession } from './editorSession.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { httpBodyRenderer, httpHeadersRenderer } from './httpRenderer.ts'
 import {
@@ -150,35 +152,38 @@ function ThemeSync() {
   return null
 }
 
+function EditorReadOnly({ readOnly }: { readOnly: boolean }) {
+  const { setReadOnly } = useWorkflowBuilderActions()
+  useEffect(() => {
+    setReadOnly(readOnly)
+  }, [readOnly, setReadOnly])
+  return null
+}
+
 // The bar floating over the canvas replaces the SDK's own top bar: the way back, the
 // automation's name, the failed Enrollments, the Save that persists the canvas to the draft, and
-// Publish and Revert (ADR 0065), which wait for unsaved changes to be saved. It sits inside
-// <WorkflowBuilder.Root> to reach the save action and the canvas, and under the SDK's i18next
+// Publish and Revert (ADR 0065), serialized by the editor session. It sits inside
+// <WorkflowBuilder.Root> to reach the canvas, and under the SDK's i18next
 // instance, which does not hold the app's strings, so it is bound back to the app's instance.
 function BuilderBar({
   form,
   workspaceId,
-  automation,
-  saved,
+  session,
+  send,
   onSave,
 }: {
   form: AutomationBarForm
   workspaceId: string
-  automation: SiteAutomationResource
-  saved: string
+  session: SnapshotFrom<typeof editorSession>
+  send: ActorRefFrom<typeof editorSession>['send']
   onSave: (graph: AutomationGraph) => Promise<DidSaveStatus>
 }) {
   const { t } = useTranslation()
   const canvasNodes = useStore((state) => state.nodes)
   const canvasEdges = useStore((state) => state.edges)
-  const dirty =
-    automationSnapshot(form.values.name, { nodes: canvasNodes, edges: canvasEdges }) !== saved
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const { nodes, edges } = useStore.getState()
-      return onSave({ nodes, edges })
-    },
-  })
+  const { resource: automation } = session.context
+  const current = automationSnapshot(form.values.name, { nodes: canvasNodes, edges: canvasEdges })
+  const busy = !session.matches('idle')
 
   return (
     <Paper withBorder shadow="sm" p="xs" pos="absolute" top={16} left={16} right={16}>
@@ -193,26 +198,36 @@ function BuilderBar({
             flex={1}
             miw={0}
             maw={320}
+            disabled={session.hasTag('readOnly')}
             {...form.getInputProps('name')}
           />
         </Group>
         <Group wrap="nowrap" flex="none">
           <FailedEnrollments workspaceId={workspaceId} automationId={automation.id} />
           <Button
-            loading={saveMutation.isPending}
+            loading={session.matches('saving')}
+            disabled={busy}
             onClick={() => {
-              if (!form.validate().hasErrors) {
-                saveMutation.mutate()
-              }
+              const { nodes, edges } = useStore.getState()
+              void onSave({ nodes, edges })
             }}
           >
             {t(($) => $.actions.save)}
           </Button>
-          <DraftControls
-            workspaceId={workspaceId}
-            resource={automation}
-            dirty={dirty}
-            {...automationDraftActions(t)}
+          <DraftActions
+            pending={automation.live !== null && automation.draft !== null}
+            publishable={session.can({ type: 'PUBLISH', current })}
+            publishing={session.matches('publishing')}
+            reverting={session.matches('reverting')}
+            disabled={busy}
+            onPublish={() => {
+              const { nodes, edges } = useStore.getState()
+              send({
+                type: 'PUBLISH',
+                current: automationSnapshot(form.getValues().name, { nodes, edges }),
+              })
+            }}
+            onRevert={() => send({ type: 'REVERT' })}
           />
         </Group>
       </Group>
@@ -223,43 +238,95 @@ function BuilderBar({
 // AutomationBuilder hosts the visual flow editor. It edits the draft, or the live version when
 // there is none (ADR 0065); a save writes the draft and leaves the live version alone. The name is
 // edited in the bar over the canvas; the Trigger is the canvas's first node, which also holds the
-// exit and goal events. Save drives onDataSave, which converts the graph to the trigger, exit and
+// exit and goal events. Save captures the graph as the trigger, exit and
 // goal events and the linear []step definition and persists them with the name together through
-// the generated update mutation. The page remounts it when the version it edits changes (a
-// publish or a revert).
+// the session's generated client call. Save and Publish preserve this canvas; only explicit
+// Revert replaces it. Query refreshes do not own the editor's local content.
 export function AutomationBuilder({ workspaceId, automation, edited }: AutomationBuilderProps) {
   const { t } = useTranslation()
   const notify = useNotify()
+  const apiErrorMessage = useApiErrorMessage()
   const queryClient = useQueryClient()
   const nodeTypes = useAutomationNodeTypes()
 
   const form = useAutomationBarForm(automation.name)
 
-  const initialGraph = useMemo(() => {
-    const labels = Object.fromEntries(
-      nodeTypes.flatMap((item) => ('type' in item ? [[item.type, item.label]] : [])),
-    )
-    return stepsToGraph(edited, edited.steps, labels)
-  }, [edited, nodeTypes])
-
-  const [saved, setSaved] = useState(() => automationSnapshot(automation.name, initialGraph))
-
-  const updateMutation = useMutation({
-    ...siteAutomationsUpdateMutation(),
-    onSuccess: async (updated) => {
-      await queryClient.invalidateQueries({
-        queryKey: siteAutomationsListQueryKey({ path: { workspaceId } }),
-      })
-      await queryClient.invalidateQueries({
-        queryKey: siteAutomationsGetQueryKey({ path: { workspaceId, id: updated.id } }),
-      })
+  const labels = useMemo(
+    () =>
+      Object.fromEntries(
+        nodeTypes.flatMap((item) => ('type' in item ? [[item.type, item.label]] : [])),
+      ),
+    [nodeTypes],
+  )
+  const initialGraph = useMemo(() => stepsToGraph(edited, edited.steps, labels), [edited, labels])
+  const [session, send, actor] = useMachine(editorSession, {
+    input: {
+      path: { workspaceId, id: automation.id },
+      resource: automation,
+      graph: initialGraph,
+      labels,
     },
   })
 
+  useEffect(() => {
+    send({ type: 'REFRESH', resource: automation })
+  }, [send, automation])
+
+  useEffect(() => {
+    const accepted = actor.on('accepted', ({ operation, resource }) => {
+      const queryKey = siteAutomationsGetQueryKey({ path: { workspaceId, id: resource.id } })
+      // The write's response is authoritative. Cancel an older GET before replacing its cache;
+      // background list reconciliation neither delays acknowledgement nor reloads the canvas.
+      void queryClient.cancelQueries({ queryKey })
+      queryClient.setQueryData(queryKey, resource)
+      void queryClient.invalidateQueries({
+        queryKey: siteAutomationsListQueryKey({ path: { workspaceId } }),
+      })
+      if (operation === 'revert') {
+        form.setValues({ name: resource.name })
+      }
+      const messages = {
+        save: t(($) => $.notifications.automationUpdated),
+        publish: t(($) => $.notifications.automationPublished),
+        revert: t(($) => $.notifications.automationReverted),
+      }
+      notify({
+        color: 'teal',
+        title: t(($) => $.notifications.successTitle),
+        message: messages[operation],
+      })
+    })
+    const failed = actor.on('failed', ({ operation, error }) => {
+      notify({
+        color: 'red',
+        title:
+          operation === 'save'
+            ? t(($) => $.alerts.automationSaveErrorTitle)
+            : t(($) => $.alerts.automationStatusErrorTitle),
+        message: apiErrorMessage(
+          error,
+          operation === 'save'
+            ? t(($) => $.alerts.automationSaveErrorMessage)
+            : t(($) => $.notifications.errorMessage),
+        ),
+      })
+    })
+    return () => {
+      accepted.unsubscribe()
+      failed.unsubscribe()
+    }
+  }, [actor, workspaceId, queryClient, form, notify, apiErrorMessage, t])
+
   const saveGraph = useCallback(
     async (graph: AutomationGraph): Promise<DidSaveStatus> => {
-      const { triggerEvent, exitEvents, goalEvent, steps, dropped } = graphToSteps(graph)
-      if (triggerEvent === null) {
+      if (!actor.getSnapshot().matches('idle')) {
+        return 'alreadyStarted'
+      }
+      if (form.validate().hasErrors) {
+        return 'error'
+      }
+      const submission = automationSubmission(form.getValues().name, graph)
+      if (!submission) {
         notify({
           color: 'red',
           title: t(($) => $.automations.triggerMissingTitle),
@@ -267,49 +334,28 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
         })
         return 'error'
       }
-      if (dropped > 0) {
+      if (submission.dropped > 0) {
         notify({
           color: 'yellow',
           title: t(($) => $.automations.branchesUnsupportedTitle),
           message: t(($) => $.automations.branchesUnsupported),
         })
       }
-      const values = form.getValues()
+      actor.send({ type: 'SAVE', submission })
       try {
-        await updateMutation.mutateAsync({
-          path: { workspaceId, id: automation.id },
-          body: {
-            name: values.name.trim(),
-            triggerEvent,
-            exitEvents,
-            goalEvent,
-            steps,
-          },
-        })
-        setSaved(automationSnapshot(values.name, graph))
-        notify({
-          color: 'teal',
-          title: t(($) => $.notifications.successTitle),
-          message: t(($) => $.notifications.automationUpdated),
-        })
-        return 'success'
-      } catch (error) {
-        notify({
-          color: 'red',
-          title: t(($) => $.alerts.automationSaveErrorTitle),
-          message: getApiErrorMessage(
-            error,
-            t(($) => $.alerts.automationSaveErrorMessage),
-          ),
-        })
+        const settled = await waitFor(actor, (state) => state.matches('idle'))
+        return settled.context.result
+      } catch {
+        // A stopped session has no receipt to return to the SDK. Its invocation cannot change
+        // another editor, even if the server already committed before the request was aborted.
         return 'error'
       }
     },
-    [workspaceId, automation.id, form, updateMutation, notify, t],
+    [actor, form, notify, t],
   )
 
-  // The SDK's own save (its shortcut) answers with its success snackbar whatever this returns, so
-  // the bar saves through `saveGraph` itself and only the app's toasts show.
+  // Custom layouts can call the SDK's imperative save action. It shares the toolbar's protocol;
+  // the SDK's props adapter itself still treats every resolved status string as success.
   const onDataSave = useCallback<OnSaveExternal>(
     async (data: IntegrationDataFormat) => saveGraph({ nodes: data.nodes, edges: data.edges }),
     [saveGraph],
@@ -345,28 +391,29 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
             language, theme and read-only toggles) is swapped for <BuilderBar />, and
             ThemeSync keeps the canvas theme in step with Mantine's color scheme. */}
           <WorkflowBuilder.Root
-            key={automation.id}
-            name={automation.name}
+            key={session.context.canvas.revision}
+            name={session.context.resource.name}
             layoutDirection="DOWN"
             nodeTypes={nodeTypes}
-            initialNodes={initialGraph.nodes}
-            initialEdges={initialGraph.edges}
+            initialNodes={session.context.canvas.graph.nodes}
+            initialEdges={session.context.canvas.graph.edges}
             integration={integration}
             isValidConnection={isValidConnection}
             jsonForm={jsonForm}
             plugins={plugins}
           >
             <ThemeSync />
+            <EditorReadOnly readOnly={session.hasTag('readOnly')} />
             <QuietRestore />
-            <LeaveGuard name={form.values.name} saved={saved} />
+            <LeaveGuard name={form.values.name} saved={session.context.saved} />
             <Box pos="relative" w="100%" h="100dvh">
               <WorkflowBuilder.Canvas />
               <I18nextProvider i18n={i18n}>
                 <BuilderBar
                   form={form}
                   workspaceId={workspaceId}
-                  automation={automation}
-                  saved={saved}
+                  session={session}
+                  send={send}
                   onSave={saveGraph}
                 />
               </I18nextProvider>
