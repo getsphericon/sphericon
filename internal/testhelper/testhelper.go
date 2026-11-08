@@ -65,6 +65,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -178,6 +179,9 @@ type TestEnv struct {
 	// AppURL is SPHERICON_APP_URL of the env: the origin and relying party id of a Passkey
 	// ceremony (ADR 0051).
 	AppURL string
+
+	// WorkspaceSummary reads the Workspace summary the surfaces map (ADR 0111).
+	WorkspaceSummary *workspacesummary.UseCase
 
 	// Holds is the module the sender's freeze check reads, for a test that builds its own
 	// Outbound module.
@@ -525,7 +529,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		client := do.MustInvoke[*ent.Client](injector)
 		p := performers{}
 		add(tb, p, txDB, client, jobs.NewSendNoticeWorker(systemSender))
-		add(tb, p, txDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector), st.now))
+		add(tb, p, txDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*integrations.Module](injector)))
 		add(tb, p, txDB, client, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
 		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client))
@@ -555,6 +559,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		RemovalCheck:      do.MustInvoke[*removalcheck.Module](injector),
 		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
 		Holds:             do.MustInvoke[*holds.Holds](injector),
+		WorkspaceSummary:  do.MustInvoke[*workspacesummary.UseCase](injector),
 		Orders:            do.MustInvoke[*orders.Module](injector),
 		edition:           edition,
 		license:           lic,

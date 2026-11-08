@@ -23,7 +23,7 @@ type LateNoticeWorker struct {
 // NewLateNoticeWorker builds the worker over the raw client the job entry point scopes from. A
 // Delivery notice needs no Telegram bot, so the module reads it without one.
 func NewLateNoticeWorker(client *ent.Client, bus *events.Bus, now func() time.Time) *LateNoticeWorker {
-	return &LateNoticeWorker{ent: client, ingest: callbackinterpretation.New(bus, nil, now)}
+	return &LateNoticeWorker{ent: client, ingest: callbackinterpretation.New(client, bus, nil, now)}
 }
 
 func (w *LateNoticeWorker) Work(ctx context.Context, job *river.Job[callbackinterpretation.LateNoticeArgs]) error {
