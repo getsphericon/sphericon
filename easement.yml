@@ -951,8 +951,8 @@ components:
 
   # Contacts, above identity: the Contacts with their Custom fields and Tags, the Segments and the
   # Conditions they hold, the consent of a Destination (the Confirmations, the Unsubscribes and the
-  # stops read in the Channel, channelstop), the Suppressions, eligibility, the Visitors and the Orders,
-  # with the Contact row lock (contactlock) and the hook that keeps stored addresses lower-cased
+  # stops read in the Channel, channelstop), the Suppressions, eligibility, the Visitors, the Orders
+  # and the Event recording (eventrecording, ADR 0112), with the Contact row lock (contactlock) and the hook that keeps stored addresses lower-cased
   # (emailcase: it targets the Contacts as well as identity's Users and Invitations). None holds the
   # raw client, so the context is one component; a raw-client holder would get
   # `domain-contacts-raw`. Counting an unsubscribe on a Broadcast and ending an Enrollment is the

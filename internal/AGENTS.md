@@ -112,8 +112,9 @@ secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the A
 into the module that owns its subject (ADR 0112) takes its tests to that module's `_test` package:
 `internal/domain/contacts/contacts` holds an import's rows (`UpsertBatch`) and
 `internal/domain/sending/outboundmessages` the refusals of a Transactional send
-(`SendTransactional`), and `internal/domain/instance/instancestates` the Release check and the
-Telemetry report. The use case is built from the container like a
+(`SendTransactional`), `internal/domain/instance/instancestates` the Release check and the
+Telemetry report, and `internal/domain/contacts/eventrecording` what the Event recording refuses and
+publishes. The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step

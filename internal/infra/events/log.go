@@ -11,7 +11,7 @@ import (
 
 // The reads of the Event log (GLOSSARY): the bus owns the Events (ADR 0102), so the app and the
 // API list them, filter them and name their distinct actions here. Recording a customer's Event
-// is the use case internal/usecase/eventrecording.
+// is the Event recording, internal/domain/contacts/eventrecording.
 
 // LogFilter narrows the Events ListLog returns; a zero field does not filter.
 type LogFilter struct {

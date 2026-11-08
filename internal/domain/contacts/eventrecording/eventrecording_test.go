@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 )
 
 // Fixtures: workspace acme (1) has events page_view and purchase; contact 1 is
@@ -63,6 +63,6 @@ const liveWindow = 72 * time.Hour
 
 var testNow = time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
 
-func newModule(env *testhelper.TestEnv) *eventrecording.UseCase {
+func newModule(env *testhelper.TestEnv) *eventrecording.Module {
 	return eventrecording.New(env.Bus, eventrecording.LivePolicy{Window: liveWindow, Now: func() time.Time { return testNow }})
 }

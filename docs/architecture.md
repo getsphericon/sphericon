@@ -167,7 +167,8 @@ coding standards in `CODING_STANDARDS.md`.
   An identity module imports no module of another context: not `providerlimit`, not `contacts`.
   Contacts, above it, is one component (`domain-contacts`, the glob of
   `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
-  `unsubscribes`, `channelstop`, `suppressions`, `eligibility`, `visitors` and `orders`, with the Contact
+  `unsubscribes`, `channelstop`, `suppressions`, `eligibility`, `visitors`, `orders` and
+  `eventrecording` (the Event recording, which has no table: the bus stores the Events), with the Contact
   row lock (`contactlock`) and the hook that keeps stored addresses lower-cased (`emailcase`, the
   Email case, which targets the Contacts as well as identity's Users and Invitations). None of them holds the raw
   client, so the context has no `domain-contacts-raw`. A contacts module imports no module of a
@@ -259,7 +260,11 @@ coding standards in `CODING_STANDARDS.md`.
   the module's own `Send`; and the Release check and the Telemetry report of the whole Instance are
   `instancestates.Module`'s (`CheckRelease`, `ReleaseFor`, `TelemetryReport`,
   `SendTelemetryReport`), with their outside parties, the release source and the receiver's client,
-  handed in by the wiring as parameters of `instancestates.New`. The use
+  handed in by the wiring as parameters of `instancestates.New`. An operation whose subject
+  no domain module owns, and which needs only one context, is a domain module of that context
+  without a table: the Event recording (`internal/domain/contacts/eventrecording`) resolves each
+  Event's Contact through `contacts`, checks an order Event through `orders` and publishes the
+  batch on the bus, which owns the Events and the Event log's reads. The use
   case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
   states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
   `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
@@ -342,8 +347,7 @@ coding standards in `CODING_STANDARDS.md`.
   Visitor through `visitors`, announces its chats through `bindings` (sending, above the Contact)
   and stitches its Events through the bus, in one transaction. The Ingest hook's reading of a provider's callbacks
   (`callbackinterpretation`) opens the request's transaction and changes Outbound messages, Suppressions,
-  Unsubscribes, Confirmations and Bindings through their modules; recording a customer's Event
-  (`eventrecording`) resolves its Contact and publishes it on the bus, which owns the Event log's reads; the Analytics reports (`analyticsreport`) and what Needs
+  Unsubscribes, Confirmations and Bindings through their modules; the Analytics reports (`analyticsreport`) and what Needs
   attention (`needsattentionreport`) only read.
   The consent of a Destination (`internal/domain/contacts/confirmations`,
   `internal/domain/contacts/unsubscribes` and `internal/domain/contacts/channelstop`, the stops read in

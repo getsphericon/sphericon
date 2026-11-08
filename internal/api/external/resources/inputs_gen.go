@@ -8,6 +8,7 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	eventrecording "github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	emailtemplates "github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
@@ -22,7 +23,6 @@ import (
 	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
-	eventrecording "github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	unsubscriberecording "github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 

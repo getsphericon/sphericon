@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -32,7 +33,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
-	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
@@ -51,7 +51,7 @@ type Handlers struct {
 	now             func() time.Time
 	workspaces      *workspaces.Module
 	bus             *events.Bus
-	eventrecording  *eventrecording.UseCase
+	eventrecording  *eventrecording.Module
 	outbound        *outboundmessages.Module
 	segments        *segments.Module
 	webhooks        *webhookendpoints.Module
@@ -117,7 +117,7 @@ type Deps struct {
 	TrackingDomains  *trackingdomains.Module
 	Outbound         *outboundmessages.Module
 	Segments         *segments.Module
-	EventRecording   *eventrecording.UseCase
+	EventRecording   *eventrecording.Module
 	Contacts         *contacts.Module
 	Erasure          *contacterasure.UseCase
 	Tags             *tags.Module

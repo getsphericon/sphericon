@@ -37,6 +37,7 @@ import (
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
@@ -98,7 +99,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
-	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
@@ -777,7 +777,7 @@ var contentPackage = do.Package(
 		return stepexecution.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i)),
 			do.MustInvoke[*secrets.Cipher](i), webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow), do.MustInvoke[Clock](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*eventrecording.UseCase, error) {
+	do.Lazy(func(i do.Injector) (*eventrecording.Module, error) {
 		policy := eventrecording.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}
 		return eventrecording.New(do.MustInvoke[*events.Bus](i), policy), nil
 	}),
@@ -922,7 +922,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Webhooks:                  do.MustInvoke[*webhookendpoints.Module](i),
 		Outbound:                  do.MustInvoke[*outboundmessages.Module](i),
 		Segments:                  do.MustInvoke[*segments.Module](i),
-		EventRecording:            do.MustInvoke[*eventrecording.UseCase](i),
+		EventRecording:            do.MustInvoke[*eventrecording.Module](i),
 		Contacts:                  do.MustInvoke[*contacts.Module](i),
 		Erasure:                   do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                      do.MustInvoke[*tags.Module](i),
