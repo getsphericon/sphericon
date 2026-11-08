@@ -66,7 +66,7 @@ func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.
 func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.SendingDomainsVerifyParams) (*externalapi.SendingDomainResource, error) {
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
-	row, err := h.sendingDomainVerification.Verify(ctx, s, id)
+	row, err := h.sendingDomains.Verify(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
-	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a
@@ -32,13 +31,13 @@ func (VerifySendingDomainArgs) Kind() string { return "sending_domain_verify" }
 type VerifySendingDomainWorker struct {
 	river.WorkerDefaults[VerifySendingDomainArgs]
 
-	ent          *ent.Client
-	verification *sendingdomainverification.UseCase
+	ent     *ent.Client
+	domains *sendingdomains.Module
 }
 
 // NewVerifySendingDomainWorker builds the worker that verifies one Sending domain.
-func NewVerifySendingDomainWorker(client *ent.Client, verification *sendingdomainverification.UseCase) *VerifySendingDomainWorker {
-	return &VerifySendingDomainWorker{ent: client, verification: verification}
+func NewVerifySendingDomainWorker(client *ent.Client, domains *sendingdomains.Module) *VerifySendingDomainWorker {
+	return &VerifySendingDomainWorker{ent: client, domains: domains}
 }
 
 // Work reads the domain by id to learn its Workspace, before any scope exists, and checks it in
@@ -48,7 +47,7 @@ func (w *VerifySendingDomainWorker) Work(ctx context.Context, job *river.Job[Ver
 	if err != nil {
 		return err
 	}
-	return w.verification.Recheck(ctx, w.ent.Scoped(dom.WorkspaceID), dom.ID)
+	return w.domains.Recheck(ctx, w.ent.Scoped(dom.WorkspaceID), dom.ID)
 }
 
 // --- periodic re-check of all domains (verified is a live property, ADR 0010) ---

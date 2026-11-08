@@ -9,7 +9,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	entbinding "github.com/getsphericon/sphericon/ent/binding"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
@@ -67,13 +66,6 @@ func (d *Delivery) Run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 	return d.run(ctx, s, id, sched, triggerPlan)
 }
 
-// RunClaimed is Run for a job queued after the Broadcast was claimed (Send or Schedule): it
-// refuses a draft with lifecycle.ErrInvalidTransition, so an unschedule that lands after
-// Due has answered is not undone by the plan.
-func (d *Delivery) RunClaimed(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler) error {
-	return d.run(ctx, s, id, sched, triggerResume)
-}
-
 func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, t trigger) error {
 	ids, err := d.plan(ctx, s, id, t)
 	if errors.Is(err, ErrPlanFailed) {
@@ -94,26 +86,6 @@ func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 		}
 	}
 	return sched.Schedule(ctx, id, sends)
-}
-
-// Due reports whether a queued send job should still run. A Broadcast that is back in draft
-// was unscheduled after the job was queued. A delayed job
-// (jobScheduledAt set) is also bound to the schedule it was enqueued for: unscheduling leaves
-// it queued, so after a reschedule the Broadcast carries a different scheduled_at (or none,
-// once sent now) and the superseded job must not send it early.
-func Due(ctx context.Context, s *ent.Scoped, id int64, jobScheduledAt *time.Time) (bool, error) {
-	b, err := s.Broadcast().Get(ctx, id)
-	if err != nil {
-		return false, fmt.Errorf("load broadcast %d: %w", id, err)
-	}
-	if b.Status == broadcast.StatusDraft {
-		return false, nil
-	}
-	if jobScheduledAt == nil {
-		return true, nil
-	}
-	// Postgres keeps microseconds; the job payload keeps nanoseconds.
-	return b.ScheduledAt != nil && b.ScheduledAt.Equal(jobScheduledAt.Truncate(time.Microsecond)), nil
 }
 
 // The unique constraint of the Broadcast's recipients (ADR 0106): no client can break it.

@@ -4,10 +4,9 @@
 version: 1
 
 # The rule parts several components share, merged with `<<` or aliased.
-# A domain module's unchecked removal, or the store of a check's outcome (a Sending domain's DKIM
-# and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
-# here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
-# that may reach the core: `x-core-forbids` (the API surfaces, MCP, the Problem mapping, each
+# A domain module's unchecked removal is reachable only from its use case (ADR 0102): each is one
+# anchored item here, aliased into the forbid_symbol list of every component but `usecase` and
+# `usecase-raw` that may reach the core: `x-core-forbids` (the API surfaces, MCP, the Problem mapping, each
 # context's `domain-<context>`, ee-api, the Enterprise `ee-domain-<context>` and `ee-usecase`),
 # `x-raw-holder-forbids` (the runner, each context's raw-client components and the Enterprise
 # `ee-domain-<context>-raw` and `ee-usecase-raw`); api-auth, ee-edition, testsupport and wiring
@@ -19,8 +18,7 @@ version: 1
 # `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
 # So do the Second factor's writes that skip its checks (the User's factor, the Recovery codes, all
-# Passkeys of a User), the issue of an OAuth grant's credentials (the Connection, a refresh token),
-# the moves of a Workspace's deletion cycle with each owner's erase of its rows, the creation of a
+# Passkeys of a User), the moves of a Workspace's deletion cycle with each owner's erase of its rows, the creation of a
 # Workspace with its creator's Membership, and each owner's step of a Contact's Erasure (the Contact
 # row, contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
 # publisher (events.PurgingPublisher), which a name cannot forbid. The Enterprise Edition's erase
@@ -42,12 +40,6 @@ x-unchecked-removals: &unchecked-removals
   - &sendingdomains-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.DeleteIn
     because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which runs the Removal check, the domain's Live use, under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
-  - &sendingdomains-record-dkim
-    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDKIM
-    because: a Sending domain becomes verified only by a live DKIM lookup (ADR 0010), which the use case internal/usecase/sendingdomainverification runs before it stores the outcome; call the use case
-  - &sendingdomains-record-dmarc
-    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDMARC
-    because: a Sending domain becomes bulk-ready only by a live DMARC lookup (ADR 0012), which the use case internal/usecase/sendingdomainverification runs before it stores the outcome; call the use case
   - &contacts-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
@@ -63,15 +55,6 @@ x-unchecked-removals: &unchecked-removals
   - &passkeys-delete-all-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
     because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorcheck checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
-  - &apitokens-issue-connection
-    name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.IssueConnection
-    because: a Connection is issued only for an authorization code whose PKCE verifier the use case internal/usecase/connectionissuance has checked and claimed (ADR 0016, ADR 0061, ADR 0102); call the use case
-  - &apitokens-rotate-connection
-    name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.RotateConnection
-    because: a Connection rotates only for a refresh token the use case internal/usecase/connectionissuance has checked and claimed (ADR 0016, ADR 0102); call the use case
-  - &oauthclients-new-refresh-token-in
-    name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.NewRefreshTokenIn
-    because: a refresh token is issued only with the Connection of a checked and claimed grant, by the use case internal/usecase/connectionissuance (ADR 0016, ADR 0102); call the use case
   - &workspaces-discard-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.DiscardIn
     because: a Workspace is deleted only by the use case internal/usecase/workspacedeletion, which checks the typed name first and records the deletion (ADR 0043, ADR 0102); call the use case
@@ -213,38 +196,23 @@ x-unchecked-removals: &unchecked-removals
   - &outboundmessages-erase-short-links
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseShortLinks
     because: *contact-erase-because
-  - &bindings-erase-subject
-    name: github.com/getsphericon/sphericon/internal/domain/sending/bindings.EraseSubject
-    because: *contact-erase-because
   - &events-erase-subject
     name: github.com/getsphericon/sphericon/internal/infra/events.EraseSubject
     because: *contact-erase-because
   - &visitors-erase-subject
     name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseSubject
     because: *contact-erase-because
-  - &confirmations-erase-contact
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseContact
-    because: *contact-erase-because
-  - &automations-erase-runs
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseRuns
-    because: *contact-erase-because
-  - &rules-erase-firings
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseFirings
+  - &confirmations-erase-number
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseNumber
     because: *contact-erase-because
   - &unsubscribes-erase-sms
     name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseSMS
-    because: *contact-erase-because
-  - &unsubscribes-detach-contact
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.DetachContact
     because: *contact-erase-because
   - &suppressions-erase-contact
     name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseContact
     because: *contact-erase-because
   - &outboundmessages-anonymize-contact
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeContact
-    because: *contact-erase-because
-  - &broadcasts-detach-recipients
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.DetachRecipients
     because: *contact-erase-because
   - &outboundmessages-anonymize-destinations
     name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeDestinations
@@ -279,16 +247,11 @@ x-core-forbids: &core-forbids
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
-  - *sendingdomains-record-dkim
-  - *sendingdomains-record-dmarc
   - *contacts-delete-in
   - *users-move-second-factor-in
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
-  - *apitokens-issue-connection
-  - *apitokens-rotate-connection
-  - *oauthclients-new-refresh-token-in
   - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
@@ -336,17 +299,12 @@ x-core-forbids: &core-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - &auditentries-erase-audit-entries-in
@@ -397,16 +355,11 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
-  - *sendingdomains-record-dkim
-  - *sendingdomains-record-dmarc
   - *contacts-delete-in
   - *users-move-second-factor-in
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
-  - *apitokens-issue-connection
-  - *apitokens-rotate-connection
-  - *oauthclients-new-refresh-token-in
   - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
@@ -454,17 +407,12 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in
@@ -489,16 +437,11 @@ x-runner-forbids: &runner-forbids
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
-  - *sendingdomains-record-dkim
-  - *sendingdomains-record-dmarc
   - *contacts-delete-in
   - *users-move-second-factor-in
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
-  - *apitokens-issue-connection
-  - *apitokens-rotate-connection
-  - *oauthclients-new-refresh-token-in
   - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
@@ -546,17 +489,12 @@ x-runner-forbids: &runner-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in
@@ -578,16 +516,11 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *contacts-update-custom-field-in
   - *integrations-delete-in
   - *sendingdomains-delete-in
-  - *sendingdomains-record-dkim
-  - *sendingdomains-record-dmarc
   - *contacts-delete-in
   - *users-move-second-factor-in
   - *recoverycodes-replace-in
   - *recoverycodes-delete-in
   - *passkeys-delete-all-in
-  - *apitokens-issue-connection
-  - *apitokens-rotate-connection
-  - *oauthclients-new-refresh-token-in
   - *workspaces-discard-in
   - *workspaces-restore-in
   - *workspaces-tombstone-in
@@ -635,17 +568,12 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *automations-cancel-pending
   - *rules-cancel-pending
   - *outboundmessages-erase-short-links
-  - *bindings-erase-subject
   - *events-erase-subject
   - *visitors-erase-subject
-  - *confirmations-erase-contact
-  - *automations-erase-runs
-  - *rules-erase-firings
+  - *confirmations-erase-number
   - *unsubscribes-erase-sms
-  - *unsubscribes-detach-contact
   - *suppressions-erase-contact
   - *outboundmessages-anonymize-contact
-  - *broadcasts-detach-recipients
   - *outboundmessages-anonymize-destinations
   - *capturedmessages-erase-to
   - *auditentries-erase-audit-entries-in
@@ -871,11 +799,10 @@ components:
       ]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
-  # *ent.Scoped to take: the Second factor of a User, the exchange of an OAuth code or refresh
-  # token, a secret that names its grant, the Callback interpretation, whose ingest key names the
-  # Integration and so its Workspace, the deletion cycle of a Workspace, which lists the
-  # Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the steps
-  # that make a User Verified with its first one, and Notice delivery, which reads a User or a
+  # *ent.Scoped to take: the Second factor of a User, the Callback interpretation, whose ingest key
+  # names the Integration and so its Workspace, the deletion cycle of a Workspace, which lists the
+  # Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the steps that
+  # make a User Verified with its first one, and Notice delivery, which reads a User or a
   # Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
   # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
@@ -883,7 +810,6 @@ components:
     in:
       [
         'internal/usecase/secondfactorcheck*',
-        'internal/usecase/connectionissuance*',
         'internal/usecase/callbackinterpretation*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/workspacecreation*',
@@ -920,7 +846,8 @@ components:
   # doc's narrower grants (`capturedmessages` only `Purge`, `automations` only `FenceOn`,
   # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and
   # `SecretSweeps`, `integrations`, `webhookendpoints`, `rules`, `automations`, `users` and
-  # `staffmembers` only their `SecretSweeps` for the re-encryption) are left to review. The composition roots, `internal/api/auth`
+  # `staffmembers` only their `SecretSweeps` for the re-encryption, `apitokens` only the token
+  # endpoint's exchange of a code or a refresh token) are left to review. The composition roots, `internal/api/auth`
   # and the job runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`,
   # which do not forbid the client.
   #
@@ -942,6 +869,7 @@ components:
   domain-identity-raw:
     in:
       [
+        internal/domain/identity/apitokens,
         internal/domain/identity/consentrecords,
         internal/domain/identity/invitations,
         internal/domain/identity/joindomains,
@@ -1150,7 +1078,7 @@ rules:
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,
-        domain-identity,
+        domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
         domain-contacts,
@@ -1183,9 +1111,9 @@ rules:
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-oauth:
     forbid_symbol: *core-forbids
-    may_depend_on: [domain-identity-raw, usecase-raw]
+    may_depend_on: [domain-identity-raw]
     forbid_external: *no-container
-    because: the OAuth server reads and registers OAuth clients through their module and exchanges a grant through its use case, never through another surface
+    because: the OAuth server reads and registers OAuth clients through their module and exchanges a grant for a Connection through the API tokens module, never through another surface
   api-tracking:
     forbid_symbol: *core-forbids
     may_depend_on:
@@ -1204,11 +1132,11 @@ rules:
     because: the TLS question asks the Tracking domains whether a host is served (ADR 0038, ADR 0111)
   mcp:
     forbid_symbol: *core-forbids
-    may_depend_on: [api-auth, api-problem, domain-identity, gen-surfaces]
+    may_depend_on: [api-auth, api-problem, domain-identity-raw, gen-surfaces]
     forbid_external: *no-container
     because: MCP projects the external API's operations as tools over the shared auth handlers and the Problem mapping, never over another surface's handlers
   api-auth:
-    may_depend_on: [domain-identity, domain-identity-users, domain-identity-base, gen-surfaces]
+    may_depend_on: [domain-identity-raw, domain-identity-users, domain-identity-base, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the security handlers sit below every surface
@@ -1377,7 +1305,7 @@ rules:
     forbid_symbol: *raw-holder-forbids
     because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
   domain-identity:
-    may_depend_on: [domain-identity-users, domain-identity-base]
+    may_depend_on: [domain-identity-users]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *core-forbids

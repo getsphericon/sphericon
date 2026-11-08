@@ -5,10 +5,11 @@
 // carry a scope its minter lacks. Handlers stay thin adapters: authorization of
 // the caller (scope, role), call, map errors.
 //
-// OAuth issuing keeps its own rules: its scopes are fixed by the consent screen, and the
-// exchange of a code (internal/usecase/connectionissuance) issues, rotates and revokes through
-// IssueConnection, RotateConnection and RevokeGrant. What it issues is a Connection, an API token
-// tied to the approving User's Membership and naming the client approved (ADR 0061). A Personal token
+// OAuth issuing keeps its own rules: its scopes are fixed by the consent screen, and the token
+// endpoint's exchange of a code or a refresh token (Module.ExchangeCode, Module.Refresh) issues,
+// rotates and revokes a Connection and its refresh tokens, which this package owns (ADR 0110). A
+// Connection is an API token tied to the approving User's Membership and naming the client
+// approved (ADR 0061). A Personal token
 // is a User's own token that names no client, minted by hand (MintPersonal). The
 // Workspace's API tokens below are the rows without a Membership; a Connection is listed
 // and revoked through Connections and RevokeConnection, a Personal token through
@@ -33,6 +34,7 @@ import (
 // The unique constraints of the tables this package writes (ADR 0106).
 var _ = db.Declare(
 	db.Fault("api_tokens_prefix_key", "the prefix is drawn at random (credentials.GenerateTokenPrefix)"),
+	db.Fault("oauth_refresh_tokens_token_hash_key", "the refresh token is drawn at random and stored as its hash"),
 )
 
 var (
