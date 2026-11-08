@@ -25,16 +25,16 @@ func TestIDByPublicIDIn(t *testing.T) {
 	require.Error(t, err, "the id is case-sensitive")
 }
 
-func TestBootstrapScopeNeverTargetsADeletedWorkspace(t *testing.T) {
+func TestTheOldestLiveWorkspaceIsNeverADeletedOne(t *testing.T) {
 	env := testhelper.Setup(t)
 	a := workspaces.New(env.DB, env.Bus, time.Now)
-	oldest, err := a.BootstrapScope(t.Context())
+	oldest, err := a.OldestLiveID(t.Context())
 	require.NoError(t, err)
-	require.EqualValues(t, fixtures.AcmeID, oldest.WorkspaceID())
+	require.EqualValues(t, fixtures.AcmeID, oldest)
 
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(t.Context())
 
-	next, err := a.BootstrapScope(t.Context())
+	next, err := a.OldestLiveID(t.Context())
 	require.NoError(t, err)
-	assert.EqualValues(t, fixtures.GlobexID, next.WorkspaceID())
+	assert.EqualValues(t, fixtures.GlobexID, next)
 }

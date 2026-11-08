@@ -2,6 +2,7 @@ package outboundmessages_test
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -9,9 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -51,10 +54,16 @@ func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string
 		messagetoken.New("test-secret", "http://local", time.Now),
 		time.Now,
 		outboundmessages.WithSystemSender(env.SystemMail),
+		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)),
 	)
 	b := &ent.Broadcast{WorkspaceID: workspaceID, Channel: channels.Email, Subject: new("Launch"), Body: new(htmlBody), FromEmail: &from, IntegrationID: integrationID}
-	return m.SendBroadcastTest(context.Background(), env.DB.Scoped(workspaceID), b, outboundmessages.TestAddress{Email: to},
-		&outboundmessages.Asker{UserID: fixtures.OwnerJaneID, Email: fixtures.OwnerJaneEmail})
+	return m.SendBroadcastTest(context.Background(), asJane(env, workspaceID), b, outboundmessages.TestAddress{Email: to})
+}
+
+// asJane is the scope of the Workspace acting as Jane, its owner: a Test send she asks for may go
+// from the System sender to her own address (ADR 0041).
+func asJane(env *testhelper.TestEnv, workspaceID int64) *ent.Scoped {
+	return env.Bus.Act(env.DB.Scoped(workspaceID), events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(fixtures.OwnerJaneID, 10)})
 }
 
 // missingIntegrationID names no Integration of any Workspace.

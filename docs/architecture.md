@@ -534,7 +534,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
      `tracked_links` row that it reads with the raw client for the message and the Workspace it
      belongs to; signed unsubscribe/confirm tokens (`workspaces.Module.LinkScope`, which the
      unsubscribe page, the confirmation page and the one-click POST of the tracked links build
-     the scope with), `workspaces.Module.BootstrapScope` (the bootstrap token), and the token
+     the scope with), the bootstrap token (`apitokens.Module.Bootstrap`, which checks the token
+     and then scopes to the oldest live Workspace, `workspaces.Module.OldestLiveID`), and the token
      endpoint of the OAuth server (`internal/api/oauth`, over `apitokens.Module.ExchangeCode` and
      `Refresh`), where an authorization code or a refresh token names its grant: `apitokens`
      claims the code through `oauthclients.ClaimCodeIn`, which checks the client, the redirect URI
@@ -572,6 +573,7 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   looked up by its secret before any scope exists), `internal/domain/identity/apitokens` (only the
   token endpoint's exchange of a code or a refresh token, ADR 0110: a Connection's refresh tokens
   are its own, and a code or a refresh token is looked up by its secret before any scope exists;
+  and the bootstrap, whose token names no Workspace, so it scopes to the oldest live one itself;
   every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
   (a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020:
   they belong to the User, not a Workspace), the unchecked operations of those identity modules
@@ -657,7 +659,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   verified by `ee/licensekey`; empty = plain core, a bad key fails boot). `ee.New` builds the
   `Edition` (extra event consumers + read seams) in `internal/app` and in `testhelper.Setup`
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
-  (`site.AuditLog`, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
+  (`auditlog.Reader`, which `auditlog.Log` serves the Audit log over and refuses as unlicensed
+  without it, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
   (ent has one schema package) but is written and read only by `ee/domain/insights/auditentries` (the
   Workspace erase deletes a deleted Workspace's entries too, below). An Audit entry is
   an event that is not Projected (`events.Projected`): it has no Event row, automations skip it,

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/urfave/cli/v3"
@@ -26,10 +25,7 @@ func workspaceCommand(d deps) *cli.Command {
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				id := cmd.StringArg("id")
-				reason := strings.TrimSpace(strings.Join(cmd.StringArgs("reason"), " "))
-				if reason == "" {
-					return errors.New("a reason is required: the owner is told why")
-				}
+				reason := strings.Join(cmd.StringArgs("reason"), " ")
 				suspender, err := c.Suspender()
 				if err != nil {
 					return err

@@ -11,12 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/api/external"
-	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -155,19 +153,18 @@ func TestExternalAuthTokensDeleteCannotTouchAnotherWorkspace(t *testing.T) {
 	assert.Nil(t, still.RevokedAt)
 }
 
-// Bootstrap has no caller token: it is gated by the configured bootstrap secret
-// and mints into the oldest workspace. The test env configures none, so the
-// handler is built here with one.
+// Bootstrap has no caller token: it is gated by the configured bootstrap token and mints into the
+// oldest Workspace (apitokens.Module.Bootstrap).
 func TestExternalAuthTokensBootstrap(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.BootstrapToken = "bootstrap-secret" }))
 	ctx := context.Background()
-	h := external.NewHandlers(external.Deps{Clock: time.Now, Workspaces: workspaces.New(env.DB, env.Bus, time.Now), BootstrapToken: "bootstrap-secret"})
+	c := env.ExternalAnonymous(t)
 	in := &externalapi.CreateApiTokenInput{Name: "first", Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeTokensWrite}}
 
-	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "nope"})
-	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
+	_, err := c.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "nope"})
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
-	created, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "bootstrap-secret"})
+	created, err := c.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "bootstrap-secret"})
 	require.NoError(t, err)
 	row, err := env.DB.ApiToken.Get(ctx, int64(created.TokenInfo.ID))
 	require.NoError(t, err)
@@ -175,17 +172,13 @@ func TestExternalAuthTokensBootstrap(t *testing.T) {
 	assert.Equal(t, []string{"tokens:write"}, row.Scopes)
 }
 
+// The test env configures no bootstrap token, so the bootstrap admits no one.
 func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	in := &externalapi.CreateApiTokenInput{Name: "first"}
 
-	// Unconfigured: an empty header must not match the empty secret.
-	h := external.NewHandlers(external.Deps{Clock: time.Now, Workspaces: workspaces.New(env.DB, env.Bus, time.Now)})
-	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: ""})
-	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
-	// Through the real server too.
-	_, err = env.ExternalAnonymous(t).AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "guess"})
+	_, err := env.ExternalAnonymous(t).AuthTokensBootstrap(context.Background(), &externalapi.CreateApiTokenInput{Name: "first"},
+		externalapi.AuthTokensBootstrapParams{XBootstrapToken: "guess"})
+
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 }
 

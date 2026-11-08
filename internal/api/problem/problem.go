@@ -7,7 +7,8 @@
 // with Of too, so a request is answered alike wherever it failed.
 //
 // The status and the body are decided here once for every surface (review rule 15): a module's
-// refusal (refusal.go), a handler error that knows its own problem (Error), a rate limit, a
+// refusal (refusal.go), a handler error that knows its own problem (Error), a rate limit (a
+// module's refusal with a wait among them), a
 // render that could not run, ogen's own errors and the faults that answer a 500.
 package problem
 
@@ -43,8 +44,8 @@ const RenderRetryAfter = "5"
 // database to come back, short enough that a client's events stay fresh.
 const CollectRetryAfter = "5"
 
-// Error is a handler's answer that no refusal kind gives (the 402 of a missing Enterprise
-// license, the 410 of an expired confirmation link): its status and its detail. A refusal a
+// Error is a handler's answer that no refusal kind gives (the 410 of an expired confirmation
+// link): its status and its detail. A refusal a
 // module decides is the module's sentinel, never an Error (ast-grep rule
 // no-hand-written-problem-in-handlers).
 type Error struct {
@@ -85,7 +86,7 @@ func Middleware(next http.Handler) http.Handler {
 // level with its detail, a server fault at error level, whose detail the client never sees.
 func Of(ctx context.Context, err error) (int, *siteapi.ProblemDetails) {
 	ex, _ := ctx.Value(exchangeKey{}).(*exchange)
-	status, body := decide(ex, err)
+	status, body := decide(ctx, ex, err)
 	method, path := "", ""
 	if ex != nil {
 		method, path = ex.r.Method, logging.RedactedPath(ex.r.URL.Path)
@@ -98,7 +99,12 @@ func Of(ctx context.Context, err error) (int, *siteapi.ProblemDetails) {
 	return status, body
 }
 
-func decide(ex *exchange, err error) (int, *siteapi.ProblemDetails) {
+func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.ProblemDetails) {
+	// A budget a module keeps refused with a wait: answered like every rate limit, its headers set,
+	// counted and logged here, where the request's writer is.
+	if wait, ok := errors.AsType[*ratelimit.WaitError](err); ok {
+		err = ratelimit.FromContext(ctx).Delay(ctx, wait.Policy, wait.Limit, wait.Wait, wait.At)
+	}
 	// A rate limit rejection already set its headers on the shared writer and was counted and
 	// logged where it was decided (ratelimit.LimitedError); the body repeats the wait.
 	if _, ok := errors.AsType[*ratelimit.LimitedError](err); ok {

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -36,20 +37,26 @@ var (
 	errRefreshReuse = errors.New("refresh token reuse")
 )
 
-// Module exchanges an authorization code or a refresh token for a Connection (ADR 0016, ADR 0061):
-// the token endpoint's operations. A code or a refresh token is a secret that names its grant
-// before any Workspace scope exists, so the module holds the raw *ent.Client (one of the closed
-// list of docs/architecture.md, Workspace scoping): it opens the exchange's transaction and scopes
-// the Connection's writes to the Workspace the claimed grant names.
+// Module issues the tokens whose request names no Workspace scope yet: it exchanges an
+// authorization code or a refresh token for a Connection (ADR 0016, ADR 0061), the token
+// endpoint's operations, and mints the first token of an Instance by its bootstrap token
+// (Bootstrap). A code or a refresh token is a secret that names its grant before any Workspace
+// scope exists, so the module holds the raw *ent.Client (one of the closed list of
+// docs/architecture.md, Workspace scoping): it opens the exchange's transaction and scopes the
+// Connection's writes to the Workspace the claimed grant names.
 type Module struct {
-	ent *ent.Client
-	now func() time.Time
+	ent        *ent.Client
+	workspaces *workspaces.Module
+	// bootstrapToken is the Instance's bootstrap token (SPHERICON_BOOTSTRAP_TOKEN), "" for none.
+	bootstrapToken string
+	now            func() time.Time
 }
 
-// New builds the module over the ent client, which opens the transaction of an exchange, and the
+// New builds the module over the ent client, which opens the transaction of an exchange, the
+// Workspaces the bootstrap mints into, the Instance's bootstrap token ("" when it has none) and the
 // Instance clock.
-func New(client *ent.Client, now func() time.Time) *Module {
-	return &Module{ent: client, now: now}
+func New(client *ent.Client, ws *workspaces.Module, bootstrapToken string, now func() time.Time) *Module {
+	return &Module{ent: client, workspaces: ws, bootstrapToken: bootstrapToken, now: now}
 }
 
 // Issued is what an exchange issues: the access token, the refresh token that replaces it and

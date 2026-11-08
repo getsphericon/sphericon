@@ -85,6 +85,8 @@ var (
 	ErrorsAccountLinkNotConfigured              = ID{key: "errors.account_link_not_configured"}
 	ErrorsAlreadyMember                         = ID{key: "errors.already_member"}
 	ErrorsAuditCursorInvalid                    = ID{key: "errors.audit_cursor_invalid"}
+	ErrorsAuditRetentionUnlicensed              = ID{key: "errors.audit_retention_unlicensed"}
+	ErrorsAuditUnlicensed                       = ID{key: "errors.audit_unlicensed"}
 	ErrorsAutomationArchived                    = ID{key: "errors.automation_archived"}
 	ErrorsAutomationExitEventInvalid            = ID{key: "errors.automation_exit_event_invalid"}
 	ErrorsAutomationGoalEventInvalid            = ID{key: "errors.automation_goal_event_invalid"}

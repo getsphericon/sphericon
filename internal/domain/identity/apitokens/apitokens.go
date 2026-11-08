@@ -19,6 +19,7 @@ package apitokens
 import (
 	"context"
 	"crypto/subtle"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -48,14 +50,21 @@ var (
 	ErrBootstrapTokenInvalid = validation.Unauthorized("apitokens: invalid bootstrap token", i18n.ErrorsBootstrapTokenInvalid)
 )
 
-// CheckBootstrap admits a request for the first token by the instance's bootstrap token: the one
-// presented must be the one configured, compared in constant time, and an instance without one
-// admits none (ErrBootstrapTokenInvalid).
-func CheckBootstrap(configured, presented string) error {
-	if configured == "" || subtle.ConstantTimeCompare([]byte(presented), []byte(configured)) != 1 {
-		return ErrBootstrapTokenInvalid
+// Bootstrap mints the first token of an Instance, which no caller token can mint yet: for a request
+// that presents the Instance's bootstrap token, a token with any scope of the vocabulary, into the
+// oldest live Workspace. The token presented must be the one configured, compared in constant time,
+// and an Instance without one admits none (ErrBootstrapTokenInvalid).
+func (m *Module) Bootstrap(ctx context.Context, presented string, in Input) (Minted, error) {
+	if m.bootstrapToken == "" || subtle.ConstantTimeCompare([]byte(presented), []byte(m.bootstrapToken)) != 1 {
+		return Minted{}, ErrBootstrapTokenInvalid
 	}
-	return nil
+	id, err := m.workspaces.OldestLiveID(ctx)
+	if err != nil {
+		return Minted{}, fmt.Errorf("apitokens: bootstrap workspace: %w", err)
+	}
+	// The bootstrap token names the Workspace rather than a login, so the scope is the ingest
+	// actor's: no one is audited for the first token.
+	return Mint(ctx, events.Ingest(m.ent.Scoped(id)), in)
 }
 
 // nameEmpty refuses a token name that is blank after trimming.
@@ -84,7 +93,7 @@ type Minted struct {
 
 // Mint creates a token with any scope of the vocabulary. The caller has already
 // been authorized to hold that power: a Membership whose Role holds tokens:manage on /site,
-// or the bootstrap secret. A token minting another token goes through MintWithin.
+// or the bootstrap token (Module.Bootstrap). A token minting another token goes through MintWithin.
 func Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
 	name, scopes, err := checked(in)
 	if err != nil {

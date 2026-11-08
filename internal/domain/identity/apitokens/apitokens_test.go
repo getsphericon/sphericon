@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -99,8 +100,33 @@ func TestRevokeRetiresOnceAndIsWorkspaceScoped(t *testing.T) {
 	assert.ErrorIs(t, apitokens.Revoke(ctx, s, 999999, time.Now()), apitokens.ErrNotFound)
 }
 
-func TestCheckBootstrapAdmitsOnlyTheConfiguredToken(t *testing.T) {
-	require.NoError(t, apitokens.CheckBootstrap("boot-secret", "boot-secret"))
-	require.ErrorIs(t, apitokens.CheckBootstrap("boot-secret", "another"), apitokens.ErrBootstrapTokenInvalid)
-	require.ErrorIs(t, apitokens.CheckBootstrap("", ""), apitokens.ErrBootstrapTokenInvalid, "an instance without one admits none")
+// bootstrapModule is the module of an Instance whose bootstrap token is configured ("" for none).
+func bootstrapModule(env *testhelper.TestEnv, configured string) *apitokens.Module {
+	return apitokens.New(env.DB, workspaces.New(env.DB, env.Bus, time.Now), configured, time.Now)
+}
+
+// The bootstrap mints the first token, with no caller token to name a Workspace: into the oldest
+// one, for the request that presents the configured bootstrap token.
+func TestBootstrapMintsTheFirstTokenIntoTheOldestWorkspace(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := bootstrapModule(env, "boot-secret")
+	in := apitokens.Input{Name: "first", Scopes: []string{"tokens:write"}}
+
+	_, err := m.Bootstrap(t.Context(), "another", in)
+	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
+
+	minted, err := m.Bootstrap(t.Context(), "boot-secret", in)
+	require.NoError(t, err)
+	row := env.DB.ApiToken.GetX(t.Context(), minted.Token.ID)
+	assert.EqualValues(t, fixtures.AcmeID, row.WorkspaceID, "the oldest Workspace")
+	assert.Equal(t, []string{"tokens:write"}, row.Scopes)
+	assert.NotEmpty(t, minted.Value)
+}
+
+func TestBootstrapAdmitsNoneWithoutAConfiguredToken(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	_, err := bootstrapModule(env, "").Bootstrap(t.Context(), "", apitokens.Input{Name: "first"})
+
+	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid, "an empty token never matches an unset one")
 }

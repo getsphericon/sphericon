@@ -723,7 +723,7 @@ rules:
     forbid_external: *no-container
     because: a reader belongs to its owner's context (ADR 0102), so an orchestration reader imports its owner, the modules beside it and those below, never a module of a context above nor a use case
   domain-insights:
-    may_depend_on: []
+    may_depend_on: [domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: insights sits above orchestration in the domain tier (ADR 0102), so an insights package imports the kernel, the infrastructure, ent and the packages of its own context and of the contexts below, (an allowance added with its first import), never a module of the instance context (the Instance state, an upgrade) nor a use case; an operation that needs one is a use case above both

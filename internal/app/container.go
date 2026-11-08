@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
@@ -62,6 +63,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
@@ -611,6 +613,7 @@ var deliveryPackage = do.Package(
 		opts := []outboundmessages.Option{
 			outboundmessages.WithStartLinks(do.MustInvoke[*bindings.Module](i)),
 			outboundmessages.WithTestSendBudget(do.MustInvoke[*throttle.Attempts](i)),
+			outboundmessages.WithUsers(do.MustInvoke[*users.Module](i)),
 			outboundmessages.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outboundmessages.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
 			outboundmessages.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[*integrations.Module](i)),
@@ -882,6 +885,21 @@ var surfacesPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*oauthclients.Module, error) {
 		return oauthclients.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer, do.MustInvoke[Clock](i)), nil
 	}),
+	// The Audit log the surfaces read (ADR 0022), over the Enterprise Edition's reader: refused as
+	// unlicensed when the License lacks it.
+	do.Lazy(func(i do.Injector) (*auditlog.Log, error) {
+		return auditlog.New(do.MustInvoke[*ee.Edition](i).Audit, do.MustInvoke[*workspaces.Module](i)), nil
+	}),
+	// The tokens whose request names no Workspace yet: a Connection the token endpoint exchanges a
+	// code or a refresh token for, and the Instance's first token, minted by its bootstrap token.
+	do.Lazy(func(i do.Injector) (*apitokens.Module, error) {
+		return apitokens.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*config.Config](i).BootstrapToken, do.MustInvoke[Clock](i)), nil
+	}),
+	// The OAuth server's protocol endpoints (internal/api/oauth), which the router mounts.
+	do.Lazy(func(i do.Injector) (*oauth.Server, error) {
+		cfg := do.MustInvoke[*config.Config](i)
+		return oauth.New(do.MustInvoke[*apitokens.Module](i), do.MustInvoke[*oauthclients.Module](i), cfg.AppURL, cfg.MCPOrigin()), nil
+	}),
 	// The Sign-in providers the Instance enabled (ADR 0048).
 	do.Lazy(func(i do.Injector) (*signinprovider.Providers, error) {
 		return signinprovider.FromConfig(do.MustInvoke[*config.Config](i), do.MustInvoke[Clock](i), do.MustInvoke[SigninOptions](i)...), nil
@@ -983,7 +1001,8 @@ var surfacesPackage = do.Package(
 		h, err := server.New(do.MustInvoke[*config.Config](i), do.MustInvoke[Database](i).DB, do.MustInvoke[*db.SchemaWatch](i), do.MustInvoke[*ent.Client](i),
 			new(do.MustInvoke[apisite.Deps](i)), do.MustInvoke[*trackingdomains.Module](i), do.MustInvoke[*ratelimit.Limiter](i),
 			do.MustInvoke[*linksHandler](i).Handler, do.MustInvoke[*hooksHandler](i).Handler,
-			do.MustInvoke[*externalAPI](i).Handler, do.MustInvoke[*mcpHandler](i).Handler, do.MustInvoke[*staffHandler](i).Handler)
+			do.MustInvoke[*externalAPI](i).Handler, do.MustInvoke[*mcpHandler](i).Handler, do.MustInvoke[*staffHandler](i).Handler,
+			do.MustInvoke[*oauth.Server](i))
 		if err != nil {
 			return Handler{}, err
 		}
@@ -1021,8 +1040,8 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		IntegrationDeletion:   do.MustInvoke[*integrationdeletion.UseCase](i),
 		SendingDomainDeletion: do.MustInvoke[*sendingdomaindeletion.UseCase](i),
 		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),
-		BootstrapToken:        do.MustInvoke[*config.Config](i).BootstrapToken,
-		Audit:                 edition.Audit,
+		Tokens:                do.MustInvoke[*apitokens.Module](i),
+		Audit:                 do.MustInvoke[*auditlog.Log](i),
 		Export:                edition.Export,
 
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
@@ -1032,7 +1051,6 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 // siteDeps is what the /site handlers are built from.
 func siteDeps(i do.Injector) (apisite.Deps, error) {
 	cfg := do.MustInvoke[*config.Config](i)
-	edition := do.MustInvoke[*ee.Edition](i)
 	bus := do.MustInvoke[*events.Bus](i)
 	accountLink, _, err := accountlink.FromConfig(cfg)
 	if err != nil {
@@ -1084,7 +1102,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Sessions:                 do.MustInvoke[*apiauth.Sessions](i),
 		Tracker:                  do.MustInvoke[*messagetoken.Tracker](i),
 		AppURL:                   cfg.AppURL,
-		Audit:                    edition.Audit,
+		Audit:                    do.MustInvoke[*auditlog.Log](i),
 		SecondFactor:             do.MustInvoke[*secondfactors.Module](i),
 		SecondFactorReset:        do.MustInvoke[*secondfactorreset.UseCase](i),
 		WorkspaceCreation:        do.MustInvoke[*workspacecreation.UseCase](i),

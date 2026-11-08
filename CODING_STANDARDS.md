@@ -138,7 +138,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
   `validation.LinkInvalid` 400 (a mailed link that does not stand), `validation.Incomplete` 428,
   `validation.UnknownReference` 400 (a reference that names nothing, such as a pending sign-up that
-  is gone or a cursor never handed out), the message as `detail` and, for a sentinel that names a
+  is gone or a cursor never handed out), `validation.Unlicensed` 402 (a capability the License does
+  not include), the message as `detail` and, for a sentinel that names a
   field (`validation.RefuseField`, `validation.ConflictField`), under its field), a `*validation.Error` with 422 and its field, a
   `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
   `detail`, an `*liveuse.Error` with 409 and `usedBy`, an `*users.DeletionRefusedError` with 422
@@ -153,8 +154,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `default` response), the handler returns the module's sentinel as its error, and the surface's
   `NewError` answers it through `internal/api/problem`, which the rule does not cover: it is where
   the problems are written. Its other `ignores` are the files that keep an answer no refusal kind
-  gives as a `problem.Error` (the 402 of a missing Enterprise license, the 410 of an expired
-  confirmation link). A single answer kept by hand in a covered file carries
+  gives as a `problem.Error` (the 410 of an expired confirmation link). A single answer kept by hand in a covered file carries
   `// ast-grep-ignore: no-hand-written-problem-in-handlers` under a comment that says why. A batch
   that reports each item inside a 200 words a failed item with `validation.Shown`.
 - **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares

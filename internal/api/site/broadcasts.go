@@ -8,10 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -205,29 +202,13 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 
 // SiteBroadcastsTestSend renders the broadcast with sample merge data and sends
 // it to a single address — no recipient rows, no tracking (a token would point
-// at a nonexistent recipient). Used to preview the rendered email or text.
+// at a nonexistent recipient). Used to preview the rendered email or text. The
+// signed-in User asks: with no verified Sending domain the preview may go from the
+// System sender to them only (ADR 0041).
 func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.TestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (*siteapi.SiteTestSendBroadcastResult, error) {
-	ws := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	b, err := h.broadcasts.Get(ctx, ws, id)
+	res, err := h.broadcasts.SendTest(ctx, workspaceScope(ctx), int64(params.ID), inputs.TestAddress(req))
 	if err != nil {
 		return nil, err
-	}
-
-	// The asking User: with no verified Sending domain the preview may go only to them
-	// (ADR 0041).
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		return nil, auth.ErrUnauthorized
-	}
-	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, inputs.TestAddress(req), &outboundmessages.Asker{UserID: a.UserID, Email: a.Email})
-	if err != nil {
-		return nil, err
-	}
-	if res.Wait > 0 {
-		// The System sender's cap: the client waits as for any rate limit.
-		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, res.Limit, res.Wait, h.now())
 	}
 	out := mapper.TestSendResultToResource(res)
 	return &out, nil

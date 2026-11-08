@@ -33,7 +33,6 @@ import (
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	apistaff "github.com/getsphericon/sphericon/internal/api/staff"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
-	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
@@ -49,16 +48,15 @@ import (
 
 // New composes the HTTP handler: the ogen servers of the surfaces, the drivers of the public
 // endpoints, the SPA and the middleware around them. client is the raw ent client: only the
-// pieces whose Workspace is not known up front take it (auth, OAuth); the site, external and
+// pieces whose Workspace is not known up front take it (auth); the site, external and
 // collect handlers get none (ADR 0017). schema answers the development schema guard
 // (SchemaGuard). limiter is the process's request budgets, shared with the internal listener.
 // links serves the tracked links (`/e/`, `/c/`) and hooks the Ingest hook (`/hooks/`); the
 // container builds them (internal/api/tracking, internal/api/hooks), and domains is the
-// Instance-wide Tracking host index the host gate reads (ADR 0038).
-func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, domains *trackingdomains.Module, limiter *ratelimit.Limiter, links, hooks, external, mcp, staff http.Handler) (http.Handler, error) {
+// Instance-wide Tracking host index the host gate reads (ADR 0038). oauthServer is the OAuth
+// server's protocol endpoints, which the container builds over the API tokens module.
+func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, domains *trackingdomains.Module, limiter *ratelimit.Limiter, links, hooks, external, mcp, staff http.Handler, oauthServer *oauth.Server) (http.Handler, error) {
 	bus := site.Bus
-	// The Instance clock of the use cases built here (required, as the site handlers require it).
-	now := site.Clock
 	mux := http.NewServeMux()
 
 	// Login and logout are /site operations (ADR 0020), and the login operation is
@@ -113,7 +111,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// OAuth 2.1 for MCP connectors (ADR 0016): discovery, dynamic client
 	// registration, authorize (hands off to the SPA consent screen) and token.
-	oauth.New(apitokens.New(client, now), site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
+	oauthServer.Mount(mux)
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(
