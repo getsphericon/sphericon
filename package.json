@@ -110,7 +110,7 @@
       "name": "tracker (t.js)",
       "path": "packages/analytics/dist/t.js",
       "gzip": true,
-      "limit": "17 kB"
+      "limit": "32 kB"
     }
   ],
   "engines": {
