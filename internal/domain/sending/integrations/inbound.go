@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -21,12 +22,28 @@ import (
 
 // The inbound side of an Integration (ADR 0037): the Preset its provider callbacks are
 // read with, the Preset's params (secrets encrypted, rotating in pairs) and its own hook
-// key. The hook (internal/server) opens an Integration by key with the raw client, then
-// asks this module for its params; everything an API reads or writes goes through here.
+// key. The Callback interpretation (internal/usecase/callbackinterpretation) opens an Integration
+// by its key (ByIngestKey), then asks this module for its params; everything an API reads or
+// writes goes through here.
 
 // SecretMask is what a read shows in place of a secret param. Sending it back, or a
 // blank, or nothing, leaves the stored secret as it is.
 const SecretMask = "********"
+
+// ByIngestKey is the Integration whose hook URL ends in key, of a live Workspace: a Workspace in
+// its deletion window takes no new data (ADR 0043), so its keys name nothing. An archived
+// Integration is found, since it still reads the callbacks of mail sent through it (ADR 0049). The
+// key names the Workspace before any scope exists, so this reads on the raw client and uses it for
+// nothing else (docs/architecture.md, Workspace scoping). An unknown key is ErrNotFound.
+func ByIngestKey(ctx context.Context, c *ent.Client, key string) (*ent.Integration, error) {
+	row, err := c.Integration.Query().
+		Where(integration.IngestKey(key), integration.HasWorkspaceWith(workspaces.Live())).
+		Only(ctx)
+	if err != nil {
+		return nil, missing(err)
+	}
+	return row, nil
+}
 
 // Presets is the registry of Presets the Instance offers.
 func (m *Module) Presets() *preset.Registry { return m.presets }

@@ -104,12 +104,13 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
   function of the owner that makes the write, which the writer calls. An entry point does not write through
   ent at all: there every write is a finding worded for the entry point. The handlers
-  of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect`, `staff` and `ee/api/staff`) do not read through ent either:
+  of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect`, `staff`, `oauth`, `tracking`, `hooks`, `tlsask` and `ee/api/staff`) do not read through ent either:
   a `Get`, `GetX`, a `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a
   function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
   transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
-  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the Enterprise
-  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The helpers the
+  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the OAuth
+  server, the tracked links, the Ingest hook and the TLS question (`internal/api/{oauth,tracking,hooks,tlsask}`),
+  the Enterprise handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The helpers the
   analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
   `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function

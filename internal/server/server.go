@@ -36,7 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
-	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
@@ -46,14 +46,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 )
 
-// New builds the top-level net/http handler wiring the three ogen-generated
-// API servers (site, external, collect) and the public endpoints.
-// New composes the HTTP handler. client is the raw ent client: only the pieces whose
-// Workspace is not known up front take it (auth, OAuth, tracking, provider hooks);
-// the site, external and collect handlers get none (ADR 0017). schema answers the development
-// schema guard (SchemaGuard). limiter is the process's request budgets, shared with the
-// internal listener.
-func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, detector *privaterelayranges.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
+// New composes the HTTP handler: the ogen servers of the surfaces, the drivers of the public
+// endpoints, the SPA and the middleware around them. client is the raw ent client: only the
+// pieces whose Workspace is not known up front take it (auth, OAuth); the site, external and
+// collect handlers get none (ADR 0017). schema answers the development schema guard
+// (SchemaGuard). limiter is the process's request budgets, shared with the internal listener.
+// links serves the tracked links (`/e/`, `/c/`) and hooks the Ingest hook (`/hooks/`); the
+// container builds them (internal/api/tracking, internal/api/hooks), and domains is the
+// Instance-wide Tracking host index the host gate reads (ADR 0038).
+func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, domains *trackingdomains.Module, limiter *ratelimit.Limiter, links, hooks, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	// The Instance clock of the use cases built here (required, as the site handlers require it).
 	now := site.Clock
@@ -133,13 +134,12 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	mux.Handle("/t.js", trackerHandler())
 
 	// Public engagement endpoints (open pixel, click redirect, unsubscribe, a short tracked link).
-	trackingH := trackingHandler(client, bus, site.Tracker, site.Unsubscribe, limiter, detector, cfg.AppURL, site.Clock)
-	mux.Handle("/e/", trackingH)
-	mux.Handle("/c/", trackingH)
+	mux.Handle("/e/", links)
+	mux.Handle("/c/", links)
 
 	// Inbound provider callbacks (ADR 0037): POST /hooks/{key}, the key of one
 	// Integration, read with that Integration's Preset.
-	mux.Handle("/hooks/", hooksHandler(client, bus, site.Integrations, now))
+	mux.Handle("/hooks/", hooks)
 
 	// Catch-all: the embedded SPA (release builds with -tags embed_spa). Most
 	// specific pattern wins, so this never shadows the API prefixes above.
@@ -168,7 +168,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		outer = append(outer, SchemaGuard(schema))
 	}
 	inner := chi.Middlewares{clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
-	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil
+	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, domains, mux, links)), nil
 }
 
 // ExternalSecurity is the Bearer-token handler of /api and of /mcp, which rides the same token
@@ -251,11 +251,12 @@ type ServiceSurface interface {
 // endpoints under /service and nothing else, behind the middleware the public server
 // uses where it applies (recoverer, request id, client address, rate limit, timeout,
 // body limit). The edge's on-demand TLS question (paths.TLSAsk, ADR 0038) is core and
-// always served; the service endpoints exist only with a surface, so a nil one (no
-// `staff` license) leaves /service unrouted (404). limiter is the one the public server uses.
-func NewInternal(cfg *config.Config, client *ent.Client, limiter *ratelimit.Limiter, surface ServiceSurface) (http.Handler, error) {
+// always served (tlsAsk, internal/api/tlsask); the service endpoints exist only with a surface, so
+// a nil one (no `staff` license) leaves /service unrouted (404). limiter is the one the public
+// server uses.
+func NewInternal(cfg *config.Config, tlsAsk http.Handler, limiter *ratelimit.Limiter, surface ServiceSurface) (http.Handler, error) {
 	mux := http.NewServeMux()
-	mux.Handle("GET "+paths.TLSAsk, tlsAskHandler(client))
+	mux.Handle("GET "+paths.TLSAsk, tlsAsk)
 	if surface != nil {
 		srv, err := surface.Server(serviceapi.WithErrorHandler(problem.ErrorHandler))
 		if err != nil {

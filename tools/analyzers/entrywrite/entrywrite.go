@@ -47,18 +47,23 @@ const module = "github.com/getsphericon/sphericon/"
 // eventsPath is the package of the events bus, whose Within… methods open a transaction.
 const eventsPath = module + "internal/infra/events"
 
-// surfaces are the entry points that read through a domain module too: the handlers of the API surfaces.
+// surfaces are the entry points that read through a domain module too: the handlers of the API
+// surfaces and of the public endpoints with no contract (the tracked links, the Ingest hook, the
+// edge's TLS question).
 var surfaces = []string{
 	"internal/api/site",
 	"internal/api/external",
 	"internal/api/collect",
 	"internal/api/staff",
 	"internal/api/oauth",
+	"internal/api/tracking",
+	"internal/api/hooks",
+	"internal/api/tlsask",
 	"ee/api/staff",
 }
 
 // entryPoints are the packages that receive input from outside (an API surface, MCP, a queue, the
-// ingest hooks) and hand it to a domain module.
+// ingest hooks) and hand it to a domain module, with the router that mounts them.
 var entryPoints = append(slices.Clone(surfaces), "internal/mcpserver", "internal/jobs", "internal/server")
 
 // owners names, for each ent entity, the package that owns its table: the only one that writes it

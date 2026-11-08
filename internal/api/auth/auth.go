@@ -315,10 +315,18 @@ func CollectScoped(ctx context.Context) *ent.Scoped {
 
 var hostWorkspaceKey = struct{ name string }{"hostWorkspace"}
 
-// WithHostWorkspace marks a request that arrived on a Workspace's own Tracking host (ADR 0059):
-// the collect key must then be that Workspace's, so the host is no ingestion path for another key.
+// WithHostWorkspace marks a request that arrived on a Workspace's own Tracking host (ADR 0038,
+// ADR 0059): the collect key must then be that Workspace's, so the host is no ingestion path for
+// another key, and a tracked link must be one of that Workspace's.
 func WithHostWorkspace(ctx context.Context, workspaceID int64) context.Context {
 	return context.WithValue(ctx, hostWorkspaceKey, workspaceID)
+}
+
+// HostWorkspace is the Workspace whose Tracking host the request arrived on, 0 on the Instance's
+// own host.
+func HostWorkspace(ctx context.Context) int64 {
+	id, _ := ctx.Value(hostWorkspaceKey).(int64)
+	return id
 }
 
 // CollectSecurityHandler implements collectapi.SecurityHandler: resolves the
@@ -359,7 +367,7 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 	if err != nil {
 		return nil, err
 	}
-	if host, onHost := ctx.Value(hostWorkspaceKey).(int64); onHost && host != ws.ID {
+	if host := HostWorkspace(ctx); host != 0 && host != ws.ID {
 		return nil, ErrUnauthorized
 	}
 	return ws, nil
