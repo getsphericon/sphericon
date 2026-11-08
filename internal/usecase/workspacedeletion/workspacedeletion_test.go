@@ -92,33 +92,6 @@ func TestEraseDueLeavesALiveWorkspace(t *testing.T) {
 	assert.Equal(t, before.CollectKey, got.CollectKey)
 }
 
-func TestDeletingTwiceKeepsTheFirstDeletionTime(t *testing.T) {
-	env := testhelper.Setup(t)
-	at := now
-	m := workspacedeletion.New(env.DB, env.Bus, func() time.Time { return at })
-	s := env.DB.Scoped(fixtures.InitechID)
-	name := initech(t, env).Name
-
-	first, err := m.Delete(t.Context(), s, actor, name)
-	require.NoError(t, err)
-	at = now.Add(24 * time.Hour)
-	second, err := m.Delete(t.Context(), s, actor, name)
-	require.NoError(t, err)
-
-	require.NotNil(t, first.DiscardedAt)
-	require.NotNil(t, second.DiscardedAt)
-	assert.True(t, first.DiscardedAt.Equal(*second.DiscardedAt), "the window does not restart")
-}
-
-func TestDeleteRefusesAWrongName(t *testing.T) {
-	env, m := setup(t)
-
-	_, err := m.Delete(t.Context(), env.DB.Scoped(fixtures.InitechID), actor, "not the name")
-
-	require.ErrorIs(t, err, workspacedeletion.ErrNameMismatch)
-	assert.Nil(t, initech(t, env).DiscardedAt)
-}
-
 // erasedJustBefore is an ent hook on the Workspace's compare-and-swap write: an erase that read
 // the same state writes first, so the write that follows holds a stale read. It is registered on
 // the restore's write only (restoreWrite), so the writes it causes do not run it again.

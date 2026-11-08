@@ -116,7 +116,8 @@ Telemetry report, `internal/domain/contacts/eventrecording` what the Event recor
 publishes, and `internal/domain/orchestration/automations` the steps of an Enrollment
 (`StepExecution`). A check that needs nothing above its owner moves into the owner the same way
 (ADR 0110): `internal/domain/sending/sendingdomains` holds the Sending domain checks (`Verify`,
-`Recheck`). The use case is built from the container like a
+`Recheck`). `internal/domain/identity/workspaces` holds the check of the typed name when
+it deletes a Workspace (`Module.Delete`). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step
@@ -134,8 +135,8 @@ changes; the Second factor check is the module `internal/domain/identity/secondf
 `env.SecondFactor`, whose `_test` package holds its own), the Workspace creation's `env.WorkspaceCreation`
 (`internal/usecase/workspacecreation`; a test of its id retry builds it with `New` and an id
 generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
-Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle
-(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange
+Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle's
+restore and erase (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange
 of an OAuth grant (`apitokens.Module`, which holds the raw client too) is driven through the
 server's `/oauth` routes, which its driver `internal/api/oauth` serves and tests.
 The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test

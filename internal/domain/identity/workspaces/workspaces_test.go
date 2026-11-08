@@ -27,7 +27,7 @@ func TestIDByPublicIDIn(t *testing.T) {
 
 func TestBootstrapScopeNeverTargetsADeletedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	a := workspaces.New(env.DB, env.Bus)
+	a := workspaces.New(env.DB, env.Bus, time.Now)
 	oldest, err := a.BootstrapScope(t.Context())
 	require.NoError(t, err)
 	require.EqualValues(t, fixtures.AcmeID, oldest.WorkspaceID())

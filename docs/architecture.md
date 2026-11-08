@@ -310,8 +310,9 @@ coding standards in `CODING_STANDARDS.md`.
   table at a time, each batch of listed ids deleted by itself through `*ent.Scoped`, the Enterprise
   Edition's tables included (ADR 0110: the one writer of a Workspace-owned table besides its owner,
   "Only the owner writes a table" above), and moves the
-  Workspace row through `workspaces.DiscardIn`, `RestoreIn` and
-  `TombstoneIn`, with the OAuth codes that name it removed by `oauthclients.DeleteCodesIn` and every
+  Workspace row back through `workspaces.RestoreIn` and on through
+  `TombstoneIn` (deleting one checks only its typed name, so it is `workspaces.Module.Delete`,
+  ADR 0110), with the OAuth codes that name it removed by `oauthclients.DeleteCodesIn` and every
   job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, "Async"
   below), both in the tombstone's transaction; and the
   creation of a Workspace (`internal/usecase/workspacecreation`), which writes the Workspace through
@@ -334,8 +335,8 @@ coding standards in `CODING_STANDARDS.md`.
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The Second factor reset's removals (`secondfactors.ResetIn`, the
-  factor with its Recovery codes, and `passkeys.DeleteAllIn`), the moves of a Workspace's deletion cycle
-  (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the removal of the OAuth codes its erase
+  factor with its Recovery codes, and `passkeys.DeleteAllIn`), the restore and the tombstone of a Workspace's
+  deletion cycle (`workspaces.RestoreIn` and `TombstoneIn`), the removal of the OAuth codes its erase
   makes (`oauthclients.DeleteCodesIn`; the erase deletes a Workspace's rows itself, ADR 0110, so no
   owner's removal of them has a name), the creation of a Workspace with its creator's Membership
   (`workspaces.CreateIn`, `memberships.AddCreatorIn`) and each owner's step of a Contact's Erasure
