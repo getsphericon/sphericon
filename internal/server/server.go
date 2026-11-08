@@ -33,6 +33,7 @@ import (
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	apistaff "github.com/getsphericon/sphericon/internal/api/staff"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
@@ -42,7 +43,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/server/spa"
-	"github.com/getsphericon/sphericon/internal/usecase/connectionissuance"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 )
 
@@ -111,7 +111,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// OAuth 2.1 for MCP connectors (ADR 0016): discovery, dynamic client
 	// registration, authorize (hands off to the SPA consent screen) and token.
-	oauth.New(connectionissuance.New(client, site.OAuth, now), site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
+	oauth.New(apitokens.New(client, now), site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(

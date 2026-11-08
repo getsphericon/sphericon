@@ -132,9 +132,9 @@ owns holds the raw client: the Second factor's is `env.SecondFactor`
 generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
 Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle
 (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables(), clock)`
-(the removals of the Enterprise Edition's tables the wiring hands in), and the exchange of an OAuth
-grant (`internal/usecase/connectionissuance`) is driven through the server's `/oauth` routes, which
-its driver `internal/api/oauth` serves and tests.
+(the removals of the Enterprise Edition's tables the wiring hands in). The exchange of an OAuth
+grant (`apitokens.Module`, which holds the raw client too) is driven through the server's `/oauth`
+routes, which its driver `internal/api/oauth` serves and tests.
 The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test
 of a race on a new address gives it a `Lookup` whose first lookup misses.
 A use case reads the time from the clock `New` takes (ADR 0104), so a test that needs a moment

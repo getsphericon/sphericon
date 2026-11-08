@@ -2,8 +2,8 @@
 // driver beside the API surfaces (ADR 0102): it serves the protocol's endpoints, the discovery
 // documents (RFC 9728, RFC 8414), dynamic client registration (RFC 7591) through the OAuth clients
 // module, the authorize step that hands the browser to the SPA consent screen, and the token
-// endpoint, whose exchange of a code or a refresh token for a Connection is the use case
-// internal/usecase/connectionissuance.
+// endpoint, whose exchange of a code or a refresh token for a Connection is
+// internal/domain/identity/apitokens's.
 package oauth
 
 import (
@@ -18,9 +18,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/usecase/connectionissuance"
 )
 
 // Paths served by the Go binary. The consent screen is the SPA route ConsentPath.
@@ -54,16 +54,16 @@ const (
 
 // Server serves the OAuth protocol endpoints.
 type Server struct {
-	connections *connectionissuance.UseCase
+	connections *apitokens.Module
 	clients     *oauthclients.Module
 	issuer      string
 	resource    string
 }
 
-// New builds the server over the use case that issues a Connection and the OAuth clients module;
-// appURL is the public origin and the OAuth issuer, and mcpURL the origin of the MCP resource (the
-// same as appURL on a single host).
-func New(connections *connectionissuance.UseCase, clients *oauthclients.Module, appURL, mcpURL string) *Server {
+// New builds the server over the API tokens module, which exchanges a grant for a Connection, and
+// the OAuth clients module; appURL is the public origin and the OAuth issuer, and mcpURL the origin
+// of the MCP resource (the same as appURL on a single host).
+func New(connections *apitokens.Module, clients *oauthclients.Module, appURL, mcpURL string) *Server {
 	return &Server{connections: connections, clients: clients, issuer: strings.TrimSuffix(appURL, "/"), resource: ResourceURL(mcpURL)}
 }
 
@@ -208,17 +208,17 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var (
-		out *connectionissuance.Issued
+		out *apitokens.Issued
 		err error
 	)
 	switch r.PostForm.Get("grant_type") {
 	case grantAuthorizationCode:
-		out, err = s.connections.ExchangeCode(r.Context(), connectionissuance.ExchangeCodeInput{
+		out, err = s.connections.ExchangeCode(r.Context(), oauthclients.CodeClaim{
 			Code: r.PostForm.Get("code"), ClientID: r.PostForm.Get("client_id"),
 			RedirectURI: r.PostForm.Get("redirect_uri"), Verifier: r.PostForm.Get("code_verifier"),
 		})
 	case grantRefreshToken:
-		out, err = s.connections.Refresh(r.Context(), connectionissuance.RefreshInput{
+		out, err = s.connections.Refresh(r.Context(), apitokens.RefreshInput{
 			RefreshToken: r.PostForm.Get("refresh_token"), ClientID: r.PostForm.Get("client_id"), Scope: r.PostForm.Get("scope"),
 		})
 	default:
@@ -237,7 +237,7 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"access_token":  out.AccessToken,
 		"token_type":    "Bearer",
-		"expires_in":    int(connectionissuance.AccessTokenTTL.Seconds()),
+		"expires_in":    int(apitokens.AccessTokenTTL.Seconds()),
 		"refresh_token": out.RefreshToken,
 		"scope":         strings.Join(out.Scopes, " "),
 	})
@@ -256,9 +256,9 @@ func writeJSON(w http.ResponseWriter, code int, body any) {
 // grant is invalid_scope, any other refusal invalid_grant. An error that is no refusal is not one.
 func exchangeRefusal(err error) (string, bool) {
 	switch {
-	case errors.Is(err, connectionissuance.ErrScopeExceedsGrant):
+	case errors.Is(err, apitokens.ErrScopeExceedsGrant):
 		return "invalid_scope", true
-	case errors.Is(err, connectionissuance.ErrInvalidGrant):
+	case errors.Is(err, oauthclients.ErrInvalidGrant):
 		return "invalid_grant", true
 	}
 	return "", false

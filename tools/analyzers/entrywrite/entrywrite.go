@@ -99,7 +99,7 @@ var owners = map[string]string{
 	"Membership":           "internal/domain/identity/memberships",
 	"OAuthClient":          "internal/domain/identity/oauthclients",
 	"OAuthCode":            "internal/domain/identity/oauthclients",
-	"OAuthRefreshToken":    "internal/domain/identity/oauthclients",
+	"OAuthRefreshToken":    "internal/domain/identity/apitokens",
 	"Order":                "internal/domain/contacts/orders",
 	"OrderMovement":        "internal/domain/contacts/orders",
 	"OutboundMessage":      "internal/domain/sending/outboundmessages",
