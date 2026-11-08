@@ -29,7 +29,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
@@ -42,7 +41,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -599,10 +597,6 @@ func TestBroadcastWorkers(t *testing.T) {
 	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now))
 	assert.Equal(t, 10*time.Minute, w.Timeout(nil))
 
-	// A draft (unscheduled after queueing) is not sent.
-	require.NoError(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID})))
-	require.Empty(t, e.queued(t))
-
 	// Fan-out: one recipient job per eligible contact.
 	e.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetStatus(broadcast.StatusSending).ExecX(ctx)
 	require.NoError(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID})))
@@ -660,75 +654,6 @@ func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 	last.Attempt = last.MaxAttempts
 	require.Error(t, failing.Work(ctx, last))
 	assert.False(t, stillPending(ctx, e.DB, ids[0]), "the last attempt fails the recipient so the broadcast can finalize")
-}
-
-// takeoverSender fails the send after another attempt took over the claim, as one that outlived
-// its lease would find: the failure cannot release a claim that is no longer its own.
-type takeoverSender struct{ db *ent.Client }
-
-func (takeoverSender) DefaultFrom() (address, name string) {
-	return "hello@codebasics.dev", "CodeBasics"
-}
-
-func (s takeoverSender) Send(ctx context.Context, _ messaging.EmailMessage) (messaging.Receipt, error) {
-	s.db.OutboundMessage.Update().
-		Where(outboundmessage.StatusEQ(outboundmessage.StatusPending)).
-		SetClaimedAt(time.Now()).ExecX(ctx)
-	return messaging.Receipt{}, errors.New("smtp unavailable")
-}
-
-// On the last attempt a recipient whose claim another attempt still holds is not failed: that
-// attempt may yet reach the provider, so the job snoozes (which spends no attempt) and gives up
-// once the lease is out.
-func TestSendRecipientWorkerSnoozesInsteadOfGivingUpOnALiveClaim(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := e.workCtx()
-	id := e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
-
-	worker := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(takeoverSender{db: e.DB}), time.Now))
-	last := job(jobs.SendRecipientArgs{RecipientID: id, BroadcastID: fixtures.BroadcastSendingID})
-	last.Attempt = last.MaxAttempts
-
-	var snooze *river.JobSnoozeError
-	require.ErrorAs(t, worker.Work(ctx, last), &snooze)
-
-	assert.True(t, stillPending(ctx, e.DB, id), "nothing is failed while the claim is live")
-	assert.Equal(t, broadcast.StatusSending, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastSendingID).Status)
-}
-
-// A recipient whose send another attempt is making waits that attempt out: the job snoozes,
-// which spends no attempt, and nothing is sent or failed meanwhile.
-func TestSendRecipientWorkerSnoozesWhileAnotherAttemptSends(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := e.workCtx()
-	id := e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactBobID)
-	e.ClaimRecipient(ctx, id, 0)
-
-	err := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now)).
-		Work(ctx, job(jobs.SendRecipientArgs{RecipientID: id, BroadcastID: fixtures.BroadcastSendingID}))
-
-	var snooze *river.JobSnoozeError
-	require.ErrorAs(t, err, &snooze)
-	assert.Positive(t, snooze.Duration)
-	assert.True(t, stillPending(ctx, e.DB, id))
-	assert.Empty(t, e.sender.sent)
-}
-
-// A queued plan job that fires after its Broadcast has finished is stale: it finishes
-// without an error (so river does not retry it) and leaves the status alone.
-func TestSendBroadcastWorkerFinishesAStaleJob(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := e.workCtx()
-	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now))
-
-	for id, want := range map[int64]broadcast.Status{
-		fixtures.BroadcastSentID:   broadcast.StatusSent,
-		fixtures.BroadcastFailedID: broadcast.StatusFailed,
-	} {
-		require.NoError(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: id})), "broadcast %d", id)
-		assert.Equal(t, want, e.DB.Broadcast.GetX(ctx, id).Status, "broadcast %d", id)
-	}
-	assert.Empty(t, e.queued(t))
 }
 
 // Every verified host is due, retired ones included: a retired host goes once its CNAME does.

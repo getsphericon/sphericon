@@ -7,8 +7,10 @@
 // Every Broadcast status write goes through the transition table in status.go (ADR 0046):
 // a stateless table with a compare-and-swap write, so an illegal move is
 // lifecycle.ErrInvalidTransition. Delivery owns the rest of the lifecycle: plan, pace, send
-// one recipient through Outbound send (ADR 0015), give up, finalize. The queue adapter (river)
-// only implements its Scheduler seam and decides how to retry.
+// one recipient through Outbound send (ADR 0015), give up, finalize. It also decides what each
+// run of a send job comes to (RunQueued, DeliverRecipient): done, a wait, a retry or a give-up on
+// the last attempt (ADR 0111). The queue adapter (river) only implements its Scheduler seam and
+// turns that Outcome into its own snooze or retry.
 package broadcasts
 
 import (

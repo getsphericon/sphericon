@@ -50,7 +50,7 @@ func NewDelivery(out *outboundmessages.Module) *Delivery { return &Delivery{out:
 // alone (a stale job is just that), and the Outbound idempotency key makes a retry after a
 // committed send replay the recorded result.
 //
-// A returned error is for the adapter to retry: *HeldError (the source is on hold),
+// A returned error is for the job to retry (DeliverRecipient reads it): *HeldError (the source is on hold),
 // *DeferredError (a send limit is spent), outboundmessages.ErrInProgress (a live claim) or a
 // fault; none consumed the recipient.
 func (d *Delivery) SendRecipient(ctx context.Context, s *ent.Scoped, recipientID int64) error {
@@ -168,14 +168,14 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	return &DeferredError{Delay: retry.After, Cause: res.Cause}
 }
 
-// GiveUp records the terminal failure of a recipient whose last attempt failed with cause:
+// giveUp records the terminal failure of a recipient whose last attempt failed with cause:
 // Outbound send ends its message as Failed with the cause as its reason (a send that already
 // reached the provider stays sent), and the Broadcast settles if none is left pending. A
 // recipient already decided keeps its outcome.
 //
 // outboundmessages.ErrInProgress means another attempt still holds a live claim and may yet reach the
-// provider: nothing is failed, and the adapter waits out the lease and gives up again.
-func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64, cause error) error {
+// provider: nothing is failed, and the job waits out the lease and gives up again.
+func (d *Delivery) giveUp(ctx context.Context, s *ent.Scoped, recipientID int64, cause error) error {
 	rec, err := s.BroadcastRecipient().Get(ctx, recipientID)
 	if ent.IsNotFound(err) {
 		return nil
@@ -200,12 +200,4 @@ func setHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason holdr
 // clearHold records that a Broadcast is no longer held.
 func clearHold(ctx context.Context, s *ent.Scoped, broadcastID int64) error {
 	return s.Broadcast().UpdateOneID(broadcastID).ClearHoldReason().Exec(ctx)
-}
-
-// IsRetryLater reports whether err asks the adapter to try again rather than record a
-// failure: a hold, a Deferral or a live claim.
-func IsRetryLater(err error) bool {
-	var held *HeldError
-	var deferred *DeferredError
-	return errors.As(err, &held) || errors.As(err, &deferred) || errors.Is(err, outboundmessages.ErrInProgress)
 }
