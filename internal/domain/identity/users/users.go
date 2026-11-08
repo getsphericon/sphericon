@@ -99,7 +99,13 @@ func (a *Module) User(ctx context.Context, id int64) (*ent.User, error) {
 // UserByEmail loads a User by login email, whatever its case (an ent NotFound error when none):
 // a stored email is lower-cased (ent/schema LowerEmail).
 func (a *Module) UserByEmail(ctx context.Context, email string) (*ent.User, error) {
-	return a.ent.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).Only(ctx)
+	return UserByEmailIn(ctx, a.ent, email)
+}
+
+// UserByEmailIn is UserByEmail in the caller's transaction: a Staff member addresses a User by
+// email at the command line (the Second factor reset).
+func UserByEmailIn(ctx context.Context, tx *ent.Client, email string) (*ent.User, error) {
+	return tx.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).Only(ctx)
 }
 
 // UserByLoginAddress loads a User by a normalized login address, ignoring case (an ent

@@ -7,12 +7,14 @@
 // reset, in one transaction.
 //
 // The Second factor belongs to the User, not a Workspace, so there is no *ent.Scoped to take:
-// this use case holds the raw *ent.Client (the User is reached by id), one of the closed list of
+// this use case holds the raw *ent.Client (the User is reached by id, or by email from the
+// command line), one of the closed list of
 // docs/architecture.md (Workspace scoping).
 package secondfactorreset
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
@@ -42,41 +44,54 @@ func New(bus *events.Bus) *UseCase {
 // Workspace behind s. It records `user.second_factor_reset` by actor in that Workspace
 // only. ErrNothingToReset without an active or pending factor or a Passkey (nothing changes).
 func (m *UseCase) Reset(ctx context.Context, s *ent.Scoped, userID int64, actor events.Actor) error {
-	return m.reset(ctx, userID, func(pub events.Publisher, _ *ent.Client, u *ent.User) error {
+	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		u, err := resetIn(ctx, tx, userID)
+		if err != nil {
+			return err
+		}
 		return users.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, s.WorkspaceID())
 	})
 }
 
-// ResetByStaff is Reset from the staff member command: the platform Staff member `by`
-// (shown to customers as "Sphericon staff") is recorded in every Workspace the User
-// holds a Membership in.
-func (m *UseCase) ResetByStaff(ctx context.Context, userID int64, by string) error {
+// ResetByStaff is Reset from the staff member command, of the User with this login email
+// (whatever its case; an unknown one fails as `user "<email>"`): the platform Staff member `by`
+// (shown to customers as "Sphericon staff") is recorded in every Workspace the User holds a
+// Membership in.
+func (m *UseCase) ResetByStaff(ctx context.Context, email, by string) error {
 	actor := events.Actor{Kind: events.ActorStaff, ID: by}
-	return m.reset(ctx, userID, func(pub events.Publisher, tx *ent.Client, u *ent.User) error {
+	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		target, err := users.UserByEmailIn(ctx, tx, email)
+		if err != nil {
+			return fmt.Errorf("user %q: %w", email, err)
+		}
+		u, err := resetIn(ctx, tx, target.ID)
+		if err != nil {
+			return err
+		}
 		return users.RecordActionOnUser(ctx, tx, pub, actor, u, events.ActionUserSecondFactorReset, nil)
 	})
 }
 
-func (m *UseCase) reset(ctx context.Context, userID int64, record func(events.Publisher, *ent.Client, *ent.User) error) error {
-	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		enrolled, err := secondfactors.EnrolledIn(ctx, tx, userID)
-		if err != nil {
-			return err
-		}
-		held, err := passkeys.HeldIn(ctx, tx, userID)
-		if err != nil {
-			return err
-		}
-		if !enrolled && !held {
-			return ErrNothingToReset
-		}
-		u, err := secondfactors.ResetIn(ctx, tx, userID)
-		if err != nil {
-			return err
-		}
-		if err := passkeys.DeleteAllIn(ctx, tx, userID); err != nil {
-			return err
-		}
-		return record(pub, tx, u)
-	})
+// resetIn clears the User's factor, Recovery codes and Passkeys in the caller's transaction and
+// returns the User with its session epoch bumped.
+func resetIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
+	enrolled, err := secondfactors.EnrolledIn(ctx, tx, userID)
+	if err != nil {
+		return nil, err
+	}
+	held, err := passkeys.HeldIn(ctx, tx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !enrolled && !held {
+		return nil, ErrNothingToReset
+	}
+	u, err := secondfactors.ResetIn(ctx, tx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if err := passkeys.DeleteAllIn(ctx, tx, userID); err != nil {
+		return nil, err
+	}
+	return u, nil
 }

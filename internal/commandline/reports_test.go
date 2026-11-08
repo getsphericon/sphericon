@@ -1,4 +1,4 @@
-package app_test
+package commandline_test
 
 import (
 	"bytes"
@@ -8,8 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 )
 
 const resetEmail = "sam@globex.test"
@@ -24,7 +25,7 @@ func keysetCipher(t *testing.T, keyset string) *secrets.Cipher {
 func TestReportResetSaysTheFactorIsClearedAndSessionsEnded(t *testing.T) {
 	var out bytes.Buffer
 
-	err := app.ReportSecondFactorReset(&out, resetEmail, true, nil)
+	err := commandline.ReportSecondFactorReset(&out, resetEmail, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "the factor and recovery codes are cleared and every session has ended")
@@ -33,10 +34,20 @@ func TestReportResetSaysTheFactorIsClearedAndSessionsEnded(t *testing.T) {
 func TestReportResetOfAUserWithoutASecondFactorSaysNothingChanged(t *testing.T) {
 	var out bytes.Buffer
 
-	err := app.ReportSecondFactorReset(&out, resetEmail, false, nil)
+	err := commandline.ReportSecondFactorReset(&out, resetEmail, secondfactorreset.ErrNothingToReset)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "has no second factor; nothing changed")
+}
+
+func TestReportResetOfAFailedResetFails(t *testing.T) {
+	var out bytes.Buffer
+	failed := errors.New(`user "nobody@globex.test": not found`)
+
+	err := commandline.ReportSecondFactorReset(&out, resetEmail, failed)
+
+	require.ErrorIs(t, err, failed)
+	assert.Empty(t, out.String())
 }
 func TestRotateKeepsTheOldKeyForDecryptionAndSaysToReencrypt(t *testing.T) {
 	old, err := secrets.GenerateKeysetBase64()
@@ -45,7 +56,7 @@ func TestRotateKeepsTheOldKeyForDecryptionAndSaysToReencrypt(t *testing.T) {
 	sealed, err := oldCipher.Encrypt([]byte("x"))
 	require.NoError(t, err)
 
-	change, err := app.RotateKeyset(old)
+	change, err := commandline.RotateKeyset(old)
 
 	require.NoError(t, err)
 	rotated := keysetCipher(t, change.Keyset)
@@ -67,7 +78,7 @@ func TestRetireKeepsOnlyThePrimary(t *testing.T) {
 	sealed, err := oldCipher.Encrypt([]byte("x"))
 	require.NoError(t, err)
 
-	change, err := app.RetireKeyset(rotated)
+	change, err := commandline.RetireKeyset(rotated)
 
 	require.NoError(t, err)
 	retired := keysetCipher(t, change.Keyset)
@@ -76,17 +87,17 @@ func TestRetireKeepsOnlyThePrimary(t *testing.T) {
 }
 
 func TestAKeysetChangeNeedsAKeyset(t *testing.T) {
-	_, rotateErr := app.RotateKeyset("")
-	_, retireErr := app.RetireKeyset("")
+	_, rotateErr := commandline.RotateKeyset("")
+	_, retireErr := commandline.RetireKeyset("")
 
-	require.ErrorIs(t, rotateErr, app.ErrNoKeyset)
-	require.ErrorIs(t, retireErr, app.ErrNoKeyset)
+	require.ErrorIs(t, rotateErr, commandline.ErrNoKeyset)
+	require.ErrorIs(t, retireErr, commandline.ErrNoKeyset)
 }
 
 func TestReencryptionReportOfARunThatRewroteSaysToRunAgain(t *testing.T) {
 	var out bytes.Buffer
 
-	err := app.WriteReencryptionReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Rewritten: 3, Current: 1}}, nil)
+	err := commandline.WriteReencryptionReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Rewritten: 3, Current: 1}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "integrations.config_encrypted")
@@ -96,7 +107,7 @@ func TestReencryptionReportOfARunThatRewroteSaysToRunAgain(t *testing.T) {
 func TestReencryptionReportOfARunThatRacedSaysToRunAgain(t *testing.T) {
 	var out bytes.Buffer
 
-	err := app.WriteReencryptionReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Current: 1, Raced: 1}}, nil)
+	err := commandline.WriteReencryptionReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Current: 1, Raced: 1}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "run it once more")
@@ -105,7 +116,7 @@ func TestReencryptionReportOfARunThatRacedSaysToRunAgain(t *testing.T) {
 func TestReencryptionReportOfARunThatFoundEverythingCurrentPointsToRetire(t *testing.T) {
 	var out bytes.Buffer
 
-	err := app.WriteReencryptionReport(&out, []secrets.Count{{Column: "webhook_endpoints.secret_encrypted", Current: 2}}, nil)
+	err := commandline.WriteReencryptionReport(&out, []secrets.Count{{Column: "webhook_endpoints.secret_encrypted", Current: 2}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "can be retired")
@@ -115,7 +126,7 @@ func TestReencryptionReportOfARunThatStoppedShowsWhatItDidAndFails(t *testing.T)
 	var out bytes.Buffer
 	stopped := errors.New("webhook_endpoints.secret_encrypted: row 4: invalid or corrupt ciphertext")
 
-	err := app.WriteReencryptionReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Rewritten: 3}}, stopped)
+	err := commandline.WriteReencryptionReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Rewritten: 3}}, stopped)
 
 	require.ErrorIs(t, err, stopped)
 	assert.Contains(t, out.String(), "integrations.config_encrypted")

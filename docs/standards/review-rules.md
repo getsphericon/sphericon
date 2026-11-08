@@ -34,9 +34,9 @@ or `AGENTS.md`.
 
 ## Layers and boundaries
 
-5. **Business logic is a layer of its own.** The drivers (handlers of every surface, MCP, jobs and
-   event subscribers) only receive input, call a domain module or a use case and return the result;
-   they hold no logic. A table is written only by the domain module that owns it (ADR 0102): any
+5. **Business logic is a layer of its own.** The drivers (handlers of every surface, MCP, jobs,
+   event subscribers and the commands of the command line) only receive input, call a domain
+   module or a use case and return the result; they hold no logic. A table is written only by the domain module that owns it (ADR 0102): any
    other package, a use case included, reads it and changes it only through a function of its owner.
    A domain module calls only the modules of its own context and of the contexts below it
    (`internal/domain/<context>`, and the Enterprise Edition's `ee/domain/<context>` in the same

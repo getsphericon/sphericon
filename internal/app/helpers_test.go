@@ -2,28 +2,23 @@ package app_test
 
 import (
 	"context"
-	"database/sql"
 	"net"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// baseline points the app at a database of the test's own, at the fixture state, and returns its
-// URL: the app connects directly and commits for real, outside the txdb harness every other
-// package uses. The database is dropped with the test.
-func baseline(t *testing.T) string {
+// baseline points the app at a database of the test's own, at the fixture state: the app connects
+// directly and commits for real, outside the txdb harness every other package uses. The database
+// is dropped with the test.
+func baseline(t *testing.T) {
 	t.Helper()
-	url := testhelper.RealDBURL(t)
-	t.Setenv("SPHERICON_DATABASE_URL", url)
-	return url
+	t.Setenv("SPHERICON_DATABASE_URL", testhelper.RealDBURL(t))
 }
 
 // newApp builds a test-profile app on the test's own database and shuts it down with the test.
@@ -34,36 +29,6 @@ func newApp(t *testing.T) *app.App {
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
 	return a
-}
-
-// newCommandApp builds the command app on the test's own database and returns it with a client of
-// the test's own on that database, to read what the app committed.
-func newCommandApp(t *testing.T) (*app.App, *ent.Client) {
-	t.Helper()
-	url := baseline(t)
-	a, err := app.NewCommandApp("test")
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
-	return a, entClientOn(t, url)
-}
-
-// entClientOn opens an ent client of the test's own on the database at url.
-func entClientOn(t *testing.T, url string) *ent.Client {
-	t.Helper()
-	sqlDB, err := sql.Open("pgx", url)
-	require.NoError(t, err)
-	client := entclient.New(sqlDB)
-	t.Cleanup(func() { cleanup.Close(client, "the test's ent client") })
-	return client
-}
-
-// sqlDBOn opens a database handle of the test's own on the database at url.
-func sqlDBOn(t *testing.T, url string) *sql.DB {
-	t.Helper()
-	sqlDB, err := sql.Open("pgx", url)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(sqlDB, "the test's database handle") })
-	return sqlDB
 }
 
 // listen opens a loopback listener on a free port.

@@ -349,9 +349,9 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped) (*ent.Workspace, error)
 	return s.Workspace(ctx)
 }
 
-// IDByPublicID resolves a Workspace id (ADR 0043) to the internal key; command-line
-// tooling addresses Workspaces by their id.
-func IDByPublicID(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
+// IDByPublicIDIn resolves a Workspace id (ADR 0043) to the internal key, in the caller's
+// transaction: an operator addresses a Workspace by its id (a suspension from the command line).
+func IDByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
 	id, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).OnlyID(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("workspace %q: %w", publicID, err)

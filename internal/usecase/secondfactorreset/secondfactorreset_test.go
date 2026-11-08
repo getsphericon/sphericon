@@ -106,11 +106,17 @@ func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 	env, _ := setup(t)
 	ctx := t.Context()
 
-	require.NoError(t, env.SecondFactorReset.ResetByStaff(ctx, fixtures.SecondFactorSamID, "cli"))
+	before := env.DB.User.GetX(ctx, fixtures.SecondFactorSamID)
+
+	require.NoError(t, env.SecondFactorReset.ResetByStaff(ctx, "Sam@Globex.test", "cli"), "the email is matched whatever its case")
 
 	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.False(t, st.Enabled)
+	factor := env.DB.SecondFactor.GetX(ctx, fixtures.SamSecondFactorID)
+	assert.Nil(t, factor.ConfirmedAt)
+	assert.Empty(t, factor.SecretEncrypted)
+	assert.Greater(t, env.DB.User.GetX(ctx, fixtures.SecondFactorSamID).SessionEpoch, before.SessionEpoch, "every session ends")
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	got, err := env.DB.AuditEntry.Query().
 		Where(auditentry.Action(events.ActionUserSecondFactorReset)).
@@ -123,4 +129,23 @@ func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 	for _, e := range got {
 		assert.Equal(t, events.ActorStaff, e.ActorKind)
 	}
+}
+
+func TestStaffResetOfAUserWithNothingToClearChangesNothing(t *testing.T) {
+	env, _ := setup(t)
+	ctx := t.Context()
+	require.NoError(t, env.SecondFactorReset.ResetByStaff(ctx, fixtures.SecondFactorSamEmail, "cli"))
+
+	err := env.SecondFactorReset.ResetByStaff(ctx, fixtures.SecondFactorSamEmail, "cli")
+
+	require.ErrorIs(t, err, secondfactorreset.ErrNothingToReset)
+}
+
+func TestStaffResetOfAnUnknownEmailNamesIt(t *testing.T) {
+	env, _ := setup(t)
+
+	err := env.SecondFactorReset.ResetByStaff(t.Context(), "nobody@app-2fa-reset.test", "cli")
+
+	require.ErrorContains(t, err, `user "nobody@app-2fa-reset.test"`)
+	require.True(t, ent.IsNotFound(err))
 }

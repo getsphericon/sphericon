@@ -13,15 +13,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestIDByPublicID(t *testing.T) {
+func TestIDByPublicIDIn(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	id, err := workspaces.IDByPublicID(context.Background(), env.DB, fixtures.AcmePublicID)
+	id, err := workspaces.IDByPublicIDIn(context.Background(), env.DB, fixtures.AcmePublicID)
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, id)
-	_, err = workspaces.IDByPublicID(context.Background(), env.DB, "NoSuchId")
+	_, err = workspaces.IDByPublicIDIn(context.Background(), env.DB, "NoSuchId")
 	require.Error(t, err)
-	_, err = workspaces.IDByPublicID(context.Background(), env.DB, "acmews01")
+	_, err = workspaces.IDByPublicIDIn(context.Background(), env.DB, "acmews01")
 	require.Error(t, err, "the id is case-sensitive")
 }
 

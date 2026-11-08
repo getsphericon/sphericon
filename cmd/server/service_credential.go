@@ -10,17 +10,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
-	"github.com/getsphericon/sphericon/ent"
 )
-
-// serviceCredentialOps is what the `service-credential` commands need from the app. The
-// app implements it (internal/app).
-type serviceCredentialOps interface {
-	IssueServiceCredential(ctx context.Context, in servicecredentials.IssueInput) (*servicecredentials.Issued, error)
-	RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*servicecredentials.Issued, error)
-	RevokeServiceCredential(ctx context.Context, id int64) error
-	ServiceCredentials(ctx context.Context, name string) ([]*ent.ServiceCredential, error)
-}
 
 // serviceCredentialCommand is `sphericon service-credential create|rotate|revoke|list` (ADR 0026),
 // the only way a Service credential is created, rotated or revoked: no endpoint can. A value is
@@ -60,8 +50,12 @@ func serviceCredentialCommand(d deps) *cli.Command {
 				&cli.StringArg{Name: "name", Required: true},
 				&cli.StringArg{Name: "scopes", Required: true},
 			},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
-				issued, err := ops.IssueServiceCredential(ctx, servicecredentials.IssueInput{
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+				credentials, err := c.ServiceCredentials()
+				if err != nil {
+					return err
+				}
+				issued, err := credentials.IssueServiceCredential(ctx, servicecredentials.IssueInput{
 					Name:      cmd.StringArg("name"),
 					Scopes:    parseScopes(cmd.StringArg("scopes")),
 					ExpiresAt: expiry(cmd),
@@ -75,12 +69,16 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			ArgsUsage: "<id>",
 			Flags:     []cli.Flag{expiresIn()},
 			Arguments: []cli.Argument{&cli.IntArg{Name: "id", Required: true}},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				id, err := credentialID(cmd)
 				if err != nil {
 					return err
 				}
-				issued, err := ops.RotateServiceCredential(ctx, id, expiry(cmd))
+				credentials, err := c.ServiceCredentials()
+				if err != nil {
+					return err
+				}
+				issued, err := credentials.RotateServiceCredential(ctx, id, expiry(cmd))
 				return servicecredentials.ReportRotated(out(cmd), id, issued, err)
 			}),
 		},
@@ -89,12 +87,16 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Usage:     "refuse a credential from now on",
 			ArgsUsage: "<id>",
 			Arguments: []cli.Argument{&cli.IntArg{Name: "id", Required: true}},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				id, err := credentialID(cmd)
 				if err != nil {
 					return err
 				}
-				err = ops.RevokeServiceCredential(ctx, id)
+				credentials, err := c.ServiceCredentials()
+				if err != nil {
+					return err
+				}
+				err = credentials.RevokeServiceCredential(ctx, id)
 				return servicecredentials.ReportRevoked(out(cmd), id, err)
 			}),
 		},
@@ -103,8 +105,12 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Usage:     "list the credentials, optionally of one name",
 			ArgsUsage: "[<name>]",
 			Arguments: []cli.Argument{&cli.StringArg{Name: "name"}},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
-				list, err := ops.ServiceCredentials(ctx, cmd.StringArg("name"))
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+				credentials, err := c.ServiceCredentials()
+				if err != nil {
+					return err
+				}
+				list, err := credentials.ServiceCredentials(ctx, cmd.StringArg("name"))
 				return servicecredentials.ReportCredentials(out(cmd), list, d.now(), err)
 			}),
 		},

@@ -10,10 +10,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
-type eventReplayOps interface {
-	ReplayEvents(ctx context.Context, workspace string, in events.ReplayRequest) (events.ReplayResult, error)
-}
-
+// eventsCommand is `sphericon events replay`: it queues one report consumer's jobs again for the
+// events a Workspace recorded in a bounded interval.
 func eventsCommand(d deps) *cli.Command {
 	return group("events", "reapply retained anonymous report inputs",
 		&cli.Command{
@@ -27,7 +25,7 @@ func eventsCommand(d deps) *cli.Command {
 				&cli.IntFlag{Name: "limit", Value: events.MaxReplayEntries, Usage: "refuse the whole selection when it exceeds this bound"},
 				&cli.BoolFlag{Name: "dry-run", Usage: "validate and count without queuing jobs"},
 			},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				from, err := time.Parse(time.RFC3339Nano, cmd.String("from"))
 				if err != nil {
 					return fmt.Errorf("--from: %w", err)
@@ -36,7 +34,11 @@ func eventsCommand(d deps) *cli.Command {
 				if err != nil {
 					return fmt.Errorf("--before: %w", err)
 				}
-				result, err := ops.ReplayEvents(ctx, cmd.String("workspace"), events.ReplayRequest{
+				bus, err := c.Bus()
+				if err != nil {
+					return err
+				}
+				result, err := bus.Replay(ctx, cmd.String("workspace"), events.ReplayRequest{
 					Consumer: cmd.String("consumer"), From: from, Before: before,
 					Limit: cmd.Int("limit"), DryRun: cmd.Bool("dry-run"),
 				})
