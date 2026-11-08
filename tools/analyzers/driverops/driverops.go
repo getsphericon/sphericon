@@ -109,9 +109,13 @@ func run(pass *analysis.Pass) (any, error) {
 	if !isDriver(pass.Pkg.Path()) {
 		return nil, nil
 	}
+	cfgs, ok := pass.ResultOf[ctrlflow.Analyzer].(*ctrlflow.CFGs)
+	if !ok {
+		return nil, nil
+	}
 	c := &checker{
 		pass:  pass,
-		cfgs:  pass.ResultOf[ctrlflow.Analyzer].(*ctrlflow.CFGs),
+		cfgs:  cfgs,
 		decls: map[*types.Func]*ast.FuncDecl{},
 		costs: map[*ast.FuncDecl]cost{},
 		busy:  map[*ast.FuncDecl]bool{},
@@ -236,10 +240,9 @@ func (c *checker) callCost(call *ast.CallExpr) cost {
 
 // components are the strongly connected components of the blocks reachable from entry, in
 // reverse topological order (Tarjan), with the index of each block's component.
-func components(entry *cfg.Block) ([][]*cfg.Block, map[*cfg.Block]int) {
+func components(entry *cfg.Block) (comps [][]*cfg.Block, of map[*cfg.Block]int) {
+	of = map[*cfg.Block]int{}
 	var (
-		comps [][]*cfg.Block
-		of    = map[*cfg.Block]int{}
 		index = map[*cfg.Block]int{}
 		low   = map[*cfg.Block]int{}
 		on    = map[*cfg.Block]bool{}

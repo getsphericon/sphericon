@@ -119,4 +119,3 @@ func (s *Sessions) Verify(ctx context.Context, raw string) (*ent.StaffMember, er
 	}
 	return op, nil
 }
-
