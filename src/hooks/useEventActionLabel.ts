@@ -34,6 +34,7 @@ export function useEventActionLabel() {
       'sms.sent': t(($) => $.eventActions.smsSent),
       'sms.delivered': t(($) => $.eventActions.smsDelivered),
       'sms.undelivered': t(($) => $.eventActions.smsUndelivered),
+      'sms.unsubscribed': t(($) => $.eventActions.smsUnsubscribed),
       'page.view': t(($) => $.eventActions.pageView),
       'email.sent': t(($) => $.eventActions.emailSent),
       'email.delivered': t(($) => $.eventActions.emailDelivered),

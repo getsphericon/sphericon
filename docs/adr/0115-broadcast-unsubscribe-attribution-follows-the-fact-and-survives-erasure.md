@@ -7,6 +7,13 @@ status: accepted
 > **Extended by [[0116-the-event-journal-retains-explicit-anonymous-replay-inputs]]:** attribution
 > retains the earliest accepted observation for a received message, so distinct source-specific
 > and everything opt-outs and their replays converge regardless of handling order.
+>
+> **Amended by #1236:** an SMS opt-out has a customer-facing Event, as email's and Telegram's
+> have. A new opt-out of a Contact's number records `sms.unsubscribed`, which Webhook endpoints,
+> Rules and Automations receive; a repeated STOP records none. It names a Broadcast or an
+> Automation only where this ADR attributes the opt-out: the link of a text the person received.
+> It is a projection of the transition, not the attribution fact: the Broadcast still counts
+> through the internal `message.unsubscribed` alone, and the internal SMS facts stay internal.
 
 A Broadcast's unsubscribe count is a reaction to an accepted opt-out, independently retried,
 and may lag behind it. The opt-out, the Confirmation it withdraws and the Enrollment it ends

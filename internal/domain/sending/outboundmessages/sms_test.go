@@ -1,6 +1,8 @@
 package outboundmessages_test
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/samber/lo"
@@ -15,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -97,6 +100,11 @@ func TestATextTwilioRefusesAsOptedOutRecordsTheOptOutAndIsSkipped(t *testing.T) 
 	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(stop.ContactID))
 	consented := env.DB.Confirmation.Query().Where(confirmation.ChannelEQ(channels.SMS), confirmation.DestinationEQ(fixtures.ContactTexterPhone)).ExistX(ctx)
 	assert.False(t, consented, "the refused number's consent ends with its stop")
+	unsubscribed := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	require.Len(t, unsubscribed, 1)
+	assert.Equal(t, strconv.Itoa(fixtures.ContactTexterID), fmt.Sprint(unsubscribed[0].Data["contactId"]))
+	assert.Equal(t, events.UnsubscribedByRefusedSend, unsubscribed[0].Data["via"])
+	assert.NotContains(t, unsubscribed[0].Data, "broadcastId", "the refused send did not cause the stop (ADR 0115)")
 
 	again := sendText(t, env, textTo(t, env, account, "sms:2"))
 

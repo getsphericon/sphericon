@@ -4,6 +4,10 @@ status: accepted
 
 # Mandatory SMS reactions run in the publishing transaction
 
+> **Amended after #1227:** the stop's subscriber also publishes the customer-facing
+> `sms.unsubscribed` when the opt-out is new (ADR 0115). It is a projection of that transition for
+> the Contact; the facts below stay internal.
+
 An SMS stop or a provider's verdict that a number is unreachable is an internal semantic fact.
 Publishing it runs its mandatory subscriber inside the same transaction: the stop records the
 Unsubscribe and withdraws Confirmation together, and the unreachable verdict records Suppression.

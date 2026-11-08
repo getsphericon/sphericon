@@ -127,6 +127,10 @@ func TestAnOffChannelSMSOptOutBlocksTheNumber(t *testing.T) {
 	assert.Equal(t, eligibility.SourceEverything, created.SendingSource)
 	decision := smsDecision(t, env, fixtures.ContactTexterPhone)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, decision.Reason)
+	unsubscribed := env.QueuedCount(t, events.NameSmsUnsubscribed, map[string]any{
+		"contactId": fixtures.ContactTexterID, "phone": fixtures.ContactTexterPhone, "via": events.UnsubscribedByManual,
+	})
+	assert.Equal(t, 1, unsubscribed, "the Contact whose phone it is records the opt-out")
 }
 
 // An opt-out of everything on sms drops the number's Confirmation, however strong: stale consent

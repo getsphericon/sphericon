@@ -1,7 +1,9 @@
 package callbackinterpretation_test
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/samber/lo"
@@ -49,6 +51,10 @@ func TestRedeliveredSTOPCannotUndoLaterSTART(t *testing.T) {
 	assert.False(t, decision.Eligible, "an old START cannot undo a new STOP either")
 	changes := env.QueuedCount(t, events.NameSmsOptOutRecorded, nil)
 	assert.Equal(t, 2, changes, "observations of a standing opt-out do not repeat its transition")
+	public := env.QueuedCount(t, events.NameSmsUnsubscribed, map[string]any{
+		"contactId": fixtures.ContactTexterID, "via": events.UnsubscribedByKeyword,
+	})
+	assert.Equal(t, 2, public, "each transition, and only a transition, is the Contact's sms.unsubscribed")
 }
 
 // confirmNumber records the Confirmation an API client asserts for the number.
@@ -113,6 +119,14 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	assert.Nil(t, consent, "the stop drops the consent it ends")
 	replies := env.QueuedCount(t, events.NameSmsReceived, nil)
 	assert.Zero(t, replies, "a STOP is no reply")
+	unsubscribed := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	require.Len(t, unsubscribed, 1)
+	data := unsubscribed[0].Data
+	assert.Equal(t, strconv.Itoa(fixtures.ContactTexterID), fmt.Sprint(data["contactId"]))
+	assert.Equal(t, knownNumber, data["phone"])
+	assert.Equal(t, events.UnsubscribedByKeyword, data["via"])
+	assert.NotContains(t, data, "broadcastId", "a STOP is no reaction to a Broadcast's text (ADR 0115)")
+	assert.NotContains(t, data, "automationId")
 }
 
 func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
@@ -131,6 +145,8 @@ func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
 	contactsAfter := env.DB.Contact.Query().CountX(t.Context())
 	assert.Equal(t, contacts, contactsAfter, "a stranger's STOP creates no Contact")
+	unsubscribed := env.QueuedCount(t, events.NameSmsUnsubscribed, nil)
+	assert.Zero(t, unsubscribed, "nor a Contact's Event")
 }
 
 func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
