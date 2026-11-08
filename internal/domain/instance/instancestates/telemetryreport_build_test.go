@@ -1,7 +1,8 @@
-package telemetryreport_test
+package instancestates_test
 
 import (
 	"encoding/json"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -15,10 +16,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/telemetryschema"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 )
 
-var testHost = telemetryreport.Host{
+var testHost = instancestates.TelemetryHost{
 	AppVersion:  "1.4.2",
 	Edition:     telemetryapi.TelemetryEditionCore,
 	DeployShape: telemetryapi.TelemetryDeployShapeContainer,
@@ -29,7 +29,8 @@ var testHost = telemetryreport.Host{
 
 func buildReport(t *testing.T, env *testhelper.TestEnv, now time.Time) telemetryapi.TelemetryReport {
 	t.Helper()
-	report, err := telemetryreport.New(instancestates.New(env.DB, instancestates.Environment{}, time.Now), testHost, nil, func() time.Time { return now }).Report(t.Context())
+	mod := instancestates.New(env.DB, instancestates.Environment{}, func() time.Time { return now }, false, nil, testHost, nil, slog.Default())
+	report, err := mod.TelemetryReport(t.Context())
 	require.NoError(t, err)
 	return report
 }
@@ -83,7 +84,7 @@ func TestReportActivityFlagsFallAwayWhenNothingHappenedInThirtyDays(t *testing.T
 
 func TestReportAgeCountsWholeDaysSinceTheInstanceFirstStarted(t *testing.T) {
 	env := testhelper.Setup(t)
-	row, err := instancestates.New(env.DB, instancestates.Environment{}, time.Now).Ensure(t.Context())
+	row, err := instancestates.New(env.DB, instancestates.Environment{}, time.Now, false, nil, testHost, nil, slog.Default()).Ensure(t.Context())
 	require.NoError(t, err)
 
 	report := buildReport(t, env, row.CreatedAt.Add(42*24*time.Hour+3*time.Hour))
@@ -98,7 +99,7 @@ func TestReportEditionAndDeployShapeAreWhatTheCallerSays(t *testing.T) {
 	host.Edition = telemetryapi.TelemetryEditionEe
 	host.DeployShape = telemetryapi.TelemetryDeployShapeKubernetes
 
-	report, err := telemetryreport.New(instancestates.New(env.DB, instancestates.Environment{}, time.Now), host, nil, time.Now).Report(t.Context())
+	report, err := instancestates.New(env.DB, instancestates.Environment{}, time.Now, false, nil, host, nil, slog.Default()).TelemetryReport(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, telemetryapi.TelemetryEditionEe, report.Edition)

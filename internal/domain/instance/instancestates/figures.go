@@ -17,11 +17,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
-// Figures are the facts about the whole Instance a Telemetry report summarizes (ADR 0032), read from
+// figures are the facts about the whole Instance a Telemetry report summarizes (ADR 0032), read from
 // core tables only: never from an Enterprise Usage snapshot, which a plain install does not have.
-// The counts are exact; the report rounds them (internal/usecase/telemetryreport), and nothing here
-// names a Workspace or a person.
-type Figures struct {
+// The counts are exact; the report rounds them (buildReport), and nothing here names a Workspace
+// or a person.
+type figures struct {
 	// State is the Instance state row: its Instance id and when the Instance first started.
 	State *ent.InstanceState
 	// Workspaces is the number of live Workspaces.
@@ -46,16 +46,16 @@ type Figures struct {
 	PostgresMajor int
 }
 
-// Figures reads the Figures of the whole Instance, with since the start of the window of every
+// readFigures reads the figures of the whole Instance, with since the start of the window of every
 // "recent" figure. It creates the Instance state row on the first start, like Ensure.
-func (m *Module) Figures(ctx context.Context, since time.Time) (Figures, error) {
+func (m *Module) readFigures(ctx context.Context, since time.Time) (figures, error) {
 	client := m.ent
 	row, err := m.Ensure(ctx)
 	if err != nil {
-		return Figures{}, err
+		return figures{}, err
 	}
 	var q figureQueries
-	f := Figures{State: row}
+	f := figures{State: row}
 	f.Workspaces = q.count(client.Workspace.Query().Where(workspaces.Live()).Count(ctx))
 	// Erasure deletes the Contact row (GLOSSARY: there is no softer delete), so an erased
 	// Contact is already gone, and those of a Workspace in its deletion window are left out; anonymous tracker Contacts have no email and are left out.
@@ -72,14 +72,14 @@ func (m *Module) Figures(ctx context.Context, since time.Time) (Figures, error) 
 	// The providers in use are those of kept Integrations: a deleted one is not set up (ADR 0099).
 	inUse, err := client.Integration.Query().Where(integration.DiscardedAtIsNil()).Unique(true).Select(integration.FieldProvider).Strings(ctx)
 	if err != nil {
-		return Figures{}, err
+		return figures{}, err
 	}
 	if q.err != nil {
-		return Figures{}, q.err
+		return figures{}, q.err
 	}
 	f.PostgresMajor, err = postgres.ServerMajor(ctx, client)
 	if err != nil {
-		return Figures{}, err
+		return figures{}, err
 	}
 	for _, p := range inUse {
 		f.Providers = append(f.Providers, providers.Provider(p))
@@ -87,7 +87,7 @@ func (m *Module) Figures(ctx context.Context, since time.Time) (Figures, error) 
 	return f, nil
 }
 
-// figureQueries keeps the first error of a run of reads, so Figures reads top to bottom.
+// figureQueries keeps the first error of a run of reads, so readFigures reads top to bottom.
 type figureQueries struct{ err error }
 
 func (q *figureQueries) count(n int, err error) int {

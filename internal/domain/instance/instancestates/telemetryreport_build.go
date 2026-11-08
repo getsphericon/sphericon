@@ -1,4 +1,4 @@
-package telemetryreport
+package instancestates
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
-	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
@@ -18,10 +17,10 @@ const schemaVersion = 1
 // reportWindow is the look-back of every "in the last 30 days" figure.
 const reportWindow = 30 * 24 * time.Hour
 
-// Host is what the report says about the running binary and its surroundings. The builder
-// never reads the process (build info, environment, files): the wiring reads them and hands
-// them in, so a test builds the same report every time.
-type Host struct {
+// TelemetryHost is what the Telemetry report says about the running binary and its surroundings.
+// The builder never reads the process (build info, environment, files): the wiring reads them and
+// hands them in (New), so a test builds the same report every time.
+type TelemetryHost struct {
 	AppVersion  string
 	Edition     telemetryapi.TelemetryEdition
 	DeployShape telemetryapi.TelemetryDeployShape
@@ -30,12 +29,13 @@ type Host struct {
 	Locale      telemetryapi.TelemetryLocale
 }
 
-// build assembles the Telemetry report (ADR 0032) from the Instance's Figures, read from core
-// tables only. It is the one builder, the preview and the daily sender both call it. Counts leave it
-// only as orders of magnitude, so an exact number never does, and it reads nothing that names a
-// Workspace or a person.
-func build(ctx context.Context, states *instancestates.Module, host Host, now time.Time) (telemetryapi.TelemetryReport, error) {
-	f, err := states.Figures(ctx, now.Add(-reportWindow))
+// buildReport assembles the Telemetry report (ADR 0032) from the Instance's figures, read from
+// core tables only. It is the one builder, the preview and the daily send both call it. Counts
+// leave it only as orders of magnitude, so an exact number never does, and it reads nothing that
+// names a Workspace or a person.
+func (m *Module) buildReport(ctx context.Context, now time.Time) (telemetryapi.TelemetryReport, error) {
+	host := m.host
+	f, err := m.readFigures(ctx, now.Add(-reportWindow))
 	if err != nil {
 		return telemetryapi.TelemetryReport{}, err
 	}

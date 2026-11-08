@@ -1,4 +1,4 @@
-package releasecheck_test
+package instancestates_test
 
 import (
 	"log/slog"
@@ -12,14 +12,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 )
 
 // releaseFound is a Release check that found 0.2.0 while 0.1.0 runs.
-func releaseFound(t *testing.T, env *testhelper.TestEnv) *releasecheck.UseCase {
+func releaseFound(t *testing.T, env *testhelper.TestEnv) *instancestates.Module {
 	t.Helper()
-	states := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, time.Now)
-	mod := releasecheck.New(states, fixedSource{version: "0.2.0"}, slog.Default())
+	mod := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, time.Now,
+		false, fixedSource{version: "0.2.0"}, instancestates.TelemetryHost{}, nil, slog.Default())
 	require.NoError(t, mod.CheckRelease(t.Context()))
 	return mod
 }
@@ -43,7 +42,8 @@ func TestAnOwnerOfAnyWorkspaceIsToldOfANewerRelease(t *testing.T) {
 
 func TestAnOwnerIsToldOfNoReleaseBeforeTheCheckFindsOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	mod := releasecheck.New(instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, time.Now), nil, slog.Default())
+	mod := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, time.Now,
+		false, nil, instancestates.TelemetryHost{}, nil, slog.Default())
 
 	release, err := mod.ReleaseFor(t.Context(), fixtures.OwnerJohnID)
 

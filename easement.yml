@@ -1035,8 +1035,8 @@ components:
   # Instance, the top context: what belongs to the Instance rather than to a Workspace, its state
   # (instancestates) and its audit log (instanceauditentries), which hold the raw client
   # (`domain-instance-raw`), the in-place upgrade of a bare binary (upgrade) and the Upgrade notes
-  # of the changelog (upgradenote). The Telemetry report is a use case
-  # (internal/usecase/telemetryreport) over instancestates.
+  # of the changelog (upgradenote). The Release check and the Telemetry report are instancestates'
+  # own operations (ADR 0112), so it is the client of the Telemetry contract (gen/telemetry).
   domain-instance-raw:
     in: [internal/domain/instance/instancestates, internal/domain/instance/instanceauditentries]
   # The rest of instance, which holds no raw client; a new module under internal/domain/instance
@@ -1062,8 +1062,8 @@ components:
   # everyone else it stays open (common).
   ent: { in: ent }
   # The generated ogen packages of the API surfaces, which only the drivers, the wiring and the
-  # Enterprise Edition import, and the Telemetry contract's client, which the Telemetry report (a
-  # use case) uses.
+  # Enterprise Edition import, and the Telemetry contract's client, which the Telemetry report of
+  # the Instance state (instancestates) uses.
   gen-surfaces: { in: gen }
   gen-telemetry: { in: gen/telemetry }
 
@@ -1112,6 +1112,7 @@ rules:
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,
+        domain-instance-raw,
         domain-identity,
         domain-identity-raw,
         domain-identity-users,
@@ -1163,7 +1164,6 @@ rules:
         domain-identity,
         domain-identity-raw,
         gen-surfaces,
-        usecase,
       ]
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
@@ -1253,17 +1253,17 @@ rules:
     forbid_symbol: *core-forbids
     because: insights sits above orchestration in the domain tier (ADR 0102), so an insights package imports the kernel, the infrastructure, ent and the packages of its own context and of the contexts below, (an allowance added with its first import), never a module of the instance context (the Instance state, an upgrade) nor a use case; an operation that needs one is a use case above both
   domain-instance-raw:
-    may_depend_on: [domain-identity-base, domain-sending]
+    may_depend_on: [domain-identity-base, domain-sending, gen-telemetry]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
-    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case; an operation across them, such as the Telemetry report or the Release check, is a use case above it
+    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import) and the Telemetry contract's client its Telemetry report sends with (ADR 0112), never a use case
   domain-instance:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *core-forbids
-    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case; an operation across them, such as the Telemetry report or the Release check, is a use case above it
+    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case
   tools:
     may_depend_on: []
     forbid_external: *no-container
@@ -1274,20 +1274,17 @@ rules:
     forbid_external: *no-container
     because: test support loads the committed fixtures through the modules' own functions where one exists (an Invitation's token) and knows no driver
   usecase:
-    # The Telemetry report is the client of the Telemetry contract (ADR 0102).
     may_depend_on:
       [
         domain-orchestration-removalcheck,
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,
-        domain-instance-raw,
         domain-instance,
         domain-identity-base,
         domain-contacts,
         domain-sending-raw,
         domain-sending,
-        gen-telemetry,
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
@@ -1360,6 +1357,7 @@ rules:
       [
         domain-orchestration-raw,
         domain-orchestration,
+        domain-instance-raw,
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,

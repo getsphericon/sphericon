@@ -102,7 +102,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
@@ -110,7 +109,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
@@ -503,26 +501,6 @@ var jobsPackage = do.Package(
 			Now:      do.MustInvoke[Clock](i),
 		}), nil
 	}),
-	// The Instance's report of itself (ADR 0032), previewed in the Staff console and sent by a
-	// periodic job.
-	do.Lazy(func(i do.Injector) (*telemetryreport.UseCase, error) {
-		cfg := do.MustInvoke[*config.Config](i)
-		lapsedAt, _ := do.MustInvoke[*licensekey.License](i).LapsedAt()
-		host := telemetryHost(cfg, string(do.MustInvoke[Version](i)), lapsedAt)
-		client, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
-		if err != nil {
-			return nil, err
-		}
-		return telemetryreport.New(do.MustInvoke[*instancestates.Module](i), host, client, do.MustInvoke[Clock](i)), nil
-	}),
-	// The Release check (ADR 0032): a daily job, the line at start and the banner of an owner.
-	do.Lazy(func(i do.Injector) (*releasecheck.UseCase, error) {
-		source, err := upgrade.NewGitHubAt(do.MustInvoke[*config.Config](i).GitHubAPIURL)
-		if err != nil {
-			return nil, err
-		}
-		return releasecheck.New(do.MustInvoke[*instancestates.Module](i), source, slog.Default()), nil
-	}),
 	do.Lazy(func(i do.Injector) (*jobsClient, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		edition := do.MustInvoke[*ee.Edition](i)
@@ -548,8 +526,7 @@ var jobsPackage = do.Package(
 			OutboundAllow:             cfg.OutboundAllow,
 			Retention:                 jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
 			Webhooks:                  edition.Webhooks,
-			ReleaseCheck:              do.MustInvoke[*releasecheck.UseCase](i),
-			TelemetryReport:           do.MustInvoke[*telemetryreport.UseCase](i),
+			Instance:                  do.MustInvoke[*instancestates.Module](i),
 		}, edition.Jobs(), edition.ExportJobs(cfg.EventsRetention))
 		if err != nil {
 			return nil, err
@@ -671,13 +648,22 @@ var identityPackage = do.Package(
 		}, do.MustInvoke[Clock](i)), nil
 	}),
 	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
-	// client.
+	// client, with its Release check (a daily job, the line at start and the banner of an owner)
+	// and its Telemetry report (previewed in the Staff console and sent by a periodic job).
 	do.Lazy(func(i do.Injector) (*instancestates.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		lapsedAt, _ := do.MustInvoke[*licensekey.License](i).LapsedAt()
-		env := instancestates.EnvironmentOf(cfg, string(do.MustInvoke[Version](i)), lapsedAt)
-		return instancestates.New(do.MustInvoke[*ent.Client](i), env, do.MustInvoke[Clock](i),
-			instancestates.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i))), nil
+		version := string(do.MustInvoke[Version](i))
+		source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
+		if err != nil {
+			return nil, err
+		}
+		receiver, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
+		if err != nil {
+			return nil, err
+		}
+		return instancestates.New(do.MustInvoke[*ent.Client](i), instancestates.EnvironmentOf(cfg, version, lapsedAt), do.MustInvoke[Clock](i),
+			do.MustInvoke[providerlimit.SendCaps](i), source, telemetryHost(cfg, version, lapsedAt), receiver, slog.Default()), nil
 	}),
 	// The Login throttle and the mail budgets of an address (ADR 0025), over the raw client.
 	do.Lazy(func(i do.Injector) (*throttle.Attempts, error) {
@@ -883,7 +869,7 @@ var surfacesPackage = do.Package(
 			jobsUI = ui
 		}
 		h, err := server.NewStaffAPI(members, do.MustInvoke[*signupitems.Module](i), do.MustInvoke[*instancestates.Module](i),
-			do.MustInvoke[*telemetryreport.UseCase](i), sections, jobsUI)
+			sections, jobsUI)
 		if err != nil {
 			return nil, err
 		}
@@ -977,7 +963,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		SignupSurvey:              do.MustInvoke[*signupsurveyresponses.Module](i),
 		SignupItems:               do.MustInvoke[*signupitems.Module](i),
 		ConsentRecords:            do.MustInvoke[*consentrecords.Module](i),
-		Release:                   do.MustInvoke[*releasecheck.UseCase](i),
+		Instance:                  do.MustInvoke[*instancestates.Module](i),
 		Deletion:                  do.MustInvoke[*workspacedeletion.UseCase](i),
 		AccountLink:               accountLink,
 		Holds:                     do.MustInvoke[*holds.Holds](i),

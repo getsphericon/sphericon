@@ -112,15 +112,16 @@ secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the A
 into the module that owns its subject (ADR 0112) takes its tests to that module's `_test` package:
 `internal/domain/contacts/contacts` holds an import's rows (`UpsertBatch`) and
 `internal/domain/sending/outboundmessages` the refusals of a Transactional send
-(`SendTransactional`). The use case is built from the container like a
+(`SendTransactional`), and `internal/domain/instance/instancestates` the Release check and the
+Telemetry report. The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step
 execution is `env.StepExecution`, for a test of how the Instance builds it (its clock); a test that
-drives an Automation over senders of its own still builds one with `New`. A use
-case of the whole Instance (the Release check, the Telemetry report) is built over the Instance state
-module instead (`instancestates.New(env.DB, …)`); the server's own are `env.ReleaseCheck` and
-`env.TelemetryReport`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
+drives an Automation over senders of its own still builds one with `New`. The Release check and
+the Telemetry report are the Instance state module's: a test builds it with `instancestates.New(env.DB,
+…)`, passing its stub of the release source or the receiver's client, or nil where the operation is
+not exercised, and the server's own is `env.Instance`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Second factor's is `env.SecondFactor`
 (`internal/usecase/secondfactorcheck`), the Workspace creation's `env.WorkspaceCreation`

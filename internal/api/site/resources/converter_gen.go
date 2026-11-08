@@ -33,6 +33,7 @@ import (
 	abusewarning "github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	setupchecklist "github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
+	instancestates "github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -57,7 +58,6 @@ import (
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	needsattentionreport "github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
-	releasecheck "github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"time"
 )
 
@@ -1275,7 +1275,7 @@ func (c *ConverterImpl) IdentityToResource(source *ent.UserIdentity) site.SiteLi
 	}
 	return siteapiSiteLinkedIdentity
 }
-func (c *ConverterImpl) InstanceReleaseToResource(source releasecheck.Release) site.SiteInstanceRelease {
+func (c *ConverterImpl) InstanceReleaseToResource(source instancestates.Release) site.SiteInstanceRelease {
 	var siteapiSiteInstanceRelease site.SiteInstanceRelease
 	siteapiSiteInstanceRelease.LatestRelease = optString(source.LatestRelease)
 	return siteapiSiteInstanceRelease
