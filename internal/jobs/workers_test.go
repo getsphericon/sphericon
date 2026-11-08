@@ -49,7 +49,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 )
 
 // riverEnv is a real river client over the test database. The workers read and
@@ -481,13 +480,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, gone, time.Now))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.Bus, nil, gone, time.Now))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil, time.Now), env.Bus, gone, time.Now)).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.Bus, nil, gone, time.Now)).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
