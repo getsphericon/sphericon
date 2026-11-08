@@ -295,6 +295,8 @@ func IsBackfill(ev DomainEvent) bool {
 // serialized envelope can be decoded back into the right Go type. All variants
 // are ours and finite — there is no catch-all.
 var registry = map[string]func() DomainEvent{
+	NameTelegramResumeObserved:    func() DomainEvent { return &TelegramResumeObserved{} },
+	NameTelegramStopObserved:      func() DomainEvent { return &TelegramStopObserved{} },
 	NameSmsStopObserved:           func() DomainEvent { return &SmsStopObserved{} },
 	NameSmsStartObserved:          func() DomainEvent { return &SmsStartObserved{} },
 	NameSmsDestinationUnreachable: func() DomainEvent { return &SmsDestinationUnreachable{} },

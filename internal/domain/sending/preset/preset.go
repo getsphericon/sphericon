@@ -289,6 +289,13 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 			return Result{}, err
 		}
 	}
+	// Telegram's built-in Preset stringifies update_id for every fact. Validate the provider's
+	// input first, so a missing id never becomes the string "null" or another fabricated identity.
+	if p.name == "telegram" {
+		if err := validateTelegramUpdate(body); err != nil {
+			return Result{}, err
+		}
+	}
 	res, err := p.run(ctx, body, req.Header)
 	if err != nil {
 		return Result{}, err
