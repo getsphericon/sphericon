@@ -318,13 +318,20 @@ components:
   # The OAuth 2.1 server for MCP connectors (ADR 0016): its protocol endpoints, a driver beside the
   # surfaces, with no TypeSpec contract of its own (the protocol's RFCs are its contract).
   api-oauth: { in: internal/api/oauth }
+  # The drivers of the public endpoints that have no TypeSpec contract (ADR 0111): the tracked
+  # links of the messages sent (`/e/`, `/c/`), the Ingest hook (`/hooks/{key}`, ADR 0037) and the
+  # edge's on-demand TLS question on the internal listener (ADR 0038).
+  api-tracking: { in: internal/api/tracking }
+  api-hooks: { in: internal/api/hooks }
+  api-tlsask: { in: internal/api/tlsask }
   # The security handlers every surface shares.
   api-auth: { in: internal/api/auth }
   # The answer of every refusal on every surface (ADR 0103): shared surface code like the security
   # handlers, so it sits among the drivers and the core never reaches it.
   api-problem:
     in: internal/api/problem
-    allow_importers: [api-site, api-external, api-collect, api-staff, mcp, ee-api, wiring]
+    allow_importers:
+      [api-site, api-external, api-collect, api-staff, api-hooks, mcp, ee-api, wiring]
     because: the Problem mapping is the surfaces' own code (it imports every surface's generated package); a core package returns its refusal and never decides the answer
 
   # The wiring: the places that may build the whole program, and so may reach the Enterprise Edition.
@@ -494,26 +501,50 @@ components:
   usecase:
     in: internal/usecase/*
     isolated: true
-    allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
+    allow_importers:
+      [
+        api-site,
+        api-external,
+        api-collect,
+        api-staff,
+        api-oauth,
+        api-tracking,
+        api-hooks,
+        runner,
+        wiring,
+      ]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
-  # *ent.Scoped to take: the Second factor reset of a User, the deletion cycle of a Workspace,
-  # which lists the Workspaces that have no scope yet, the creation of a Workspace, the Sign-up
-  # with the steps that make a User Verified with its first one, and Notice delivery, which reads a
-  # User or a Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
+  # *ent.Scoped to take: the Second factor reset of a User, the Callback interpretation, whose
+  # ingest key names the Integration and so its Workspace, the deletion cycle of a Workspace, which
+  # lists the Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the
+  # steps that make a User Verified with its first one, and Notice delivery, which reads a User or a
+  # Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
   # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
   usecase-raw:
     in:
       [
         'internal/usecase/secondfactorreset*',
+        'internal/usecase/callbackinterpretation*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/workspacecreation*',
         'internal/usecase/signup*',
         'internal/usecase/noticedelivery*',
       ]
     isolated: true
-    allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
+    allow_importers:
+      [
+        api-site,
+        api-external,
+        api-collect,
+        api-staff,
+        api-oauth,
+        api-tracking,
+        api-hooks,
+        runner,
+        wiring,
+      ]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
 
   # The domain tier (ADR 0102) is internal/domain/<context>/<module>, the contexts ordered from
@@ -599,6 +630,7 @@ components:
         internal/domain/sending/bindings,
         internal/domain/sending/capturedmessages,
         internal/domain/sending/integrations,
+        internal/domain/sending/outboundmessages/engagement,
         internal/domain/sending/privaterelayranges,
         internal/domain/sending/sendingdomains,
         internal/domain/sending/trackingdomains,
@@ -797,6 +829,22 @@ rules:
     may_depend_on: [domain-identity-raw]
     forbid_external: *no-container
     because: the OAuth server reads and registers OAuth clients through their module and exchanges a grant for a Connection through the API tokens module, never through another surface
+  api-tracking:
+    forbid_symbol: *core-forbids
+    may_depend_on:
+      [api-auth, domain-contacts, domain-identity-base, domain-sending-raw, domain-sending, usecase]
+    forbid_external: *no-container
+    because: the tracked links record an open or a click through the Outbound message's engagement and an opt-out through its use case (ADR 0111); the host gate's Workspace comes from the shared auth package, never from the wiring
+  api-hooks:
+    forbid_symbol: *core-forbids
+    may_depend_on: [api-problem, domain-sending, usecase-raw]
+    forbid_external: *no-container
+    because: the Ingest hook hands each callback to the Callback interpretation, which finds the Integration and scopes to its Workspace (ADR 0111)
+  api-tlsask:
+    forbid_symbol: *core-forbids
+    may_depend_on: [domain-sending-raw]
+    forbid_external: *no-container
+    because: the TLS question asks the Tracking domains whether a host is served (ADR 0038, ADR 0111)
   mcp:
     forbid_symbol: *core-forbids
     may_depend_on: [api-auth, api-problem, domain-identity-raw, gen-surfaces]
@@ -825,7 +873,7 @@ rules:
     forbid_symbol: *core-forbids
     because: content sits above contacts in the domain tier (ADR 0102), so a content module imports the kernel, the infrastructure, ent, the other content modules and those of identity and contacts (an allowance added with its first import), never a module of a context above (an Integration, an Outbound message, a Broadcast, an Automation, a Rule) nor a use case; an operation that needs one is a use case above both
   domain-sending-raw:
-    may_depend_on: [domain-sending, domain-contacts, domain-identity-raw]
+    may_depend_on: [domain-sending, domain-contacts, domain-identity-raw, domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
@@ -984,7 +1032,6 @@ rules:
         domain-contacts,
         domain-sending-raw,
         domain-sending,
-        usecase,
         usecase-raw,
       ]
     forbid_external: *no-container
@@ -1133,6 +1180,9 @@ rules:
         api-collect,
         api-staff,
         api-oauth,
+        api-tracking,
+        api-hooks,
+        api-tlsask,
         api-auth,
         api-problem,
         mcp,
