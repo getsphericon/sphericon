@@ -32,8 +32,7 @@ type TelegramStop struct {
 	// Via is how the person stopped: one of events.UnsubscribedBy*.
 	Via string
 	// Message is the Outbound message a button was pressed on, nil when there is none or it did
-	// not resolve. Its Broadcast or Automation is named on its Contact's event, from which the
-	// Broadcast counts the opt-out (the broadcasts consumer, internal/jobs).
+	// not resolve. Attribution follows its delivery row independently of the Contact event.
 	Message *ent.OutboundMessage
 	// Now is the clock of the fact.
 	Now time.Time
@@ -79,14 +78,19 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 			IntegrationID: st.IntegrationID, Via: st.Via, DedupID: fmt.Sprintf("%s/unsubscribed/%d", st.DedupKey, c.ID),
 		}
 		if m := st.Message; m != nil && m.ContactID != nil && *m.ContactID == c.ID {
-			// The Broadcast counts the opt-out when its consumer works this event (broadcasts owns
-			// the recipient row, ADR 0102): the job commits with the opt-out.
+			// The public Contact event names the source; anonymous attribution is published below.
 			e.BroadcastID, e.AutomationID = lo.FromPtr(m.BroadcastID), lo.FromPtr(m.AutomationID)
 		}
 		if err := pub.Publish(ctx, e); err != nil {
 			return err
 		}
 	}
+	// Only an action on a received message attributes the stop; a provider refusing a new send
+	// reports an existing refusal, not a reaction to that new Broadcast.
+	if m := st.Message; st.Via == events.UnsubscribedByButton && m != nil && m.ID != 0 {
+		return pub.Publish(ctx, &events.MessageUnsubscribed{WorkspaceID: s.WorkspaceID(), OutboundMessageID: m.ID, ObservedAt: st.Now})
+	}
+
 	return nil
 }
 

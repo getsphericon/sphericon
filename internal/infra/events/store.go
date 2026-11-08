@@ -14,7 +14,8 @@ import (
 
 // The unique constraint of the Event log (ADR 0106): one Event per source id.
 var _ = db.Declare(
-	db.Fault("events_source_id_key", "storeEvent inserts ON CONFLICT (source_id) DO NOTHING, and an Erasure only clears a source id"),
+	db.Fault("event_workspace_id_source_id", "storeEvent inserts ON CONFLICT (workspace_id, source_id) DO NOTHING, and an Erasure only clears a source id"),
+	db.Fault("event_receipts_receipt_key_key", "claimExternal inserts ON CONFLICT (receipt_key) DO NOTHING so an external fact is consumed once"),
 )
 
 // storeEvent writes the Event row of a projected domain event, on client, the producer's
@@ -59,7 +60,7 @@ func storeEvent(ctx context.Context, client *ent.Client, env Envelope, ev Domain
 		}
 	}
 	// A repeat is told from a first write by the insert its conflict skipped.
-	err := create.OnConflictColumns(event.FieldSourceID).DoNothing().Exec(ctx)
+	err := create.OnConflictColumns(event.FieldWorkspaceID, event.FieldSourceID).DoNothing().Exec(ctx)
 	stored, err := db.Inserted(err)
 	if err != nil {
 		return false, fmt.Errorf("store event %q: %w", env.Name, err)

@@ -18,16 +18,19 @@ import (
 // ErrSMSSource refuses a hand-recorded SMS opt-out of a narrower source: it is Channel-wide.
 var ErrSMSSource = validation.RefuseField("sendingSource", "consent: an sms opt-out is for everything", i18n.ErrorsSendingSourceSms)
 
-// StopSMS records the Channel-wide opt-out of a phone number (scope `everything`, Channel `sms`,
+// stopSMS records the Channel-wide opt-out of a phone number (scope `everything`, Channel `sms`,
 // the number in E.164): no text of the Workspace goes to it, whichever sender, Broadcast or
 // Automation (ADR 0077). Like an opt-out of everything on email it deletes the number's SMS
 // Confirmation, so stale consent never reactivates: only a new Confirmation (the START that lifts
 // the opt-out) makes the number reachable again; the sms.confirmed Event stays as proof. It
 // is idempotent: a number already opted out changes nothing, and keeps the way it first stopped.
-// via is how the person stopped, which the Contact card shows. stopped is whether this call
-// stopped the number: false when it was stopped already, so what follows a stop is done already
-// too. Run it inside the transaction s is bound to.
-func StopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (stopped bool, err error) {
+// via is how the person stopped, which the Contact card shows. Run it inside the transaction s is
+// bound to.
+func stopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (bool, error) {
+	number, err := unsubscribes.SMSNumber(number)
+	if err != nil {
+		return false, err
+	}
 	added, err := unsubscribes.AddSMS(ctx, s, number, via)
 	if err != nil || !added {
 		return false, err
@@ -39,7 +42,7 @@ func StopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.
 }
 
 // SMSUnsubscribe records an SMS opt-out that reached the Workspace by another route (an email, a
-// call): the number gets no more texts, whichever sender (StopSMS). A manual opt-out is
+// call): the number gets no more texts, whichever sender. A manual opt-out is
 // Channel-wide, so only the `everything` source is accepted. Idempotent.
 func SMSUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
 	number, err := unsubscribes.SMSNumber(destination)
@@ -49,9 +52,8 @@ func SMSUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destina
 	if source != eligibility.SourceEverything {
 		return nil, ErrSMSSource
 	}
-	if err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		_, err := StopSMS(ctx, ts, number, unsubscribe.ViaManual)
-		return err
+	if err := bus.WithinScopedTx(ctx, s, func(_ *ent.Scoped, pub events.Publisher) error {
+		return pub.Publish(ctx, &events.SmsStopObserved{WorkspaceID: s.WorkspaceID(), Phone: number, Via: events.UnsubscribedByManual})
 	}); err != nil {
 		return nil, err
 	}

@@ -11,6 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -50,6 +51,7 @@ func TestTheBroadcastReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {
 	require.NoError(t, err)
 
 	env.DeliverQueuedBroadcasts(t)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 
 	got, err := jane.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID),

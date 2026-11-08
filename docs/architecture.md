@@ -222,7 +222,7 @@ coding standards in `CODING_STANDARDS.md`.
   other package fails the lint. The owner is the domain module of the entity (a module that owns
   several is named after the one the others belong to: `contacts` owns the Contact, its Custom fields
   and its join rows with Tags, so a Contact's Tags are applied there, `contacts.ApplyTagIn`, over the
-  `tags` catalogue's `EnsureIn`); the infrastructure owns the tables of no domain (the bus the Events,
+  `tags` catalogue's `EnsureIn`); the infrastructure owns the tables of no domain (the bus the Events and external-fact receipts,
   `internal/infra/events`, which stores, prunes, stitches (`StitchVisitor`) and erases them and lists
   the Event log (`ListLog`, `DistinctActions`); the Login
   throttle the attempts; `internal/infra/db` the schema state the migrations keep); a hook package owns
@@ -272,8 +272,8 @@ coding standards in `CODING_STANDARDS.md`.
   Enrollment `stepexecution`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
-  `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Broadcast's count and the Enrollment's exit), reads them, and changes their rows only through their functions
-  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, then calls `broadcasts.RecordUnsubscribe` and `automations.Exit`).
+  `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Enrollment's exit and anonymous attribution work), reads them, and changes their rows only through their functions
+  (`sendingdomainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes anonymous attribution for the Broadcast consumer).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
   the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
   `workspaces.Module.LinkScope`). easement
@@ -708,13 +708,23 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   (`internal/jobs/notices.go`) queues one send job per Notice, unique on the event and the address,
   which the System sender delivers. Do not mail a person anywhere else: publish the event and add its
   Notice to the use case.
+- **Transactional reactions (ADR 0114)**: a publish first consumes a stable external fact's
+  identity, including a nonprojected fact, by a scoped digest in `event_receipts`. Synchronous
+  subscribers (`events.Subscriber`, registered by the wiring) join the publishing transaction
+  and call the domain owners; an error rolls back state, receipt and asynchronous work. The
+  event module imports no domain owner. `OnStored` remains after-commit and is not this seam.
+  A repeated external observation never runs mandatory writes again after a later reversal.
+  Transition reactions follow only a real state change, not every observation.
 - **Async**: one queue, river, for jobs and domain events alike (ADR 0101,
   `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of
-  the state change: it writes the Event row (a repeated `source_id` publishes nothing) and
+  the state change: it writes the Event row (a repeated Workspace-scoped `source_id` publishes nothing) and
   inserts one job per consumer whose filter wants the envelope (`events.Consumer`, registered in
   `internal/app`: `jobs.EventConsumers` and `ee.EventConsumers`). A producer never names a
-  consumer; a new consumer is an args type embedding `events.EventJob`, a worker and a registry
-  entry, its jobs in the `events` queue. Every event job runs in the context of handling its
+  consumer; a new consumer is an args type (embedding `events.EventJob` when the whole envelope
+  is needed), a worker and a registry
+  entry, its jobs in the `events` queue. Anonymous report jobs carry only Workspace, delivery reference,
+  measurement kind and observation time and survive Contact Erasure (ADRs 0113 and 0115); full
+  personal envelopes keep their purge rules. Every event job runs in the context of handling its
   envelope (`events.JobChain`), so what it publishes is caused by that event.
   `internal/jobs` uses river (Postgres-backed queue, `database/sql` driver, polling). A job that must
   exist iff a state change commits is queued in that transaction with

@@ -52,6 +52,8 @@ type Tx struct {
 	Erasure *ErasureClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// EventReceipt is the client for interacting with the EventReceipt builders.
+	EventReceipt *EventReceiptClient
 	// HeldOrderEvent is the client for interacting with the HeldOrderEvent builders.
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
@@ -298,6 +300,7 @@ func (tx *Tx) init() {
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
 	tx.Erasure = NewErasureClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
+	tx.EventReceipt = NewEventReceiptClient(tx.config)
 	tx.HeldOrderEvent = NewHeldOrderEventClient(tx.config)
 	tx.Hold = NewHoldClient(tx.config)
 	tx.InstanceAuditEntry = NewInstanceAuditEntryClient(tx.config)

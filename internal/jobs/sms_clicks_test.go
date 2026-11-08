@@ -88,6 +88,7 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, smsCart, resp.Header().Get("Location"))
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	clickedAfterClick := clicked()
 	assert.True(t, clickedAfterClick, "a person's click sets the recipient's rollup")
 	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.LacunaID), id)

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -245,6 +246,7 @@ func TestPostmarkDeliveryNoticeLinksAndStampsTheMessage(t *testing.T) {
 	assert.Equal(t, "pm-msg-alice-1", got[0].ProviderMessageID)
 	assert.EqualValues(t, fixtures.OutboundMessagePostmarkAliceID, got[0].OutboundMessageID)
 	assert.EqualValues(t, fixtures.ContactAliceID, got[0].ContactID)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := messageOf(t, env, fixtures.OutboundMessagePostmarkAliceID)
 	require.NotNil(t, m.DeliveredAt)
 	assert.True(t, hookClock.Equal(*m.DeliveredAt))
@@ -261,12 +263,14 @@ func TestPostmarkTransientIsADelayAndBounceAndComplaintStamp(t *testing.T) {
 	require.Len(t, got, 1)
 	assert.Equal(t, events.NameEmailDelayed, got[0].Action)
 	assert.EqualValues(t, fixtures.OutboundMessagePostmarkAliceID, got[0].OutboundMessageID)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := messageOf(t, env, fixtures.OutboundMessagePostmarkAliceID)
 	assert.Nil(t, m.DeliveredAt)
 	assert.Nil(t, m.BouncedAt)
 
 	require.Equal(t, http.StatusOK, postmarkPost(t, env, key, postmarkUser, postmarkToken, postmarkBodyFor("Bounce", "402", "HardBounce", fixtures.ContactAliceEmail, "pm-msg-alice-1")).Code)
 	require.Equal(t, http.StatusOK, postmarkPost(t, env, key, postmarkUser, postmarkToken, postmarkBodyFor("SpamComplaint", "403", "SpamComplaint", fixtures.ContactAliceEmail, "pm-msg-alice-1")).Code)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m = messageOf(t, env, fixtures.OutboundMessagePostmarkAliceID)
 	assert.NotNil(t, m.BouncedAt)
 	assert.NotNil(t, m.ComplainedAt)
@@ -297,12 +301,14 @@ func TestMailgunNoticesLinkToTheMessageByItsMessageIDAndStampIt(t *testing.T) {
 	assert.Equal(t, "mailgun", got[0].Provider)
 	assert.Equal(t, "<"+mid+">", got[0].ProviderMessageID)
 	assert.EqualValues(t, fixtures.OutboundMessageMailgunAliceID, got[0].OutboundMessageID)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := messageOf(t, env, fixtures.OutboundMessageMailgunAliceID)
 	require.NotNil(t, m.DeliveredAt)
 	assert.True(t, hookClock.Equal(*m.DeliveredAt))
 
 	require.Equal(t, http.StatusOK, mailgunPost(t, env, key, mailgunKey, mailgunEventFor("failed", "evt-b", "permanent", fixtures.ContactAliceEmail, mid)).Code)
 	require.Equal(t, http.StatusOK, mailgunPost(t, env, key, mailgunKey, mailgunEventFor("complained", "evt-c", "", fixtures.ContactAliceEmail, mid)).Code)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m = messageOf(t, env, fixtures.OutboundMessageMailgunAliceID)
 	assert.NotNil(t, m.BouncedAt)
 	assert.NotNil(t, m.ComplainedAt)
@@ -326,6 +332,7 @@ func TestMailgunDelayAndDropAreEventsAndStampNothing(t *testing.T) {
 	for _, ev := range byAction {
 		assert.EqualValues(t, fixtures.OutboundMessageMailgunAliceID, ev.OutboundMessageID)
 	}
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := messageOf(t, env, fixtures.OutboundMessageMailgunAliceID)
 	assert.Nil(t, m.DeliveredAt)
 	assert.Nil(t, m.BouncedAt)

@@ -120,18 +120,18 @@ const (
 	ResultComplained  DeliveryResult = "complained"
 )
 
-// StampDelivery sets the message's delivery result of the given kind to at, only while it is
-// empty: the first notice of each kind stamps once and a stamp is never replaced or cleared,
-// so a redelivered notice changes nothing and an old report does not shrink (ADR 0053).
+// StampDelivery retains the earliest observed email result of each kind (ADR 0113), so
+// reversed consumer order and retries cannot change the report's meaning. SMS's mutually
+// exclusive final result still goes through StampFinal synchronously.
 func StampDelivery(ctx context.Context, s *ent.Scoped, id int64, result DeliveryResult, at time.Time) error {
 	u := s.OutboundMessage().Update()
 	switch result {
 	case ResultDelivered:
-		u.Where(outboundmessage.ID(id), outboundmessage.DeliveredAtIsNil()).SetDeliveredAt(at)
+		u.Where(outboundmessage.ID(id), outboundmessage.Or(outboundmessage.DeliveredAtIsNil(), outboundmessage.DeliveredAtGT(at))).SetDeliveredAt(at)
 	case ResultBounced:
-		u.Where(outboundmessage.ID(id), outboundmessage.BouncedAtIsNil()).SetBouncedAt(at)
+		u.Where(outboundmessage.ID(id), outboundmessage.Or(outboundmessage.BouncedAtIsNil(), outboundmessage.BouncedAtGT(at))).SetBouncedAt(at)
 	case ResultComplained:
-		u.Where(outboundmessage.ID(id), outboundmessage.ComplainedAtIsNil()).SetComplainedAt(at)
+		u.Where(outboundmessage.ID(id), outboundmessage.Or(outboundmessage.ComplainedAtIsNil(), outboundmessage.ComplainedAtGT(at))).SetComplainedAt(at)
 	case ResultUndelivered:
 		return fmt.Errorf("%s is a final state: StampFinal sets it", result)
 	default:

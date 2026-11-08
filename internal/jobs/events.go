@@ -23,6 +23,7 @@ import (
 // EventConsumers are core's consumers of the domain events, for the bus to insert their jobs.
 func EventConsumers() []events.Consumer {
 	return []events.Consumer{
+		{Wants: observesMessage, Job: observeMessage},
 		{Wants: suppresses, Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
 			return SuppressEventArgs{events.EventJob{Envelope: env}}
 		}},
@@ -229,25 +230,22 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 	return nil
 }
 
-// BroadcastUnsubscribeEventArgs is the broadcasts consumer's job: a Telegram opt-out made from a
-// Broadcast's message, which the Broadcast counts as an unsubscribe of its recipient.
+// BroadcastUnsubscribeEventArgs carries anonymous attribution to a received message on any
+// Channel. Its envelope contains no personal fields and survives Contact Erasure.
 type BroadcastUnsubscribeEventArgs struct {
 	events.EventJob
 }
 
 func (BroadcastUnsubscribeEventArgs) Kind() string { return "event_broadcast_unsubscribe" }
 
-// countsOnBroadcast wants a telegram.unsubscribed that names a Broadcast and its Contact.
+// countsOnBroadcast selects the internal, anonymous attribution fact.
 func countsOnBroadcast(_ events.Envelope, ev events.DomainEvent) bool {
-	e, ok := ev.(*events.TelegramUnsubscribed)
-	return ok && e.BroadcastID != 0 && e.ContactID != 0
+	e, ok := ev.(*events.MessageUnsubscribed)
+	return ok && e.OutboundMessageID != 0
 }
 
-// BroadcastUnsubscribeEventWorker counts a Telegram opt-out on the Broadcast whose message it was
-// made from (broadcasts.RecordUnsubscribe). The opt-out is written by
-// internal/domain/contacts/channelstop, below the Broadcasts, and the recipient row is the broadcasts
-// module's (ADR 0102: only the owner writes a table), so the count follows the event: its job
-// commits with the opt-out, and a repeat counts nothing, the mark being set once.
+// BroadcastUnsubscribeEventWorker updates the Broadcast owner through its anonymous message
+// reference; neither a Contact lookup nor the original personal event is needed.
 type BroadcastUnsubscribeEventWorker struct {
 	river.WorkerDefaults[BroadcastUnsubscribeEventArgs]
 
@@ -260,20 +258,20 @@ func NewBroadcastUnsubscribeEventWorker(client *ent.Client) *BroadcastUnsubscrib
 	return &BroadcastUnsubscribeEventWorker{ent: client}
 }
 
-// Work marks the Contact's recipient row of the Broadcast as unsubscribed, once.
+// Work marks the received message's recipient as unsubscribed, without restoring identity.
 func (w *BroadcastUnsubscribeEventWorker) Work(ctx context.Context, job *river.Job[BroadcastUnsubscribeEventArgs]) error {
 	env := job.Args.Envelope
 	ev, err := events.Decode(env)
 	if err != nil {
 		return err
 	}
-	e, ok := ev.(*events.TelegramUnsubscribed)
-	if !ok || e.BroadcastID == 0 {
+	e, ok := ev.(*events.MessageUnsubscribed)
+	if !ok || e.OutboundMessageID == 0 {
 		return nil
 	}
 	// The Workspace comes from the event envelope, as for every consumer, and the moment from when
 	// the unsubscribe occurred.
-	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(env.WorkspaceID), e.BroadcastID, e.ContactID, env.OccurredAt); err != nil {
+	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(env.WorkspaceID), e.OutboundMessageID, e.ObservedAt); err != nil {
 		return fmt.Errorf("count the unsubscribe for the broadcast: %w", err)
 	}
 	return nil

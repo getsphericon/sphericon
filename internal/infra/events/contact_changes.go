@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"time"
 	"unicode/utf8"
 )
 
@@ -285,16 +286,17 @@ func (e *SmsDelivery) Project() Projection {
 // Destination the message went to is not repeated: the Outbound message holds it. Each Channel's
 // click is its own Event on these facts: SmsClicked, TelegramClicked.
 type LinkClick struct {
-	WorkspaceID       int64  `json:"workspaceId"`
-	ContactID         int64  `json:"contactId"`
-	Email             string `json:"email,omitempty"`
-	IntegrationID     int64  `json:"integrationId,omitempty"`
-	URL               string `json:"url"`
-	BroadcastID       int64  `json:"broadcastId,omitempty"`
-	AutomationID      int64  `json:"automationId,omitempty"`
-	OutboundMessageID int64  `json:"outboundMessageId"`
-	Machine           bool   `json:"machine,omitempty"`
-	DedupID           string `json:"dedupId,omitempty"`
+	ObservedAt        time.Time `json:"observedAt,omitzero"`
+	WorkspaceID       int64     `json:"workspaceId"`
+	ContactID         int64     `json:"contactId"`
+	Email             string    `json:"email,omitempty"`
+	IntegrationID     int64     `json:"integrationId,omitempty"`
+	URL               string    `json:"url"`
+	BroadcastID       int64     `json:"broadcastId,omitempty"`
+	AutomationID      int64     `json:"automationId,omitempty"`
+	OutboundMessageID int64     `json:"outboundMessageId"`
+	Machine           bool      `json:"machine,omitempty"`
+	DedupID           string    `json:"dedupId,omitempty"`
 }
 
 // project is the click's Event row, as the action names it.
@@ -313,7 +315,8 @@ func (e *LinkClick) project(action string) Projection {
 		props[MachineProperty] = true
 	}
 	return Projection{
-		Subject: e.Email, Action: action, Email: e.Email, ContactID: e.ContactID,
+		OccurredAt: e.ObservedAt,
+		Subject:    e.Email, Action: action, Email: e.Email, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, URL: e.URL, Machine: e.Machine, Properties: props,
 	}
 }
@@ -350,6 +353,8 @@ const (
 	UnsubscribedByLink = "link"
 	// UnsubscribedByManual is an opt-out recorded by hand, through the API.
 	UnsubscribedByManual = "manual"
+	// UnsubscribedByRefusedSend is a provider refusing a send because the number opted out.
+	UnsubscribedByRefusedSend = "refused_send"
 )
 
 // TelegramUnsubscribed is a Contact's Channel-wide Telegram opt-out (telegram.unsubscribed), recorded

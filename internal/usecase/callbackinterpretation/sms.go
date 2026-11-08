@@ -9,17 +9,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
-	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
@@ -66,12 +61,12 @@ func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) e
 		return err
 	}
 	if result == outboundmessages.ResultUndelivered && deadNumber(tx.Integration.Provider, code) {
-		err := suppressions.Add(ctx, tx.Scoped, suppressions.Entry{
-			Channel: channels.SMS, Destination: msg.Destination, Reason: entsuppression.ReasonBounce,
-			ContactID: *msg.ContactID,
+		err := tx.Pub.Publish(ctx, &events.SmsDestinationUnreachable{
+			WorkspaceID: tx.Scoped.WorkspaceID(), Phone: msg.Destination, ContactID: *msg.ContactID,
+			DedupID: tx.DedupKey(n.ID), ObservedAt: tx.Now,
 		})
 		if err != nil {
-			return fmt.Errorf("ingest: suppress a dead number: %w", err)
+			return err
 		}
 	}
 	c, err := tx.Scoped.Contact().Get(ctx, *msg.ContactID)
@@ -105,10 +100,9 @@ func (sms) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMessage) e
 	}
 	switch {
 	case channelstop.IsStopKeyword(m.Text):
-		_, err := channelstop.StopSMS(ctx, tx.Scoped, number, unsubscribe.ViaKeyword)
-		return err
+		return tx.Pub.Publish(ctx, &events.SmsStopObserved{WorkspaceID: tx.Scoped.WorkspaceID(), Phone: number, Via: events.UnsubscribedByKeyword, DedupID: tx.DedupKey(m.ID), ObservedAt: tx.Now})
 	case channelstop.IsStartKeyword(m.Text):
-		return confirmations.StartSMSIn(ctx, tx.Scoped, tx.Pub, number)
+		return tx.Pub.Publish(ctx, &events.SmsStartObserved{WorkspaceID: tx.Scoped.WorkspaceID(), Phone: number, DedupID: tx.DedupKey(m.ID), ObservedAt: tx.Now})
 	}
 	c, err := tx.Scoped.Contact().Query().Where(contact.Phone(number)).Only(ctx)
 	if ent.IsNotFound(err) {

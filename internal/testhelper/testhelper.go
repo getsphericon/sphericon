@@ -523,6 +523,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client))
 		add(tb, p, txDB, client, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
 		add(tb, p, txDB, client, jobs.NewBroadcastUnsubscribeEventWorker(client))
+		add(tb, p, txDB, client, jobs.NewMessageObservationWorker(client))
 		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.UseCase](injector), systemSender))
 		add[recordedArgs](tb, p, txDB, client, recordedWorker{})
 		add(tb, p, txDB, client, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))

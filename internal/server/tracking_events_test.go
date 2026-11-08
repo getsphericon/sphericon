@@ -11,6 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -62,6 +63,7 @@ func TestEveryOpenIsAnEventAndTheRollupIsStampedOnce(t *testing.T) {
 		assert.EqualValues(t, fixtures.OutboundMessageTrackingSampleID, got.OutboundMessageID)
 		assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, got.BroadcastID)
 	}
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	require.NotNil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt)
 	assert.Equal(t, 1, figures(t, env, fixtures.BroadcastSentUntrackedID).Opened, "unique opens count the recipient once")
 }
@@ -79,6 +81,7 @@ func TestOpenAndClickAreStampedAtTheInstanceClock(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, opened.Code)
 	require.Equal(t, http.StatusFound, clicked.Code)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID)
 	require.NotNil(t, msg.OpenedAt)
 	require.NotNil(t, msg.ClickedAt)
@@ -100,6 +103,7 @@ func TestEveryClickIsAnEventWithItsURLAndTheReportListsTheLinks(t *testing.T) {
 	clicked := env.QueuedEvents(t, events.NameEmailClicked)
 	require.Len(t, clicked, 3, "one email.clicked Event per click")
 	assert.Equal(t, linkA, clicked[0].(*events.EmailEngagement).URL)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Equal(t, 1, figures(t, env, fixtures.BroadcastSentUntrackedID).Clicked, "unique clicks count the recipient once")
 
 	assert.Equal(t, map[string]int32{linkA: 2, linkB: 1}, linkClicks(t, env))
@@ -114,6 +118,7 @@ func TestUniqueFiguresSurviveTheExpiryOfTheEvents(t *testing.T) {
 	trackingGet(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID))
 	require.Equal(t, map[string]int32{linkA: 1}, linkClicks(t, env))
 
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	n, err := events.PruneEvents(ctx, env.DB, time.Nanosecond, 100, time.Now())
 	require.NoError(t, err)
 	require.Positive(t, n, "the engagement Events are analytical and expire")

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"entgo.io/ent/dialect/sql"
+	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -100,16 +100,21 @@ var _ = db.Declare(
 // idempotent per (channel, destination): an existing active entry keeps its reason. A
 // lifted entry does not count (ADR 0049): the destination is suppressed anew in a new row.
 func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
+	_, err := add(ctx, s, e)
+	return err
+}
+
+func add(ctx context.Context, s *ent.Scoped, e Entry) (bool, error) {
 	dest := NormalizeDestination(e.Destination)
 	if dest == "" {
-		return ErrDestinationEmpty
+		return false, ErrDestinationEmpty
 	}
 	channel := e.Channel
 	if channel == "" {
 		channel = channels.Email
 	}
 	if !ValidDestination(string(channel), dest) {
-		return ErrDestinationInvalid
+		return false, ErrDestinationInvalid
 	}
 	create := s.Suppression().Create().
 		SetChannel(channel).
@@ -118,11 +123,16 @@ func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 	if e.ContactID != 0 {
 		create.SetContactID(e.ContactID)
 	}
-	return create.
-		OnConflictColumnsWhere(sql.IsNull(entsuppression.FieldLiftedAt),
+	err := create.
+		OnConflictColumnsWhere(entsql.IsNull(entsuppression.FieldLiftedAt),
 			entsuppression.FieldWorkspaceID, entsuppression.FieldChannel, entsuppression.FieldDestination).
-		Ignore().
+		DoNothing().
 		Exec(ctx)
+	added, err := db.Inserted(err)
+	if err != nil {
+		return false, err
+	}
+	return added, nil
 }
 
 // AddManual is Add with the manual reason (an Owner's or an API caller's request), and

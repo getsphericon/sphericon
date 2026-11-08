@@ -67,12 +67,24 @@ func (env *TestEnv) performEnqueuedJobs(tb testing.TB, mustSucceed bool, only ..
 	env.performEnqueuedJobsWhere(tb, mustSucceed, nil, only...)
 }
 
+// PerformEnqueuedJobsNewestFirst exercises consumers without a FIFO assumption, using the same
+// River executor and middleware as PerformEnqueuedJobs.
+func (env *TestEnv) PerformEnqueuedJobsNewestFirst(t *testing.T, only ...river.JobArgs) {
+	t.Helper()
+	env.performEnqueuedJobsInOrder(t, true, nil, river.SortOrderDesc, only...)
+}
+
 // performEnqueuedJobsWhere is performEnqueuedJobs for the waiting jobs that match, or all of them
 // when match is nil.
 func (env *TestEnv) performEnqueuedJobsWhere(tb testing.TB, mustSucceed bool, match func(*rivertype.JobRow) bool, only ...river.JobArgs) {
 	tb.Helper()
+	env.performEnqueuedJobsInOrder(tb, mustSucceed, match, river.SortOrderAsc, only...)
+}
+
+func (env *TestEnv) performEnqueuedJobsInOrder(tb testing.TB, mustSucceed bool, match func(*rivertype.JobRow) bool, order river.SortOrder, only ...river.JobArgs) {
+	tb.Helper()
 	params := river.NewJobListParams().States(rivertype.JobStateAvailable).
-		OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(maxQueuedJobs)
+		OrderBy(river.JobListOrderByID, order).First(maxQueuedJobs)
 	if len(only) > 0 {
 		kinds := make([]string, len(only))
 		for i, args := range only {

@@ -39,6 +39,7 @@ func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice)
 		return fmt.Errorf("lookup contact %q: %w", address, err)
 	}
 	ev := &events.EmailDelivery{
+		ObservedAt:        tx.Now,
 		Action:            actionOf(n.Kind),
 		WorkspaceID:       tx.Scoped.WorkspaceID(),
 		ContactID:         contactID,
@@ -72,30 +73,7 @@ func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice)
 			ev.ContactID = lo.FromPtr(msg.ContactID)
 		}
 	}
-	if err := tx.Pub.Publish(ctx, ev); err != nil {
-		return err
-	}
-	if msg == nil {
-		return nil
-	}
-	if result, ok := resultOf(ev.Action); ok {
-		return outboundmessages.StampDelivery(ctx, tx.Scoped, msg.ID, result, tx.Now)
-	}
-	return nil
-}
-
-// resultOf is the delivery result a notice's Event stamps on its Outbound message. Delay and
-// drop stamp nothing (ADR 0053).
-func resultOf(action string) (outboundmessages.DeliveryResult, bool) {
-	switch action {
-	case events.NameEmailDelivered:
-		return outboundmessages.ResultDelivered, true
-	case events.NameEmailBounced:
-		return outboundmessages.ResultBounced, true
-	case events.NameEmailComplained:
-		return outboundmessages.ResultComplained, true
-	}
-	return "", false
+	return tx.Pub.Publish(ctx, ev)
 }
 
 // actionOf is the Event action a Delivery notice kind becomes.

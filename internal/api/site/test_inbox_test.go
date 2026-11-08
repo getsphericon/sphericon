@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -186,6 +187,7 @@ func TestTheOutboundMessageOfACapturedSendIsStampedDeliveredOnceAndNothingBounce
 	sent, err := sendGlobexTransactional(t, env, "ada@example.com")
 
 	require.NoError(t, err)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	row := env.DB.OutboundMessage.Query().Where(outboundmessage.ID(int64(sent.ID))).OnlyX(t.Context())
 	assert.NotNil(t, row.DeliveredAt)
 	assert.Nil(t, row.BouncedAt)

@@ -99,7 +99,7 @@ func TestEngagementIsRecordedOnce(t *testing.T) {
 		"open":  func() (bool, error) { return outboundmessages.StampOpened(d.t.Context(), d.s, messageID, time.Now()) },
 		"click": func() (bool, error) { return outboundmessages.StampClicked(d.t.Context(), d.s, messageID, time.Now()) },
 		"unsubscribe": func() (bool, error) {
-			return broadcasts.RecordUnsubscribe(d.t.Context(), d.s, fixtures.BroadcastSendingID, fixtures.ContactAliceID, time.Now())
+			return broadcasts.RecordUnsubscribe(d.t.Context(), d.s, messageID, time.Now())
 		},
 	} {
 		first, err := record()
@@ -120,7 +120,7 @@ func TestEngagementOfAnUnknownMessageIsNothing(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, recorded)
 
-	recorded, err = broadcasts.RecordUnsubscribe(d.t.Context(), d.s, fixtures.BroadcastSendingID, fixtures.ContactAliceID, time.Now())
+	recorded, err = broadcasts.RecordUnsubscribe(d.t.Context(), d.s, 424242, time.Now())
 	require.NoError(t, err)
 	assert.False(t, recorded, "a Contact that is not a recipient of the Broadcast matches nothing")
 }

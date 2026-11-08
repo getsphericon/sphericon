@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -199,6 +200,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.Code)
 	assert.Equal(t, "image/gif", resp.Header().Get("Content-Type"))
 
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.NotNil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt)
 	assert.Equal(t, 1, figures(t, env, b.ID).Opened)
 
@@ -209,6 +211,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	resp = get("/e/c/" + clickToken)
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, "https://dest.test/x", resp.Header().Get("Location"))
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.NotNil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).ClickedAt)
 	assert.Equal(t, 1, figures(t, env, b.ID).Clicked)
 
@@ -219,7 +222,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	uPath := unsubPath(t, tr, linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email,
-		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID,
+		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID,
 	})
 	optedOut := func() bool {
 		ok, err := env.DB.Unsubscribe.Query().Where(
@@ -238,10 +241,11 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.False(t, optedOut(), "GET records nothing")
 	assert.Equal(t, 0, figures(t, env, b.ID).Unsubscribed)
 
-	// POST performs the opt-out and bumps the counter once.
+	// POST performs the opt-out and queues attribution to the received message.
 	resp = post(uPath)
 	assert.Equal(t, http.StatusNoContent, resp.Code)
 	assert.True(t, optedOut(), "POST writes a broadcasts-scoped opt-out")
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
 	assert.Equal(t, 1, figures(t, env, b.ID).Unsubscribed)
 	unsubscribedAt := env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt
 	require.NotNil(t, unsubscribedAt, "the recipient records the unsubscribe")
@@ -361,7 +365,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	srcPath := unsubPath(t, tr, linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email,
-		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID,
+		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID,
 	})
 	resp := get(srcPath)
 	require.Equal(t, http.StatusSeeOther, resp.Code)
@@ -400,6 +404,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 // figures is the Broadcast's delivery figures, derived from its rows.
 func figures(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadcasts.Stats {
 	t.Helper()
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	got, err := broadcasts.StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
 	require.NoError(t, err)
 	return got[broadcastID]

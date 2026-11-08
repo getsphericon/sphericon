@@ -63,6 +63,9 @@ type Erasure func(*sql.Selector)
 // Event is the predicate function for event builders.
 type Event func(*sql.Selector)
 
+// EventReceipt is the predicate function for eventreceipt builders.
+type EventReceipt func(*sql.Selector)
+
 // HeldOrderEvent is the predicate function for heldorderevent builders.
 type HeldOrderEvent func(*sql.Selector)
 

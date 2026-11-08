@@ -14,8 +14,8 @@ import "github.com/getsphericon/sphericon/internal/kernel/channels"
 // is scoped to ("broadcasts" / "automation:<id>" / "everything"). Channel is the Channel the
 // opt-out is recorded on: a link in a Telegram message unsubscribes on Telegram only (ADR 0077),
 // and Destination is that Channel's (the email address, the Telegram user id). OutboundMessageID is
-// the message the link sits in, 0 for a link that came from none (a message sent before the link
-// named it, or an opt-out made without one): the email.unsubscribed Event is about that message.
+// the message the link sits in, 0 for an opt-out made without a received message. Attribution
+// uses that delivery record rather than the Contact, so it survives Erasure anonymously.
 type Unsubscribe struct {
 	Channel           channels.Channel
 	Source            string

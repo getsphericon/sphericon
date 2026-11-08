@@ -1120,7 +1120,7 @@ func ScopedEntities() []ScopedEntity {
 				_ = remap
 				b := s.Event().Create()
 				if src.SourceID != nil {
-					b.SetSourceID(*src.SourceID + "-replanted")
+					b.SetSourceID(*src.SourceID)
 				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))

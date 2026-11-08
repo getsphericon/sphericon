@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -59,6 +60,7 @@ func TestSESDeliveryNoticeLinksAndStampsTheMessage(t *testing.T) {
 	assert.EqualValues(t, fixtures.ContactAliceID, got[0].ContactID)
 	assert.Equal(t, "sns-msg-20/"+fixtures.ContactAliceEmail, got[0].DedupID)
 
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := sesAliceMessage(t, env)
 	require.NotNil(t, m.DeliveredAt)
 	assert.True(t, hookClock.Equal(*m.DeliveredAt))
@@ -76,10 +78,11 @@ func TestSESDeliveryStampIsSetOnce(t *testing.T) {
 	postNotice(t, env, "delivery")
 	postNotice(t, env, "delivery")
 
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := sesAliceMessage(t, env)
 	require.NotNil(t, m.DeliveredAt)
 	assert.True(t, first.Equal(*m.DeliveredAt), "the first stamp is never replaced")
-	n, err := env.DB.Event.Query().Where(event.SourceID("sns-msg-20/" + fixtures.ContactAliceEmail)).Count(t.Context())
+	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailDelivered + ":sns-msg-20/" + fixtures.ContactAliceEmail)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
 }
@@ -101,6 +104,7 @@ func TestSESDelayAndDropAreEventsWithAReasonAndStampNothing(t *testing.T) {
 	for _, ev := range byAction {
 		assert.EqualValues(t, fixtures.OutboundMessageSesAliceID, ev.OutboundMessageID)
 	}
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := sesAliceMessage(t, env)
 	assert.Nil(t, m.DeliveredAt)
 	assert.Nil(t, m.BouncedAt)
@@ -132,6 +136,7 @@ func TestSESBounceAndComplaintStampTheirKindAndSuppress(t *testing.T) {
 	env := setupHooks(t)
 
 	postNotice(t, env, "bounce-for-message")
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := sesAliceMessage(t, env)
 	require.NotNil(t, m.BouncedAt)
 	assert.Nil(t, m.ComplainedAt)
@@ -142,6 +147,7 @@ func TestSESBounceAndComplaintStampTheirKindAndSuppress(t *testing.T) {
 	assert.Equal(t, events.BounceKindHard, bounces[0].BounceKind)
 
 	postNotice(t, env, "complaint-for-message")
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.NotNil(t, sesAliceMessage(t, env).ComplainedAt)
 
 	applySuppression(t, env)

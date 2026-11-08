@@ -7,11 +7,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -74,22 +70,14 @@ func (smsChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route, 
 
 // unreachable suppresses a number the provider reports reaches no handset, like a hard bounce: no
 // send on the Channel goes to it again, and the message is Skipped as suppressed.
-func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publisher, _ *ent.Integration, req Request, to target, _ int64) (string, error) {
-	err := suppressions.Add(ctx, s, suppressions.Entry{
-		Channel: channels.SMS, Destination: to.dest, Reason: entsuppression.ReasonBounce, ContactID: req.contactID(),
-	})
-	if err != nil {
-		return "", fmt.Errorf("outbound: suppress a dead number: %w", err)
-	}
-	return eligibility.ReasonSuppressed, nil
+func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, _ *ent.Integration, req Request, to target, messageID int64) (string, error) {
+	err := pub.Publish(ctx, &events.SmsDestinationUnreachable{WorkspaceID: s.WorkspaceID(), Phone: to.dest, ContactID: req.contactID(), DedupID: fmt.Sprintf("sms-send:%d/unreachable", messageID)})
+	return eligibility.ReasonSuppressed, err
 }
 
-// optedOut records that the number stopped at the provider, which refused the text for it (Twilio's
-// 21610: the number texted STOP to the sender): the number's Channel-wide opt-out (ADR 0077), the
-// same as a STOP texted to sphericon, keyed by the number whichever sender found out.
-func (smsChannel) optedOut(ctx context.Context, s *ent.Scoped, _ events.Publisher, _ *ent.Integration, _ *ent.OutboundMessage, to target, _ time.Time) error {
-	_, err := channelstop.StopSMS(ctx, s, to.dest, unsubscribe.ViaRefusedSend)
-	return err
+// optedOut reports the provider's semantic verdict without attributing a prior stop to this send.
+func (smsChannel) optedOut(ctx context.Context, s *ent.Scoped, pub events.Publisher, _ *ent.Integration, msg *ent.OutboundMessage, to target, at time.Time) error {
+	return pub.Publish(ctx, &events.SmsStopObserved{WorkspaceID: s.WorkspaceID(), Phone: to.dest, Via: events.UnsubscribedByRefusedSend, DedupID: fmt.Sprintf("sms-send:%d/opted-out", msg.ID), ObservedAt: at})
 }
 
 // smsMessage is a rendered text, as the provider takes it.
@@ -107,7 +95,7 @@ func (c smsChannel) render(ctx context.Context, s *ent.Scoped, req Request, mess
 		return nil, fmt.Errorf("outbound: %T is no SMS content", req.Content)
 	}
 	vars := Bindings(req.Contact, req.Variables)
-	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, channels.SMS, content.Text, vars); err != nil {
+	if err := c.m.bindUnsubscribeURL(ctx, s, req, messageID, dest, ws, channels.SMS, content.Text, vars); err != nil {
 		return nil, err
 	}
 	body, err := smsrender.Render(content.Text, vars)

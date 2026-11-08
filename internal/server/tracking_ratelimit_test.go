@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -80,7 +81,9 @@ func TestOverTheTrackingGuardAClickStillRedirectsButIsNotRecorded(t *testing.T) 
 
 	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.Equal(t, clickDest, rec.Header().Get("Location"))
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedFirstID).ClickedAt)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Nil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedSecondID).ClickedAt)
 }
 
@@ -95,7 +98,9 @@ func TestOverTheTrackingGuardAnOpenStillReturnsThePixelButIsNotRecorded(t *testi
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "image/gif", rec.Header().Get("Content-Type"))
 	assert.NotEmpty(t, rec.Body.Bytes())
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedFirstID).OpenedAt)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Nil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedSecondID).OpenedAt)
 }
 
@@ -108,7 +113,9 @@ func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
 	clicked := trackingGet(t, env, clickPath(t, env, fixtures.OutboundMessageUnengagedSecondID))
 	require.Equal(t, http.StatusFound, clicked.Code)
 
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedFirstID).OpenedAt)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedSecondID).ClickedAt)
 }
 
@@ -153,6 +160,7 @@ func TestAZeroTrackingLimitRecordsEverything(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(0))
 	for _, message := range []int64{fixtures.OutboundMessageUnengagedFirstID, fixtures.OutboundMessageUnengagedSecondID} {
 		require.Equal(t, http.StatusOK, trackingGet(t, env, "/e/o/"+trackingToken(t, env, message)).Code)
+		env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 		assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), message).OpenedAt)
 	}
 }

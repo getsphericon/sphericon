@@ -262,6 +262,7 @@ func (a emailAdapter) publishSent(ctx context.Context, pub events.Publisher, f s
 		return nil
 	}
 	return pub.Publish(ctx, &events.EmailDelivery{
+		ObservedAt:        f.observedAt,
 		Action:            events.NameEmailDelivered,
 		WorkspaceID:       f.workspaceID,
 		ContactID:         f.req.contactID(),

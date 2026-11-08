@@ -6,6 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
@@ -13,11 +14,21 @@ import (
 // this call set it, so a repeated click on the link is counted exactly once. Its opens and clicks
 // are the Outbound message's stamps (outboundmessages.StampOpened, ADR 0053).
 
-// RecordUnsubscribe marks the Contact's recipient row of the Broadcast as having unsubscribed
-// from it. A Contact that was never a recipient of it (a link to an erased row) matches nothing.
-func RecordUnsubscribe(ctx context.Context, s *ent.Scoped, broadcastID, contactID int64, at time.Time) (bool, error) {
+// RecordUnsubscribe attributes an opt-out to a received message. Its anonymous delivery and
+// recipient references survive Erasure; a missing, foreign or unsent message counts nothing.
+func RecordUnsubscribe(ctx context.Context, s *ent.Scoped, messageID int64, at time.Time) (bool, error) {
+	msg, err := s.OutboundMessage().Query().Where(outboundmessage.ID(messageID), outboundmessage.StatusEQ(outboundmessage.StatusSent)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if msg.BroadcastRecipientID == nil || msg.BroadcastID == nil {
+		return false, nil
+	}
 	return setOnce(ctx, s,
-		broadcastrecipient.And(broadcastrecipient.BroadcastID(broadcastID), broadcastrecipient.ContactID(contactID)),
+		broadcastrecipient.And(broadcastrecipient.ID(*msg.BroadcastRecipientID), broadcastrecipient.BroadcastID(*msg.BroadcastID)),
 		broadcastrecipient.UnsubscribedAtIsNil(),
 		func(u *ent.BroadcastRecipientScopedUpdate, at time.Time) { u.SetUnsubscribedAt(at) }, at)
 }

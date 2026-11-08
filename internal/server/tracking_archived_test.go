@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -35,6 +36,7 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	env.Server.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	opened := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt
 	assert.NotNil(t, opened)
 	assert.Equal(t, 1, figures(t, env, b.ID).Opened)

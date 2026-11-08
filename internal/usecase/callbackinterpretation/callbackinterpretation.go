@@ -75,6 +75,9 @@ func (tx Tx) After(f func(context.Context)) { *tx.after = append(*tx.after, f) }
 // only per provider account, prefixed with the Channel and the Integration (on Telegram
 // `telegram:<integration id>:<update_id>`, since an update_id is per bot).
 func (tx Tx) DedupKey(eventID string) string {
+	if eventID == "" {
+		return ""
+	}
 	return fmt.Sprintf("%s:%d:%s", tx.Integration.Channel, tx.Integration.ID, eventID)
 }
 

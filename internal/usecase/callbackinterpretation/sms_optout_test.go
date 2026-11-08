@@ -28,6 +28,29 @@ import (
 // knownNumber is the number of ContactTexter, which has neither a Confirmation nor an opt-out.
 const knownNumber = fixtures.ContactTexterPhone
 
+func TestRedeliveredSTOPCannotUndoLaterSTART(t *testing.T) {
+	env := testhelper.Setup(t)
+	sms := env.AcmeTwilio(t)
+	post := func(id, text string) {
+		t.Helper()
+		response := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
+			inbound(sms, id, knownNumber, text))
+		require.Equal(t, http.StatusOK, response.Code, response.Body.String())
+	}
+	post("SM-consent-stop", "STOP")
+	post("SM-consent-start", "START")
+	post("SM-consent-stop", "STOP")
+	decision := textable(t, env, knownNumber)
+	assert.True(t, decision.Eligible, "an old STOP is consumed before its synchronous reaction")
+	post("SM-consent-new-stop", "STOP")
+	post("SM-consent-start", "START")
+	post("SM-consent-already-stopped", "STOP")
+	decision = textable(t, env, knownNumber)
+	assert.False(t, decision.Eligible, "an old START cannot undo a new STOP either")
+	changes := env.QueuedCount(t, events.NameSmsOptOutRecorded, nil)
+	assert.Equal(t, 2, changes, "observations of a standing opt-out do not repeat its transition")
+}
+
 // confirmNumber records the Confirmation an API client asserts for the number.
 func confirmNumber(t *testing.T, env *testhelper.TestEnv, number string) {
 	t.Helper()

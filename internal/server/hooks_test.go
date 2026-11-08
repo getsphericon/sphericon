@@ -254,7 +254,7 @@ func TestHookRedeliveryHasTheEffectOfOnce(t *testing.T) {
 	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
 	applySuppression(t, env)
 
-	n, err := env.DB.Event.Query().Where(event.SourceID("evt_1/" + fixtures.ContactAliceEmail)).Count(t.Context())
+	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailBounced + ":evt_1/" + fixtures.ContactAliceEmail)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
 	assert.True(t, suppressed(t, env, fixtures.ContactAliceEmail))

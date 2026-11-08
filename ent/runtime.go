@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
@@ -514,6 +515,25 @@ func init() {
 	eventDescBackfill := eventFields[15].Descriptor()
 	// event.DefaultBackfill holds the default value on creation for the backfill field.
 	event.DefaultBackfill = eventDescBackfill.Default.(bool)
+	eventreceiptMixin := schema.EventReceipt{}.Mixin()
+	eventreceiptMixinFields0 := eventreceiptMixin[0].Fields()
+	_ = eventreceiptMixinFields0
+	eventreceiptFields := schema.EventReceipt{}.Fields()
+	_ = eventreceiptFields
+	// eventreceiptDescCreatedAt is the schema descriptor for created_at field.
+	eventreceiptDescCreatedAt := eventreceiptMixinFields0[0].Descriptor()
+	// eventreceipt.DefaultCreatedAt holds the default value on creation for the created_at field.
+	eventreceipt.DefaultCreatedAt = eventreceiptDescCreatedAt.Default.(func() time.Time)
+	// eventreceiptDescUpdatedAt is the schema descriptor for updated_at field.
+	eventreceiptDescUpdatedAt := eventreceiptMixinFields0[1].Descriptor()
+	// eventreceipt.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	eventreceipt.DefaultUpdatedAt = eventreceiptDescUpdatedAt.Default.(func() time.Time)
+	// eventreceipt.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	eventreceipt.UpdateDefaultUpdatedAt = eventreceiptDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// eventreceiptDescReceiptKey is the schema descriptor for receipt_key field.
+	eventreceiptDescReceiptKey := eventreceiptFields[1].Descriptor()
+	// eventreceipt.ReceiptKeyValidator is a validator for the "receipt_key" field. It is called by the builders before save.
+	eventreceipt.ReceiptKeyValidator = eventreceiptDescReceiptKey.Validators[0].(func(string) error)
 	heldordereventMixin := schema.HeldOrderEvent{}.Mixin()
 	heldordereventMixinFields0 := heldordereventMixin[0].Fields()
 	_ = heldordereventMixinFields0

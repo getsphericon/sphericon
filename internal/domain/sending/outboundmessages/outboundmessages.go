@@ -933,14 +933,8 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 		}); err != nil {
 			return err
 		}
-		// The provider confirmed delivery on acceptance: the same stamp a Delivery notice
-		// yields, in this transaction. The fence above makes it once.
-		if receipt.DeliveryConfirmed {
-			if err := StampDelivery(ctx, ts, msg.ID, ResultDelivered, now); err != nil {
-				return err
-			}
-		}
 		return g.route.Sender.publishSent(ctx, pub, sentFact{
+			observedAt:    now,
 			workspaceID:   s.WorkspaceID(),
 			req:           req,
 			messageID:     msg.ID,
