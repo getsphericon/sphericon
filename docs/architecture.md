@@ -177,8 +177,8 @@ coding standards in `CODING_STANDARDS.md`.
   `easement.yml` states the order once, from the drivers through the use cases and the contexts
   down to the infrastructure and the kernel (ADR 0111): a component imports those below it and
   none above, so an import against the order fails `check:arch` with the context's reason. Within
-  a context the raw-client holders sit above the rest, which reach them through the one edge a
-  rule's `may_depend_on` names. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
+  a context the raw-client holders sit above the rest; where the rest imports them (identity,
+  sending), that edge is the one a rule's `may_depend_on` names. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
   Memberships (`domain-identity-base`, which imports no other domain module: every module may read a
   Workspace, ask a Permission or tell the Owners something), the raw-client holders `apitokens`, `consentrecords`,
   `invitations`, `joindomains`, `oauthclients`, `passkeys`, `secondfactors`, `signupitems`,
