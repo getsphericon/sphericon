@@ -180,7 +180,7 @@ func TestJournalPublicationDoesNotBlockAnOwnersFeedUpdate(t *testing.T) {
 	require.NoError(t, testhelper.Receive(t, published, "publisher committed"))
 }
 
-func pauseJournalPublication(ctx context.Context, t *testing.T, bus *events.Bus, fact events.DomainEvent) (func(), <-chan error) {
+func pauseJournalPublication(ctx context.Context, t *testing.T, bus *events.Bus, fact events.DomainEvent) (resume func(), done <-chan error) {
 	t.Helper()
 	entered, release := make(chan struct{}), make(chan struct{})
 	var once sync.Once

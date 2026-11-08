@@ -37,7 +37,11 @@ func TestAcceptInvitationOfAVerifiedUserNeedsTheirSession(t *testing.T) {
 // firstInsertMember is an ent hook that, just before an invitation's Membership is
 // written, lets a concurrent accept win the race: it inserts the User's `member` Membership.
 func firstInsertMember(next ent.Mutator) ent.Mutator {
-	return hook.MembershipFunc(func(ctx context.Context, m *ent.MembershipMutation) (ent.Value, error) {
+	return ent.MutateFunc(func(ctx context.Context, mutation ent.Mutation) (ent.Value, error) {
+		m, ok := mutation.(*ent.MembershipMutation)
+		if !ok {
+			return next.Mutate(ctx, mutation)
+		}
 		source, _ := m.Source()
 		if source != membership.SourceInvitation {
 			return next.Mutate(ctx, m)
