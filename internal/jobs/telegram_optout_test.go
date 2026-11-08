@@ -217,7 +217,7 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 		{ID: "1", Destination: strconv.Itoa(optOutUser), Reachable: false, Reason: preset.Deactivated},
 	}}
 
-	err := callbackinterpretation.New(env.Bus, nil, time.Now).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), callbackinterpretation.InterpretInput{Integration: row, Preset: "telegram", Result: res})
+	err := callbackinterpretation.New(env.DB, env.Bus, nil, time.Now).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), callbackinterpretation.InterpretInput{Integration: row, Preset: "telegram", Result: res})
 
 	require.NoError(t, err)
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.Destination(strconv.Itoa(optOutUser))).CountX(t.Context()))

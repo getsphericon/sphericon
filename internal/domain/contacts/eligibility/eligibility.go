@@ -30,6 +30,7 @@ package eligibility
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql"
@@ -44,6 +45,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // Reasons a destination is ineligible.
@@ -218,6 +221,35 @@ func Audience(dest Destination, source string) predicate.Contact {
 			return sql.And(kept...)
 		})
 	}
+}
+
+// BroadcastAudience narrows a Contact query to the Contacts a Broadcast on the channel reaches (ADR
+// 0080): those reachable at the Channel's Destination from the "broadcasts" source. On email the
+// Contact's address, on SMS its phone, on Telegram its Bindings on the Integration the Broadcast
+// routes through, the one integrationID names or the Channel's default (nil); a route with none
+// reaches nobody. It is the audience a Broadcast's plan takes and the one a Segment preview counts
+// for a Broadcast form, so the two cannot drift.
+func BroadcastAudience(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64) (predicate.Contact, error) {
+	var dest Destination
+	switch channel {
+	case channels.Email:
+		dest = EmailDestination()
+	case channels.SMS:
+		dest = PhoneDestination()
+	case channels.Telegram:
+		integ, err := messaging.Integration(ctx, s, channels.Telegram, integrationID)
+		switch {
+		case errors.Is(err, messaging.ErrNoProvider):
+			dest = BindingDestination(ChannelTelegram, 0)
+		case err != nil:
+			return nil, fmt.Errorf("integration: %w", err)
+		default:
+			dest = BindingDestination(ChannelTelegram, integ.ID)
+		}
+	default:
+		return nil, fmt.Errorf("channel %q has no destination", channel)
+	}
+	return Audience(dest, SourceBroadcasts), nil
 }
 
 // GloballyOptedOut matches contacts whose destination is non-mailable on the given

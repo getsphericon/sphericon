@@ -89,17 +89,33 @@ type Bots interface {
 // answerTimeout bounds one acknowledgement to a provider after the commit.
 const answerTimeout = 5 * time.Second
 
-// UseCase interprets the facts of every Ingest hook request.
-type UseCase struct {
-	bus  *events.Bus
-	bots Bots
-	now  func() time.Time
+// Integrations is what the Ingest hook reads of an Integration besides its row: its Preset with
+// the Preset's params, its hook URL, the confirmation of a subscription its provider asks for, and
+// the bot of a Telegram Integration. *integrations.Module satisfies it.
+type Integrations interface {
+	Bots
+	Presets() *preset.Registry
+	Params(row *ent.Integration) (preset.Params, error)
+	HookURL(row *ent.Integration) string
+	ConfirmSubscription(ctx context.Context, url string) error
 }
 
-// New builds the use case on the bus the facts' System events are published through, the bots
-// of Telegram Integrations and the Instance clock the hook reads.
-func New(bus *events.Bus, bots Bots, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, bots: bots, now: now}
+// UseCase interprets the facts of every Ingest hook request.
+type UseCase struct {
+	// client finds the Integration an ingest key names and scopes to its Workspace, before any
+	// scope exists (docs/architecture.md, Workspace scoping).
+	client *ent.Client
+	bus    *events.Bus
+	integ  Integrations
+	now    func() time.Time
+}
+
+// New builds the use case on the raw client an ingest key is resolved with, the bus the facts'
+// System events are published through, the Integrations module and the Instance clock the hook
+// reads. A nil integ serves only the facts that need neither a Preset nor a bot (a late Delivery
+// notice).
+func New(client *ent.Client, bus *events.Bus, integ Integrations, now func() time.Time) *UseCase {
+	return &UseCase{client: client, bus: bus, integ: integ, now: now}
 }
 
 // InterpretInput is one Ingest hook request: the Integration the callback came to, the name of
@@ -117,7 +133,7 @@ func (m *UseCase) interpreterFor(ch channels.Channel) Interpreter {
 	case channels.Email:
 		return email{}
 	case channels.Telegram:
-		return telegram{bots: m.bots}
+		return telegram{bots: m.integ}
 	case channels.SMS:
 		return sms{}
 	}
