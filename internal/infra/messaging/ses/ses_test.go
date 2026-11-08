@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,11 +26,13 @@ import (
 // sesAPI is an httptest stand-in for the SES v2 REST API; the provider's
 // Config.Endpoint override points the real aws-sdk client at it.
 type sesAPI struct {
-	srv  *httptest.Server
-	path string
-	body map[string]any
-	auth string
-	hits int
+	srv   *httptest.Server
+	path  string
+	body  map[string]any
+	auth  string
+	host  string
+	token string
+	hits  int
 }
 
 func newSESAPI(t *testing.T, status int, body string) *sesAPI {
@@ -51,6 +55,8 @@ func newSESAPIWithErrorType(t *testing.T, status int, errorType, body string) *s
 		}
 		api.path = r.URL.Path
 		api.auth = r.Header.Get("Authorization")
+		api.host = r.Host
+		api.token = r.Header.Get("X-Amz-Security-Token")
 		w.Header().Set("Content-Type", "application/json")
 		if errorType != "" {
 			w.Header().Set("X-Amzn-Errortype", errorType)
@@ -72,8 +78,13 @@ func throttledBody(message string) string {
 
 func build(t *testing.T, endpoint string) messaging.EmailSender {
 	t.Helper()
+	return buildWithClient(t, endpoint, http.DefaultClient)
+}
+
+func buildWithClient(t *testing.T, endpoint string, client *http.Client) messaging.EmailSender {
+	t.Helper()
 	raw := fmt.Sprintf(`{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com","fromName":"Acme","endpoint":%q}`, endpoint)
-	built, err := ses.NewDescriptor(http.DefaultClient).Build([]byte(raw), messaging.Deps{})
+	built, err := ses.NewDescriptor(client).Build([]byte(raw), messaging.Deps{})
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
@@ -133,33 +144,86 @@ func TestSendErrors(t *testing.T) {
 		assert.ErrorContains(t, err, "MessageRejected")
 	})
 
-	t.Run("a Throttling reply is classified as too fast", func(t *testing.T) {
-		api := newSESAPIWithErrorType(t, http.StatusTooManyRequests, "TooManyRequestsException", throttledBody("Maximum sending rate exceeded."))
-		_, err := build(t, api.srv.URL).Send(ctx, msg)
-		require.ErrorIs(t, err, messaging.ErrBusy)
-		assert.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
-	})
+	for _, code := range []string{"TooManyRequestsException", "LimitExceededException", "Throttling"} {
+		t.Run(code+" is busy regardless of its message", func(t *testing.T) {
+			api := newSESAPIWithErrorType(t, http.StatusTooManyRequests, code, throttledBody("Please try again later."))
+			sender := build(t, api.srv.URL)
+			_, err := sender.Send(ctx, msg)
+			require.ErrorIs(t, err, messaging.ErrBusy)
+			require.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
+			assert.Equal(t, 1, api.hits, "throttling reaches Deferral without SDK retries")
+		})
+	}
 
 	t.Run("daily quota is classified as quota exceeded", func(t *testing.T) {
 		api := newSESAPIWithErrorType(t, http.StatusTooManyRequests, "TooManyRequestsException", throttledBody("Daily message quota exceeded."))
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
-		assert.ErrorIs(t, err, messaging.ErrQuotaExceeded)
+		require.ErrorIs(t, err, messaging.ErrQuotaExceeded)
+		require.NotErrorIs(t, err, messaging.ErrBusy)
+		assert.Equal(t, 1, api.hits, "a spent daily quota is deferred without SDK retries")
 	})
 
-	t.Run("a rejected message is not busy", func(t *testing.T) {
-		api := newSESAPIWithErrorType(t, http.StatusBadRequest, "MessageRejected", rejectedBody)
+	t.Run("a refusal mentioning a rate limit is not busy", func(t *testing.T) {
+		api := newSESAPIWithErrorType(t, http.StatusBadRequest, "MessageRejected", `{"message":"Message content mentions a rate limit."}`)
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
+		require.ErrorIs(t, err, messaging.ErrRefused)
 		require.NotErrorIs(t, err, messaging.ErrBusy)
 		assert.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
 	})
+}
 
-	t.Run("unusable AWS environment config", func(t *testing.T) {
-		t.Setenv("AWS_USE_FIPS_ENDPOINT", "not-a-bool")
-		api := newSESAPI(t, http.StatusOK, okBody)
-		_, err := build(t, api.srv.URL).Send(ctx, msg)
-		require.ErrorContains(t, err, "ses: load config")
-		assert.Zero(t, api.hits)
-	})
+func TestSendIgnoresHostAWSConfiguration(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "invalid-config")
+	err := os.WriteFile(configPath, []byte("[invalid\n"), 0o600)
+	require.NoError(t, err)
+	for key, value := range map[string]string{
+		"AWS_USE_FIPS_ENDPOINT":       "not-a-bool",
+		"AWS_RETRY_MODE":              "not-a-mode",
+		"AWS_MAX_ATTEMPTS":            "not-a-number",
+		"AWS_PROFILE":                 "missing-profile",
+		"AWS_CONFIG_FILE":             configPath,
+		"AWS_SHARED_CREDENTIALS_FILE": configPath,
+	} {
+		t.Run(key, func(t *testing.T) {
+			t.Setenv(key, value)
+			api := newSESAPI(t, http.StatusOK, okBody)
+			sender := build(t, api.srv.URL)
+			receipt, err := sender.Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+			require.NoError(t, err)
+			assert.Equal(t, "ses-msg-42", receipt.MessageID)
+		})
+	}
+}
+
+func TestSendIgnoresHostAWSEndpointAndCredentials(t *testing.T) {
+	t.Setenv("AWS_REGION", "us-east-1")
+	t.Setenv("AWS_ACCESS_KEY_ID", "HOSTKEY")
+	t.Setenv("AWS_SECRET_ACCESS_KEY", "host-secret")
+	t.Setenv("AWS_SESSION_TOKEN", "host-token")
+	for _, key := range []string{"AWS_ENDPOINT_URL", "AWS_ENDPOINT_URL_SESV2"} {
+		t.Run(key, func(t *testing.T) {
+			t.Setenv(key, "https://host-config.example")
+			api := newSESAPI(t, http.StatusOK, okBody)
+			sender := buildWithClient(t, "", &http.Client{Transport: toServer{target: api.srv.URL}})
+			receipt, err := sender.Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+			require.NoError(t, err)
+			assert.Equal(t, "ses-msg-42", receipt.MessageID)
+			assert.Equal(t, "email.eu-west-1.amazonaws.com", api.host)
+			assert.Contains(t, api.auth, "AKIATEST/")
+			assert.Contains(t, api.auth, "/eu-west-1/ses/")
+			assert.Empty(t, api.token)
+		})
+	}
+}
+
+func TestSendRetriesServerErrors(t *testing.T) {
+	api := newSESAPIWithErrorType(t, http.StatusServiceUnavailable, "ServiceUnavailableException", `{"message":"temporarily unavailable"}`)
+	sender := build(t, api.srv.URL)
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+	require.Error(t, err)
+	require.NotErrorIs(t, err, messaging.ErrBusy)
+	require.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
+	assert.Equal(t, 3, api.hits, "transient server errors keep the SDK's standard retry budget")
 }
 
 func TestDefaultFrom(t *testing.T) {
@@ -225,6 +289,7 @@ func (r toServer) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	req = req.Clone(req.Context())
+	req.Host = req.URL.Host
 	req.URL.Scheme, req.URL.Host = target.Scheme, target.Host
 	return http.DefaultTransport.RoundTrip(req)
 }
@@ -233,9 +298,7 @@ func (r toServer) RoundTrip(req *http.Request) (*http.Response, error) {
 // requests answered by the stand-in at serverURL.
 func awsQuotaReader(t *testing.T, serverURL string) messaging.QuotaReader {
 	t.Helper()
-	raw := `{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com"}`
-	built, err := ses.NewDescriptor(&http.Client{Transport: toServer{target: serverURL}}).Build([]byte(raw), messaging.Deps{})
-	require.NoError(t, err)
+	built := buildWithClient(t, "", &http.Client{Transport: toServer{target: serverURL}})
 	reader, ok := built.(messaging.QuotaReader)
 	require.True(t, ok)
 	return reader
