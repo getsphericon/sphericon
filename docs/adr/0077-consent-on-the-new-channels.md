@@ -19,7 +19,7 @@ status: accepted
 > the number, without creating a Contact. An opt-out keeps how the person stopped (`via`) for the
 > Contact card.
 >
-> **Amended after #1227:** a new SMS opt-out of a Contact's number records the `sms.unsubscribed`
+> **Amended by #1236:** a new SMS opt-out of a Contact's number records the `sms.unsubscribed`
 > Event, as a Telegram stop records `telegram.unsubscribed`, with how the person stopped (`via`)
 > and the number. A STOP from a number already opted out records none (ADR 0114, ADR 0115).
 

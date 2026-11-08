@@ -4,7 +4,7 @@ status: accepted
 
 # Mandatory SMS reactions run in the publishing transaction
 
-> **Amended after #1227:** the stop's subscriber also publishes the customer-facing
+> **Amended by #1236:** the stop's subscriber also publishes the customer-facing
 > `sms.unsubscribed` when the opt-out is new (ADR 0115). It is a projection of that transition for
 > the Contact; the facts below stay internal.
 
