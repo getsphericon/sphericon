@@ -9,6 +9,12 @@ status: accepted
 >
 > Refined by [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]]: the CLI's
 > operations leave `internal/app` for the CLI's driver package.
+>
+> Amended by [[0112-an-operation-belongs-to-the-module-that-owns-its-subject]]: the operations that
+> move to their owner (the Contact intake, the Transactional send, the Release check, the Telemetry
+> report, the Abuse detector's pass, the Event recording) follow the domain module's conventions and
+> leave `usecaseshape`. The contract still binds the use case tiers only; whether domain modules get
+> one is not decided.
 
 ## Context
 

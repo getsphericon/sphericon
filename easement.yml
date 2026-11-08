@@ -760,8 +760,8 @@ components:
         ee-domain-insights-raw,
       ]
     because: the core never imports the Enterprise Edition; the wiring reads the License key, and every Enterprise package asks it what the License switches on
-  # The Enterprise use cases (ADR 0102): an operation across domain modules, core or Enterprise,
-  # such as the Abuse detector's pass or the advanced-retention prune. Each directory under ee/usecase is one use case; none imports another, and only an
+  # The Enterprise use cases (ADR 0102, ADR 0112): an operation no single module can own, such as
+  # the advanced-retention prune over the License, the Workspaces' windows and the Audit entries. Each directory under ee/usecase is one use case; none imports another, and only an
   # Enterprise surface, the Edition or the wiring imports one. Each holds the raw client today, so
   # each is named in `ee-usecase-raw` (one pattern each, so each is an instance); a new one that
   # holds no raw client lands in `ee-usecase`.
@@ -772,7 +772,7 @@ components:
     allow_importers: [ee-api, ee-edition, wiring]
     because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
   ee-usecase-raw:
-    in: ['ee/usecase/abusedetection*', 'ee/usecase/auditlogretention*']
+    in: ['ee/usecase/auditlogretention*']
     isolated: true
     allow_importers: [ee-api, ee-edition, wiring]
     because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
@@ -811,13 +811,15 @@ components:
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context and above, the Edition and the wiring; the core never imports the Enterprise Edition
   # Insights: the Audit entries (auditentries), the Erasures of the Export streams (erasures) and
   # the Usage figures (usages), which own their tables and hold the raw client, the Abuse detector
-  # (abusedetector), its limits and its reading of a Workspace's standing, and the Workspace
-  # oversight (workspaceoversight), the Staff's and the services' look across Workspaces, which
-  # holds the raw client and sits at the top of the context: it calls the identity and sending
-  # modules and the other insights modules, of the core and of the Edition.
+  # (abusedetector), its limits, its reading of a Workspace's standing and its hourly pass over
+  # every Workspace, which holds the raw client (ADR 0112), and the Workspace oversight
+  # (workspaceoversight), the Staff's and the services' look across Workspaces, which holds the raw
+  # client and sits at the top of the context: it calls the identity and sending modules and the
+  # other insights modules, of the core and of the Edition.
   ee-domain-insights-raw:
     in:
       [
+        ee/domain/insights/abusedetector,
         ee/domain/insights/auditentries,
         ee/domain/insights/erasures,
         ee/domain/insights/usages,
@@ -827,6 +829,7 @@ components:
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
   ee-domain-insights:
     in: 'ee/domain/insights/**'
+    optional: true
     allow_importers:
       [ee-domain-insights-raw, ee-usecase, ee-usecase-raw, ee-api, ee-edition, wiring]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
@@ -860,8 +863,9 @@ components:
     allow_importers: [wiring]
     because: the job runner is a driver (ADR 0102) that only the wiring builds; no domain module imports it, and a package with jobs of its own hands them in as a jobextension.Extension
 
-  # The use cases (ADR 0102): an operation that spans several domain modules, such as deleting a Tag
-  # after the Removal check of the modules that name it. Each directory under internal/usecase is
+  # The use cases (ADR 0102, ADR 0112): an operation whose subject's owner would have to call a
+  # module above it, or that no single module can own, such as deleting a Tag after the Removal
+  # check of the modules that name it. Each directory under internal/usecase is
   # one use case; it calls the domain modules, opens the transaction they join and takes the
   # Workspace lock where ADR 0099 requires it. Only a driver or the wiring imports one.
   usecase:
@@ -947,8 +951,8 @@ components:
 
   # Contacts, above identity: the Contacts with their Custom fields and Tags, the Segments and the
   # Conditions they hold, the consent of a Destination (the Confirmations, the Unsubscribes and the
-  # stops read in the Channel, channelstop), the Suppressions, eligibility, the Visitors and the Orders,
-  # with the Contact row lock (contactlock) and the hook that keeps stored addresses lower-cased
+  # stops read in the Channel, channelstop), the Suppressions, eligibility, the Visitors, the Orders
+  # and the Event recording (eventrecording, ADR 0112), with the Contact row lock (contactlock) and the hook that keeps stored addresses lower-cased
   # (emailcase: it targets the Contacts as well as identity's Users and Invitations). None holds the
   # raw client, so the context is one component; a raw-client holder would get
   # `domain-contacts-raw`. Counting an unsubscribe on a Broadcast and ending an Enrollment is the
@@ -1034,8 +1038,8 @@ components:
   # Instance, the top context: what belongs to the Instance rather than to a Workspace, its state
   # (instancestates) and its audit log (instanceauditentries), which hold the raw client
   # (`domain-instance-raw`), the in-place upgrade of a bare binary (upgrade) and the Upgrade notes
-  # of the changelog (upgradenote). The Telemetry report is a use case
-  # (internal/usecase/telemetryreport) over instancestates.
+  # of the changelog (upgradenote). The Release check and the Telemetry report are instancestates'
+  # own operations (ADR 0112), so it is the client of the Telemetry contract (gen/telemetry).
   domain-instance-raw:
     in: [internal/domain/instance/instancestates, internal/domain/instance/instanceauditentries]
   # The rest of instance, which holds no raw client; a new module under internal/domain/instance
@@ -1061,8 +1065,8 @@ components:
   # everyone else it stays open (common).
   ent: { in: ent }
   # The generated ogen packages of the API surfaces, which only the drivers, the wiring and the
-  # Enterprise Edition import, and the Telemetry contract's client, which the Telemetry report (a
-  # use case) uses.
+  # Enterprise Edition import, and the Telemetry contract's client, which the Telemetry report of
+  # the Instance state (instancestates) uses.
   gen-surfaces: { in: gen }
   gen-telemetry: { in: gen/telemetry }
 
@@ -1111,6 +1115,7 @@ rules:
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,
+        domain-instance-raw,
         domain-identity,
         domain-identity-raw,
         domain-identity-users,
@@ -1162,7 +1167,6 @@ rules:
         domain-identity,
         domain-identity-raw,
         gen-surfaces,
-        usecase,
       ]
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
@@ -1252,17 +1256,17 @@ rules:
     forbid_symbol: *core-forbids
     because: insights sits above orchestration in the domain tier (ADR 0102), so an insights package imports the kernel, the infrastructure, ent and the packages of its own context and of the contexts below, (an allowance added with its first import), never a module of the instance context (the Instance state, an upgrade) nor a use case; an operation that needs one is a use case above both
   domain-instance-raw:
-    may_depend_on: [domain-identity-base, domain-sending]
+    may_depend_on: [domain-identity-base, domain-sending, gen-telemetry]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
-    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case; an operation across them, such as the Telemetry report or the Release check, is a use case above it
+    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import) and the Telemetry contract's client its Telemetry report sends with (ADR 0112), never a use case
   domain-instance:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *core-forbids
-    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case; an operation across them, such as the Telemetry report or the Release check, is a use case above it
+    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case
   tools:
     may_depend_on: []
     forbid_external: *no-container
@@ -1273,21 +1277,17 @@ rules:
     forbid_external: *no-container
     because: test support loads the committed fixtures through the modules' own functions where one exists (an Invitation's token) and knows no driver
   usecase:
-    # The Telemetry report is the client of the Telemetry contract (ADR 0102).
     may_depend_on:
       [
         domain-orchestration-removalcheck,
         domain-orchestration-raw,
         domain-orchestration,
         domain-insights,
-        domain-instance-raw,
         domain-instance,
         domain-identity-base,
         domain-contacts,
-        domain-content,
         domain-sending-raw,
         domain-sending,
-        gen-telemetry,
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
@@ -1360,6 +1360,7 @@ rules:
       [
         domain-orchestration-raw,
         domain-orchestration,
+        domain-instance-raw,
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
@@ -1410,7 +1411,6 @@ rules:
         domain-sending,
         domain-insights,
         ee-domain-identity-raw,
-        ee-domain-insights,
         ee-domain-insights-raw,
         gen-surfaces,
       ]
@@ -1424,7 +1424,6 @@ rules:
         domain-insights,
         ee-licensekey,
         ee-domain-identity-raw,
-        ee-domain-insights,
         ee-domain-insights-raw,
         ee-usecase-raw,
         ee-api,
@@ -1445,14 +1444,7 @@ rules:
     forbid_symbol: *core-forbids
     because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); unlike a core use case it calls no unchecked removal of the core, which only the core's own use case may call
   ee-usecase-raw:
-    may_depend_on:
-      [
-        domain-identity-raw,
-        domain-identity-base,
-        ee-licensekey,
-        ee-domain-insights,
-        ee-domain-insights-raw,
-      ]
+    may_depend_on: [domain-identity-base, ee-licensekey, ee-domain-insights-raw]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
@@ -1478,15 +1470,13 @@ rules:
         domain-insights,
         ee-licensekey,
         ee-domain-identity-raw,
-        ee-domain-insights,
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
     because: an Enterprise insights module sits above orchestration (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the modules of the core and of the Edition of its context and the contexts below, never an instance module nor a use case; an operation that needs one is a use case
   ee-domain-insights:
-    may_depend_on:
-      [domain-identity-raw, domain-identity-base, domain-sending, domain-insights, ee-licensekey]
+    may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *core-forbids
@@ -1510,9 +1500,7 @@ rules:
         domain-sending,
         ee-licensekey,
         ee-domain-identity-raw,
-        ee-domain-insights,
         ee-domain-insights-raw,
-        ee-usecase-raw,
         ee-edition,
         api-site,
         api-external,

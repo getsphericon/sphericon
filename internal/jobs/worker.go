@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -33,10 +34,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
-	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -99,10 +98,9 @@ type Deps struct {
 	// Webhooks, when set, wraps the dispatcher the webhooks consumer fans an event out with (the
 	// Edition's license gate on Audit entries, ADR 0022).
 	Webhooks func(next events.WebhookDispatcher) events.WebhookDispatcher
-	// ReleaseCheck and TelemetryReport are the use cases of the Instance's own ticks (instance.go);
-	// a nil one schedules nothing.
-	ReleaseCheck    *releasecheck.UseCase
-	TelemetryReport *telemetryreport.UseCase
+	// Instance is the Instance state, whose Release check and Telemetry report are the Instance's
+	// own ticks (instance.go); nil schedules neither.
+	Instance *instancestates.Module
 }
 
 // NewClient builds the river client with every worker registered over deps. ext plugs in the

@@ -36,7 +36,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
@@ -252,14 +251,10 @@ func (a *App) start(ctx context.Context) error {
 	if _, err := inst.Ensure(ctx); err != nil {
 		return err
 	}
-	release, err := do.Invoke[*releasecheck.UseCase](a.injector)
-	if err != nil {
+	if err := inst.AnnounceRelease(ctx); err != nil {
 		return err
 	}
-	if err := release.AnnounceRelease(ctx); err != nil {
-		return err
-	}
-	if err := telemetry.ObserveReleaseAvailable(release.LatestRelease); err != nil {
+	if err := telemetry.ObserveReleaseAvailable(inst.LatestRelease); err != nil {
 		return err
 	}
 	edition, err := do.Invoke[*ee.Edition](a.injector)

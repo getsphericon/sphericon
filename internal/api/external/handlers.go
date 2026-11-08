@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -31,14 +32,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
-	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
-	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 
@@ -53,7 +51,7 @@ type Handlers struct {
 	now             func() time.Time
 	workspaces      *workspaces.Module
 	bus             *events.Bus
-	eventrecording  *eventrecording.UseCase
+	eventrecording  *eventrecording.Module
 	outbound        *outboundmessages.Module
 	segments        *segments.Module
 	webhooks        *webhookendpoints.Module
@@ -76,15 +74,12 @@ type Handlers struct {
 	sendingDomainVerification *sendingdomainverification.UseCase
 	bindings                  *bindings.Module
 	templates                 *emailtemplates.Module
-	transactional             *transactionalsend.UseCase
 	brandKit                  *brandkits.Module
 	automations               *automations.Module
 	rules                     *rules.Module
 	bootstrapToken            string
 	audit                     AuditLog
 	export                    ExportStreams
-	// intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
-	intake *contactintake.UseCase
 	// unsubscribe records an opt-out (a use case, ADR 0102).
 	unsubscribe *unsubscriberecording.UseCase
 }
@@ -122,7 +117,7 @@ type Deps struct {
 	TrackingDomains  *trackingdomains.Module
 	Outbound         *outboundmessages.Module
 	Segments         *segments.Module
-	EventRecording   *eventrecording.UseCase
+	EventRecording   *eventrecording.Module
 	Contacts         *contacts.Module
 	Erasure          *contacterasure.UseCase
 	Tags             *tags.Module
@@ -136,7 +131,6 @@ type Deps struct {
 	SendingDomainVerification *sendingdomainverification.UseCase
 	Bindings                  *bindings.Module
 	Templates                 *emailtemplates.Module
-	Transactional             *transactionalsend.UseCase
 	BrandKit                  *brandkits.Module
 	Automations               *automations.Module
 	Rules                     *rules.Module
@@ -148,8 +142,6 @@ type Deps struct {
 	// Clock is the Instance clock (app.Clock) the handlers read, and the security handler checks a
 	// Connection's Two-factor requirement against. Required.
 	Clock func() time.Time
-	// Intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
-	Intake *contactintake.UseCase
 	// Unsubscribe records an opt-out (a use case, ADR 0102).
 	Unsubscribe *unsubscriberecording.UseCase
 }
@@ -161,10 +153,10 @@ func NewHandlers(d Deps) *Handlers {
 	return &Handlers{
 		now:        d.Clock,
 		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
-		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
+		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,
-		intake: d.Intake, unsubscribe: d.Unsubscribe,
+		unsubscribe: d.Unsubscribe,
 	}
 }
 

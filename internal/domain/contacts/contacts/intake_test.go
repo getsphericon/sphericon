@@ -1,4 +1,4 @@
-package contactintake_test
+package contacts_test
 
 import (
 	"context"
@@ -13,19 +13,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 )
-
-func createdEvents(t *testing.T, env *testhelper.TestEnv, contactID int64) int {
-	t.Helper()
-	return env.QueuedCount(t, "contact.created", map[string]any{"contactId": contactID})
-}
 
 func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
-	intake := contactintake.New(env.Bus, contacts.New(env.Bus))
+	intake := contacts.New(env.Bus)
 
-	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contactintake.Input{
+	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contacts.IntakeInput{
 		{Email: new("batch.new@example.com"), CustomFields: map[string]any{"source": "import"}},
 		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: patch.Set("Alicia")},
 		{FirstName: patch.Set("No identity")},

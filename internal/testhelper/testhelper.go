@@ -57,12 +57,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
-	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
 	// The pgx driver behind database/sql.
@@ -142,12 +140,9 @@ func initBaseline() {
 }
 
 type TestEnv struct {
-	// Instance is the Instance state module the server shares.
+	// Instance is the Instance state module the server shares: run its Release check with
+	// CheckRelease; the preview of its Telemetry report is TelemetryReport.
 	Instance *instancestates.Module
-	// ReleaseCheck is the Release check the server shares: run it with CheckRelease.
-	ReleaseCheck *releasecheck.UseCase
-	// TelemetryReport is the Telemetry report the server shares: its preview is Report.
-	TelemetryReport *telemetryreport.UseCase
 	// DB is the plain client the modules under test get, transaction-bound and rolled back when
 	// the test finishes. Like production's (entclient.New) it refuses a change the Workspace
 	// feed, the User feed or the Tracking host log would record outside a bus transaction, so a
@@ -538,8 +533,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	env := &TestEnv{
 		Instance:          do.MustInvoke[*instancestates.Module](injector),
-		ReleaseCheck:      do.MustInvoke[*releasecheck.UseCase](injector),
-		TelemetryReport:   do.MustInvoke[*telemetryreport.UseCase](injector),
 		AppURL:            cfg.AppURL,
 		DB:                do.MustInvoke[*ent.Client](injector),
 		FeedDB:            feedClient,

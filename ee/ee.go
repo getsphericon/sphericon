@@ -21,7 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
@@ -65,7 +64,7 @@ type Edition struct {
 	staffSessions *staffmembers.Sessions
 	bus           *events.Bus
 	suspend       *suspension.Suspender
-	abuseCfg      abusedetection.Config
+	abuseLimits   abusedetector.Limits
 	now           func() time.Time
 }
 
@@ -103,7 +102,7 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 
 		ServiceCredentials: servicecredentials.New(deps.Client, lic, staffCfg.Clock),
 	}
-	e.abuseCfg = abusedetection.Config{Limits: staffCfg.Abuse}
+	e.abuseLimits = staffCfg.Abuse
 	e.now = staffCfg.Clock
 	if e.now == nil {
 		return nil, errors.New("ee: workspaceoversight.Config.Clock is required: the Edition reads the Instance clock")
@@ -175,8 +174,8 @@ func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() 
 // Abuse is the abuse detector (ADR 0026): the pass the hourly job runs, and the read of
 // a Workspace's standing. It suspends through the core Suspender and tells owners through
 // the system (platform) sender. Unlicensed it does nothing.
-func (e *Edition) Abuse() *abusedetection.UseCase {
-	return abusedetection.New(e.client, e.bus, e.lic, e.suspend, e.abuseCfg, e.now)
+func (e *Edition) Abuse() *abusedetector.Detector {
+	return abusedetector.NewDetector(e.client, e.bus, e.lic, e.suspend, e.abuseLimits, e.now)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none

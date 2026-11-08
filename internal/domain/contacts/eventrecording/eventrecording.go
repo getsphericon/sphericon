@@ -1,8 +1,9 @@
-// Package eventrecording is the use case that records a customer's Events in the Event log
-// (GLOSSARY, ADR 0102): Record resolves each Event's identity to an existing Contact (contacts,
-// ADR 0002), checks an order Event's shape (orders) and publishes the batch on the bus in a single
-// transaction. It writes no table itself: the bus stores the Events, and the Event log's reads are
-// the bus's (events.ListLog, events.DistinctActions).
+// Package eventrecording is the Event recording (GLOSSARY): it records a customer's Events in the
+// Event log. Record resolves each Event's identity to an existing Contact (contacts, ADR 0002),
+// checks an order Event's shape (orders) and publishes the batch on the bus in a single
+// transaction. It is a domain module of the contacts context without a table (ADR 0112): the bus
+// stores the Events, and the Event log's reads are the bus's (events.ListLog,
+// events.DistinctActions).
 //
 // Publishing an Event writes its row in Record's transaction; what reacts to it
 // (Automations, Rules, webhooks) runs asynchronously, so Record is accept-then-process.
@@ -21,8 +22,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/batch"
 )
 
-// UseCase records a customer's Events.
-type UseCase struct {
+// Module records a customer's Events.
+type Module struct {
 	bus  *events.Bus
 	live LivePolicy
 }
@@ -35,10 +36,10 @@ type LivePolicy struct {
 	Now    func() time.Time
 }
 
-// New builds the use case over the domain-event bus (transactional publish). Identity
+// New builds the module over the domain-event bus (transactional publish). Identity
 // resolution goes through the Workspace-scoped client each call receives.
-func New(bus *events.Bus, live LivePolicy) *UseCase {
-	return &UseCase{bus: bus, live: live}
+func New(bus *events.Bus, live LivePolicy) *Module {
+	return &Module{bus: bus, live: live}
 }
 
 // Input is one customer Event to record. Action and Properties are the customer's
@@ -59,10 +60,10 @@ type Input struct {
 	Backfill bool
 }
 
-// validate refuses an Event the use case must not publish: one without an identity or an
+// validate refuses an Event the module must not publish: one without an identity or an
 // action, one that claims a reserved action, a Backfill without a time that has passed,
 // and a live Event old enough to be history.
-func (m *UseCase) validate(in Input) error {
+func (m *Module) validate(in Input) error {
 	if strings.TrimSpace(in.SubjectID) == "" {
 		return events.Reject("subject id and action are required")
 	}
@@ -85,7 +86,7 @@ func (m *UseCase) validate(in Input) error {
 // identity stays anonymous; a Contact is never created) and publishes the whole batch
 // atomically: either every Event is accepted or none is. An Event that fails validate
 // refuses the whole batch with an events.ErrRejected.
-func (m *UseCase) Record(ctx context.Context, s *ent.Scoped, inputs []Input) error {
+func (m *Module) Record(ctx context.Context, s *ent.Scoped, inputs []Input) error {
 	for _, in := range inputs {
 		if err := m.validate(in); err != nil {
 			return err
@@ -137,7 +138,7 @@ func (m *UseCase) Record(ctx context.Context, s *ent.Scoped, inputs []Input) err
 // RecordEach records each Event in its own transaction, so an invalid or failing item
 // does not affect the others (Record, by contrast, is all-or-nothing). The outcomes are in the
 // order of inputs; an outcome without an error is an accepted Event.
-func (m *UseCase) RecordEach(ctx context.Context, s *ent.Scoped, inputs []Input) batch.Result[struct{}] {
+func (m *Module) RecordEach(ctx context.Context, s *ent.Scoped, inputs []Input) batch.Result[struct{}] {
 	return batch.Each(inputs, func(in Input) (struct{}, error) {
 		return struct{}{}, m.Record(ctx, s, []Input{in})
 	})

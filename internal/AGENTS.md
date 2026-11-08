@@ -107,17 +107,22 @@ edit's, `internal/usecase/integrationdeletion` the Integration's and
 tested in `internal/domain/orchestration/removalcheck` against `env.RemovalCheck`,
 `internal/usecase/sendingdomainverification` the Sending domain checks, `internal/usecase/stepexecution` the
 steps of an Enrollment, `internal/usecase/secretreencryption` the re-encryption of every stored
-secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records,
-`internal/usecase/contactintake` an import's rows and `internal/usecase/visitoridentification` what Identify
-binds and stitches). The use case is built from the container like a
+secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
+`internal/usecase/visitoridentification` what Identify binds and stitches). An operation that moves
+into the module that owns its subject (ADR 0112) takes its tests to that module's `_test` package:
+`internal/domain/contacts/contacts` holds an import's rows (`UpsertBatch`) and
+`internal/domain/sending/outboundmessages` the refusals of a Transactional send
+(`SendTransactional`), `internal/domain/instance/instancestates` the Release check and the
+Telemetry report, and `internal/domain/contacts/eventrecording` what the Event recording refuses and
+publishes. The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step
 execution is `env.StepExecution`, for a test of how the Instance builds it (its clock); a test that
-drives an Automation over senders of its own still builds one with `New`. A use
-case of the whole Instance (the Release check, the Telemetry report) is built over the Instance state
-module instead (`instancestates.New(env.DB, …)`); the server's own are `env.ReleaseCheck` and
-`env.TelemetryReport`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
+drives an Automation over senders of its own still builds one with `New`. The Release check and
+the Telemetry report are the Instance state module's: a test builds it with `instancestates.New(env.DB,
+…)`, passing its stub of the release source or the receiver's client, or nil where the operation is
+not exercised, and the server's own is `env.Instance`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Second factor's is `env.SecondFactor`
 (`internal/usecase/secondfactorcheck`), the Workspace creation's `env.WorkspaceCreation`
@@ -171,7 +176,7 @@ same `Load` as the other rows; loading a table a second time would wipe the firs
 deletes every table of its files first), so volume never comes from a second loader. The generator
 reads a loop body once and refuses a `# fixture:` name inside one. Every row is one INSERT at the
 start of every test process, so keep the volume small and scale the code under test's thresholds
-down in the test (see `ee/usecase/abusedetection/detector_test.go`, whose scenarios are day offsets in `events.yml`).
+down in the test (see `ee/domain/insights/abusedetector/detector_test.go`, whose scenarios are day offsets in `events.yml`).
 
 ### Credentials and anchor identities
 

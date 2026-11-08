@@ -4445,10 +4445,10 @@
   occurred_at: '{{hoursAgo 24}}'
   created_at: '{{hoursAgo 24}}'
 
-# Abuse detector traffic (ADR 0026, ee/usecase/abusedetection tests): one scenario per day offset, so a test runs the
+# Abuse detector traffic (ADR 0026, ee/domain/insights/abusedetector tests): one scenario per day offset, so a test runs the
 # detector at `now - days` and sees only its own scenario in the trailing 24 hours. Rows are one
 # hour before the scenario's day. Volumes are small: the tests judge with a volume floor of 20
-# sent. Ids 30000 and up (day 2: 7100 and up). ee/usecase/abusedetection/detector_test.go names the day of each
+# sent. Ids 30000 and up (day 2: 7100 and up). ee/domain/insights/abusedetector/detector_test.go names the day of each
 # scenario.
 
 # day 3, over the freeze limit (Vandelay 15% complaints; Kramerica, exempt, 50%)

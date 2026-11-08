@@ -135,6 +135,13 @@ list it, filter it and name its distinct actions. Append-only like the Events it
 Not the **Audit log**, which records changes to the Workspace.
 _Avoid_: Event stream, activity feed
 
+**Event recording**:
+A customer's Events entering the **Event log** through the API: each is attached to an existing
+Contact by stable identity, an order Event's properties are checked, and the batch is recorded in
+one transaction, or each Event in one of its own. A **Backfill** needs a time that has passed, and
+a live Event older than the live window is refused as history.
+_Avoid_: Event submission, track call
+
 **Import**:
 Bringing records from a Workspace's earlier system into the Workspace, repeatably: sending the
 same record again changes nothing. Contacts and Events are imported differently; Events are a

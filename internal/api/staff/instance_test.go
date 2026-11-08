@@ -179,7 +179,7 @@ func TestTheConsoleShowsANewerRelease(t *testing.T) {
 		c.ReleaseCheck = true
 		c.IsDev = false // the Release check never runs in a development or test environment
 	}))
-	require.NoError(t, h.env.ReleaseCheck.CheckRelease(t.Context()))
+	require.NoError(t, h.env.Instance.CheckRelease(t.Context()))
 
 	state := instanceState(t, h.console(t))
 

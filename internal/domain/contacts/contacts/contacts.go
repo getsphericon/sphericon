@@ -11,6 +11,9 @@
 //   - domain errors (ErrNotFound, ErrEmailTaken and its kin, ErrIdentityRequired),
 //     sentinel refusals the server's error handler answers alike on every surface.
 //
+// The Contact intake of an import (UpsertBatch) is the module's too: each row upserts its Contact
+// and records the SMS Confirmation it carries (confirmations) in one transaction (ADR 0112).
+//
 // There is no repository layer over ent: the module uses the Workspace-scoped ent
 // client (ADR 0017) it is handed, and writes no Workspace predicate.
 package contacts
@@ -263,7 +266,7 @@ func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, 
 }
 
 // changes says whether an upsert records the changes of the Custom fields it writes: every
-// upsert does but an import's (ImportIn).
+// upsert does but an import's (importIn).
 type changes bool
 
 const (
@@ -271,15 +274,15 @@ const (
 	importChanges changes = false
 )
 
-// ImportSummary counts the rows of one import.
-type ImportSummary struct {
+// importSummary counts the rows of one import.
+type importSummary struct {
 	Created, Updated, Failed int
 }
 
-// RecordImport records one contact.import Audit entry for a whole import: the actor of
-// s and the row counts, never a Contact or a value. Importers write their rows through
-// an unaudited scope (events.Ingest) so only this entry reaches the log.
-func (m *Module) RecordImport(ctx context.Context, s *ent.Scoped, sum ImportSummary) error {
+// recordImport records one contact.import Audit entry for a whole import: the actor of
+// s and the row counts, never a Contact or a value. The Contact intake writes its rows through
+// an unaudited scope (events.Unaudited) so only this entry reaches the log.
+func (m *Module) recordImport(ctx context.Context, s *ent.Scoped, sum importSummary) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: ts.WorkspaceID(),
@@ -311,11 +314,11 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	return upsertIn(ctx, s, pub, src, in, recordChanges)
 }
 
-// ImportIn is UpsertIn for one row of an import (ADR 0022), inside a transaction the caller
-// already owns: it brings earlier state rather than something happening now, so it records no
+// importIn is UpsertIn for one row of an import (ADR 0022), inside the row's transaction of the
+// Contact intake (UpsertBatch): it brings earlier state rather than something happening now, so it records no
 // contact.field_changed (#897). Its refusals are the domain errors Upsert returns (ErrEmailTaken
 // and its kin, ErrNotFound).
-func ImportIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput) (Result, error) {
+func importIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput) (Result, error) {
 	res, err := upsertIn(ctx, s, pub, src, in, importChanges)
 	if err != nil {
 		return Result{}, domainError(err)

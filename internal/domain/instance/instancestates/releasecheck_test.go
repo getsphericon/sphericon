@@ -1,4 +1,4 @@
-package releasecheck_test
+package instancestates_test
 
 import (
 	"bytes"
@@ -13,7 +13,6 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 )
 
 type fixedSource struct {
@@ -23,13 +22,13 @@ type fixedSource struct {
 
 func (s fixedSource) LatestRelease(context.Context) (string, error) { return s.version, s.err }
 
-func logged(t *testing.T, running string, src releasecheck.ReleaseSource) (*releasecheck.UseCase, *bytes.Buffer) {
+func logged(t *testing.T, running string, src instancestates.ReleaseSource) (*instancestates.Module, *bytes.Buffer) {
 	t.Helper()
 	env := testhelper.Setup(t)
 	buf := &bytes.Buffer{}
 	log := slog.New(slog.NewTextHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	states := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: running}, time.Now)
-	mod := releasecheck.New(states, src, log)
+	mod := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: running}, time.Now,
+		false, src, instancestates.TelemetryHost{}, nil, log)
 	return mod, buf
 }
 

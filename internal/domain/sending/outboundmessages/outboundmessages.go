@@ -14,6 +14,10 @@
 //   - render, the Provider limit and the Send cap, the provider call;
 //   - the record of the result and the Channel's sent Event, in one transaction.
 //
+// The Transactional send itself is the module's too (SendTransactional, transactional.go, ADR
+// 0112): it reads the Template the request references and resolves its Contact, then sends
+// through Send.
+//
 // Only a Channel's renderer and provider adapter differ (channel.go). Email's (email.go) holds
 // the Sending-domain gate, the unsubscribe footer and RFC 8058 headers, the open pixel and DKIM
 // signing (inside the EmailSender); a Test send and the System sender are email's (testsend.go).

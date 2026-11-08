@@ -16,7 +16,7 @@ func (h *Handlers) SiteInstanceGetRelease(ctx context.Context) (*siteapi.SiteIns
 	if a := auth.GetSiteAuth(ctx); a != nil {
 		userID = a.UserID
 	}
-	release, err := h.release.ReleaseFor(ctx, userID)
+	release, err := h.instance.ReleaseFor(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

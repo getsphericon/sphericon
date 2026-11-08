@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -74,7 +75,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
-	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the
@@ -606,7 +606,7 @@ type Converter interface {
 	OptionalConsentToSite(source consentrecords.OptionalConsent) siteapi.SiteOptionalConsent
 	OptionalConsentsToSite(source []consentrecords.OptionalConsent) []siteapi.SiteOptionalConsent
 	// The banner of a newer release, the one part of the Instance a Workspace's owner sees (ADR 0032).
-	InstanceReleaseToResource(source releasecheck.Release) siteapi.SiteInstanceRelease
+	InstanceReleaseToResource(source instancestates.Release) siteapi.SiteInstanceRelease
 
 	// Pages: a list response is the module's pagination.Page mapped whole, its items through
 	// the list methods above. Items the handler maps itself (an extra per item) arrive as a

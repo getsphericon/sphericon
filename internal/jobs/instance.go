@@ -6,12 +6,11 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
-	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 )
 
-// The Instance's own ticks: the Release check and the Telemetry report. Their use cases do the
-// work; the jobs and their schedules are the runner's.
+// The Instance's own ticks: the Release check and the Telemetry report. The Instance state module
+// does the work; the jobs and their schedules are the runner's.
 
 // ReleaseCheckArgs is the daily tick of the Release check. A restart checks again at once, which
 // is harmless: the check sends nothing.
@@ -19,20 +18,20 @@ type ReleaseCheckArgs struct{}
 
 func (ReleaseCheckArgs) Kind() string { return "release_check" }
 
-// ReleaseCheckWorker runs the Release check (releasecheck.UseCase.CheckRelease).
+// ReleaseCheckWorker runs the Release check (instancestates.Module.CheckRelease).
 type ReleaseCheckWorker struct {
 	river.WorkerDefaults[ReleaseCheckArgs]
 
-	check *releasecheck.UseCase
+	instance *instancestates.Module
 }
 
 // NewReleaseCheckWorker is the Release check's worker.
-func NewReleaseCheckWorker(check *releasecheck.UseCase) *ReleaseCheckWorker {
-	return &ReleaseCheckWorker{check: check}
+func NewReleaseCheckWorker(instance *instancestates.Module) *ReleaseCheckWorker {
+	return &ReleaseCheckWorker{instance: instance}
 }
 
 func (w *ReleaseCheckWorker) Work(ctx context.Context, _ *river.Job[ReleaseCheckArgs]) error {
-	return w.check.CheckRelease(ctx)
+	return w.instance.CheckRelease(ctx)
 }
 
 // telemetryReportCheckInterval is how often the job looks at whether a Telemetry report is due: a
@@ -44,40 +43,40 @@ type TelemetryReportArgs struct{}
 
 func (TelemetryReportArgs) Kind() string { return "telemetry_report" }
 
-// TelemetryReportWorker sends the report when one is due (telemetryreport.UseCase.Send). A failed
-// send is not a job failure: the next tick tries again.
+// TelemetryReportWorker sends the report when one is due
+// (instancestates.Module.SendTelemetryReport). A failed send is not a job failure: the next tick
+// tries again.
 type TelemetryReportWorker struct {
 	river.WorkerDefaults[TelemetryReportArgs]
 
-	report *telemetryreport.UseCase
+	instance *instancestates.Module
 }
 
 // NewTelemetryReportWorker is the Telemetry report's worker.
-func NewTelemetryReportWorker(report *telemetryreport.UseCase) *TelemetryReportWorker {
-	return &TelemetryReportWorker{report: report}
+func NewTelemetryReportWorker(instance *instancestates.Module) *TelemetryReportWorker {
+	return &TelemetryReportWorker{instance: instance}
 }
 
 func (w *TelemetryReportWorker) Work(ctx context.Context, _ *river.Job[TelemetryReportArgs]) error {
-	return w.report.Send(ctx)
+	return w.instance.SendTelemetryReport(ctx)
 }
 
-// instanceJobs adds the workers of the Instance's ticks whose use case deps has, and returns their
-// schedules.
+// instanceJobs adds the workers of the Instance's ticks when deps has the Instance state, and
+// returns their schedules.
 func instanceJobs(workers *river.Workers, deps Deps) []*river.PeriodicJob {
-	var periodic []*river.PeriodicJob
-	if deps.ReleaseCheck != nil {
-		river.AddWorker(workers, NewReleaseCheckWorker(deps.ReleaseCheck))
-		periodic = append(periodic, river.NewPeriodicJob(river.PeriodicInterval(24*time.Hour),
-			func() (river.JobArgs, *river.InsertOpts) { return ReleaseCheckArgs{}, nil },
-			&river.PeriodicJobOpts{RunOnStart: true}))
+	if deps.Instance == nil {
+		return nil
 	}
-	if deps.TelemetryReport != nil {
-		river.AddWorker(workers, NewTelemetryReportWorker(deps.TelemetryReport))
-		periodic = append(periodic, river.NewPeriodicJob(river.PeriodicInterval(telemetryReportCheckInterval),
+	river.AddWorker(workers, NewReleaseCheckWorker(deps.Instance))
+	river.AddWorker(workers, NewTelemetryReportWorker(deps.Instance))
+	return []*river.PeriodicJob{
+		river.NewPeriodicJob(river.PeriodicInterval(24*time.Hour),
+			func() (river.JobArgs, *river.InsertOpts) { return ReleaseCheckArgs{}, nil },
+			&river.PeriodicJobOpts{RunOnStart: true}),
+		river.NewPeriodicJob(river.PeriodicInterval(telemetryReportCheckInterval),
 			func() (river.JobArgs, *river.InsertOpts) {
 				return TelemetryReportArgs{}, &river.InsertOpts{MaxAttempts: 1}
 			},
-			&river.PeriodicJobOpts{RunOnStart: true}))
+			&river.PeriodicJobOpts{RunOnStart: true}),
 	}
-	return periodic
 }
