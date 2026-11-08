@@ -1,4 +1,4 @@
-package workspaces_test
+package workspacesunchecked_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -22,7 +22,7 @@ func TestCreateInGivesUpOnAGeneratorThatOnlyDrawsTakenIDs(t *testing.T) {
 	var err error
 
 	txErr := env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
-		_, err = workspaces.CreateIn(t.Context(), tx, "Fresh", taken, nil)
+		_, err = workspacesunchecked.CreateIn(t.Context(), tx, "Fresh", taken, nil)
 		return nil
 	})
 
@@ -43,7 +43,7 @@ func TestCreateInKeepsTheFirstIDThatIsFree(t *testing.T) {
 	var ws *ent.Workspace
 	err := env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
 		var err error
-		ws, err = workspaces.CreateIn(t.Context(), tx, "Fresh", next, nil)
+		ws, err = workspacesunchecked.CreateIn(t.Context(), tx, "Fresh", next, nil)
 		return err
 	})
 

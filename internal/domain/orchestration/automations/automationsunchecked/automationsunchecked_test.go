@@ -1,4 +1,4 @@
-package automations_test
+package automationsunchecked_test
 
 import (
 	"testing"
@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
@@ -17,7 +18,7 @@ import (
 // cancelFor runs CancelPending for a Contact the way Erasure does.
 func cancelFor(t *testing.T, env *testhelper.TestEnv, contactID int64) error {
 	t.Helper()
-	return env.CancelPendingFor(t, contactID, automations.CancelPending)
+	return env.CancelPendingFor(t, contactID, automationsunchecked.CancelPending)
 }
 
 func runIDsOf(t *testing.T, env *testhelper.TestEnv, kind string) []any {

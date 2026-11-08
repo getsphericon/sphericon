@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -166,7 +166,7 @@ func TestSitePublicConsentOfAnErasedWorkspaceRecordsNothing(t *testing.T) {
 	anon := env.SiteAnonymous(t)
 	const address = "late-click@example.com"
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return workspaces.TombstoneIn(ctx, tx, fixtures.BluthID, time.Now())
+		return workspacesunchecked.TombstoneIn(ctx, tx, fixtures.BluthID, time.Now())
 	})
 	require.NoError(t, err)
 

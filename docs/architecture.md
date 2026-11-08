@@ -296,7 +296,7 @@ coding standards in `CODING_STANDARDS.md`.
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
   `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Enrollment's exit and anonymous attribution work), reads them, and changes their rows only through their functions
-  (Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `outboundmessages.AnonymizeContact`, `confirmations.EraseNumber`, `unsubscribes.EraseSMS` and the rest, then `contacts.DeleteIn`, whose foreign keys delete or detach the Contact's other rows; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes anonymous attribution for the Broadcast consumer).
+  (Erasure calls an erase function of each owner, from its `<module>unchecked` subpackage: `eventsunchecked.EraseSubject`, `visitorsunchecked.EraseSubject`, `outboundmessagesunchecked.AnonymizeContact`, `confirmationsunchecked.EraseNumber`, `unsubscribesunchecked.EraseSMS` and the rest, then `contactsunchecked.DeleteIn`, whose foreign keys delete or detach the Contact's other rows; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes anonymous attribution for the Broadcast consumer).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
   the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
   `workspaces.Module.LinkScope`). easement
@@ -314,13 +314,14 @@ coding standards in `CODING_STANDARDS.md`.
   table at a time, each batch of listed ids deleted by itself through `*ent.Scoped`, the Enterprise
   Edition's tables included (ADR 0110: the one writer of a Workspace-owned table besides its owner,
   "Only the owner writes a table" above), and moves the
-  Workspace row back through `workspaces.RestoreIn` and on through
+  Workspace row back through `workspacesunchecked.RestoreIn` and on through
   `TombstoneIn` (deleting one checks only its typed name, so it is `workspaces.Module.Delete`,
-  ADR 0110), with the OAuth codes that name it removed by `oauthclients.DeleteCodesIn` and every
+  ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with the OAuth codes
+  that name it removed by `oauthclientsunchecked.DeleteCodesIn` and every
   job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, "Async"
   below), both in the tombstone's transaction; and the
   creation of a Workspace (`internal/usecase/workspacecreation`), which writes the Workspace through
-  `workspaces.CreateIn` and its Owner Membership through `memberships.AddCreatorIn` with the Send cap it
+  `workspacesunchecked.CreateIn` and its Owner Membership through `membershipsunchecked.AddCreatorIn` with the Send cap it
   starts with (`instancestates.DefaultSendCapIn`, ADR 0067); and the Sign-up
   (`internal/usecase/signup`), which composes the same two modules for the User's first Workspace in
   every step that makes a User Verified, each on its own transaction: the verification and reset
@@ -337,27 +338,43 @@ coding standards in `CODING_STANDARDS.md`.
   `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),
   locks the User row and the Owner rows of its Workspaces (`memberships.SoleOwnershipIn`), refuses
   the only Owner of a live Workspace, leaves each Workspace (`memberships.LeaveIn`, or
-  `LeaveDoomedWorkspaceIn` for one in its deletion window) and deletes the row with
-  `users.DeleteIn`, which publishes `UserDeleted`. A removal (or a change) that a use case guards with a check is the domain module's
-  unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
-  never a method of the module, since easement matches a method only as a use of its type. Its
-  `<import path>.<Name>` is an item of the top-level `forbid_symbol` in `easement.yml` with
-  `allow: [usecase, usecase-raw]`, which holds in every other component and in the files of none, so
-  only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
-  the owning module itself (easement counts a call there too; the definition and tests are not
-  checked). User deletion's removals (`memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner
-  of a Workspace in its deletion window leave, and the User row, `users.DeleteIn`), the Second
-  factor reset's removals (`secondfactors.ResetIn`, the
-  factor with its Recovery codes, and `passkeys.DeleteAllIn`), the restore and the tombstone of a Workspace's
-  deletion cycle (`workspaces.RestoreIn` and `TombstoneIn`), the removal of the OAuth codes its erase
-  makes (`oauthclients.DeleteCodesIn`; the erase deletes a Workspace's rows itself, ADR 0110, so no
-  owner's removal of them has a name), the creation of a Workspace with its creator's Membership
-  (`workspaces.CreateIn`, `memberships.AddCreatorIn`) and each owner's step of a Contact's Erasure
-  (`visitors.EraseSubject`, `events.EraseSubject`, `suppressions.EraseContact` and the others
-  `internal/usecase/contacterasure` sequences; the purge of its queued jobs is a method of the bus's
-  publisher, which a name cannot forbid) are such items too. The tests of the operation live in the use case's own `_test` package
+  `membershipsunchecked.LeaveDoomedWorkspaceIn` for one in its deletion window) and deletes the row
+  with `usersunchecked.DeleteIn`, which publishes `UserDeleted`.
+  What stays unchecked lives in `<module>unchecked` (ADR 0110). A write is left unchecked only
+  when its check needs a module its owner may not call: one in a higher context, or several at
+  once; otherwise the check moves into the owner. It still checks its own input (ADR 0107); what it
+  leaves to the use case is the rule across modules. Such a write is a package-level function of a
+  subpackage of its owner named `<module>unchecked`
+  (`internal/domain/contacts/tags/tagsunchecked`), which may import its owner and which the owner
+  does not import; the owner exports for it only what writes nothing (a state table such as
+  `workspaces.DeletionCycle` or `secondfactors.Machine`, a compare-and-swap condition, an Audit
+  entry, a read under a lock), and the write itself is the subpackage's, which `entrywrite` takes as
+  its owner's. easement holds every such subpackage of the core in one component,
+  `domain-unchecked` (`internal/**/*unchecked`), with `allow_importers: [usecase, usecase-raw]`, so
+  only a use case imports one: no handler, job, MCP tool, command, other domain module, Enterprise
+  package nor the owner bypasses the check. The Enterprise Edition's are `ee-domain-unchecked`
+  (`ee/**/*unchecked`), imported only by its own use cases; none exists today. No `forbid_symbol`
+  names an unchecked operation: that list holds only what the program's builders use (the raw
+  client, the ent hooks and guards, the upgrade boundaries, river's workers). They are the Live
+  use writes behind the Removal check (`tagsunchecked.DeleteIn`, the retype
+  `contactsunchecked.UpdateCustomFieldIn`, `integrationsunchecked.DeleteIn` and
+  `sendingdomainsunchecked.DeleteIn`), User deletion's removals
+  (`membershipsunchecked.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
+  deletion window leave, and the User row, `usersunchecked.DeleteIn`), the Second factor reset's
+  removals (`secondfactorsunchecked.ResetIn`, the factor with its Recovery codes, and
+  `passkeysunchecked.DeleteAllIn`), the restore and the tombstone of a Workspace's deletion cycle
+  (`workspacesunchecked.RestoreIn` and `TombstoneIn`), the removal of the OAuth codes its erase
+  makes (`oauthclientsunchecked.DeleteCodesIn`; the erase deletes a Workspace's rows itself, ADR
+  0110, so no owner's removal of them has a name), the creation of a Workspace with its creator's
+  Membership (`workspacesunchecked.CreateIn`, `membershipsunchecked.AddCreatorIn`) and each owner's
+  step of a Contact's Erasure (`visitorsunchecked.EraseSubject`, `eventsunchecked.EraseSubject` of
+  the bus, `suppressionsunchecked.EraseContact` and the others `internal/usecase/contacterasure`
+  sequences, with the Contact row last, `contactsunchecked.DeleteIn`; the purge of its queued jobs
+  is a method of the bus's publisher). A new fence for any other caller has the same form: a
+  subpackage and one component whose `allow_importers` names who may import it, as the readers of
+  the Removal check are (`<module>use`). The tests of the operation live in the use case's own `_test` package
   (`internal/usecase/tagdeletion`, `internal/usecase/customfieldretyping`, `internal/usecase/unsubscriberecording`; a retype's refusal is also tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
-  rows. What the Removal check finds is tested in its own package
+  rows, and an unchecked operation's own tests of its rows are its subpackage's (`broadcastsunchecked`, `suppressionsunchecked`). What the Removal check finds is tested in its own package
   (`internal/domain/orchestration/removalcheck`, with the writes that create a use waiting for the
   Workspace lock), and each removal that runs it races those writes in its use case's own
   `workspace_lock_test.go`. The Secret re-encryption
@@ -367,7 +384,7 @@ coding standards in `CODING_STANDARDS.md`.
   `staffmembers`, `automations`, `rules`), the columns as `secrets.Sweep` values the wiring builds on
   the raw client in a fixed order, and sweeps them by id and compare-and-swap
   (`secrets.Cipher.Reencrypt`). A sweep only stores the value it read again under the
-  primary key, so no check guards it and it is not in the `forbid_symbol` of `easement.yml`.
+  primary key, so no check guards it and it is no unchecked operation.
   A use case need not guard a removal: an operation whose subject's owner would have to call a
   module above it is one too, and so is one that reads modules of several contexts. A Visitor
   identification (`internal/usecase/visitoridentification`, built in
@@ -557,7 +574,10 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   are its own, and a code or a refresh token is looked up by its secret before any scope exists;
   every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
   (a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020:
-  they belong to the User, not a Workspace), the use cases `internal/usecase/secondfactorreset` (a
+  they belong to the User, not a Workspace), the unchecked operations of those identity modules
+  that join their use case's raw transaction (ADR 0110: `workspacesunchecked`, `membershipsunchecked`,
+  `usersunchecked`, `passkeysunchecked`, `secondfactorsunchecked` and `oauthclientsunchecked`, in the
+  component `domain-unchecked`, which only a use case imports), the use cases `internal/usecase/secondfactorreset` (a
   Second factor reset, ADR 0020: one transaction across the Second factor and the Passkeys, none of
   which a Workspace owns),
   `internal/usecase/workspacecreation` (a Workspace with its Owner Membership, ADR 0043: no Workspace
@@ -689,8 +709,9 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   `auditlogretention` (the advanced-retention prune over `workspaces` and the Audit log). The `export` license gate is the Edition's own (`ee.ExportStreams`).
   An Enterprise domain module imports the core's modules of its context and the contexts below
   and the Enterprise modules of those contexts, never a module above nor a use case; an Enterprise
-  use case imports domain modules only, calls no unchecked removal of the core (unlike a core use
-  case) and is imported only by `ee/api`, the Edition and the wiring. The boundary with the core is
+  use case imports domain modules only, never an unchecked operation of the core (`domain-unchecked`
+  admits only the core's use cases; the Edition's own would be `ee-domain-unchecked`, ADR 0110) and
+  is imported only by `ee/api`, the Edition and the wiring. The boundary with the core is
   unchanged: no core component may import an `ee` component, and each `ee` component names its
   importers; the command line (`cli`) may import the Service credentials, which only it issues,
   rotates and revokes (ADR 0026).
@@ -709,9 +730,9 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   check, `internal/domain/orchestration/removalcheck`: one method per subject (`Tag`,
   `CustomFieldRetype`, `Integration`, `SendingDomain`), each returning nil or the `*liveuse.Error`
   with its `Subject` set, called by the use case that removes the row under the Workspace lock before
-  its unchecked removal (`tagdeletion` before `tags.DeleteIn`, `customfieldretyping` before
-  `contacts.UpdateCustomFieldIn`, `integrationdeletion` and `sendingdomaindeletion` before
-  `integrations.DeleteIn` and `sendingdomains.DeleteIn`; see "Use cases"). It is the one list of the
+  its unchecked removal (`tagdeletion` before `tagsunchecked.DeleteIn`, `customfieldretyping` before
+  `contactsunchecked.UpdateCustomFieldIn`, `integrationdeletion` and `sendingdomaindeletion` before
+  `integrationsunchecked.DeleteIn` and `sendingdomainsunchecked.DeleteIn`; see "Use cases"). It is the one list of the
   readers of what may hold a row. Each owner keeps its readers in a subpackage `<module>use` (ADR
   0110's fence by place), which may import its owner and which the owner does not import: Definition
   use is `segmentsuse.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.UsingTag`,

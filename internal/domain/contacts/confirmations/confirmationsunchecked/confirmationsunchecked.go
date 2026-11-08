@@ -1,4 +1,9 @@
-package confirmations
+// Package confirmationsunchecked holds the Confirmation part of a Contact's Erasure that the
+// foreign keys cannot do. It is a step of a Contact's Erasure (ADR 0021), which harms a live
+// Contact when it runs alone: the use case internal/usecase/contacterasure runs each owner's step
+// in its order, in the one transaction of the Erasure; only a use case may import this one (ADR
+// 0110). The confirmations module does not import it.
+package confirmationsunchecked
 
 import (
 	"context"

@@ -2,6 +2,7 @@ package secondfactors
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/qmuntal/stateless"
@@ -140,6 +141,10 @@ type Moved struct {
 	Factor *ent.SecondFactor
 }
 
+// errResetUnchecked refuses a reset in move: the reset is written only by
+// secondfactorsunchecked.ResetIn, behind the Second factor reset's check.
+var errResetUnchecked = errors.New("secondfactors: a reset is written by secondfactorsunchecked.ResetIn")
+
 // move atomically consumes the snapshot that was checked: the User's session epoch and password
 // and the factor's secret, enrollment identity, confirmation and accepted step. A stale operation
 // never acts on a newer factor or on a User whose password or sessions moved meanwhile. The User
@@ -158,7 +163,7 @@ func move(ctx context.Context, tx *ent.Client, before Snapshot, change Change) (
 		if before.Factor == nil {
 			return writeFirst(ctx, tx, before.User.ID, change, &out)
 		}
-		update := tx.SecondFactor.UpdateOneID(before.Factor.ID).Where(snapshot(before.Factor)...)
+		update := tx.SecondFactor.UpdateOneID(before.Factor.ID).Where(Unchanged(before.Factor)...)
 		switch change.Trigger {
 		case FactorStart:
 			update.SetGeneration(before.Factor.Generation + 1).SetSecretEncrypted(change.SealedSecret).
@@ -173,8 +178,12 @@ func move(ctx context.Context, tx *ent.Client, before Snapshot, change Change) (
 			}
 		case FactorRegenerate:
 			update.SetLastStep(before.Factor.LastStep)
-		case FactorDisable, FactorReset:
+		case FactorDisable:
 			update.ClearSecretEncrypted().ClearConfirmedAt().SetLastStep(0)
+		case FactorReset:
+			// A reset clears the factor without its code: it is the unchecked
+			// secondfactorsunchecked.ResetIn's write (ADR 0110), never this module's.
+			return false, errResetUnchecked
 		}
 		saved, err := update.Save(ctx)
 		if ent.IsNotFound(err) {
@@ -211,7 +220,10 @@ func writeFirst(ctx context.Context, tx *ent.Client, userID int64, change Change
 	return err == nil, err
 }
 
-func snapshot(before *ent.SecondFactor) []predicate.SecondFactor {
+// Unchanged is the condition the factor row is still before: its enrollment identity, secret,
+// confirmation and accepted step. Every change of the row is a compare-and-swap on it, so a stale
+// operation never acts on a newer factor.
+func Unchanged(before *ent.SecondFactor) []predicate.SecondFactor {
 	predicates := []predicate.SecondFactor{
 		secondfactor.GenerationEQ(before.Generation),
 		secondfactor.LastStepEQ(before.LastStep),

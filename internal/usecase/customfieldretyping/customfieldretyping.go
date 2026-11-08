@@ -3,8 +3,8 @@
 // Definition use: retyping it runs the Removal check (internal/domain/orchestration/removalcheck),
 // which refuses with a *liveuse.Error naming what tests the field with a leaf the new type does not
 // take, because their Conditions would stop compiling. The contacts module knows none of them, so
-// the check runs here before the module's unchecked edit, contacts.UpdateCustomFieldIn, which
-// easement forbids every other package to call. The check and the edit run in one transaction
+// the check runs here before the module's unchecked edit, contactsunchecked.UpdateCustomFieldIn,
+// which only a use case may import (ADR 0110). The check and the edit run in one transaction
 // under the Workspace's lock (ADR 0099).
 package customfieldretyping
 
@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts/contactsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -54,7 +55,7 @@ func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, id int64, in contac
 				return err
 			}
 		}
-		updated, err = contacts.UpdateCustomFieldIn(ctx, ts, field, in)
+		updated, err = contactsunchecked.UpdateCustomFieldIn(ctx, ts, field, in)
 		return err
 	})
 	if err != nil {

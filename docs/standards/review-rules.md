@@ -38,7 +38,10 @@ or `AGENTS.md`.
    event subscribers and the commands of the command line) only receive input, call a domain
    module or a use case and return the result; they hold no logic. A table is written only by the domain module that owns it (ADR 0102): any
    other package, a use case included, reads it and changes it only through a function of its owner.
-   A domain module calls only the modules of its own context and of the contexts below it
+   A write whose check needs a module its owner may not call is an unchecked operation of the
+   owner's subpackage `<module>unchecked` (the owner's own for this rule), which only a use case
+   imports, after the check (ADR 0110); the owner exports for it nothing that writes, and nothing
+   else calls it. A domain module calls only the modules of its own context and of the contexts below it
    (`internal/domain/<context>`, and the Enterprise Edition's `ee/domain/<context>` in the same
    contexts, ADR 0102); an operation that needs a module above is a use case. A use case is called
    one way (ADR 0104): its `New` takes every dependency and the clock, and each method takes the
