@@ -132,9 +132,9 @@ func TestATestSendOfAnSMSBroadcastShowsTheShortLinksAndTheirClicksRecordNothing(
 	b := env.DB.Broadcast.GetX(ctx, id)
 	mod := env.OutboundModule()
 
-	_, err := mod.SendBroadcastTest(ctx, s, b, outboundmessages.TestAddress{Phone: "+14155550199"}, nil)
+	_, err := mod.SendBroadcastTest(ctx, s, b, outboundmessages.TestAddress{Phone: "+14155550199"})
 	require.NoError(t, err)
-	_, err = mod.SendBroadcastTest(ctx, s, b, outboundmessages.TestAddress{Phone: "+14155550199"}, nil)
+	_, err = mod.SendBroadcastTest(ctx, s, b, outboundmessages.TestAddress{Phone: "+14155550199"})
 	require.NoError(t, err)
 
 	sent := env.Twilio.Messages()

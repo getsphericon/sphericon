@@ -382,6 +382,17 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadca
 	return b, err
 }
 
+// SendTest sends the Broadcast id of the Workspace to the one address an author names, with sample
+// merge data, to preview it (outboundmessages.Module.SendBroadcastTest): no recipient rows, no
+// tracking, never the audience. The scope's actor is who asks; ErrNotFound for an unknown id.
+func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, id int64, to outboundmessages.TestAddress) (outboundmessages.Result, error) {
+	b, err := m.Get(ctx, s, id)
+	if err != nil {
+		return outboundmessages.Result{}, err
+	}
+	return m.out.SendBroadcastTest(ctx, s, b, to)
+}
+
 // ListFilter narrows the Broadcast list: the archived ones instead of the kept ones, only some
 // statuses (every one when empty), only one Channel (every one when nil).
 type ListFilter struct {

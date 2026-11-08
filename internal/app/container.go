@@ -612,6 +612,7 @@ var deliveryPackage = do.Package(
 		opts := []outboundmessages.Option{
 			outboundmessages.WithStartLinks(do.MustInvoke[*bindings.Module](i)),
 			outboundmessages.WithTestSendBudget(do.MustInvoke[*throttle.Attempts](i)),
+			outboundmessages.WithUsers(do.MustInvoke[*users.Module](i)),
 			outboundmessages.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outboundmessages.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
 			outboundmessages.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[*integrations.Module](i)),

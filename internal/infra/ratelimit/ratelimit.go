@@ -293,6 +293,21 @@ type Refusal struct {
 	Limit int
 }
 
+// WaitError is a request a budget of a module turned away (the Test sends from the System sender,
+// ADR 0041): the module decides it and returns it as its refusal, and the server's error handler
+// answers it as any rate limit, 429 with Retry-After and X-RateLimit-*, counted under Policy
+// (Exchange.Delay). At is when it was refused, on the module's clock: the budget resets At+Wait.
+type WaitError struct {
+	Refusal
+
+	Policy string
+	At     time.Time
+}
+
+func (e *WaitError) Error() string {
+	return "rate limit exceeded: " + e.Policy + ", retry in " + e.Wait.String()
+}
+
 // Delay refuses a request that must wait out a delay rather than a window budget
 // (the per-account login delay, ADR 0025): the caller may retry `wait` from now.
 // limit is the budget reported in X-RateLimit-Limit; Remaining is always 0. Like

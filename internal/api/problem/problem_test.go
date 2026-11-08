@@ -5,11 +5,13 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/problem"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -17,6 +19,9 @@ import (
 var errMissing = validation.NotFound("thing not found", i18n.ErrorsContactNotFound)
 
 var errForbidden = validation.Forbidden("not allowed", i18n.ErrorsContactNotFound)
+
+// errWait is a budget of a module spent for a minute.
+var errWait = &ratelimit.WaitError{Policy: ratelimit.PolicyTestSend, Wait: time.Minute, Limit: 5, At: time.Now()}
 
 // answer is what a surface's NewError answered: the status, the code and the detail.
 type answer struct {
@@ -62,6 +67,7 @@ func TestEverySurfaceAnswersARefusalAlike(t *testing.T) {
 	}{
 		"a refusal without a code": {errMissing, answer{http.StatusNotFound, "", "contact not found"}},
 		"a refusal with a code":    {errForbidden, answer{http.StatusForbidden, "permission_required", "contact not found"}},
+		"a refusal with a wait":    {errWait, answer{http.StatusTooManyRequests, "", "rate limit exceeded, retry later"}},
 		"an answer of a handler":   {&problem.Error{Status: http.StatusPaymentRequired, Detail: "licensed"}, answer{http.StatusPaymentRequired, "", "licensed"}},
 		"a fault":                  {errors.New("boom"), answer{http.StatusInternalServerError, "", ""}},
 	} {
