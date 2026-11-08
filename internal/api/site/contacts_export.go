@@ -18,15 +18,15 @@ func (h *Handlers) SiteContactsExport(ctx context.Context, params siteapi.SiteCo
 	if v, ok := params.ID.Get(); ok {
 		contactID = new(int64(v))
 	}
-	c, err := dataexport.Find(ctx, scoped, contactID, dataexport.Ref(params.Email.Get()))
+	d, err := dataexport.Open(ctx, scoped, resources.ExportMapper{Converter: mapper}, contactID, dataexport.Ref(params.Email.Get()))
 	if err != nil {
 		return nil, err
 	}
 
 	return &siteapi.SiteContactsExportOKApplicationOctetStreamHeaders{
-		ContentDisposition: `attachment; filename="` + dataexport.Filename(c) + `"`,
+		ContentDisposition: `attachment; filename="` + d.Filename + `"`,
 		Response: siteapi.SiteContactsExportOKApplicationOctetStream{
-			Data: seqreader.New(dataexport.Export(ctx, scoped, resources.ExportMapper{Converter: mapper}, c)),
+			Data: seqreader.New(d.Chunks),
 		},
 	}, nil
 }
