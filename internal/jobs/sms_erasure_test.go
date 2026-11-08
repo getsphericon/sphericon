@@ -107,7 +107,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	textIn(t, env, account, "SM0301", number, "Thanks, my card is 4111")
 	textIn(t, env, account, "SM0302", number, "STOP")
 	env.SuppressNumber(ctx, number)
-	kinds := []string{events.NameSmsClicked, events.NameSmsDelivered, events.NameSmsSent}
+	kinds := []string{events.NameSmsClicked, events.NameSmsDelivered, events.NameSmsSent, events.NameSmsUnsubscribed}
 	kept := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactTexterID), event.ActionIn(kinds...)).IDsX(ctx)
 	require.Len(t, kept, len(kinds))
 	gone := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactTexterID),
@@ -126,6 +126,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	})
 	assert.Equal(t, []erasedEvent{
 		{Action: events.NameSmsClicked}, {Action: events.NameSmsDelivered}, {Action: events.NameSmsSent},
+		{Action: events.NameSmsUnsubscribed},
 	}, keeps, "the facts keep no Contact, phone, provider reference, Destination or url")
 	texts := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationID(automationID)).AllX(ctx)
 	anonymous := lo.Map(texts, func(m *ent.OutboundMessage, _ int) erasedMessage {

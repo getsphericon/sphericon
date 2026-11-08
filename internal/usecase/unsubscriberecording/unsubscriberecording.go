@@ -1,10 +1,11 @@
 // Package unsubscriberecording is the use case that records an Unsubscribe (ADR 0001, ADR 0102):
 // from a signed unsubscribe link, or by an authenticated caller (the external API, an agent over
 // MCP) for an opt-out that reached the Workspace by another route. Beside the row (unsubscribes)
-// an unsubscribe counts on the Broadcast that provoked it (broadcasts) and ends the Enrollment of
-// the Automation it names (automations), in one transaction: the modules that own those rows sit
-// above the opt-out's, so the operation across them lives here. The link and the API produce
-// identical effects.
+// an unsubscribe ends the Enrollment of the Automation it names (automations), in one transaction:
+// that module sits above the opt-out's, so the operation across them lives here. The opt-out's
+// Event (email.unsubscribed, telegram.unsubscribed, sms.unsubscribed) names the Broadcast that
+// provoked it, which counts it from the event, as it counts an opt-out made on any other path
+// (ADR 0112). The link and the API produce identical effects.
 package unsubscriberecording
 
 import (
@@ -23,7 +24,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
@@ -43,10 +43,10 @@ func New(bus *events.Bus, now func() time.Time) *UseCase { return &UseCase{bus: 
 // (ADR 0001) from a signed token — no contact-row lookup, so the opt-out records
 // even if the contact was deleted between send and click (the point of
 // destination-keying). The default in-email link is scoped to its sending source;
-// "everything" is the deliberate escalation. All effects (the row, the broadcast
-// counter, the automation enrollment exit, and the engagement event) live in one
-// transaction gated on the existence check, so a repeated POST (mailbox retry or a
-// double click) is a complete no-op and concurrent POSTs are counted exactly once. s is the scope
+// "everything" is the deliberate escalation. All effects (the row, the automation
+// enrollment exit, and the opt-out's event, from which the Broadcast counts it) live in
+// one transaction gated on the existence check, so a repeated POST (mailbox retry or a
+// double click) is a complete no-op and concurrent POSTs are recorded exactly once. s is the scope
 // of the token's Workspace, which the entry point builds from it; the writes go through it as the
 // ingest actor (never audited), since no membership or API token stands behind them.
 func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarget.Unsubscribe) error {
@@ -56,7 +56,6 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 	}
 	channel := target.Channel
 	automationID, isAutomation := eligibility.ParseAutomationSource(target.Source)
-	at := u.now()
 
 	// The Workspace comes from the signed unsubscribe token (no membership or api
 	// token here), so this is a scope source outside the site/external/job list.
@@ -67,7 +66,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			return err
 		}
 		if target.Channel == channels.SMS {
-			return recordSMSLink(ctx, sc, target, dest, u.now())
+			return recordSMSLink(ctx, sc, pub, target, dest)
 		}
 		o := unsubscribes.OptOut{Channel: channel, Destination: dest, Source: target.Source, ContactID: target.ContactID}
 		if target.Channel == channels.Telegram {
@@ -91,12 +90,6 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			}
 		}
 
-		// Broadcast attribution: the triggering Broadcast counts the recipient's unsubscribe.
-		if target.BroadcastID != 0 && target.ContactID != 0 {
-			if _, err := broadcasts.RecordUnsubscribe(ctx, sc, target.BroadcastID, target.ContactID, at); err != nil {
-				return err
-			}
-		}
 		// Automation: unsubscribing from an automation also exits its active
 		// enrollment (ADR: two effects from one action).
 		if isAutomation && target.ContactID != 0 {
@@ -121,20 +114,16 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 
 // recordSMSLink records the click on a text's unsubscribe link: on SMS every opt-out is the
 // number's Channel-wide one (ADR 0077), whatever source the link names, with the same effects as a
-// STOP (channelstop.StopSMS), and the Broadcast the text came from counts it. The Automation's Enrollment
-// goes on: its next text is Skipped like any other, and a step on another Channel still runs.
-func recordSMSLink(ctx context.Context, sc *ent.Scoped, target linktarget.Unsubscribe, number string, at time.Time) error {
-	// A repeated or concurrent click finds the number stopped: the rest is done already.
-	stopped, err := channelstop.StopSMS(ctx, sc, number, unsubscribe.ViaLink)
-	if err != nil || !stopped {
-		return err
-	}
-	if target.BroadcastID != 0 && target.ContactID != 0 {
-		if _, err := broadcasts.RecordUnsubscribe(ctx, sc, target.BroadcastID, target.ContactID, at); err != nil {
-			return err
-		}
-	}
-	return nil
+// STOP (channelstop.StopSMS), and its sms.unsubscribed names the Broadcast the text came from, which
+// counts it. A repeated or concurrent click finds the number stopped and records nothing. The
+// Automation's Enrollment goes on: its next text is Skipped like any other, and a step on another
+// Channel still runs.
+func recordSMSLink(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, number string) error {
+	automationID, _ := eligibility.ParseAutomationSource(target.Source)
+	return channelstop.StopSMS(ctx, sc, pub, channelstop.SMSStop{
+		Number: number, Via: events.UnsubscribedByLink,
+		ContactID: target.ContactID, BroadcastID: target.BroadcastID, AutomationID: automationID,
+	})
 }
 
 // publishTelegramUnsubscribed records telegram.unsubscribed for the Contact a Telegram unsubscribe

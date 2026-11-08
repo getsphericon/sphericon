@@ -285,11 +285,12 @@ var telegramTriggers = []string{
 }
 
 // smsTriggers are the `sms.` Events an Automation may start from or end on: a text the person sent,
-// the consent they gave, a link they clicked, and whether a text reached their phone (a delivery
-// report, which on SMS says the number works or not, unlike email's infrastructure notices). The
-// acceptance (`sms.sent`) is infrastructure, like `email.sent`.
+// the consent they gave and withdrew, a link they clicked, and whether a text reached their phone (a
+// delivery report, which on SMS says the number works or not, unlike email's infrastructure
+// notices). The acceptance (`sms.sent`) is infrastructure, like `email.sent`.
 var smsTriggers = []string{
-	events.NameSmsReceived, events.NameSmsConfirmed, events.NameSmsClicked, events.NameSmsDelivered, events.NameSmsUndelivered,
+	events.NameSmsReceived, events.NameSmsConfirmed, events.NameSmsUnsubscribed, events.NameSmsClicked,
+	events.NameSmsDelivered, events.NameSmsUndelivered,
 }
 
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.

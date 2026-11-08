@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -97,6 +98,10 @@ func TestATextTwilioRefusesAsOptedOutRecordsTheOptOutAndIsSkipped(t *testing.T) 
 	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(stop.ContactID))
 	consented := env.DB.Confirmation.Query().Where(confirmation.ChannelEQ(channels.SMS), confirmation.DestinationEQ(fixtures.ContactTexterPhone)).ExistX(ctx)
 	assert.False(t, consented, "the refused number's consent ends with its stop")
+	stops := env.QueuedCount(t, events.NameSmsUnsubscribed, map[string]any{
+		"contactId": fixtures.ContactTexterID, "via": events.UnsubscribedByRefusedSend, "integrationId": account.Integration.ID,
+	})
+	assert.Equal(t, 1, stops, "the stop is recorded with sms.unsubscribed, from the text's sender")
 
 	again := sendText(t, env, textTo(t, env, account, "sms:2"))
 

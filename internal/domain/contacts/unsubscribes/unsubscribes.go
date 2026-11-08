@@ -109,9 +109,10 @@ func Get(ctx context.Context, s *ent.Scoped, channel channels.Channel, destinati
 
 // AddSMS records the Channel-wide opt-out of a phone number (scope `everything`, Channel `sms`, the
 // number in E.164), naming the Contact whose phone it is, unless it stands already (by the number
-// or by its hash), and reports whether it wrote one: a number already opted out changes nothing,
-// and keeps the way it first stopped. via is how the person stopped, which the Contact card shows.
-func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (bool, error) {
+// or by its hash), and returns the row it wrote, nil when it wrote none: a number already opted out
+// changes nothing, and keeps the way it first stopped. via is how the person stopped, which the
+// Contact card shows.
+func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (*ent.Unsubscribe, error) {
 	// The opt-out of an erased person is kept by the hash of the number (EraseSMS): a second row by
 	// the number itself would not conflict with it.
 	hashed, err := s.Unsubscribe().Query().Where(
@@ -120,10 +121,10 @@ func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.V
 		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),
 	).Exist(ctx)
 	if err != nil {
-		return false, fmt.Errorf("find opt-out: %w", err)
+		return nil, fmt.Errorf("find opt-out: %w", err)
 	}
 	if hashed {
-		return false, nil
+		return nil, nil
 	}
 	create := s.Unsubscribe().Create().
 		SetChannel(channels.SMS).
@@ -135,9 +136,13 @@ func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.V
 	case err == nil:
 		create.SetContactID(holder)
 	case !ent.IsNotFound(err):
-		return false, fmt.Errorf("find the number's contact: %w", err)
+		return nil, fmt.Errorf("find the number's contact: %w", err)
 	}
-	return insert(ctx, create)
+	added, err := insert(ctx, create)
+	if err != nil || !added {
+		return nil, err
+	}
+	return Get(ctx, s, channels.SMS, number, eligibility.SourceEverything)
 }
 
 // LiftSMS lifts the Channel-wide opt-out of a phone number: the person texted START. Nothing to

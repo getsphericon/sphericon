@@ -70,8 +70,9 @@ const (
 	NameTelegramSent = "telegram.sent"
 	// NameTelegramClicked is a click on a short tracked link of a Telegram message (ADR 0083).
 	NameTelegramClicked = "telegram.clicked"
-	// NameTelegramUnsubscribed is a Contact stopping all of the Workspace's Telegram marketing in
-	// Telegram: a STOP keyword, the unsubscribe button, or blocking the bot (ADR 0077).
+	// NameTelegramUnsubscribed is a Contact stopping all of the Workspace's Telegram marketing: a
+	// STOP keyword, the unsubscribe button or link, blocking the bot, or one recorded by hand
+	// (ADR 0077).
 	NameTelegramUnsubscribed = "telegram.unsubscribed"
 
 	// NameSmsReceived is a text a Contact sent from its phone to an SMS Integration's sender
@@ -89,7 +90,20 @@ const (
 	NameSmsConfirmed = "sms.confirmed"
 	// NameSmsClicked is a click on a short tracked link of an SMS (ADR 0083).
 	NameSmsClicked = "sms.clicked"
+	// NameSmsUnsubscribed is a Contact's phone number stopping all of the Workspace's texts: a STOP
+	// keyword, the unsubscribe link of a text, a send the provider refused because the number had
+	// stopped there, or one recorded by hand (ADR 0077).
+	NameSmsUnsubscribed = "sms.unsubscribed"
 )
+
+// unsubscribedNames are the opt-outs of every Channel, each an Event of the Contact that names the
+// Broadcast or the Automation of the message it was made from.
+var unsubscribedNames = []string{NameEmailUnsubscribed, NameTelegramUnsubscribed, NameSmsUnsubscribed}
+
+// IsUnsubscribed reports whether name is the bus type of an opt-out, on any Channel.
+func IsUnsubscribed(name string) bool {
+	return slices.Contains(unsubscribedNames, name)
+}
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
 // (`email.*`), consent (`marketing.*`), the Contact's lifecycle, Tags and Custom fields
@@ -323,6 +337,7 @@ var registry = map[string]func() DomainEvent{
 	NameSmsDelivered:          func() DomainEvent { return &SmsDelivery{} },
 	NameSmsUndelivered:        func() DomainEvent { return &SmsDelivery{} },
 	NameSmsClicked:            func() DomainEvent { return &SmsClicked{} },
+	NameSmsUnsubscribed:       func() DomainEvent { return &SmsUnsubscribed{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 

@@ -1090,6 +1090,7 @@ export default interface Resources {
       "smsReceived": "Sent a text message",
       "smsSent": "Was sent a text message",
       "smsUndelivered": "Text message not delivered",
+      "smsUnsubscribed": "Unsubscribed from text messages",
       "telegramBound": "Telegram chat bound",
       "telegramClicked": "Clicked a link in a Telegram message",
       "telegramReceived": "Sent a Telegram message",

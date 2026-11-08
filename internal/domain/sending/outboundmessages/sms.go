@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -86,10 +87,17 @@ func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publi
 
 // optedOut records that the number stopped at the provider, which refused the text for it (Twilio's
 // 21610: the number texted STOP to the sender): the number's Channel-wide opt-out (ADR 0077), the
-// same as a STOP texted to sphericon, keyed by the number whichever sender found out.
-func (smsChannel) optedOut(ctx context.Context, s *ent.Scoped, _ events.Publisher, _ *ent.Integration, _ *ent.OutboundMessage, to target, _ time.Time) error {
-	_, err := channelstop.StopSMS(ctx, s, to.dest, unsubscribe.ViaRefusedSend)
-	return err
+// same as a STOP texted to sphericon, keyed by the number whichever sender found out, and
+// sms.unsubscribed attributed to the text that found out.
+func (smsChannel) optedOut(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, msg *ent.OutboundMessage, to target, _ time.Time) error {
+	st := channelstop.SMSStop{Number: to.dest, Via: events.UnsubscribedByRefusedSend}
+	if integ != nil {
+		st.IntegrationID = integ.ID
+	}
+	if msg != nil {
+		st.ContactID, st.BroadcastID, st.AutomationID = lo.FromPtr(msg.ContactID), lo.FromPtr(msg.BroadcastID), lo.FromPtr(msg.AutomationID)
+	}
+	return channelstop.StopSMS(ctx, s, pub, st)
 }
 
 // smsMessage is a rendered text, as the provider takes it.

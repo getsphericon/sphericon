@@ -229,25 +229,41 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 	return nil
 }
 
-// BroadcastUnsubscribeEventArgs is the broadcasts consumer's job: a Telegram opt-out made from a
-// Broadcast's message, which the Broadcast counts as an unsubscribe of its recipient.
+// BroadcastUnsubscribeEventArgs is the broadcasts consumer's job: an opt-out made from a
+// Broadcast's message, on any Channel, which the Broadcast counts as an unsubscribe of its recipient.
 type BroadcastUnsubscribeEventArgs struct {
 	events.EventJob
 }
 
 func (BroadcastUnsubscribeEventArgs) Kind() string { return "event_broadcast_unsubscribe" }
 
-// countsOnBroadcast wants a telegram.unsubscribed that names a Broadcast and its Contact.
-func countsOnBroadcast(_ events.Envelope, ev events.DomainEvent) bool {
-	e, ok := ev.(*events.TelegramUnsubscribed)
-	return ok && e.BroadcastID != 0 && e.ContactID != 0
+// countsOnBroadcast wants an opt-out (email.unsubscribed, telegram.unsubscribed, sms.unsubscribed)
+// that names a Broadcast and its Contact.
+func countsOnBroadcast(env events.Envelope, ev events.DomainEvent) bool {
+	_, _, ok := optOutOfBroadcast(env, ev)
+	return ok
 }
 
-// BroadcastUnsubscribeEventWorker counts a Telegram opt-out on the Broadcast whose message it was
-// made from (broadcasts.RecordUnsubscribe). The opt-out is written by
-// internal/domain/contacts/channelstop, below the Broadcasts, and the recipient row is the broadcasts
-// module's (ADR 0102: only the owner writes a table), so the count follows the event: its job
-// commits with the opt-out, and a repeat counts nothing, the mark being set once.
+// optOutOfBroadcast is the Broadcast and the Contact an opt-out names. An email engagement shares
+// its type with opens and clicks, so the opt-out is told by its bus name, not by its type.
+func optOutOfBroadcast(env events.Envelope, ev events.DomainEvent) (broadcastID, contactID int64, ok bool) {
+	if !events.IsUnsubscribed(env.Name) {
+		return 0, 0, false
+	}
+	p, projected := events.ProjectionOf(ev)
+	if !projected || p.BroadcastID == 0 || p.ContactID == 0 {
+		return 0, 0, false
+	}
+	return p.BroadcastID, p.ContactID, true
+}
+
+// BroadcastUnsubscribeEventWorker counts an opt-out on the Broadcast whose message it was made from
+// (broadcasts.RecordUnsubscribe), whatever the Channel and the path (ADR 0112): an unsubscribe link,
+// a STOP keyword or button, a blocked bot or a send the provider refused. The opt-out is written
+// below the Broadcasts (internal/domain/contacts, from a use case or from the Outbound send), and the
+// recipient row is the broadcasts module's (ADR 0102: only the owner writes a table), so the count
+// follows the event: its job is inserted in the opt-out's transaction (ADR 0101), and a repeat counts
+// nothing, the mark being set once.
 type BroadcastUnsubscribeEventWorker struct {
 	river.WorkerDefaults[BroadcastUnsubscribeEventArgs]
 
@@ -267,13 +283,13 @@ func (w *BroadcastUnsubscribeEventWorker) Work(ctx context.Context, job *river.J
 	if err != nil {
 		return err
 	}
-	e, ok := ev.(*events.TelegramUnsubscribed)
-	if !ok || e.BroadcastID == 0 {
+	broadcastID, contactID, ok := optOutOfBroadcast(env, ev)
+	if !ok {
 		return nil
 	}
 	// The Workspace comes from the event envelope, as for every consumer, and the moment from when
 	// the unsubscribe occurred.
-	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(env.WorkspaceID), e.BroadcastID, e.ContactID, env.OccurredAt); err != nil {
+	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(env.WorkspaceID), broadcastID, contactID, env.OccurredAt); err != nil {
 		return fmt.Errorf("count the unsubscribe for the broadcast: %w", err)
 	}
 	return nil

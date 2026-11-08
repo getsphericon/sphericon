@@ -337,18 +337,23 @@ func (e *TelegramClicked) Workspace() int64    { return e.WorkspaceID }
 func (e *TelegramClicked) EventID() string     { return e.DedupID }
 func (e *TelegramClicked) Project() Projection { return (*LinkClick)(e).project(NameTelegramClicked) }
 
-// Ways a Contact stops Telegram marketing, the `via` property of telegram.unsubscribed.
+// Ways a Contact stops a Channel, the `via` property of telegram.unsubscribed and sms.unsubscribed
+// and the values of the opt-out's own `via`.
 const (
-	// UnsubscribedByKeyword is `/stop` or a STOP keyword.
+	// UnsubscribedByKeyword is a STOP keyword, or `/stop` on Telegram.
 	UnsubscribedByKeyword = "keyword"
 	// UnsubscribedByButton is a press on a message's unsubscribe button.
 	UnsubscribedByButton = "button"
 	// UnsubscribedByBlock is the person blocking the bot, which Telegram reported by an update or
 	// by refusing a send.
 	UnsubscribedByBlock = "block"
-	// UnsubscribedByLink is a click on the `unsubscribe_url` link of a message, scoped to its source.
+	// UnsubscribedByLink is a click on the `unsubscribe_url` link of a message: scoped to its source
+	// on Telegram, Channel-wide on SMS.
 	UnsubscribedByLink = "link"
-	// UnsubscribedByManual is an opt-out recorded by hand, through the API.
+	// UnsubscribedByRefusedSend is a send the SMS provider refused because the number had stopped
+	// the sender there (Twilio's 21610).
+	UnsubscribedByRefusedSend = "refused_send"
+	// UnsubscribedByManual is an opt-out recorded by hand, through the app or the API.
 	UnsubscribedByManual = "manual"
 )
 

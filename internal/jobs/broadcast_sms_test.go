@@ -55,6 +55,29 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, figures)
 }
 
+// A text of the Broadcast that Twilio refuses with 21610 (the number texted STOP to the sender
+// there) is the number's opt-out, and its sms.unsubscribed names the Broadcast, which counts it
+// when the event's consumer runs (ADR 0112). Lacuna's Segment Textham freezes Bea alone.
+func TestAnSMSBroadcastsTextTwilioRefusesAsOptedOutCountsAsItsUnsubscribe(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	env.LacunaTwilio(t)
+	id := int64(fixtures.BroadcastLacunaSmsGreetingID)
+	env.Twilio.RefuseNextSend(twiliotest.Unsubscribed)
+
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	before := figuresOf(t, env, id)
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
+	after := figuresOf(t, env, id)
+
+	stops := env.QueuedCount(t, events.NameSmsUnsubscribed, map[string]any{
+		"broadcastId": id, "contactId": fixtures.ContactLacunaBeaID, "via": events.UnsubscribedByRefusedSend,
+	})
+	assert.Equal(t, 1, stops)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1}, before, "the send's transaction leaves the count to the event")
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1, Unsubscribed: 1}, after)
+}
+
 // A Recipient frozen with a confirmed phone is checked again when its text is sent: one that lost
 // its phone, opted out or was suppressed since is Skipped with that reason, and the figures add up.
 // Lacuna's four confirmed phones are frozen: Ada's is cleared, the parked opt-out moves onto Bea's

@@ -10,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -105,8 +104,10 @@ func (sms) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMessage) e
 	}
 	switch {
 	case channelstop.IsStopKeyword(m.Text):
-		_, err := channelstop.StopSMS(ctx, tx.Scoped, number, unsubscribe.ViaKeyword)
-		return err
+		// No text names the Broadcast or the Automation a STOP answers: it counts on none.
+		return channelstop.StopSMS(ctx, tx.Scoped, tx.Pub, channelstop.SMSStop{
+			Number: number, Via: events.UnsubscribedByKeyword, IntegrationID: tx.Integration.ID,
+		})
 	case channelstop.IsStartKeyword(m.Text):
 		return confirmations.StartSMSIn(ctx, tx.Scoped, tx.Pub, number)
 	}

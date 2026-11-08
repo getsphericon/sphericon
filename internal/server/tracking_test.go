@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -238,16 +239,18 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.False(t, optedOut(), "GET records nothing")
 	assert.Equal(t, 0, figures(t, env, b.ID).Unsubscribed)
 
-	// POST performs the opt-out and bumps the counter once.
+	// POST performs the opt-out; the Broadcast counts it once from its event (ADR 0112).
 	resp = post(uPath)
 	assert.Equal(t, http.StatusNoContent, resp.Code)
 	assert.True(t, optedOut(), "POST writes a broadcasts-scoped opt-out")
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
 	assert.Equal(t, 1, figures(t, env, b.ID).Unsubscribed)
 	unsubscribedAt := env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt
 	require.NotNil(t, unsubscribedAt, "the recipient records the unsubscribe")
 
 	// A repeated POST (mailbox retry / double click) must not double-count.
 	post(uPath)
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
 	assert.Equal(t, 1, figures(t, env, b.ID).Unsubscribed)
 	assert.True(t, unsubscribedAt.Equal(*env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt), "set once")
 

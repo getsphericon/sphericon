@@ -1,7 +1,9 @@
 package callbackinterpretation_test
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/samber/lo"
@@ -17,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -90,6 +93,27 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	assert.Nil(t, consent, "the stop drops the consent it ends")
 	replies := env.QueuedCount(t, events.NameSmsReceived, nil)
 	assert.Zero(t, replies, "a STOP is no reply")
+}
+
+// A STOP records sms.unsubscribed for the number's Contact (ADR 0112). No text names the Broadcast it
+// answers, so it counts on none.
+func TestASTOPRecordsSmsUnsubscribedAndCountsOnNoBroadcast(t *testing.T) {
+	env := testhelper.Setup(t)
+	sms := env.AcmeTwilio(t)
+
+	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
+		inbound(sms, "SM0105", knownNumber, "STOP"))
+
+	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
+	stops := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	require.Len(t, stops, 1)
+	assert.Equal(t, json.Number(strconv.Itoa(fixtures.ContactTexterID)), stops[0].Data["contactId"])
+	assert.Equal(t, knownNumber, stops[0].Data["phone"])
+	assert.Equal(t, events.UnsubscribedByKeyword, stops[0].Data["via"])
+	assert.Equal(t, json.Number(strconv.FormatInt(int64(sms.Integration.ID), 10)), stops[0].Data["integrationId"])
+	assert.NotContains(t, stops[0].Data, "broadcastId")
+	counts := env.EventJobs(t, jobs.BroadcastUnsubscribeEventArgs{}.Kind())
+	assert.Empty(t, counts, "a STOP counts on no Broadcast")
 }
 
 func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
