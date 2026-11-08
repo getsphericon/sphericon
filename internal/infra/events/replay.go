@@ -47,7 +47,9 @@ type ReplayResult struct {
 // comes from one SELECT snapshot; there is no journal cursor and no commit-order assumption.
 // It never calls Publish, subscribers or general fan-out. Version, scope, bound and queue
 // errors leave no partial work. The Workspace key-share lock fences its final purge until commit.
-func (b *Bus) Replay(ctx context.Context, s *ent.Scoped, in ReplayRequest) (ReplayResult, error) {
+// The Workspace is named by its id (ADR 0043), the address an operator types: one that is unknown,
+// deleted or erased is ErrReplayWorkspaceUnavailable.
+func (b *Bus) Replay(ctx context.Context, publicID string, in ReplayRequest) (ReplayResult, error) {
 	var result ReplayResult
 	if in.From.IsZero() || in.Before.IsZero() || !in.From.Before(in.Before) {
 		return result, errors.New("events: replay requires a nonempty recorded-time interval")
@@ -63,15 +65,15 @@ func (b *Bus) Replay(ctx context.Context, s *ent.Scoped, in ReplayRequest) (Repl
 		return result, err
 	}
 	err = b.within(ctx, func(client *ent.Client, pub *txPublisher) error {
-		_, err := client.Workspace.Query().Where(workspace.ID(s.WorkspaceID()), workspace.DiscardedAtIsNil(), workspace.ErasedAtIsNil()).ForShare(journalLifetimeLock).Only(ctx)
+		workspaceID, err := client.Workspace.Query().Where(workspace.PublicID(publicID), workspace.DiscardedAtIsNil(), workspace.ErasedAtIsNil()).ForShare(journalLifetimeLock).OnlyID(ctx)
 		if ent.IsNotFound(err) {
-			return ErrReplayWorkspaceUnavailable
+			return fmt.Errorf("workspace %q: %w", publicID, ErrReplayWorkspaceUnavailable)
 		}
 		if err != nil {
 			return err
 		}
 		rows, err := client.EventJournalEntry.Query().Where(
-			eventjournalentry.WorkspaceID(s.WorkspaceID()),
+			eventjournalentry.WorkspaceID(workspaceID),
 			eventjournalentry.RecordedAtGTE(in.From), eventjournalentry.RecordedAtLT(in.Before),
 			func(selector *sql.Selector) {
 				selector.Where(sqljson.HasKey(eventjournalentry.FieldInputs, sqljson.Path(policy.kind)))
@@ -101,7 +103,7 @@ func (b *Bus) Replay(ctx context.Context, s *ent.Scoped, in ReplayRequest) (Repl
 			if err := json.Unmarshal(input.Args, &scope); err != nil {
 				return err
 			}
-			if scope.WorkspaceID != s.WorkspaceID() || args.Kind() != policy.kind {
+			if scope.WorkspaceID != workspaceID || args.Kind() != policy.kind {
 				return fmt.Errorf("events: retained input of %s has a different scope or kind", row.EventID)
 			}
 			params = append(params, river.InsertManyParams{Args: args})

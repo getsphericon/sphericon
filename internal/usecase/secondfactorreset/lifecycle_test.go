@@ -30,7 +30,7 @@ func TestLifecycleResetCancelsPendingEnrollment(t *testing.T) {
 	before, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 
-	err = env.SecondFactorReset.ResetByStaff(t.Context(), fixtures.OwnerJohnID, "cli")
+	err = env.SecondFactorReset.ResetByStaff(t.Context(), fixtures.OwnerJohnEmail, "cli")
 
 	require.NoError(t, err)
 	status, err := env.SecondFactor.Status(t.Context(), fixtures.OwnerJohnID)
@@ -46,7 +46,7 @@ func TestLifecycleResetNeverReusesAnEnrollmentIdentity(t *testing.T) {
 	env, c := setup(t)
 	first, err := env.SecondFactor.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
-	err = env.SecondFactorReset.ResetByStaff(t.Context(), fixtures.OwnerJohnID, "cli")
+	err = env.SecondFactorReset.ResetByStaff(t.Context(), fixtures.OwnerJohnEmail, "cli")
 	require.NoError(t, err)
 	second, err := env.SecondFactor.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestLifecycleConfirmationCannotUndoAReset(t *testing.T) {
 		result <- err
 	}()
 	testhelper.Receive(t, ready, "confirmation checked the secret before reset")
-	err = r.reset.ResetByStaff(t.Context(), fixtures.OwnerJohnID, "cli")
+	err = r.reset.ResetByStaff(t.Context(), fixtures.OwnerJohnEmail, "cli")
 	require.NoError(t, err)
 	release()
 
@@ -149,7 +149,7 @@ func TestLifecycleRegenerationCannotRecreateCodesAfterReset(t *testing.T) {
 		result <- err
 	}()
 	testhelper.Receive(t, ready, "regeneration checked the active factor")
-	err := r.reset.ResetByStaff(t.Context(), fixtures.SecondFactorSamID, "cli")
+	err := r.reset.ResetByStaff(t.Context(), fixtures.SecondFactorSamEmail, "cli")
 	require.NoError(t, err)
 	release()
 

@@ -86,16 +86,21 @@ coding standards in `CODING_STANDARDS.md`.
 - **Package boundaries are checked by easement (`easement.yml`, `mise run check:arch`).** A surface
   package (`internal/api/{site,external,collect,staff}`) never imports another surface, the core (`internal/{kernel,infra,domain,usecase}`)
   imports neither a surface nor `ee/`, and only the wiring packages (`internal/app`,
-  `internal/server`, `internal/testhelper`, `internal/doctor`, `internal/healthcheck`,
-  `cmd/server`) assemble them; only they import `ee/`. Inside `ee/`, the Enterprise surfaces (`ee/api/**`,
+  `internal/server`, `internal/testhelper`, `internal/doctor`, `internal/healthcheck`) assemble
+  them; only they import `ee/`, and the command line its Service credentials. Inside `ee/`, the Enterprise surfaces (`ee/api/**`,
   component `ee-api`) call an Enterprise use case or domain module and hold neither the raw client
   nor the container, and only the Edition (`ee/ee.go`, component `ee-edition`) builds them: no
   Enterprise module imports a handler (see "Enterprise Edition layout" below). The drivers (ADR 0102) are the API surfaces, their shared security
   handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), MCP (`internal/mcpserver`,
-  component `mcp`, with the surfaces' rules), the job runner (`internal/jobs`, component `runner`)
-  and the Enterprise job runner (`ee/jobs`, component `ee-runner`, with the runner's rules, ADR 0111):
-  each receives input, calls a domain module or a use case and returns or records the result (review
-  rule 5), and no core tier imports one. Only the wiring imports MCP and the runners, and it hands the
+  component `mcp`, with the surfaces' rules), the job runner (`internal/jobs`, component `runner`),
+  the Enterprise job runner (`ee/jobs`, component `ee-runner`, with the runner's rules, ADR 0111)
+  and the command line (the `sphericon` binary's commands in `cmd/server` and their driver package
+  `internal/commandline`, which holds what they print, component `cli`, ADR 0111): each receives
+  input, calls a domain module or a use case and returns or records the result (review rule 5), and
+  no core tier imports one. A command takes the modules and use cases it calls from the command app
+  (`app.NewCommandApp`), whose accessors build each from the container only when a command asks for
+  it; the command line is the one driver that imports the wiring, and it holds neither the raw client
+  nor the container. Only the wiring imports MCP and the runners, and it hands the
   Enterprise runner's jobs to the core's job client as a `jobextension.Extension`; the Edition
   (`ee/ee.go`) schedules nothing and imports no river. A domain module or a use case does the work as a function
   and may queue a job (its args, river's insert), but declares no worker and no periodic job: a
@@ -143,7 +148,9 @@ coding standards in `CODING_STANDARDS.md`.
   is no catch-all for the rest of `internal/`: a new package elsewhere there fails the check until
   it is put in a tier, a context or a component of its own (the drivers, the wiring, `tools` for
   the packages of the repository's commands under `cmd/`, `testsupport` for what the tests share
-  below the harness), and a new top-level tree must be assigned a component or listed as `unowned`
+  below the harness). A command under `cmd/` is the driver `cli` (`cmd/server`) or one of the
+  repository's own (`commands`: the generators, the CI checks, the development database and the
+  seeding), and a new top-level tree must be assigned a component or listed as `unowned`
   in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
   `*ent.Client` list (the contexts' `domain-<context>-raw`, `infra-raw` and `usecase-raw`,
@@ -523,7 +530,7 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   transaction, which the use case `signup` opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its
   token, the only handle, before any Workspace is known; issuing and revoking take the Workspace's scope), `internal/domain/identity/workspaces` (the Workspace row, ADR 0043, ADR 0102: it is the
   tenant, not a tenant-owned entity, so the scoped client has no wrapper for it; a setting is written on the Workspace a
-  scope names, and the command line resolves a Workspace id), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
+  scope names, and a suspension from the command line resolves a Workspace id in its transaction, `workspaces.IDByPublicIDIn`), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
   the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
   several Workspaces), `internal/api/auth` (credentials, token and key lookup),
   `internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes,
@@ -662,7 +669,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   use case imports domain modules only, calls no unchecked removal of the core (unlike a core use
   case) and is imported only by `ee/api`, the Edition and the wiring. The boundary with the core is
   unchanged: no core component may import an `ee` component, and each `ee` component names its
-  importers.
+  importers; the command line (`cli`) may import the Service credentials, which only it issues,
+  rotates and revokes (ADR 0026).
 - **Owners and suspension are defined once.** `internal/domain/identity/memberships` owns "Owner of a
   Workspace": `Owners`, `OwnersOf`, `LockOwners`, `IsOwner`, `OwnerRole`;
   `internal/domain/identity/suspension` owns "suspended" (`Is`, `Suspended`, `NotSuspended`,
@@ -732,7 +740,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   reads and deletes. Only consumers with a `Replay` policy retain versioned anonymous job args,
   initially message observations and Broadcast unsubscribe attribution. The original envelope,
   personal source keys and arbitrary request ids are never copied. `Bus.Replay` selects one
-  supported consumer and a bounded recorded-time interval, validates versions and scope and
+  supported consumer and a bounded recorded-time interval of the Workspace an operator names by
+  its id (`sphericon events replay`), validates versions and scope and
   queues its normal jobs atomically; it never publishes or runs mandatory subscribers. History
   has no automatic expiry. Contact Erasure preserves anonymous report inputs; Workspace erasure
   drains its history in batches, then fences publication and replay's `FOR KEY SHARE` locks with

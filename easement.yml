@@ -329,15 +329,7 @@ components:
 
   # The wiring: the places that may build the whole program, and so may reach the Enterprise Edition.
   wiring:
-    in:
-      [
-        internal/app,
-        internal/server,
-        internal/testhelper,
-        internal/doctor,
-        internal/healthcheck,
-        cmd/server,
-      ]
+    in: [internal/app, internal/server, internal/testhelper, internal/doctor, internal/healthcheck]
 
   # The Enterprise Edition (ADR 0014, ADR 0102) has the core's shape: its domain modules in
   # ee/domain/<context>/<module>, its use cases in ee/usecase/<name>, its surfaces in ee/api and
@@ -413,9 +405,10 @@ components:
         ee-usecase-raw,
         ee-api,
         ee-edition,
+        cli,
         wiring,
       ]
-    because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context and above, the Edition and the wiring; the core never imports the Enterprise Edition
+    because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context and above, the Edition and the wiring, and the Service credentials by the command line, the only way one is issued, rotated or revoked (ADR 0026); no other core package imports the Enterprise Edition
   ee-domain-identity:
     in: 'ee/domain/identity/**'
     optional: true
@@ -485,6 +478,15 @@ components:
     in: internal/jobs
     allow_importers: [wiring]
     because: the job runner is a driver (ADR 0102) that only the wiring builds; no domain module imports it, and a package with jobs of its own hands them in as a jobextension.Extension
+  # The command line (ADR 0111): the `sphericon` binary's commands (cmd/server), a driver like the
+  # surfaces, and its driver package (internal/commandline), which holds what they print. A command
+  # reads its arguments, calls one operation of a domain module or a use case and prints the result;
+  # the program it calls is the one the wiring builds (the command app of internal/app), so it is
+  # the one driver that imports the wiring.
+  cli:
+    in: [cmd/server, internal/commandline]
+    allow_importers: []
+    because: the command line is a driver (ADR 0111); nothing imports it
 
   # The use cases (ADR 0102, ADR 0112): an operation whose subject's owner would have to call a
   # module above it, or that no single module can own, such as deleting a Tag after the Removal
@@ -494,8 +496,9 @@ components:
   usecase:
     in: internal/usecase/*
     isolated: true
-    allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
-    because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
+    allow_importers:
+      [api-site, api-external, api-collect, api-staff, api-oauth, runner, cli, wiring]
+    because: a use case is called by a driver (an API surface, MCP, a job, a command) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
   # *ent.Scoped to take: the Second factor reset of a User, the deletion cycle of a Workspace,
   # which lists the Workspaces that have no scope yet, the creation of a Workspace, the Sign-up
@@ -513,8 +516,9 @@ components:
         'internal/usecase/noticedelivery*',
       ]
     isolated: true
-    allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
-    because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
+    allow_importers:
+      [api-site, api-external, api-collect, api-staff, api-oauth, runner, cli, wiring]
+    because: a use case is called by a driver (an API surface, MCP, a job, a command) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
 
   # The domain tier (ADR 0102) is internal/domain/<context>/<module>, the contexts ordered from
   # the bottom: identity -> contacts -> content -> sending -> orchestration -> insights -> instance.
@@ -693,6 +697,11 @@ components:
   gen-surfaces: { in: gen }
   gen-telemetry: { in: gen/telemetry }
 
+  # The repository's own commands under cmd/ that are not the application: the generators, the CI
+  # checks, the development database and the seeding. The `sphericon` binary is the driver `cli`.
+  commands:
+    in: 'cmd/*'
+    isolated: true
   # The packages behind the repository's own commands under cmd/ that are not the application: the
   # generators (scopegen, the fixture catalog, goverter's enum transformer) and the CI checks
   # (contractcopy, prcheck, upgradecheck). No tier, no driver and no wiring imports one.
@@ -706,7 +715,7 @@ components:
         internal/scopegen,
         internal/upgradecheck,
       ]
-    allow_importers: []
+    allow_importers: [commands]
     because: a tool package serves a command of the repository under cmd/ (a generator or a CI check), never the application
   # What tests share below the harness: the committed fixtures' loader and catalog (fixtures, which
   # cmd/seed also loads into the development database), an in-process DNS server (dnstest) and the
@@ -714,8 +723,8 @@ components:
   # only the harness is a checked importer.
   testsupport:
     in: [internal/fixtures, internal/dnstest, internal/telemetryschema]
-    allow_importers: [wiring]
-    because: test support serves the tests and the harness (internal/testhelper), and the seeding command; no tier and no driver imports it
+    allow_importers: [wiring, commands]
+    because: test support serves the tests and the harness (internal/testhelper), and the seeding command (cmd/seed); no tier and no driver imports it
 
 # Every component may use the infrastructure (publish through the bus, among others) and the kernel,
 # and import the generated ent client.
@@ -990,6 +999,25 @@ rules:
     forbid_external: *no-container
     forbid_symbol: *runner-forbids
     because: the job runner calls the core and the use cases, never a surface or the Enterprise Edition; the Enterprise runner (ee/jobs) hands its jobs in through the wiring
+  cli:
+    may_depend_on:
+      [
+        wiring,
+        domain-identity-raw,
+        domain-identity-users,
+        domain-sending,
+        domain-instance,
+        ee-domain-identity-raw,
+        usecase,
+        usecase-raw,
+      ]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: a command receives its arguments, calls one operation of a domain module or a use case and prints the result (review rule 5, ADR 0111); it takes them from the command app the wiring builds, never the raw client or the container, and of the Enterprise Edition it reaches only the Service credentials
+  commands:
+    may_depend_on: [tools, testsupport]
+    forbid_external: *no-container
+    because: a command of the repository runs a generator, a CI check or the development database, never the application
   infra:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
@@ -1211,7 +1239,6 @@ unowned:
   - tools/**
   - packages/**
   - mise/**
-  - cmd/**
   - e2e/**
   # The TypeSpec contract's decorators (ADR 0069), loaded by the TypeSpec compiler.
   - typespec/**

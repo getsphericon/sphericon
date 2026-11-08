@@ -1,4 +1,9 @@
-package app
+// Package commandline is the command line's driver package (ADR 0111): what the commands of the
+// `sphericon` binary (cmd/server) print, and the keyset changes they make. A command reads its
+// arguments, calls one operation of a domain module or a use case, which returns a value
+// (ADR 0104), and writes it here; this package is where that logic is tested, since a command has
+// none.
+package commandline
 
 import (
 	"errors"
@@ -7,21 +12,18 @@ import (
 	"text/tabwriter"
 
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 )
 
-// The reports and keyset changes of the CLI's commands over a use case (ADR 0104): the use case
-// returns a value, and the command writes it here, beside the operations the CLI calls on the
-// App.
-
 // ReportSecondFactorReset reports `sphericon user reset-second-factor` of the User with email:
-// whether their Second factor was cleared, or they had none.
-func ReportSecondFactorReset(w io.Writer, email string, changed bool, err error) error {
-	if err != nil {
-		return err
-	}
-	if !changed {
+// whether their Second factor was cleared, or they had none (secondfactorreset.ErrNothingToReset).
+func ReportSecondFactorReset(w io.Writer, email string, err error) error {
+	if errors.Is(err, secondfactorreset.ErrNothingToReset) {
 		_, _ = fmt.Fprintf(w, "user %q has no second factor; nothing changed\n", email)
 		return nil
+	}
+	if err != nil {
+		return err
 	}
 	_, _ = fmt.Fprintf(w, "second factor of %q reset: the factor and recovery codes are cleared and every session has ended\n", email)
 	return nil
