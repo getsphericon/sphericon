@@ -14,13 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 func TestExternalContactsEraseRemovesUnsentBroadcastRecipients(t *testing.T) {
@@ -82,7 +82,7 @@ func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: erasedID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Action: "x"})
-	env.EnqueueJob(t, stepexecution.RunStepArgs{RunID: fixtures.AutomationRunErasableID})
+	env.EnqueueJob(t, automations.RunStepArgs{RunID: fixtures.AutomationRunErasableID})
 	env.EnqueueJob(t, jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
 	env.EnqueueJob(t, jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientBystanderPendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
 
@@ -97,7 +97,7 @@ func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 	for _, args := range evaluate {
 		assert.EqualValues(t, bystanderID, args["contact_id"])
 	}
-	assert.Empty(t, env.JobsOf(t, stepexecution.RunStepArgs{}.Kind()))
+	assert.Empty(t, env.JobsOf(t, automations.RunStepArgs{}.Kind()))
 	recipients := env.JobsOf(t, jobs.SendRecipientArgs{}.Kind())
 	require.Len(t, recipients, 1)
 	assert.EqualValues(t, fixtures.BroadcastRecipientBystanderPendingID, recipients[0]["recipient_id"])
@@ -139,7 +139,7 @@ func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *tes
 		fixtures.AutomationRunErasableID, fixtures.AutomationRunErasableHTTPFailedID,
 		fixtures.AutomationRunBystanderHTTPFailedID, fixtures.AutomationRunHTTPFailedID,
 	} {
-		env.EnqueueJob(t, stepexecution.RunHTTPStepArgs{RunID: id})
+		env.EnqueueJob(t, automations.RunHTTPStepArgs{RunID: id})
 	}
 
 	eraseErasable(t, env)

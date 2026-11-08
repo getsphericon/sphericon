@@ -1,4 +1,4 @@
-package stepexecution
+package automations
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
@@ -35,7 +34,7 @@ type ExecuteHTTPInput struct {
 // Enrollment's exit fence, then advances or fails the Enrollment. The adapter supplies only the
 // Workspace scope and the ordinary attempt data. An accepted request whose advancement fails can
 // be repeated; external delivery is not exactly-once.
-func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTPInput) (HTTPExecution, error) {
+func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTPInput) (HTTPExecution, error) {
 	step, attempt := in.Step, in.Attempt
 	run, err := s.AutomationRun().Get(ctx, in.RunID)
 	if ent.IsNotFound(err) {
@@ -44,9 +43,9 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTP
 	if err != nil {
 		return HTTPExecution{}, err
 	}
-	if active, err := automations.IsActive(ctx, s, run.ID); err != nil {
+	if live, err := isActive(ctx, s, run.ID); err != nil {
 		return HTTPExecution{}, err
-	} else if !active || run.CurrentStep != step {
+	} else if !live || run.CurrentStep != step {
 		return HTTPExecution{}, nil
 	}
 	version, err := s.AutomationVersion().Get(ctx, run.VersionID)
@@ -55,7 +54,7 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTP
 	}
 	steps, err := automationstep.Decode(version.Steps)
 	if err != nil {
-		return m.failHTTP(ctx, s, run.ID, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, HTTPExecution{Cancel: err})
+		return m.failHTTP(ctx, s, run.ID, failure{Kind: automationrun.FailureKindInvalidBody}, HTTPExecution{Cancel: err})
 	}
 	if step < 0 || step >= len(steps) || steps[step].Type != automationstep.HTTP {
 		return HTTPExecution{}, nil
@@ -68,13 +67,13 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTP
 	if err != nil {
 		return HTTPExecution{}, err
 	}
-	opened, err := automations.OpenHTTP(m.cipher, st)
+	opened, err := openHTTP(m.cipher, st)
 	if err != nil {
 		return HTTPExecution{}, err
 	}
-	body, err := automations.RenderBody(st.Body, c, run)
+	body, err := renderBody(st.Body, c, run)
 	if err != nil {
-		return m.failHTTP(ctx, s, run.ID, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, HTTPExecution{Cancel: err})
+		return m.failHTTP(ctx, s, run.ID, failure{Kind: automationrun.FailureKindInvalidBody}, HTTPExecution{Cancel: err})
 	}
 	// An exit committed before this fence prevents the call; an exit during it waits until
 	// the call returns. Release it before the lifecycle move, which takes the row's write lock.
@@ -84,11 +83,11 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTP
 			ID: fmt.Sprintf("automation_%d_%d", run.ID, step),
 		})
 	})
-	if automations.Stale(sendErr) {
+	if stale(sendErr) {
 		return HTTPExecution{}, nil
 	}
 	if sendErr == nil {
-		return HTTPExecution{}, m.advance(ctx, s, run.ID, step, move{})
+		return HTTPExecution{}, m.advance(ctx, s, run.ID, step, stepMove{})
 	}
 	decision := httpcall.OneOff.Decide(sendErr, attempt, m.now())
 	switch {
@@ -98,13 +97,13 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTP
 		return HTTPExecution{Retry: sendErr}, nil
 	case decision.Reason == httpcall.AttemptsExhausted:
 		// The last attempt fails as an ordinary one, and the queue ends it as exhausted.
-		return m.failHTTP(ctx, s, run.ID, automations.FailureOfDelivery(sendErr), HTTPExecution{Retry: sendErr})
+		return m.failHTTP(ctx, s, run.ID, failureOfDelivery(sendErr), HTTPExecution{Retry: sendErr})
 	}
-	return m.failHTTP(ctx, s, run.ID, automations.FailureOfDelivery(sendErr), HTTPExecution{Cancel: sendErr})
+	return m.failHTTP(ctx, s, run.ID, failureOfDelivery(sendErr), HTTPExecution{Cancel: sendErr})
 }
 
-func (m *UseCase) failHTTP(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure, decision HTTPExecution) (HTTPExecution, error) {
-	if err := quiet(automations.Fail(ctx, s, runID, m.now(), f)); err != nil {
+func (m *StepExecution) failHTTP(ctx context.Context, s *ent.Scoped, runID int64, f failure, decision HTTPExecution) (HTTPExecution, error) {
+	if err := quiet(failRun(ctx, s, runID, m.now(), f)); err != nil {
 		return HTTPExecution{}, err
 	}
 	return decision, nil

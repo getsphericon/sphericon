@@ -16,10 +16,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 const slackBody = `{"text": "New signup: {{ first_name }} {{ last_name }}", "email": "{{ email }}"}`
+
+// openStored decrypts a stored HTTP step's URL, header values and secret, as its call opens them.
+func openStored(cipher *secrets.Cipher, s automationstep.Step) (httpcall.Opened, error) {
+	return httpcall.Open(cipher, httpcall.Spec{URL: s.URL, Headers: s.Headers, Secret: s.Secret})
+}
 
 func httpStep(url string) automationstep.Step {
 	return automationstep.Step{Type: automationstep.HTTP, URL: url, Body: slackBody}
@@ -120,7 +126,7 @@ func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 	a, err := m.Get(context.Background(), acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
 	steps := liveSteps(t, a)
-	opened, err := automations.OpenHTTP(env.Cipher, steps[0])
+	opened, err := openStored(env.Cipher, steps[0])
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T000/B000/XXXX", opened.URL)
 	assert.Equal(t, "Bearer slack-demo-token", opened.Headers["Authorization"])
@@ -163,7 +169,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	assert.Equal(t, stored[1].Headers, after[0].Headers)
 	assert.Equal(t, `{"edited":true}`, after[0].Body)
 
-	opened, err := automations.OpenHTTP(env.Cipher, after[0])
+	opened, err := openStored(env.Cipher, after[0])
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T000/SECRETPATH", opened.URL)
 	assert.Equal(t, map[string]string{"Authorization": "Bearer hunter2"}, opened.Headers)
@@ -177,7 +183,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automationstep.Step{replace}})
 	require.NoError(t, err)
 	after = draftSteps(t, updated)
-	opened, err = automations.OpenHTTP(env.Cipher, after[0])
+	opened, err = openStored(env.Cipher, after[0])
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.zapier.com/a", opened.URL)
 	assert.Equal(t, map[string]string{"X-Key": "k"}, opened.Headers)

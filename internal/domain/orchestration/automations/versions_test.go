@@ -92,9 +92,10 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	assert.Equal(t, "hold_demo_edited", draft.TriggerEvent, "the second edit keeps the draft's Trigger")
 	assert.Equal(t, []int{1, 2}, versionsOf(t, env, fixtures.AutomationHoldDemoID), "one draft, rewritten in place")
 
-	runID, enrolled, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, time.Now())
+	enrolled, err := enrollNow(t, env, acme, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
+	runID := runOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	assert.Equal(t, 1, versionOfRun(t, env, runID), "the Enrollment begins on the live version")
 }
 
@@ -122,8 +123,9 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	first, _, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, time.Now())
+	_, err := enrollNow(t, env, acme, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	require.NoError(t, err)
+	first := runOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	edited := []automationstep.Step{{Type: automationstep.Wait, Seconds: 99}}
 	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &edited})
 	require.NoError(t, err)
@@ -135,8 +137,9 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 	_, draft := automations.LiveAndDraft(published)
 	assert.Nil(t, draft, "the draft became live")
 
-	second, _, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactBobID, time.Now())
+	_, err = enrollNow(t, env, acme, fixtures.AutomationHoldDemoID, fixtures.ContactBobID)
 	require.NoError(t, err)
+	second := runOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactBobID)
 	assert.Equal(t, 2, versionOfRun(t, env, second), "the next Enrollment follows the new version")
 	assert.Equal(t, 1, versionOfRun(t, env, first), "the Enrollment in flight stays on its version")
 	assert.Equal(t, []int{1, 2}, versionsOf(t, env, fixtures.AutomationHoldDemoID))
@@ -145,7 +148,7 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 // A never-published Automation enrolls nobody: it has no live version.
 func TestANeverPublishedAutomationEnrollsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, _, err := automations.Enroll(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationWinBackID, fixtures.ContactAliceID, time.Now())
+	_, err := enrollNow(t, env, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWinBackID, fixtures.ContactAliceID)
 	require.ErrorIs(t, err, automations.ErrNoVersion)
 }
 

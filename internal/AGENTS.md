@@ -105,21 +105,23 @@ Removal check reads under the Workspace lock, `internal/usecase/customfieldretyp
 edit's, `internal/usecase/integrationdeletion` the Integration's and
 `internal/usecase/sendingdomaindeletion` the Sending domain's, while what the Removal check finds is
 tested in `internal/domain/orchestration/removalcheck` against `env.RemovalCheck`,
-`internal/usecase/sendingdomainverification` the Sending domain checks, `internal/usecase/stepexecution` the
-steps of an Enrollment, `internal/usecase/secretreencryption` the re-encryption of every stored
+`internal/usecase/sendingdomainverification` the Sending domain checks, `internal/usecase/secretreencryption` the re-encryption of every stored
 secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
 `internal/usecase/visitoridentification` what Identify binds and stitches). An operation that moves
 into the module that owns its subject (ADR 0112) takes its tests to that module's `_test` package:
 `internal/domain/contacts/contacts` holds an import's rows (`UpsertBatch`) and
 `internal/domain/sending/outboundmessages` the refusals of a Transactional send
 (`SendTransactional`), `internal/domain/instance/instancestates` the Release check and the
-Telemetry report, and `internal/domain/contacts/eventrecording` what the Event recording refuses and
-publishes. The use case is built from the container like a
+Telemetry report, `internal/domain/contacts/eventrecording` what the Event recording refuses and
+publishes, and `internal/domain/orchestration/automations` the steps of an Enrollment
+(`StepExecution`). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step
-execution is `env.StepExecution`, for a test of how the Instance builds it (its clock); a test that
-drives an Automation over senders of its own still builds one with `New`. The Release check and
+execution is `env.StepExecution`, for a test of how the Instance builds it (its clock) and for a test
+that hands it an Event (`OnEvent`), a Rule's enrollment (`EnrollOnRule`) or a step; a test that
+drives an Automation over senders, a fence or a clock of its own builds one with
+`automations.NewStepExecution`. The Release check and
 the Telemetry report are the Instance state module's: a test builds it with `instancestates.New(env.DB,
 …)`, passing its stub of the release source or the receiver's client, or nil where the operation is
 not exercised, and the server's own is `env.Instance`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
@@ -136,8 +138,7 @@ its driver `internal/api/oauth` serves and tests.
 The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test
 of a race on a new address gives it a `Lookup` whose first lookup misses.
 A use case reads the time from the clock `New` takes (ADR 0104), so a test that needs a moment
-builds it with a clock it controls; the container's Step execution use case is `env.StepExecution`,
-for a test that hands it an Event or a Rule's enrollment.
+builds it with a clock it controls.
 
 ## Fixture catalog
 

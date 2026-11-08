@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -35,6 +36,6 @@ func TestFenceRunsNothingOnAnExitedEnrollment(t *testing.T) {
 		return nil
 	})
 
-	require.True(t, automations.Stale(err))
+	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	assert.False(t, ran)
 }

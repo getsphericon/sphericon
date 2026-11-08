@@ -260,7 +260,10 @@ coding standards in `CODING_STANDARDS.md`.
   the module's own `Send`; and the Release check and the Telemetry report of the whole Instance are
   `instancestates.Module`'s (`CheckRelease`, `ReleaseFor`, `TelemetryReport`,
   `SendTelemetryReport`), with their outside parties, the release source and the receiver's client,
-  handed in by the wiring as parameters of `instancestates.New`. An operation whose subject
+  handed in by the wiring as parameters of `instancestates.New`; and the Step execution of an
+  Enrollment is `automations.StepExecution` (`NewStepExecution`, beside the Automation's lifecycle as
+  the Broadcast's delivery is `broadcasts.Delivery`), which applies a tag step's Tag through
+  `contacts` and sends a send step through the Outbound send. An operation whose subject
   no domain module owns, and which needs only one context, is a domain module of that context
   without a table: the Event recording (`internal/domain/contacts/eventrecording`) resolves each
   Event's Contact through `contacts`, checks an order Event through `orders` and publishes the
@@ -268,8 +271,7 @@ coding standards in `CODING_STANDARDS.md`.
   case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
   states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
   `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
-  included: the Sending domain re-check jobs call `sendingdomainverification`, the step jobs of an
-  Enrollment `stepexecution`). It takes the
+  included: the Sending domain re-check jobs call `sendingdomainverification`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
   `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Enrollment's exit and anonymous attribution work), reads them, and changes their rows only through their functions
@@ -758,7 +760,7 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   subscription (`httpcall.Subscription`): it retries any failure until its attempts run out. Each
   caller keeps only its own side effects: the failure it records, and the snooze, cancellation or
   retry its job turns the decision into.
-- **Automation HTTP Steps**: `stepexecution.UseCase.ExecuteHTTP` (`internal/usecase/stepexecution`) selects the Enrollment's pinned Step,
+- **Automation HTTP Steps**: `automations.StepExecution.ExecuteHTTP` (`internal/domain/orchestration/automations`) selects the Enrollment's pinned Step,
   checks its lifecycle and position, opens and renders its stored call, and executes it through
   the protected HTTP adapter under the Enrollment's exit fence. Success advances and queues the
   next Step in one transaction; final failure records the Enrollment's failure. The one-off
@@ -770,7 +772,7 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
 - **Rule HTTP Actions**: `rules.Module.ExecuteHTTP` selects the pending Action of a Firing,
   opens its secrets, renders its Contact and Event, executes the protected call and records the
   result. The module holds the protected HTTP adapter and the Instance clock from `rules.New`, as
-  the use case does from `stepexecution.New`; each call receives only ordinary attempt data
+  the Step execution does from `automations.NewStepExecution`; each call receives only ordinary attempt data
   (`httpcall.Attempt`) and returns a retry or wait decision without River types. The River
   worker loads the Firing to establish Workspace scope and translates that decision. A final
   failure belongs to the Action's result; it does not cancel the Firing's other Actions or adopt

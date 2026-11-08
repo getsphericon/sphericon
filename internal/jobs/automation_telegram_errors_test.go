@@ -13,12 +13,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // What Telegram answers at send time is sorted by whom it concerns (ADR 0079): the bot, the rate,
@@ -143,7 +143,7 @@ func TestATelegramIntegrationNotHeldSavedWithTheSameTokenChangesNothing(t *testi
 
 // heldTelegram connects a bot whose Enrollment waits at a step held by Telegram's 401 on the send:
 // the token itself stays known to Telegram, which refuses sends until the test clears the script.
-func heldTelegram(t *testing.T, env *testhelper.TestEnv) (testhelper.TelegramBot, int64, *stepexecution.UseCase) {
+func heldTelegram(t *testing.T, env *testhelper.TestEnv) (testhelper.TelegramBot, int64, *automations.StepExecution) {
 	t.Helper()
 	bot := env.AcmeTelegram(t)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555101, 555101)
@@ -206,7 +206,7 @@ func TestATelegramTooManyRequestsDefersTheStepAndItSendsLater(t *testing.T) {
 	require.True(t, env.RunNextStep(t, mod))
 
 	assert.Equal(t, automationrun.StatusActive, env.DB.AutomationRun.GetX(ctx, runID).Status)
-	jobs := env.JobRowsOf(t, stepexecution.RunStepArgs{}.Kind())
+	jobs := env.JobRowsOf(t, automations.RunStepArgs{}.Kind())
 	require.Len(t, jobs, 1)
 	assert.GreaterOrEqual(t, jobs[0].ScheduledAt.Sub(before), 120*time.Second, "not before retry_after")
 

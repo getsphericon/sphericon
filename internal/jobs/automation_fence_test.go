@@ -31,7 +31,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // noFence is the Fencer of the ordinary tests, whose database is one transaction on one
@@ -115,18 +114,34 @@ func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) ev
 	return bus
 }
 
-// stepper is the Step execution use case over a provider that sends through sender.
-func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepexecution.UseCase {
+// stepper is the Step execution over a provider that sends through sender.
+func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *automations.StepExecution {
 	t.Helper()
 	bus := e.bus(t)
 	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
-	return stepexecution.New(bus, mod, e.fence, nil, nil, time.Now)
+	return automations.NewStepExecution(bus, mod, e.fence, nil, nil, time.Now)
 }
 
-// enrollments is the Step execution use case over bus for a race that hands it an Event: it ends
+// enrollments is the Step execution over bus for a race that hands it an Event: it ends
 // and makes Enrollments on that bus's own connection, and runs no step.
-func (e *realEnv) enrollments(bus *events.Bus) *stepexecution.UseCase {
-	return stepexecution.New(bus, nil, e.fence, nil, nil, time.Now)
+func (e *realEnv) enrollments(bus *events.Bus) *automations.StepExecution {
+	return automations.NewStepExecution(bus, nil, e.fence, nil, nil, time.Now)
+}
+
+// enrolledNow enrolls the Contact in the Automation as a Rule whose Event is no longer stored does
+// (the Enrollment begins now and no Event began it), and returns the Enrollment.
+func (e *realEnv) enrolledNow(t *testing.T, automationID, contactID int64) int64 {
+	t.Helper()
+	ctx := context.Background()
+	in := automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID}
+	enrolled, err := e.enrollments(e.bus(t)).EnrollOnRule(ctx, e.scoped, in)
+	require.NoError(t, err)
+	require.True(t, enrolled)
+	run, err := e.client.AutomationRun.Query().
+		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID)).
+		Only(ctx)
+	require.NoError(t, err)
+	return run.ID
 }
 
 // runRowIsLocked reports whether another writer would have to wait for the Enrollment's row:
@@ -157,9 +172,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	bs := newBlockingSender()
 	t.Cleanup(bs.release) // a failed assertion must not leave the send blocked
 	stepper := e.stepper(t, bs)
-	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID, time.Now())
-	require.NoError(t, err)
-	require.True(t, enrolled)
+	runID := e.enrolledNow(t, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
 
 	stepDone := make(chan error, 1)
 	go func() {
@@ -220,16 +233,14 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	// The edit is a draft until it is published (ADR 0065); the Enrollment begins on the live one.
 	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
-	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID, time.Now())
-	require.NoError(t, err)
-	require.True(t, enrolled)
-	w := jobs.NewRunHTTPStepWorker(e.client, stepexecution.New(bus, nil, e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now))
+	runID := e.enrolledNow(t, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
+	w := jobs.NewRunHTTPStepWorker(e.client, automations.NewStepExecution(bus, nil, e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now))
 
 	workDone := make(chan error, 1)
 	go func() {
-		workDone <- w.Work(workCtx, &river.Job[stepexecution.RunHTTPStepArgs]{
-			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: stepexecution.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
-			Args:   stepexecution.RunHTTPStepArgs{RunID: runID},
+		workDone <- w.Work(workCtx, &river.Job[automations.RunHTTPStepArgs]{
+			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: automations.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
+			Args:   automations.RunHTTPStepArgs{RunID: runID},
 		})
 	}()
 	<-started
@@ -238,7 +249,8 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	exited := make(chan error, 1)
 	pub := testhelper.PublisherOn(e.bus(t))
 	go func() {
-		exited <- automations.ExitRun(ctx, e.scoped, pub, runID, time.Now())
+		_, err := automations.Exit(ctx, e.scoped, pub, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID, time.Now())
+		exited <- err
 	}()
 	release()
 

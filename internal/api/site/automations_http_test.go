@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -56,7 +56,8 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 
 	steps, err := automationstep.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
-	opened, err := automations.OpenHTTP(env.Cipher, steps[0])
+	stored := httpcall.Spec{URL: steps[0].URL, Headers: steps[0].Headers, Secret: steps[0].Secret}
+	opened, err := httpcall.Open(env.Cipher, stored)
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T0/SECRETPATH", opened.URL)
 	assert.Equal(t, "Bearer hunter2", opened.Headers["Authorization"])

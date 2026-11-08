@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -35,7 +36,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -86,7 +86,7 @@ type Deps struct {
 	// (ADR 0010, ADR 0071); verified is a live property.
 	SendingDomainVerification *sendingdomainverification.UseCase
 	// StepExecution executes the steps of the Enrollments (the run_step and http_step jobs).
-	StepExecution   *stepexecution.UseCase
+	StepExecution   *automations.StepExecution
 	JoinDomains     *joindomains.Module
 	TrackingDomains *trackingdomains.Module
 	Machine         *privaterelayranges.Detector
@@ -233,10 +233,10 @@ func WorkerConfig(client *ent.Client) *river.Config {
 // Queues are the queues the worker client works, each with its number of workers.
 func Queues() map[string]river.QueueConfig {
 	return map[string]river.QueueConfig{
-		river.QueueDefault:           {MaxWorkers: 5},
-		broadcasts.Queue:             {MaxWorkers: 10},
-		QueueWebhooks:                {MaxWorkers: 5},
-		stepexecution.QueueHTTPSteps: {MaxWorkers: 5},
+		river.QueueDefault:         {MaxWorkers: 5},
+		broadcasts.Queue:           {MaxWorkers: 10},
+		QueueWebhooks:              {MaxWorkers: 5},
+		automations.QueueHTTPSteps: {MaxWorkers: 5},
 		// The domain events' consumers (ADR 0101): short jobs, most of which only queue more.
 		events.QueueEvents: {MaxWorkers: 10},
 	}

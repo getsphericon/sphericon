@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // recordingSenders resolves every Integration to fs and records which one each send went through.
@@ -55,7 +54,7 @@ func TestAnEditWithoutThePublishScopeChangesNothingThatSends(t *testing.T) {
 	ctx := t.Context()
 	editGreeting(t, env.ExternalScoped(t, "automations:read", "automations:write"))
 
-	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID), "the draft's Trigger enrolls nobody")
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
@@ -82,7 +81,7 @@ func TestAfterPublishTheNextEnrollmentFollowsTheNewVersion(t *testing.T) {
 	_, err := publisher.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
 	require.NoError(t, err)
 
-	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), stepexecution.OnEventInput{ContactID: fixtures.ContactBobID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactBobID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
 	next := enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID)
 	require.Len(t, next, 1, "the published Trigger enrolls")
 

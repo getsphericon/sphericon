@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
@@ -60,7 +61,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
 	// The pgx driver behind database/sql.
@@ -230,11 +230,11 @@ type TestEnv struct {
 	// SignUp is the use case the server signs Users up with and makes them Verified with their
 	// first Workspace, an Owner made from a shell among them (ADR 0102).
 	SignUp *signup.UseCase
-	// StepExecution is the use case the Instance runs an Enrollment's steps with, on the env's
-	// clock (ADR 0102). A test that drives an Automation over senders of its own builds one with
-	// stepexecution.New instead. A test hands it an Event (OnEvent) or a Rule's enrollment
-	// (EnrollOnRule) too.
-	StepExecution *stepexecution.UseCase
+	// StepExecution is the Automations module's Step execution the Instance runs an Enrollment's
+	// steps with, on the env's clock (ADR 0112). A test that drives an Automation over senders of its
+	// own builds one with automations.NewStepExecution instead. A test hands it an Event (OnEvent)
+	// or a Rule's enrollment (EnrollOnRule) too.
+	StepExecution *automations.StepExecution
 
 	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,
 	// ADR 0063), on every env.
@@ -566,7 +566,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SecondFactor:      do.MustInvoke[*secondfactorcheck.UseCase](injector),
 		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
 		SignUp:            do.MustInvoke[*signup.UseCase](injector),
-		StepExecution:     do.MustInvoke[*stepexecution.UseCase](injector),
+		StepExecution:     do.MustInvoke[*automations.StepExecution](injector),
 		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
 		StaffEnterprise:   edition.Staff,
 

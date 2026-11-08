@@ -3,7 +3,6 @@ package automations_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,30 +24,32 @@ func eventOf(t *testing.T, env *testhelper.TestEnv, id int64) automations.Event 
 // stored row when it begins.
 func TestATriggeredEnrollmentCopiesItsEventsActionAndProperties(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	s := env.DB.Scoped(fixtures.AcmeID)
-	origin, err := automations.OriginOf(ctx, s, eventOf(t, env, fixtures.EventPaymentFailedID))
-	require.NoError(t, err)
+	ev := eventOf(t, env, fixtures.EventPaymentFailedID)
+	in := automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}
 
-	runID, enrolled, err := automations.EnrollOnTrigger(ctx, s, env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID, origin)
-	require.NoError(t, err)
-	run, err := env.DB.AutomationRun.Get(ctx, runID)
-	require.NoError(t, err)
+	require.NoError(t, env.StepExecution.OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
 
-	assert.True(t, enrolled)
-	assert.Equal(t, new(fixtures.EventPaymentFailedAction), run.EventAction)
-	assert.Equal(t, map[string]any{"amount": "€49", "plan": `<b>Pro</b> "annual"`}, run.EventProperties)
+	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
+	require.Len(t, runs, 1)
+	assert.Equal(t, new(fixtures.EventPaymentFailedAction), runs[0].EventAction)
+	assert.Equal(t, map[string]any{"amount": "€49", "plan": `<b>Pro</b> "annual"`}, runs[0].EventProperties)
 }
 
 // An Event weighing more than a Rule is shown leaves no properties to copy, as a Rule sees none.
 func TestAnEventOverTheBoundGivesNoPropertiesToCopy(t *testing.T) {
 	env := testhelper.Setup(t)
+	in := automations.EnrollOnRuleInput{
+		AutomationID: fixtures.AutomationPaymentRecoveryID, ContactID: fixtures.ContactPaymentFailedID,
+		SourceID: eventOf(t, env, fixtures.EventRuleUrlOversizedID).SourceID,
+	}
 
-	origin, err := automations.OriginOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), eventOf(t, env, fixtures.EventRuleUrlOversizedID))
+	_, err := env.StepExecution.EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID), in)
 
 	require.NoError(t, err)
-	assert.Equal(t, fixtures.EventRuleUrlOversizedAction, origin.Action)
-	assert.Nil(t, origin.Properties)
+	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
+	require.Len(t, runs, 1)
+	assert.Equal(t, new(fixtures.EventRuleUrlOversizedAction), runs[0].EventAction)
+	assert.Nil(t, runs[0].EventProperties)
 }
 
 // A trigger job of a release before #752 names no stored Event: the Enrollment keeps the action and
@@ -57,22 +58,25 @@ func TestATriggerWithoutASourceIDGivesNoProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 	ev := eventOf(t, env, fixtures.EventPaymentFailedID)
 	ev.SourceID = ""
+	in := automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}
 
-	origin, err := automations.OriginOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), ev)
+	require.NoError(t, env.StepExecution.OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
 
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.EventPaymentFailedAction, origin.Action)
-	assert.Nil(t, origin.Properties)
+	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
+	require.Len(t, runs, 1)
+	assert.Equal(t, new(fixtures.EventPaymentFailedAction), runs[0].EventAction)
+	assert.Nil(t, runs[0].EventProperties)
 }
 
-// An Enrollment no Event began keeps no copy: its `event` is empty.
+// An Enrollment no Event began (a Rule's whose Event is no longer stored) keeps no copy: its
+// `event` is empty.
 func TestAnEnrollmentNoEventBeganKeepsNoCopy(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	runID, _, err := automations.Enroll(ctx, env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID, time.Now())
+	_, err := enrollNow(t, env, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
 	require.NoError(t, err)
-	run, err := env.DB.AutomationRun.Get(ctx, runID)
+	run, err := env.DB.AutomationRun.Get(ctx, runOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID))
 	require.NoError(t, err)
 
 	assert.Nil(t, run.EventAction)
