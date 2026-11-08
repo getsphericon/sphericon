@@ -2,15 +2,15 @@ package site
 
 import (
 	"context"
-	"github.com/getsphericon/sphericon/internal/api/problem"
-	"io"
 	"net/http"
 	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
 
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;
@@ -87,22 +87,16 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 	}
 
 	// A data export is itself audited (story 19): Export records it before any row leaves.
-	write, err := h.audit.Export(ctx, s, filter)
+	rows, err := h.audit.Export(ctx, s, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	// Stream through a pipe so a long log never sits in memory. If the response ends
-	// early the context is cancelled, which closes the pipe and stops the writer.
-	pr, pw := io.Pipe()
-	stop := context.AfterFunc(ctx, func() { _ = pw.CloseWithError(ctx.Err()) })
-	go func() {
-		defer stop()
-		_ = pw.CloseWithError(write(pw))
-	}()
+	// The response reads a page of rows only once it has sent the last, so a long log never
+	// sits in memory.
 	return &siteapi.SiteAuditExportOKHeaders{
 		ContentDisposition: `attachment; filename="audit-log-` + string(params.WorkspaceId) + `.csv"`,
-		Response:           siteapi.SiteAuditExportOK{Data: pr},
+		Response:           siteapi.SiteAuditExportOK{Data: seqreader.New(rows)},
 	}, nil
 }
 

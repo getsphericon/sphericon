@@ -4,7 +4,7 @@ package site
 
 import (
 	"context"
-	"io"
+	"iter"
 	"strconv"
 	"time"
 
@@ -158,8 +158,8 @@ type AuditLog interface {
 	// the cursor entry id (0 = from the newest), and the next page's cursor (0 = last page).
 	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error)
 	// Export records the export as an Audit entry of the scope's actor, then returns the
-	// function that writes the entries matching the filter, newest first, as CSV.
-	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error)
+	// entries matching the filter, newest first, as CSV chunks the handler streams.
+	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (iter.Seq2[[]byte, error], error)
 	// Facets returns the actors, actions and target types that occur in the log, sorted.
 	Facets(ctx context.Context, s *ent.Scoped) (auditlog.Facets, error)
 	// RetentionLicensed reports whether the retention window may be set (ADR 0014).
