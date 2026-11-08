@@ -78,6 +78,7 @@ export default defineConfig({
       '@mantine/hooks',
       '@mantine/modals',
       '@mantine/notifications',
+      '@xstate/react',
       '@rjsf/mantine',
       '@rjsf/validator-ajv8',
       '@sphericon/analytics > es-toolkit',
@@ -96,6 +97,7 @@ export default defineConfig({
       // (src/utils/dayjsLocale.ts): optimized up front, or the first use reloads the page.
       ...Object.keys(DAYJS_LOCALE_LOADERS).map((name) => `dayjs/locale/${name}.js`),
       'react-error-boundary',
+      'xstate',
     ],
   },
   // Under Vitest browser mode the page loads @vite/client, which would try to open
