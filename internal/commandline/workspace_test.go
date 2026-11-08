@@ -1,4 +1,4 @@
-package suspension_test
+package commandline_test
 
 import (
 	"bytes"
@@ -8,14 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
-	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/commandline"
 )
+
+const workspaceID = "ws_acme"
 
 func TestReportSuspendedSaysSendingIsFrozenAndTheOwnerTold(t *testing.T) {
 	var out bytes.Buffer
 
-	err := suspension.ReportSuspended(&out, fixtures.AcmePublicID, true, nil)
+	err := commandline.ReportSuspended(&out, workspaceID, true, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "suspended: outbound sending is frozen and the owner has been notified")
@@ -24,7 +25,7 @@ func TestReportSuspendedSaysSendingIsFrozenAndTheOwnerTold(t *testing.T) {
 func TestReportSuspendedOfASuspendedWorkspaceSaysNothingChanged(t *testing.T) {
 	var out bytes.Buffer
 
-	err := suspension.ReportSuspended(&out, fixtures.AcmePublicID, false, nil)
+	err := commandline.ReportSuspended(&out, workspaceID, false, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "is already suspended; nothing changed")
@@ -33,7 +34,7 @@ func TestReportSuspendedOfASuspendedWorkspaceSaysNothingChanged(t *testing.T) {
 func TestReportUnsuspendedSaysHeldSendsResume(t *testing.T) {
 	var out bytes.Buffer
 
-	err := suspension.ReportUnsuspended(&out, fixtures.AcmePublicID, true, nil)
+	err := commandline.ReportUnsuspended(&out, workspaceID, true, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "held sends will resume")
@@ -42,18 +43,18 @@ func TestReportUnsuspendedSaysHeldSendsResume(t *testing.T) {
 func TestReportUnsuspendedOfAWorkspaceNotSuspendedSaysNothingChanged(t *testing.T) {
 	var out bytes.Buffer
 
-	err := suspension.ReportUnsuspended(&out, fixtures.AcmePublicID, false, nil)
+	err := commandline.ReportUnsuspended(&out, workspaceID, false, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "is not suspended; nothing changed")
 }
 
-func TestReportOfAFailedChangePrintsNothing(t *testing.T) {
+func TestReportOfAFailedSuspensionChangePrintsNothing(t *testing.T) {
 	failed := errors.New("workspace not found")
 	var out bytes.Buffer
 
-	suspendErr := suspension.ReportSuspended(&out, fixtures.AcmePublicID, false, failed)
-	unsuspendErr := suspension.ReportUnsuspended(&out, fixtures.AcmePublicID, false, failed)
+	suspendErr := commandline.ReportSuspended(&out, workspaceID, false, failed)
+	unsuspendErr := commandline.ReportUnsuspended(&out, workspaceID, false, failed)
 
 	require.ErrorIs(t, suspendErr, failed)
 	require.ErrorIs(t, unsuspendErr, failed)

@@ -1,4 +1,4 @@
-package suspension
+package commandline
 
 import (
 	"fmt"

@@ -8,7 +8,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/internal/commandline"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // userCommand is the `user` group. `create-owner <email> <name...>` (ADR 0042) makes an Owner
@@ -37,7 +36,7 @@ func userCommand(d deps) *cli.Command {
 					return err
 				}
 				password, err := signUp.CreateOwner(ctx, email, name)
-				return users.ReportOwnerCreated(out(cmd), email, password, err)
+				return commandline.ReportOwnerCreated(out(cmd), email, password, err)
 			}),
 		},
 		&cli.Command{

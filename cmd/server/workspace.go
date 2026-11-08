@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 )
 
@@ -34,7 +35,7 @@ func workspaceCommand(d deps) *cli.Command {
 					return err
 				}
 				changed, err := suspender.SuspendByPublicID(ctx, id, suspension.CLI, reason)
-				return suspension.ReportSuspended(out(cmd), id, changed, err)
+				return commandline.ReportSuspended(out(cmd), id, changed, err)
 			}),
 		},
 		&cli.Command{
@@ -49,7 +50,7 @@ func workspaceCommand(d deps) *cli.Command {
 				}
 				id := cmd.StringArg("id")
 				changed, err := suspender.UnsuspendByPublicID(ctx, id, suspension.CLI)
-				return suspension.ReportUnsuspended(out(cmd), id, changed, err)
+				return commandline.ReportUnsuspended(out(cmd), id, changed, err)
 			}),
 		},
 	)

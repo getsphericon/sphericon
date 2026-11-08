@@ -1,4 +1,4 @@
-package staffmembers_test
+package commandline_test
 
 import (
 	"bytes"
@@ -8,24 +8,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 )
 
 const newStaffEmail = "new-staff@sphericon.test"
 
-func TestReportCreatedShowsTheOneTimePasswordOnce(t *testing.T) {
+func TestReportStaffCreatedShowsTheOneTimePasswordOnce(t *testing.T) {
 	var out bytes.Buffer
 
-	err := staffmembers.ReportCreated(&out, newStaffEmail, "one-time-pw", nil)
+	err := commandline.ReportStaffCreated(&out, newStaffEmail, "one-time-pw", nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "password (shown once): one-time-pw")
 	assert.Contains(t, out.String(), "enrols a TOTP at first login")
 }
 
-func TestReportCreatedExplainsARefusal(t *testing.T) {
-	duplicate := staffmembers.ReportCreated(&bytes.Buffer{}, newStaffEmail, "", fmt.Errorf("create: %w", staffmembers.ErrDuplicate))
-	off := staffmembers.ReportCreated(&bytes.Buffer{}, newStaffEmail, "", staffmembers.ErrSignInOff)
+func TestReportStaffCreatedExplainsARefusal(t *testing.T) {
+	duplicate := commandline.ReportStaffCreated(&bytes.Buffer{}, newStaffEmail, "", fmt.Errorf("create: %w", staffmembers.ErrDuplicate))
+	off := commandline.ReportStaffCreated(&bytes.Buffer{}, newStaffEmail, "", staffmembers.ErrSignInOff)
 
 	require.ErrorContains(t, duplicate, "already exists; nothing changed")
 	require.ErrorContains(t, off, "set SPHERICON_STAFF_JWT_SECRET")
@@ -34,14 +35,14 @@ func TestReportCreatedExplainsARefusal(t *testing.T) {
 func TestReportTOTPResetSaysTheStaffReenrols(t *testing.T) {
 	var out bytes.Buffer
 
-	err := staffmembers.ReportTOTPReset(&out, newStaffEmail, nil)
+	err := commandline.ReportTOTPReset(&out, newStaffEmail, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "re-enrol")
 }
 
 func TestReportTOTPResetExplainsARefusal(t *testing.T) {
-	unknown := staffmembers.ReportTOTPReset(&bytes.Buffer{}, "nobody@sphericon.test", staffmembers.ErrNotFound)
+	unknown := commandline.ReportTOTPReset(&bytes.Buffer{}, "nobody@sphericon.test", staffmembers.ErrNotFound)
 
 	require.ErrorContains(t, unknown, "no staff with email")
 }
