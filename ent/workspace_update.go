@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -596,6 +597,21 @@ func (_u *WorkspaceUpdate) AddEvents(v ...*Event) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddEventIDs(ids...)
+}
+
+// AddEventJournalEntryIDs adds the "event_journal_entries" edge to the EventJournalEntry entity by IDs.
+func (_u *WorkspaceUpdate) AddEventJournalEntryIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddEventJournalEntryIDs(ids...)
+	return _u
+}
+
+// AddEventJournalEntries adds the "event_journal_entries" edges to the EventJournalEntry entity.
+func (_u *WorkspaceUpdate) AddEventJournalEntries(v ...*EventJournalEntry) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEventJournalEntryIDs(ids...)
 }
 
 // AddOrderIDs adds the "orders" edge to the Order entity by IDs.
@@ -1261,6 +1277,27 @@ func (_u *WorkspaceUpdate) RemoveEvents(v ...*Event) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEventIDs(ids...)
+}
+
+// ClearEventJournalEntries clears all "event_journal_entries" edges to the EventJournalEntry entity.
+func (_u *WorkspaceUpdate) ClearEventJournalEntries() *WorkspaceUpdate {
+	_u.mutation.ClearEventJournalEntries()
+	return _u
+}
+
+// RemoveEventJournalEntryIDs removes the "event_journal_entries" edge to EventJournalEntry entities by IDs.
+func (_u *WorkspaceUpdate) RemoveEventJournalEntryIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveEventJournalEntryIDs(ids...)
+	return _u
+}
+
+// RemoveEventJournalEntries removes "event_journal_entries" edges to EventJournalEntry entities.
+func (_u *WorkspaceUpdate) RemoveEventJournalEntries(v ...*EventJournalEntry) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEventJournalEntryIDs(ids...)
 }
 
 // ClearOrders clears all "orders" edges to the Order entity.
@@ -2484,6 +2521,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EventJournalEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EventJournalEntriesTable,
+			Columns: []string{workspace.EventJournalEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(eventjournalentry.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEventJournalEntriesIDs(); len(nodes) > 0 && !_u.mutation.EventJournalEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EventJournalEntriesTable,
+			Columns: []string{workspace.EventJournalEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(eventjournalentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EventJournalEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EventJournalEntriesTable,
+			Columns: []string{workspace.EventJournalEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(eventjournalentry.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -4705,6 +4787,21 @@ func (_u *WorkspaceUpdateOne) AddEvents(v ...*Event) *WorkspaceUpdateOne {
 	return _u.AddEventIDs(ids...)
 }
 
+// AddEventJournalEntryIDs adds the "event_journal_entries" edge to the EventJournalEntry entity by IDs.
+func (_u *WorkspaceUpdateOne) AddEventJournalEntryIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddEventJournalEntryIDs(ids...)
+	return _u
+}
+
+// AddEventJournalEntries adds the "event_journal_entries" edges to the EventJournalEntry entity.
+func (_u *WorkspaceUpdateOne) AddEventJournalEntries(v ...*EventJournalEntry) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEventJournalEntryIDs(ids...)
+}
+
 // AddOrderIDs adds the "orders" edge to the Order entity by IDs.
 func (_u *WorkspaceUpdateOne) AddOrderIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddOrderIDs(ids...)
@@ -5368,6 +5465,27 @@ func (_u *WorkspaceUpdateOne) RemoveEvents(v ...*Event) *WorkspaceUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEventIDs(ids...)
+}
+
+// ClearEventJournalEntries clears all "event_journal_entries" edges to the EventJournalEntry entity.
+func (_u *WorkspaceUpdateOne) ClearEventJournalEntries() *WorkspaceUpdateOne {
+	_u.mutation.ClearEventJournalEntries()
+	return _u
+}
+
+// RemoveEventJournalEntryIDs removes the "event_journal_entries" edge to EventJournalEntry entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveEventJournalEntryIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveEventJournalEntryIDs(ids...)
+	return _u
+}
+
+// RemoveEventJournalEntries removes "event_journal_entries" edges to EventJournalEntry entities.
+func (_u *WorkspaceUpdateOne) RemoveEventJournalEntries(v ...*EventJournalEntry) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEventJournalEntryIDs(ids...)
 }
 
 // ClearOrders clears all "orders" edges to the Order entity.
@@ -6621,6 +6739,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EventJournalEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EventJournalEntriesTable,
+			Columns: []string{workspace.EventJournalEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(eventjournalentry.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEventJournalEntriesIDs(); len(nodes) > 0 && !_u.mutation.EventJournalEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EventJournalEntriesTable,
+			Columns: []string{workspace.EventJournalEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(eventjournalentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EventJournalEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EventJournalEntriesTable,
+			Columns: []string{workspace.EventJournalEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(eventjournalentry.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

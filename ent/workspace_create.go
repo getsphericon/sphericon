@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -483,6 +484,21 @@ func (_c *WorkspaceCreate) AddEvents(v ...*Event) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddEventIDs(ids...)
+}
+
+// AddEventJournalEntryIDs adds the "event_journal_entries" edge to the EventJournalEntry entity by IDs.
+func (_c *WorkspaceCreate) AddEventJournalEntryIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddEventJournalEntryIDs(ids...)
+	return _c
+}
+
+// AddEventJournalEntries adds the "event_journal_entries" edges to the EventJournalEntry entity.
+func (_c *WorkspaceCreate) AddEventJournalEntries(v ...*EventJournalEntry) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEventJournalEntryIDs(ids...)
 }
 
 // AddOrderIDs adds the "orders" edge to the Order entity by IDs.
@@ -1391,6 +1407,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EventJournalEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EventJournalEntriesTable,
+			Columns: []string{workspace.EventJournalEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(eventjournalentry.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -8,7 +8,9 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
@@ -155,6 +157,15 @@ func (b *Bus) WithinWorkspacePurgeTx(ctx context.Context, fn func(tx *ent.Client
 }
 
 func (p *txPublisher) PurgeWorkspaceJobs(ctx context.Context, workspaceID int64) error {
+	// Fence publications and replays before deleting their history and jobs. Once this
+	// lock is acquired, earlier publishers committed and the following delete sees them;
+	// later ones wait for the tombstone and cannot recreate journal history afterwards.
+	if _, err := p.client.Workspace.Query().Where(workspace.ID(workspaceID)).ForUpdate().All(ctx); err != nil {
+		return err
+	}
+	if _, err := p.client.EventJournalEntry.Delete().Where(eventjournalentry.WorkspaceID(workspaceID)).Exec(ctx); err != nil {
+		return err
+	}
 	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().
 		// raw sql: a field of the args matched by containment, which river's GIN index on args
 		// serves; river's delete filters stop at a job's own columns.

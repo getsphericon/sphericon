@@ -26,6 +26,7 @@ func TestRenderTable(t *testing.T) {
 		"misnested tags are repaired":  {"<b><i>x</b>y</i>", "<b><i>x</i></b><i>y</i>"},
 		"stray end tag is dropped":     {"x</b>y", "xy"},
 		"link with https":              {`<a href="https://example.com/a?x=1&y=2">go</a>`, `<a href="https://example.com/a?x=1&amp;y=2">go</a>`},
+		"formatting inside a link":     {`<a href="https://e.com"><b>x</b> <i>y</i></a>`, `<a href="https://e.com"><b>x</b> <i>y</i></a>`},
 		"link with javascript":         {`<a href="javascript:alert(1)">go</a>`, "go"},
 		"link without href":            {`<a name="x">go</a>`, "go"},
 		"relative link":                {`<a href="/path">go</a>`, "go"},
@@ -89,6 +90,9 @@ func TestRenderAlwaysYieldsTheAllowedSubset(t *testing.T) {
 			case html.StartTagToken:
 				name, hasAttr := z.TagName()
 				require.Truef(t, allowedTags[string(name)], "tag %s in %q", name, out)
+				if string(name) == "a" {
+					require.NotContains(t, open, "a", "links cannot be nested after unsupported tags are flattened")
+				}
 				if hasAttr {
 					key, val, _ := z.TagAttr()
 					require.Equal(t, "a", string(name))

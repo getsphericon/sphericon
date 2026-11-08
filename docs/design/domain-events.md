@@ -23,6 +23,8 @@ the pieces fit; the ADRs say why.
 5. **Queryable log**: the Event table is the durable record the Activity timeline, Segments, Rules,
    Automations and analytics read.
 6. **Typed**: our events are Go structs with a stable name and version.
+7. **Retained publication history**: every accepted fact leaves journal metadata independently of
+   River cleanup. Explicitly replayable report consumers retain their anonymous inputs (ADR 0116).
 
 Event sourcing of aggregates is out of scope: aggregates are CRUD rows in ent, and events are a
 reaction and log layer beside them.
@@ -48,6 +50,7 @@ producer (one transaction):
                ├─ claim an externally identified fact: duplicate → stop here
                ├─ projected event: write its Event row (unique workspace_id + source_id)
                ├─ run matching synchronous subscribers, including their derived facts
+               ├─ journal publication metadata and explicitly retained anonymous inputs
                └─ InsertManyTx: one River job per matching asynchronous consumer
 commit
 ```
@@ -74,6 +77,11 @@ password reset, a verification link sent again) publishes in a transaction of it
   the producer's transaction. The entries are registered on the bus when the application is wired
   (`internal/app`): core's (`jobs.EventConsumers`) and the Enterprise Edition's
   (`ee.EventConsumers`), so the events module imports no consumer module.
+- **The journal** records every accepted publication, even without a consumer or an Event row.
+  It stores no original envelope, personal source key or request metadata. A consumer's explicit
+  `Replay` policy retains only its versioned anonymous job args. The message observation and
+  Broadcast attribution consumers are the initial allowlist. Metadata alone cannot reconstruct
+  arbitrary historical typed payloads; retaining another input is an explicit policy decision.
 - **After the commit**: what must happen once for a newly stored Event, outside any transaction, is
   registered on the bus with `OnStored` and runs after the commit, so neither a repeat nor a
   rolled-back Event reaches it: the send-outcome counter of a provider's bounce or complaint
@@ -130,6 +138,24 @@ context it was inserted in, and the span of its work links to the inserting span
 from the request to the webhook delivery.
 
 ## Failures and operations
+
+```sh
+sphericon events replay --workspace <public-id> --consumer event_message_observation \
+  --from <RFC3339> --before <RFC3339> --dry-run
+```
+
+This validates and counts the retained inputs in the half-open recorded-time interval. Omitting
+`--dry-run` queues that consumer's ordinary River jobs. `event_broadcast_unsubscribe` is the other
+supported consumer. A selection over `--limit` (default and maximum 1000) is refused entirely:
+narrow the interval. Unsupported consumers and input versions queue nothing. Replay never
+publishes again, runs mandatory subscribers or fans out to other consumers. It reapplies
+convergent measurements; it does not clear or reset a projection.
+
+The selection is one query snapshot, not an advancing cursor or a commit-order promise.
+Concurrent publications keep their live jobs. Journal metadata and retained anonymous inputs
+have no automatic expiry; Contact Erasure preserves them and Workspace erasure removes its
+history through the bus. Other consumers still see future publications only and retry existing
+failed work through River UI.
 
 - River's default attempts and backoff apply to event jobs; a discarded one is kept 30 days and
   retried from River UI.

@@ -1001,6 +1001,40 @@ var (
 			},
 		},
 	}
+	// EventJournalEntriesColumns holds the columns for the "event_journal_entries" table.
+	EventJournalEntriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "event_id", Type: field.TypeString, Unique: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "version", Type: field.TypeInt},
+		{Name: "occurred_at", Type: field.TypeTime},
+		{Name: "recorded_at", Type: field.TypeTime},
+		{Name: "inputs", Type: field.TypeJSON, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64, Nullable: true},
+	}
+	// EventJournalEntriesTable holds the schema information for the "event_journal_entries" table.
+	EventJournalEntriesTable = &schema.Table{
+		Name:       "event_journal_entries",
+		Columns:    EventJournalEntriesColumns,
+		PrimaryKey: []*schema.Column{EventJournalEntriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "event_journal_entries_workspaces_event_journal_entries",
+				Columns:    []*schema.Column{EventJournalEntriesColumns[9]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "eventjournalentry_workspace_id_recorded_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{EventJournalEntriesColumns[9], EventJournalEntriesColumns[7], EventJournalEntriesColumns[0]},
+			},
+		},
+	}
 	// EventReceiptsColumns holds the columns for the "event_receipts" table.
 	EventReceiptsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3014,6 +3048,7 @@ var (
 		EmailTemplatesTable,
 		ErasuresTable,
 		EventsTable,
+		EventJournalEntriesTable,
 		EventReceiptsTable,
 		HeldOrderEventsTable,
 		HoldsTable,
@@ -3206,6 +3241,10 @@ func init() {
 	EventsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	EventsTable.Annotation = &entsql.Annotation{
 		Table: "events",
+	}
+	EventJournalEntriesTable.ForeignKeys[0].RefTable = WorkspacesTable
+	EventJournalEntriesTable.Annotation = &entsql.Annotation{
+		Table: "event_journal_entries",
 	}
 	EventReceiptsTable.Annotation = &entsql.Annotation{
 		Table: "event_receipts",

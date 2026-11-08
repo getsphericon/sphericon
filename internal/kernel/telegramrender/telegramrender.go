@@ -204,6 +204,7 @@ func Check(text string) error {
 // Sanitize reduces markup to Telegram's subset: the allowed tags, `a` only with an http or https
 // href, text escaped, tags balanced (the HTML parser closes what is left open and repairs
 // misnested ones). Inside code and pre nothing but text is kept, as Telegram nests nothing there.
+// Flattening unsupported block elements must not expose nested anchors in the output.
 func Sanitize(markup string) string {
 	nodes, err := html.ParseFragment(strings.NewReader(markup), &html.Node{Type: html.ElementNode, Data: "body", DataAtom: atom.Body})
 	if err != nil {
@@ -211,43 +212,47 @@ func Sanitize(markup string) string {
 	}
 	var b strings.Builder
 	for _, n := range nodes {
-		write(&b, n, false)
+		write(&b, n, renderState{})
 	}
 	return b.String()
 }
 
-func write(b *strings.Builder, n *html.Node, flat bool) {
+type renderState struct{ flat, linked bool }
+
+func write(b *strings.Builder, n *html.Node, state renderState) {
 	switch n.Type {
 	case html.TextNode:
 		b.WriteString(escapeText(n.Data))
 	case html.ElementNode:
-		element(b, n, flat)
+		element(b, n, state)
 	case html.ErrorNode, html.DocumentNode, html.CommentNode, html.DoctypeNode, html.RawNode:
 	}
 }
 
-func element(b *strings.Builder, n *html.Node, flat bool) {
+func element(b *strings.Builder, n *html.Node, state renderState) {
 	switch {
 	case dropped[n.Data]:
 		return
 	case n.Data == "br":
 		b.WriteString("\n")
 		return
-	case !allowed[n.Data] || flat:
-		children(b, n, flat)
+	case !allowed[n.Data] || state.flat || (n.Data == "a" && state.linked):
+		children(b, n, state)
 		return
 	}
 	opening, closing := "<"+n.Data+">", "</"+n.Data+">"
 	if n.Data == "a" {
 		href, ok := safeHref(n)
 		if !ok {
-			children(b, n, flat)
+			children(b, n, state)
 			return
 		}
 		opening = `<a href="` + escapeAttr(href) + `">`
 	}
 	var inner strings.Builder
-	children(&inner, n, n.Data == "code" || n.Data == "pre")
+	state.flat = n.Data == "code" || n.Data == "pre"
+	state.linked = state.linked || n.Data == "a"
+	children(&inner, n, state)
 	b.WriteString(opening)
 	if n.Data == "pre" && strings.HasPrefix(inner.String(), "\n") {
 		// The HTML parser drops a newline right after <pre>; keep the one the text begins with.
@@ -257,9 +262,9 @@ func element(b *strings.Builder, n *html.Node, flat bool) {
 	b.WriteString(closing)
 }
 
-func children(b *strings.Builder, n *html.Node, flat bool) {
+func children(b *strings.Builder, n *html.Node, state renderState) {
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		write(b, c, flat)
+		write(b, c, state)
 	}
 }
 

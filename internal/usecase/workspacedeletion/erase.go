@@ -120,6 +120,18 @@ func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) e
 // erasePass runs every step once, each in batches, and returns how many rows it removed.
 func (m *UseCase) erasePass(ctx context.Context, id int64) (int, error) {
 	total := 0
+	// The bus's journal also holds Instance facts, so it has no required Workspace mixin
+	// or scoped table wrapper. Its owner drains this Workspace's history in bounded transactions.
+	for {
+		removed, err := m.bus.EraseWorkspaceJournalBatch(ctx, m.client.Scoped(id), m.batch)
+		if err != nil {
+			return total, err
+		}
+		total += removed
+		if removed < m.batch {
+			break
+		}
+	}
 	for _, step := range m.steps {
 		for {
 			removed := 0

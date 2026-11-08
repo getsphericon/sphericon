@@ -237,6 +237,18 @@ func (f EventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EventMutation", m)
 }
 
+// The EventJournalEntryFunc type is an adapter to allow the use of ordinary
+// function as EventJournalEntry mutator.
+type EventJournalEntryFunc func(context.Context, *ent.EventJournalEntryMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EventJournalEntryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.EventJournalEntryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EventJournalEntryMutation", m)
+}
+
 // The EventReceiptFunc type is an adapter to allow the use of ordinary
 // function as EventReceipt mutator.
 type EventReceiptFunc func(context.Context, *ent.EventReceiptMutation) (ent.Value, error)

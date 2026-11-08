@@ -77,6 +77,8 @@ const (
 	EdgeSegments = "segments"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
 	EdgeEvents = "events"
+	// EdgeEventJournalEntries holds the string denoting the event_journal_entries edge name in mutations.
+	EdgeEventJournalEntries = "event_journal_entries"
 	// EdgeOrders holds the string denoting the orders edge name in mutations.
 	EdgeOrders = "orders"
 	// EdgeOrderMovements holds the string denoting the order_movements edge name in mutations.
@@ -188,6 +190,13 @@ const (
 	EventsInverseTable = "events"
 	// EventsColumn is the table column denoting the events relation/edge.
 	EventsColumn = "workspace_id"
+	// EventJournalEntriesTable is the table that holds the event_journal_entries relation/edge.
+	EventJournalEntriesTable = "event_journal_entries"
+	// EventJournalEntriesInverseTable is the table name for the EventJournalEntry entity.
+	// It exists in this package in order to avoid circular dependency with the "eventjournalentry" package.
+	EventJournalEntriesInverseTable = "event_journal_entries"
+	// EventJournalEntriesColumn is the table column denoting the event_journal_entries relation/edge.
+	EventJournalEntriesColumn = "workspace_id"
 	// OrdersTable is the table that holds the orders relation/edge.
 	OrdersTable = "orders"
 	// OrdersInverseTable is the table name for the Order entity.
@@ -757,6 +766,20 @@ func ByEvents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByEventJournalEntriesCount orders the results by event_journal_entries count.
+func ByEventJournalEntriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEventJournalEntriesStep(), opts...)
+	}
+}
+
+// ByEventJournalEntries orders the results by event_journal_entries terms.
+func ByEventJournalEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEventJournalEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByOrdersCount orders the results by orders count.
 func ByOrdersCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1307,6 +1330,13 @@ func newEventsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EventsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EventsTable, EventsColumn),
+	)
+}
+func newEventJournalEntriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EventJournalEntriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EventJournalEntriesTable, EventJournalEntriesColumn),
 	)
 }
 func newOrdersStep() *sqlgraph.Step {

@@ -249,8 +249,8 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
 	if err := p.react(ctx, env, ev); err != nil {
 		return err
 	}
-	if err := p.queueConsumers(Handling(ctx, env), env, ev); err != nil {
-		return fmt.Errorf("queue the consumers of %q: %w", env.Name, err)
+	if err := p.journalAndQueueConsumers(Handling(ctx, env), env, ev); err != nil {
+		return fmt.Errorf("journal and queue the consumers of %q: %w", env.Name, err)
 	}
 	return nil
 }
