@@ -16,6 +16,12 @@
 // (internal/testhelper, which only tests import) and the end-to-end suite (e2e/, behind its build
 // tag).
 //
+// The Workspace erase (ADR 0110) is the one writer of a Workspace-owned table besides its owner: the
+// rows of a Workspace past its deletion window have no rule of an owner left to keep, so
+// internal/usecase/workspacedeletion deletes them directly. It may only remove, and only through the
+// scoped wrappers, which exist for the Workspace-owned entities alone: a Delete or Purge (or their
+// One and OneID forms) on one, or a generic function instantiated with its delete builder.
+//
 // An entry point (a handler of any surface, an MCP tool, a job or an event subscriber) receives input
 // and calls a domain module or a use case; it owns no table, so every write there is a finding, worded
 // for the entry point. The handlers of the API surfaces (`surfaces`) do not read through ent either: a
@@ -140,6 +146,12 @@ var owners = map[string]string{
 // Owners returns a copy of the ownership map: each ent entity and the package that owns its table.
 func Owners() map[string]string { return maps.Clone(owners) }
 
+// eraser is the Workspace erase, which removes a Workspace-owned table's rows whoever owns it (ADR 0110).
+const eraser = "internal/usecase/workspacedeletion"
+
+// removals are the methods of a scoped wrapper that start a delete: what the erase may call.
+var removals = map[string]bool{"Delete": true, "DeleteOne": true, "DeleteOneID": true, "Purge": true, "PurgeOneID": true}
+
 // unread are the packages of the module the analyzer does not read: the generated ent package, and
 // the test code outside `_test.go` files: the test harness, which only tests import, and the
 // end-to-end suite behind its build tag.
@@ -203,6 +215,7 @@ type checker struct {
 	path  string
 	entry bool
 	reads bool
+	erase bool
 }
 
 func run(pass *analysis.Pass) (any, error) {
@@ -210,7 +223,7 @@ func run(pass *analysis.Pass) (any, error) {
 	if !isRead(path) {
 		return nil, nil
 	}
-	c := checker{pass: pass, path: path, entry: isEntryPoint(path), reads: isSurface(path)}
+	c := checker{pass: pass, path: path, entry: isEntryPoint(path), reads: isSurface(path), erase: isIn(path, eraser)}
 	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !ok {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
@@ -261,6 +274,9 @@ func (c checker) call(call *ast.CallExpr) {
 		return
 	}
 	entity := entx.Entity(named)
+	if c.erase && named.Obj().Name() == entity+"Scoped" && removals[sel.Sel.Name] {
+		return
+	}
 	c.write(call.Pos(), sel.Sel.Name+" on "+entity, entity)
 }
 
@@ -283,6 +299,9 @@ func (c checker) instance(id *ast.Ident) {
 		suffix := strings.TrimPrefix(strings.TrimPrefix(named.Obj().Name(), entity), "Scoped")
 		if entity == named.Obj().Name() || !builders[suffix] {
 			continue
+		}
+		if c.erase && (named.Obj().Name() == entity+"ScopedDelete" || named.Obj().Name() == entity+"ScopedDeleteOne") {
+			return
 		}
 		c.write(id.Pos(), id.Name+" with "+named.Obj().Name(), entity)
 		return
