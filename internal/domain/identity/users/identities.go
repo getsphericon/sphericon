@@ -68,7 +68,7 @@ type ProviderSignin struct {
 // DecideSigninFor reads the facts of the provider's answer in and takes the one decision
 // (DecideSignin): the User of the Linked identity (known) and the User that holds the
 // provider's trusted email (holder), with the decision on them. The provider sign-in
-// (internal/usecase/workspacecreation) applies it.
+// (signup.UseCase.SignInWithProvider) applies it.
 func (a *Module) DecideSigninFor(ctx context.Context, in ProviderLogin) (decision SigninDecision, known, holder *ent.User, err error) {
 	known, holder, err = signinFacts(ctx, a.ent, in)
 	if err != nil {
@@ -124,7 +124,7 @@ func providerName(in ProviderLogin) string {
 // CreateProviderUserIn writes the Verified User of a trusted provider email and its Linked
 // identity in tx: the provider's name, or the address's local part when it gave none, and no
 // password. Its email is proven now; the caller creates its first Workspace and records
-// `user.email_verify` on the same transaction (internal/usecase/workspacecreation).
+// `user.email_verify` on the same transaction (internal/usecase/signup).
 func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin, now time.Time) (*ent.User, error) {
 	email := strings.TrimSpace(in.Email)
 	name := providerName(in)
@@ -300,7 +300,7 @@ func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLo
 // winning over a Sign-up nobody proved: Verified with the provider's name, no password, earlier
 // sessions ended, and the Linked identity; a pending Invitation to the address is not touched.
 // The caller gives it its first Workspace on the same transaction, as a verify link would
-// (internal/usecase/workspacecreation). ErrAlreadyVerified when the User is no longer Unverified.
+// (internal/usecase/signup). ErrAlreadyVerified when the User is no longer Unverified.
 func TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin, now time.Time) (*ent.User, error) {
 	upd := tx.User.Update().
 		Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).

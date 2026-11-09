@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
+	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
 
 // ContactsExport streams the subject-access Data export of one contact (ADR 0021),
@@ -17,15 +18,15 @@ func (h *Handlers) ContactsExport(ctx context.Context, params externalapi.Contac
 	if v, ok := params.ID.Get(); ok {
 		contactID = new(int64(v))
 	}
-	c, err := dataexport.Find(ctx, s, contactID, dataexport.Ref(params.Email.Get()))
+	d, err := dataexport.Open(ctx, s, resources.ExportMapper{Converter: mapper}, contactID, dataexport.Ref(params.Email.Get()))
 	if err != nil {
 		return nil, err
 	}
 
 	return &externalapi.ContactsExportOKApplicationOctetStreamHeaders{
-		ContentDisposition: `attachment; filename="` + dataexport.Filename(c) + `"`,
+		ContentDisposition: `attachment; filename="` + d.Filename + `"`,
 		Response: externalapi.ContactsExportOKApplicationOctetStream{
-			Data: dataexport.Open(ctx, s, resources.ExportMapper{Converter: mapper}, c),
+			Data: seqreader.New(d.Chunks),
 		},
 	}, nil
 }

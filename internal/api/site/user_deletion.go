@@ -2,54 +2,27 @@ package site
 
 import (
 	"context"
-	"errors"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 )
 
-// SiteUserDeleteUser deletes the caller's own User at once (User deletion, ADR 0050), after
-// the typed email, the password (through the login module's one prove path, so a wrong one
-// is counted on the Login throttle) and, with a Second factor, a current code. The
-// accounts operation does the rest in one transaction; this handler authenticates and proves.
+// SiteUserDeleteUser deletes the caller's own User at once (User deletion, ADR 0050): the use
+// case checks the typed email, the proof and the Second factor code, and deletes in one
+// transaction. The handler answers a running Login throttle delay with the 429 and clears the
+// session cookie.
 func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDeleteUserInput) (*siteapi.SiteUserDeleteUserNoContent, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.users.DeletionSubject(ctx, userID, string(req.Email))
-	if err != nil {
-		return nil, err
-	}
-	hadPassword := u.PasswordHash != ""
-	if hadPassword {
-		if err := h.proveCurrentPassword(ctx, u, req.CurrentPassword.Or("")); err != nil {
-			return nil, err
-		}
-	} else {
-		// A User with no password proves the mailbox instead, and nothing in that proof
-		// feeds the Login throttle: consult it here, before the link or any code is
-		// checked, so the code cannot be guessed past the budget (ADR 0025).
-		delay, throttled, err := h.login.Throttled(ctx, u.Email)
-		if err != nil {
-			return nil, err
-		}
-		if throttled {
-			return nil, loginDelayError(ctx, delay)
-		}
-		if err := h.links.CheckDeletionLink(req.Token.Or(""), u); err != nil {
-			return nil, err
-		}
-	}
-
-	_, err = h.users.DeleteUser(ctx, u.ID, &users.DeleteProof{HadPassword: hadPassword, Confirm: h.secondFactor.DeletionCode(req.Code.Or(""))})
-	if errors.Is(err, secondfactorcheck.ErrDeletionCodeInvalid) {
-		// The wrong code is counted like a wrong password (ADR 0025).
-		if cerr := h.login.CountFailure(ctx, u.Email); cerr != nil {
-			return nil, cerr
-		}
-	}
+	err = h.userDeletion.Delete(ctx, userdeletion.Request{
+		UserID:   userID,
+		Email:    string(req.Email),
+		Password: req.CurrentPassword.Or(""),
+		Token:    req.Token.Or(""),
+		Code:     req.Code.Or(""),
+	})
 	if err != nil {
 		return nil, err
 	}

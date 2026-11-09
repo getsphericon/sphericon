@@ -13,32 +13,24 @@ import (
 
 // SitePasskeysList lists the session User's Passkeys, oldest first (ADR 0052).
 func (h *Handlers) SitePasskeysList(ctx context.Context) (*siteapi.SitePasskeyList, error) {
-	userID, err := sessionUserID(ctx)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.users.User(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := h.passkeys.List(ctx, userID)
+	rows, err := h.passkeys.List(ctx, u.ID)
 	if err != nil {
 		return nil, err
 	}
 	items := mapper.PasskeysToResources(rows)
 	return &siteapi.SitePasskeyList{
-		Items: items, Available: h.passkeys.Available(), PasswordSet: u.PasswordHash != "", IdentityProofFresh: u.PasswordHash == "" && h.identityProofFresh(ctx),
+		Items: items, Available: h.passkeys.Available(), PasswordSet: u.PasswordHash != "", IdentityProofFresh: sessionProof(ctx, "").StandsInFor(u, h.now()),
 	}, nil
 }
 
 // SitePasskeysBeginRegistration answers the creation options for the browser and sets the
 // ceremony cookie. It writes nothing.
 func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.SitePasskeyRegistrationBegunHeaders, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -60,11 +52,7 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.
 // password, or a fresh provider login) and the authenticator's response checks out; the owner
 // is told by mail. Every session of the User goes on.
 func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *siteapi.SitePasskeyRegistrationInput, params siteapi.SitePasskeysFinishRegistrationParams) (*siteapi.SitePasskey, error) {
-	name, err := passkeys.PasskeyName(string(req.Name))
-	if err != nil {
-		return nil, err
-	}
-	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +60,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 	if err != nil {
 		return nil, err
 	}
-	_, row, err := h.passkeys.FinishRegistration(ctx, userID, params.PASSKEY.Or(""), response, name)
+	_, row, err := h.passkeys.FinishRegistration(ctx, u, proof, passkeys.Registration{Ceremony: params.PASSKEY.Or(""), Response: response, Name: string(req.Name)})
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +71,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 // SitePasskeysBeginCheck answers the request options of a fresh Passkey check of the session
 // User, who holds at least one Passkey, and sets the ceremony cookie.
 func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (*siteapi.SitePasskeyCheckBegunHeaders, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -108,13 +92,9 @@ func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (*siteapi.SitePas
 // SitePasskeysFinishCheck verifies a fresh Passkey check of the session's own User (the
 // passkeys module's Check, whose every refusal is the one 403). The acting session is reissued
 // with the time of the check, which stands in for the password for a few minutes
-// (identityProofTTL).
+// (users.IdentityProof.FreshAt).
 func (h *Handlers) SitePasskeysFinishCheck(ctx context.Context, req *siteapi.SitePasskeyCheckInput, params siteapi.SitePasskeysFinishCheckParams) (*siteapi.SitePasskeysFinishCheckNoContent, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	u, err := h.users.User(ctx, userID)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -175,23 +155,19 @@ func (h *Handlers) SitePasskeysRename(ctx context.Context, req *siteapi.SitePass
 // password, or a fresh provider login). It ends the other sessions, reissues the acting one and
 // mails the owner.
 func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePasskeyRemoveInput, params siteapi.SitePasskeysRemoveParams) (*siteapi.SitePasskeysRemoveNoContent, error) {
-	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	u, _, err := h.passkeys.Remove(ctx, userID, int64(params.ID))
-	if err != nil {
-		return nil, err
-	}
-	remaining, err := h.passkeys.List(ctx, userID)
+	removal, err := h.passkeys.Remove(ctx, u, proof, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
 	sess := currentSession(ctx)
-	if len(remaining) == 0 {
+	if removal.NoneLeft {
 		sess = sess.WithoutPasskeys()
 	}
-	cookie, err := h.sessions.Issue(u, sess)
+	cookie, err := h.sessions.Issue(removal.User, sess)
 	if err != nil {
 		return nil, err
 	}

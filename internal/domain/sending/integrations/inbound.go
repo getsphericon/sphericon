@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -21,12 +22,28 @@ import (
 
 // The inbound side of an Integration (ADR 0037): the Preset its provider callbacks are
 // read with, the Preset's params (secrets encrypted, rotating in pairs) and its own hook
-// key. The hook (internal/server) opens an Integration by key with the raw client, then
-// asks this module for its params; everything an API reads or writes goes through here.
+// key. The Callback interpretation (internal/usecase/callbackinterpretation) opens an Integration
+// by its key (ByIngestKey), then asks this module for its params; everything an API reads or
+// writes goes through here.
 
 // SecretMask is what a read shows in place of a secret param. Sending it back, or a
 // blank, or nothing, leaves the stored secret as it is.
 const SecretMask = "********"
+
+// ByIngestKey is the Integration whose hook URL ends in key, of a live Workspace: a Workspace in
+// its deletion window takes no new data (ADR 0043), so its keys name nothing. An archived
+// Integration is found, since it still reads the callbacks of mail sent through it (ADR 0049). The
+// key names the Workspace before any scope exists, so this reads on the raw client and uses it for
+// nothing else (docs/architecture/workspace-scoping.md, Workspace scoping). An unknown key is ErrNotFound.
+func ByIngestKey(ctx context.Context, c *ent.Client, key string) (*ent.Integration, error) {
+	row, err := c.Integration.Query().
+		Where(integration.IngestKey(key), integration.HasWorkspaceWith(workspaces.Live())).
+		Only(ctx)
+	if err != nil {
+		return nil, missing(err)
+	}
+	return row, nil
+}
 
 // Presets is the registry of Presets the Instance offers.
 func (m *Module) Presets() *preset.Registry { return m.presets }
@@ -52,16 +69,16 @@ func RawOf(values map[string]any) map[string]jx.Raw {
 	return out
 }
 
-// ParamsView is the read side of an Integration's params: the values as saved with each
+// maskedParams is the read side of an Integration's params: the values as saved with each
 // secret masked, and the secrets that are rotating.
-type ParamsView struct {
+type maskedParams struct {
 	Values          map[string]any
 	SecretsRetiring []string
 }
 
-// View opens the stored params and returns them without a secret.
-func (m *Module) View(row *ent.Integration) (ParamsView, error) {
-	view := ParamsView{Values: map[string]any{}, SecretsRetiring: []string{}}
+// paramsView opens the stored params and returns them without a secret.
+func (m *Module) paramsView(row *ent.Integration) (maskedParams, error) {
+	view := maskedParams{Values: map[string]any{}, SecretsRetiring: []string{}}
 	if row.Preset == nil || row.ParamsEncrypted == "" {
 		return view, nil
 	}
@@ -71,7 +88,7 @@ func (m *Module) View(row *ent.Integration) (ParamsView, error) {
 	}
 	stored, err := m.openParams(row)
 	if err != nil {
-		return ParamsView{}, err
+		return maskedParams{}, err
 	}
 	secret := secretSet(p)
 	for name, v := range stored {
@@ -260,29 +277,29 @@ func samePreset(a, b *string) bool {
 	return *a == *b
 }
 
-// RegenerateKey gives the Integration a new hook key: the old hook URL stops working at
-// once. The write is audited like any other edit of the Integration; the key itself never
-// reaches the entry.
+// RegenerateKey gives the Integration a new hook key and answers its View: the old hook URL
+// stops working at once. The write is audited like any other edit of the Integration; the key
+// itself never reaches the entry.
 //
 // A Telegram Integration that holds its bot's webhook points it at the new URL first; Telegram's
 // refusal refuses the regeneration and the old key stays. A deleted Integration keeps its key: it
 // is ErrNotFound, as an unknown id is.
-func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
 	key, err := credentials.GenerateIngestKey()
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 	current, err := m.editable(ctx, s, id)
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 	if current.Provider == providers.Telegram && holdsWebhook(current.Enabled, current.DiscardedAt) {
 		cfg, err := m.telegramConfigOf(current)
 		if err != nil {
-			return nil, err
+			return View{}, err
 		}
 		if err := m.reconnect(ctx, current, cfg.Token, key); err != nil {
-			return nil, err
+			return View{}, err
 		}
 	}
 	// A Twilio Integration points its sender's callbacks at the new URL first; Twilio's refusal
@@ -291,7 +308,7 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*e
 	if current.Provider == providers.Twilio {
 		enc, err := m.repointTwilio(ctx, current, key)
 		if err != nil {
-			return nil, err
+			return View{}, err
 		}
 		sealed = &enc
 	}
@@ -306,9 +323,9 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*e
 		return err
 	})
 	if err != nil {
-		return nil, missing(err)
+		return View{}, missing(err)
 	}
-	return row, nil
+	return m.viewOf(ctx, s, row)
 }
 
 // paramsRefusal refuses params the Preset's schema does not accept, each failure on the field of

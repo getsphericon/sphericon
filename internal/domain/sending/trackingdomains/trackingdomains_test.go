@@ -516,3 +516,32 @@ func TestEveryEdgeOfTheStateLifecycle(t *testing.T) {
 		})
 	}
 }
+
+// --- the Instance-wide host index (ADR 0038) ---
+
+// hostWorkspace is the Workspace a host is served for, 0 when it is served for none.
+func hostWorkspace(t *testing.T, m *trackingdomains.Module, host string) int64 {
+	t.Helper()
+	ws, ok, err := m.HostWorkspace(t.Context(), host)
+	require.NoError(t, err)
+	require.Equal(t, ok, ws != 0)
+	return ws
+}
+
+// A host is served once its DNS is verified, in any role (a retired one still serves what was sent
+// on it), and only while its Workspace is live.
+func TestAHostIsServedForItsWorkspaceOnceItsDNSIsVerified(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{Now: time.Now})
+
+	assert.Equal(t, int64(fixtures.UmbrellaID), hostWorkspace(t, m, fixtures.TrackingDomainServingHost))
+	assert.Equal(t, int64(fixtures.UmbrellaID), hostWorkspace(t, m, fixtures.TrackingDomainRetiredHost))
+	assert.NotZero(t, hostWorkspace(t, m, fixtures.TrackingDomainDNSVerifiedHost))
+	assert.Equal(t, int64(fixtures.UmbrellaID), hostWorkspace(t, m, strings.ToUpper(fixtures.TrackingDomainServingHost)+"."))
+	assert.Zero(t, hostWorkspace(t, m, fixtures.TrackingDomainReplacementHost), "a pending host is not served")
+	assert.Zero(t, hostWorkspace(t, m, "t.unknown.example"))
+	assert.Zero(t, hostWorkspace(t, m, ""))
+
+	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(time.Now()).ExecX(t.Context())
+	assert.Zero(t, hostWorkspace(t, m, fixtures.TrackingDomainServingHost), "nor is the host of a deleted Workspace")
+}

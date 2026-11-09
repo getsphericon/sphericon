@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"log/slog"
 	"strings"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -44,7 +43,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 
 	a := auth.GetSiteAuth(ctx)
 	in := inputs.InvitationCreate(req)
-	in.InvitedBy = a.UserID
+	in.InvitedBy = a.User.ID
 	// Token, hash, expiry and the upsert are the accounts operation's; the site only
 	// maps its refusals.
 	inv, token, err := h.invitations.Invite(ctx, s, h.actor(ctx), in)
@@ -56,11 +55,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	// invites; the Invitation's event mails the link too.
 	inviteURL := strings.TrimRight(h.appURL, "/") + "/invitations/" + token
 
-	inviter, uerr := h.users.User(ctx, a.UserID)
-	if uerr != nil {
-		slog.WarnContext(ctx, "inviter not loaded for the invitation", "error", uerr, "invitation_id", inv.ID)
-	}
-	inv.Edges.Inviter = inviter
+	inv.Edges.Inviter = a.User
 	return &siteapi.SiteCreateInvitationResponse{
 		InviteUrl: inviteURL,
 		Resource:  mapper.InvitationToResource(inv),
@@ -87,42 +82,22 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 	return mapper.InvitationToLookupResult(inv), nil
 }
 
-// acceptForm is what SitePublicInvitationsAccept checks beyond the contract.
-type acceptForm struct {
-	Password string `json:"password" validate:"omitempty,password_not_blank,password_length"`
-}
-
 // SitePublicInvitationsAccept turns an invite into a Membership: it attaches an
 // Verified User (their own session) or sets up the account (name + password and the
 // answers to the Sign-up items, ADR 0062), then joins them to the workspace. Link possession authorizes an address with no Verified
 // User; a Verified User's address also needs that User's session.
 func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi.SiteAcceptInvitationInput, params siteapi.SitePublicInvitationsAcceptParams) error {
-	inv, err := h.invitations.PendingInvitation(ctx, params.Token)
-	if err != nil {
-		return err
-	}
-
 	// A Verified User's own session is the proof of the address (ADR 0030); the
 	// transaction decides whether the address is one, so the session is always passed.
 	sessionEmail := ""
 	if a := auth.GetSiteAuth(ctx); a != nil {
-		sessionEmail = a.Email
+		sessionEmail = a.User.Email
 	}
 	name, _ := req.Name.Get()
 	password, _ := req.Password.Get()
-	// Whether a name and a password are needed at all is the transaction's to say (a Verified
-	// User's address needs neither, and the name's rule is the transaction's too); a password
-	// that is sent must pass its rule.
-	if err := validation.Form(acceptForm{Password: password}); err != nil {
-		return err
-	}
-
-	err = h.users.AcceptInvitation(ctx, inv, users.InvitationAcceptance{
+	// Whether a name and a password are needed at all, and their rules, are the acceptance's to
+	// say (a Verified User's address needs neither).
+	return h.users.AcceptInvitationLink(ctx, params.Token, users.InvitationAcceptance{
 		Name: strings.TrimSpace(string(name)), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

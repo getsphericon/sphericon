@@ -109,7 +109,7 @@ func (ms *Module) Leave(ctx context.Context, s *ent.Scoped, userID int64) error 
 // A User with no Membership in the Workspace is an ent NotFound error. User deletion
 // (ADR 0050) calls it once per Workspace in its own transaction.
 func LeaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
-	target, owners, actor, err := lockedSelf(ctx, ts, userID)
+	target, owners, actor, err := LockSelfIn(ctx, ts, userID)
 	if err != nil {
 		return err
 	}
@@ -117,20 +117,10 @@ func LeaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID i
 	return removeLocked(ctx, ts, pub, actor, target.Role, target, owners)
 }
 
-// LeaveDoomedWorkspaceIn removes User userID's own Membership like LeaveIn but lets the only
-// Owner go too, for User deletion of a Workspace that is in its deletion window (ADR 0050):
-// nobody is left to hand it to, and the Workspace is erased on schedule.
-func LeaveDoomedWorkspaceIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
-	target, _, actor, err := lockedSelf(ctx, ts, userID)
-	if err != nil {
-		return err
-	}
-	return deleteLocked(ctx, ts, pub, actor, target)
-}
-
-// lockedSelf locks the Workspace's Owner rows, then loads User userID's own Membership with
-// its User, the count of Owners, and the User as the actor of the Audit entry.
-func lockedSelf(ctx context.Context, ts *ent.Scoped, userID int64) (target *ent.Membership, owners int, actor events.Actor, err error) {
+// LockSelfIn locks the Workspace's Owner rows, then loads User userID's own Membership with its
+// User, the count of Owners, and the User as the actor of the Audit entry, inside the transaction
+// ts is bound to. It writes nothing: the leaves of a Membership read their target through it.
+func LockSelfIn(ctx context.Context, ts *ent.Scoped, userID int64) (target *ent.Membership, owners int, actor events.Actor, err error) {
 	target, owners, err = lockedTarget(ctx, ts, membership.UserID(userID))
 	if err != nil {
 		return nil, 0, events.Actor{}, err
@@ -154,15 +144,22 @@ func deleteLocked(ctx context.Context, ts *ent.Scoped, pub events.Publisher, act
 	if err := ts.Membership().DeleteOneID(target.ID).Exec(ctx); err != nil {
 		return err
 	}
-	return events.RecordAudit(ctx, pub, &events.AuditEntry{
-		WorkspaceID: ts.WorkspaceID(),
+	return events.RecordAudit(ctx, pub, RemovalAudit(ts.WorkspaceID(), actor, target))
+}
+
+// RemovalAudit is the `membership.delete` Audit entry of removing target, a Membership of the
+// Workspace workspaceID loaded with its User, by actor. It writes nothing: each removal records it
+// in its own transaction.
+func RemovalAudit(workspaceID int64, actor events.Actor, target *ent.Membership) *events.AuditEntry {
+	return &events.AuditEntry{
+		WorkspaceID: workspaceID,
 		Actor:       actor,
 		Action:      events.ActionMembershipDelete,
 		TargetType:  "membership",
 		TargetID:    strconv.FormatInt(target.ID, 10),
 		TargetName:  target.Edges.User.Name,
 		Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), nil)},
-	})
+	}
 }
 
 // lockedTarget locks the Workspace's owner rows, then loads the one Membership matching

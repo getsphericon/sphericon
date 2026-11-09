@@ -78,7 +78,7 @@ password reset, a verification link sent again) publishes in a transaction of it
   job kind. The bus inserts the jobs of every entry that wants the event with one `InsertManyTx` on
   the producer's transaction. The entries are registered on the bus when the application is wired
   (`internal/app`): core's (`jobs.EventConsumers`) and the Enterprise Edition's
-  (`ee.EventConsumers`), so the events module imports no consumer module.
+  (`ee/jobs.EventConsumers`), so the events module imports no consumer module.
 - **The journal** records every accepted publication, even without a consumer or an Event row.
   It stores no original envelope, personal source key or request metadata. A consumer's explicit
   `Replay` policy retains only its versioned anonymous job args. The message observation and
@@ -87,7 +87,7 @@ password reset, a verification link sent again) publishes in a transaction of it
 - **After the commit**: what must happen once for a newly stored Event, outside any transaction, is
   registered on the bus with `OnStored` and runs after the commit, so neither a repeat nor a
   rolled-back Event reaches it: the send-outcome counter of a provider's bounce or complaint
-  (`app.RecordSendOutcome`, which the wiring registers). The bus knows no domain module: the names it catalogs (`email.bounced`,
+  (`jobs.RecordSendOutcome`, an event subscriber of the job runner, which the wiring registers). The bus knows no domain module: the names it catalogs (`email.bounced`,
   `email.complained`) are its own, and `suppressions` refers to them.
 
 A consumer that reads the whole event has args of its own that embed the envelope (`events.EventJob`),

@@ -1,12 +1,13 @@
 id: no-hand-written-problem-in-handlers
 language: Go
 severity: error
-message: "rule 15: a handler writes a refusal's problem by hand; fix: return the module's sentinel refusal (validation.Refuse/RefuseField/NotFound/Conflict/ConflictField/Forbidden/Unauthorized/Denied/Unverified/LinkInvalid/Incomplete/UnknownReference) and let internal/api/problem answer it"
+message: "rule 15: a handler writes a refusal's problem by hand; fix: return the module's sentinel refusal (validation.Refuse/RefuseField/NotFound/Conflict/ConflictField/Forbidden/Unauthorized/Denied/Unverified/LinkInvalid/Incomplete/UnknownReference/Unlicensed) and let internal/api/problem answer it"
 note: >-
   A refusal answers the same on every surface and is mapped once (review rule 15): the module that
   decides it returns a sentinel whose kind carries its status and code (not found 404, refused 422,
   conflict 409, forbidden 403 permission_required, unauthorized 401, denied 403, unverified 403
-  email_verification_required, an invalid link 400, incomplete 428, an unknown reference 400), the
+  email_verification_required, an invalid link 400, incomplete 428, an unknown reference 400, a
+  capability the License does not include 402), the
   handler returns it as its error, and the surface's NewError answers it through internal/api/problem.
   A handler that builds a surface's ProblemDetails (or its ProblemDetailsStatusCode) or a
   problem.Error writes a second mapping of the decision, next to the handler rather than the
@@ -30,8 +31,5 @@ ignores:
   - '**/*_gen.go'
   # The one place the problems are written: the mapping this rule sends every handler to.
   - internal/api/problem/**
-  # No refusal kind fits these: the 402 of a missing Enterprise license (audit), the 410 of an
-  # expired confirmation link (consent).
-  - internal/api/site/audit.go
+  # No refusal kind fits this: the 410 of an expired confirmation link (consent).
   - internal/api/site/consent.go
-  - internal/api/external/audit.go

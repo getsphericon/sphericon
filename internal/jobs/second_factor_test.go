@@ -6,10 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pquerna/otp/totp"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -27,7 +30,7 @@ var (
 // sent when the test reads env.SystemMail.
 func remind(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	sweep := jobs.NewRemindSecondFactorWorker(env.DB, env.Bus, func() time.Time { return now })
+	sweep := jobs.NewRemindSecondFactorWorker(env.SecondFactor, func() time.Time { return now })
 	require.NoError(t, sweep.Work(context.Background(), job(jobs.RemindSecondFactorArgs{})))
 }
 
@@ -77,10 +80,11 @@ func TestSecondFactorReminderShowsTheDeadlineInTheUserTimeZone(t *testing.T) {
 
 func TestNoSecondFactorReminderForAUserWhoEnrolledOrWhoseGraceEnded(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.DB.User.UpdateOneID(fixtures.UmbrellaMemberNinaID).
-		SetSecondFactorSecretEncrypted("sealed").
-		SetSecondFactorConfirmedAt(ninaDeadline.Add(-48 * time.Hour)).
-		Save(context.Background())
+	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.UmbrellaMemberNinaID), users.IdentityProof{Password: fixtures.UmbrellaMemberNinaPassword})
+	require.NoError(t, err)
+	code, err := totp.GenerateCode(enrollment.Secret, time.Now())
+	require.NoError(t, err)
+	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.UmbrellaMemberNinaID), users.IdentityProof{Password: fixtures.UmbrellaMemberNinaPassword}, secondfactors.ConfirmInput{EnrollmentID: enrollment.ID, Code: code})
 	require.NoError(t, err)
 
 	remind(t, env, ninaDeadline.Add(-12*time.Hour))

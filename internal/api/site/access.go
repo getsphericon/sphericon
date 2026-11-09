@@ -8,8 +8,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -37,9 +37,9 @@ type access struct {
 var errUndeclared = validation.Forbidden("site: the operation declares no access", i18n.ErrorsPermissionUnknown)
 
 // Access is the ogen middleware of /site (ADR 0061), and the site's construction point of the
-// scoped client (ADR 0017). For an operation of a Workspace it loads the caller's Membership of
-// the Workspace its workspaceId names; it then admits the signed-in User (users.Admit: a
-// required acceptance pending, then the Workspace's Two-factor requirement, each unless the
+// scoped client (ADR 0017). It admits the signed-in User to the operation (admission.Module.Admit:
+// for an operation of a Workspace, the caller's Membership of the Workspace its workspaceId names,
+// then a required acceptance pending and the Workspace's Two-factor requirement, each unless the
 // operation lets it through), checks the Permissions the operation declares and puts the
 // Workspace's *ent.Scoped (acting as the caller, ADR 0022) and the Membership in the context,
 // where the handler reads them with workspaceScope and callerMembership. A request without a
@@ -59,27 +59,27 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 		}
 		return next(req)
 	}
-	var c caller
-	if a.workspace {
-		id, _ := req.Params.Path("workspaceId")
-		publicID, _ := id.(siteapi.WorkspaceId)
-		s, m, err := h.memberships.Scope(req.Context, session.UserID, string(publicID))
-		if err != nil {
-			return middleware.Response{}, err
-		}
-		c = caller{scoped: s, membership: m}
-	}
-	err := h.users.Admit(req.Context, users.Admission{
-		UserID:                 session.UserID,
-		Membership:             c.membership,
+	r := admission.Request{
+		UserID:                 session.User.ID,
 		StrongSession:          currentSession(req.Context).Method.Strong(),
 		WhileAcceptancePending: a.whileAcceptancePending,
 		WhileWithheld:          a.whileWithheld,
 		At:                     h.now(),
-	})
+	}
+	if a.workspace {
+		id, _ := req.Params.Path("workspaceId")
+		publicID, _ := id.(siteapi.WorkspaceId)
+		if publicID == "" {
+			// No Workspace is named by an empty id: never the operation of no Workspace.
+			return middleware.Response{}, workspaces.ErrNotFound
+		}
+		r.Workspace = string(publicID)
+	}
+	admitted, err := h.admission.Admit(req.Context, r)
 	if err != nil {
 		return middleware.Response{}, err
 	}
+	c := caller{scoped: admitted.Scoped, membership: admitted.Membership}
 	if !a.workspace {
 		return next(req)
 	}

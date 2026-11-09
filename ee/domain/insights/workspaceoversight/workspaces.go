@@ -3,7 +3,6 @@ package workspaceoversight
 import (
 	"context"
 	"strconv"
-	"strings"
 
 	"github.com/samber/lo"
 
@@ -11,14 +10,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 var (
-	// ErrReasonRequired refuses a suspension with no reason: the owner is told why.
-	ErrReasonRequired = validation.RefuseField("reason", "staff: a suspension needs a reason", i18n.ErrorsSuspensionReasonRequired)
 	// ErrWorkspaceNotFound is an id no Workspace has, on the console and the service endpoints alike.
 	ErrWorkspaceNotFound = validation.NotFound("staff: workspace not found", i18n.ErrorsWorkspaceNotFound)
 )
@@ -43,13 +41,10 @@ func (m *Module) changeOf(ctx context.Context, id int64, changed bool) (*Workspa
 // the same Suspender the command line uses (ADR 0007), which tells its owners via the
 // system sender. It reports whether anything changed: an already-suspended
 // Workspace is left as it was and its owners are not told twice. A failed notice does
-// not undo the suspension; it is logged. A blank reason is ErrReasonRequired.
+// not undo the suspension; it is logged. A blank reason is suspension.ErrReasonRequired.
 func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, by *ent.StaffMember, reason string) (*WorkspaceChange, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err
-	}
-	if strings.TrimSpace(reason) == "" {
-		return nil, ErrReasonRequired
 	}
 	w, err := m.workspace(ctx, publicID)
 	if err != nil {
@@ -81,10 +76,11 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *en
 	return m.changeOf(ctx, id, changed)
 }
 
-// workspace loads a Workspace row by its id (ADR 0043), the only address the console and the
-// service endpoints take. ErrWorkspaceNotFound for an unknown id; the id is case-sensitive.
+// workspace loads a Workspace row by its id (ADR 0043, workspaces.ByPublicIDIn), the only address
+// the console and the service endpoints take. ErrWorkspaceNotFound for an unknown id; the id is
+// case-sensitive.
 func (m *Module) workspace(ctx context.Context, publicID string) (*ent.Workspace, error) {
-	w, err := m.ent.Workspace.Query().Where(entworkspace.PublicID(publicID)).Only(ctx)
+	w, err := workspaces.ByPublicIDIn(ctx, m.ent, publicID)
 	if ent.IsNotFound(err) {
 		return nil, ErrWorkspaceNotFound
 	}
@@ -140,16 +136,50 @@ func (m *Module) ListWorkspaces(ctx context.Context, review abusedetector.Review
 		})
 }
 
-// GetWorkspace is one Workspace's metadata row; ErrWorkspaceNotFound when it does not
-// exist.
-func (m *Module) GetWorkspace(ctx context.Context, publicID string) (*ent.Workspace, error) {
-	if err := m.licensed(); err != nil {
-		return nil, err
-	}
-	return m.workspace(ctx, publicID)
+// WorkspaceDetail is what the Staff console shows of one Workspace.
+type WorkspaceDetail struct {
+	Workspace      *ent.Workspace
+	Deliverability abusedetector.Deliverability
+	Holds          []*ent.Hold
+	// Breach is the abuse detector's warning now.
+	Breach abusedetector.Breach
+	// SentLast24h is the Workspace's sends over the last 24 hours, the figure shown next to its
+	// Send cap; nil on an Instance without Send caps.
+	SentLast24h *int
 }
 
-// WorkspaceDeliverability is the rates of one Workspace, by the existing reputation
+// GetWorkspace is one Workspace as the Staff console shows it: its metadata row, its
+// deliverability, its active Holds, its abuse warning and, with Send caps, its sends over the
+// last 24 hours. ErrWorkspaceNotFound when it does not exist.
+func (m *Module) GetWorkspace(ctx context.Context, publicID string) (WorkspaceDetail, error) {
+	if err := m.licensed(); err != nil {
+		return WorkspaceDetail{}, err
+	}
+	w, err := m.workspace(ctx, publicID)
+	if err != nil {
+		return WorkspaceDetail{}, err
+	}
+	d := WorkspaceDetail{Workspace: w}
+	if d.Deliverability, err = m.deliverability(ctx, w); err != nil {
+		return WorkspaceDetail{}, err
+	}
+	if d.Holds, err = m.holdsOf(ctx, m.ent.Scoped(w.ID)); err != nil {
+		return WorkspaceDetail{}, err
+	}
+	if d.Breach, err = m.watch.Warning(ctx, m.ent.Scoped(w.ID), w, m.now()); err != nil {
+		return WorkspaceDetail{}, err
+	}
+	if m.sendCaps {
+		sent, err := m.sentLast24h(ctx, w)
+		if err != nil {
+			return WorkspaceDetail{}, err
+		}
+		d.SentLast24h = &sent
+	}
+	return d, nil
+}
+
+// deliverability is the rates of one Workspace, by the existing reputation
 // computation (ADR 0011, no new one), and its send volume. A rate stays undefined
 // while its Sending domain sent fewer than the volume floor in the window. The
 // reputation module reads through a Workspace scope, so one is built here over the
@@ -159,10 +189,7 @@ func (m *Module) GetWorkspace(ctx context.Context, publicID string) (*ent.Worksp
 // the reputation module defines as the count of the domain's email.sent Events in the
 // window: it is exactly the messages sent in the window from the Workspace's Sending
 // domains (a send naming no Sending domain of the Workspace belongs to no rate).
-func (m *Module) WorkspaceDeliverability(ctx context.Context, w *ent.Workspace) (abusedetector.Deliverability, error) {
-	if err := m.licensed(); err != nil {
-		return abusedetector.Deliverability{}, err
-	}
+func (m *Module) deliverability(ctx context.Context, w *ent.Workspace) (abusedetector.Deliverability, error) {
 	floor := m.watch.Limits().VolumeFloor
 	rates, err := m.rates.Rates(ctx, m.ent.Scoped(w.ID), abusedetector.WindowFor(w, m.now()))
 	if err != nil {
@@ -199,14 +226,4 @@ func (m *Module) SetAbuseExempt(ctx context.Context, publicID string, by *ent.St
 		return nil, err
 	}
 	return m.changeOf(ctx, id, changed)
-}
-
-// WorkspaceAbuse is the Workspace's warning now, by the detector's own computation:
-// none while it is exempt, suspended or unlicensed. The detector reads through a
-// Workspace scope, built here over the Workspace being looked at (like the rates).
-func (m *Module) WorkspaceAbuse(ctx context.Context, w *ent.Workspace) (abusedetector.Breach, error) {
-	if err := m.licensed(); err != nil {
-		return abusedetector.Breach{}, err
-	}
-	return m.watch.Warning(ctx, m.ent.Scoped(w.ID), w, m.now())
 }

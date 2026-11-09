@@ -42,6 +42,17 @@ failure belongs to the Action's result; it does not cancel the Firing's other Ac
 Enrollment lifecycle rules. The call retains its stable request identity and existing delivery
 guarantees: a request accepted before a failed result write may be repeated.
 
+## Broadcast send jobs
+
+**Broadcast send jobs** (ADR 0107, ADR 0111): `broadcasts.Delivery.RunQueued` runs a plan job
+and `DeliverRecipient` one attempt at a recipient's job (`broadcasts.Attempt`, the number and
+the limit). The module decides what the run comes to, as a `broadcasts.Outcome` without River
+types: a job superseded by a reschedule or stale (unscheduled, sent or failed meanwhile) is done,
+a hold, a Deferral or a live claim waits the time it asks for, any other failure spends an
+attempt, and on the last attempt a failed recipient is given up so the Broadcast settles. The
+River workers load the row that names the Workspace, hand over the attempt and turn the outcome
+into a snooze or an error; the synchronous adapter runs every send as its last attempt.
+
 ## Email rendering
 
 `internal/kernel/emaildoc` (ADR 0040) turns an editor document into email HTML inside the binary: the editor's own

@@ -122,20 +122,11 @@ func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.
 }
 
 // BroadcastsTestSend renders the broadcast with sample merge data and sends it to
-// one address: no recipient rows, no tracking, never the audience.
+// one address: no recipient rows, no tracking, never the audience. A token is no User, so the
+// Test send never goes from the System sender.
 func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.TestSendBroadcastInput, params externalapi.BroadcastsTestSendParams) error {
-	id := int64(params.ID)
-	ws := auth.TokenScoped(ctx)
-	b, err := h.broadcasts.Get(ctx, ws, id)
-	if err != nil {
-		return err
-	}
-
-	// No Asker: /api never sends from the System sender, so its cap never defers the Test send.
-	if _, err := h.outbound.SendBroadcastTest(ctx, ws, b, inputs.TestAddress(req), nil); err != nil {
-		return err
-	}
-	return nil
+	_, err := h.broadcasts.SendTest(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.TestAddress(req))
+	return err
 }
 
 func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.BroadcastsReportParams) (*externalapi.BroadcastReport, error) {

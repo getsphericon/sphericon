@@ -2,11 +2,9 @@ package site
 
 import (
 	"context"
-	"errors"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // signinSettingsPath is the account page that lists the Linked identities: where a link flow
@@ -64,38 +62,4 @@ func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 	return &siteapi.SiteIdentitiesUnlinkNoContent{SetCookie: cookie.String()}, nil
-}
-
-// linkProvider finishes a link flow: the callback of the browser that is signed in as the
-// User the flow names adds the provider's subject to that User, reissues this session (a new
-// identity keeps the session's provider login time; every other session goes on), and lands on
-// the page the flow began from. Anything else is a refusal that lands on the settings page with
-// the Reason.
-func (h *Handlers) linkProvider(ctx context.Context, flow signinprovider.Flow, session string, profile signinprovider.Profile) (*siteapi.SiteAuthSigninCallbackFound, error) {
-	holds, err := h.holdsSession(ctx, session, flow.LinkUserID)
-	if err != nil {
-		return nil, err
-	}
-	if !holds {
-		return h.signinRefused(flow, signinprovider.ReasonInvalidState), nil
-	}
-	u, added, err := h.users.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, profile.Subject)
-	if errors.Is(err, users.ErrIdentityInUse) {
-		return h.signinRefused(flow, signinprovider.ReasonIdentityInUse), nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	// Signing in again with a provider account the User already had is a fresh provider
-	// login. A provider account added now proves nothing about the person (a stolen session
-	// could add its own), so the session keeps the login time it had.
-	sess, _ := h.sessions.SessionOf(session)
-	if !added {
-		sess.ProviderLoginAt = h.now()
-	}
-	cookie, err := h.sessions.Issue(u, sess)
-	if err != nil {
-		return nil, err
-	}
-	return h.signinLanded(flow, cookie.String()), nil
 }

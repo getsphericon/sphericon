@@ -3,17 +3,9 @@ package main
 import (
 	"context"
 
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/urfave/cli/v3"
-
-	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 )
-
-// staffOps is what the `staff` commands need from the app. The app implements
-// it (internal/app).
-type staffOps interface {
-	CreateStaffMember(ctx context.Context, email string) (password string, err error)
-	ResetStaffTOTP(ctx context.Context, email string) error
-}
 
 // staffCommand is `sphericon staff create|reset-totp <email>` (ADR 0026, ADR 0063), on every
 // Instance without a License key. `create` is the only
@@ -28,10 +20,14 @@ func staffCommand(d deps) *cli.Command {
 			Usage:     "create a Staff member and print their one-time password",
 			ArgsUsage: "<email>",
 			Arguments: []cli.Argument{&cli.StringArg{Name: "email", Required: true}},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+				members, err := c.StaffMembers()
+				if err != nil {
+					return err
+				}
 				email := cmd.StringArg("email")
-				password, err := ops.CreateStaffMember(ctx, email)
-				return staffmembers.ReportCreated(out(cmd), email, password, err)
+				password, err := members.Create(ctx, email)
+				return commandline.ReportStaffCreated(out(cmd), email, password, err)
 			}),
 		},
 		&cli.Command{
@@ -39,10 +35,14 @@ func staffCommand(d deps) *cli.Command {
 			Usage:     "clear a Staff member's TOTP and end their sessions",
 			ArgsUsage: "<email>",
 			Arguments: []cli.Argument{&cli.StringArg{Name: "email", Required: true}},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+				members, err := c.StaffMembers()
+				if err != nil {
+					return err
+				}
 				email := cmd.StringArg("email")
-				err := ops.ResetStaffTOTP(ctx, email)
-				return staffmembers.ReportTOTPReset(out(cmd), email, err)
+				err = members.ResetTOTP(ctx, email)
+				return commandline.ReportTOTPReset(out(cmd), email, err)
 			}),
 		},
 	)

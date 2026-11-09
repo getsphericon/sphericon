@@ -2,6 +2,7 @@ package sendingdomains
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"strings"
 	"time"
@@ -16,17 +17,88 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
-// RecordDKIM stores what a live DKIM check of dom found (ADR 0010): last_checked_at, verified_at
+// Verify runs the live DNS check of the domain now, when a person asks for it, and returns the
+// domain as the check left it: `verified`, `lastCheckedAt`, `dmarcCheckedAt` and `dmarcFoundAt`
+// are the outcome. It confirms the domain is in the Workspace and kept first: an unknown or a
+// deleted domain is ErrNotFound.
+func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+	if _, err := Editable(ctx, s, id); err != nil {
+		return nil, err
+	}
+	if err := m.Recheck(ctx, s, id); err != nil {
+		return nil, err
+	}
+	return m.Get(ctx, s, id)
+}
+
+// Recheck checks one Sending domain: its DKIM, then its DMARC record. A DKIM lookup error is
+// returned so the job retries; DMARC never fails the check nor changes its DKIM result (ADR 0012).
+// A deleted domain is not kept working (ADR 0099): a check queued before the deletion does nothing.
+// An unknown id is ErrNotFound.
+func (m *Module) Recheck(ctx context.Context, s *ent.Scoped, id int64) error {
+	dom, err := m.Get(ctx, s, id)
+	if err != nil {
+		return err
+	}
+	if dom.DiscardedAt != nil {
+		return nil
+	}
+	if err := m.checkDKIM(ctx, s, dom); err != nil {
+		return err
+	}
+	m.checkDMARC(ctx, s, dom)
+	return nil
+}
+
+// checkDKIM looks the DKIM record of a kept domain already read up and stores the outcome
+// (recordDKIM). The write lands only while the domain is still kept, so one deleted during the
+// lookup is neither changed nor reported.
+func (m *Module) checkDKIM(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain) error {
+	verified, err := VerifyDKIM(ctx, m.lookup, dom.DkimSelector, dom.Domain, dom.DkimPublicKey)
+	if err != nil {
+		return err
+	}
+	var lost bool
+	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		var err error
+		lost, err = recordDKIM(ctx, ts, pub, dom, verified, m.now())
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	if lost {
+		slog.WarnContext(ctx, "sending domain DKIM verification lost",
+			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
+	}
+	return nil
+}
+
+// checkDMARC looks the domain's DMARC record up and stores the answer (recordDMARC). A failed
+// lookup or write is logged and changes nothing: the domain stays as the last answer left it.
+func (m *Module) checkDMARC(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain) {
+	found, err := LookupDMARC(ctx, m.lookup, dom.Domain)
+	if err != nil {
+		slog.WarnContext(ctx, "sending domain DMARC lookup failed",
+			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "domain", dom.Domain, "err", err)
+		return
+	}
+	if err := recordDMARC(ctx, s, dom, found, m.now()); err != nil {
+		slog.WarnContext(ctx, "sending domain DMARC result not stored",
+			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "err", err)
+	}
+}
+
+// recordDKIM stores what a live DKIM check of dom found (ADR 0010): last_checked_at, verified_at
 // when it becomes verified (clearing the loss) and verification_lost_at when it stops being. dom is
 // the kept domain as the check read it before its lookup. The write is a compare-and-swap on the
 // state the check read and lands only while the domain is still kept: a check that lost to another
 // one, or a domain deleted during the lookup, stores nothing, and the stored state is the answer.
-// It returns the domain's verified state after the write, and lost, whether this write took the
-// verification away; a loss publishes events.SendingDomainVerificationLost on pub, so the Owners
-// are told once per loss (ADR 0046, ADR 0105): s and pub are the transaction's. A check's outcome
-// is not an edit by whoever asked for it: the write is left out of the Audit log
-// (events.Unaudited), as is RecordDMARC's.
-func RecordDKIM(ctx context.Context, s *ent.Scoped, pub events.Publisher, dom *ent.SendingDomain, verified bool, now time.Time) (state, lost bool, err error) {
+// It returns lost, whether this write took the verification away; a loss publishes
+// events.SendingDomainVerificationLost on pub, so the Owners are told once per loss (ADR 0046,
+// ADR 0105): s and pub are the transaction's. A check's outcome is not an edit by whoever asked
+// for it: the write is left out of the Audit log (events.Unaudited), as is recordDMARC's.
+func recordDKIM(ctx context.Context, s *ent.Scoped, pub events.Publisher, dom *ent.SendingDomain, verified bool, now time.Time) (lost bool, err error) {
 	was := dkimstate.Is(dom)
 	upd := events.Unaudited(s).SendingDomain().UpdateOneID(dom.ID).
 		Where(sendingdomain.DiscardedAtIsNil()).
@@ -43,30 +115,26 @@ func RecordDKIM(ctx context.Context, s *ent.Scoped, pub events.Publisher, dom *e
 	if err := upd.Exec(ctx); err != nil {
 		if ent.IsNotFound(err) {
 			// Lost the swap (or the domain is deleted or gone): the stored state is the answer.
-			current, gerr := s.SendingDomain().Get(ctx, dom.ID)
-			if gerr != nil {
-				return false, false, gerr
-			}
-			return dkimstate.Is(current), false, nil
+			return false, nil
 		}
-		return false, false, err
+		return false, err
 	}
 	if !was || verified {
-		return verified, false, nil
+		return false, nil
 	}
-	return false, true, pub.Publish(ctx, &events.SendingDomainVerificationLost{
+	return true, pub.Publish(ctx, &events.SendingDomainVerificationLost{
 		WorkspaceID: dom.WorkspaceID, SendingDomainID: dom.ID, Domain: dom.Domain,
 		Record: dom.DkimSelector + "._domainkey." + dom.Domain,
 	})
 }
 
-// RecordDMARC stores what a DMARC lookup of dom found (ADR 0012): dmarc_checked_at that a lookup
+// recordDMARC stores what a DMARC lookup of dom found (ADR 0012): dmarc_checked_at that a lookup
 // answered, and dmarc_found_at when the record was first found, set when a lookup finds it and it
 // was not yet, cleared when one finds none. dom is the kept domain as the check read it. The move
 // of dmarc_found_at is a compare-and-swap on the state it leaves; the write is an update of its
 // own, so it never touches the DKIM moments, and a check that loses the swap, or a domain deleted
 // meanwhile, leaves the answer the stored row has and is no error.
-func RecordDMARC(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain, found bool, now time.Time) error {
+func recordDMARC(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain, found bool, now time.Time) error {
 	upd := events.Unaudited(s).SendingDomain().UpdateOneID(dom.ID).
 		Where(sendingdomain.DiscardedAtIsNil()).
 		SetDmarcCheckedAt(now)

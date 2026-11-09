@@ -179,16 +179,18 @@ func annotatedRows(raw []byte) (map[string]*yaml.Node, error) {
 
 // credentialColumns maps a hash column to the constant-name suffix of the plaintext
 // it was derived from. The plaintext is the literal argument of the hashing
-// template call (see credentialCall); a column holding a static hash yields nothing.
-var credentialColumns = []struct{ column, suffix string }{
-	{"password_hash", "Password"},
-	{"secret_hash", "Secret"},
-	{"token_hash", "Token"},
-	{"second_factor_secret_encrypted", "TotpSecret"},
-	{"totp_secret_encrypted", "TotpSecret"},
-	{"code_hash", "Code"},
-	{"credential_id", "CredentialID"},
-	{"public_key", "PrivateKey"},
+// template call (see credentialCall); a column holding a static hash yields nothing. A
+// column named with its table (file) is lifted from that table only: a Second factor's
+// secret_encrypted is a TOTP secret, a Webhook endpoint's is not.
+var credentialColumns = []struct{ column, suffix, table string }{
+	{"password_hash", "Password", ""},
+	{"secret_hash", "Secret", ""},
+	{"token_hash", "Token", ""},
+	{"secret_encrypted", "TotpSecret", "second_factors"},
+	{"totp_secret_encrypted", "TotpSecret", ""},
+	{"code_hash", "Code", ""},
+	{"credential_id", "CredentialID", ""},
+	{"public_key", "PrivateKey", ""},
 }
 
 // credentialCall matches a quoted-string hashing or sealing call:
@@ -219,6 +221,9 @@ func rowConstants(name, source string, row *yaml.Node) []constant {
 	source = strings.TrimSuffix(source, ".yml")
 	var out []constant
 	for _, col := range credentialColumns {
+		if col.table != "" && col.table != source {
+			continue
+		}
 		raw, ok := columnValue(row, col.column)
 		if !ok {
 			continue

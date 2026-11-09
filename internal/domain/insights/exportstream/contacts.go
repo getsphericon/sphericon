@@ -72,7 +72,10 @@ func contactRow(c *ent.Contact) ContactRow {
 
 // Contacts serves a page of the Workspace's Contacts stream. A Tag change moves the Contact's
 // updated_at (internal/domain/contacts/tags), so the Tag names ride the row's own version.
-func Contacts(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+func (st *Streams) Contacts(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+	if !st.offered() {
+		return Page{}, ErrNotOffered
+	}
 	return Read(token, limit, func(after Cursor, n int) ([]ContactRow, error) {
 		rows, err := s.Contact().Query().
 			Where(predicate.Contact(Seek(after))).

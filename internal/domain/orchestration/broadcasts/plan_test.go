@@ -371,55 +371,6 @@ func TestProgressEstimateUsesTheBroadcastsOwnIntegration(t *testing.T) {
 	assert.Equal(t, 2*500*time.Millisecond, eta)
 }
 
-// A delayed job outlives an unschedule: a Broadcast back in draft is not due, a scheduled
-// one is.
-func TestDueIsFalseOnlyForADraft(t *testing.T) {
-	d := newDelivery(t, time.Now)
-
-	due, err := broadcasts.Due(d.t.Context(), d.s, fixtures.BroadcastDraftID, nil)
-	require.NoError(t, err)
-	assert.False(t, due, "draft: unscheduled after the job was queued")
-
-	due, err = broadcasts.Due(d.t.Context(), d.s, fixtures.BroadcastScheduledID, nil)
-	require.NoError(t, err)
-	assert.True(t, due)
-}
-
-// A delayed job is bound to the schedule it was enqueued for: after a reschedule (or
-// unschedule + schedule) the superseded job must not send the Broadcast early.
-func TestDueIsFalseForASupersededScheduledJob(t *testing.T) {
-	d := newDelivery(t, time.Now)
-	oldAt := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastScheduledID).ScheduledAt
-	require.NotNil(t, oldAt)
-	newAt := oldAt.Add(48 * time.Hour)
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastScheduledID).SetScheduledAt(newAt).ExecX(d.t.Context())
-
-	due, err := broadcasts.Due(d.t.Context(), d.s, fixtures.BroadcastScheduledID, oldAt)
-	require.NoError(t, err)
-	assert.False(t, due, "job for the old schedule is superseded")
-
-	due, err = broadcasts.Due(d.t.Context(), d.s, fixtures.BroadcastScheduledID, &newAt)
-	require.NoError(t, err)
-	assert.True(t, due, "job for the current schedule runs")
-}
-
-// A delayed job is also superseded by an immediate send (which clears scheduled_at), while
-// a retry of the job that legitimately started the send (sending, same scheduled_at) runs.
-func TestDueForADelayedJobAcrossSendAndRetry(t *testing.T) {
-	d := newDelivery(t, time.Now)
-	at := *d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastScheduledID).ScheduledAt
-
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastScheduledID).SetStatus(broadcast.StatusSending).ExecX(d.t.Context())
-	due, err := broadcasts.Due(d.t.Context(), d.s, fixtures.BroadcastScheduledID, &at)
-	require.NoError(t, err)
-	assert.True(t, due, "retry of the job that started the send")
-
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastScheduledID).ClearScheduledAt().ExecX(d.t.Context())
-	due, err = broadcasts.Due(d.t.Context(), d.s, fixtures.BroadcastScheduledID, &at)
-	require.NoError(t, err)
-	assert.False(t, due, "sent now: the delayed job is superseded")
-}
-
 // A Workspace freeze holds the plan: the Broadcast keeps its status, records why and no
 // recipient row exists; it resumes once the freeze lifts (story 6).
 func TestPlanHoldsOnAWorkspaceFreezeAndResumes(t *testing.T) {
@@ -593,30 +544,4 @@ func TestPaceSpreadsEverySendOneStepApartFromTheStart(t *testing.T) {
 // sinceStart is how long after start each time is.
 func sinceStart(times []time.Time, start time.Time) []time.Duration {
 	return lo.Map(times, func(at time.Time, _ int) time.Duration { return at.Sub(start) })
-}
-
-// A queued job runs only a Broadcast that was claimed for it (scheduled or sending). One
-// that an unschedule returned to draft after the job's Due check must stay a draft: the
-// plan of a direct caller may claim a draft, the plan of a queued job may not.
-func TestQueuedRunRefusesADraftUnscheduledAfterItsDueCheck(t *testing.T) {
-	d := newDelivery(t, time.Now)
-
-	err := d.del.RunClaimed(d.t.Context(), d.s, fixtures.BroadcastDraftID, &recordingScheduler{})
-
-	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
-	status := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).Status
-	assert.Equal(t, broadcast.StatusDraft, status)
-	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
-}
-
-func TestQueuedRunPlansAScheduledBroadcast(t *testing.T) {
-	d := newDelivery(t, time.Now)
-
-	sched := &recordingScheduler{}
-	err := d.del.RunClaimed(d.t.Context(), d.s, fixtures.BroadcastScheduledID, sched)
-
-	require.NoError(t, err)
-	status := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastScheduledID).Status
-	assert.Equal(t, broadcast.StatusSending, status)
-	assert.NotEmpty(t, sched.sends)
 }

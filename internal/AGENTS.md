@@ -42,10 +42,10 @@ the fixtures are sealed with, and never loads the configuration for it.
 
 **A document is saved through a fake export.** A runtime of the editor's code takes seconds to
 start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Setup` and of a module a
-test builds itself (`emailtemplates.New(testhelper.Renderer())`), runs our own checks and fakes the
-editor's schema check and export: the body is the document's text as paragraphs. A test of what the
-export makes of a document takes `testhelper.RealRenderer()`, and asserts the brand or the markup
-only there. The nightly run sets `SPHERICON_TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
+test builds itself (`emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})`), runs our own
+checks and fakes the editor's schema check and export: the body is the document's text as
+paragraphs. A test of what the export makes of a document takes `testhelper.RealRenderer()`, and
+asserts the brand or the markup only there. The nightly run sets `SPHERICON_TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
 
 **Build test scenarios on the committed fixtures (review rules 10 and 11).** Reference fixture rows through the catalog constants below
 (`fixtures.BroadcastDraftID`, `fixtures.ContactAliceID`, `fixtures.SegmentActiveID`, …),
@@ -105,7 +105,7 @@ Removal check reads under the Workspace lock, `internal/usecase/customfieldretyp
 edit's, `internal/usecase/integrationdeletion` the Integration's and
 `internal/usecase/sendingdomaindeletion` the Sending domain's, while what the Removal check finds is
 tested in `internal/domain/orchestration/removalcheck` against `env.RemovalCheck`,
-`internal/usecase/sendingdomainverification` the Sending domain checks, `internal/usecase/secretreencryption` the re-encryption of every stored
+`internal/usecase/secretreencryption` the re-encryption of every stored
 secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
 `internal/usecase/visitoridentification` what Identify binds and stitches). An operation that moves
 into the module that owns its subject (ADR 0112) takes its tests to that module's `_test` package:
@@ -114,7 +114,10 @@ into the module that owns its subject (ADR 0112) takes its tests to that module'
 (`SendTransactional`), `internal/domain/instance/instancestates` the Release check and the
 Telemetry report, `internal/domain/contacts/eventrecording` what the Event recording refuses and
 publishes, and `internal/domain/orchestration/automations` the steps of an Enrollment
-(`StepExecution`). The use case is built from the container like a
+(`StepExecution`). A check that needs nothing above its owner moves into the owner the same way
+(ADR 0110): `internal/domain/sending/sendingdomains` holds the Sending domain checks (`Verify`,
+`Recheck`). `internal/domain/identity/workspaces` holds the check of the typed name when
+it deletes a Workspace (`Module.Delete`). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step
@@ -126,15 +129,18 @@ the Telemetry report are the Instance state module's: a test builds it with `ins
 …)`, passing its stub of the release source or the receiver's client, or nil where the operation is
 not exercised, and the server's own is `env.Instance`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
-owns holds the raw client: the Second factor's is `env.SecondFactor`
-(`internal/usecase/secondfactorcheck`), the Workspace creation's `env.WorkspaceCreation`
-(`internal/usecase/workspacecreation`; a test of its id retry builds it with `New` and an id
-generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
-Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle
-(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables(), clock)`
-(the removals of the Enterprise Edition's tables the wiring hands in), and the exchange of an OAuth
-grant (`internal/usecase/connectionissuance`) is driven through the server's `/oauth` routes, which
-its driver `internal/api/oauth` serves and tests.
+owns holds the raw client: the Second factor reset's is `env.SecondFactorReset`
+(`internal/usecase/secondfactorreset`, with the races of a reset against the factor's other
+changes; the Second factor check is the module `internal/domain/identity/secondfactors`,
+`env.SecondFactor`, whose `_test` package holds its own), the Workspace view's `env.WorkspaceView`
+(`internal/usecase/workspaceview`, which creates and restores a Workspace; the id retry of a
+creation is `workspacesunchecked.CreateIn`'s, tested with an id generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
+Verified with its first Workspace and an Owner from a shell), User deletion's `env.UserDeletion`
+(`internal/usecase/userdeletion`, with a proof that no longer fits the User and two co-Owners
+deleting themselves at once; a test of the race builds it with `New` on a real database), the Workspace deletion cycle's
+restore and erase (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange
+of an OAuth grant (`apitokens.Module`, which holds the raw client too) is driven through the
+server's `/oauth` routes, which its driver `internal/api/oauth` serves and tests.
 The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test
 of a race on a new address gives it a `Lookup` whose first lookup misses.
 A use case reads the time from the clock `New` takes (ADR 0104), so a test that needs a moment

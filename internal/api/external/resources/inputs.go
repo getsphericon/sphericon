@@ -98,7 +98,6 @@ type Inputs interface {
 	// goverter:ignore Channel
 	OptOut(source *externalapi.CreateUnsubscribeInput) unsubscriberecording.OptOutInput
 
-	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *externalapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
@@ -149,6 +148,10 @@ type Inputs interface {
 	SegmentCreate(source *externalapi.CreateSegmentInput) (segments.CreateInput, error)
 	// goverter:map Condition | segmentConditionPatch
 	SegmentUpdate(source *externalapi.UpdateSegmentInput) (segments.UpdateInput, error)
+	// goverter:map Condition | conditionIn
+	// /api previews the match alone: its contract asks for no Channel.
+	// goverter:ignore Channel IntegrationID
+	SegmentPreview(source *externalapi.PreviewSegmentInput) (segments.PreviewInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
@@ -159,9 +162,9 @@ type Inputs interface {
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
 
 	RuleActions(source []externalapi.RuleAction) []rules.Action
-	// goverter:map Condition | ruleConditionIn
+	// goverter:map Condition | conditionIn
 	RuleCreate(source *externalapi.CreateRuleInput) (rules.CreateInput, error)
-	// goverter:map Condition | ruleConditionIn
+	// goverter:map Condition | conditionIn
 	RuleUpdate(source *externalapi.UpdateRuleInput) (rules.UpdateInput, error)
 
 	ApiTokenCreate(source *externalapi.CreateApiTokenInput) apitokens.Input
@@ -317,7 +320,9 @@ func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleAction) *[]rules.Actio
 	return &out
 }
 
-func ruleConditionIn(o externalapi.OptConditionGroup) (*string, error) {
+// conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
+// it is absent.
+func conditionIn(o externalapi.OptConditionGroup) (*string, error) {
 	return condition.EncodeOptional(o)
 }
 

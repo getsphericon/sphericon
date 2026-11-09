@@ -95,26 +95,6 @@ func SessionEpoch(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSessionEpoch, v))
 }
 
-// SecondFactorSecretEncrypted applies equality check predicate on the "second_factor_secret_encrypted" field. It's identical to SecondFactorSecretEncryptedEQ.
-func SecondFactorSecretEncrypted(v string) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorGeneration applies equality check predicate on the "second_factor_generation" field. It's identical to SecondFactorGenerationEQ.
-func SecondFactorGeneration(v int64) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSecondFactorGeneration, v))
-}
-
-// SecondFactorConfirmedAt applies equality check predicate on the "second_factor_confirmed_at" field. It's identical to SecondFactorConfirmedAtEQ.
-func SecondFactorConfirmedAt(v time.Time) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSecondFactorConfirmedAt, v))
-}
-
-// SecondFactorLastStep applies equality check predicate on the "second_factor_last_step" field. It's identical to SecondFactorLastStepEQ.
-func SecondFactorLastStep(v int64) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSecondFactorLastStep, v))
-}
-
 // SignupSurveyDueAt applies equality check predicate on the "signup_survey_due_at" field. It's identical to SignupSurveyDueAtEQ.
 func SignupSurveyDueAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSignupSurveyDueAt, v))
@@ -560,221 +540,6 @@ func SessionEpochLTE(v int64) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldSessionEpoch, v))
 }
 
-// SecondFactorSecretEncryptedEQ applies the EQ predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedEQ(v string) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedNEQ applies the NEQ predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedNEQ(v string) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedIn applies the In predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedIn(vs ...string) predicate.User {
-	return predicate.User(sql.FieldIn(FieldSecondFactorSecretEncrypted, vs...))
-}
-
-// SecondFactorSecretEncryptedNotIn applies the NotIn predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedNotIn(vs ...string) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldSecondFactorSecretEncrypted, vs...))
-}
-
-// SecondFactorSecretEncryptedGT applies the GT predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedGT(v string) predicate.User {
-	return predicate.User(sql.FieldGT(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedGTE applies the GTE predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedGTE(v string) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedLT applies the LT predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedLT(v string) predicate.User {
-	return predicate.User(sql.FieldLT(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedLTE applies the LTE predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedLTE(v string) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedContains applies the Contains predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedContains(v string) predicate.User {
-	return predicate.User(sql.FieldContains(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedHasPrefix applies the HasPrefix predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedHasPrefix(v string) predicate.User {
-	return predicate.User(sql.FieldHasPrefix(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedHasSuffix applies the HasSuffix predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedHasSuffix(v string) predicate.User {
-	return predicate.User(sql.FieldHasSuffix(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedIsNil applies the IsNil predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedIsNil() predicate.User {
-	return predicate.User(sql.FieldIsNull(FieldSecondFactorSecretEncrypted))
-}
-
-// SecondFactorSecretEncryptedNotNil applies the NotNil predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedNotNil() predicate.User {
-	return predicate.User(sql.FieldNotNull(FieldSecondFactorSecretEncrypted))
-}
-
-// SecondFactorSecretEncryptedEqualFold applies the EqualFold predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedEqualFold(v string) predicate.User {
-	return predicate.User(sql.FieldEqualFold(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorSecretEncryptedContainsFold applies the ContainsFold predicate on the "second_factor_secret_encrypted" field.
-func SecondFactorSecretEncryptedContainsFold(v string) predicate.User {
-	return predicate.User(sql.FieldContainsFold(FieldSecondFactorSecretEncrypted, v))
-}
-
-// SecondFactorGenerationEQ applies the EQ predicate on the "second_factor_generation" field.
-func SecondFactorGenerationEQ(v int64) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSecondFactorGeneration, v))
-}
-
-// SecondFactorGenerationNEQ applies the NEQ predicate on the "second_factor_generation" field.
-func SecondFactorGenerationNEQ(v int64) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldSecondFactorGeneration, v))
-}
-
-// SecondFactorGenerationIn applies the In predicate on the "second_factor_generation" field.
-func SecondFactorGenerationIn(vs ...int64) predicate.User {
-	return predicate.User(sql.FieldIn(FieldSecondFactorGeneration, vs...))
-}
-
-// SecondFactorGenerationNotIn applies the NotIn predicate on the "second_factor_generation" field.
-func SecondFactorGenerationNotIn(vs ...int64) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldSecondFactorGeneration, vs...))
-}
-
-// SecondFactorGenerationGT applies the GT predicate on the "second_factor_generation" field.
-func SecondFactorGenerationGT(v int64) predicate.User {
-	return predicate.User(sql.FieldGT(FieldSecondFactorGeneration, v))
-}
-
-// SecondFactorGenerationGTE applies the GTE predicate on the "second_factor_generation" field.
-func SecondFactorGenerationGTE(v int64) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldSecondFactorGeneration, v))
-}
-
-// SecondFactorGenerationLT applies the LT predicate on the "second_factor_generation" field.
-func SecondFactorGenerationLT(v int64) predicate.User {
-	return predicate.User(sql.FieldLT(FieldSecondFactorGeneration, v))
-}
-
-// SecondFactorGenerationLTE applies the LTE predicate on the "second_factor_generation" field.
-func SecondFactorGenerationLTE(v int64) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldSecondFactorGeneration, v))
-}
-
-// SecondFactorGenerationIsNil applies the IsNil predicate on the "second_factor_generation" field.
-func SecondFactorGenerationIsNil() predicate.User {
-	return predicate.User(sql.FieldIsNull(FieldSecondFactorGeneration))
-}
-
-// SecondFactorGenerationNotNil applies the NotNil predicate on the "second_factor_generation" field.
-func SecondFactorGenerationNotNil() predicate.User {
-	return predicate.User(sql.FieldNotNull(FieldSecondFactorGeneration))
-}
-
-// SecondFactorConfirmedAtEQ applies the EQ predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtEQ(v time.Time) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSecondFactorConfirmedAt, v))
-}
-
-// SecondFactorConfirmedAtNEQ applies the NEQ predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtNEQ(v time.Time) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldSecondFactorConfirmedAt, v))
-}
-
-// SecondFactorConfirmedAtIn applies the In predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtIn(vs ...time.Time) predicate.User {
-	return predicate.User(sql.FieldIn(FieldSecondFactorConfirmedAt, vs...))
-}
-
-// SecondFactorConfirmedAtNotIn applies the NotIn predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtNotIn(vs ...time.Time) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldSecondFactorConfirmedAt, vs...))
-}
-
-// SecondFactorConfirmedAtGT applies the GT predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtGT(v time.Time) predicate.User {
-	return predicate.User(sql.FieldGT(FieldSecondFactorConfirmedAt, v))
-}
-
-// SecondFactorConfirmedAtGTE applies the GTE predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtGTE(v time.Time) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldSecondFactorConfirmedAt, v))
-}
-
-// SecondFactorConfirmedAtLT applies the LT predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtLT(v time.Time) predicate.User {
-	return predicate.User(sql.FieldLT(FieldSecondFactorConfirmedAt, v))
-}
-
-// SecondFactorConfirmedAtLTE applies the LTE predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtLTE(v time.Time) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldSecondFactorConfirmedAt, v))
-}
-
-// SecondFactorConfirmedAtIsNil applies the IsNil predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtIsNil() predicate.User {
-	return predicate.User(sql.FieldIsNull(FieldSecondFactorConfirmedAt))
-}
-
-// SecondFactorConfirmedAtNotNil applies the NotNil predicate on the "second_factor_confirmed_at" field.
-func SecondFactorConfirmedAtNotNil() predicate.User {
-	return predicate.User(sql.FieldNotNull(FieldSecondFactorConfirmedAt))
-}
-
-// SecondFactorLastStepEQ applies the EQ predicate on the "second_factor_last_step" field.
-func SecondFactorLastStepEQ(v int64) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSecondFactorLastStep, v))
-}
-
-// SecondFactorLastStepNEQ applies the NEQ predicate on the "second_factor_last_step" field.
-func SecondFactorLastStepNEQ(v int64) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldSecondFactorLastStep, v))
-}
-
-// SecondFactorLastStepIn applies the In predicate on the "second_factor_last_step" field.
-func SecondFactorLastStepIn(vs ...int64) predicate.User {
-	return predicate.User(sql.FieldIn(FieldSecondFactorLastStep, vs...))
-}
-
-// SecondFactorLastStepNotIn applies the NotIn predicate on the "second_factor_last_step" field.
-func SecondFactorLastStepNotIn(vs ...int64) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldSecondFactorLastStep, vs...))
-}
-
-// SecondFactorLastStepGT applies the GT predicate on the "second_factor_last_step" field.
-func SecondFactorLastStepGT(v int64) predicate.User {
-	return predicate.User(sql.FieldGT(FieldSecondFactorLastStep, v))
-}
-
-// SecondFactorLastStepGTE applies the GTE predicate on the "second_factor_last_step" field.
-func SecondFactorLastStepGTE(v int64) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldSecondFactorLastStep, v))
-}
-
-// SecondFactorLastStepLT applies the LT predicate on the "second_factor_last_step" field.
-func SecondFactorLastStepLT(v int64) predicate.User {
-	return predicate.User(sql.FieldLT(FieldSecondFactorLastStep, v))
-}
-
-// SecondFactorLastStepLTE applies the LTE predicate on the "second_factor_last_step" field.
-func SecondFactorLastStepLTE(v int64) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldSecondFactorLastStep, v))
-}
-
 // SignupSurveyDueAtEQ applies the EQ predicate on the "signup_survey_due_at" field.
 func SignupSurveyDueAtEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSignupSurveyDueAt, v))
@@ -1053,6 +818,29 @@ func HasSentInvitations() predicate.User {
 func HasSentInvitationsWith(preds ...predicate.Invitation) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newSentInvitationsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSecondFactor applies the HasEdge predicate on the "second_factor" edge.
+func HasSecondFactor() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, SecondFactorTable, SecondFactorColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSecondFactorWith applies the HasEdge predicate on the "second_factor" edge with a given conditions (other predicates).
+func HasSecondFactorWith(preds ...predicate.SecondFactor) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newSecondFactorStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

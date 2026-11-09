@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
@@ -64,7 +65,7 @@ var _ staffeeapi.SecurityHandler = (*SecurityHandler)(nil)
 // HandleApiKeyAuth authenticates the Staff member cookie and puts the Staff member in the
 // context.
 func (h *SecurityHandler) HandleApiKeyAuth(ctx context.Context, _ staffeeapi.OperationName, t staffeeapi.ApiKeyAuth) (context.Context, error) {
-	return h.sessions.Authenticate(ctx, t.APIKey)
+	return auth.AuthenticateStaff(ctx, h.sessions, t.APIKey)
 }
 
 // StaffWorkspacesList is a page of Workspaces, newest first, narrowed by an id or name
@@ -88,35 +89,20 @@ func review(p staffeeapi.OptStaffWorkspaceReview) abusedetector.Review {
 
 // StaffWorkspacesGet is one Workspace's metadata and suspension state.
 func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.StaffWorkspacesGetParams) (*staffeeapi.StaffWorkspaceDetailResource, error) {
-	w, err := h.module.GetWorkspace(ctx, string(params.WorkspaceId))
+	d, err := h.module.GetWorkspace(ctx, string(params.WorkspaceId))
 	if err != nil {
 		return nil, err
 	}
-	d, err := h.module.WorkspaceDeliverability(ctx, w)
-	if err != nil {
-		return nil, err
-	}
-	active, err := h.module.ActiveHolds(ctx, w.PublicID)
-	if err != nil {
-		return nil, err
-	}
-	breach, err := h.module.WorkspaceAbuse(ctx, w)
-	if err != nil {
-		return nil, err
-	}
+	w := d.Workspace
 	res := staffMapper.WorkspaceDetailToResource(w)
-	res.Holds = staffMapper.HoldsToResources(active)
+	res.Holds = staffMapper.HoldsToResources(d.Holds)
 	res.Abuse = staffMapper.AbuseToResource(w)
-	if breach.Tier != abusedetector.TierNone {
-		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(breach))
+	if d.Breach.Tier != abusedetector.TierNone {
+		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(d.Breach))
 	}
-	res.Deliverability = staffMapper.DeliverabilityToResource(d)
-	if h.module.SendCaps() {
-		sendCap, err := h.sendCap(ctx, w)
-		if err != nil {
-			return nil, err
-		}
-		res.SendCap = staffeeapi.NewOptStaffSendCap(sendCap)
+	res.Deliverability = staffMapper.DeliverabilityToResource(d.Deliverability)
+	if d.SentLast24h != nil {
+		res.SendCap = staffeeapi.NewOptStaffSendCap(sendCap(w, *d.SentLast24h))
 	}
 	return &res, nil
 }
@@ -134,26 +120,18 @@ func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staff
 
 // setSendCap is the change both Send cap operations make.
 func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, perDay *int) (*staffeeapi.StaffSendCapChange, error) {
-	done, err := h.module.SetSendCap(ctx, string(wsID), staffmembers.Current(ctx), perDay)
+	done, err := h.module.SetSendCap(ctx, string(wsID), auth.StaffMember(ctx), perDay)
 	if err != nil {
 		return nil, err
 	}
-	sendCap, err := h.sendCap(ctx, done.Workspace)
-	if err != nil {
-		return nil, err
-	}
-	return &staffeeapi.StaffSendCapChange{Changed: done.Changed, SendCap: sendCap}, nil
+	return &staffeeapi.StaffSendCapChange{Changed: done.Changed, SendCap: sendCap(done.Workspace, done.SentLast24h)}, nil
 }
 
 // sendCap is the Workspace's Send cap with its sends over the last 24 hours.
-func (h *Handlers) sendCap(ctx context.Context, w *ent.Workspace) (staffeeapi.StaffSendCap, error) {
-	sent, err := h.module.SentLast24h(ctx, w)
-	if err != nil {
-		return staffeeapi.StaffSendCap{}, err
-	}
+func sendCap(w *ent.Workspace, sent int) staffeeapi.StaffSendCap {
 	res := staffMapper.SendCapToResource(w)
 	res.SentLast24h = narrow.Int32(sent)
-	return res, nil
+	return res
 }
 
 func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.StaffSuspensionChange {
@@ -163,7 +141,7 @@ func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.Staff
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
-	done, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx), req.Reason)
+	done, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), auth.StaffMember(ctx), req.Reason)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +150,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.S
 
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
-	done, err := h.module.UnsuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx))
+	done, err := h.module.UnsuspendWorkspace(ctx, string(params.WorkspaceId), auth.StaffMember(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +170,7 @@ func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeap
 
 // setExempt is the change both exemption operations make.
 func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (*staffeeapi.StaffExemptionChange, error) {
-	done, err := h.module.SetAbuseExempt(ctx, string(wsID), staffmembers.Current(ctx), exempt)
+	done, err := h.module.SetAbuseExempt(ctx, string(wsID), auth.StaffMember(ctx), exempt)
 	if err != nil {
 		return nil, err
 	}

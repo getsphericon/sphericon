@@ -18,6 +18,7 @@ import (
 	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	invitations "github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	secondfactors "github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
@@ -33,9 +34,8 @@ import (
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	secondfactorcheck "github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
-	workspacedeletion "github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
+	workspaceview "github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 type InputsImpl struct{}
@@ -596,7 +596,7 @@ func (c *InputsImpl) RuleCreate(source *site.SiteCreateRuleInput) (rules.CreateI
 				rulesCreateInput.TriggerEvents[i] = (*source).TriggerEvents[i]
 			}
 		}
-		pString, err := ruleConditionIn((*source).Condition)
+		pString, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesCreateInput, err
 		}
@@ -610,7 +610,7 @@ func (c *InputsImpl) RuleUpdate(source *site.SiteUpdateRuleInput) (rules.UpdateI
 	if source != nil {
 		rulesUpdateInput.Name = stringPtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
-		pString, err := ruleConditionIn((*source).Condition)
+		pString, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesUpdateInput, err
 		}
@@ -619,13 +619,13 @@ func (c *InputsImpl) RuleUpdate(source *site.SiteUpdateRuleInput) (rules.UpdateI
 	}
 	return rulesUpdateInput, nil
 }
-func (c *InputsImpl) SecondFactorConfirm(source *site.SiteSecondFactorConfirmInput) secondfactorcheck.ConfirmInput {
-	var secondfactorcheckConfirmInput secondfactorcheck.ConfirmInput
+func (c *InputsImpl) SecondFactorConfirm(source *site.SiteSecondFactorConfirmInput) secondfactors.ConfirmInput {
+	var secondfactorsConfirmInput secondfactors.ConfirmInput
 	if source != nil {
-		secondfactorcheckConfirmInput.EnrollmentID = int64((*source).EnrollmentId)
-		secondfactorcheckConfirmInput.Code = (*source).Code
+		secondfactorsConfirmInput.EnrollmentID = int64((*source).EnrollmentId)
+		secondfactorsConfirmInput.Code = (*source).Code
 	}
-	return secondfactorcheckConfirmInput
+	return secondfactorsConfirmInput
 }
 func (c *InputsImpl) SegmentCreate(source *site.SiteCreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput
@@ -638,6 +638,19 @@ func (c *InputsImpl) SegmentCreate(source *site.SiteCreateSegmentInput) (segment
 		segmentsCreateInput.Condition = pString
 	}
 	return segmentsCreateInput, nil
+}
+func (c *InputsImpl) SegmentPreview(source *site.SitePreviewSegmentInput) (segments.PreviewInput, error) {
+	var segmentsPreviewInput segments.PreviewInput
+	if source != nil {
+		pString, err := conditionIn((*source).Condition)
+		if err != nil {
+			return segmentsPreviewInput, err
+		}
+		segmentsPreviewInput.Condition = pString
+		segmentsPreviewInput.Channel = broadcastChannelPtrIn(c, (*source).Channel)
+		segmentsPreviewInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
+	}
+	return segmentsPreviewInput, nil
 }
 func (c *InputsImpl) SegmentUpdate(source *site.SiteUpdateSegmentInput) (segments.UpdateInput, error) {
 	var segmentsUpdateInput segments.UpdateInput
@@ -668,6 +681,13 @@ func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.SignUpInput {
 		signupSignUpInput.SignupItems = c.SignupAnswers((*source).SignupItems)
 	}
 	return signupSignUpInput
+}
+func (c *InputsImpl) SigninCallback(source site.SiteAuthSigninCallbackParams) signup.ProviderSignInInput {
+	var signupProviderSignInInput signup.ProviderSignInInput
+	// signupProviderSignInInput.Flow: ignore
+	signupProviderSignInInput.Code = stringIn(source.Code)
+	// signupProviderSignInInput.Session: ignore
+	return signupProviderSignInInput
 }
 func (c *InputsImpl) SignupAnswers(source []site.SiteSignupItemAnswer) []consentrecords.Answer {
 	var consentrecordsAnswerList []consentrecords.Answer
@@ -838,7 +858,6 @@ func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) emailtempl
 		emailtemplatesCreateInput.Subject = stringPtrIn((*source).Subject)
 		emailtemplatesCreateInput.Body = stringPtrIn((*source).Body)
 		emailtemplatesCreateInput.Doc = documentIn((*source).Doc)
-		// emailtemplatesCreateInput.Prepared: ignore
 	}
 	return emailtemplatesCreateInput
 }
@@ -906,12 +925,30 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhookendpo
 	}
 	return webhookendpointsUpdateInput
 }
-func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) workspacedeletion.RestoreInput {
-	var workspacedeletionRestoreInput workspacedeletion.RestoreInput
-	// workspacedeletionRestoreInput.UserID: ignore
-	workspacedeletionRestoreInput.PublicID = string(source.ID)
-	// workspacedeletionRestoreInput.Actor: ignore
-	return workspacedeletionRestoreInput
+func (c *InputsImpl) WorkspaceCreate(source *site.SiteCreateWorkspaceInput) workspaceview.CreateInput {
+	var workspaceviewCreateInput workspaceview.CreateInput
+	if source != nil {
+		// workspaceviewCreateInput.UserID: ignore
+		workspaceviewCreateInput.Name = (*source).Name
+		// workspaceviewCreateInput.StrongSession: ignore
+	}
+	return workspaceviewCreateInput
+}
+func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) workspaceview.RestoreInput {
+	var workspaceviewRestoreInput workspaceview.RestoreInput
+	// workspaceviewRestoreInput.UserID: ignore
+	workspaceviewRestoreInput.PublicID = string(source.ID)
+	// workspaceviewRestoreInput.Actor: ignore
+	// workspaceviewRestoreInput.StrongSession: ignore
+	return workspaceviewRestoreInput
+}
+func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) workspaceview.UpdateInput {
+	var workspaceviewUpdateInput workspaceview.UpdateInput
+	if source != nil {
+		workspaceviewUpdateInput.Name = (*source).Name
+		workspaceviewUpdateInput.PostalAddress = stringPtrIn((*source).PostalAddress)
+	}
+	return workspaceviewUpdateInput
 }
 func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
 	var consentrecordsReAcceptance consentrecords.ReAcceptance

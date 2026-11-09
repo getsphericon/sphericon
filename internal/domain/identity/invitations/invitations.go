@@ -82,8 +82,14 @@ func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, 
 // its Workspace edge. The token is the authorization, so no Workspace is known up
 // front. ErrInvitationLinkNotFound when there is none.
 func (m *Module) PendingInvitation(ctx context.Context, token string) (*ent.Invitation, error) {
-	inv, err := m.client.Invitation.Query().
-		Where(invitation.TokenHash(HashInviteToken(token)), PendingAt(m.now())).
+	return PendingByToken(ctx, m.client, token, m.now())
+}
+
+// PendingByToken is PendingInvitation on client at the time at, for the module that accepts the
+// Invitation (users.Module.AcceptInvitationLink).
+func PendingByToken(ctx context.Context, client *ent.Client, token string, at time.Time) (*ent.Invitation, error) {
+	inv, err := client.Invitation.Query().
+		Where(invitation.TokenHash(HashInviteToken(token)), PendingAt(at)).
 		WithWorkspace().
 		Only(ctx)
 	if ent.IsNotFound(err) {

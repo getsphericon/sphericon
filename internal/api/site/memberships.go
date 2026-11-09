@@ -5,6 +5,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 )
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.
@@ -56,21 +57,11 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 // someone else's, so nothing is reissued. A member resets nobody, and nobody resets
 // their own here (disabling takes a password and a code).
 func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params siteapi.SiteMembershipsResetSecondFactorParams) error {
-	s := workspaceScope(ctx)
-
-	id := int64(params.ID)
 	callerID, err := sessionUserID(ctx)
 	if err != nil {
 		return err
 	}
-	target, err := memberships.SecondFactorResetTarget(ctx, s, callerID, callerMembership(ctx).Role, id)
-	if err != nil {
-		return err
-	}
-
-	err = h.secondFactor.Reset(ctx, s, target.UserID, h.actor(ctx))
-	if err != nil {
-		return err
-	}
-	return nil
+	return h.secondFactorReset.Reset(ctx, workspaceScope(ctx), int64(params.ID), secondfactorreset.Caller{
+		UserID: callerID, Role: callerMembership(ctx).Role, Actor: h.actor(ctx),
+	})
 }

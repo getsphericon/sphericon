@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -53,14 +52,4 @@ func TestOnlyTheStaffLicenseServesTheEnterpriseSections(t *testing.T) {
 	assert.Nil(t, plain.StaffSections())
 	assert.Nil(t, off.StaffSections())
 	assert.NotNil(t, licensed.StaffSections())
-}
-
-func TestTheEditionRegistersTheAbuseDetectorNextToTheOtherJobs(t *testing.T) {
-	e, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, workspaceoversight.Config{Clock: time.Now})
-	require.NoError(t, err)
-
-	jobs := e.Jobs()
-
-	assert.Len(t, jobs.PeriodicJobs, 3, "retention, usage and the abuse detector")
-	assert.NotPanics(t, func() { jobs.Workers(river.NewWorkers()) })
 }

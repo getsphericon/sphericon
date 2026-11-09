@@ -4,7 +4,7 @@ import (
 	"context"
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
-	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 )
 
 // StaffSignupItemsList is every Sign-up item of the Instance that is not deleted, in the order of
@@ -79,7 +79,7 @@ func (h *Handlers) StaffSignupItemsSaveDraft(ctx context.Context, req *staffapi.
 // StaffSignupItemsPublish publishes the draft as a new version, recorded with the signed-in Staff
 // member.
 func (h *Handlers) StaffSignupItemsPublish(ctx context.Context, req *staffapi.StaffLegalDocumentPublishInput, params staffapi.StaffSignupItemsPublishParams) (*staffapi.StaffSignupItemResource, error) {
-	it, err := h.items.Publish(ctx, int64(params.ID), string(req.Label), staffmembers.Current(ctx).ID)
+	it, err := h.items.Publish(ctx, int64(params.ID), string(req.Label), auth.StaffMember(ctx).ID)
 	if err != nil {
 		return nil, err
 	}

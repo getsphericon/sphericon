@@ -23,8 +23,9 @@ the one suppression).
 
 **HTTP**: `internal/server/server.go` `New()` mounts the four public ogen servers (the fifth,
 `/service`, is served by `NewInternal` on the internal listener, which also always serves the
-edge's on-demand TLS `GET /tls/ask`, core, ADR 0038) and the
-public endpoints onto a stdlib `http.ServeMux`, then wraps it with hand-rolled middleware
+edge's on-demand TLS `GET /tls/ask`, core, ADR 0038, from `internal/api/tlsask`) and the
+public endpoints (the tracked links of `internal/api/tracking`, the Ingest hook of
+`internal/api/hooks`, whose handlers the container builds) onto a stdlib `http.ServeMux`, then wraps it with hand-rolled middleware
 (recoverer, requestID, timeout, CORS). Errors render as RFC 7807 `application/problem+json`.
 
 ## API surfaces
@@ -68,9 +69,14 @@ and auth scheme:
 second steps and for `Prove` (the password check behind second-factor and profile actions):
 address normalization, the throttle consulted first (ADR 0025), the decoy hash, the verification
 gate (ADR 0030), failure counting and the challenge. It holds no database client; an adapter
-supplies the `Store`, `Throttle`, challenge `Parse`/`Verify` and issues the session. `/site`
-(`internal/api/site/auth_login.go`) and `internal/domain/identity/staffmembers` (`login.go`, the second adapter, ADR 0026) are
-the two adapters: add sign-in rules in the module, not in a handler. The throttle is
+supplies the `Store`, `Throttle`, challenge `Parse`/`Verify`, and a surface issues the session.
+`internal/domain/identity/userlogin` (the User's Login: the Users, their Second factors and Passkeys, the
+verification gate, the challenge and the `user.login` entry of each step that signs a User in) and `internal/domain/identity/staffmembers` (`login.go`, the second adapter, ADR 0026) are
+the two adapters,
+both in identity: add sign-in rules in the module, not in a handler, which only turns the outcome into a
+session. User deletion
+(`internal/usecase/userdeletion`) proves the password through the same module's `Prove`, over the
+Users' throttle and the same hasher, and counts a wrong Second factor code with `CountFailure`. The throttle is
 `throttle.Attempts.For(kind)` (`internal/infra/throttle`), a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
 which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
 `login.SecondOutcome`).
@@ -101,9 +107,14 @@ whether the session is issued again) are `users.Module.ChangeProfile`, which tak
 **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
 `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
 `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
-(marked `goverter:ignore` with the reason). Hand-built values are limited to response wrappers
-(`*ListOK`, `*Headers`) and aggregates with no single source (setup checklist, lint findings,
-the integration config `oneOf`).
+(marked `goverter:ignore` with the reason). A resource `/site` and `/api` both answer is built once
+below them (ADR 0111): the Integration's `integrations.View`, the Segment preview of `segments`,
+the Workspace summary of the Workspace view (`workspaceview`); each surface maps the same values into
+its own contract. What one contract shows and the other does not is a separate operation, so the
+other never pays for it: `/site` calls `broadcasts.Views` (a Broadcast's figures, Progress and lint)
+and `emailtemplates.Views` (the lint of a save), `/api` the modules, which answer the row. Hand-built
+values are limited to response wrappers (`*ListOK`, `*Headers`) and aggregates with no single source
+(setup checklist, lint findings, the integration config `oneOf`).
 
 ## Authentication context
 
@@ -115,5 +126,5 @@ Auth security handlers live in `internal/api/auth/auth.go`. External requests ca
 
 The answer of every refusal and failure on every surface (ADR 0103) is decided once in
 `internal/api/problem`, beside the security handlers: it is the surfaces' shared code, imported by
-the surfaces, `internal/server` and `ee/api` only. A core package returns its refusal and never
+the surfaces, the Ingest hook (`internal/api/hooks`), `internal/server` and `ee/api` only. A core package returns its refusal and never
 imports it (easement component `api-problem`).

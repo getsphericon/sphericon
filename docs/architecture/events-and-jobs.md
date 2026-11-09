@@ -38,8 +38,12 @@ its Workspace is optional for Instance facts, so the owner's operations explicit
 reads and deletes. Only consumers with a `Replay` policy retain versioned anonymous job args,
 initially message observations and Broadcast unsubscribe attribution. The original envelope,
 personal source keys and arbitrary request ids are never copied. `Bus.Replay` selects one
-supported consumer and a bounded recorded-time interval, validates versions and scope and
-queues its normal jobs atomically; it never publishes or runs mandatory subscribers. History
+supported consumer and a bounded recorded-time interval of one Workspace, validates versions and
+scope and queues its normal jobs atomically, under the Workspace's key-share lock, refusing one
+deleted or erased; it never publishes or runs mandatory subscribers. An operator names the
+Workspace by its id (`sphericon events list` and `replay`): the Event history use case
+(`internal/usecase/eventhistory`) resolves it through `workspaces`, since the bus touches a
+Workspace row only to lock it, and reads the Instance's own facts when no Workspace is named. History
 has no automatic expiry. Contact Erasure preserves anonymous report inputs; Workspace erasure
 drains its history in batches, then fences publication and replay's `FOR KEY SHARE` locks with
 the Workspace's `FOR UPDATE` row lock
@@ -51,7 +55,7 @@ while purging any final history and jobs and committing the tombstone.
 [event flow](../design/domain-events.md)). `events.Bus` publishes an event inside the transaction of
 the state change: it writes the Event row (a repeated Workspace-scoped `source_id` publishes nothing) and
 inserts one job per consumer whose filter wants the envelope (`events.Consumer`, registered in
-`internal/app`: `jobs.EventConsumers` and `ee.EventConsumers`). A producer never names a
+`internal/app`: `jobs.EventConsumers` and the Enterprise runner's `ee/jobs.EventConsumers`). A producer never names a
 consumer; a new consumer is an args type (embedding `events.EventJob` when the whole envelope
 is needed), a worker and a registry
 entry, its jobs in the `events` queue. Anonymous report jobs carry only Workspace, delivery reference,

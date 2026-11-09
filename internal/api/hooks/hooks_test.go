@@ -1,0 +1,424 @@
+package hooks_test
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/go-faster/jx"
+	"github.com/samber/lo"
+	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/suppression"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
+)
+
+// The hook over HTTP, on the committed Integrations of Acme that read their callbacks with
+// the generic Preset (ADR 0037). Every case posts a signed request to a hook URL and asserts
+// what it left behind: the response, the published events, Suppression.
+
+// hookClock is the instant the hook believes it is, and the one requests are signed at.
+var hookClock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+
+// The secrets of the two generic Integrations in fixtures/integrations.yml: whsec_ and the
+// base64 of a plain string, which is how the fixture spells them.
+var (
+	secretA = newSecret("secret-A0123456789")
+	secretB = newSecret("secret-B0123456789")
+)
+
+func newSecret(seed string) string {
+	return "whsec_" + base64.StdEncoding.EncodeToString([]byte("sphericon-test-"+seed))
+}
+
+func setupHooks(t *testing.T) *testhelper.TestEnv {
+	t.Helper()
+	return testhelper.Setup(t, testhelper.WithClock(func() time.Time { return hookClock }))
+}
+
+// signedPost posts body to the hook of key, signed with secret as Standard Webhooks does.
+func signedPost(t *testing.T, env *testhelper.TestEnv, key, secret, id, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	wh, err := standardwebhooks.NewWebhook(secret)
+	require.NoError(t, err)
+	sig, err := wh.Sign(id, hookClock, []byte(body))
+	require.NoError(t, err)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/hooks/"+key, strings.NewReader(body))
+	req.Header.Set("Webhook-Id", id)
+	req.Header.Set("Webhook-Timestamp", strconv.FormatInt(hookClock.Unix(), 10))
+	req.Header.Set("Webhook-Signature", sig)
+	rec := httptest.NewRecorder()
+	env.Server.ServeHTTP(rec, req)
+	return rec
+}
+
+func failureBody(id, destination string, hard bool) string {
+	return `{"id":"` + id + `","destination":"` + destination + `","kind":"bounce","hard":` + strconv.FormatBool(hard) + `,"sending_domain":"Codebasics.dev"}`
+}
+
+// applySuppression works the suppression jobs everything published so far inserted.
+func applySuppression(t *testing.T, env *testhelper.TestEnv) {
+	t.Helper()
+	env.PerformEnqueuedJobs(t, jobs.SuppressEventArgs{})
+}
+
+func suppressed(t *testing.T, env *testhelper.TestEnv, email string) bool {
+	t.Helper()
+	ok, err := env.DB.Suppression.Query().
+		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination(email), suppression.LiftedAtIsNil()).
+		Exist(t.Context())
+	require.NoError(t, err)
+	return ok
+}
+
+func TestHookOfAnUnknownKeyIsNotFound(t *testing.T) {
+	env := setupHooks(t)
+
+	rec := signedPost(t, env, "omik_does_not_exist", secretA, "msg_1", failureBody("evt_1", "a@example.com", true))
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	assert.Empty(t, queuedNotices(t, env, "a@example.com"))
+}
+
+// A Workspace in its deletion window takes no new data (ADR 0043): its hook answers 404 and
+// publishes nothing, and answers again once the Workspace is restored.
+func TestHookOfADeletedWorkspaceIsNotFound(t *testing.T) {
+	env := setupHooks(t)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+	body := failureBody("evt_1", fixtures.ContactAliceEmail, true)
+	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(hookClock).ExecX(t.Context())
+
+	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", body).Code)
+	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+
+	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(t.Context())
+	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
+}
+
+// An Integration accepts only its own secret: a callback signed for one Integration of the
+// Workspace is refused at the other's URL, and changes nothing.
+func TestTwoIntegrationsOfAWorkspaceEachAcceptOnlyTheirOwnSecret(t *testing.T) {
+	env := setupHooks(t)
+	body := failureBody("evt_1", strings.ToUpper(fixtures.ContactAliceEmail), true)
+
+	assert.Equal(t, http.StatusForbidden, signedPost(t, env, fixtures.IntegrationAcmeGenericBIngestKey, secretA, "msg_1", body).Code)
+	assert.Equal(t, http.StatusForbidden, signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretB, "msg_1", body).Code)
+	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+
+	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body).Code)
+	// Another event of the provider: the same one twice would be a repeat, published once.
+	other := failureBody("evt_2", strings.ToUpper(fixtures.ContactAliceEmail), true)
+	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericBIngestKey, secretB, "msg_2", other).Code)
+	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
+	require.Len(t, got, 2)
+	for _, f := range got {
+		assert.Equal(t, events.NameEmailBounced, f.Action)
+		assert.Equal(t, events.BounceKindHard, f.BounceKind)
+		assert.EqualValues(t, fixtures.ContactAliceID, f.ContactID)
+		assert.Equal(t, "generic", f.Provider, "the Preset's name is the provider")
+		assert.Equal(t, "codebasics.dev", f.SendingDomain)
+	}
+	assert.Equal(t, "evt_1/"+fixtures.ContactAliceEmail, got[0].DedupID, "the provider's event id plus the Destination")
+}
+
+func TestHookRefusesAnUnsignedOrUnreadableRequest(t *testing.T) {
+	env := setupHooks(t)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+
+	unsigned := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/hooks/"+key, strings.NewReader(failureBody("evt_1", "a@example.com", true)))
+	rec := httptest.NewRecorder()
+	env.Server.ServeHTTP(rec, unsigned)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+
+	// Correctly signed, but not JSON: the provider's to fix, not retried.
+	assert.Equal(t, http.StatusBadRequest, signedPost(t, env, key, secretA, "msg_1", "not json").Code)
+
+	assert.Empty(t, queuedNotices(t, env, "a@example.com"))
+}
+
+// A valid request with nothing the Preset handles is accepted, so the provider does not
+// disable the endpoint, and publishes nothing.
+func TestHookAcceptsAValidRequestWithNothingToHandle(t *testing.T) {
+	env := setupHooks(t)
+
+	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", `[]`)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Empty(t, env.QueuedEvents(t, deliveryNames...))
+}
+
+// The generic Preset passes its body through, so it carries facts of every kind. An email
+// Integration reads Delivery notices only: an Inbound message and a Reachability change are
+// accepted and record nothing, and so is a message its Preset says came in on another Channel.
+func TestAnEmailIntegrationAcceptsInboundMessagesAndReachabilityChangesAndRecordsNothing(t *testing.T) {
+	env := setupHooks(t)
+	body := `[{"kind":"inbound_message","id":"evt_1","channel":"email","destination":"` + fixtures.ContactAliceEmail + `","text":"STOP"},` +
+		`{"kind":"inbound_message","id":"evt_2","channel":"telegram","destination":"42","chat_id":"42","text":"/start abc"},` +
+		`{"kind":"reachability_change","id":"evt_3","destination":"` + fixtures.ContactAliceEmail + `","reachable":false,"reason":"blocked"}]`
+
+	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Empty(t, env.QueuedEvents(t))
+}
+
+// A Delivery notice its Preset says is about a message of another Channel is the Preset's mistake
+// on an email Integration: it is accepted and records nothing, while the email notice beside it
+// still counts.
+func TestAnEmailIntegrationRecordsNothingOfADeliveryNoticeOnAnotherChannel(t *testing.T) {
+	env := setupHooks(t)
+	body := `[{"id":"evt_1","channel":"sms","destination":"+14155552671","kind":"bounce","hard":true,"status":"undelivered","error_code":"30003"},` +
+		failureBody("evt_2", fixtures.ContactAliceEmail, true) + `]`
+
+	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	got := env.QueuedEvents(t, deliveryNames...)
+	require.Len(t, got, 1)
+	assert.Len(t, queuedNotices(t, env, fixtures.ContactAliceEmail), 1)
+}
+
+// A malformed fact of a new kind fails the transform as a malformed Delivery notice does: the
+// request is verified, so the fault is the Preset's, and nothing of it is recorded.
+func TestAMalformedFactIsRefusedLikeAMalformedDeliveryNotice(t *testing.T) {
+	env := setupHooks(t)
+	bodies := map[string]string{
+		"a Delivery notice that names no address":      `[{"id":"evt_1","destination":"not an address","kind":"bounce"}]`,
+		"an Inbound message without a destination":     `[{"kind":"inbound_message","id":"evt_2","channel":"email","text":"STOP"}]`,
+		"a Reachability change with an unknown reason": `[{"kind":"reachability_change","id":"evt_3","destination":"42","reachable":false,"reason":"moved"}]`,
+		"a valid notice beside a malformed fact":       `[{"id":"evt_4","destination":"a@example.com","kind":"bounce"},{"kind":"reachability_change","id":"evt_4","destination":""}]`,
+	}
+	for name, body := range bodies {
+		rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_"+name, body)
+
+		assert.Equal(t, http.StatusInternalServerError, rec.Code, name)
+	}
+	assert.Empty(t, env.QueuedEvents(t))
+}
+
+// A hard bounce suppresses; a soft one is still published (the deliverability rates read
+// it) and never suppresses.
+func TestHookSuppressesAHardBounceAndOnlyRecordsASoftOne(t *testing.T) {
+	env := setupHooks(t)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+
+	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_hard", "hard@example.com", true)).Code)
+	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_soft", "soft@example.com", false)).Code)
+
+	soft := queuedNotices(t, env, "soft@example.com")
+	require.Len(t, soft, 1)
+	assert.Equal(t, events.BounceKindSoft, soft[0].BounceKind)
+
+	applySuppression(t, env)
+	assert.True(t, suppressed(t, env, "hard@example.com"))
+	assert.False(t, suppressed(t, env, "soft@example.com"))
+}
+
+// A hard bounce for a destination whose Suppression was lifted suppresses it anew.
+func TestHookSuppressesALiftedDestinationAgain(t *testing.T) {
+	env := setupHooks(t)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+
+	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_again", "lifted@codebasics.dev", true)).Code)
+	applySuppression(t, env)
+
+	active, err := env.DB.Suppression.Query().
+		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination("lifted@codebasics.dev"), suppression.LiftedAtIsNil()).
+		Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, active, "a new active row beside the lifted one")
+}
+
+// The same callback delivered twice has the effect of once: one persisted event, one
+// Suppression, one count.
+func TestHookRedeliveryHasTheEffectOfOnce(t *testing.T) {
+	env := setupHooks(t)
+	metricstest.StartMetrics(t)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+	body := failureBody("evt_1", fixtures.ContactAliceEmail, true)
+
+	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
+	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
+	applySuppression(t, env)
+
+	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailBounced + ":evt_1/" + fixtures.ContactAliceEmail)).Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, n)
+	assert.True(t, suppressed(t, env, fixtures.ContactAliceEmail))
+	scrape := metricstest.ScrapeMetrics(t)
+	assert.InDelta(t, 1, scrape.Value(t, "email_send_outcomes_total", map[string]string{"provider": "generic", "status": "bounce"}), 0)
+}
+
+func updateParams(t *testing.T, c *externalapi.Client, id int64, update *externalapi.UpdateIntegrationInput) *externalapi.IntegrationResource {
+	t.Helper()
+	out, err := c.IntegrationsUpdate(t.Context(), update, externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
+	require.NoError(t, err)
+	return out
+}
+
+func secretParam(secret string) externalapi.OptJsonObject {
+	return externalapi.NewOptJsonObject(externalapi.JsonObject{
+		"secret": jx.Raw(strconv.Quote(secret)),
+	})
+}
+
+// Rotating a secret keeps the old value valid until it is retired, then refuses it; no read
+// returns either value.
+func TestRotatingASecretKeepsTheOldOneValidUntilItIsRetired(t *testing.T) {
+	env := setupHooks(t)
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	id := int64(fixtures.IntegrationAcmeGenericAID)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+	rotated := newSecret("rotated-0123456789")
+
+	read := updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
+	assert.Equal(t, []string{"secret"}, read.SecretsRetiring)
+	shown := string(read.Params["secret"])
+	assert.NotContains(t, shown, rotated)
+	assert.NotContains(t, shown, secretA)
+
+	assert.Equal(t, http.StatusOK, signedPost(t, env, key, rotated, "msg_1", failureBody("evt_new", "new@example.com", true)).Code)
+	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_old", "old@example.com", true)).Code)
+
+	retired := updateParams(t, c, id, &externalapi.UpdateIntegrationInput{RetireSecrets: externalapi.NewOptBool(true)})
+	assert.Empty(t, retired.SecretsRetiring)
+	assert.Equal(t, http.StatusOK, signedPost(t, env, key, rotated, "msg_3", failureBody("evt_new2", "new2@example.com", true)).Code)
+	assert.Equal(t, http.StatusForbidden, signedPost(t, env, key, secretA, "msg_4", failureBody("evt_old2", "old2@example.com", true)).Code)
+	assert.Empty(t, queuedNotices(t, env, "old2@example.com"))
+}
+
+// Regenerating the key invalidates the old URL; the new one works, with the same secret.
+func TestRegeneratingTheKeyInvalidatesTheOldURL(t *testing.T) {
+	env := setupHooks(t)
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	old := fixtures.IntegrationAcmeGenericAIngestKey
+
+	got, err := c.IntegrationsRegenerateKey(t.Context(), externalapi.IntegrationsRegenerateKeyParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)})
+	require.NoError(t, err)
+	require.Contains(t, got.HookUrl, "/hooks/omik_", got.HookUrl)
+	require.NotContains(t, got.HookUrl, old)
+	newKey := got.HookUrl[strings.LastIndex(got.HookUrl, "/")+1:]
+
+	body := failureBody("evt_1", "a@example.com", true)
+	assert.Equal(t, http.StatusNotFound, signedPost(t, env, old, secretA, "msg_1", body).Code)
+	assert.Equal(t, http.StatusOK, signedPost(t, env, newKey, secretA, "msg_1", body).Code)
+}
+
+// Params that violate the Preset's schema are refused, and an unknown Preset too.
+func TestIntegrationParamsAreValidatedAgainstThePresetSchema(t *testing.T) {
+	env := setupHooks(t)
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	id := externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)
+
+	for name, in := range map[string]externalapi.UpdateIntegrationInput{
+		"a secret of the wrong type": {Params: externalapi.NewOptJsonObject(externalapi.JsonObject{"secret": jx.Raw(`42`)})},
+		"a param the schema does not know": {Params: externalapi.NewOptJsonObject(externalapi.JsonObject{
+			"secret": jx.Raw(strconv.Quote(newSecret("x-0123456789"))), "extra": jx.Raw(`true`),
+		})},
+		"a Preset that does not exist": {Preset: externalapi.NewOptNilString("nope")},
+	} {
+		_, err := c.IntegrationsUpdate(t.Context(), &in, externalapi.IntegrationsUpdateParams{ID: id})
+		testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, name)
+	}
+}
+
+// Choosing a Preset carries nothing over from the last one: after the Preset is removed,
+// choosing it again needs its params in full, secret included, and the old URL goes quiet.
+func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
+	env := setupHooks(t)
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	id := int64(fixtures.IntegrationAcmeGenericAID)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+
+	removed := updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.OptNilString{Set: true, Null: true}})
+	assert.True(t, removed.Preset.Null)
+	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_1", "a@example.com", true)).Code,
+		"an SMTP Integration with no Preset receives nothing")
+
+	_, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic")},
+		externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
+
+	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(secretA)})
+	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_1", "a@example.com", true)).Code)
+
+	// Both changes of the Preset are in the Audit log, the secret in neither.
+	audit := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
+		e, ok := ev.(*events.AuditEntry)
+		require.Truef(t, ok, "got %T", ev)
+		raw, err := json.Marshal(e)
+		require.NoError(t, err)
+		assert.NotContains(t, string(raw), secretA)
+		return e
+	})
+	presetChanges := lo.Filter(audit, func(e *events.AuditEntry, _ int) bool { return e.Diff["preset"] != nil })
+	assert.Len(t, presetChanges, 2)
+}
+
+// An agent learns what an Integration's params take from presets_list.
+func TestPresetsListCarriesTheParamsSchemaOfEachPreset(t *testing.T) {
+	env := setupHooks(t)
+	c := env.ExternalScoped(t, "integrations:read")
+
+	list, err := c.PresetsList(t.Context())
+	require.NoError(t, err)
+	generic, found := lo.Find(list.Items, func(p externalapi.PresetResource) bool { return p.Name == "generic" })
+	require.True(t, found)
+	assert.Contains(t, string(generic.ParamsSchema["properties"]), "writeOnly")
+}
+
+// Choosing a Preset and rotating a secret are audited, and the secret never reaches the log.
+func TestChoosingAPresetAndRotatingASecretAreAuditedWithoutTheSecret(t *testing.T) {
+	env := setupHooks(t)
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	id := int64(fixtures.IntegrationAcmeGenericAID)
+	rotated := newSecret("audited-0123456789")
+
+	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
+	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(newSecret("again-0123456789"))})
+
+	entries := env.QueuedEvents(t, events.NameAuditEntry)
+	require.NotEmpty(t, entries)
+	for _, ev := range entries {
+		e, ok := ev.(*events.AuditEntry)
+		require.Truef(t, ok, "got %T", ev)
+		assert.Equal(t, "integration.update", e.Action)
+		assert.Equal(t, "changed", e.Diff["params_encrypted"], "the entry says only that the params changed")
+		raw, err := json.Marshal(e)
+		require.NoError(t, err)
+		assert.NotContains(t, string(raw), rotated)
+		assert.NotContains(t, string(raw), secretA)
+	}
+}
+
+// The hook URL rides every read of an Integration.
+func TestEveryReadOfAnIntegrationCarriesItsHookURL(t *testing.T) {
+	env := setupHooks(t)
+	c := env.ExternalScoped(t, "integrations:read")
+
+	got, err := c.IntegrationsGet(t.Context(), externalapi.IntegrationsGetParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)})
+	require.NoError(t, err)
+	assert.True(t, strings.HasSuffix(got.HookUrl, "/hooks/"+fixtures.IntegrationAcmeGenericAIngestKey), got.HookUrl)
+	preset, _ := got.Preset.Get()
+	assert.Equal(t, "generic", preset)
+
+	list, err := c.IntegrationsList(t.Context(), externalapi.IntegrationsListParams{})
+	require.NoError(t, err)
+	page := list
+	for _, item := range page.Items {
+		assert.Contains(t, item.HookUrl, "/hooks/omik_")
+	}
+}

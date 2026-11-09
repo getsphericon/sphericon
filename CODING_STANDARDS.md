@@ -99,28 +99,52 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `OnConflictColumnsWhere`), a soft-delete move (`Archive`, `Unarchive`, `Discard`, `Purge`, `PurgeOneID`)
   or a Versioned definition's `Pointers` and their moves, on a type of the `ent` package (the raw client, a
   transaction, the scoped client and its wrappers); a generic function instantiated with an ent write
-  builder writes that builder's entity where it is instantiated. The moves of `ent.VersionedStore` are not
+  builder writes that builder's entity where it is instantiated. The one writer besides the owner is the
+  Workspace erase (`internal/usecase/workspacedeletion`, ADR 0110), which may delete or purge a
+  Workspace-owned table's rows through its scoped wrapper and write nothing else. The moves of `ent.VersionedStore` are not
   read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/versioneddefinition`. Not
   read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
-  function of the owner that makes the write, which the writer calls. An entry point does not write through
-  ent at all: there every write is a finding worded for the entry point. The handlers
-  of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect`, `staff` and `ee/api/staff`) do not read through ent either:
-  a `Get`, `GetX`, a `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a
-  function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
-  transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
-  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the Enterprise
-  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The helpers the
-  analyzers share about the generated package are in `tools/analyzers/entx`.
+  function of the owner that makes the write, which the writer calls. An entry point (a driver of
+  `tools/analyzers/tier`) does not write through ent at all: there every write is a finding worded for the
+  entry point. The HTTP handlers (`tier.IsHandler`: `internal/api/site`, `external`, `collect`, `staff`,
+  `oauth`, `tracking`, `hooks`, `tlsask` and `ee/api`) do not read through ent either: a `Get`, `GetX`, a
+  `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a function of the
+  module that owns the entity; the other entry points may read. Nor does a handler there open a transaction
+  (a `Within…` method of the events bus): the module it calls does. The wiring, the router in
+  `internal/server` included, is no entry point. The helpers the analyzers share about the generated
+  package are in `tools/analyzers/entx`.
 - **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
   `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function
   other than `New`, a `New` that returns anything but `*UseCase`, an exported type other than `UseCase`
   with a method that takes a `context.Context`, a method that returns `*UseCase` (a builder), an exported
   method with more than two results, a second result that is not `error` or named results, more than two
   arguments after `ctx` and the scope (`*ent.Scoped` or `*ent.Client`), a `now` argument, a
-  `func() time.Time` argument, an `io.Writer` argument, a `[]error` result and any use of `time.Now`. The
+  `func() time.Time` argument, a `[]error` result and any use of `time.Now`. The
   fix is the shape the ADR states: a dependency or the clock is a parameter of `New`, a third or an
-  optional argument goes into a typed `XInput`, two values into a named result struct, what became of a batch's items
-  into `batch.Result` (`internal/kernel/batch`), and a report is written by its driver.
+  optional argument goes into a typed `XInput`, two values into a named result struct, and what became of a batch's items
+  into `batch.Result` (`internal/kernel/batch`). An `io.Writer` is `nowriter`'s.
+- **Rule 5, `nowriter`.** The domain and the use case tiers write to no `io.Writer` (ADR 0104, ADR 0111).
+  In a package under `internal/domain`, `ee/domain`, `internal/usecase` or `ee/usecase` (test files are
+  not read) the analyzer refuses an `io.Writer` parameter of a function, a method, a function literal or
+  a function type, and a struct field that holds one. The fix is a value or an iterator (`iter.Seq2`) the
+  module or the use case returns: the command line prints a report (`internal/commandline`), and an HTTP
+  handler streams an export.
+- **The tiers are stated once.** Which packages are the wiring, the drivers, the use cases and the
+  domain is `tools/analyzers/tier`, which every analyzer above reads; its test checks it against the
+  rows of `layers` in `easement.yml`, so a new driver or a moved tier changes both.
+- **Rule 5, `driverops`.** A driver function calls one operation of the core (ADR 0111). The drivers
+  are those of `tools/analyzers/tier`: the packages under `internal/api` and `ee/api`, `internal/mcpserver`,
+  `internal/jobs`, `ee/jobs`, `internal/commandline` and `cmd/server`, not the wiring (`internal/server`,
+  `internal/app`, `ee/ee.go`); an operation is a call into a package of the domain or the use case tier
+  that takes a `context.Context`, so reading the actor or the scope and mapping to and from the contract
+  are none. The count follows the
+  function's control flow: one operation on each branch of a `switch` is one per run, while two on
+  one path, or one in a loop, are a finding. A function of the driver package that the driver calls
+  counts its operations at the call site, so a helper hides none, and a function literal (a command's
+  action, a consumer) is a driver function of its own. Test files are not read, and a package whose
+  control-flow graphs are missing fails the run instead of passing unread. The fix is in the core:
+  the composition moves into the domain module that owns its rule, or into a use case when it spans
+  several, and the driver makes that one call.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns
@@ -130,7 +154,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
   `validation.LinkInvalid` 400 (a mailed link that does not stand), `validation.Incomplete` 428,
   `validation.UnknownReference` 400 (a reference that names nothing, such as a pending sign-up that
-  is gone or a cursor never handed out), the message as `detail` and, for a sentinel that names a
+  is gone or a cursor never handed out), `validation.Unlicensed` 402 (a capability the License does
+  not include), the message as `detail` and, for a sentinel that names a
   field (`validation.RefuseField`, `validation.ConflictField`), under its field), a `*validation.Error` with 422 and its field, a
   `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
   `detail`, an `*liveuse.Error` with 409 and `usedBy`, an `*users.DeletionRefusedError` with 422
@@ -145,8 +170,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `default` response), the handler returns the module's sentinel as its error, and the surface's
   `NewError` answers it through `internal/api/problem`, which the rule does not cover: it is where
   the problems are written. Its other `ignores` are the files that keep an answer no refusal kind
-  gives as a `problem.Error` (the 402 of a missing Enterprise license, the 410 of an expired
-  confirmation link). A single answer kept by hand in a covered file carries
+  gives as a `problem.Error` (the 410 of an expired confirmation link). A single answer kept by hand in a covered file carries
   `// ast-grep-ignore: no-hand-written-problem-in-handlers` under a comment that says why. A batch
   that reports each item inside a 200 words a failed item with `validation.Shown`.
 - **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares

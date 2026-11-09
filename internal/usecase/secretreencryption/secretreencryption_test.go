@@ -121,12 +121,13 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 		_, err := retired.Decrypt(row.TotpSecretEncrypted)
 		require.NoError(t, err, "staff member %d", row.ID)
 	}
-	users, err := env.DB.User.Query().All(ctx)
+	factors, err := env.DB.SecondFactor.Query().All(ctx)
 	require.NoError(t, err)
-	withSecondFactor := lo.Filter(users, func(row *ent.User, _ int) bool { return row.SecondFactorSecretEncrypted != "" })
+	withSecondFactor := lo.Filter(factors, func(row *ent.SecondFactor, _ int) bool { return row.SecretEncrypted != "" })
+	require.NotEmpty(t, withSecondFactor)
 	for _, row := range withSecondFactor {
-		_, err := retired.Decrypt(row.SecondFactorSecretEncrypted)
-		require.NoError(t, err, "user %d", row.ID)
+		_, err := retired.Decrypt(row.SecretEncrypted)
+		require.NoError(t, err, "second factor %d", row.ID)
 	}
 	rows, err := env.DB.AutomationVersion.Query().All(ctx)
 	require.NoError(t, err)

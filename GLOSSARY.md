@@ -22,6 +22,19 @@ The short opaque identifier of a Workspace that appears in its URLs and in the A
 once at creation and never changed; it is the only address a Workspace has.
 _Avoid_: slug
 
+**Workspace summary**:
+The read of a Workspace as its members and agents see it, built once for every surface: the
+Workspace with its settings, the Holds on its sending, its **Send cap** with the sends of the last
+24 hours, and the lengths a text message is written against (a short tracked link, the longest
+SMS). A member reads it as their **Workspace view**.
+_Avoid_: Workspace profile, overview (that is the dashboard page)
+
+**Workspace view**:
+A **Workspace summary** as one member sees it: with their Role and their Second factor grace,
+which a strong session does not count down; the Permissions of the Role are added by the surface.
+Every change a member makes to a Workspace from its screens (creating it, restoring it, changing
+its settings) answers with the member's Workspace view.
+
 **Contact**:
 The single record for a person in a workspace — whether fully identified or still anonymous.
 Anchored by a stable internal id, with email, phone, and subject_id (the customer's own user
@@ -1290,7 +1303,8 @@ _Avoid_: Unlock, disable 2FA
 The check that comes before every change of a User's **Second factor**: a current code (or a
 **Recovery code**) to confirm, regenerate the codes or disable, a factor not yet active to enroll, and
 for a **Second factor reset** the resetter's Role; a code accepted at login is single-use. Each change
-then writes the User, its Recovery codes and, for a reset, its Passkeys in one transaction.
+then writes the factor, its Recovery codes, the User's session epoch and, for a reset, its Passkeys
+in one transaction.
 _Avoid_: 2FA flow, MFA verification
 
 **Login**:

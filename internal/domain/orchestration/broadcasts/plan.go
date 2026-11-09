@@ -9,14 +9,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	entbinding "github.com/getsphericon/sphericon/ent/binding"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/db"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -67,13 +65,6 @@ func (d *Delivery) Run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 	return d.run(ctx, s, id, sched, triggerPlan)
 }
 
-// RunClaimed is Run for a job queued after the Broadcast was claimed (Send or Schedule): it
-// refuses a draft with lifecycle.ErrInvalidTransition, so an unschedule that lands after
-// Due has answered is not undone by the plan.
-func (d *Delivery) RunClaimed(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler) error {
-	return d.run(ctx, s, id, sched, triggerResume)
-}
-
 func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, t trigger) error {
 	ids, err := d.plan(ctx, s, id, t)
 	if errors.Is(err, ErrPlanFailed) {
@@ -94,26 +85,6 @@ func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 		}
 	}
 	return sched.Schedule(ctx, id, sends)
-}
-
-// Due reports whether a queued send job should still run. A Broadcast that is back in draft
-// was unscheduled after the job was queued. A delayed job
-// (jobScheduledAt set) is also bound to the schedule it was enqueued for: unscheduling leaves
-// it queued, so after a reschedule the Broadcast carries a different scheduled_at (or none,
-// once sent now) and the superseded job must not send it early.
-func Due(ctx context.Context, s *ent.Scoped, id int64, jobScheduledAt *time.Time) (bool, error) {
-	b, err := s.Broadcast().Get(ctx, id)
-	if err != nil {
-		return false, fmt.Errorf("load broadcast %d: %w", id, err)
-	}
-	if b.Status == broadcast.StatusDraft {
-		return false, nil
-	}
-	if jobScheduledAt == nil {
-		return true, nil
-	}
-	// Postgres keeps microseconds; the job payload keeps nanoseconds.
-	return b.ScheduledAt != nil && b.ScheduledAt.Equal(jobScheduledAt.Truncate(time.Microsecond)), nil
 }
 
 // The unique constraint of the Broadcast's recipients (ADR 0106): no client can break it.
@@ -250,55 +221,6 @@ func renderable(content outboundmessages.Content) error {
 // the copy of its Condition, or a copy that no longer compiles. Its plan fails it.
 var ErrNoAudience = errors.New("broadcasts: the audience of the broadcast cannot be resolved")
 
-// destinationOf is the Destination the Broadcast b reaches its audience at, by its Channel (ADR
-// 0080): on email the Contact's address, on SMS its phone, on Telegram its Bindings on the Integration the Broadcast
-// routes through, the one it names or the Channel's default. A route with none reaches nobody.
-func destinationOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (eligibility.Destination, error) {
-	dest, err := destinationFor(ctx, s, b.Channel, b.IntegrationID)
-	if err != nil {
-		return nil, fmt.Errorf("broadcasts: broadcast %d: %w", b.ID, err)
-	}
-	return dest, nil
-}
-
-// destinationFor is destinationOf for a Channel and the Integration a Broadcast names (nil: the
-// Channel's default), before a Broadcast exists.
-func destinationFor(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64) (eligibility.Destination, error) {
-	switch channel {
-	case channels.Email:
-		return eligibility.EmailDestination(), nil
-	case channels.SMS:
-		return eligibility.PhoneDestination(), nil
-	case channels.Telegram:
-		integ, err := messaging.Integration(ctx, s, channels.Telegram, integrationID)
-		if errors.Is(err, messaging.ErrNoProvider) {
-			return eligibility.BindingDestination(eligibility.ChannelTelegram, 0), nil
-		}
-		if err != nil {
-			return nil, fmt.Errorf("integration: %w", err)
-		}
-		return eligibility.BindingDestination(eligibility.ChannelTelegram, integ.ID), nil
-	default:
-		return nil, fmt.Errorf("channel %q has no destination", channel)
-	}
-}
-
-// RecipientsOf is how many of the Contacts that match the Condition cond (a Segment's rule, "" for
-// all) a Broadcast on the Channel would take if it ran now, through the Integration it names (nil:
-// the Channel's default): the audience of its plan, so the Contacts with an eligible Destination on
-// that Channel. It is the audience the plan takes, asked before a Broadcast exists.
-func RecipientsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64, cond string, now time.Time) (int, error) {
-	dest, err := destinationFor(ctx, s, channel, integrationID)
-	if err != nil {
-		return 0, err
-	}
-	pred, err := condition.ContactPredicate(ctx, s, cond, now)
-	if err != nil {
-		return 0, fmt.Errorf("%w: %w", ErrNoAudience, err)
-	}
-	return s.Contact().Query().Where(eligibility.Audience(dest, eligibility.SourceBroadcasts), pred).Count(ctx)
-}
-
 // audienceOf is the Contacts the plan of the Broadcast b, which has left draft, takes: the
 // Workspace's Contacts narrowed by the Condition copied from its Segment when it left draft (ADR
 // 0065; a Broadcast to all contacts is not narrowed) and by its Channel's Destination: they have
@@ -307,11 +229,11 @@ func RecipientsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, 
 // A Contact without a Destination (on Telegram, an eligible Binding on the routed Integration) is left out, so no row is created that could never send and
 // would block finalization forever.
 func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (*ent.ContactQuery, error) {
-	dest, err := destinationOf(ctx, s, b)
+	reached, err := eligibility.BroadcastAudience(ctx, s, b.Channel, b.IntegrationID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("broadcasts: broadcast %d: %w", b.ID, err)
 	}
-	audience := s.Contact().Query().Where(eligibility.Audience(dest, eligibility.SourceBroadcasts))
+	audience := s.Contact().Query().Where(reached)
 	if b.SegmentID == nil {
 		return audience, nil
 	}

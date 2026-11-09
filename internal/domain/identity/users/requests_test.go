@@ -20,7 +20,7 @@ func requests(env *testhelper.TestEnv) *users.Requests {
 	attempts := throttle.NewAttempts(env.DB, time.Now,
 		throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(1)),
 		throttle.WithRule(throttle.KindEmailChange, throttle.ResetRule(1)))
-	return users.NewRequests(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now), attempts)
+	return users.NewRequests(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now, users.WithProver(proveByHash{})), attempts)
 }
 
 // published are the account's events the test's requests published, oldest first.
@@ -77,13 +77,28 @@ func TestAnEmailChangeAsksForTheLinkOrClaimsATakenAddress(t *testing.T) {
 	r := requests(env)
 	john := env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID)
 
-	require.NoError(t, r.EmailChange(t.Context(), john, "john.new@example.com"))
-	require.NoError(t, r.EmailChange(t.Context(), john, fixtures.OwnerJaneEmail))
+	require.NoError(t, r.EmailChange(t.Context(), john, " john.new@example.com ", fixtures.OwnerJohnPassword))
+	require.NoError(t, r.EmailChange(t.Context(), john, fixtures.OwnerJaneEmail, fixtures.OwnerJohnPassword))
 
 	assert.Equal(t, []events.DomainEvent{
 		&events.LinkRequested{Action: events.NameUserEmailChangeRequested, UserID: fixtures.OwnerJohnID, Email: "john.new@example.com", Deliver: true},
 		&events.AddressClaimed{Email: fixtures.OwnerJaneEmail, Deliver: true},
 	}, published(t, env))
+}
+
+// An email change is asked with the current password; a refused address costs no proof, and a
+// refused one asks for nothing.
+func TestAnEmailChangeIsAskedOnlyWithTheCurrentPassword(t *testing.T) {
+	env := testhelper.Setup(t)
+	r := requests(env)
+	john := env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID)
+
+	wrong := r.EmailChange(t.Context(), john, "john.new@example.com", "wrong")
+	same := r.EmailChange(t.Context(), john, fixtures.OwnerJohnEmail, "wrong")
+
+	require.ErrorIs(t, wrong, errWrongPassword)
+	require.ErrorIs(t, same, users.ErrNewEmailSame, "the address is checked before the password")
+	assert.Empty(t, published(t, env))
 }
 
 // ADR 0050: only a User with no password asks for a deletion link, with their own address; a User

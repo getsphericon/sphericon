@@ -76,7 +76,9 @@ context gets a package of its own by the same test.
     `unsubscriberecording` (the Broadcast's count, the Enrollment's exit) and
     `visitoridentification` (the chats a Visitor started, in sending) (condition 1).
   - Identity needs `instancestates`, the top context, for the Send cap a Workspace starts with:
-    `signup` and `workspacecreation` (condition 1).
+    `signup` and `workspacecreation` (condition 1). (Amended by #1218: creating a Workspace is an
+    operation of the Workspace view, `workspaceview`, see
+    [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]].)
   - The Second factor reset also removes Passkeys, above the factor (ADR 0110), and User deletion
     becomes a use case (ADR 0110, ADR 0111, #1206) (condition 1).
   - The License with a core module's rows: `auditlogretention`, whose windows are the Workspaces'

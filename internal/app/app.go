@@ -18,28 +18,25 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/sidelistener"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 type App struct {
@@ -377,140 +374,43 @@ func (a *App) runJobs(ctx context.Context) error {
 	return a.jobs.Start(ctx)
 }
 
-// SuspendWorkspace freezes a Workspace's outbound sending (ADR 0007) and tells its
-// owner(s) through the system sender. It reports whether anything changed; an
-// already-suspended Workspace is left as it was and the owner is not told twice. If
-// the notice cannot be sent the suspension still stands and the error says so.
-func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspension.Actor, reason string) (bool, error) {
-	client, err := do.Invoke[*ent.Client](a.injector)
-	if err != nil {
-		return false, err
-	}
-	id, err := workspaces.IDByPublicID(ctx, client, publicID)
-	if err != nil {
-		return false, err
-	}
-	suspender, err := do.Invoke[*suspension.Suspender](a.injector)
-	if err != nil {
-		return false, err
-	}
-	return suspender.Suspend(ctx, id, by, reason)
+// The modules and use cases the staff member commands call (cmd/server, a driver, ADR 0111), each
+// built by the container only when a command asks for it, so a command constructs only what it
+// uses.
+
+// Suspender is the Workspace suspension from the DI container.
+func (a *App) Suspender() (*suspension.Suspender, error) {
+	return do.Invoke[*suspension.Suspender](a.injector)
 }
 
-// UnsuspendWorkspace lifts a Workspace's suspension; held sends resume on their own.
-func (a *App) UnsuspendWorkspace(ctx context.Context, publicID string, by suspension.Actor) (bool, error) {
-	client, err := do.Invoke[*ent.Client](a.injector)
-	if err != nil {
-		return false, err
-	}
-	id, err := workspaces.IDByPublicID(ctx, client, publicID)
-	if err != nil {
-		return false, err
-	}
-	bus, err := do.Invoke[*events.Bus](a.injector)
-	if err != nil {
-		return false, err
-	}
-	now, err := do.Invoke[Clock](a.injector)
-	if err != nil {
-		return false, err
-	}
-	return suspension.UnsuspendWorkspace(ctx, bus, id, by, now())
+// SecondFactorReset is the Second factor reset use case from the DI container.
+func (a *App) SecondFactorReset() (*secondfactorreset.UseCase, error) {
+	return do.Invoke[*secondfactorreset.UseCase](a.injector)
 }
 
-// ResetSecondFactor clears the Second factor and Recovery codes of the User with
-// this email and ends every session of theirs (ADR 0020), recorded as
-// `user.second_factor_reset` by the Staff member "cli" in each of their Workspaces. It
-// reports whether anything changed: a User without a Second factor is left as is.
-func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error) {
-	client, err := do.Invoke[*ent.Client](a.injector)
-	if err != nil {
-		return false, err
-	}
-	id, err := client.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).OnlyID(ctx)
-	if err != nil {
-		return false, fmt.Errorf("user %q: %w", email, err)
-	}
-	sf, err := do.Invoke[*secondfactorcheck.UseCase](a.injector)
-	if err != nil {
-		return false, err
-	}
-	err = sf.ResetByStaff(ctx, id, "cli")
-	if errors.Is(err, secondfactorcheck.ErrNothingToReset) {
-		return false, nil
-	}
-	return err == nil, err
+// SignUp is the Sign-up use case from the DI container, which creates an Owner from a shell.
+func (a *App) SignUp() (*signup.UseCase, error) {
+	return do.Invoke[*signup.UseCase](a.injector)
 }
 
-// CreateOwner makes a Verified User with its first Workspace and a one-time password
-// (ADR 0042): an Owner made from a shell, with no Sign-up.
-func (a *App) CreateOwner(ctx context.Context, email, name string) (string, error) {
-	signUp, err := do.Invoke[*signup.UseCase](a.injector)
-	if err != nil {
-		return "", err
-	}
-	return signUp.CreateOwner(ctx, email, name)
+// StaffMembers is the platform Staff members module from the DI container.
+func (a *App) StaffMembers() (*staffmembers.Module, error) {
+	return do.Invoke[*staffmembers.Module](a.injector)
 }
 
-// CreateStaffMember makes a platform Staff member (ADR 0026, ADR 0063) and returns its one-time
-// password: the only way a Staff member comes to exist (there is no signup). It refuses a
-// duplicate email and an instance whose Staff sign-in is off (no Staff member secret).
-func (a *App) CreateStaffMember(ctx context.Context, email string) (string, error) {
-	members, err := do.Invoke[*staffmembers.Module](a.injector)
-	if err != nil {
-		return "", err
-	}
-	return members.Create(ctx, email)
-}
-
-// ResetStaffTOTP clears the TOTP of the Staff member with this email and ends its
-// sessions (ADR 0026): the only way a lost TOTP is reset. The Staff member re-enrols at next
-// login. staffmembers.ErrNotFound for an unknown email.
-func (a *App) ResetStaffTOTP(ctx context.Context, email string) error {
-	members, err := do.Invoke[*staffmembers.Module](a.injector)
-	if err != nil {
-		return err
-	}
-	return members.ResetTOTP(ctx, email)
-}
-
-// IssueServiceCredential creates a Service credential (ADR 0026) and returns it with its
-// value, shown once. Only the Staff member's command line makes one: no endpoint can.
-func (a *App) IssueServiceCredential(ctx context.Context, in servicecredentials.IssueInput) (*servicecredentials.Issued, error) {
+// ServiceCredentials is the Enterprise Edition's Service credentials module, from the Edition the
+// DI container builds.
+func (a *App) ServiceCredentials() (*servicecredentials.Module, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	return edition.ServiceCredentials.IssueServiceCredential(ctx, in)
+	return edition.ServiceCredentials, nil
 }
 
-// RotateServiceCredential issues a new credential with the name and scopes of an active
-// one, leaving the old one active until it is revoked.
-func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*servicecredentials.Issued, error) {
-	edition, err := do.Invoke[*ee.Edition](a.injector)
-	if err != nil {
-		return nil, err
-	}
-	return edition.ServiceCredentials.RotateServiceCredential(ctx, id, expiresAt)
-}
-
-// RevokeServiceCredential ends a Service credential.
-func (a *App) RevokeServiceCredential(ctx context.Context, id int64) error {
-	edition, err := do.Invoke[*ee.Edition](a.injector)
-	if err != nil {
-		return err
-	}
-	return edition.ServiceCredentials.RevokeServiceCredential(ctx, id)
-}
-
-// ServiceCredentials lists the Service credentials with their state, narrowed to one
-// service's by name when set.
-func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.ServiceCredential, error) {
-	edition, err := do.Invoke[*ee.Edition](a.injector)
-	if err != nil {
-		return nil, err
-	}
-	return edition.ServiceCredentials.ServiceCredentials(ctx, name)
+// SecretReencryption is the re-encryption of every stored secret from the DI container.
+func (a *App) SecretReencryption() (*secretreencryption.UseCase, error) {
+	return do.Invoke[*secretreencryption.UseCase](a.injector)
 }
 
 // Users is the product's Users module from the DI container, for harnesses that
@@ -520,10 +420,10 @@ func (a *App) Users() (*users.Module, error) {
 	return do.Invoke[*users.Module](a.injector)
 }
 
-// WorkspaceCreation is the product's Workspace creation use case from the DI container, for the
-// same harnesses: they create a Workspace for a User they made.
-func (a *App) WorkspaceCreation() (*workspacecreation.UseCase, error) {
-	return do.Invoke[*workspacecreation.UseCase](a.injector)
+// WorkspaceView is the product's Workspace view use case from the DI container, for the
+// same harnesses: they create a Workspace for a User they made through it.
+func (a *App) WorkspaceView() (*workspaceview.UseCase, error) {
+	return do.Invoke[*workspaceview.UseCase](a.injector)
 }
 
 // Memberships is the product's Memberships module from the DI container, for the same harnesses:
@@ -538,19 +438,15 @@ func (a *App) Bus() (*events.Bus, error) {
 	return do.Invoke[*events.Bus](a.injector)
 }
 
+// EventHistory is the Event history use case from the DI container, which `sphericon events`
+// lists and replays through.
+func (a *App) EventHistory() (*eventhistory.UseCase, error) {
+	return do.Invoke[*eventhistory.UseCase](a.injector)
+}
+
 func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
 	a.shutdownOnce.Do(func() {
 		a.shutdownReport = a.injector.ShutdownWithContext(ctx)
 	})
 	return a.shutdownReport
-}
-
-// Reencrypt seals every stored secret under the primary key of the encryption keyset
-// (`sphericon encryption-key reencrypt`) and returns what it did per column.
-func (a *App) Reencrypt(ctx context.Context) ([]secrets.Count, error) {
-	reencryption, err := do.Invoke[*secretreencryption.UseCase](a.injector)
-	if err != nil {
-		return nil, err
-	}
-	return reencryption.Run(ctx)
 }

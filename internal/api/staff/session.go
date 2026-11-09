@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 )
 
@@ -19,7 +20,7 @@ func RequireSession(sessions *staffmembers.Sessions, next http.Handler) http.Han
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
-		ctx, err := sessions.Authenticate(r.Context(), cookie.Value)
+		ctx, err := auth.AuthenticateStaff(r.Context(), sessions, cookie.Value)
 		if errors.Is(err, staffmembers.ErrUnauthorized) {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return

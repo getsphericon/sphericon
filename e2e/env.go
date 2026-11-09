@@ -29,7 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // Env is the running application under test plus its Mailpit. One Env serves every
@@ -41,7 +41,7 @@ type Env struct {
 	hooks   *Hooks
 
 	users       *users.Module
-	creation    *workspacecreation.UseCase
+	creation    *workspaceview.UseCase
 	memberships *memberships.Module
 	bus         *events.Bus
 	// brandKit is the product's own module, for the arrange step the public API leaves to a
@@ -132,18 +132,18 @@ func Boot() (*Env, func(), error) {
 		return nil, nil, fmt.Errorf("start application: %w", err)
 	}
 	// The arrange step goes through the product's own Users and Memberships modules and its
-	// Workspace creation, taken from the application's container (no second pool).
+	// Workspace view, which creates a Workspace, taken from the application's container (no second pool).
 	acc, err := a.Users()
 	if err != nil {
 		cleanup.Report("close the application", a.Close(ctx))
 		stopMailpit()
 		return nil, nil, fmt.Errorf("resolve users: %w", err)
 	}
-	creation, err := a.WorkspaceCreation()
+	creation, err := a.WorkspaceView()
 	if err != nil {
 		cleanup.Report("close the application", a.Close(ctx))
 		stopMailpit()
-		return nil, nil, fmt.Errorf("resolve workspace creation: %w", err)
+		return nil, nil, fmt.Errorf("resolve workspace summary: %w", err)
 	}
 	ms, err := a.Memberships()
 	if err != nil {
@@ -178,7 +178,7 @@ func Boot() (*Env, func(), error) {
 		memberships: ms,
 		bus:         bus,
 
-		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New())),
+		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New(), brandkits.Brands{})),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), time.Now, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }

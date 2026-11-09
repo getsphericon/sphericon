@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
@@ -125,62 +126,6 @@ func (_c *UserCreate) SetNillableSessionEpoch(v *int64) *UserCreate {
 	return _c
 }
 
-// SetSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field.
-func (_c *UserCreate) SetSecondFactorSecretEncrypted(v string) *UserCreate {
-	_c.mutation.SetSecondFactorSecretEncrypted(v)
-	return _c
-}
-
-// SetNillableSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field if the given value is not nil.
-func (_c *UserCreate) SetNillableSecondFactorSecretEncrypted(v *string) *UserCreate {
-	if v != nil {
-		_c.SetSecondFactorSecretEncrypted(*v)
-	}
-	return _c
-}
-
-// SetSecondFactorGeneration sets the "second_factor_generation" field.
-func (_c *UserCreate) SetSecondFactorGeneration(v int64) *UserCreate {
-	_c.mutation.SetSecondFactorGeneration(v)
-	return _c
-}
-
-// SetNillableSecondFactorGeneration sets the "second_factor_generation" field if the given value is not nil.
-func (_c *UserCreate) SetNillableSecondFactorGeneration(v *int64) *UserCreate {
-	if v != nil {
-		_c.SetSecondFactorGeneration(*v)
-	}
-	return _c
-}
-
-// SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
-func (_c *UserCreate) SetSecondFactorConfirmedAt(v time.Time) *UserCreate {
-	_c.mutation.SetSecondFactorConfirmedAt(v)
-	return _c
-}
-
-// SetNillableSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field if the given value is not nil.
-func (_c *UserCreate) SetNillableSecondFactorConfirmedAt(v *time.Time) *UserCreate {
-	if v != nil {
-		_c.SetSecondFactorConfirmedAt(*v)
-	}
-	return _c
-}
-
-// SetSecondFactorLastStep sets the "second_factor_last_step" field.
-func (_c *UserCreate) SetSecondFactorLastStep(v int64) *UserCreate {
-	_c.mutation.SetSecondFactorLastStep(v)
-	return _c
-}
-
-// SetNillableSecondFactorLastStep sets the "second_factor_last_step" field if the given value is not nil.
-func (_c *UserCreate) SetNillableSecondFactorLastStep(v *int64) *UserCreate {
-	if v != nil {
-		_c.SetSecondFactorLastStep(*v)
-	}
-	return _c
-}
-
 // SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
 func (_c *UserCreate) SetSignupSurveyDueAt(v time.Time) *UserCreate {
 	_c.mutation.SetSignupSurveyDueAt(v)
@@ -271,6 +216,25 @@ func (_c *UserCreate) AddSentInvitations(v ...*Invitation) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddSentInvitationIDs(ids...)
+}
+
+// SetSecondFactorID sets the "second_factor" edge to the SecondFactor entity by ID.
+func (_c *UserCreate) SetSecondFactorID(id int64) *UserCreate {
+	_c.mutation.SetSecondFactorID(id)
+	return _c
+}
+
+// SetNillableSecondFactorID sets the "second_factor" edge to the SecondFactor entity by ID if the given value is not nil.
+func (_c *UserCreate) SetNillableSecondFactorID(id *int64) *UserCreate {
+	if id != nil {
+		_c = _c.SetSecondFactorID(*id)
+	}
+	return _c
+}
+
+// SetSecondFactor sets the "second_factor" edge to the SecondFactor entity.
+func (_c *UserCreate) SetSecondFactor(v *SecondFactor) *UserCreate {
+	return _c.SetSecondFactorID(v.ID)
 }
 
 // AddRecoveryCodeIDs adds the "recovery_codes" edge to the RecoveryCode entity by IDs.
@@ -399,10 +363,6 @@ func (_c *UserCreate) defaults() {
 		v := user.DefaultSessionEpoch
 		_c.mutation.SetSessionEpoch(v)
 	}
-	if _, ok := _c.mutation.SecondFactorLastStep(); !ok {
-		v := user.DefaultSecondFactorLastStep
-		_c.mutation.SetSecondFactorLastStep(v)
-	}
 	if _, ok := _c.mutation.FeedPosition(); !ok {
 		v := user.DefaultFeedPosition
 		_c.mutation.SetFeedPosition(v)
@@ -435,14 +395,6 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.SessionEpoch(); !ok {
 		return &ValidationError{Name: "session_epoch", err: errors.New(`ent: missing required field "User.session_epoch"`)}
-	}
-	if v, ok := _c.mutation.SecondFactorGeneration(); ok {
-		if err := user.SecondFactorGenerationValidator(v); err != nil {
-			return &ValidationError{Name: "second_factor_generation", err: fmt.Errorf(`ent: validator failed for field "User.second_factor_generation": %w`, err)}
-		}
-	}
-	if _, ok := _c.mutation.SecondFactorLastStep(); !ok {
-		return &ValidationError{Name: "second_factor_last_step", err: errors.New(`ent: missing required field "User.second_factor_last_step"`)}
 	}
 	if v, ok := _c.mutation.Timezone(); ok {
 		if err := user.TimezoneValidator(v); err != nil {
@@ -522,22 +474,6 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldSessionEpoch, field.TypeInt64, value)
 		_node.SessionEpoch = value
 	}
-	if value, ok := _c.mutation.SecondFactorSecretEncrypted(); ok {
-		_spec.SetField(user.FieldSecondFactorSecretEncrypted, field.TypeString, value)
-		_node.SecondFactorSecretEncrypted = value
-	}
-	if value, ok := _c.mutation.SecondFactorGeneration(); ok {
-		_spec.SetField(user.FieldSecondFactorGeneration, field.TypeInt64, value)
-		_node.SecondFactorGeneration = &value
-	}
-	if value, ok := _c.mutation.SecondFactorConfirmedAt(); ok {
-		_spec.SetField(user.FieldSecondFactorConfirmedAt, field.TypeTime, value)
-		_node.SecondFactorConfirmedAt = &value
-	}
-	if value, ok := _c.mutation.SecondFactorLastStep(); ok {
-		_spec.SetField(user.FieldSecondFactorLastStep, field.TypeInt64, value)
-		_node.SecondFactorLastStep = value
-	}
 	if value, ok := _c.mutation.SignupSurveyDueAt(); ok {
 		_spec.SetField(user.FieldSignupSurveyDueAt, field.TypeTime, value)
 		_node.SignupSurveyDueAt = &value
@@ -579,6 +515,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(invitation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SecondFactorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SecondFactorTable,
+			Columns: []string{user.SecondFactorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(secondfactor.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -823,84 +775,6 @@ func (u *UserUpsert) UpdateSessionEpoch() *UserUpsert {
 // AddSessionEpoch adds v to the "session_epoch" field.
 func (u *UserUpsert) AddSessionEpoch(v int64) *UserUpsert {
 	u.Add(user.FieldSessionEpoch, v)
-	return u
-}
-
-// SetSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field.
-func (u *UserUpsert) SetSecondFactorSecretEncrypted(v string) *UserUpsert {
-	u.Set(user.FieldSecondFactorSecretEncrypted, v)
-	return u
-}
-
-// UpdateSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field to the value that was provided on create.
-func (u *UserUpsert) UpdateSecondFactorSecretEncrypted() *UserUpsert {
-	u.SetExcluded(user.FieldSecondFactorSecretEncrypted)
-	return u
-}
-
-// ClearSecondFactorSecretEncrypted clears the value of the "second_factor_secret_encrypted" field.
-func (u *UserUpsert) ClearSecondFactorSecretEncrypted() *UserUpsert {
-	u.SetNull(user.FieldSecondFactorSecretEncrypted)
-	return u
-}
-
-// SetSecondFactorGeneration sets the "second_factor_generation" field.
-func (u *UserUpsert) SetSecondFactorGeneration(v int64) *UserUpsert {
-	u.Set(user.FieldSecondFactorGeneration, v)
-	return u
-}
-
-// UpdateSecondFactorGeneration sets the "second_factor_generation" field to the value that was provided on create.
-func (u *UserUpsert) UpdateSecondFactorGeneration() *UserUpsert {
-	u.SetExcluded(user.FieldSecondFactorGeneration)
-	return u
-}
-
-// AddSecondFactorGeneration adds v to the "second_factor_generation" field.
-func (u *UserUpsert) AddSecondFactorGeneration(v int64) *UserUpsert {
-	u.Add(user.FieldSecondFactorGeneration, v)
-	return u
-}
-
-// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
-func (u *UserUpsert) ClearSecondFactorGeneration() *UserUpsert {
-	u.SetNull(user.FieldSecondFactorGeneration)
-	return u
-}
-
-// SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
-func (u *UserUpsert) SetSecondFactorConfirmedAt(v time.Time) *UserUpsert {
-	u.Set(user.FieldSecondFactorConfirmedAt, v)
-	return u
-}
-
-// UpdateSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field to the value that was provided on create.
-func (u *UserUpsert) UpdateSecondFactorConfirmedAt() *UserUpsert {
-	u.SetExcluded(user.FieldSecondFactorConfirmedAt)
-	return u
-}
-
-// ClearSecondFactorConfirmedAt clears the value of the "second_factor_confirmed_at" field.
-func (u *UserUpsert) ClearSecondFactorConfirmedAt() *UserUpsert {
-	u.SetNull(user.FieldSecondFactorConfirmedAt)
-	return u
-}
-
-// SetSecondFactorLastStep sets the "second_factor_last_step" field.
-func (u *UserUpsert) SetSecondFactorLastStep(v int64) *UserUpsert {
-	u.Set(user.FieldSecondFactorLastStep, v)
-	return u
-}
-
-// UpdateSecondFactorLastStep sets the "second_factor_last_step" field to the value that was provided on create.
-func (u *UserUpsert) UpdateSecondFactorLastStep() *UserUpsert {
-	u.SetExcluded(user.FieldSecondFactorLastStep)
-	return u
-}
-
-// AddSecondFactorLastStep adds v to the "second_factor_last_step" field.
-func (u *UserUpsert) AddSecondFactorLastStep(v int64) *UserUpsert {
-	u.Add(user.FieldSecondFactorLastStep, v)
 	return u
 }
 
@@ -1150,97 +1024,6 @@ func (u *UserUpsertOne) AddSessionEpoch(v int64) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateSessionEpoch() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateSessionEpoch()
-	})
-}
-
-// SetSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field.
-func (u *UserUpsertOne) SetSecondFactorSecretEncrypted(v string) *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.SetSecondFactorSecretEncrypted(v)
-	})
-}
-
-// UpdateSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field to the value that was provided on create.
-func (u *UserUpsertOne) UpdateSecondFactorSecretEncrypted() *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.UpdateSecondFactorSecretEncrypted()
-	})
-}
-
-// ClearSecondFactorSecretEncrypted clears the value of the "second_factor_secret_encrypted" field.
-func (u *UserUpsertOne) ClearSecondFactorSecretEncrypted() *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.ClearSecondFactorSecretEncrypted()
-	})
-}
-
-// SetSecondFactorGeneration sets the "second_factor_generation" field.
-func (u *UserUpsertOne) SetSecondFactorGeneration(v int64) *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.SetSecondFactorGeneration(v)
-	})
-}
-
-// AddSecondFactorGeneration adds v to the "second_factor_generation" field.
-func (u *UserUpsertOne) AddSecondFactorGeneration(v int64) *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.AddSecondFactorGeneration(v)
-	})
-}
-
-// UpdateSecondFactorGeneration sets the "second_factor_generation" field to the value that was provided on create.
-func (u *UserUpsertOne) UpdateSecondFactorGeneration() *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.UpdateSecondFactorGeneration()
-	})
-}
-
-// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
-func (u *UserUpsertOne) ClearSecondFactorGeneration() *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.ClearSecondFactorGeneration()
-	})
-}
-
-// SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
-func (u *UserUpsertOne) SetSecondFactorConfirmedAt(v time.Time) *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.SetSecondFactorConfirmedAt(v)
-	})
-}
-
-// UpdateSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field to the value that was provided on create.
-func (u *UserUpsertOne) UpdateSecondFactorConfirmedAt() *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.UpdateSecondFactorConfirmedAt()
-	})
-}
-
-// ClearSecondFactorConfirmedAt clears the value of the "second_factor_confirmed_at" field.
-func (u *UserUpsertOne) ClearSecondFactorConfirmedAt() *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.ClearSecondFactorConfirmedAt()
-	})
-}
-
-// SetSecondFactorLastStep sets the "second_factor_last_step" field.
-func (u *UserUpsertOne) SetSecondFactorLastStep(v int64) *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.SetSecondFactorLastStep(v)
-	})
-}
-
-// AddSecondFactorLastStep adds v to the "second_factor_last_step" field.
-func (u *UserUpsertOne) AddSecondFactorLastStep(v int64) *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.AddSecondFactorLastStep(v)
-	})
-}
-
-// UpdateSecondFactorLastStep sets the "second_factor_last_step" field to the value that was provided on create.
-func (u *UserUpsertOne) UpdateSecondFactorLastStep() *UserUpsertOne {
-	return u.Update(func(s *UserUpsert) {
-		s.UpdateSecondFactorLastStep()
 	})
 }
 
@@ -1668,97 +1451,6 @@ func (u *UserUpsertBulk) AddSessionEpoch(v int64) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateSessionEpoch() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateSessionEpoch()
-	})
-}
-
-// SetSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field.
-func (u *UserUpsertBulk) SetSecondFactorSecretEncrypted(v string) *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.SetSecondFactorSecretEncrypted(v)
-	})
-}
-
-// UpdateSecondFactorSecretEncrypted sets the "second_factor_secret_encrypted" field to the value that was provided on create.
-func (u *UserUpsertBulk) UpdateSecondFactorSecretEncrypted() *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.UpdateSecondFactorSecretEncrypted()
-	})
-}
-
-// ClearSecondFactorSecretEncrypted clears the value of the "second_factor_secret_encrypted" field.
-func (u *UserUpsertBulk) ClearSecondFactorSecretEncrypted() *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.ClearSecondFactorSecretEncrypted()
-	})
-}
-
-// SetSecondFactorGeneration sets the "second_factor_generation" field.
-func (u *UserUpsertBulk) SetSecondFactorGeneration(v int64) *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.SetSecondFactorGeneration(v)
-	})
-}
-
-// AddSecondFactorGeneration adds v to the "second_factor_generation" field.
-func (u *UserUpsertBulk) AddSecondFactorGeneration(v int64) *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.AddSecondFactorGeneration(v)
-	})
-}
-
-// UpdateSecondFactorGeneration sets the "second_factor_generation" field to the value that was provided on create.
-func (u *UserUpsertBulk) UpdateSecondFactorGeneration() *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.UpdateSecondFactorGeneration()
-	})
-}
-
-// ClearSecondFactorGeneration clears the value of the "second_factor_generation" field.
-func (u *UserUpsertBulk) ClearSecondFactorGeneration() *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.ClearSecondFactorGeneration()
-	})
-}
-
-// SetSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field.
-func (u *UserUpsertBulk) SetSecondFactorConfirmedAt(v time.Time) *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.SetSecondFactorConfirmedAt(v)
-	})
-}
-
-// UpdateSecondFactorConfirmedAt sets the "second_factor_confirmed_at" field to the value that was provided on create.
-func (u *UserUpsertBulk) UpdateSecondFactorConfirmedAt() *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.UpdateSecondFactorConfirmedAt()
-	})
-}
-
-// ClearSecondFactorConfirmedAt clears the value of the "second_factor_confirmed_at" field.
-func (u *UserUpsertBulk) ClearSecondFactorConfirmedAt() *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.ClearSecondFactorConfirmedAt()
-	})
-}
-
-// SetSecondFactorLastStep sets the "second_factor_last_step" field.
-func (u *UserUpsertBulk) SetSecondFactorLastStep(v int64) *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.SetSecondFactorLastStep(v)
-	})
-}
-
-// AddSecondFactorLastStep adds v to the "second_factor_last_step" field.
-func (u *UserUpsertBulk) AddSecondFactorLastStep(v int64) *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.AddSecondFactorLastStep(v)
-	})
-}
-
-// UpdateSecondFactorLastStep sets the "second_factor_last_step" field to the value that was provided on create.
-func (u *UserUpsertBulk) UpdateSecondFactorLastStep() *UserUpsertBulk {
-	return u.Update(func(s *UserUpsert) {
-		s.UpdateSecondFactorLastStep()
 	})
 }
 

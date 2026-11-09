@@ -153,13 +153,13 @@ func addFact(r *Result, item any) error {
 		return err
 	}
 	switch {
-	case kind == kindInboundMessage:
+	case kind == KindInboundMessage:
 		m, err := validateInbound(raw)
 		if err != nil {
 			return err
 		}
 		r.InboundMessages = append(r.InboundMessages, m)
-	case kind == kindReachabilityChange:
+	case kind == KindReachabilityChange:
 		c, err := validateReachability(raw)
 		if err != nil {
 			return err
@@ -173,7 +173,7 @@ func addFact(r *Result, item any) error {
 		r.Notices = append(r.Notices, n)
 	default:
 		return fmt.Errorf("kind %v is not %s, %s, bounce, complaint, delivery, delay, drop or undelivered",
-			obj["kind"], kindInboundMessage, kindReachabilityChange)
+			obj["kind"], KindInboundMessage, KindReachabilityChange)
 	}
 	return nil
 }

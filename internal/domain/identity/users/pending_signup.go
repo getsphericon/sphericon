@@ -64,9 +64,9 @@ func (a *Module) HoldPending(ctx context.Context, in ProviderLogin) (*ent.Pendin
 // openAt is the one definition of a pending sign-up still open at now: it has not expired.
 func openAt(now time.Time) predicate.PendingSignup { return pendingsignup.ExpiresAtGT(now) }
 
-// PendingSignup is the pending sign-up with id while it is still open at now, or
+// pendingSignup is the pending sign-up with id while it is still open at now, or
 // ErrPendingSignupGone.
-func (a *Module) PendingSignup(ctx context.Context, id int64, now time.Time) (*ent.PendingSignup, error) {
+func (a *Module) pendingSignup(ctx context.Context, id int64, now time.Time) (*ent.PendingSignup, error) {
 	p, err := a.ent.PendingSignup.Query().
 		Where(pendingsignup.ID(id), openAt(now)).
 		Only(ctx)
@@ -81,7 +81,7 @@ func (a *Module) PendingSignup(ctx context.Context, id int64, now time.Time) (*e
 // Verified User with the provider's address and name, or takes over the Unverified User that
 // holds the address, as a provider sign-in without items does, its Linked identity, the Consent
 // records of the answers and the Membership of the Invitation the flow began from. The caller
-// creates the first Workspace on the same transaction (internal/usecase/workspacecreation).
+// creates the first Workspace on the same transaction (internal/usecase/signup).
 // surveyDue marks the User as owing the Sign-up survey, unless the sign-up accepts an Invitation.
 // It returns the User and the pending sign-up it came from. ErrPendingSignupGone when the pending
 // sign-up is no longer open, its Invitation no longer pending, or its address or provider
@@ -160,9 +160,9 @@ func completeProviderSignup(ctx context.Context, tx *ent.Client, in ProviderLogi
 	}
 }
 
-// DeclinePendingSignup deletes the pending sign-up with id: the person declined the Sign-up items
+// declinePendingSignup deletes the pending sign-up with id: the person declined the Sign-up items
 // and nothing is created. A pending sign-up already gone changes nothing.
-func (a *Module) DeclinePendingSignup(ctx context.Context, id int64) error {
+func (a *Module) declinePendingSignup(ctx context.Context, id int64) error {
 	_, err := a.ent.PendingSignup.Delete().Where(pendingsignup.ID(id)).Exec(ctx)
 	return err
 }

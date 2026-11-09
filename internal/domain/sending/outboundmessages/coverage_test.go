@@ -663,7 +663,7 @@ func TestSendBroadcastTestRefusesEveryOutcomeButSent(t *testing.T) {
 
 	t.Run("sent", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("Launch {{ first_name }}", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"}, nil)
+		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("Launch {{ first_name }}", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"})
 		require.NoError(t, err)
 
 		msgs := env.CustomerMail.Messages()
@@ -677,7 +677,7 @@ func TestSendBroadcastTestRefusesEveryOutcomeButSent(t *testing.T) {
 	t.Run("held", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
-		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"}, nil)
+		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"})
 		require.ErrorIs(t, err, outboundmessages.ErrHeld)
 		assert.Equal(t, "the message was not sent: "+outboundmessages.Detail(holds.ReasonSuspended), validation.Message(err))
 	})
@@ -685,14 +685,14 @@ func TestSendBroadcastTestRefusesEveryOutcomeButSent(t *testing.T) {
 	t.Run("send error", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.CustomerMail.SetErr(errors.New("smtp unavailable"))
-		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"}, nil)
+		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"})
 		require.ErrorContains(t, err, "smtp unavailable")
 		assert.NotErrorIs(t, err, outboundmessages.ErrHeld, "a failed send is a fault, not a refusal")
 	})
 
 	t.Run("content does not render", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("{% if %}broken", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"}, nil)
+		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("{% if %}broken", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"})
 		require.ErrorIs(t, err, emailrender.ErrInvalidContent)
 		assert.Empty(t, env.CustomerMail.Messages())
 	})

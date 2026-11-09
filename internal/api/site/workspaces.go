@@ -3,7 +3,6 @@ package site
 import (
 	"context"
 	"slices"
-	"strings"
 
 	"github.com/samber/lo"
 
@@ -13,9 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // SiteWorkspacesList returns the workspaces the authenticated user is a member of.
@@ -24,62 +24,45 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 	if a == nil {
 		return []siteapi.SiteWorkspaceResource{}, nil
 	}
-
-	items, err := h.memberships.OfUser(ctx, a.UserID)
+	views, err := h.workspaceView.OfMembers(ctx, a.User.ID, a.Method.Strong())
 	if err != nil {
 		return nil, err
 	}
-
-	resources := make([]siteapi.SiteWorkspaceResource, len(items))
-	for i, m := range items {
-		if resources[i], err = h.workspaceResource(ctx, h.memberships.ScopeOf(m), m); err != nil {
-			return nil, err
-		}
-	}
-	return resources, nil
+	return lo.Map(views, func(v workspaceview.View, _ int) siteapi.SiteWorkspaceResource { return h.workspaceResource(v) }), nil
 }
 
-// workspaceResource is the Membership's Workspace as the Membership's User sees it,
-// with their grace end under the Two-factor requirement (ADR 0020) and the Staff member
-// holds active now (ADR 0009) and the Send cap the send path enforces with the last 24 hours of
-// sends (ADR 0067; null when none applies), read through s, the Workspace's scope. The Membership's
-// User and Workspace edges must be loaded.
-func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
-	r := mapper.WorkspaceToResource(m.Edges.Workspace)
-	r.Role = mapper.MembershipRoleToResource(m.Role)
-	if suspension.Is(m.Edges.Workspace) && h.supportEmail != "" {
+// viewCaller is the caller of an operation on the Workspace it addresses, as the Workspace
+// view takes them: their Membership, the actor and whether their session is strong.
+func (h *Handlers) viewCaller(ctx context.Context) workspaceview.Caller {
+	return workspaceview.Caller{Membership: callerMembership(ctx), Actor: h.actor(ctx), StrongSession: currentSession(ctx).Method.Strong()}
+}
+
+// workspaceResource maps the Workspace summary as the member of the View sees it, with their Role
+// and Permissions, their grace end under the Two-factor requirement (ADR 0020) and the Instance's
+// addresses besides the app's own.
+func (h *Handlers) workspaceResource(v workspaceview.View) siteapi.SiteWorkspaceResource {
+	sum := v.Summary
+	r := mapper.WorkspaceToResource(sum.Workspace)
+	r.Role = mapper.MembershipRoleToResource(v.Membership.Role)
+	if suspension.Is(sum.Workspace) && h.supportEmail != "" {
 		r.SupportEmail = siteapi.NewOptNilString(h.supportEmail)
 	}
 	r.McpUrl = h.origins.MCP
 	r.TrackerUrl = h.origins.Tracker
-	if target := h.trackingDomains.Target(); target != "" {
-		r.TrackingTarget = siteapi.NewOptString(target)
+	if sum.TrackingTarget != "" {
+		r.TrackingTarget = siteapi.NewOptString(sum.TrackingTarget)
 	}
-	held := memberships.Permissions(m.Role)
+	held := memberships.Permissions(v.Membership.Role)
 	r.Permissions = mapper.PermissionsToResources(held)
 	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, memberships.PermAccountLinkOpen)
-	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
-	// no grace to count down: this is the decision users.Module.Admit makes.
-	if end, ok := users.SecondFactorDeadline(m); ok && !currentSession(ctx).Method.Strong() {
-		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
+	if end := v.SecondFactorGraceEndsAt; end != nil {
+		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*end))
 	}
-	standing, err := h.holds.Standing(ctx, s)
-	if err != nil {
-		return r, err
-	}
-	r.Holds = mapper.HoldsToResources(standing.Holds())
-	sendCap, err := h.outbound.SendCapStatus(ctx, s, m.Edges.Workspace)
-	if err != nil {
-		return r, err
-	}
-	r.SendCap = mapper.SendCapStatusToResource(sendCap)
-	linkLength, err := h.outbound.ShortLinkLength(ctx, s)
-	if err != nil {
-		return r, err
-	}
-	r.ShortLinkLength = narrow.Int32(linkLength)
-	r.SmsMaxLength = mapper.SmsLengthLimitToResource(h.outbound.SMSLengthLimit())
-	return r, nil
+	r.Holds = mapper.HoldsToResources(sum.Holds)
+	r.SendCap = mapper.SendCapStatusToResource(sum.SendCap)
+	r.ShortLinkLength = narrow.Int32(sum.ShortLinkLength)
+	r.SmsMaxLength = mapper.SmsLengthLimitToResource(sum.SMSMaxLength)
+	return r
 }
 
 // SiteWorkspacesCreate creates a Workspace for the authenticated User, who becomes its
@@ -89,18 +72,13 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	if a == nil {
 		return nil, &ent.NotFoundError{}
 	}
-	ws, err := h.workspaceCreation.CreateWorkspace(ctx, a.UserID, req.Name)
+	in := inputs.WorkspaceCreate(req)
+	in.UserID, in.StrongSession = a.User.ID, a.Method.Strong()
+	v, err := h.workspaceView.Create(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	s, m, err := h.memberships.Scope(ctx, a.UserID, ws.PublicID)
-	if err != nil {
-		return nil, err
-	}
-	r, err := h.workspaceResource(ctx, s, m)
-	if err != nil {
-		return nil, err
-	}
+	r := h.workspaceResource(v)
 	return &r, nil
 }
 
@@ -117,13 +95,6 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, _ siteapi.Site
 		return nil, err
 	}
 	return &siteapi.SiteAccountLinkResource{URL: h.accountLink.Address(), Token: token, ExpiresAt: siteapi.Timestamp(expires)}, nil
-}
-
-// withWorkspace is the Membership with its Workspace replaced by w (after an update).
-func withWorkspace(m *ent.Membership, w *ent.Workspace) *ent.Membership {
-	c := *m
-	c.Edges.Workspace = w
-	return &c
 }
 
 // SiteWorkspacesRequireSecondFactor switches the Workspace's Two-factor requirement on (Permission
@@ -152,55 +123,38 @@ func (h *Handlers) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context
 // on or off and answers its Workspace as the caller now sees it. Switching it on tells the Users
 // without a Second factor (workspaces.Module.SetSecondFactorRequirement publishes it).
 func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required bool) (siteapi.SiteWorkspaceResource, error) {
-	s, m := workspaceScope(ctx), callerMembership(ctx)
-	w, err := h.workspaces.SetSecondFactorRequirement(ctx, s, h.actor(ctx), required, h.now())
+	v, err := h.workspaceView.SetSecondFactorRequirement(ctx, workspaceScope(ctx), h.viewCaller(ctx), required)
 	if err != nil {
 		return siteapi.SiteWorkspaceResource{}, err
 	}
-	return h.workspaceResource(ctx, s, withWorkspace(m, w))
+	return h.workspaceResource(v), nil
 }
 
 // SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, _ siteapi.SiteWorkspacesUpdateParams) (*siteapi.SiteWorkspaceResource, error) {
-	s, m := workspaceScope(ctx), callerMembership(ctx)
-
-	var postal *string
-	// postalAddress is optional in the contract: absent = leave unchanged, present
-	// (incl. empty string) = set/clear. Trimmed so a whitespace-only value clears it.
-	if req.PostalAddress.Set {
-		v := strings.TrimSpace(req.PostalAddress.Value)
-		postal = &v
-	}
-	w, err := h.workspaces.Update(ctx, s, h.actor(ctx), req.Name, postal)
+	v, err := h.workspaceView.Update(ctx, workspaceScope(ctx), h.viewCaller(ctx), inputs.WorkspaceUpdate(req))
 	if err != nil {
 		return nil, err
 	}
-	resource, err := h.workspaceResource(ctx, s, withWorkspace(m, w))
-	if err != nil {
-		return nil, err
-	}
+	resource := h.workspaceResource(v)
 	return &resource, nil
 }
 
 // SiteWorkspacesSetTimezone sets the Workspace time zone (Permission workspace:timezone, ADR 0057).
 func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, _ siteapi.SiteWorkspacesSetTimezoneParams) (*siteapi.SiteWorkspaceResource, error) {
-	s, m := workspaceScope(ctx), callerMembership(ctx)
-	w, err := h.workspaces.SetTimezone(ctx, s, h.actor(ctx), string(req.Timezone))
+	v, err := h.workspaceView.SetTimezone(ctx, workspaceScope(ctx), h.viewCaller(ctx), string(req.Timezone))
 	if err != nil {
 		return nil, err
 	}
-	resource, err := h.workspaceResource(ctx, s, withWorkspace(m, w))
-	if err != nil {
-		return nil, err
-	}
+	resource := h.workspaceResource(v)
 	return &resource, nil
 }
 
 // deletedWorkspaceResource is a Workspace in its deletion window with the date its data
 // will be erased.
-func deletedWorkspaceResource(w *ent.Workspace, onlyOwner bool) siteapi.SiteDeletedWorkspaceResource {
-	res := mapper.DeletedWorkspaceToResource(w)
-	res.OnlyOwner = onlyOwner
+func deletedWorkspaceResource(d workspacedeletion.DeletedWorkspace) siteapi.SiteDeletedWorkspaceResource {
+	res := mapper.DeletedWorkspaceToResource(d.Workspace)
+	res.OnlyOwner = d.OnlyOwner
 	return res
 }
 
@@ -211,31 +165,22 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 	if a == nil {
 		return []siteapi.SiteDeletedWorkspaceResource{}, nil
 	}
-	items, err := h.deletion.Deleted(ctx, a.UserID)
+	items, err := h.deletion.Deleted(ctx, a.User.ID)
 	if err != nil {
 		return nil, err
 	}
-	sole, err := h.deletion.SoleOwned(ctx, lo.Map(items, func(m *ent.Membership, _ int) int64 { return m.WorkspaceID }))
-	if err != nil {
-		return nil, err
-	}
-	return lo.Map(items, func(m *ent.Membership, _ int) siteapi.SiteDeletedWorkspaceResource {
-		return deletedWorkspaceResource(m.Edges.Workspace, sole[m.WorkspaceID])
+	return lo.Map(items, func(d workspacedeletion.DeletedWorkspace, _ int) siteapi.SiteDeletedWorkspaceResource {
+		return deletedWorkspaceResource(d)
 	}), nil
 }
 
 // SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
 func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, _ siteapi.SiteWorkspacesDeleteParams) (*siteapi.SiteDeletedWorkspaceResource, error) {
-	s := workspaceScope(ctx)
-	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name)
+	d, err := h.deletion.Delete(ctx, workspaceScope(ctx), h.actor(ctx), req.Name)
 	if err != nil {
 		return nil, err
 	}
-	sole, err := h.deletion.SoleOwned(ctx, []int64{w.ID})
-	if err != nil {
-		return nil, err
-	}
-	r := deletedWorkspaceResource(w, sole[w.ID])
+	r := deletedWorkspaceResource(d)
 	return &r, nil
 }
 
@@ -259,19 +204,12 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 		return nil, workspaces.ErrNotFound
 	}
 	in := inputs.WorkspaceRestore(params)
-	in.UserID, in.Actor = a.UserID, h.actor(ctx)
-	if _, err := h.deletion.Restore(ctx, in); err != nil {
-		return nil, err
-	}
-	// The Workspace is live again, so the caller's Owner Membership resolves like any other.
-	s, m, err := h.memberships.Scope(ctx, a.UserID, string(params.ID))
+	in.UserID, in.Actor, in.StrongSession = a.User.ID, h.actor(ctx), a.Method.Strong()
+	v, err := h.workspaceView.Restore(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	r, err := h.workspaceResource(ctx, s, m)
-	if err != nil {
-		return nil, err
-	}
+	r := h.workspaceResource(v)
 	return &r, nil
 }
 

@@ -8,15 +8,13 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 )
 
-type eventOps interface {
-	ReplayEvents(ctx context.Context, workspace string, in events.ReplayRequest) (events.ReplayResult, error)
-	EventJournal(ctx context.Context, in app.EventJournalRequest) (events.JournalPage, error)
-}
-
+// eventsCommand is `sphericon events`: `list` inspects the publication metadata one Workspace or
+// the Instance retained, and `replay` queues one report consumer's jobs again for the events a
+// Workspace recorded in a bounded interval.
 func eventsCommand(d deps) *cli.Command {
 	return group("events", "inspect publication metadata and reapply retained report inputs",
 		&cli.Command{
@@ -36,14 +34,17 @@ func eventsCommand(d deps) *cli.Command {
 				&cli.TimestampFlag{Name: "before", Usage: "exclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
 				&cli.IntFlag{Name: "limit", Value: events.DefaultJournalLimit, Usage: "maximum entries in newest-first output; truncated reports omitted matches"},
 			},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
-				page, err := ops.EventJournal(ctx, app.EventJournalRequest{
-					Workspace: cmd.String("workspace"), Instance: cmd.Bool("instance"),
-					Query: events.JournalQuery{
-						Name: cmd.String("name"), EventID: cmd.String("event-id"),
-						From: cmd.Timestamp("from"), Before: cmd.Timestamp("before"), Limit: cmd.Int("limit"),
-					},
-				})
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+				history, err := c.EventHistory()
+				if err != nil {
+					return err
+				}
+				query := events.JournalQuery{
+					Name: cmd.String("name"), EventID: cmd.String("event-id"),
+					From: cmd.Timestamp("from"), Before: cmd.Timestamp("before"), Limit: cmd.Int("limit"),
+				}
+				of := eventhistory.Of{Instance: cmd.Bool("instance"), Workspace: cmd.String("workspace")}
+				page, err := history.List(ctx, of, query)
 				if err != nil {
 					return err
 				}
@@ -61,7 +62,7 @@ func eventsCommand(d deps) *cli.Command {
 				&cli.IntFlag{Name: "limit", Value: events.MaxReplayEntries, Usage: "refuse the whole selection when it exceeds this bound"},
 				&cli.BoolFlag{Name: "dry-run", Usage: "validate and count without queuing jobs"},
 			},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				from, err := time.Parse(time.RFC3339Nano, cmd.String("from"))
 				if err != nil {
 					return fmt.Errorf("--from: %w", err)
@@ -70,7 +71,11 @@ func eventsCommand(d deps) *cli.Command {
 				if err != nil {
 					return fmt.Errorf("--before: %w", err)
 				}
-				result, err := ops.ReplayEvents(ctx, cmd.String("workspace"), events.ReplayRequest{
+				history, err := c.EventHistory()
+				if err != nil {
+					return err
+				}
+				result, err := history.Replay(ctx, cmd.String("workspace"), events.ReplayRequest{
 					Consumer: cmd.String("consumer"), From: from, Before: before,
 					Limit: cmd.Int("limit"), DryRun: cmd.Bool("dry-run"),
 				})

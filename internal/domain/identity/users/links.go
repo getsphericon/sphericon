@@ -69,7 +69,8 @@ const (
 )
 
 // Links mints and reads the links the self-service account flows mail (password reset, email
-// verification, email change, User deletion, "this was not me"). Each is an authtoken of its
+// verification, email change, User deletion, "this was not me") and the reference of a pending
+// sign-up. Each is an authtoken of its
 // purpose, keyed to a value that changes once its action lands, so it works once with no
 // store. A link that does not stand is refused with its flow's sentinel; deciding that is
 // this type's, so no handler parses a token.
@@ -141,7 +142,7 @@ func (l *Links) PasswordResetLink(u *ent.User) (string, error) {
 
 // PasswordReset reads a reset link and the new password it sets: the password rule first (a
 // refused one costs no hash), then the link (ErrResetLinkInvalid). It returns the User the link
-// names and the new password's hash, for the reset (internal/usecase/workspacecreation, which
+// names and the new password's hash, for the reset (internal/usecase/signup, which
 // completes the Sign-up of an Unverified User).
 func (l *Links) PasswordReset(ctx context.Context, token, password string) (userID int64, passwordHash string, err error) {
 	if err := validation.Form(passwordForm{Password: password}); err != nil {
@@ -173,7 +174,7 @@ func (l *Links) VerificationLink(u *ent.User, browserHash string) (string, error
 }
 
 // Verification reads a verification link (ADR 0030) for the completion of its Sign-up
-// (internal/usecase/workspacecreation): the User it names and the password hash to set, nil to
+// (internal/usecase/signup): the User it names and the password hash to set, nil to
 // keep the one stored at Sign-up. browser is the Sign-up browser cookie the request carries, ""
 // for none: the Sign-up browser keeps the password stored at Sign-up, and any other browser must
 // send password, which replaces it. The link is single use and scoped to the address it was sent
@@ -211,8 +212,8 @@ func (l *Links) Verification(ctx context.Context, token, browser, password strin
 	return uid, &replacement, nil
 }
 
-// EmailChange is what an email change link asks: the User and the address to change to.
-type EmailChange struct {
+// emailChange is what an email change link asks: the User and the address to change to.
+type emailChange struct {
 	UserID   int64
 	NewEmail string
 }
@@ -223,9 +224,9 @@ func (l *Links) EmailChangeLink(u *ent.User, newEmail string) (string, error) {
 	return l.tokens.Mint(authtoken.PurposeEmailChange, u.ID, u.Email, emailChangeLinkTTL, map[string]string{claimNewEmail: newEmail})
 }
 
-// EmailChange reads an email change link: ErrConfirmLinkInvalid when it does not stand,
+// emailChange reads an email change link: ErrConfirmLinkInvalid when it does not stand,
 // ErrConfirmLinkBad when it names no address.
-func (l *Links) EmailChange(ctx context.Context, token string) (EmailChange, error) {
+func (l *Links) emailChange(ctx context.Context, token string) (emailChange, error) {
 	uid, extra, err := l.parse(token, authtoken.PurposeEmailChange, func(id int64) (string, error) {
 		u, err := l.users.User(ctx, id)
 		if err != nil {
@@ -234,24 +235,55 @@ func (l *Links) EmailChange(ctx context.Context, token string) (EmailChange, err
 		return u.Email, nil
 	}, ErrConfirmLinkInvalid)
 	if err != nil {
-		return EmailChange{}, err
+		return emailChange{}, err
 	}
 	newEmail := strings.TrimSpace(extra[claimNewEmail])
 	if newEmail == "" {
-		return EmailChange{}, ErrConfirmLinkBad
+		return emailChange{}, ErrConfirmLinkBad
 	}
-	return EmailChange{UserID: uid, NewEmail: newEmail}, nil
+	return emailChange{UserID: uid, NewEmail: newEmail}, nil
 }
 
-// ConfirmEmailChange applies the change a link asked (Module.ChangeEmail). The new address
-// was proven by following the link, so it is Verified. An address Taken meanwhile (the unique
-// index guards the race) is ErrConfirmLinkInvalid, never "in use" (ADR 0031).
-func (l *Links) ConfirmEmailChange(ctx context.Context, c EmailChange) error {
-	err := l.users.ChangeEmail(ctx, c.UserID, c.NewEmail)
-	if errors.Is(err, ErrEmailTaken) {
-		return ErrConfirmLinkInvalid
+// SessionHolder is the session the confirming request carried, as its signature reads it: the
+// User it belongs to and the session epoch it was issued under. The zero SessionHolder is none.
+type SessionHolder struct {
+	UserID int64
+	Epoch  int64
+}
+
+// EmailChangeConfirmed is what confirming an email change left: the User with the new address,
+// and whether the confirming request's session was a current one of that User, which continues
+// under a fresh session though the change ended every session (ADR 0020).
+type EmailChangeConfirmed struct {
+	User      *ent.User
+	Continues bool
+}
+
+// ConfirmEmailChange applies the change the email change link token asks (Module.ChangeEmail):
+// ErrConfirmLinkInvalid or ErrConfirmLinkBad when the link does not stand. The new address was
+// proven by following the link, so it is Verified. An address Taken meanwhile (the unique index
+// guards the race) is ErrConfirmLinkInvalid, never "in use" (ADR 0031). The link alone never
+// signs anyone in: the change continues only holder, when it is a session of the link's User at
+// the epoch it had before the change.
+func (l *Links) ConfirmEmailChange(ctx context.Context, token string, holder SessionHolder) (EmailChangeConfirmed, error) {
+	c, err := l.emailChange(ctx, token)
+	if err != nil {
+		return EmailChangeConfirmed{}, err
 	}
-	return err
+	// Read before the change: its epoch bump ends the holder's session too.
+	before, err := l.users.User(ctx, c.UserID)
+	if err != nil {
+		return EmailChangeConfirmed{}, err
+	}
+	saved, err := l.users.ChangeEmail(ctx, c.UserID, c.NewEmail)
+	if errors.Is(err, ErrEmailTaken) {
+		return EmailChangeConfirmed{}, ErrConfirmLinkInvalid
+	}
+	if err != nil {
+		return EmailChangeConfirmed{}, err
+	}
+	continues := holder.UserID == before.ID && holder.Epoch == before.SessionEpoch
+	return EmailChangeConfirmed{User: saved, Continues: continues}, nil
 }
 
 // deletionBinding keys a deletion link to the User's session epoch, so signing out everywhere
@@ -321,4 +353,47 @@ func (l *Links) UndoNotMe(ctx context.Context, token string) error {
 		return ErrNotMeLinkInvalid
 	}
 	return nil
+}
+
+// PendingSignupReference mints the signed reference of a pending sign-up (ADR 0062), which the
+// screen that asks the Sign-up items carries: valid as long as the pending sign-up is open, and
+// keyed to its provider subject, so it names nothing once the row is gone.
+func (l *Links) PendingSignupReference(p *ent.PendingSignup) (string, error) {
+	return l.tokens.Mint(authtoken.PurposePendingSignup, p.ID, p.Subject, PendingSignupTTL, nil)
+}
+
+// PendingSignup is the pending sign-up a signed reference names while it is open, or
+// ErrPendingSignupGone for a reference that is forged, expired or names nothing open; other
+// errors are the store's.
+func (l *Links) PendingSignup(ctx context.Context, reference string) (*ent.PendingSignup, error) {
+	var pending *ent.PendingSignup
+	_, _, err := l.tokens.Parse(reference, authtoken.PurposePendingSignup, func(id int64) (string, error) {
+		p, err := l.users.pendingSignup(ctx, id, l.users.now())
+		if err != nil {
+			return "", err
+		}
+		pending = p
+		return p.Subject, nil
+	})
+	if bindingErr, ok := errors.AsType[*authtoken.BindingError](err); ok && !errors.Is(bindingErr, ErrPendingSignupGone) {
+		return nil, bindingErr.Err
+	}
+	if err != nil {
+		return nil, ErrPendingSignupGone
+	}
+	return pending, nil
+}
+
+// DeclinePendingSignup deletes the pending sign-up a signed reference names: the person declined
+// the Sign-up items and nothing is created. A reference that names nothing open any more is
+// declined already.
+func (l *Links) DeclinePendingSignup(ctx context.Context, reference string) error {
+	pending, err := l.PendingSignup(ctx, reference)
+	if errors.Is(err, ErrPendingSignupGone) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return l.users.declinePendingSignup(ctx, pending.ID)
 }

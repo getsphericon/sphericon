@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"time"
 
 	"github.com/riverqueue/river"
 
@@ -20,10 +19,10 @@ type LateNoticeWorker struct {
 	ingest *callbackinterpretation.UseCase
 }
 
-// NewLateNoticeWorker builds the worker over the raw client the job entry point scopes from. A
-// Delivery notice needs no Telegram bot, so the module reads it without one.
-func NewLateNoticeWorker(client *ent.Client, bus *events.Bus, now func() time.Time) *LateNoticeWorker {
-	return &LateNoticeWorker{ent: client, ingest: callbackinterpretation.New(bus, nil, now)}
+// NewLateNoticeWorker builds the worker over the raw client the job entry point scopes from and
+// the Callback interpretation the container built (ADR 0111: a driver builds no use case).
+func NewLateNoticeWorker(client *ent.Client, ingest *callbackinterpretation.UseCase) *LateNoticeWorker {
+	return &LateNoticeWorker{ent: client, ingest: ingest}
 }
 
 func (w *LateNoticeWorker) Work(ctx context.Context, job *river.Job[callbackinterpretation.LateNoticeArgs]) error {

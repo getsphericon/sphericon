@@ -20,7 +20,7 @@ beyond the authorization-code and refresh-token grants.
 
 ## Re-check after refresh tokens and rotation (#361)
 
-Refresh tokens with rotation and reuse detection are now in (`internal/usecase/connectionissuance/connectionissuance.go`, then named `oauthauthorization`).
+Refresh tokens with rotation and reuse detection are now in `internal/domain/identity/apitokens/exchange.go` (at the re-check, the use case `oauthauthorization`, later `connectionissuance`, which ADR 0110 folded into `apitokens`).
 They reuse the claim-one-row shape of the code grant, on the connector's
 `ApiToken` row, so the grant logic did not outgrow the hand-written server. Re-checked once:
 `ory/fosite` has had no release since v0.49.0 (2024-12) and still has no DCR, metadata documents or

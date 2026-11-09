@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
-	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
-	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 )
 
 // StaffInstanceSetDefaultSendCap sets the Send cap of new Workspaces as the signed-in Staff member
 // (ADR 0067); not found on an Instance that has no Send caps.
 func (h *Handlers) StaffInstanceSetDefaultSendCap(ctx context.Context, req *staffapi.StaffDefaultSendCapInput) (*staffapi.StaffDefaultSendCapChange, error) {
 	perDay := int(req.PerDay)
-	change, err := h.instance.SetDefaultSendCap(ctx, staffmembers.Current(ctx), &perDay)
+	change, err := h.instance.SetDefaultSendCap(ctx, auth.StaffMember(ctx), &perDay)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +22,7 @@ func (h *Handlers) StaffInstanceSetDefaultSendCap(ctx context.Context, req *staf
 // StaffInstanceClearDefaultSendCap removes the Send cap of new Workspaces as the signed-in Staff
 // member; not found on an Instance that has no Send caps.
 func (h *Handlers) StaffInstanceClearDefaultSendCap(ctx context.Context) (*staffapi.StaffDefaultSendCapChange, error) {
-	change, err := h.instance.SetDefaultSendCap(ctx, staffmembers.Current(ctx), nil)
+	change, err := h.instance.SetDefaultSendCap(ctx, auth.StaffMember(ctx), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -32,17 +31,13 @@ func (h *Handlers) StaffInstanceClearDefaultSendCap(ctx context.Context) (*staff
 
 // StaffInstanceListAuditEntries is a page of the Instance audit log (ADR 0070), newest first.
 func (h *Handlers) StaffInstanceListAuditEntries(ctx context.Context, params staffapi.StaffInstanceListAuditEntriesParams) (*staffapi.StaffInstanceAuditEntryList, error) {
-	cursor, err := auditlog.Page(params.Cursor.Or(""))
+	page, err := h.instance.AuditEntries(ctx, params.Cursor.Or(""), int(params.Limit.Value))
 	if err != nil {
 		return nil, err
 	}
-	page, err := h.instance.AuditEntries(ctx, cursor, int(params.Limit.Value))
-	if err != nil {
-		return nil, err
-	}
-	out := &staffapi.StaffInstanceAuditEntryList{Items: mapper.InstanceAuditEntriesToResources(page.Items)}
-	if page.Next > 0 {
-		out.NextCursor = staffapi.NewOptNilString(auditlog.NextCursor(page.Next))
+	out := &staffapi.StaffInstanceAuditEntryList{Items: mapper.InstanceAuditEntriesToResources(page.Entries)}
+	if page.Next != "" {
+		out.NextCursor = staffapi.NewOptNilString(page.Next)
 	}
 	return out, nil
 }

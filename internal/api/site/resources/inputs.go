@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
@@ -35,9 +36,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
@@ -106,18 +106,27 @@ import (
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
 type Inputs interface {
-	SecondFactorConfirm(source *siteapi.SiteSecondFactorConfirmInput) secondfactorcheck.ConfirmInput
+	SecondFactorConfirm(source *siteapi.SiteSecondFactorConfirmInput) secondfactors.ConfirmInput
 
-	// The restoring User and the actor the Audit log records come from the session, which the
-	// handler assigns.
+	// The restoring User, the actor the Audit log records and whether the session is strong come
+	// from the session, which the handler assigns.
 	// goverter:map ID PublicID
-	// goverter:ignore UserID Actor
-	WorkspaceRestore(source siteapi.SiteWorkspacesRestoreParams) workspacedeletion.RestoreInput
+	// goverter:ignore UserID Actor StrongSession
+	WorkspaceRestore(source siteapi.SiteWorkspacesRestoreParams) workspaceview.RestoreInput
+	// The creating User and whether the session is strong come from the session, which the
+	// handler assigns.
+	// goverter:ignore UserID StrongSession
+	WorkspaceCreate(source *siteapi.SiteCreateWorkspaceInput) workspaceview.CreateInput
+	// An absent postal address leaves it unchanged; a present one, empty included, sets it.
+	WorkspaceUpdate(source *siteapi.SiteUpdateWorkspaceInput) workspaceview.UpdateInput
 	// The Sign-up browser is the request's cookie, a parameter the handler assigns.
 	// goverter:ignore Browser
 	VerifyEmailLink(source *siteapi.SiteVerifyEmailInput) signup.VerifyEmailLinkInput
+	// The flow and the session holder are the request's cookies, which the handler opens and
+	// assigns.
+	// goverter:ignore Flow Session
+	SigninCallback(source siteapi.SiteAuthSigninCallbackParams) signup.ProviderSignInInput
 
-	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
@@ -160,6 +169,8 @@ type Inputs interface {
 	SegmentCreate(source *siteapi.SiteCreateSegmentInput) (segments.CreateInput, error)
 	// goverter:map Condition | segmentConditionPatch
 	SegmentUpdate(source *siteapi.SiteUpdateSegmentInput) (segments.UpdateInput, error)
+	// goverter:map Condition | conditionIn
+	SegmentPreview(source *siteapi.SitePreviewSegmentInput) (segments.PreviewInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
@@ -170,9 +181,9 @@ type Inputs interface {
 	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
 
 	RuleActions(source []siteapi.SiteRuleAction) []rules.Action
-	// goverter:map Condition | ruleConditionIn
+	// goverter:map Condition | conditionIn
 	RuleCreate(source *siteapi.SiteCreateRuleInput) (rules.CreateInput, error)
-	// goverter:map Condition | ruleConditionIn
+	// goverter:map Condition | conditionIn
 	RuleUpdate(source *siteapi.SiteUpdateRuleInput) (rules.UpdateInput, error)
 
 	TokenCreate(source *siteapi.SiteCreateTokenInput) apitokens.Input
@@ -350,7 +361,9 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleAction) *[]rules.Actio
 	return &out
 }
 
-func ruleConditionIn(o siteapi.OptSiteConditionGroup) (*string, error) {
+// conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
+// it is absent.
+func conditionIn(o siteapi.OptSiteConditionGroup) (*string, error) {
 	return condition.EncodeOptional(o)
 }
 

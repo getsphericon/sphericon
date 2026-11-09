@@ -51,7 +51,7 @@ func (s *twoStepEnv) challenge(t *testing.T) string {
 // code is Sam's authenticator code at the env clock.
 func (s *twoStepEnv) code(t *testing.T) string {
 	t.Helper()
-	c, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, s.clock.now())
+	c, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, s.clock.now())
 	require.NoError(t, err)
 	return c
 }

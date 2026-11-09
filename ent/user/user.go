@@ -30,14 +30,6 @@ const (
 	FieldEmailProvenAt = "email_proven_at"
 	// FieldSessionEpoch holds the string denoting the session_epoch field in the database.
 	FieldSessionEpoch = "session_epoch"
-	// FieldSecondFactorSecretEncrypted holds the string denoting the second_factor_secret_encrypted field in the database.
-	FieldSecondFactorSecretEncrypted = "second_factor_secret_encrypted"
-	// FieldSecondFactorGeneration holds the string denoting the second_factor_generation field in the database.
-	FieldSecondFactorGeneration = "second_factor_generation"
-	// FieldSecondFactorConfirmedAt holds the string denoting the second_factor_confirmed_at field in the database.
-	FieldSecondFactorConfirmedAt = "second_factor_confirmed_at"
-	// FieldSecondFactorLastStep holds the string denoting the second_factor_last_step field in the database.
-	FieldSecondFactorLastStep = "second_factor_last_step"
 	// FieldSignupSurveyDueAt holds the string denoting the signup_survey_due_at field in the database.
 	FieldSignupSurveyDueAt = "signup_survey_due_at"
 	// FieldTimezone holds the string denoting the timezone field in the database.
@@ -50,6 +42,8 @@ const (
 	EdgeMemberships = "memberships"
 	// EdgeSentInvitations holds the string denoting the sent_invitations edge name in mutations.
 	EdgeSentInvitations = "sent_invitations"
+	// EdgeSecondFactor holds the string denoting the second_factor edge name in mutations.
+	EdgeSecondFactor = "second_factor"
 	// EdgeRecoveryCodes holds the string denoting the recovery_codes edge name in mutations.
 	EdgeRecoveryCodes = "recovery_codes"
 	// EdgePasskeys holds the string denoting the passkeys edge name in mutations.
@@ -76,6 +70,13 @@ const (
 	SentInvitationsInverseTable = "invitations"
 	// SentInvitationsColumn is the table column denoting the sent_invitations relation/edge.
 	SentInvitationsColumn = "invited_by"
+	// SecondFactorTable is the table that holds the second_factor relation/edge.
+	SecondFactorTable = "second_factors"
+	// SecondFactorInverseTable is the table name for the SecondFactor entity.
+	// It exists in this package in order to avoid circular dependency with the "secondfactor" package.
+	SecondFactorInverseTable = "second_factors"
+	// SecondFactorColumn is the table column denoting the second_factor relation/edge.
+	SecondFactorColumn = "user_id"
 	// RecoveryCodesTable is the table that holds the recovery_codes relation/edge.
 	RecoveryCodesTable = "recovery_codes"
 	// RecoveryCodesInverseTable is the table name for the RecoveryCode entity.
@@ -124,10 +125,6 @@ var Columns = []string{
 	FieldEmailVerifiedAt,
 	FieldEmailProvenAt,
 	FieldSessionEpoch,
-	FieldSecondFactorSecretEncrypted,
-	FieldSecondFactorGeneration,
-	FieldSecondFactorConfirmedAt,
-	FieldSecondFactorLastStep,
 	FieldSignupSurveyDueAt,
 	FieldTimezone,
 	FieldRegionalFormat,
@@ -157,10 +154,6 @@ var (
 	EmailValidator func(string) error
 	// DefaultSessionEpoch holds the default value on creation for the "session_epoch" field.
 	DefaultSessionEpoch int64
-	// SecondFactorGenerationValidator is a validator for the "second_factor_generation" field. It is called by the builders before save.
-	SecondFactorGenerationValidator func(int64) error
-	// DefaultSecondFactorLastStep holds the default value on creation for the "second_factor_last_step" field.
-	DefaultSecondFactorLastStep int64
 	// TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	TimezoneValidator func(string) error
 	// RegionalFormatValidator is a validator for the "regional_format" field. It is called by the builders before save.
@@ -217,26 +210,6 @@ func BySessionEpoch(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSessionEpoch, opts...).ToFunc()
 }
 
-// BySecondFactorSecretEncrypted orders the results by the second_factor_secret_encrypted field.
-func BySecondFactorSecretEncrypted(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSecondFactorSecretEncrypted, opts...).ToFunc()
-}
-
-// BySecondFactorGeneration orders the results by the second_factor_generation field.
-func BySecondFactorGeneration(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSecondFactorGeneration, opts...).ToFunc()
-}
-
-// BySecondFactorConfirmedAt orders the results by the second_factor_confirmed_at field.
-func BySecondFactorConfirmedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSecondFactorConfirmedAt, opts...).ToFunc()
-}
-
-// BySecondFactorLastStep orders the results by the second_factor_last_step field.
-func BySecondFactorLastStep(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSecondFactorLastStep, opts...).ToFunc()
-}
-
 // BySignupSurveyDueAt orders the results by the signup_survey_due_at field.
 func BySignupSurveyDueAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSignupSurveyDueAt, opts...).ToFunc()
@@ -282,6 +255,13 @@ func BySentInvitationsCount(opts ...sql.OrderTermOption) OrderOption {
 func BySentInvitations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newSentInvitationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySecondFactorField orders the results by second_factor field.
+func BySecondFactorField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSecondFactorStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -359,6 +339,13 @@ func newSentInvitationsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SentInvitationsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, SentInvitationsTable, SentInvitationsColumn),
+	)
+}
+func newSecondFactorStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SecondFactorInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, SecondFactorTable, SecondFactorColumn),
 	)
 }
 func newRecoveryCodesStep() *sqlgraph.Step {

@@ -2,14 +2,18 @@ package emailtemplates_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -17,7 +21,7 @@ import (
 
 func TestListIsAscendingByIDAndPaged(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := emailtemplates.New(testhelper.Renderer())
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
@@ -34,7 +38,7 @@ func TestListIsAscendingByIDAndPaged(t *testing.T) {
 
 func TestGetIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := emailtemplates.New(testhelper.Renderer())
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
 	ctx := context.Background()
 
 	got, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID)
@@ -47,7 +51,7 @@ func TestGetIsWorkspaceScoped(t *testing.T) {
 
 func TestCreateStoresTheTemplate(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := emailtemplates.New(testhelper.Renderer())
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
 	ctx := context.Background()
 
 	tpl, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), emailtemplates.CreateInput{Name: "New", Subject: new("Hi")})
@@ -60,7 +64,7 @@ func TestCreateStoresTheTemplate(t *testing.T) {
 // blank-name case gets its own environment.
 func TestCreateRefusesABlankName(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := emailtemplates.New(testhelper.Renderer())
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
 	ctx := context.Background()
 
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
@@ -71,7 +75,7 @@ func TestCreateRefusesABlankName(t *testing.T) {
 
 func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := emailtemplates.New(testhelper.Renderer())
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
 	ctx := context.Background()
 
 	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Name: patch.Set("")})
@@ -81,7 +85,7 @@ func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 
 func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := emailtemplates.New(testhelper.Renderer())
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
 	ctx := context.Background()
 
 	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Subject: patch.Set("Changed")})
@@ -97,7 +101,7 @@ func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 func TestDeleteLeavesTheSentMessageWithoutATemplate(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	require.NoError(t, emailtemplates.New(testhelper.Renderer()).Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
+	require.NoError(t, emailtemplates.New(testhelper.Renderer(), brandkits.Brands{}).Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
 
 	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageWelcomeID)
 	assert.Nil(t, msg.TemplateID)
@@ -106,7 +110,7 @@ func TestDeleteLeavesTheSentMessageWithoutATemplate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := emailtemplates.New(testhelper.Renderer())
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
 	ctx := context.Background()
 
 	require.NoError(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
@@ -118,7 +122,7 @@ func TestCreateRefusesAWhitespaceName(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := emailtemplates.New(testhelper.Renderer()).Create(ctx, env.DB.Scoped(fixtures.AcmeID), emailtemplates.CreateInput{Name: "   "})
+	_, err := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{}).Create(ctx, env.DB.Scoped(fixtures.AcmeID), emailtemplates.CreateInput{Name: "   "})
 	require.ErrorIs(t, err, emailtemplates.ErrBlankName)
 }
 
@@ -126,7 +130,111 @@ func TestUpdateRefusesAWhitespaceName(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := emailtemplates.New(testhelper.Renderer()).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Name: patch.Set("  ")})
+	_, err := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{}).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Name: patch.Set("  ")})
 	require.ErrorIs(t, err, emailtemplates.ErrBlankName)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
+}
+
+// warnedBody breaks two warning rules against Acme's saved Brand kit (Arial): a font outside it and
+// an element the sanitizer removes, so only the body as written still shows the second.
+const warnedBody = `<p style="font-family:Georgia, serif">Sale</p><marquee>Scroll</marquee>`
+
+func codes(fs []emailrender.Finding) []emailrender.Code {
+	out := make([]emailrender.Code, len(fs))
+	for i, f := range fs {
+		out[i] = f.Code
+	}
+	return out
+}
+
+func views() *emailtemplates.Views {
+	return emailtemplates.NewViews(emailtemplates.New(testhelper.Renderer(), brandkits.Brands{}))
+}
+
+// unreadBrands fails every read of the Brand kit.
+type unreadBrands struct{}
+
+func (unreadBrands) Brand(context.Context, *ent.Scoped) (*emailrender.Brand, error) {
+	return nil, errors.New("brand kit read")
+}
+
+// A save through the Module stores the Template and never reads the Brand kit: the lint is the
+// views', for a surface whose contract shows the warnings.
+func TestASaveOutsideTheViewsIsNotLinted(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := emailtemplates.New(testhelper.Renderer(), unreadBrands{})
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	tpl, err := m.Create(ctx, s, emailtemplates.CreateInput{Name: "Plain", Body: new(warnedBody)})
+	require.NoError(t, err)
+	_, err = m.Update(ctx, s, tpl.ID, emailtemplates.UpdateInput{Subject: patch.Set("Hello")})
+	require.NoError(t, err)
+
+	_, err = emailtemplates.NewViews(m).Update(ctx, s, tpl.ID, emailtemplates.UpdateInput{Subject: patch.Set("Hi")})
+	require.ErrorContains(t, err, "brand kit read")
+}
+
+// A save returns the lint of the body as written, before the sanitizer, against the Workspace's
+// Brand kit (ADR 0040); the warnings never block it.
+func TestCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	saved, err := views().Create(ctx, env.DB.Scoped(fixtures.AcmeID),
+		emailtemplates.CreateInput{Name: "Warned", Subject: new("Hi"), Body: new(warnedBody)})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeUnknownConstruct}, codes(saved.Warnings))
+	assert.NotContains(t, saved.Template.Body, "marquee", "stored sanitized")
+}
+
+// A Workspace with no Brand kit saved has nothing to compare a message to.
+func TestCreateWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	saved, err := views().Create(ctx, env.DB.Scoped(fixtures.VandelayID),
+		emailtemplates.CreateInput{Name: "Warned", Body: new(warnedBody)})
+	require.NoError(t, err)
+	assert.Equal(t, []emailrender.Code{emailrender.CodeUnknownConstruct}, codes(saved.Warnings))
+}
+
+// A write that leaves the body lints the body stored.
+func TestUpdateOfTheSubjectAloneLintsTheStoredBody(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	v := views()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	created, err := v.Create(ctx, s, emailtemplates.CreateInput{Name: "Warned", Body: new(`<img src="https://cdn.example.com/a.png">`)})
+	require.NoError(t, err)
+
+	saved, err := v.Update(ctx, s, created.Template.ID, emailtemplates.UpdateInput{Subject: patch.Set("Hello")})
+	require.NoError(t, err)
+	assert.Equal(t, []emailrender.Code{emailrender.CodeMissingAlt}, codes(saved.Warnings))
+}
+
+// The lint without a save reads a body, or a document rendered as a save renders it, against the
+// Brand kit; a message that cannot render is the report's Error, not a failure of the call.
+func TestLintWithoutASave(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	report, err := m.Lint(ctx, s, "Hi", new(warnedBody), nil)
+	require.NoError(t, err)
+	require.NoError(t, report.Error)
+	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeUnknownConstruct}, codes(report.Warnings))
+
+	report, err = m.Lint(ctx, s, "Hi", new("<div><span>unclosed</div>"), nil)
+	require.NoError(t, err)
+	require.ErrorIs(t, report.Error, emailrender.ErrInvalidContent)
+
+	report, err = m.Lint(ctx, s, "Hi", nil, []byte(`{"not":"a document"}`))
+	require.NoError(t, err)
+	require.ErrorIs(t, report.Error, emailrender.ErrInvalidContent, "a document that cannot render")
+	assert.Empty(t, report.Warnings)
+
+	_, err = m.Lint(ctx, s, "Hi", nil, nil)
+	require.ErrorIs(t, err, emailtemplates.ErrLintBodyOrDoc)
 }

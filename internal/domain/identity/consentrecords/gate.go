@@ -78,10 +78,18 @@ func (m *Module) Gated(ctx context.Context, userID int64) (bool, error) {
 }
 
 // AcceptPending records every acceptance pending for the User accepted, with the source
-// re-acceptance, in one transaction. accepted is what the screen showed; ErrAcceptanceStale, and
-// nothing recorded, unless it names each pending acceptance at its current version. With nothing
-// pending it records nothing.
-func (m *Module) AcceptPending(ctx context.Context, userID int64, accepted []ReAcceptance) error {
+// re-acceptance, in one transaction, and returns what is pending for them after it (Pending: none,
+// unless an item came into effect meanwhile). accepted is what the screen showed;
+// ErrAcceptanceStale, and nothing recorded, unless it names each pending acceptance at its current
+// version. With nothing pending it records nothing.
+func (m *Module) AcceptPending(ctx context.Context, userID int64, accepted []ReAcceptance) ([]signupitems.Document, error) {
+	if err := m.acceptPending(ctx, userID, accepted); err != nil {
+		return nil, err
+	}
+	return m.Pending(ctx, userID)
+}
+
+func (m *Module) acceptPending(ctx context.Context, userID int64, accepted []ReAcceptance) error {
 	pending, err := m.Pending(ctx, userID)
 	if err != nil {
 		return err

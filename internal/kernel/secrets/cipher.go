@@ -23,6 +23,10 @@ import (
 // ErrCiphertext is returned when a stored value cannot be decrypted.
 var ErrCiphertext = errors.New("invalid or corrupt ciphertext")
 
+// ErrNoKeyset means the keyset is empty (SPHERICON_ENCRYPTION_KEY is not set): there is no key to
+// build a Cipher from, to rotate or to retire.
+var ErrNoKeyset = errors.New("SPHERICON_ENCRYPTION_KEY is not set: there is no encryption keyset")
+
 // Cipher encrypts and decrypts secret values with a Tink AEAD primitive.
 type Cipher struct {
 	aead      tink.AEAD
@@ -32,9 +36,6 @@ type Cipher struct {
 // NewCipher builds a Cipher from a base64-encoded Tink keyset. It fails fast
 // (caller wires this at boot) when the keyset is missing or malformed.
 func NewCipher(keysetBase64 string) (*Cipher, error) {
-	if strings.TrimSpace(keysetBase64) == "" {
-		return nil, errors.New("encryption keyset is required")
-	}
 	kh, err := readKeyset(keysetBase64)
 	if err != nil {
 		return nil, err
@@ -47,7 +48,11 @@ func NewCipher(keysetBase64 string) (*Cipher, error) {
 }
 
 func readKeyset(keysetBase64 string) (*keyset.Handle, error) {
-	raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(keysetBase64))
+	keysetBase64 = strings.TrimSpace(keysetBase64)
+	if keysetBase64 == "" {
+		return nil, ErrNoKeyset
+	}
+	raw, err := base64.StdEncoding.DecodeString(keysetBase64)
 	if err != nil {
 		return nil, fmt.Errorf("decode encryption keyset: %w", err)
 	}

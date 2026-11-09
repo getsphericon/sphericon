@@ -6,12 +6,16 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -130,13 +134,48 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 	return seg, err
 }
 
-// Preview counts the Contacts in the Workspace that match an unsaved condition.
-func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, cond string) (int, error) {
-	pred, err := condition.ContactPredicate(ctx, ws, cond, s.now())
+// PreviewInput is an unsaved Condition to preview, nil for every Contact, and the Channel of a
+// Broadcast the audience is asked for, with the Integration it routes through (nil: the Channel's
+// default). Without a Channel the preview counts the match alone.
+type PreviewInput struct {
+	Condition     *string
+	Channel       *channels.Channel
+	IntegrationID *int64
+}
+
+// PreviewResult is what a preview counts: the Contacts the Condition matches, and, when a Channel
+// was asked for, how many of them a Broadcast there would take now (eligibility.BroadcastAudience).
+type PreviewResult struct {
+	Count      int
+	Recipients *int
+}
+
+// Preview counts the Contacts in the Workspace that match an unsaved Condition, and the recipients
+// of a Broadcast on the Channel the input names. A Condition that does not compile is
+// ErrInvalidCondition.
+func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (PreviewResult, error) {
+	pred, err := condition.ContactPredicate(ctx, ws, lo.FromPtr(in.Condition), s.now())
 	if err != nil {
-		return 0, ErrInvalidCondition.With(err.Error())
+		return PreviewResult{}, ErrInvalidCondition.With(err.Error())
 	}
-	return ws.Contact().Query().Where(pred).Count(ctx)
+	count, err := ws.Contact().Query().Where(pred).Count(ctx)
+	if err != nil {
+		return PreviewResult{}, err
+	}
+	res := PreviewResult{Count: count}
+	if in.Channel == nil {
+		return res, nil
+	}
+	reached, err := eligibility.BroadcastAudience(ctx, ws, *in.Channel, in.IntegrationID)
+	if err != nil {
+		return PreviewResult{}, err
+	}
+	recipients, err := ws.Contact().Query().Where(reached, pred).Count(ctx)
+	if err != nil {
+		return PreviewResult{}, err
+	}
+	res.Recipients = &recipients
+	return res, nil
 }
 
 // Count counts the Contacts matching a stored Segment, evaluated live.
@@ -148,11 +187,8 @@ func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (int, erro
 	if err != nil {
 		return 0, err
 	}
-	cond := ""
-	if seg.Condition != nil {
-		cond = *seg.Condition
-	}
-	return s.Preview(ctx, ws, cond)
+	res, err := s.Preview(ctx, ws, PreviewInput{Condition: seg.Condition})
+	return res.Count, err
 }
 
 // Contacts returns one page of the Contacts a stored Segment matches, evaluated live, ascending by id.

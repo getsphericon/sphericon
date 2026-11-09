@@ -1,7 +1,7 @@
 // Package usages materializes what each Workspace did per Usage period (ADR 0009): the
 // Usage snapshot of a closed period and the Live usage of the open one, one row per
-// (Workspace, period, metric) in the usages table. A periodic job of the Edition
-// (ee/jobs.go), like the retention prune, closes the elapsed periods and
+// (Workspace, period, metric) in the usages table. A periodic job of the Enterprise job
+// runner (ee/jobs), like the retention prune, closes the elapsed periods and
 // refreshes the open one; a read never recounts. Unlicensed (no `staff` feature),
 // the job does nothing and no row is ever written.
 //

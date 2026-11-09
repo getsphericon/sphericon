@@ -47,7 +47,7 @@ func TestReplayQueueFailureRollsBackEvenAnInsertedPrefix(t *testing.T) {
 	require.NoError(t, err)
 	boom := errors.New("queue failed after inserting")
 	env.Bus.UseJobs(failAfterReplayInsert{JobQueue: queue, failure: boom})
-	result, err := env.Bus.Replay(t.Context(), s, events.ReplayRequest{Consumer: jobs.MessageObservationArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
+	result, err := env.Bus.Replay(t.Context(), fixtures.AcmeID, events.ReplayRequest{Consumer: jobs.MessageObservationArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
 	require.ErrorIs(t, err, boom)
 	assert.Zero(t, result.Enqueued)
 	assert.Empty(t, env.JobsOf(t, jobs.MessageObservationArgs{}.Kind()))
@@ -86,13 +86,13 @@ func TestReplayReappliesOnlyTheSelectedReportWithItsOriginalObservation(t *testi
 	beforeJournal := env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).Order(eventjournalentry.ByID()).IDsX(t.Context())
 	beforeWebhooks := len(env.JobsOf(t, jobs.WebhookEventArgs{}.Kind()))
 	in := events.ReplayRequest{Consumer: jobs.MessageObservationArgs{}.Kind(), From: at, Before: at.Add(time.Hour), DryRun: true}
-	preview, err := env.Bus.Replay(t.Context(), s, in)
+	preview, err := env.Bus.Replay(t.Context(), fixtures.AcmeID, in)
 	require.NoError(t, err)
 	assert.Equal(t, events.ReplayResult{Matched: 2}, preview)
 	assert.Equal(t, []int64{fixtures.InitechID}, workspacesOfJobs(t, env, jobs.MessageObservationArgs{}.Kind()), "another Workspace's original job stays")
 	in.DryRun = false
 	for range 2 {
-		result, err := env.Bus.Replay(t.Context(), s, in)
+		result, err := env.Bus.Replay(t.Context(), fixtures.AcmeID, in)
 		require.NoError(t, err)
 		assert.Equal(t, events.ReplayResult{Matched: 2, Enqueued: 2}, result)
 		env.PerformEnqueuedJobsNewestFirst(t, jobs.MessageObservationArgs{})
@@ -115,12 +115,12 @@ func TestReplayRefusesUnsupportedConsumersVersionsAndOversizedRangesWithoutParti
 	}
 	removeReportJobs(t, env.Bus, s, jobs.MessageObservationArgs{})
 	in := events.ReplayRequest{Consumer: jobs.MessageObservationArgs{}.Kind(), From: at, Before: at.Add(time.Minute), Limit: 1}
-	_, err := env.Bus.Replay(t.Context(), s, in)
+	_, err := env.Bus.Replay(t.Context(), fixtures.AcmeID, in)
 	require.ErrorIs(t, err, events.ErrReplayRangeTooLarge)
 	assert.Empty(t, env.JobsOf(t, in.Consumer))
 	in.Limit = 2
 	in.Consumer = jobs.NoticeEventArgs{}.Kind()
-	_, err = env.Bus.Replay(t.Context(), s, in)
+	_, err = env.Bus.Replay(t.Context(), fixtures.AcmeID, in)
 	require.ErrorIs(t, err, events.ErrReplayConsumerUnsupported)
 	in.Consumer = jobs.MessageObservationArgs{}.Kind()
 
@@ -131,16 +131,16 @@ func TestReplayRefusesUnsupportedConsumersVersionsAndOversizedRangesWithoutParti
 	consumers[0].Replay = events.RetainForReplay[jobs.MessageObservationArgs](2)
 	bus.UseConsumers(consumers...)
 	in.DryRun = true
-	_, err = bus.Replay(t.Context(), s, in)
+	_, err = bus.Replay(t.Context(), fixtures.AcmeID, in)
 	require.ErrorContains(t, err, "unsupported input version 1")
 	assert.Empty(t, env.JobsOf(t, in.Consumer))
 
 	in.From = in.Before
-	_, err = env.Bus.Replay(t.Context(), s, in)
+	_, err = env.Bus.Replay(t.Context(), fixtures.AcmeID, in)
 	require.ErrorContains(t, err, "nonempty recorded-time interval")
 	in.From = at
 	in.Limit = events.MaxReplayEntries + 1
-	_, err = env.Bus.Replay(t.Context(), s, in)
+	_, err = env.Bus.Replay(t.Context(), fixtures.AcmeID, in)
 	require.ErrorContains(t, err, "replay limit")
 }
 
@@ -163,7 +163,7 @@ func TestReplayMeasurementsSurviveContactErasureAndNeverRestoreIdentity(t *testi
 			replay := func() {
 				for range 2 {
 					for _, args := range []river.JobArgs{jobs.MessageObservationArgs{}, jobs.BroadcastUnsubscribeEventArgs{}} {
-						result, err := env.Bus.Replay(t.Context(), s, events.ReplayRequest{Consumer: args.Kind(), From: at, Before: at.Add(time.Minute)})
+						result, err := env.Bus.Replay(t.Context(), fixtures.InitechID, events.ReplayRequest{Consumer: args.Kind(), From: at, Before: at.Add(time.Minute)})
 						require.NoError(t, err)
 						assert.Equal(t, 1, result.Enqueued)
 						env.PerformEnqueuedJobs(t, args)
@@ -198,10 +198,17 @@ func TestReplayAndJournalRespectWorkspacePurge(t *testing.T) {
 	assert.Equal(t, 1, env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).CountX(t.Context()))
 	instanceCount := env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceIDIsNil(), eventjournalentry.Name(events.NameUserPasskeyAdded)).CountX(t.Context())
 	assert.Equal(t, 1, instanceCount)
-	result, err := env.Bus.Replay(t.Context(), env.DB.Scoped(fixtures.InitechID), events.ReplayRequest{Consumer: jobs.BroadcastUnsubscribeEventArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
+	result, err := env.Bus.Replay(t.Context(), fixtures.InitechID, events.ReplayRequest{Consumer: jobs.BroadcastUnsubscribeEventArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
 	require.NoError(t, err)
 	assert.Zero(t, result.Matched)
-	_, err = env.Bus.Replay(t.Context(), env.DB.Scoped(999999), events.ReplayRequest{Consumer: jobs.BroadcastUnsubscribeEventArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
+}
+
+func TestReplayRefusesAWorkspaceInItsDeletionWindow(t *testing.T) {
+	at := time.Date(2026, 11, 8, 2, 0, 0, 0, time.UTC)
+	env := testhelper.Setup(t)
+
+	_, err := env.Bus.Replay(t.Context(), fixtures.BluthID, events.ReplayRequest{Consumer: jobs.BroadcastUnsubscribeEventArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
+
 	require.ErrorIs(t, err, events.ErrReplayWorkspaceUnavailable)
 }
 
@@ -225,7 +232,7 @@ func TestReplayBroadcastAttributionConvergesAcrossDistinctFactsInEitherOrder(t *
 			}
 			removeReportJobs(t, env.Bus, s, jobs.BroadcastUnsubscribeEventArgs{})
 			for range 2 {
-				result, err := env.Bus.Replay(t.Context(), s, events.ReplayRequest{Consumer: jobs.BroadcastUnsubscribeEventArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
+				result, err := env.Bus.Replay(t.Context(), fixtures.InitechID, events.ReplayRequest{Consumer: jobs.BroadcastUnsubscribeEventArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
 				require.NoError(t, err)
 				assert.Equal(t, 2, result.Enqueued)
 				perform(t, env)

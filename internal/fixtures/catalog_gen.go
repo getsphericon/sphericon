@@ -3015,6 +3015,10 @@ const (
 	PaxGoogleIdentityProvider = "google"
 	// PaxGoogleIdentitySubject is from fixtures/user_identities.
 	PaxGoogleIdentitySubject = "google-subject-of-pax"
+	// PaxSecondFactorID is from fixtures/second_factors.
+	PaxSecondFactorID = 2
+	// PaxSecondFactorTotpSecret is from fixtures/second_factors.
+	PaxSecondFactorTotpSecret = "JBSWY3DPEHPK3PXP"
 	// PendingSignupExpiredEmail is from fixtures/pending_signups.
 	PendingSignupExpiredEmail = "gone.visitor@gmail.com"
 	// PendingSignupExpiredID is from fixtures/pending_signups.
@@ -3085,8 +3089,6 @@ const (
 	ProviderOnlyPaxID = 23
 	// ProviderOnlyPaxName is from fixtures/users.
 	ProviderOnlyPaxName = "Pax"
-	// ProviderOnlyPaxTotpSecret is from fixtures/users.
-	ProviderOnlyPaxTotpSecret = "JBSWY3DPEHPK3PXP"
 	// ProviderOnlyPiaEmail is from fixtures/users.
 	ProviderOnlyPiaEmail = "pia@hooli.test"
 	// ProviderOnlyPiaID is from fixtures/users.
@@ -3315,6 +3317,10 @@ const (
 	SamGoogleIdentityProvider = "google"
 	// SamGoogleIdentitySubject is from fixtures/user_identities.
 	SamGoogleIdentitySubject = "google-subject-of-sam"
+	// SamSecondFactorID is from fixtures/second_factors.
+	SamSecondFactorID = 1
+	// SamSecondFactorTotpSecret is from fixtures/second_factors.
+	SamSecondFactorTotpSecret = "JBSWY3DPEHPK3PXP"
 	// SecondFactorSamEmail is from fixtures/users.
 	SecondFactorSamEmail = "sam@globex.test"
 	// SecondFactorSamID is from fixtures/users.
@@ -3331,8 +3337,6 @@ const (
 	SecondFactorSamSpentRecoveryCode = "sam02-spent"
 	// SecondFactorSamSpentRecoveryID is from fixtures/recovery_codes.
 	SecondFactorSamSpentRecoveryID = 2
-	// SecondFactorSamTotpSecret is from fixtures/users.
-	SecondFactorSamTotpSecret = "JBSWY3DPEHPK3PXP"
 	// SegmentActiveID is from fixtures/segments.
 	SegmentActiveID = 1
 	// SegmentActiveName is from fixtures/segments.

@@ -31,6 +31,19 @@ func TestSuspendWorkspaceRecordsAttribution(t *testing.T) {
 	assert.Equal(t, "complaint rate 0.9%", *ws.SuspensionReason)
 }
 
+// A suspension tells the owners why, so one without a reason is refused and changes nothing,
+// whoever asks.
+func TestSuspendWorkspaceRequiresAReason(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, "   ", time.Now())
+
+	require.ErrorIs(t, err, suspension.ErrReasonRequired)
+	assert.False(t, changed)
+	assert.Nil(t, env.DB.Workspace.GetX(ctx, fixtures.AcmeID).SuspendedAt)
+}
+
 // Suspending an already-suspended workspace changes nothing, so the first actor and
 // reason (the ones the owner was told about) are never overwritten.
 func TestSuspendWorkspaceIsIdempotent(t *testing.T) {
@@ -67,13 +80,6 @@ func TestUnsuspendWorkspaceClearsEverything(t *testing.T) {
 	changed, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.CLI, time.Now())
 	require.NoError(t, err)
 	assert.False(t, changed, "unsuspending a workspace that is not suspended is a no-op")
-}
-
-func TestSuspendWorkspaceRequiresAReason(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "  ", time.Now())
-	require.Error(t, err, "attribution needs a reason: the owner is told why")
 }
 
 // A Staff member's real id is kept on the internal record; it is the only actor with one.

@@ -7,8 +7,10 @@
 // Every Broadcast status write goes through the transition table in status.go (ADR 0046):
 // a stateless table with a compare-and-swap write, so an illegal move is
 // lifecycle.ErrInvalidTransition. Delivery owns the rest of the lifecycle: plan, pace, send
-// one recipient through Outbound send (ADR 0015), give up, finalize. The queue adapter (river)
-// only implements its Scheduler seam and decides how to retry.
+// one recipient through Outbound send (ADR 0015), give up, finalize. It also decides what each
+// run of a send job comes to (RunQueued, DeliverRecipient): done, a wait, a retry or a give-up on
+// the last attempt (ADR 0111). The queue adapter (river) only implements its Scheduler seam and
+// turns that Outcome into its own snooze or retry.
 package broadcasts
 
 import (
@@ -60,6 +62,12 @@ var (
 // keeping them off the default queue stops a large broadcast from starving automation steps and
 // welcome emails (the same isolation jobs.QueueWebhooks gives outbound webhooks).
 const Queue = "broadcasts"
+
+// RecipientAttempts is how many attempts a recipient's send job is given: the last failed one
+// gives the recipient up (Delivery.DeliverRecipient), and its failure stays on the recipient's
+// row. A hard bounce does not recover, so a runner's default retry budget would only hold the
+// Broadcast in sending; a runner queues each recipient's job with this many attempts.
+const RecipientAttempts = 3
 
 // SendArgs is the fan-out (plan) job payload: which Broadcast to dispatch. The worker plans
 // the audience and queues one job per recipient, so no single job carries the whole send.
@@ -371,13 +379,24 @@ func keptSegment(ctx context.Context, s *ent.Scoped, id int64) (*ent.Segment, er
 	return seg, nil
 }
 
-// Get returns one Broadcast of the Workspace.
+// Get returns one Broadcast of the Workspace; ErrNotFound for an unknown id.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	b, err := s.Broadcast().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
 	return b, err
+}
+
+// SendTest sends the Broadcast id of the Workspace to the one address an author names, with sample
+// merge data, to preview it (outboundmessages.Module.SendBroadcastTest): no recipient rows, no
+// tracking, never the audience. The scope's actor is who asks; ErrNotFound for an unknown id.
+func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, id int64, to outboundmessages.TestAddress) (outboundmessages.Result, error) {
+	b, err := m.Get(ctx, s, id)
+	if err != nil {
+		return outboundmessages.Result{}, err
+	}
+	return m.out.SendBroadcastTest(ctx, s, b, to)
 }
 
 // ListFilter narrows the Broadcast list: the archived ones instead of the kept ones, only some

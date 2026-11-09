@@ -49,11 +49,12 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 **`*ent.Scoped` is built only in a closed list of places:**
 
 1. site: `memberships.Module.Scope`, behind the ogen middleware `Handlers.Access`
-   (`internal/api/site/access.go`, ADR 0061), from the user's Membership of the Workspace an
+   (`internal/api/site/access.go`, ADR 0061), through the one call that admits a request made on a
+   session (`admission.Module.Admit`, `internal/domain/identity/admission`): from the user's Membership of the Workspace an
    operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership with
-   `callerMembership(ctx)`). On every operation that carries a session, the middleware then
-   admits the User (`users.Module.Admit`, `internal/domain/identity/users/admission.go`, the one decision
-   of both surfaces): it refuses first a User with a required acceptance pending (403
+   `callerMembership(ctx)`). On every operation that carries a session, the admission then
+   admits the User (`users.Module.CheckAcceptance`, then `secondfactors.Module.CheckRequirement`, the
+   one decision of both surfaces): it refuses first a User with a required acceptance pending (403
    `acceptance_pending`, ADR 0062) unless the operation is marked
    `@allowedWhileAcceptancePending` in TypeSpec, the one list of what a gated User may call;
    an unmarked operation is refused, the mark lifts only the gate (a Workspace's operation still
@@ -63,15 +64,15 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    ADR 0020) unless the operation is marked `@allowedWhileWithheld` (only lifting the
    requirement), and last applies the Permissions the operation declares in TypeSpec
    (`@requiresPermissions`, generated into `operationAccess`). Two operations name their
-   Workspace elsewhere and call `memberships.Module.Scope` themselves: `SiteOAuthDecide` (in its
-   body, then `users.Module.Admit` as the middleware does) and `SiteWorkspacesCreate` /
+   Workspace elsewhere: `SiteOAuthDecide` (in its body: `oauthclients.Module.Decide` admits the User
+   to it through `admission.Module.Admit` as the middleware does) and `SiteWorkspacesCreate` /
    `SiteWorkspacesRestore` (a Workspace that was not live before);
 2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
    in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`. A User's own token (an API
    token with a `membership_id`, ADR 0061: a Connection, which names its `oauth_client_id`, or a
    Personal token, which names none; `internal/domain/identity/apitokens/kinds.go` tells them apart) is looked up
    with its Membership: the scope acts as its User, the acceptance gate and the Two-factor
-   requirement apply (`users.Module.Admit`, as on /site: 403 `acceptance_pending` or
+   requirement apply (`admission.Module.AdmitMembership`, as on /site: 403 `acceptance_pending` or
    `second_factor_required`), and the Role bounds its scopes on every request (`memberships.MayGrant`,
    the bound the OAuth consent and the minting of a Personal token apply too); the Workspace's API
    token meets neither;
@@ -84,7 +85,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    id; and the orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
    client and scopes it to the envelope's Workspace to build the Orders, handing the scope to
    `orders.Module.Record`), and
-   `users.RemindSecondFactorDeadlines` (the deadline reminder job: it lists the Memberships of every
+   `secondfactors.Module.RemindDeadlines` (the deadline reminder job: it lists the Memberships of every
    Workspace with the raw client and scopes each claim, `memberships.ClaimSecondFactorReminder`,
    to the Workspace of the Membership it loaded), and `workspacedeletion.UseCase.EraseDue` (`internal/usecase/workspacedeletion`), which lists the due Workspaces with the raw client and
    scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
@@ -99,25 +100,27 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    `internal/domain/identity/users/join.go`, ADR 0051), which builds `tx.Scoped(...)` for the Workspace a
    verified Join domain names, right after `joindomains.HolderIn` has loaded that row, to add
    the joining User's Membership (every step that proves an address calls it explicitly); and
-   `users.Module.DeleteUser` (User deletion, ADR 0050) scopes its one transaction in turn to each
+   `userdeletion.UseCase.Delete` (User deletion, ADR 0050, `internal/usecase/userdeletion`) scopes its one transaction in turn to each
    Workspace the User belongs to (`tx.Scoped(m.WorkspaceID)`, from the User's own Memberships),
    to lock the Owner rows and remove the Membership;
 6. the Workspace comes from a secret rather than a login: the ingest hook
-   `POST /hooks/{key}` (`internal/server/hooks.go`, ADR 0037), where the key belongs to one
-   Integration, so the hook resolves the Integration by key with the raw client and then
-   scopes to its Workspace (`row.WorkspaceID`); the tracking endpoints (`loadEngaged` in
-   `internal/server/tracking.go`), where the token names an outbound message that is loaded
-   with the raw client and scoped to its Workspace, and the short link `GET /c/{token}` there,
-   whose token names a `tracked_links` row that is read with the raw client for the message and
+   `POST /hooks/{key}` (driver `internal/api/hooks`, ADR 0037), where the key belongs to one
+   Integration, so the Callback interpretation (`callbackinterpretation.UseCase.Receive`) finds
+   the Integration by key (`integrations.ByIngestKey`, on its raw client) and then
+   scopes to its Workspace (`row.WorkspaceID`); the tracked links (driver `internal/api/tracking`), where an
+   open or click token names an outbound message that the Outbound message's engagement
+   (`internal/domain/sending/outboundmessages/engagement`) loads with the raw client and scopes
+   to its Workspace, and the short link `GET /c/{token}` there,
+   whose token names a `tracked_links` row that it reads with the raw client for the message and
    the Workspace it belongs to; signed unsubscribe/confirm tokens
-   (`workspaces.Module.LinkScope`, which the unsubscribe page and the confirmation page build
-   the scope with; the one-click POST in `internal/server/tracking.go` scopes with the raw
-   client), `workspaces.Module.BootstrapScope` (the bootstrap token), and the token
-   endpoint of the OAuth server (`internal/api/oauth`, over the use case
-   `internal/usecase/connectionissuance`), where an authorization
-   code or a refresh token names its grant: the use case loads the row through
-   `internal/domain/identity/oauthclients` and scopes the Connection's writes (`apitokens.IssueConnection`,
-   `RotateConnection`, `RevokeGrant`) to the Workspace that row names;
+   (`workspaces.Module.LinkScope`, which the unsubscribe page, the confirmation page and the one-click POST of the tracked links build
+   the scope with), the bootstrap token (`apitokens.Module.Bootstrap`, which checks the token
+   and then scopes to the oldest live Workspace, `workspaces.Module.OldestLiveID`), and the token
+   endpoint of the OAuth server (`internal/api/oauth`, over `apitokens.Module.ExchangeCode` and
+   `Refresh`), where an authorization
+   code or a refresh token names its grant: `apitokens`
+   claims the code through `oauthclients.ClaimCodeIn`, which checks the client, the redirect URI
+   and the PKCE verifier first, or reads its own refresh token, and scopes the Connection's writes to the Workspace that row names;
 7. the platform Staff member (ADR 0026): `ee/domain/insights/workspaceoversight` scopes over the one Workspace the console
    is looking at, in three reads, each after the Workspace row is loaded and each through
    the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
@@ -145,28 +148,36 @@ or Workspace exists yet, and its completion creates them, its Consent records an
 transaction, which the use case `signup` opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its
 token, the only handle, before any Workspace is known; issuing and revoking take the Workspace's scope), `internal/domain/identity/workspaces` (the Workspace row, ADR 0043, ADR 0102: it is the
 tenant, not a tenant-owned entity, so the scoped client has no wrapper for it; a setting is written on the Workspace a
-scope names, and the command line resolves a Workspace id), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
+scope names, and a suspension from the command line resolves a Workspace id in its transaction, `workspaces.IDByPublicIDIn`), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
 the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
 several Workspaces), `internal/api/auth` (credentials, token and key lookup),
-`internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes and refresh tokens,
+`internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes,
 ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is
-looked up by its secret before any scope exists), `internal/domain/identity/passkeys` and `internal/domain/identity/recoverycodes`
-(a User's Passkeys and Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
-Workspace), the use cases `internal/usecase/secondfactorcheck` (a User's TOTP Second
-factor, ADR 0020: one transaction across the User, the Recovery codes and the Passkeys, none of
-which a Workspace owns), `internal/usecase/connectionissuance` (the token endpoint's
-exchange of a code or a refresh token, a secret that names its grant, see list item 6),
-`internal/usecase/workspacecreation` (a Workspace with its Owner Membership, ADR 0043: no Workspace
-exists yet), `internal/usecase/signup` (the steps that make a User Verified with its first
-Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/noticedelivery` (the Notices of
+looked up by its secret before any scope exists), `internal/domain/identity/apitokens` (only the
+token endpoint's exchange of a code or a refresh token, ADR 0110: a Connection's refresh tokens
+are its own, and a code or a refresh token is looked up by its secret before any scope exists;
+and the bootstrap, whose token names no Workspace, so it scopes to the oldest live one itself;
+every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
+(a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
+Workspace), the unchecked operations of those identity modules
+that join their use case's raw transaction (ADR 0110: `workspacesunchecked`, `membershipsunchecked`,
+`usersunchecked`, `passkeysunchecked`, `secondfactorsunchecked` and `oauthclientsunchecked`, in the
+component `domain-identity-unchecked`, which only a use case imports), the use cases `internal/usecase/secondfactorreset` (a
+Second factor reset, ADR 0020: one transaction across the Second factor and the Passkeys, none of
+which a Workspace owns),
+`internal/usecase/workspaceview` (a Workspace created with its Owner Membership, ADR 0043: no Workspace
+exists yet; and a deleted one restored, which has no scope its Owner can reach yet), `internal/usecase/signup` (the steps that make a User Verified with its first
+Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/userdeletion` (User deletion,
+ADR 0050: the User belongs to no Workspace, and its one transaction is scoped in turn to each
+Workspace the User leaves), `internal/usecase/noticedelivery` (the Notices of
 the domain events, ADR 0105: an event of a User's account belongs to no Workspace, and a
 Workspace's Owners and Members are read by the id an event names) and
 `internal/usecase/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the
 Workspaces whose window has passed and the Owners' deleted ones, which have no scope yet, opens a
 transaction per erase step (one per Workspace-owned table, the Send cap's bucket
 `send_cap_limiters` among them), scopes to the one Workspace being erased inside it, and moves the
-Workspace row through `workspaces`), `internal/domain/identity/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/domain/identity/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/domain/identity/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/domain/identity/signupsurveyresponses` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/domain/sending/integrations`, `internal/domain/orchestration/webhookendpoints` and `internal/domain/orchestration/rules` (only `SecretSweeps`, the stored secrets of the Integrations, the Webhook endpoints and the Rule versions of every Workspace, which `sphericon encryption-key reencrypt`, the use case `internal/usecase/secretreencryption`, has each owner rewrite under the primary key by id and compare-and-swap, as it has the `SecretSweeps` of `users`, `staffmembers`, `sendingdomains` and `automations`, and the Rules' `PruneFirings`, the Instance-wide age prune of Rule Firings the Event retention job calls; every other function of these three takes a `*ent.Scoped`), `internal/domain/sending/privaterelayranges` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/domain/instance/instancestates` (the Instance state row
-that no Workspace owns, set by a Staff member in the console, ADR 0032, 0063; its Release check reads the Memberships of every live Workspace to tell an owner of any of them of a newer release, and its Telemetry report reads the Instance-wide counts it rounds; `DefaultSendCapIn` reads the default Send cap on the transaction of the use case `workspacecreation` or `signup` that creates a Workspace, ADR 0067), `internal/domain/instance/instanceauditentries` (the Instance audit log, ADR 0070: its entries belong to the Instance, not to a Workspace; `Record` writes one on the transaction client of the Instance-level Staff change it records, `Entries` reads it for the console), `internal/domain/identity/joindomains` (Join
+Workspace row through `workspacesunchecked.TombstoneIn`), `internal/domain/identity/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/domain/identity/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/domain/identity/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/domain/identity/signupsurveyresponses` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/domain/sending/integrations`, `internal/domain/orchestration/webhookendpoints` and `internal/domain/orchestration/rules` (only `SecretSweeps`, the stored secrets of the Integrations, the Webhook endpoints and the Rule versions of every Workspace, which `sphericon encryption-key reencrypt`, the use case `internal/usecase/secretreencryption`, has each owner rewrite under the primary key by id and compare-and-swap, as it has the `SecretSweeps` of `secondfactors`, `staffmembers`, `sendingdomains` and `automations`, and the Rules' `PruneFirings`, the Instance-wide age prune of Rule Firings the Event retention job calls, and the Integrations' `ByIngestKey`, the lookup of the Integration an ingest key names, which the Callback interpretation makes before any scope exists; every other function of these three takes a `*ent.Scoped`), `internal/domain/sending/privaterelayranges` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/domain/instance/instancestates` (the Instance state row
+that no Workspace owns, set by a Staff member in the console, ADR 0032, 0063; its Release check reads the Memberships of every live Workspace to tell an owner of any of them of a newer release, and its Telemetry report reads the Instance-wide counts it rounds; `DefaultSendCapIn` reads the default Send cap on the transaction of the use case `workspaceview` or `signup` that creates a Workspace, ADR 0067), `internal/domain/instance/instanceauditentries` (the Instance audit log, ADR 0070: its entries belong to the Instance, not to a Workspace; `Record` writes one on the transaction client of the Instance-level Staff change it records, `Entries` reads it for the console), `internal/domain/identity/joindomains` (Join
 domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
 by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
 scopes one transaction to both Workspaces through `events.Bus.WithinHandOverTx`; the periodic
@@ -174,16 +185,19 @@ re-check of verified domains, a river job in `internal/jobs`, lists the due doma
 `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
 loses a domain, by that re-check or by a hand-over, are told by the `join_domain.lost` event the loss publishes in its transaction; `Tokens` reads every Workspace's claim of a domain for the end-to-end
 suite's resolver), `internal/domain/sending/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
-listed by a river job that then reads each domain by id to learn its Workspace and hands the use case
-`internal/usecase/sendingdomainverification` that Workspace's scope; `DevTXTLookup`, the end-to-end suite's resolver; and `SecretSweeps`, the DKIM private keys the re-encryption rewrites; every other
+listed by a river job that then reads each domain by id to learn its Workspace and calls `Module.Recheck`
+in that Workspace's scope; `DevTXTLookup`, the end-to-end suite's resolver; and `SecretSweeps`, the DKIM private keys the re-encryption rewrites; every other
 function takes a `*ent.Scoped`), `internal/domain/sending/trackingdomains` (the Workspaces' Tracking domains, ADR 0071: the recheck job lists the verified hosts of every
 Workspace with `Module.Due` and loads a row by id in `Module.Recheck` before any scope exists, then writes through that
-Workspace's scope), `internal/domain/orchestration/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row, and `SecretSweeps`, the sealed HTTP step fields of every Automation version the re-encryption rewrites; every other function takes a `*ent.Scoped`), `internal/domain/identity/suspension` (Workspace
+Workspace's scope; `Module.HostWorkspace` reads the Instance-wide Tracking host index, ADR 0038, for the host gate of
+`internal/server` (`trackinghost.go`) and the edge's TLS question (`internal/api/tlsask`), which resolve a host to its
+Workspace before any scope exists), `internal/domain/orchestration/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row, and `SecretSweeps`, the sealed HTTP step fields of every Automation version the re-encryption rewrites; every other function takes a `*ent.Scoped`), `internal/domain/identity/suspension` (Workspace
 suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067; it opens the transaction and writes the row through `workspaces`), `internal/infra/events`
 (the bus, the Event rows it writes and the event consumers' work), `internal/jobs` (job entry points), `internal/server`
-(tracking by recipient id, provider hooks, composition, and the Instance-wide Tracking host
-index, ADR 0038: the host gate `trackingHostGate` / `verifiedTrackingHost` in `trackinghost.go`,
-`tlsAskHandler` and `recipientOnHost` resolve a host to its Workspace before any scope exists), `ee/domain/insights/auditentries` (the Audit log's event
+(composition only: it hands the raw client to the security handlers it mounts), `internal/domain/sending/outboundmessages/engagement` (the
+opens and clicks of the Outbound messages, ADR 0053: an open or click token names a message, and a short
+link's token a tracked link, before any scope exists, list item 6), `internal/usecase/callbackinterpretation` (the
+Callback interpretation behind the Ingest hook: an ingest key names an Integration and so its Workspace before any scope exists, list item 6), `ee/domain/insights/auditentries` (the Audit log's event
 consumer: its envelope carries only a Workspace id, ADR 0022), `ee/domain/insights/erasures` (the Export streams'
 event consumer, which writes the Erasures rows from `contact.erased`, and their prune job over every
 Workspace's rows, ADR 0045), `ee/usecase/auditlogretention` (the
@@ -198,13 +212,13 @@ which belong to no Workspace), `internal/domain/identity/workspacefeed` (the ent
 a Workspace the next feed position when it is created or an owner is added, removed,
 transferred or changes email or verification: it must reach the Workspace a User or
 Membership change belongs to; `ee/domain/insights/workspaceoversight` serves the feed in `Module.WorkspaceFeed`), `internal/domain/identity/usertombstones` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/domain/insights/workspaceoversight` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/domain/sending/trackinghostchanges` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/domain/insights/workspaceoversight` serves it in `Module.TrackingHostFeed`), `internal/infra/db` (the guard's read of the schema state row, on a client of its own before the application's exists), `internal/infra/throttle` (the Login throttle and the mail budgets of an address, ADR 0025: an AuthAttempt belongs to an address, not a Workspace, and the purge river job only calls it) and the composition roots
-(`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
+(`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above), and the Enterprise job runner `ee/jobs`, which only hands the client the wiring gives it to those packages. Needing raw access anywhere else
 means a new small package in this list, not a field on `Handlers`. easement holds the core
 domain modules of the list as the raw-client components of their contexts in `easement.yml` (the
-identity modules of the list as `domain-identity-base`, `domain-identity-users` and
+identity modules of the list as `domain-identity-base` and
 `domain-identity-raw`, the sending modules as `domain-sending-raw`, the orchestration modules as
-`domain-orchestration-raw`, the instance modules as `domain-instance-raw`, see [Domain contexts](modules.md#domain-contexts)); the job runner as its own `runner` component, which does not forbid the client
-either, the raw use cases as the `usecase-raw` component, and the bus, the database package and the Login throttle,
+`domain-orchestration-raw`, the instance modules as `domain-instance-raw`, see [Domain contexts](modules.md#domain-contexts)); the job runners as their own `runner` and `ee-runner` components, which do not forbid
+the client either, the raw use cases as the `usecase-raw` component, and the bus, the database package and the Login throttle,
 `internal/infra/events`, `internal/infra/db` and `internal/infra/throttle`, as the `infra-raw` component, and the
 Enterprise packages of the list as `ee-domain-identity-raw`, `ee-domain-insights-raw` and
 `ee-usecase-raw`. It fails a use of

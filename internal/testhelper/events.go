@@ -16,10 +16,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee"
+	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -179,9 +178,9 @@ func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
 	bus.UseJobs(inserter)
 	bus.UseSubscribers(channelstop.Subscribers()...)
 	bus.UseSubscribers(suppressions.Subscribers()...)
-	bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
+	bus.UseConsumers(append(jobs.EventConsumers(), eejobs.EventConsumers()...)...)
 	bus.UseConsumers(recorder)
-	bus.OnStored(app.RecordSendOutcome)
+	bus.OnStored(jobs.RecordSendOutcome)
 	return bus
 }
 
@@ -230,7 +229,7 @@ func (env *TestEnv) RetryJobs(t *testing.T, only ...river.JobArgs) {
 
 // EditionJobs are the jobs of the Enterprise Edition's consumers, the Audit log's and the Erasures
 // stream's, for PerformEnqueuedJobs.
-var EditionJobs = []river.JobArgs{ee.EntryEventArgs{}, ee.ErasureEventArgs{}}
+var EditionJobs = []river.JobArgs{eejobs.EntryEventArgs{}, eejobs.ErasureEventArgs{}}
 
 // QueuedDeliveries are the queued webhook deliveries, oldest first.
 func (env *TestEnv) QueuedDeliveries(t *testing.T) []jobs.DeliverWebhookArgs {

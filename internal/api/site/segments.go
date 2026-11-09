@@ -3,12 +3,7 @@ package site
 import (
 	"context"
 
-	"github.com/samber/lo"
-
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -94,29 +89,21 @@ func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.Sit
 	return &res, nil
 }
 
-// SiteSegmentsPreview reports how many *deliverable* (active) contacts match a
-// rule definition. It applies the same active filter the broadcast send path
-// uses, so the previewed number matches what a broadcast to this segment ships.
+// SiteSegmentsPreview reports how many contacts match a rule definition, and, for a Broadcast
+// form that names its Channel, how many of them the Broadcast there would take: the audience of
+// its plan, not the Segment's whole match.
 func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePreviewSegmentInput, _ siteapi.SiteSegmentsPreviewParams) (*siteapi.SitePreviewSegmentResult, error) {
-	ws := workspaceScope(ctx)
-
-	def, err := condition.EncodeOptional(req.Condition)
+	in, err := inputs.SegmentPreview(req)
 	if err != nil {
 		return nil, err
 	}
-	count, err := h.segments.Preview(ctx, ws, lo.FromPtr(def))
+	preview, err := h.segments.Preview(ctx, workspaceScope(ctx), in)
 	if err != nil {
 		return nil, err
 	}
-	res := &siteapi.SitePreviewSegmentResult{Count: narrow.Int32(count)}
-	// A Broadcast form asks for the recipients its Channel would take: the audience of its plan,
-	// not the Segment's whole match.
-	if channel, ok := req.Channel.Get(); ok {
-		recipients, err := broadcasts.RecipientsOf(ctx, ws, inputs.BroadcastChannel(channel), convert.Int64Ptr(req.IntegrationId), lo.FromPtr(def), h.now())
-		if err != nil {
-			return nil, err
-		}
-		res.Recipients = siteapi.NewOptInt32(narrow.Int32(recipients))
+	res := &siteapi.SitePreviewSegmentResult{Count: narrow.Int32(preview.Count)}
+	if preview.Recipients != nil {
+		res.Recipients = siteapi.NewOptInt32(narrow.Int32(*preview.Recipients))
 	}
 	return res, nil
 }

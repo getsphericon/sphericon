@@ -2,12 +2,16 @@ package outboundmessages
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -29,10 +33,6 @@ type TestRequest struct {
 	// email default, and a named one whose Send route cannot send holds the Test send
 	// (no_integration) without the System sender standing in.
 	IntegrationID *int64
-	// Asker is the User who asks. Set, it lets a Workspace with no verified Sending domain
-	// send from the System sender, to Asker.Email only (ADR 0041). Nil (an API token) keeps
-	// the Sending-domain gate for every Test send.
-	Asker *Asker
 }
 
 // TestSubjectPrefix marks a preview send so it is never mistaken for the real mailing.
@@ -74,16 +74,16 @@ type TestAddress struct {
 // Channel with no Test send is ErrNoTestSend. A Held or Refused Test send is ErrHeld or
 // ErrTestRefused made With the reason worded by Detail, content that does not render is
 // emailrender.ErrInvalidContent with its reason, and a failed send is returned as the error it is,
-// so every surface answers a refused preview the same way. The System sender's cap is no error:
-// the Result is a Deferral whose Wait and Limit say when capacity returns.
-func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to TestAddress, asker *Asker) (Result, error) {
+// so every surface answers a refused preview the same way. Who asks is the scope's actor, as for
+// SendTest, and the System sender's cap is its *ratelimit.WaitError.
+func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to TestAddress) (Result, error) {
 	stored, err := BroadcastContent(b)
 	if err != nil {
 		return Result{}, err
 	}
 	switch content := stored.(type) {
 	case EmailContent:
-		return m.sendEmailBroadcastTest(ctx, s, b, content, to.Email, asker)
+		return m.sendEmailBroadcastTest(ctx, s, b, content, to.Email)
 	case SMSContent:
 		return m.sendSMSTest(ctx, s, content, to.Phone, b.IntegrationID)
 	default:
@@ -103,7 +103,7 @@ func testVariables(email string) map[string]any {
 }
 
 // sendEmailBroadcastTest is the Test send of an email Broadcast to the address to.
-func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, content EmailContent, to string, asker *Asker) (Result, error) {
+func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, content EmailContent, to string) (Result, error) {
 	if to == "" {
 		return Result{}, ErrTestEmailRequired
 	}
@@ -114,7 +114,6 @@ func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *e
 		Variables: testVariables(to),
 		// The Integration a real send of the Broadcast would go through.
 		IntegrationID: b.IntegrationID,
-		Asker:         asker,
 	})
 	if err != nil {
 		return Result{}, err
@@ -127,7 +126,6 @@ func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *e
 	case Failed: // the content did not render
 		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
 	case Sent, Skipped, Deferral:
-		// Sent, or the System sender's cap, which Wait and Limit describe.
 	}
 	return res, nil
 }
@@ -140,11 +138,12 @@ func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *e
 // Failed (the content did not render) or Held; there is no replay.
 //
 // The Test send goes through the Send route of the Integration the request names, else of the
-// email default, as a real send does (#663). With an Asker, no verified Sending domain in
-// the Workspace and that route either delivering outside or held for want of a default, it goes
-// from the System sender instead (ADR 0041, ADR 0058): after the same freeze check, only to the
-// Asker's own address, within the per-User and per-Workspace caps, and Refused when the Instance
-// has no System sender. A route that keeps its mail (a Test inbox) takes the Test send itself and
+// email default, as a real send does (#663). Asked for by a User (the scope's actor: a /site
+// session, never a token), with no verified Sending domain in the Workspace and that route either
+// delivering outside or held for want of a default, it goes from the System sender instead
+// (ADR 0041, ADR 0058): after the same freeze check, only to the User's own address, and Refused
+// when the Instance has no System sender. Past the per-User or the per-Workspace cap it is not
+// made: the error is a *ratelimit.WaitError that says when a slot frees. A route that keeps its mail (a Test inbox) takes the Test send itself and
 // the Result is Captured; a named Integration that cannot send holds it (no_integration). The
 // route is resolved once and decides both: no other module decides which sender a Test send uses.
 func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (Result, error) {
@@ -164,13 +163,13 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 	if err != nil {
 		return Result{}, err
 	}
-	if req.Asker != nil {
+	if userID, ok := askingUser(s); ok {
 		system, err := m.systemStandsIn(ctx, s, route, req.IntegrationID)
 		if err != nil {
 			return Result{}, err
 		}
 		if system {
-			return m.sendTestFromSystem(ctx, s, ws, req)
+			return m.sendTestFromSystem(ctx, s, ws, req, userID)
 		}
 	}
 	g, err := m.through(ctx, s, route, req.Content)
@@ -242,11 +241,33 @@ func sendTestMessage(ctx context.Context, sender messaging.EmailSender, msg mess
 	return Result{Outcome: Sent, From: from}, nil
 }
 
+// askingUser is the User a Test send is asked for by: the scope's actor when it is a User. Any other
+// actor (an API token, MCP's Connection) is no User a Test send from the System sender may go to.
+func askingUser(s *ent.Scoped) (int64, bool) {
+	actor := s.Actor()
+	if actor.Kind != events.ActorUser {
+		return 0, false
+	}
+	id, err := strconv.ParseInt(actor.ID, 10, 64)
+	return id, err == nil
+}
+
+// errNoUsers is a module asked for a Test send by a User without the Users to find them among: a
+// configuration error (WithUsers), never a silent refusal.
+var errNoUsers = errors.New("outbound: a Test send asked by a User needs the Users (WithUsers)")
+
 // sendTestFromSystem is the Test send of a Workspace with no verified Sending domain, past the
-// Workspace freeze.
-func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, req TestRequest) (Result, error) {
+// Workspace freeze, asked for by the User userID.
+func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, req TestRequest, userID int64) (Result, error) {
+	if m.users == nil {
+		return Result{}, errNoUsers
+	}
+	asker, err := m.users.User(ctx, userID)
+	if err != nil {
+		return Result{}, fmt.Errorf("outbound: the user who asks for a test send: %w", err)
+	}
 	to := suppressions.NormalizeDestination(req.To)
-	if to != suppressions.NormalizeDestination(req.Asker.Email) {
+	if to != suppressions.NormalizeDestination(asker.Email) {
 		return Result{Outcome: Refused, Reason: RefuseOtherRecipient}, nil
 	}
 	if m.system == nil {
@@ -263,12 +284,12 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 		return Result{Outcome: Refused, Reason: RefuseNoSystemSender}, nil
 	}
 	if m.testBudget != nil {
-		refusal, err := m.testBudget.TakeTestSend(ctx, req.Asker.UserID, s.WorkspaceID())
+		refusal, err := m.testBudget.TakeTestSend(ctx, userID, s.WorkspaceID())
 		if err != nil {
 			return Result{}, fmt.Errorf("outbound: test send budget: %w", err)
 		}
 		if refusal.Wait > 0 {
-			return Result{Outcome: Deferral, Refusal: refusal}, nil
+			return Result{}, &ratelimit.WaitError{Policy: ratelimit.PolicyTestSend, Refusal: refusal, At: m.now()}
 		}
 	}
 	return sendTestMessage(ctx, m.system, msg, from, name, to)

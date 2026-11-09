@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -13,17 +12,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
-	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // recipientInsertChunk bounds a single InsertMany so a very large audience is enqueued in
 // batches rather than one giant statement.
 const recipientInsertChunk = 1000
-
-// recipientMaxAttempts caps per-recipient send retries. A hard bounce won't
-// recover, so the default 25 is wrong here; the failed recipient row records
-// the last error.
-const recipientMaxAttempts = 3
 
 // SendRecipientArgs is one per-recipient send. BroadcastID rides along so the
 // worker can finalize without an extra lookup.
@@ -58,23 +51,16 @@ func (w *SendBroadcastWorker) Timeout(*river.Job[broadcasts.SendArgs]) time.Dura
 	return 10 * time.Minute
 }
 
-// Work is the river adapter over the module's delivery sequence: it keeps only the queue
-// concerns, the schedule of the recipient jobs and the retry decision of a hold.
+// Work is the river adapter over the module's plan job: it keeps only the queue concerns, the
+// schedule of the recipient jobs and the snooze or retry the module's outcome asks for.
 func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[broadcasts.SendArgs]) error {
 	s, err := broadcastScope(ctx, w.ent, job.Args.BroadcastID)
 	if err != nil {
 		return err
 	}
-	if due, err := broadcasts.Due(ctx, s, job.Args.BroadcastID, job.Args.ScheduledAt); err != nil || !due {
-		return err // not due: unscheduled (back to draft) after this job was queued
-	}
-	// RunClaimed refuses a Broadcast unscheduled after the check above: Due is the shortcut
-	// of the usual case, the claim inside the plan decides the race.
-	err = w.del.RunClaimed(ctx, s, job.Args.BroadcastID, riverSends{rc: river.ClientFromContext[*sql.Tx](ctx), workspaceID: s.WorkspaceID()})
-	if errors.Is(err, lifecycle.ErrInvalidTransition) {
-		return nil // stale: the Broadcast is past its plan (sent or failed), nothing to retry
-	}
-	return snoozeIfDeferrable(err)
+	sched := riverSends{rc: river.ClientFromContext[*sql.Tx](ctx), workspaceID: s.WorkspaceID()}
+	out := w.del.RunQueued(ctx, s, job.Args, sched)
+	return riverResult(out)
 }
 
 // riverSends is the river adapter of the module's scheduling seam: one recipient job per send,
@@ -92,7 +78,7 @@ func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []bro
 			// A plan job retried after inserting some chunks plans the same recipients again:
 			// river refuses a second job with the same args while the first is in any state
 			// but cancelled or discarded, so each recipient keeps one job.
-			opts := &river.InsertOpts{Queue: broadcasts.Queue, MaxAttempts: recipientMaxAttempts, UniqueOpts: river.UniqueOpts{ByArgs: true}}
+			opts := &river.InsertOpts{Queue: broadcasts.Queue, MaxAttempts: broadcasts.RecipientAttempts, UniqueOpts: river.UniqueOpts{ByArgs: true}}
 			if !send.At.IsZero() {
 				opts.ScheduledAt = send.At
 			}
@@ -123,67 +109,31 @@ func NewSendRecipientWorker(client *ent.Client, mod *outboundmessages.Module) *S
 	return &SendRecipientWorker{ent: client, del: broadcasts.NewDelivery(mod)}
 }
 
-// Work is the river adapter over the module's recipient delivery: it keeps only the queue
-// concerns, snoozing on a retry decision, the last attempt and finishing a stale job.
+// Work is the river adapter over the module's recipient job: it hands the module the attempt and
+// turns the outcome into river's snooze or retry. On the last attempt a given-up recipient's
+// failure is still returned, so river discards the job and the ErrorHandler logs it.
 func (w *SendRecipientWorker) Work(ctx context.Context, job *river.Job[SendRecipientArgs]) error {
 	s, err := recipientScope(ctx, w.ent, job.Args.RecipientID)
 	if err != nil || s == nil {
 		return err // no such recipient: erased with its Contact after the job was queued
 	}
-	err = w.del.SendRecipient(ctx, s, job.Args.RecipientID)
-	switch classify(err) {
-	case outcomeDone:
-		return nil
-	case outcomeRetryLater:
-		// A hold or a Deferral is not a failure: wait it out without spending an attempt.
-		return snoozeIfDeferrable(err)
-	case outcomeFailed:
-		// falls through to the retry budget below
-	}
-	// On the final attempt the module records the terminal failure so the Broadcast can
-	// finalize instead of hanging in "sending"; the error still surfaces (river discards
-	// the job and the ErrorHandler logs it). A give-up that cannot be recorded is returned
-	// with it, so the job is not silently lost.
-	if job.Attempt >= job.MaxAttempts {
-		if gerr := w.del.GiveUp(ctx, s, job.Args.RecipientID, err); gerr != nil {
-			if errors.Is(gerr, outboundmessages.ErrInProgress) {
-				// Another attempt holds a live claim and may still reach the provider, so
-				// nothing is failed yet. A snooze spends no attempt: the job runs again once
-				// the lease is out, and gives up (or replays the recorded send) then.
-				return river.JobSnooze(inProgressRetryDelay)
-			}
-			return errors.Join(err, gerr)
-		}
-	}
-	return err
+	attempt := broadcasts.Attempt{Number: job.Attempt, Limit: job.MaxAttempts}
+	out := w.del.DeliverRecipient(ctx, s, job.Args.RecipientID, attempt)
+	return riverResult(out)
 }
 
-// outcome is how an adapter treats the result of delivering one recipient.
-type outcome int
-
-const (
-	outcomeDone       outcome = iota // delivered, or nothing left to do (a stale job included)
-	outcomeRetryLater                // a hold, a Deferral or a live claim: not a failure
-	outcomeFailed                    // the attempt failed
-)
-
-// classify is the one reading of a delivery error shared by both adapters. A recipient that
-// was decided meanwhile (lifecycle.ErrInvalidTransition) is a stale job, finished without a
-// retry.
-func classify(err error) outcome {
-	switch {
-	case err == nil, errors.Is(err, lifecycle.ErrInvalidTransition):
-		return outcomeDone
-	case broadcasts.IsRetryLater(err):
-		return outcomeRetryLater
-	default:
-		return outcomeFailed
+// riverResult is the module's outcome as river reads it: a wait is a snooze, which spends no
+// attempt, and any other error spends one.
+func riverResult(out broadcasts.Outcome) error {
+	if out.Wait > 0 {
+		return river.JobSnooze(out.Wait)
 	}
+	return out.Err
 }
 
-// SendBroadcast runs a Broadcast's delivery sequence synchronously: the module plans and
-// paces it exactly as production does, and the inline scheduler sends each recipient in
-// order at once. It is the queue-free adapter for the inline enqueuer and tests.
+// SendBroadcast runs a Broadcast's delivery sequence synchronously (broadcasts.Delivery.RunInline):
+// the module plans and paces it exactly as production does and sends each recipient in order at
+// once. It is the queue-free adapter for the inline enqueuer and tests.
 //
 // Audience = workspace contacts with an email address (optionally narrowed by a
 // segment) minus the ineligible (suppressed / unsubscribed, derived per ADR 0001).
@@ -192,40 +142,7 @@ func SendBroadcast(ctx context.Context, client *ent.Client, mod *outboundmessage
 	if err != nil {
 		return err
 	}
-	del := broadcasts.NewDelivery(mod)
-	return del.Run(ctx, s, broadcastID, inlineSends{s: s, del: del})
-}
-
-// inlineSends is the synchronous adapter of the module's scheduling seam: it sends in order,
-// ignoring the times (the module still computes and records them).
-type inlineSends struct {
-	s   *ent.Scoped
-	del *broadcasts.Delivery
-}
-
-func (i inlineSends) Schedule(ctx context.Context, _ int64, sends []broadcasts.Send) error {
-	for _, send := range sends {
-		serr := i.del.SendRecipient(ctx, i.s, send.RecipientID)
-		switch classify(serr) {
-		case outcomeDone:
-			// delivered, or stale: next recipient
-		case outcomeRetryLater:
-			// The source is on hold (or a claim is live): stop, leaving the remaining
-			// recipients pending for a later run rather than consuming them.
-			return serr
-		case outcomeFailed:
-			// Unlike the river adapter, which retries up to the last attempt, the synchronous
-			// path has no retry runtime: a failed send is terminal, so give the recipient up
-			// at once (a bad recipient must not abort the batch).
-			if gerr := i.del.GiveUp(ctx, i.s, send.RecipientID, serr); gerr != nil {
-				if errors.Is(gerr, outboundmessages.ErrInProgress) {
-					return gerr // a live claim: stop and leave the rest pending, like a hold
-				}
-				return errors.Join(serr, gerr)
-			}
-		}
-	}
-	return nil
+	return broadcasts.NewDelivery(mod).RunInline(ctx, s, broadcastID)
 }
 
 // broadcastScope loads the Broadcast row that names the Workspace and scopes to it (the job

@@ -1,6 +1,7 @@
 // Package workspaces owns the Workspace (ADR 0043, ADR 0102): the tenant every other row belongs
-// to, its settings, whether it is live, and the deletion window with the erase date. It sits at
-// the bottom of identity, so every module can read a Workspace's settings and its window.
+// to, its settings, whether it is live, its deletion (checked by its typed name, ADR 0110) and the
+// deletion window with the erase date. It sits at the bottom of identity, so every module can read
+// a Workspace's settings and its window.
 //
 // The Workspace is the tenant root, not a tenant-owned entity, so the scoped client has no
 // wrapper for it: the module writes the row with the raw client, always the row of the
@@ -30,12 +31,13 @@ import (
 type Module struct {
 	client *ent.Client
 	bus    *events.Bus
+	now    func() time.Time
 }
 
 // New builds the module over the ent client; the bus opens the transactions that write a
-// setting with its Audit entry.
-func New(client *ent.Client, bus *events.Bus) *Module {
-	return &Module{client: client, bus: bus}
+// setting with its Audit entry, and now is the Instance clock a deletion is dated by.
+func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, now: now}
 }
 
 // DeletionWindow is how long a deleted Workspace stays restorable before its data is
@@ -50,14 +52,11 @@ func EraseDate(discardedAt time.Time) time.Time { return discardedAt.Add(Deletio
 // which Workspace ids exist. Every surface answers it alike (review rule 15).
 var ErrNotFound = errors.New("workspaces: workspace not found")
 
-// BootstrapScope is the scoped client of the oldest Workspace, for the bootstrap
-// token (no caller token exists yet to say which Workspace is meant).
-func (m *Module) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
-	id, err := m.client.Workspace.Query().Where(Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return events.Ingest(m.client.Scoped(id)), nil
+// OldestLiveID is the key of the oldest live Workspace, the one the bootstrap token mints the
+// Instance's first token into (apitokens.Module.Bootstrap): no caller token exists yet to say which
+// Workspace is meant.
+func (m *Module) OldestLiveID(ctx context.Context) (int64, error) {
+	return m.client.Workspace.Query().Where(Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
 }
 
 // LinkScope is the scoped client of the Workspace a signed unsubscribe or confirmation link
@@ -68,7 +67,7 @@ func (m *Module) LinkScope(workspaceID int64) *ent.Scoped {
 }
 
 // Update renames the scoped Workspace and, when postalAddress is non-nil,
-// sets (or clears, with "") its postal address. A change is recorded as a
+// sets (or clears, with "") its postal address, trimmed so whitespace alone clears it. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is
 // the tenant root and has no scoped wrapper, so this is an explicit path.
 // The name is trimmed; an empty one is ErrNameEmpty.
@@ -85,7 +84,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		}
 		upd := tx.Workspace.UpdateOneID(s.WorkspaceID()).SetName(name)
 		if postalAddress != nil {
-			upd = upd.SetPostalAddress(*postalAddress)
+			upd = upd.SetPostalAddress(strings.TrimSpace(*postalAddress))
 		}
 		updated, err = upd.Save(ctx)
 		if err != nil {
@@ -349,20 +348,47 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped) (*ent.Workspace, error)
 	return s.Workspace(ctx)
 }
 
-// IDByPublicID resolves a Workspace id (ADR 0043) to the internal key; command-line
-// tooling addresses Workspaces by their id.
-func IDByPublicID(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
-	id, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).OnlyID(ctx)
+// ByPublicIDIn loads the Workspace a Workspace id (ADR 0043) names, live or deleted, through client
+// (the raw client or the caller's transaction): an operator addresses a Workspace by its id (a
+// suspension from the command line, the Staff console). An unknown id is an ent NotFound error.
+func ByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (*ent.Workspace, error) {
+	w, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).Only(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("workspace %q: %w", publicID, err)
+		return nil, fmt.Errorf("workspace %q: %w", publicID, err)
 	}
-	return id, nil
+	return w, nil
+}
+
+// IDByPublicIDIn is the internal key of the Workspace ByPublicIDIn loads.
+func IDByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
+	w, err := ByPublicIDIn(ctx, client, publicID)
+	if err != nil {
+		return 0, err
+	}
+	return w.ID, nil
+}
+
+// IDByPublicID resolves a Workspace id (ADR 0043) an operator types to the internal key, whatever
+// the Workspace's deletion state: the event history of a Workspace is read while it awaits
+// deletion. An unknown one is ErrNotFound.
+func (m *Module) IDByPublicID(ctx context.Context, publicID string) (int64, error) {
+	id, err := IDByPublicIDIn(ctx, m.client, publicID)
+	if ent.IsNotFound(err) {
+		return 0, fmt.Errorf("%w: %w", ErrNotFound, err)
+	}
+	return id, err
 }
 
 // Live is a Workspace that is not deleted (ADR 0043): every lookup that must not reach a
 // deleted Workspace (its Members' scope, the lists, the Instance-wide readers) uses it, so
 // "live" is stated once.
 func Live() predicate.Workspace { return workspace.DiscardedAtIsNil() }
+
+// LiveIn loads, on the transaction tx, the Workspaces among ids that are Live, in ascending id
+// order.
+func LiveIn(ctx context.Context, tx *ent.Client, ids ...int64) ([]*ent.Workspace, error) {
+	return tx.Workspace.Query().Where(workspace.IDIn(ids...), Live()).Order(ent.Asc(workspace.FieldID)).All(ctx)
+}
 
 // ErasedIn reports whether the scope's Workspace is erased (ADR 0043): its rows are gone and its
 // tombstone is all that is left, so a write on its behalf that arrives late (a signed link clicked

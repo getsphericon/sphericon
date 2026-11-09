@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -62,15 +63,17 @@ type Config struct {
 type UseCase struct {
 	client    *ent.Client
 	links     *users.Links
+	factors   *secondfactors.Module
 	providers *signinprovider.Providers
 	cfg       Config
 	now       func() time.Time
 }
 
-// New builds Notice delivery over the raw client, the links of the account mails, the Sign-in
-// providers (which name a linked one) and the Instance's configuration; now is the Instance clock.
-func New(client *ent.Client, links *users.Links, providers *signinprovider.Providers, cfg Config, now func() time.Time) *UseCase {
-	return &UseCase{client: client, links: links, providers: providers, cfg: cfg, now: now}
+// New builds Notice delivery over the raw client, the links of the account mails, the Second
+// factors (whose deadlines the Two-factor notices name), the Sign-in providers (which name a linked
+// one) and the Instance's configuration; now is the Instance clock.
+func New(client *ent.Client, links *users.Links, factors *secondfactors.Module, providers *signinprovider.Providers, cfg Config, now func() time.Time) *UseCase {
+	return &UseCase{client: client, links: links, factors: factors, providers: providers, cfg: cfg, now: now}
 }
 
 // Issue answers the Notices ev calls for (the Notices' consumer wants only an event that calls for
@@ -291,9 +294,13 @@ func (u *UseCase) secondFactorRequired(ctx context.Context, e *events.SecondFact
 	if err != nil {
 		return nil, fmt.Errorf("notice: load the members of workspace %d: %w", e.WorkspaceID, err)
 	}
+	deadlines, err := u.factors.Deadlines(ctx, members)
+	if err != nil {
+		return nil, fmt.Errorf("notice: read the deadlines of workspace %d: %w", e.WorkspaceID, err)
+	}
 	var notices []Notice
 	for _, m := range members {
-		if deadline, ok := users.SecondFactorDeadline(m); ok {
+		if deadline, ok := deadlines[m.ID]; ok {
 			notices = append(notices, u.secondFactorMail(i18n.EmailSecondFactorRequiredSubject, i18n.EmailSecondFactorRequiredBody, m, deadline))
 		}
 	}
@@ -311,7 +318,11 @@ func (u *UseCase) secondFactorReminder(ctx context.Context, e *events.SecondFact
 	if err != nil {
 		return nil, fmt.Errorf("notice: load membership %d: %w", e.MembershipID, err)
 	}
-	if users.HasSecondFactor(m.Edges.User) {
+	active, err := u.factors.Active(ctx, m.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("notice: read the second factor of user %d: %w", m.UserID, err)
+	}
+	if active {
 		return nil, nil
 	}
 	return []Notice{u.secondFactorMail(i18n.EmailSecondFactorReminderSubject, i18n.EmailSecondFactorReminderBody, m, e.Deadline)}, nil

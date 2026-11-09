@@ -20,13 +20,16 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -34,8 +37,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -76,18 +79,24 @@ type Deps struct {
 	// with no outbound mail).
 	SystemSender messaging.EmailSender
 	// Notices issues the Notices of the domain events (ADR 0105).
-	Notices  *noticedelivery.UseCase
-	Catalog  *messaging.Catalog
-	Rules    *rules.Module
-	Users    *users.Module
-	Orders   *orders.Module
-	Deletion *workspacedeletion.UseCase
-	// SendingDomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
+	Notices *noticedelivery.UseCase
+	// Callbacks reads again a Delivery notice that came before its message (the late notice job).
+	Callbacks *callbackinterpretation.UseCase
+	Catalog   *messaging.Catalog
+	Rules     *rules.Module
+	Users     *users.Module
+	// SecondFactor reminds the Users whose Two-factor grace ends soon (ADR 0020).
+	SecondFactor *secondfactors.Module
+	Orders       *orders.Module
+	Deletion     *workspacedeletion.UseCase
+	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
-	SendingDomainVerification *sendingdomainverification.UseCase
+	SendingDomains *sendingdomains.Module
 	// StepExecution executes the steps of the Enrollments (the run_step and http_step jobs).
-	StepExecution   *automations.StepExecution
-	JoinDomains     *joindomains.Module
+	StepExecution *automations.StepExecution
+	JoinDomains   *joindomains.Module
+	// Integrations reads an Integration's provider send quota (ADR 0023).
+	Integrations    *integrations.Module
 	TrackingDomains *trackingdomains.Module
 	Machine         *privaterelayranges.Detector
 	// Clock is the Instance's clock (app.Clock), which every worker reads; NewClient refuses none.
@@ -120,7 +129,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	stepper := deps.StepExecution
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, stepper))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
-	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, now))
+	river.AddWorker(workers, NewLateNoticeWorker(entClient, deps.Callbacks))
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus, stepper)})
 	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules))
@@ -128,8 +137,8 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, bus))
 	river.AddWorker(workers, NewNoticeEventWorker(deps.Notices, systemSender))
 	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
-	river.AddWorker(workers, NewRemindSecondFactorWorker(entClient, bus, now))
-	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomainVerification))
+	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor, now))
+	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomains))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))
@@ -138,7 +147,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
 	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
-	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, cipher, deps.Catalog, now))
+	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, deps.Integrations))
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events, now))

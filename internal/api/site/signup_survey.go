@@ -14,5 +14,5 @@ func (h *Handlers) SiteSignupSurveySubmit(ctx context.Context, req *siteapi.Site
 	if a == nil {
 		return auth.ErrUnauthorized
 	}
-	return h.signupSurvey.Submit(ctx, a.UserID, inputs.SignupSurvey(req))
+	return h.signupSurvey.Submit(ctx, a.User.ID, inputs.SignupSurvey(req))
 }

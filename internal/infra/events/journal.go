@@ -10,6 +10,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 )
@@ -48,7 +49,7 @@ type retainedInput struct {
 
 func (p *txPublisher) journal(ctx context.Context, env Envelope, inputs map[string]retainedInput) error {
 	if env.WorkspaceID != 0 {
-		_, err := p.client.Workspace.Query().Where(workspace.ID(env.WorkspaceID), workspace.ErasedAtIsNil()).ForShare(journalLifetimeLock).Only(ctx)
+		err := holdJournalWorkspace(ctx, p.client, env.WorkspaceID)
 		if ent.IsNotFound(err) {
 			return ErrWorkspaceErased
 		}
@@ -74,6 +75,14 @@ func (p *txPublisher) journal(ctx context.Context, env Envelope, inputs map[stri
 	return nil
 }
 
-// Key share fences the final FOR UPDATE purge without blocking ordinary non-key writes,
-// notably workspacefeed's position update while its Instance-wide advisory lock is held.
-func journalLifetimeLock(options *sql.LockOptions) { options.Strength = sql.LockKeyShare }
+// holdJournalWorkspace locks the Workspace the journal writes or replays for, until the
+// transaction ends, so its erasure's final purge waits for it; a Workspace that is erased, or does
+// not meet also, is ent's not found. Key share fences the final FOR UPDATE purge without blocking
+// ordinary non-key writes, notably workspacefeed's position update while its Instance-wide
+// advisory lock is held.
+func holdJournalWorkspace(ctx context.Context, client *ent.Client, id int64, also ...predicate.Workspace) error {
+	where := append([]predicate.Workspace{workspace.ID(id), workspace.ErasedAtIsNil()}, also...)
+	_, err := client.Workspace.Query().Where(where...).
+		ForShare(func(options *sql.LockOptions) { options.Strength = sql.LockKeyShare }).OnlyID(ctx)
+	return err
+}

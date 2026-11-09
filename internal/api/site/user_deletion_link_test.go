@@ -62,7 +62,7 @@ func TestAProviderOnlyUserWithASecondFactorNeedsTheCodeToo(t *testing.T) {
 	testhelper.SiteRefusal(t, missing, http.StatusForbidden)
 	assert.True(t, userExists(t, env, fixtures.ProviderOnlyPaxEmail), "the link alone does not delete")
 
-	code, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, time.Now())
+	code, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, time.Now())
 	require.NoError(t, err)
 	done := deleteUser(t, pax, &siteapi.SiteDeleteUserInput{
 		Email: fixtures.ProviderOnlyPaxEmail, Token: siteapi.NewOptString(token), Code: siteapi.NewOptString(code),
@@ -161,7 +161,7 @@ func TestWrongCodesOfAProviderOnlyUserAreThrottledOnTheLoginBudget(t *testing.T)
 		wrong := deleteUser(t, pax, input("000000"))
 		testhelper.SiteRefusal(t, wrong, http.StatusForbidden)
 	}
-	right, err := totp.GenerateCode(fixtures.ProviderOnlyPaxTotpSecret, time.Now())
+	right, err := totp.GenerateCode(fixtures.PaxSecondFactorTotpSecret, time.Now())
 	require.NoError(t, err)
 
 	err = deleteUser(t, pax, input(right))

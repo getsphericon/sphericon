@@ -7,18 +7,31 @@
 **Package boundaries are checked by easement (`easement.yml`, `mise run check:arch`).** A surface
 package (`internal/api/{site,external,collect,staff}`) never imports another surface, the core (`internal/{kernel,infra,domain,usecase}`)
 imports neither a surface nor `ee/`, and only the wiring packages (`internal/app`,
-`internal/server`, `internal/testhelper`, `internal/doctor`, `internal/healthcheck`,
-`cmd/server`) assemble them; only they import `ee/`. Inside `ee/`, the Enterprise surfaces (`ee/api/**`,
+`internal/server`, `internal/testhelper`, `internal/doctor`, `internal/healthcheck`) assemble them; only they import `ee/`, and the command line its Service credentials. Inside `ee/`, the Enterprise surfaces (`ee/api/**`,
 component `ee-api`) call an Enterprise use case or domain module and hold neither the raw client
 nor the container, and only the Edition (`ee/ee.go`, component `ee-edition`) builds them: no
 Enterprise module imports a handler (see [Enterprise Edition layout](enterprise.md#enterprise-edition-layout)). The drivers (ADR 0102) are the API surfaces, their shared security
-handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), MCP (`internal/mcpserver`,
-component `mcp`, with the surfaces' rules) and the job runner (`internal/jobs`, component `runner`):
-each receives input, calls a domain module or a use case and returns or records the result (review
-rule 5), and no core tier imports one. Only the wiring imports MCP and the runner, and the Edition hands its jobs in as a
-`jobextension.Extension` (`ee/jobs.go`). A domain module or a use case does the work as a function
-and may queue a job (its args, river's insert), but declares no worker and no periodic job: the
-runner or the Edition calls the function, and easement forbids river's `WorkerDefaults`,
+handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), the public endpoints
+with no contract (ADR 0111: the tracked links `internal/api/tracking`, the Ingest hook
+`internal/api/hooks` and the edge's TLS question `internal/api/tlsask`, components `api-tracking`,
+`api-hooks` and `api-tlsask`, with the surfaces' rules; `internal/server` keeps the router and the
+middleware), MCP (`internal/mcpserver`,
+component `mcp`, with the surfaces' rules), the job runner (`internal/jobs`, component `runner`), the Enterprise job runner (`ee/jobs`, component
+`ee-runner`, with the runner's rules, ADR 0111) and the command line (the `sphericon` binary's
+commands in `cmd/server` and their driver package `internal/commandline`, which holds what they
+print, component `cli`, ADR 0111): each receives input, calls one operation of a domain module or
+a use case and returns or records the result (review rule 5, analyzer `driverops`), and no core
+tier imports one. A domain module
+or a use case writes to no `io.Writer` (ADR 0104, ADR 0111, analyzer `nowriter`): it returns a value or an iterator
+(`iter.Seq2`), which a command prints and an HTTP handler streams (`internal/kernel/seqreader`
+turns the chunks of an export into the response's body). A command takes the
+modules and use cases it calls from the command app (`app.NewCommandApp`), whose accessors build
+each from the container only when a command asks for it; the command line is the one driver that
+imports the wiring, and it holds neither the raw client nor the container. Only the wiring imports MCP and the runners, and it hands the
+Enterprise runner's jobs to the core's job client as a `jobextension.Extension`; the Edition
+(`ee/ee.go`) schedules nothing and imports no river. A domain module or a use case does the work as a function
+and may queue a job (its args, river's insert), but declares no worker and no periodic job: a
+runner calls the function, and easement forbids river's `WorkerDefaults`,
 `AddWorker` and `NewPeriodicJob` below them. A new wiring package is added to the `wiring` component, never to a
 baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
 packages that import none of ours, such as the vocabulary every tier shares (`channels`,
@@ -35,7 +48,7 @@ OpenTelemetry (`telemetry`, served by `sidelistener`) and the process's configur
 which stays at the root). Every component may import it, and easement fails its import of
 anything of ours but the kernel and the generated ent client: the bus knows no consumer (the
 wiring registers them; the suppression consumer is a job in `internal/jobs`, and the send-outcome
-counter of a bounce or a complaint is `app.RecordSendOutcome`, registered with `Bus.OnStored`), and
+counter of a bounce or a complaint is `jobs.RecordSendOutcome`, registered with `Bus.OnStored`), and
 the database package installs no ent hook (`internal/app/entclient` builds every client). No core
 tier (kernel, infrastructure, domain) imports an API surface's generated package (component
 `gen-surfaces`): what the core shares with a contract is generated into the kernel, as the scope
@@ -62,7 +75,9 @@ anywhere else under `ee/` by none: it fails the check until it is placed. There
 is no catch-all for the rest of `internal/`: a new package elsewhere there fails the check until
 it is put in a tier, a context or a component of its own (the drivers, the wiring, `tools` for
 the packages of the repository's commands under `cmd/`, `testsupport` for what the tests share
-below the harness), and a new top-level tree must be assigned a component or listed as `unowned`
+below the harness). A command under `cmd/` is the driver `cli` (`cmd/server`) or one of the
+repository's own (`commands`: the generators, the CI checks, the development database and the
+seeding), and a new top-level tree must be assigned a component or listed as `unowned`
 in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
 its ogen package, whose own imports are not checked. The same file also holds the raw
 `*ent.Client` list (the contexts' `domain-<context>-raw`, `infra-raw` and `usecase-raw`,
@@ -78,16 +93,18 @@ needs a module above is a use case. easement holds a context as a few components
 `domain-<context>[-<part>]`, one per privilege: `domain-<context>` is the glob of the context's
 directory (the modules that hold no raw client), `domain-<context>-raw` is the closed list of its
 raw-client holders (with the other holders, the `allow` of `ent.Client` in the top-level
-`forbid_symbol`), and a part a rule binds alone gets a component of its own. Each lists in
-`may_depend_on` the other components of its context and every component of the contexts below,
-in context order, and nothing above, so an import against the order fails `check:arch` with the
-context's reason. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
+`forbid_symbol`), and a part a rule binds alone gets a component of its own. `layers` in
+`easement.yml` states the order once, from the drivers through the use cases and the contexts
+down to the infrastructure and the kernel (ADR 0111): a component imports those below it and
+none above, so an import against the order fails `check:arch` with the
+context's reason. Within
+a context the raw-client holders sit above the rest; where the rest imports them (identity,
+sending), that edge is the one a rule's `may_depend_on` names. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
 Memberships (`domain-identity-base`, which imports no other domain module: every module may read a
-Workspace, ask a Permission or tell the Owners something), the Users (`domain-identity-users`, the
-one caller of `memberships.LeaveDoomedWorkspaceIn`), the raw-client holders `consentrecords`,
-`invitations`, `joindomains`, `oauthclients`, `passkeys`, `recoverycodes`, `signupitems`,
-`signupsurveyresponses`, `staffmembers`, `suspension`, `usertombstones` and `workspacefeed`
-(`domain-identity-raw`), and `apitokens`, `login`, `signinprovider` and `accountlink` (`domain-identity`).
+Workspace, ask a Permission or tell the Owners something), the raw-client holders `apitokens`, `consentrecords`,
+`invitations`, `joindomains`, `oauthclients`, `passkeys`, `secondfactors`, `signupitems`,
+`signupsurveyresponses`, `staffmembers`, `suspension`, `users`, `usertombstones` and `workspacefeed`
+(`domain-identity-raw`), and `login`, `userlogin`, `admission`, `signinprovider` and `accountlink` (`domain-identity`).
 An identity module imports no module of another context: not `providerlimit`, not `contacts`.
 Contacts, above it, is one component (`domain-contacts`, the glob of
 `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
@@ -138,8 +155,7 @@ To move a module into its context: `git mv` its directory, rewrite the import pa
 `.../internal/domain/<context>/<module>`) and the module-relative paths that name it (the
 `forbid_symbol` names in `easement.yml`, the ownership map of `entrywrite`, `.golangci.yml`,
 the ast-grep rules, scopegen's outputs, the docs), put it in the context's component (by name in
-`domain-<context>-raw` if it holds the raw client), regenerate (`mise run generate:scopes`, goverter, `generate:mocks`) and let
-`easement suggest --check` trim the `may_depend_on` lists.
+`domain-<context>-raw` if it holds the raw client), regenerate (`mise run generate:scopes`, goverter, `generate:mocks`).
 
 ## Table ownership
 
@@ -156,14 +172,17 @@ throttle the attempts; `internal/infra/db` the schema state the migrations keep)
 the log it keeps (`usertombstones` the User tombstones, `trackinghostchanges` the Tracking host changes); the
 Enterprise Edition owns its own tables in its domain modules (`ee/domain/insights/auditentries` the Audit
 entries, `ee/domain/insights/erasures` the Erasures rows, `ee/domain/insights/usages` the Usage rows,
-`ee/domain/identity/servicecredentials` the Service credentials). Any other package, a use case
+`ee/domain/identity/servicecredentials` the Service credentials). The one other writer of a
+Workspace-owned table is the Workspace erase (`internal/usecase/workspacedeletion`, ADR 0110): it
+deletes the rows of a Workspace past its deletion window itself, through the scoped client, since no
+rule of an owner governs them any more; it only deletes, and only through the scoped wrappers. Any other package, a use case
 included, reads the table and changes it only through a function of its owner: the Workspace's
 standing (`workspaces.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position)
 for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
 (`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
 Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
-`users`; a provider's quota answer and refusal of an Integration (`integrations.RecordQuota`,
-`RecordRefused`) for `providerlimit` and `outboundmessages`. A write through a generic helper counts where
+`users`; a provider's refusal of an Integration (`integrations.RecordRefused`) for
+`outboundmessages`. A write through a generic helper counts where
 the helper is instantiated with an ent write builder. The owner also declares each unique
 constraint of its tables beside those writes (ADR 0106): `var constraints = db.Declare(...)`, each
 constraint by exact name a `db.Refusal` with the module's sentinel or a `db.Fault` with its reason,

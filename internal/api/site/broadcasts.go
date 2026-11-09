@@ -4,66 +4,33 @@ import (
 	"context"
 	"time"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// withStats maps a Broadcast and attaches its delivery figures, which are derived from its
-// recipients and their Outbound messages rather than stored on it.
-func withStats(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
-	figures, err := broadcasts.StatsFor(ctx, s, b)
-	if err != nil {
-		return siteapi.SiteBroadcastResource{}, err
+// broadcastResource maps a Broadcast's view and attaches what the converter cannot see: its
+// delivery figures, its progress while it is sending (ADR 0023) and the lint warnings of a save
+// (ADR 0040).
+func broadcastResource(v broadcasts.View) siteapi.SiteBroadcastResource {
+	res := mapper.BroadcastToResource(v.Broadcast)
+	res.Stats = mapper.BroadcastStatsToResource(v.Stats.Figures())
+	if v.Progress != nil {
+		res.Progress = siteapi.NewOptNilSiteBroadcastProgress(mapper.BroadcastProgressToResource(*v.Progress))
 	}
-	res := mapper.BroadcastToResource(b)
-	res.Stats = mapper.BroadcastStatsToResource(figures[b.ID].Figures())
-	return res, nil
-}
-
-// broadcastResource maps a Broadcast and, while it is sending, attaches its progress
-// and ETA (ADR 0023), derived on the server from its recipients. Only the single-row
-// responses (get, send) use it: the list leaves progress out.
-func (h *Handlers) broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
-	d, err := h.broadcasts.Detail(ctx, s, b, h.now())
-	if err != nil {
-		return siteapi.SiteBroadcastResource{}, err
-	}
-	res := mapper.BroadcastToResource(b)
-	res.Stats = mapper.BroadcastStatsToResource(d.Stats.Figures())
-	if d.Progress != nil {
-		res.Progress = siteapi.NewOptNilSiteBroadcastProgress(mapper.BroadcastProgressToResource(*d.Progress))
-	}
-	return res, nil
+	res.Warnings = mapper.LintFindingsToResource(v.Warnings)
+	return res
 }
 
 func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBroadcastsListParams) (*siteapi.SiteBroadcastsListOK, error) {
 	ws := workspaceScope(ctx)
 
 	order := inputs.BroadcastsOrder(params.Order.Or(siteapi.SiteBroadcastsOrderNewest))
-	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.BroadcastsListFilter(params), order)
+	page, err := h.broadcastViews.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.BroadcastsListFilter(params), order)
 	if err != nil {
 		return nil, err
 	}
-
-	// The figures of the whole page are two grouped queries. No progress here: it costs a
-	// query per sending row and the list does not show it.
-	figures, err := broadcasts.StatsFor(ctx, ws, page.Items...)
-	if err != nil {
-		return nil, err
-	}
-	return mapper.BroadcastsListPage(pagination.Map(page, func(b *ent.Broadcast) siteapi.SiteBroadcastResource {
-		res := mapper.BroadcastToResource(b)
-		res.Stats = mapper.BroadcastStatsToResource(figures[b.ID].Figures())
-		return res
-	})), nil
+	return mapper.BroadcastsListPage(pagination.Map(page, broadcastResource)), nil
 }
 
 func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.CreateBroadcastInput, _ siteapi.SiteBroadcastsCreateParams) (*siteapi.SiteBroadcastResource, error) {
@@ -73,42 +40,23 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.Create
 	if err != nil {
 		return nil, err
 	}
-	b, err := h.broadcasts.Create(ctx, ws, in)
+	v, err := h.broadcastViews.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := withStats(ctx, ws, b)
-	if err != nil {
-		return nil, err
-	}
-	if res.Warnings, err = h.broadcastWarnings(ctx, ws, b, req.Content.OneOf); err != nil {
-		return nil, err
-	}
+	res := broadcastResource(v)
 	return &res, nil
-}
-
-// broadcastWarnings is the lint of a saved Broadcast's content on its Channel (ADR 0040), over the
-// body as written when the save wrote one: on email the subject and the body.
-func (h *Handlers) broadcastWarnings(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, written siteapi.BroadcastContentInputSum) ([]siteapi.LintFinding, error) {
-	if b.Channel == channels.Email {
-		body := written.EmailBroadcastContentInput.Body
-		return h.lintWarnings(ctx, s, lo.FromPtr(b.Subject), body, lo.FromPtr(b.Body))
-	}
-	return nil, nil
 }
 
 func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBroadcastsGetParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	b, err := h.broadcasts.Get(ctx, ws, id)
+	v, err := h.broadcastViews.Get(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
-	res, err := h.broadcastResource(ctx, ws, b)
-	if err != nil {
-		return nil, err
-	}
+	res := broadcastResource(v)
 	return &res, nil
 }
 
@@ -121,17 +69,11 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.Update
 	if err != nil {
 		return nil, err
 	}
-	b, err := h.broadcasts.Update(ctx, ws, id, in)
+	v, err := h.broadcastViews.Update(ctx, ws, id, in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := withStats(ctx, ws, b)
-	if err != nil {
-		return nil, err
-	}
-	if res.Warnings, err = h.broadcastWarnings(ctx, ws, b, req.Content.Value.OneOf); err != nil {
-		return nil, err
-	}
+	res := broadcastResource(v)
 	return &res, nil
 }
 
@@ -141,14 +83,11 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	b, err := h.broadcasts.Archive(ctx, ws, id)
+	v, err := h.broadcastViews.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
-	res, err := withStats(ctx, ws, b)
-	if err != nil {
-		return nil, err
-	}
+	res := broadcastResource(v)
 	return &res, nil
 }
 
@@ -157,14 +96,11 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	b, err := h.broadcasts.Unarchive(ctx, ws, id)
+	v, err := h.broadcastViews.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
-	res, err := withStats(ctx, ws, b)
-	if err != nil {
-		return nil, err
-	}
+	res := broadcastResource(v)
 	return &res, nil
 }
 
@@ -175,14 +111,11 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 
 	id := int64(params.ID)
 
-	b, err := h.broadcasts.Send(ctx, ws, id)
+	v, err := h.broadcastViews.Send(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
-	res, err := h.broadcastResource(ctx, ws, b)
-	if err != nil {
-		return nil, err
-	}
+	res := broadcastResource(v)
 	return &res, nil
 }
 
@@ -192,42 +125,23 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 
 	id := int64(params.ID)
 
-	b, err := h.broadcasts.Schedule(ctx, ws, id, time.Time(req.ScheduledAt))
+	v, err := h.broadcastViews.Schedule(ctx, ws, id, time.Time(req.ScheduledAt))
 	if err != nil {
 		return nil, err
 	}
-	res, err := withStats(ctx, ws, b)
-	if err != nil {
-		return nil, err
-	}
+	res := broadcastResource(v)
 	return &res, nil
 }
 
 // SiteBroadcastsTestSend renders the broadcast with sample merge data and sends
 // it to a single address — no recipient rows, no tracking (a token would point
-// at a nonexistent recipient). Used to preview the rendered email or text.
+// at a nonexistent recipient). Used to preview the rendered email or text. The
+// signed-in User asks: with no verified Sending domain the preview may go from the
+// System sender to them only (ADR 0041).
 func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.TestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (*siteapi.SiteTestSendBroadcastResult, error) {
-	ws := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	b, err := h.broadcasts.Get(ctx, ws, id)
+	res, err := h.broadcasts.SendTest(ctx, workspaceScope(ctx), int64(params.ID), inputs.TestAddress(req))
 	if err != nil {
 		return nil, err
-	}
-
-	// The asking User: with no verified Sending domain the preview may go only to them
-	// (ADR 0041).
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		return nil, auth.ErrUnauthorized
-	}
-	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, inputs.TestAddress(req), &outboundmessages.Asker{UserID: a.UserID, Email: a.Email})
-	if err != nil {
-		return nil, err
-	}
-	if res.Wait > 0 {
-		// The System sender's cap: the client waits as for any rate limit.
-		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, res.Limit, res.Wait, h.now())
 	}
 	out := mapper.TestSendResultToResource(res)
 	return &out, nil

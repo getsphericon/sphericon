@@ -26,14 +26,17 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
+	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
@@ -45,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -58,10 +62,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
-	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -176,6 +180,10 @@ type TestEnv struct {
 	// ceremony (ADR 0051).
 	AppURL string
 
+	// WorkspaceView reads the Workspace summary the surfaces map, and makes the changes of a
+	// Workspace that answer with it, creating and restoring one among them (ADR 0111).
+	WorkspaceView *workspaceview.UseCase
+
 	// Holds is the module the sender's freeze check reads, for a test that builds its own
 	// Outbound module.
 	Holds *holds.Holds
@@ -220,13 +228,17 @@ type TestEnv struct {
 	// Confirmations records the subscription URLs a Preset's confirm action fetched.
 	Confirmations *Confirmations
 
-	// SecondFactor is the module the server verifies Second factors with, on the
-	// env's clock (ADR 0020).
-	SecondFactor *secondfactorcheck.UseCase
+	// SecondFactor is the module the server enrolls, verifies and reads Second factors with,
+	// on the env's clock (ADR 0020).
+	SecondFactor *secondfactors.Module
+	// Admission admits a request on a User's own credential, a token of theirs included (ADR 0061).
+	Admission *admission.Module
+	// SecondFactorReset is the use case the server resets a member's Second factor and
+	// Passkeys with (ADR 0102).
+	SecondFactorReset *secondfactorreset.UseCase
+	// UserDeletion is the use case the server deletes a User with at their own ask (ADR 0050).
+	UserDeletion *userdeletion.UseCase
 
-	// WorkspaceCreation is the use case the server creates a Verified User's Workspaces with
-	// (ADR 0102).
-	WorkspaceCreation *workspacecreation.UseCase
 	// SignUp is the use case the server signs Users up with and makes them Verified with their
 	// first Workspace, an Owner made from a shell among them (ADR 0102).
 	SignUp *signup.UseCase
@@ -517,8 +529,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		client := do.MustInvoke[*ent.Client](injector)
 		p := performers{}
 		add(tb, p, txDB, client, jobs.NewSendNoticeWorker(systemSender))
-		add(tb, p, txDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector), st.now))
-		add(tb, p, txDB, client, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomainverification.UseCase](injector)))
+		add(tb, p, txDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*integrations.Module](injector)))
+		add(tb, p, txDB, client, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
 		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client))
 		add(tb, p, txDB, client, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
@@ -527,8 +539,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.UseCase](injector), systemSender))
 		add[recordedArgs](tb, p, txDB, client, recordedWorker{})
 		add(tb, p, txDB, client, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
-		add(tb, p, txDB, client, ee.NewEntryEventWorker(client, lic))
-		add(tb, p, txDB, client, ee.NewErasureEventWorker(client, lic))
+		add(tb, p, txDB, client, eejobs.NewEntryEventWorker(client, lic))
+		add(tb, p, txDB, client, eejobs.NewErasureEventWorker(client, lic))
 		return p
 	}
 
@@ -547,6 +559,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		RemovalCheck:      do.MustInvoke[*removalcheck.Module](injector),
 		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
 		Holds:             do.MustInvoke[*holds.Holds](injector),
+		WorkspaceView:     do.MustInvoke[*workspaceview.UseCase](injector),
 		Orders:            do.MustInvoke[*orders.Module](injector),
 		edition:           edition,
 		license:           lic,
@@ -563,8 +576,10 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Machine:           do.MustInvoke[*privaterelayranges.Detector](injector),
 		PrivateRelay:      relay,
 		Confirmations:     confirmations,
-		SecondFactor:      do.MustInvoke[*secondfactorcheck.UseCase](injector),
-		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
+		SecondFactor:      do.MustInvoke[*secondfactors.Module](injector),
+		Admission:         do.MustInvoke[*admission.Module](injector),
+		SecondFactorReset: do.MustInvoke[*secondfactorreset.UseCase](injector),
+		UserDeletion:      do.MustInvoke[*userdeletion.UseCase](injector),
 		SignUp:            do.MustInvoke[*signup.UseCase](injector),
 		StepExecution:     do.MustInvoke[*automations.StepExecution](injector),
 		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),

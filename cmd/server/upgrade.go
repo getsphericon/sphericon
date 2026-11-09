@@ -6,11 +6,12 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
 )
 
 // exitNewerRelease is the exit status of `upgrade --check` when a newer release exists
-// (upgrade.ErrNewerRelease, ADR 0034).
+// (commandline.ErrNewerRelease, ADR 0034).
 const exitNewerRelease = 10
 
 // upgradeCommand is `sphericon upgrade [--from <dir>] [--version vX.Y.Z] [--yes] [--restart]`: it
@@ -32,15 +33,15 @@ func upgradeCommand() *cli.Command {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (%s)", cmd.Args().First(), upgrade.Usage)
 			}
-			return upgrade.Run(ctx, upgrade.Request{
+			progress := upgrade.Run(ctx, upgrade.Request{
 				From:    cmd.String("from"),
 				Version: cmd.String("version"),
 				Yes:     cmd.Bool("yes"),
 				Check:   cmd.Bool("check"),
 				Restart: cmd.Bool("restart"),
 				Service: cmd.String("service"),
-				Out:     out(cmd),
 			})
+			return commandline.WriteUpgrade(out(cmd), progress)
 		},
 	}
 }

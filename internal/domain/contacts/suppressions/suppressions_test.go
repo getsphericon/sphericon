@@ -128,21 +128,6 @@ func TestForEventSuppressesAComplaintAndAHardBounceOnly(t *testing.T) {
 	assert.False(t, other)
 }
 
-func TestEraseContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := t.Context()
-	s := env.DB.Scoped(fixtures.InitechID)
-
-	require.NoError(t, suppressions.EraseContact(ctx, s, int64(fixtures.ContactErasableID), ""))
-
-	row, err := s.Suppression().Get(ctx, fixtures.SuppressionErasableID)
-	require.NoError(t, err)
-	assert.Nil(t, row.ContactID)
-	verdict, err := eligibility.Check(ctx, s, eligibility.ChannelEmail, row.Destination, eligibility.SourceBroadcasts)
-	require.NoError(t, err)
-	assert.False(t, verdict.Eligible)
-}
-
 // A typed number is suppressed on sms in E.164, and SMS Send-eligibility refuses it; text that is
 // no phone number with its country code is refused on the destination.
 func TestAManualSMSSuppressionStoresTheNumberInE164(t *testing.T) {

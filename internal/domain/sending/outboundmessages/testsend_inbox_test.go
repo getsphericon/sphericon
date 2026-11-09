@@ -2,16 +2,20 @@ package outboundmessages_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -24,11 +28,11 @@ func globexTestSend(env *testhelper.TestEnv, via senders, to string) (outboundme
 		messagetoken.New("test-secret", "http://local", time.Now),
 		time.Now,
 		outboundmessages.WithSystemSender(env.SystemMail),
+		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)),
 	)
-	return m.SendTest(context.Background(), env.DB.Scoped(fixtures.GlobexID), outboundmessages.TestRequest{
+	return m.SendTest(context.Background(), asJane(env, fixtures.GlobexID), outboundmessages.TestRequest{
 		To:      to,
 		Content: outboundmessages.EmailContent{Subject: "[Test] Hi", Body: htmlBody},
-		Asker:   &outboundmessages.Asker{UserID: fixtures.OwnerJaneID, Email: fixtures.OwnerJaneEmail},
 	})
 }
 
@@ -72,4 +76,52 @@ func TestTestSendWithoutVerifiedDomainKeepsTheSystemSenderForASenderThatDelivers
 			assert.Equal(t, outboundmessages.RefuseOtherRecipient, other.Reason)
 		})
 	}
+}
+
+// spentBudget is a Test send budget with no slot left for a minute, of a cap of five.
+type spentBudget struct{}
+
+func (spentBudget) TakeTestSend(context.Context, int64, int64) (ratelimit.Refusal, error) {
+	return ratelimit.Refusal{Wait: time.Minute, Limit: 5}, nil
+}
+
+// The System sender's cap is a refusal with a wait, which every surface answers as a rate limit:
+// the Test send is not made.
+func TestTestSendFromTheSystemSenderPastItsCapIsRefusedWithAWait(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := outboundmessages.New(env.Bus, env.Holds, senders{err: messaging.ErrNoProvider},
+		messagetoken.New("test-secret", "http://local", time.Now), time.Now,
+		outboundmessages.WithSystemSender(env.SystemMail),
+		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)),
+		outboundmessages.WithTestSendBudget(spentBudget{}))
+
+	_, err := m.SendTest(t.Context(), asJane(env, fixtures.GlobexID), outboundmessages.TestRequest{
+		To: fixtures.OwnerJaneEmail, Content: outboundmessages.EmailContent{Subject: "[Test] Hi", Body: htmlBody},
+	})
+
+	wait, ok := errors.AsType[*ratelimit.WaitError](err)
+	require.True(t, ok, "a refusal with a wait, not %v", err)
+	assert.Equal(t, ratelimit.PolicyTestSend, wait.Policy)
+	assert.Equal(t, time.Minute, wait.Wait)
+	assert.Equal(t, 5, wait.Limit)
+	assert.Empty(t, env.SystemMail.Messages())
+}
+
+// A Test send asked for through a token (the scope's actor is no User) never goes from the System
+// sender: the Workspace's Sending-domain gate holds it.
+func TestTestSendOfATokenNeverGoesFromTheSystemSender(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := outboundmessages.New(env.Bus, env.Holds, senders{err: messaging.ErrNoProvider},
+		messagetoken.New("test-secret", "http://local", time.Now), time.Now,
+		outboundmessages.WithSystemSender(env.SystemMail),
+		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)))
+	token := env.Bus.Act(env.DB.Scoped(fixtures.GlobexID), events.Actor{Kind: events.ActorAPIToken, ID: "1"})
+
+	res, err := m.SendTest(t.Context(), token, outboundmessages.TestRequest{
+		To: fixtures.OwnerJaneEmail, Content: outboundmessages.EmailContent{Subject: "[Test] Hi", Body: htmlBody},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, outboundmessages.Held, res.Outcome)
+	assert.Empty(t, env.SystemMail.Messages())
 }

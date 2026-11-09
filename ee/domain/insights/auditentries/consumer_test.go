@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee"
+	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -41,7 +41,7 @@ func entries(t *testing.T, env *testhelper.TestEnv) int {
 func TestAnAuditedChangeIsStoredOnceThroughItsJob(t *testing.T) {
 	env := testhelper.Setup(t)
 	recordEntry(t, env)
-	queued := env.EventJobs(t, ee.EntryEventArgs{}.Kind())
+	queued := env.EventJobs(t, eejobs.EntryEventArgs{}.Kind())
 	require.Len(t, queued, 1)
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
@@ -56,7 +56,7 @@ func TestAnAuditedChangeIsStoredOnceThroughItsJob(t *testing.T) {
 func TestAnUnlicensedInstanceStoresNoAuditEntry(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	recordEntry(t, env)
-	queued := env.EventJobs(t, ee.EntryEventArgs{}.Kind())
+	queued := env.EventJobs(t, eejobs.EntryEventArgs{}.Kind())
 	require.Len(t, queued, 1, "the job is queued whatever the license")
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)

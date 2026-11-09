@@ -1,12 +1,13 @@
 // Package integrations is the domain module of a Workspace's sending-provider Integrations:
-// config validation, credential sealing, the default-per-channel rule and the redacted read
-// view. /site and /api are thin adapters over it, so the two surfaces cannot diverge on how a
-// credential is stored or what is refused. Deleting one is the use case
+// config validation, credential sealing, the default-per-channel rule, the provider's send quota
+// stored on the row and the View every surface answers with (the redacted config and params, the
+// hook URL and the Provider limit). /site and /api only map it, so the two surfaces cannot diverge
+// on how a credential is stored, what is refused or what is shown. Deleting one is the use case
 // internal/usecase/integrationdeletion, which checks its Live use first (ADR 0102).
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
-// the row or a domain error: validation.Error (a 422), ErrDefaultConflict (a 409), or
-// ent's not-found for an unknown id.
+// the View or a domain error: validation.Error (a 422), ErrDefaultConflict (a 409), or
+// ErrNotFound for an unknown id.
 package integrations
 
 import (
@@ -29,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
-	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -82,6 +82,7 @@ type Module struct {
 	catalog *messaging.Catalog
 	presets *preset.Registry
 	appURL  string
+	now     func() time.Time
 	confirm func(ctx context.Context, url string) error
 }
 
@@ -124,10 +125,11 @@ func WithSubscriptionConfirmer(f func(ctx context.Context, url string) error) Op
 	return func(m *Module) { m.confirm = f }
 }
 
-// New builds the module. presets is the Instance's Preset registry and appURL the public
-// origin the hook URLs are built from.
-func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, presets *preset.Registry, appURL string, opts ...Option) *Module {
-	m := &Module{bus: bus, cipher: cipher, catalog: catalog, presets: presets, appURL: appURL, confirm: confirmByGet}
+// New builds the module. presets is the Instance's Preset registry, appURL the public origin the
+// hook URLs are built from and now the Instance clock a quota lookup and the 24-hour usage are
+// read against.
+func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, presets *preset.Registry, appURL string, now func() time.Time, opts ...Option) *Module {
+	m := &Module{bus: bus, cipher: cipher, catalog: catalog, presets: presets, appURL: appURL, now: now, confirm: confirmByGet}
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -197,22 +199,22 @@ type UpdateInput struct {
 	RetireSecrets bool
 }
 
-// Create validates and stores an Integration, sealing its credentials.
-func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.Integration, error) {
+// Create validates and stores an Integration, sealing its credentials, and answers its View.
+func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (View, error) {
 	name, err := validName(in.Name)
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 	provider, channel, plaintext, err := m.encode(in.Config)
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 	if err := presetFits(provider, in.Preset, in.Params); err != nil {
-		return nil, err
+		return View{}, err
 	}
 	if in.Config.SES != nil {
 		if err := requireProviderLimit(in.Config.SES.Endpoint, in.MaxPerSecond, in.MaxPerDay); err != nil {
-			return nil, err
+			return View{}, err
 		}
 	}
 	enabled := true
@@ -243,29 +245,29 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	}
 	inb, err := m.sealInbound(nil, inboundChange{preset: patch.FromPtr(presetName), params: params})
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 	key, err := credentials.GenerateIngestKey()
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 	if provider == providers.Telegram {
 		// The bot is connected before the save: Telegram refuses a wrong token or a webhook it cannot
 		// reach, and the save is refused with it.
 		if plaintext, err = m.connectNew(ctx, tokenOf(in.Config.Telegram), key, currentSecret(params["secret"]), enabled); err != nil {
-			return nil, err
+			return View{}, err
 		}
 	}
 	if provider == providers.Twilio {
 		// The account is checked and its sender pointed at the hook before the save: Twilio refuses
 		// a wrong or revoked key, and the save is refused with it.
 		if plaintext, err = m.connectTwilio(ctx, twilioStored(in.Config.Twilio), key); err != nil {
-			return nil, err
+			return View{}, err
 		}
 	}
 	sealed, err := m.cipher.Encrypt(plaintext)
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 
 	var row *ent.Integration
@@ -305,16 +307,16 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 			// The bot was pointed at a hook that was never saved.
 			m.releaseToken(ctx, 0, tokenOf(in.Config.Telegram))
 		}
-		return nil, err
+		return View{}, err
 	}
-	return row, nil
+	return m.viewOf(ctx, s, row)
 }
 
-// Update applies a partial edit. An unknown id, or a deleted Integration's, is ErrNotFound.
-func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Integration, error) {
+// Update applies a partial edit and answers the View of the result. An unknown id, or a deleted Integration's, is ErrNotFound.
+func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (View, error) {
 	row, err := m.editable(ctx, s, id)
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 
 	// Validate and collect the changes up front so a refusal short-circuits before the
@@ -323,7 +325,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if raw, ok := in.Name.Get(); ok {
 		n, err := validName(raw)
 		if err != nil {
-			return nil, err
+			return View{}, err
 		}
 		name = &n
 	}
@@ -332,25 +334,25 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if row.Provider == providers.Telegram {
 		// The bot is connected, as the edit asks, before the save commits.
 		if tg, err = m.editTelegram(ctx, row, in); err != nil {
-			return nil, err
+			return View{}, err
 		}
 		sealed = tg.sealed
 	} else if row.Provider == providers.Twilio {
 		// New credentials or a new sender are checked with Twilio before the save commits.
 		if sealed, err = m.editTwilio(ctx, row, in); err != nil {
-			return nil, err
+			return View{}, err
 		}
 	} else if sealed, err = m.sealEditedConfig(row, in.Config.Ptr()); err != nil {
-		return nil, err
+		return View{}, err
 	}
 	if err := m.keepsProviderLimit(row, in); err != nil {
-		return nil, err
+		return View{}, err
 	}
 
 	params, _ := in.Params.Get()
 	inb, err := m.sealInbound(row, inboundChange{preset: in.Preset, params: params, retireSecrets: in.RetireSecrets})
 	if err != nil {
-		return nil, err
+		return View{}, err
 	}
 
 	// Promoting to default touches sibling rows, so it clears the channel's current
@@ -382,12 +384,12 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return m.discoverQuota(ctx, q, updated)
 	})
 	if err != nil {
-		return nil, missing(err)
+		return View{}, missing(err)
 	}
 	if tg.release {
 		m.release(ctx, updated)
 	}
-	return updated, nil
+	return m.viewOf(ctx, s, updated)
 }
 
 // sealEditedConfig validates an edited provider config and seals it, nil when the edit sends
@@ -441,20 +443,6 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	patch.Apply(in.MaxPerSecond, upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
 	patch.Apply(in.MaxPerDay, upd.SetMaxPerDay, upd.ClearMaxPerDay)
 	patch.ApplySet(in.IsDefault, upd.SetIsDefault)
-}
-
-// DeleteIn discards the Integration row for good (ADR 0049) on the transaction's scoped client,
-// without asking whether work still sends through it: the unchecked removal behind the Integration
-// deletion use case (internal/usecase/integrationdeletion), which runs the Removal check (its Live
-// use) under the Workspace lock first and is the only caller easement allows. A deleted Integration gives up the
-// default: its channel has none until another is picked. A missing row is ErrNotFound.
-func DeleteIn(ctx context.Context, ts *ent.Scoped, row *ent.Integration, at time.Time) error {
-	if row.IsDefault {
-		if err := ts.Integration().UpdateOneID(row.ID).SetIsDefault(false).Exec(ctx); err != nil {
-			return missing(err)
-		}
-	}
-	return missing(ts.Integration().Discard(ctx, row.ID, at))
 }
 
 // ReleaseDeleted lets the bot of a Telegram Integration that held its webhook go of it, best
@@ -528,19 +516,11 @@ func (m *Module) discoverQuota(ctx context.Context, q events.Enqueuer, row *ent.
 // reportsQuota reports whether the Integration's provider can say what it allows: whether its
 // sender is a messaging.QuotaReader.
 func (m *Module) reportsQuota(row *ent.Integration) bool {
-	if row.Channel != channels.Email || m.catalog == nil {
+	if m.catalog == nil {
 		return false
 	}
-	config, err := m.cipher.Decrypt(row.ConfigEncrypted)
-	if err != nil {
-		return false
-	}
-	built, err := m.catalog.BuildEmail(row.Provider, config, messaging.Deps{})
-	if err != nil {
-		return false
-	}
-	_, ok := messaging.AsQuotaReader(built)
-	return ok
+	_, ok, err := m.quotaReader(row)
+	return err == nil && ok
 }
 
 // clearDefault unsets the existing default Integration for the channel.
@@ -743,18 +723,4 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 		return redactTwilio(plaintext)
 	}
 	return RedactedConfig{}, errUnknownProvider
-}
-
-// All returns every kept Integration of the Workspace, ascending by id.
-func (m *Module) All(ctx context.Context, s *ent.Scoped) ([]*ent.Integration, error) {
-	return s.Integration().Query().Order(ent.Asc(integration.FieldID)).All(ctx)
-}
-
-// List returns one page of the Workspace's kept Integrations, ascending by id.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Integration], error) {
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.Integration().Query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Integration, error) {
-			return s.Integration().Query().Order(ent.Asc(integration.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
 }

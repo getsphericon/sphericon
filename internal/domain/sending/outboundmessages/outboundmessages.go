@@ -174,11 +174,9 @@ var ErrNoTracker = errors.New("outbound: marketing send requires an unsubscribe 
 
 // Result is the outcome of a Send.
 type Result struct {
-	// Refusal is, for a Deferral, how long until capacity returns (Wait) and, for a Test
-	// send Deferred by the System sender's caps, the cap that was hit (Limit).
-	ratelimit.Refusal
-
 	Outcome Outcome
+	// Wait is, for a Deferral, how long until capacity returns.
+	Wait time.Duration
 	// Cause is, for a Deferral of a Send, the limit it waits for; empty for every other Outcome
 	// and for a Test send (its cap is Limit).
 	Cause providerlimit.Cause
@@ -207,12 +205,10 @@ type Senders interface {
 	EmailSender(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error)
 }
 
-// Asker is the User who asks for a Test send. Only they may receive one from the System
-// sender (ADR 0041).
-type Asker struct {
-	UserID int64
-	// Email is the User's own address.
-	Email string
+// Users finds the User who asks for a Test send, whose own address is the only one a Test send
+// from the System sender may go to (ADR 0041). *users.Module satisfies it.
+type Users interface {
+	User(ctx context.Context, id int64) (*ent.User, error)
 }
 
 // TestSendBudget meters Test sends from the System sender, per User and per Workspace
@@ -252,6 +248,8 @@ type Module struct {
 	system messaging.EmailSender
 	// testBudget caps Test sends from the System sender; nil means uncapped.
 	testBudget TestSendBudget
+	// users finds the User a Test send is asked by; nil on a module that sends no Test send for one.
+	users Users
 	// startLinks issues the Start tokens of {{ telegram_start_url }}; nil renders the tag empty.
 	startLinks StartLinks
 	// now is the clock the Provider limit and the claim lease are read at.
@@ -288,6 +286,10 @@ func WithSystemSender(s messaging.EmailSender) Option { return func(m *Module) {
 
 // WithTestSendBudget caps the Test sends made from the System sender.
 func WithTestSendBudget(b TestSendBudget) Option { return func(m *Module) { m.testBudget = b } }
+
+// WithUsers gives the module the Users, among whom it finds the one a Test send is asked by: the
+// scope's actor (ADR 0041).
+func WithUsers(u Users) Option { return func(m *Module) { m.users = u } }
 
 // Now reads the module's clock (New's now): the moment a Deferral's Wait is measured from, so a
 // caller that records when the deferred send is due uses the same clock.

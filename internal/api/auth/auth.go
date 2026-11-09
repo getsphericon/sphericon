@@ -20,9 +20,9 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
@@ -83,7 +83,7 @@ func TokenScoped(ctx context.Context) *ent.Scoped {
 type ExternalSecurityHandler struct {
 	ent   *ent.Client
 	bus   *events.Bus
-	users *users.Module
+	admit *admission.Module
 	now   func() time.Time
 }
 
@@ -93,8 +93,8 @@ type ExternalSecurityDeps struct {
 	Ent *ent.Client
 	// Bus opens the transactions of audited writes made under the token (ADR 0022).
 	Bus *events.Bus
-	// Users admits a Connection's User as it admits their own session (Admit).
-	Users *users.Module
+	// Admission admits a Connection's User as it admits their own session (AdmitMembership).
+	Admission *admission.Module
 	// Clock is the Instance clock a token's expiry and a Connection's Two-factor requirement are
 	// checked against. Required.
 	Clock func() time.Time
@@ -106,7 +106,7 @@ func NewExternalSecurityHandler(d ExternalSecurityDeps) *ExternalSecurityHandler
 	if now == nil {
 		panic("auth: ExternalSecurityDeps.Clock is required: the handler reads the Instance clock")
 	}
-	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, users: d.Users, now: now}
+	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, admit: d.Admission, now: now}
 }
 
 var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
@@ -137,9 +137,10 @@ func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op exter
 // budget is refused before the token is looked at, a failure counts against it, and a success
 // charges the Workspace's shared /api and /mcp budget. Rejections surface as
 // *ratelimit.LimitedError. A User's own token (a Connection or a Personal token) is admitted as the
-// User's session is (users.Admit): refused with 403 acceptance_pending while a required
-// acceptance is pending (ADR 0062), and with 403 second_factor_required once the Workspace's
-// Two-factor requirement withholds its User (ADR 0020); the Workspace's API token meets neither. /mcp
+// User's session is (admission.Module.AdmitMembership): refused with 403 acceptance_pending while a
+// required acceptance is pending (ADR 0062), and with 403 second_factor_required once the
+// Workspace's Two-factor requirement withholds its User (ADR 0020); the Workspace's API token meets
+// neither. /mcp
 // authenticates its requests with it; each tool call it dispatches to /api then meets the
 // operation's scopes in HandleBearerAuth.
 func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error) {
@@ -267,7 +268,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 		// without the application) through its own name. Each is admitted as the User's own
 		// session is (ADR 0061), and a token carries no Second factor step. The Workspace's API
 		// token is no User's and is not admitted.
-		if err := h.users.Admit(ctx, users.Admission{UserID: m.UserID, Membership: m, At: h.now()}); err != nil {
+		if err := h.admit.AdmitMembership(ctx, m, h.now()); err != nil {
 			return ctx, err
 		}
 		actor = events.ConnectionActor(m.UserID, m.Edges.User.Name, token.Name)
@@ -315,10 +316,18 @@ func CollectScoped(ctx context.Context) *ent.Scoped {
 
 var hostWorkspaceKey = struct{ name string }{"hostWorkspace"}
 
-// WithHostWorkspace marks a request that arrived on a Workspace's own Tracking host (ADR 0059):
-// the collect key must then be that Workspace's, so the host is no ingestion path for another key.
+// WithHostWorkspace marks a request that arrived on a Workspace's own Tracking host (ADR 0038,
+// ADR 0059): the collect key must then be that Workspace's, so the host is no ingestion path for
+// another key, and a tracked link must be one of that Workspace's.
 func WithHostWorkspace(ctx context.Context, workspaceID int64) context.Context {
 	return context.WithValue(ctx, hostWorkspaceKey, workspaceID)
+}
+
+// HostWorkspace is the Workspace whose Tracking host the request arrived on, 0 on the Instance's
+// own host.
+func HostWorkspace(ctx context.Context) int64 {
+	id, _ := ctx.Value(hostWorkspaceKey).(int64)
+	return id
 }
 
 // CollectSecurityHandler implements collectapi.SecurityHandler: resolves the
@@ -359,7 +368,7 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 	if err != nil {
 		return nil, err
 	}
-	if host, onHost := ctx.Value(hostWorkspaceKey).(int64); onHost && host != ws.ID {
+	if host := HostWorkspace(ctx); host != 0 && host != ws.ID {
 		return nil, ErrUnauthorized
 	}
 	return ws, nil
@@ -371,8 +380,9 @@ type SiteAuth struct {
 	// the time of that login.
 	Session
 
-	UserID int64
-	Email  string
+	// User is the session's User as the security handler loaded it: the actor of the request,
+	// which a handler reads here rather than loading it again (ADR 0111).
+	User *ent.User
 }
 
 var siteAuthKey = struct{ name string }{"siteAuth"}
@@ -422,7 +432,7 @@ func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, op siteapi.O
 		return ctx, err
 	}
 	sess, _ := sessionOf(claims)
-	return WithSiteAuth(ctx, &SiteAuth{UserID: u.ID, Email: u.Email, Session: sess}), nil
+	return WithSiteAuth(ctx, &SiteAuth{User: u, Session: sess}), nil
 }
 
 // Verify checks a raw session token (signature, expiry, User id and epoch) and

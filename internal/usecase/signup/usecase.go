@@ -5,7 +5,11 @@
 // sign-up. Each step writes the User's part through the users module's ...In functions and, on
 // the same transaction, creates the User's first Workspace with its Owner Membership and the Send
 // cap it starts with (ADR 0067) through workspaces and memberships, so no identity module reads
-// the Send caps. A Verified User's later Workspaces are internal/usecase/workspacecreation's.
+// the Send caps. A Verified User's later Workspaces are internal/usecase/workspaceview's.
+//
+// The sign-in through a Sign-in provider is here whole (ADR 0111): the provider's answer, the
+// Invitation the flow began from, the Sign-up items, the decision, the Second factor and the
+// `user.login` entry, so its driver only turns what happened into a cookie or a redirect.
 //
 // It takes the raw client's transactions: a User and its first Workspace belong to no Workspace
 // when the step starts, so there is no *ent.Scoped to take.
@@ -16,9 +20,9 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships/membershipsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -37,6 +41,8 @@ type UseCase struct {
 	states *instancestates.Module
 	// signUp is what a Sign-up needs besides the users module.
 	signUp SignUpConfig
+	// providers is what a sign-in through a Sign-in provider needs besides the users module.
+	providers SignInConfig
 	// now is the Instance clock a pending sign-up is checked against.
 	now func() time.Time
 }
@@ -45,13 +51,14 @@ type UseCase struct {
 // part of each step, links reads the verification and reset links, passwords hashes the
 // password of an Owner made from a shell, states says the Send cap a Workspace starts with
 // (instancestates.Module.StartingSendCapIn, ADR 0067; nil, as in a test, gives a first Workspace
-// none), cfg is what a Sign-up needs (ADR 0030, ADR 0031) and now is the Instance clock.
+// none), cfg is what a Sign-up needs (ADR 0030, ADR 0031), signIn what a sign-in through a
+// Sign-in provider needs (ADR 0048) and now is the Instance clock.
 func New(bus *events.Bus, usersModule *users.Module, links *users.Links, passwords *credentials.Hasher,
-	states *instancestates.Module, cfg SignUpConfig, now func() time.Time,
+	states *instancestates.Module, cfg SignUpConfig, signIn SignInConfig, now func() time.Time,
 ) *UseCase {
 	u := &UseCase{
 		bus: bus, users: usersModule, links: links, passwords: passwords, newPublicID: workspaceid.New,
-		states: states, now: now,
+		states: states, providers: signIn, now: now,
 	}
 	if cfg.Lookup == nil {
 		cfg.Lookup = u.lookupUser
@@ -70,11 +77,11 @@ func (u *UseCase) firstWorkspaceIn(ctx context.Context, tx *ent.Client, userID i
 			return nil, err
 		}
 	}
-	ws, err := workspaces.CreateIn(ctx, tx, users.FirstWorkspaceName, u.newPublicID, sendCap)
+	ws, err := workspacesunchecked.CreateIn(ctx, tx, users.FirstWorkspaceName, u.newPublicID, sendCap)
 	if err != nil {
 		return nil, err
 	}
-	if err := memberships.AddCreatorIn(ctx, tx, userID, ws.ID); err != nil {
+	if err := membershipsunchecked.AddCreatorIn(ctx, tx, userID, ws.ID); err != nil {
 		return nil, err
 	}
 	return ws, nil

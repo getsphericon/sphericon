@@ -3,7 +3,8 @@
 // once, consults the throttle (ADR 0025), looks the account up and checks the password
 // against a decoy hash when there is none, applies the verification gate (ADR 0030),
 // counts a failure and mints the second-factor challenge. It returns one Result, or the
-// refusal as its error (a validation sentinel every surface answers alike, review rule 15),
+// refusal as its error (a validation sentinel every surface answers alike, review rule 15, and
+// a running delay as a *ratelimit.WaitError, which every surface answers 429),
 // and holds no database client: an adapter supplies the Store, the throttle's counter, the
 // challenge and, after an Authenticated result, the session.
 //
@@ -31,6 +32,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -41,26 +43,12 @@ import (
 type Outcome int
 
 const (
-	// Throttled: the address's delay is running. Result.Wait, Limit and Now say how long.
-	Throttled Outcome = iota + 1
 	// SecondFactor: the password is right and a second step follows. Result.Challenge
 	// is its token.
-	SecondFactor
+	SecondFactor Outcome = iota + 1
 	// Authenticated: the password is right and nothing else is needed. The counter is
 	// reset; the adapter issues the session.
 	Authenticated
-)
-
-// SecondOutcome is what the second step decided.
-type SecondOutcome int
-
-const (
-	// SecondThrottled: the address's delay is running. SecondResult.Wait, Limit and Now
-	// say how long.
-	SecondThrottled SecondOutcome = iota + 1
-	// SecondAuthenticated: the code is right. The counter is reset; the adapter issues
-	// the session.
-	SecondAuthenticated
 )
 
 // The refusals of signing in. Every surface answers them alike (review rule 15).
@@ -84,17 +72,6 @@ var (
 	ErrPasswordIncorrect = validation.Denied("login: current password incorrect", i18n.ErrorsCurrentPasswordIncorrect)
 )
 
-// PasskeyOutcome is what the Passkey step decided (ADR 0052).
-type PasskeyOutcome int
-
-const (
-	// PasskeyThrottled: the delay of the User the credential names is running.
-	PasskeyThrottled PasskeyOutcome = iota + 1
-	// PasskeyAuthenticated: the credential is proven and the person verified. The counter
-	// is reset; the adapter issues the session. No Second factor follows.
-	PasskeyAuthenticated
-)
-
 // ErrPasskeyUnknown is what an adapter's PasskeyFind returns for a response that names no
 // credential (malformed, or a credential nobody registered).
 var ErrPasskeyUnknown = errors.New("login: passkey unknown")
@@ -110,13 +87,10 @@ type PasskeyAssertion struct {
 	Response []byte
 }
 
-// PasskeyResult is the one answer of the Passkey step. Principal is set for
-// PasskeyAuthenticated.
+// PasskeyResult is the one answer of the Passkey step (ADR 0052): the credential is proven and
+// the person verified. The counter is reset; the adapter issues the session. No Second factor
+// follows.
 type PasskeyResult[P any] struct {
-	// Delay is set for a PasskeyThrottled result.
-	Delay
-
-	Outcome   PasskeyOutcome
 	Principal P
 }
 
@@ -134,33 +108,18 @@ type Pending[P any] struct {
 	Binding string
 }
 
-// Delay is the throttle's refusal: how long the address must still wait, the failure
-// threshold and the throttle's clock. A throttled result of any step carries it.
-type Delay struct {
-	Wait  time.Duration
-	Limit int
-	Now   time.Time
-}
-
-// Result is the one answer of the password step. Principal is set for SecondFactor and
-// Authenticated.
+// Result is the one answer of the password step.
 type Result[P any] struct {
-	// Delay is set for a Throttled result.
-	Delay
-
 	Outcome   Outcome
 	Principal P
 	// Challenge is the second step's token, for a SecondFactor result.
 	Challenge string
 }
 
-// SecondResult is the one answer of the second step. Principal, Method and
-// ProviderLoginAt (the last two come from the challenge) are set for SecondAuthenticated.
+// SecondResult is the one answer of the second step: the code is right. The counter is reset;
+// the adapter issues the session for Principal, with Method and ProviderLoginAt, which come from
+// the challenge.
 type SecondResult[P any] struct {
-	// Delay is set for a SecondThrottled result.
-	Delay
-
-	Outcome         SecondOutcome
 	Principal       P
 	Method          string
 	ProviderLoginAt time.Time
@@ -231,27 +190,25 @@ type Module[P any] struct {
 // New builds the module over a surface's adapter.
 func New[P any](cfg Config[P]) *Module[P] { return &Module[P]{cfg: cfg} }
 
-// throttle consults the throttle for a normalized address; wait is true, with the Delay
-// to report, while the address must wait whatever the password or code.
-func (m *Module[P]) throttle(ctx context.Context, address string) (delay Delay, wait bool, err error) {
+// throttle consults the throttle for a normalized address: while the address must wait,
+// whatever the password or code, it is refused with a *ratelimit.WaitError of the per-account
+// login policy, which says how long, the failure threshold and the throttle's clock.
+func (m *Module[P]) throttle(ctx context.Context, address string) error {
 	d, err := m.cfg.Throttle.Delay(ctx, address)
 	if err != nil || d <= 0 {
-		return Delay{}, false, err
+		return err
 	}
-	return Delay{Wait: d, Limit: m.cfg.Throttle.Limit(), Now: m.cfg.Throttle.Now()}, true, nil
+	return &ratelimit.WaitError{Wait: d, Limit: m.cfg.Throttle.Limit(), Policy: ratelimit.PolicyLoginAccount, At: m.cfg.Throttle.Now()}
 }
 
 // Password runs the first step for an address and a password as typed. A refusal is its
-// error: users.ErrEmailNotVerified for a gated account, ErrInvalidCredentials otherwise.
+// error: the running delay (*ratelimit.WaitError), users.ErrEmailNotVerified for a gated
+// account, ErrInvalidCredentials otherwise.
 func (m *Module[P]) Password(ctx context.Context, address, password string) (Result[P], error) {
 	address = throttle.NormalizeEmail(address)
 
-	delay, wait, err := m.throttle(ctx, address)
-	if err != nil {
+	if err := m.throttle(ctx, address); err != nil {
 		return Result[P]{}, err
-	}
-	if wait {
-		return Result[P]{Outcome: Throttled, Delay: delay}, nil
 	}
 
 	acc, found, err := m.cfg.Store.Lookup(ctx, address)
@@ -285,7 +242,7 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 
 // SecondFactor runs the second step for a challenge and a code as typed. Order: a bad
 // challenge is refused (ErrChallengeInvalid) without counting; the throttle is consulted before the code, so
-// a correct code is refused while the delay runs; a wrong code counts against the same
+// a correct code is refused while the delay runs (*ratelimit.WaitError); a wrong code counts against the same
 // budget as a wrong password (ErrInvalidCode; a counting error refuses the attempt); a committed second
 // factor resets the counter, and a reset that fails is logged, not fatal.
 func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (SecondResult[P], error) {
@@ -295,12 +252,8 @@ func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (S
 	}
 	address := throttle.NormalizeEmail(p.Address)
 
-	delay, wait, err := m.throttle(ctx, address)
-	if err != nil {
+	if err := m.throttle(ctx, address); err != nil {
 		return SecondResult[P]{}, err
-	}
-	if wait {
-		return SecondResult[P]{Outcome: SecondThrottled, Delay: delay}, nil
 	}
 
 	switch err := m.cfg.Verify(ctx, p, code); {
@@ -317,11 +270,12 @@ func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (S
 		// must not cost the sign-in.
 		slog.ErrorContext(ctx, "login: counter not reset", "error", err)
 	}
-	return SecondResult[P]{Outcome: SecondAuthenticated, Principal: p.Principal, Method: p.Method, ProviderLoginAt: p.ProviderLoginAt}, nil
+	return SecondResult[P]{Principal: p.Principal, Method: p.Method, ProviderLoginAt: p.ProviderLoginAt}, nil
 }
 
 // Passkey runs the Passkey login for a response as the browser sent it (ADR 0052). The
-// account is found by the credential, never by an address. Every refusal is ErrPasskeyFailed.
+// account is found by the credential, never by an address. Every refusal is ErrPasskeyFailed,
+// but the running delay (*ratelimit.WaitError).
 // Order: an unknown credential is refused without counting; the throttle of the account found is consulted before the
 // response is verified, so a correct response is refused while the delay runs; the
 // verification gate refuses an account that may not sign in yet, with the same answer and no
@@ -339,12 +293,8 @@ func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyRes
 	}
 	address := throttle.NormalizeEmail(p.Address)
 
-	delay, wait, err := m.throttle(ctx, address)
-	if err != nil {
+	if err := m.throttle(ctx, address); err != nil {
 		return PasskeyResult[P]{}, err
-	}
-	if wait {
-		return PasskeyResult[P]{Outcome: PasskeyThrottled, Delay: delay}, nil
 	}
 	if m.cfg.Gate != nil && m.cfg.Gate(p.Principal) {
 		// The same refusal as any other: a Passkey login does not tell that the address waits.
@@ -361,7 +311,7 @@ func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyRes
 	if err := m.cfg.Throttle.RecordSuccess(ctx, address); err != nil {
 		slog.ErrorContext(ctx, "login: counter not reset", "error", err)
 	}
-	return PasskeyResult[P]{Outcome: PasskeyAuthenticated, Principal: p.Principal}, nil
+	return PasskeyResult[P]{Principal: p.Principal}, nil
 }
 
 // verify checks the password; an empty hash (no account, or no password) is checked

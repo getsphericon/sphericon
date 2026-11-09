@@ -12,6 +12,15 @@ status: accepted
 > a Telegram opt-out is not routed through `unsubscriberecording`. Its Broadcast attribution, like
 > every Channel's, follows the accepted opt-out through one consumer after the commit, while
 > leaving an Automation, where an opt-out does, stays in the opt-out's transaction.
+>
+> **Amended by #1218:** the Workspace's view is not a read use case alone. Creating a Workspace,
+> restoring one and changing its settings answer with the caller's view of it, and a use case
+> cannot import another while a driver makes one call, so the change in identity and the read of
+> sending that follows it are one operation of the same use case. It is named after what it is,
+> the Workspace view (`workspaceview`): the operations of the Workspace screens, each answering
+> with the Workspace summary as the caller sees it. `workspacecreation` goes into it, and so does
+> restoring a deleted Workspace, which leaves the deletion cycle (`workspacedeletion`, ADR 0110):
+> it still needs a Membership that holds the delete Permission, now asked of `memberships`.
 
 ## Context
 
@@ -96,9 +105,10 @@ the call, and `releasecheck.LatestRelease` already shows that shape.
     to a Broadcast follows the opt-out through one consumer for every Channel, while leaving an
     Automation stays synchronous.
 - **A resource is built once below the contracts.** The Integration view and the Segment preview
-  are operations of `integrations` and `segments`. The Workspace's view, which reads identity and
-  sending, is a read use case named after the report it builds. `/site` and `/api` keep their own
-  contracts and map the same values.
+  are operations of `integrations` and `segments`. ~~The Workspace's view, which reads identity and
+  sending, is a read use case named after the report it builds.~~ Replaced by #1218: the
+  Workspace view is the use case of the operations that answer with it, its reads included (see
+  the note above). `/site` and `/api` keep their own contracts and map the same values.
 - **The domain tier writes to no `io.Writer`.** A module returns a value or an iterator
   (`iter.Seq2`). The CLI prints its reports and an upgrade's steps, and the HTTP driver streams a
   Data export.

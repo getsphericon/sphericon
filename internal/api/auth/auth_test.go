@@ -19,7 +19,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -62,7 +61,7 @@ func TestAuthContextsRoundTrip(t *testing.T) {
 	assert.Same(t, collect, auth.GetCollectAuth(withCollect))
 	assert.EqualValues(t, 5, collectWorkspaceID(withCollect))
 
-	site := &auth.SiteAuth{UserID: 9, Email: "u@example.com"}
+	site := &auth.SiteAuth{User: &ent.User{ID: 9, Email: "u@example.com"}}
 	assert.Same(t, site, auth.GetSiteAuth(auth.WithSiteAuth(ctx, site)))
 
 	// The three identities live under distinct keys: one never reads as another.
@@ -72,7 +71,7 @@ func TestAuthContextsRoundTrip(t *testing.T) {
 
 func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: env.Admission})
 
 	ctx, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
@@ -94,7 +93,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 
 func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: env.Admission})
 	ctx := context.Background()
 	valid := credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)
 
@@ -133,7 +132,7 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 // unauthorized credential.
 func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: env.Admission})
 	reader := externalapi.BearerAuth{Token: env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsRead))}
 
 	ctx, err := h.HandleBearerAuth(t.Context(), externalapi.ContactsListOperation, reader)
@@ -194,15 +193,15 @@ func TestSiteAuthResolvesTheDashboardUserByTheIDInTheToken(t *testing.T) {
 	require.NoError(t, err)
 	got := auth.GetSiteAuth(ctx)
 	require.NotNil(t, got)
-	assert.EqualValues(t, fixtures.OwnerJohnID, got.UserID)
-	assert.Equal(t, fixtures.OwnerJohnEmail, got.Email)
+	assert.EqualValues(t, fixtures.OwnerJohnID, got.User.ID)
+	assert.Equal(t, fixtures.OwnerJohnEmail, got.User.Email)
 
 	// The id decides, not the login name the token also carries.
 	ctx, err = h.HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{
 		APIKey: env.SiteToken(t, fixtures.OwnerJaneEmail, func(c *gptoken.Claims) { c.User.Name = fixtures.OwnerJohnEmail }),
 	})
 	require.NoError(t, err)
-	assert.EqualValues(t, fixtures.OwnerJaneID, auth.GetSiteAuth(ctx).UserID)
+	assert.EqualValues(t, fixtures.OwnerJaneID, auth.GetSiteAuth(ctx).User.ID)
 }
 
 func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {

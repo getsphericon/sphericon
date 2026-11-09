@@ -16,7 +16,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
+
+// ErrReasonRequired refuses a suspension with no reason, whoever asks for it: the owners are told
+// why their sending stopped.
+var ErrReasonRequired = validation.RefuseField("reason", "suspension: a suspension needs a reason", i18n.ErrorsSuspensionReasonRequired)
 
 // Actor is who suspends or lifts a suspension (ADR 0026): the automated abuse detector
 // (System), the staff member command (CLI) or a platform Staff member, whose real id is kept on
@@ -61,22 +67,35 @@ func (a Actor) auditActor() events.Actor {
 }
 
 // SuspendWorkspace freezes all outbound sending for a Workspace (ADR 0007): it sets
-// suspended_at together with who did it and why. The send path reads it as a reversible Hold
+// suspended_at together with who did it and why; a blank reason is ErrReasonRequired. The send path reads it as a reversible Hold
 // (ADR 0015); login, reads and /collect are unaffected. It reports whether anything
 // changed: suspending an already-suspended Workspace is a no-op, so the first actor
 // and reason — the ones the owner was told about — are never overwritten. A change is
 // recorded as `workspace.suspend` in the Workspace's Audit log and published as
 // events.WorkspaceSuspended, which tells its owners (ADR 0105), in the same transaction.
 func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, reason string, at time.Time) (bool, error) {
+	changed, err := suspend(ctx, bus, byKey(workspaceID), by, reason, at)
+	if err != nil {
+		return false, fmt.Errorf("suspend workspace %d: %w", workspaceID, err)
+	}
+	return changed, nil
+}
+
+// suspend is SuspendWorkspace of the Workspace target resolves in its transaction.
+func suspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Actor, reason string, at time.Time) (bool, error) {
 	reason = strings.TrimSpace(reason)
 	if err := by.validate(); err != nil {
-		return false, fmt.Errorf("suspend workspace: %w", err)
+		return false, err
 	}
 	if reason == "" {
-		return false, errors.New("suspend workspace: an actor and a reason are required")
+		return false, ErrReasonRequired
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		workspaceID, err := target(ctx, tx)
+		if err != nil {
+			return err
+		}
 		n, err := workspaces.SuspendIn(ctx, tx, workspaceID, by.Kind, nilIfEmpty(by.ID), reason, at)
 		if err != nil || n == 0 {
 			return err
@@ -88,10 +107,7 @@ func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, b
 		}
 		return pub.Publish(ctx, &events.WorkspaceSuspended{WorkspaceID: workspaceID})
 	})
-	if err != nil {
-		return false, fmt.Errorf("suspend workspace %d: %w", workspaceID, err)
-	}
-	return changed, nil
+	return changed, err
 }
 
 // UnsuspendWorkspace lifts a suspension, clearing its attribution, and records
@@ -100,11 +116,24 @@ func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, b
 // suspended. Held sends resume on their own: the jobs that were snoozed ask Outbound
 // send again.
 func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, at time.Time) (bool, error) {
+	changed, err := unsuspend(ctx, bus, byKey(workspaceID), by, at)
+	if err != nil {
+		return false, fmt.Errorf("unsuspend workspace %d: %w", workspaceID, err)
+	}
+	return changed, nil
+}
+
+// unsuspend is UnsuspendWorkspace of the Workspace target resolves in its transaction.
+func unsuspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Actor, at time.Time) (bool, error) {
 	if err := by.validate(); err != nil {
-		return false, fmt.Errorf("unsuspend workspace: %w", err)
+		return false, err
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		workspaceID, err := target(ctx, tx)
+		if err != nil {
+			return err
+		}
 		n, err := workspaces.UnsuspendIn(ctx, tx, workspaceID, at)
 		if err != nil || n == 0 {
 			return err
@@ -113,10 +142,22 @@ func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64,
 		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceUnsuspend,
 			map[string]any{"suspended": events.Change(true, false)})
 	})
-	if err != nil {
-		return false, fmt.Errorf("unsuspend workspace %d: %w", workspaceID, err)
+	return changed, err
+}
+
+// workspaceTarget resolves, in a suspension's transaction, the key of the Workspace it changes.
+type workspaceTarget func(ctx context.Context, tx *ent.Client) (int64, error)
+
+// byKey is the Workspace with this internal key.
+func byKey(workspaceID int64) workspaceTarget {
+	return func(context.Context, *ent.Client) (int64, error) { return workspaceID, nil }
+}
+
+// byPublicID is the Workspace with this Workspace id (ADR 0043), the address an operator types.
+func byPublicID(publicID string) workspaceTarget {
+	return func(ctx context.Context, tx *ent.Client) (int64, error) {
+		return workspaces.IDByPublicIDIn(ctx, tx, publicID)
 	}
-	return changed, nil
 }
 
 // SetAbuseExempt exempts a Workspace from the abuse detector, or polices it again

@@ -2,20 +2,13 @@ package main
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 )
-
-// workspaceOps is what the `workspace` staff member commands need from the app. The
-// app implements it (internal/app).
-type workspaceOps interface {
-	SuspendWorkspace(ctx context.Context, id string, by suspension.Actor, reason string) (bool, error)
-	UnsuspendWorkspace(ctx context.Context, id string, by suspension.Actor) (bool, error)
-}
 
 // workspaceCommand is `sphericon workspace suspend|unsuspend` (ADR 0007): the bare
 // staff member toggle for a Workspace's outbound-sending freeze. Everything above this
@@ -30,14 +23,15 @@ func workspaceCommand(d deps) *cli.Command {
 				&cli.StringArg{Name: "id", Required: true},
 				&cli.StringArgs{Name: "reason", Min: 1, Max: -1},
 			},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				id := cmd.StringArg("id")
-				reason := strings.TrimSpace(strings.Join(cmd.StringArgs("reason"), " "))
-				if reason == "" {
-					return errors.New("a reason is required: the owner is told why")
+				reason := strings.Join(cmd.StringArgs("reason"), " ")
+				suspender, err := c.Suspender()
+				if err != nil {
+					return err
 				}
-				changed, err := ops.SuspendWorkspace(ctx, id, suspension.CLI, reason)
-				return suspension.ReportSuspended(out(cmd), id, changed, err)
+				changed, err := suspender.SuspendByPublicID(ctx, id, suspension.CLI, reason)
+				return commandline.Suspension.Report(out(cmd), id, changed, err)
 			}),
 		},
 		&cli.Command{
@@ -45,10 +39,14 @@ func workspaceCommand(d deps) *cli.Command {
 			Usage:     "resume outbound sending",
 			ArgsUsage: "<id>",
 			Arguments: []cli.Argument{&cli.StringArg{Name: "id", Required: true}},
-			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+				suspender, err := c.Suspender()
+				if err != nil {
+					return err
+				}
 				id := cmd.StringArg("id")
-				changed, err := ops.UnsuspendWorkspace(ctx, id, suspension.CLI)
-				return suspension.ReportUnsuspended(out(cmd), id, changed, err)
+				changed, err := suspender.UnsuspendByPublicID(ctx, id, suspension.CLI)
+				return commandline.Unsuspension.Report(out(cmd), id, changed, err)
 			}),
 		},
 	)

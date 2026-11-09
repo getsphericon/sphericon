@@ -7,10 +7,10 @@
 // 409), or ErrNotFound for an unknown id. The DKIM private key never leaves the module:
 // callers see the public record only, through Records.
 //
-// Verification stays a live DKIM check, done by the use case internal/usecase/sendingdomainverification,
-// which stores its outcome through RecordDKIM and RecordDMARC; easement lets no other package call
-// them, so nothing in either API can set a domain verified. Deleting one is the use case internal/usecase/sendingdomaindeletion, which
-// checks its Live use first (ADR 0102).
+// Verification stays a live DKIM check, with the DMARC lookup next to it (ADR 0010, ADR 0012):
+// Verify and Recheck look the records up and store their outcome; nothing else stores one, so
+// nothing in either API can set a domain verified. Deleting one is the use case
+// internal/usecase/sendingdomaindeletion, which checks its Live use first (ADR 0102).
 //
 // It holds the raw *ent.Client only in Due, which lists the domains of every Workspace due a
 // check before any scope exists, and in DevTXTLookup, the end-to-end suite's resolver
@@ -65,13 +65,17 @@ var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.
 type Module struct {
 	bus    *events.Bus
 	cipher *secrets.Cipher
-	// now is the Instance clock a lost verification is stamped by.
+	// lookup resolves the DNS records a check reads.
+	lookup domainname.TXTLookup
+	// now is the Instance clock a check and a lost verification are stamped by.
 	now func() time.Time
 }
 
-// New builds the module; now is the Instance clock.
-func New(bus *events.Bus, cipher *secrets.Cipher, now func() time.Time) *Module {
-	return &Module{bus: bus, cipher: cipher, now: now}
+// New builds the module: bus opens the transactions its writes run in (a check's DKIM outcome is
+// stored and its loss published in one, which tells the Owners, ADR 0105), lookup resolves the
+// DNS records a check reads, and now is the Instance clock.
+func New(bus *events.Bus, cipher *secrets.Cipher, lookup domainname.TXTLookup, now func() time.Time) *Module {
+	return &Module{bus: bus, cipher: cipher, lookup: lookup, now: now}
 }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
@@ -169,15 +173,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return nil, err
 	}
 	return row, nil
-}
-
-// DeleteIn discards the Sending domain row for good (ADR 0049) on the transaction's scoped client,
-// without asking whether work still sends from it: the unchecked removal behind the Sending domain
-// deletion use case (internal/usecase/sendingdomaindeletion), which runs the Removal check (its
-// Live use) under the Workspace lock first and is the only caller easement allows. The record of mail sent from it
-// stays.
-func DeleteIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
-	return ts.SendingDomain().Discard(ctx, id, at)
 }
 
 // Record is one DNS TXT record to publish.

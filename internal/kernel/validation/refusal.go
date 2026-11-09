@@ -46,6 +46,9 @@ const (
 	// KindSecondFactorRequired is a User the Workspace's Two-factor requirement withholds (ADR
 	// 0020): the grace ended without a Second factor.
 	KindSecondFactorRequired
+	// KindUnlicensed is a capability of the Enterprise Edition that the Instance's License does not
+	// include (ADR 0014): the Audit log without the `audit` feature.
+	KindUnlicensed
 )
 
 // RefusalError is a sentinel domain error that carries its kind and the text to show a user.
@@ -138,6 +141,12 @@ func AcceptancePending(text string, key i18n.ID) *RefusalError {
 // (KindSecondFactorRequired).
 func SecondFactorRequired(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindSecondFactorRequired, text: text, key: key}
+}
+
+// Unlicensed makes the sentinel for a capability the Instance's License does not include
+// (KindUnlicensed).
+func Unlicensed(text string, key i18n.ID) *RefusalError {
+	return &RefusalError{kind: KindUnlicensed, text: text, key: key}
 }
 
 func (r *RefusalError) Error() string { return r.text }

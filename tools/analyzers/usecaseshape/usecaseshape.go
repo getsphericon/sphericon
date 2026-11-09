@@ -1,5 +1,6 @@
 // Package usecaseshape checks the call contract of a use case (ADR 0104, review rule 5): a
-// package under internal/usecase or ee/usecase exports New and the methods of its UseCase.
+// package of the use case tier (tools/analyzers/tier) exports New and the methods of its UseCase.
+// That a use case writes to no io.Writer is nowriter's, which reads the domain tier too.
 package usecaseshape
 
 import (
@@ -10,7 +11,9 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
+	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
 // Analyzer reports a use case package that breaks the call contract of ADR 0104.
@@ -20,10 +23,8 @@ var Analyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
-const module = "github.com/getsphericon/sphericon/"
-
 func run(pass *analysis.Pass) (any, error) {
-	if !isUseCase(pass.Pkg.Path()) {
+	if !tier.IsUseCase(pass.Pkg.Path()) {
 		return nil, nil
 	}
 	for _, file := range pass.Files {
@@ -49,11 +50,6 @@ func run(pass *analysis.Pass) (any, error) {
 		})
 	}
 	return nil, nil
-}
-
-// isUseCase holds for a package of either use case tier.
-func isUseCase(path string) bool {
-	return strings.HasPrefix(path, module+"internal/usecase/") || strings.HasPrefix(path, module+"ee/usecase/")
 }
 
 func checkFunc(pass *analysis.Pass, fn *ast.FuncDecl) {
@@ -101,8 +97,8 @@ func checkFunc(pass *analysis.Pass, fn *ast.FuncDecl) {
 	checkParams(pass, fn, sig)
 }
 
-// checkParams refuses more than two arguments after ctx and the scope, the time or the clock as
-// an argument, and an io.Writer.
+// checkParams refuses more than two arguments after ctx and the scope, and the time or the clock as
+// an argument.
 func checkParams(pass *analysis.Pass, fn *ast.FuncDecl, sig *types.Signature) {
 	params := sig.Params()
 	name := fn.Name.Name
@@ -123,9 +119,6 @@ func checkParams(pass *analysis.Pass, fn *ast.FuncDecl, sig *types.Signature) {
 		case isClock(p.Type()):
 			report(pass, fn, name+" takes a clock",
 				"take the clock as a parameter of New, fed from app.Clock")
-		case isNamed(p.Type(), "io", "Writer"):
-			report(pass, fn, name+" takes an io.Writer",
-				"return the value and let the CLI, the API or the job runner write the report")
 		}
 	}
 	if rest > 2 {
@@ -140,7 +133,7 @@ func isScope(t types.Type) bool {
 	if !ok {
 		return false
 	}
-	return isNamed(ptr.Elem(), module+"ent", "Scoped") || isNamed(ptr.Elem(), module+"ent", "Client")
+	return isNamed(ptr.Elem(), entx.Path, "Scoped") || isNamed(ptr.Elem(), entx.Path, "Client")
 }
 
 // isClock holds for func() time.Time.
