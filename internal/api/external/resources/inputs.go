@@ -98,7 +98,6 @@ type Inputs interface {
 	// goverter:ignore Channel
 	OptOut(source *externalapi.CreateUnsubscribeInput) unsubscriberecording.OptOutInput
 
-	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *externalapi.UpdateTemplateInput) emailtemplates.UpdateInput
 

@@ -43,7 +43,7 @@ func TestAFirstSaveThatLosesTheRaceUpdatesAndMakesNoStarters(t *testing.T) {
 			Exec(ctx)
 	})
 
-	module := brandkits.New(race.Bus, emailtemplates.New(testhelper.Renderer()))
+	module := brandkits.New(race.Bus, emailtemplates.New(testhelper.Renderer(), brandkits.Brands{}))
 	var saved brandkits.Kit
 	errs := testhelper.QueuedBehind(t, race.DB, release,
 		testhelper.Writer{Name: "second first save", Run: func() error {

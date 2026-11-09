@@ -133,9 +133,9 @@ func riverResult(out broadcasts.Outcome) error {
 	return out.Err
 }
 
-// SendBroadcast runs a Broadcast's delivery sequence synchronously: the module plans and
-// paces it exactly as production does, and the inline scheduler sends each recipient in
-// order at once. It is the queue-free adapter for the inline enqueuer and tests.
+// SendBroadcast runs a Broadcast's delivery sequence synchronously (broadcasts.Delivery.RunInline):
+// the module plans and paces it exactly as production does and sends each recipient in order at
+// once. It is the queue-free adapter for the inline enqueuer and tests.
 //
 // Audience = workspace contacts with an email address (optionally narrowed by a
 // segment) minus the ineligible (suppressed / unsubscribed, derived per ADR 0001).
@@ -144,29 +144,7 @@ func SendBroadcast(ctx context.Context, client *ent.Client, mod *outboundmessage
 	if err != nil {
 		return err
 	}
-	del := broadcasts.NewDelivery(mod)
-	return del.Run(ctx, s, broadcastID, inlineSends{s: s, del: del})
-}
-
-// inlineSends is the synchronous adapter of the module's scheduling seam: it sends in order,
-// ignoring the times (the module still computes and records them).
-type inlineSends struct {
-	s   *ent.Scoped
-	del *broadcasts.Delivery
-}
-
-func (i inlineSends) Schedule(ctx context.Context, _ int64, sends []broadcasts.Send) error {
-	for _, send := range sends {
-		// No retry runtime: every send's first attempt is its last, so a failed one is given up
-		// at once (a bad recipient must not abort the batch).
-		out := i.del.DeliverRecipient(ctx, i.s, send.RecipientID, broadcasts.Attempt{Number: 1, Limit: 1})
-		if out.Err != nil && !out.GaveUp {
-			// A hold, a Deferral or a live claim stops the run, leaving the remaining recipients
-			// pending for a later one; so does a give-up that could not be recorded.
-			return out.Err
-		}
-	}
-	return nil
+	return broadcasts.NewDelivery(mod).RunInline(ctx, s, broadcastID)
 }
 
 // broadcastScope loads the Broadcast row that names the Workspace and scopes to it (the job

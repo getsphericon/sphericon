@@ -858,7 +858,6 @@ func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) emailtempl
 		emailtemplatesCreateInput.Subject = stringPtrIn((*source).Subject)
 		emailtemplatesCreateInput.Body = stringPtrIn((*source).Body)
 		emailtemplatesCreateInput.Doc = documentIn((*source).Doc)
-		// emailtemplatesCreateInput.Prepared: ignore
 	}
 	return emailtemplatesCreateInput
 }

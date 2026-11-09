@@ -91,17 +91,17 @@ func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Mod
 	return &Module{bus: bus, renderer: renderer, out: out}
 }
 
-// Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
+// send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
 // its send job in the same transaction: either both happen or neither does.
-func (m *Module) Send(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
+func (m *Module) send(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	return m.claim(ctx, s, id, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, nil)
 }
 
-// Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
+// schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
 // job in the same transaction. Scheduling arms the send, so a Broadcast whose Send route cannot
 // send (its Integration is disabled or archived, or the Workspace has no default) is refused with
 // outboundmessages.ErrRouteHeld and stays as it was; a route that stops sending after it holds the plan.
-func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (*ent.Broadcast, error) {
+func (m *Module) schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (*ent.Broadcast, error) {
 	return m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
 }
 
@@ -146,9 +146,9 @@ func checkWritten(b *ent.Broadcast) error {
 	return nil
 }
 
-// Unschedule returns a scheduled Broadcast to draft and drops its schedule. The
+// unschedule returns a scheduled Broadcast to draft and drops its schedule. The
 // delayed job stays queued; when it fires it finds a draft and does nothing.
-func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
+func (m *Module) unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	err := fire(ctx, s, id, triggerUnschedule, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() })
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return nil, fmt.Errorf("%w: %w", ErrNotScheduled, err)
@@ -288,12 +288,12 @@ func setsFrom(from, stored *string) bool {
 	return from != nil && *from != "" && (stored == nil || *stored != *from)
 }
 
-// Create makes a draft Broadcast on the Channel of its content. Nothing here schedules or sends.
+// create makes a draft Broadcast on the Channel of its content. Nothing here schedules or sends.
 // A blank name is ErrBlankName, no content ErrNoChannel, an SMS Broadcast in a Workspace with no
 // SMS Integration ErrChannelNoIntegration and an Integration of another Channel
 // ErrIntegrationOtherChannel; content that cannot render is emailrender.ErrInvalidContent, and an
 // email body is stored sanitized.
-func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent.Broadcast, error) {
+func (m *Module) create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent.Broadcast, error) {
 	if err := checkName(f.Name); err != nil {
 		return nil, err
 	}
@@ -373,8 +373,8 @@ func keptSegment(ctx context.Context, s *ent.Scoped, id int64) (*ent.Segment, er
 	return seg, nil
 }
 
-// Get returns one Broadcast of the Workspace.
-func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
+// row returns one Broadcast of the Workspace.
+func (m *Module) row(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	b, err := s.Broadcast().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
@@ -386,7 +386,7 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadca
 // merge data, to preview it (outboundmessages.Module.SendBroadcastTest): no recipient rows, no
 // tracking, never the audience. The scope's actor is who asks; ErrNotFound for an unknown id.
 func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, id int64, to outboundmessages.TestAddress) (outboundmessages.Result, error) {
-	b, err := m.Get(ctx, s, id)
+	b, err := m.row(ctx, s, id)
 	if err != nil {
 		return outboundmessages.Result{}, err
 	}
@@ -401,8 +401,8 @@ type ListFilter struct {
 	Channel  *channels.Channel
 }
 
-// List returns one page of the Workspace's Broadcasts that f lets through, in order.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter, order Order) (pagination.Page[*ent.Broadcast], error) {
+// list returns one page of the Workspace's Broadcasts that f lets through, in order.
+func (m *Module) list(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter, order Order) (pagination.Page[*ent.Broadcast], error) {
 	rows := func() *ent.BroadcastQuery {
 		q := s.Broadcast().Query()
 		if f.Archived {
@@ -448,15 +448,15 @@ func (o Order) terms() []broadcast.OrderOption {
 	return []broadcast.OrderOption{newest}
 }
 
-// Update applies a patch to a draft and returns it. The UPDATE only matches a draft row, so a
+// update applies a patch to a draft and returns it. The UPDATE only matches a draft row, so a
 // Broadcast that was claimed for sending in the meantime is never edited. A blank name is
 // ErrBlankName; a Segment or Integration set here is checked as on Create; content of another
 // Channel than the Broadcast's is ErrChannelFixed, since a Broadcast is never converted (ADR 0080).
-func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInput) (*ent.Broadcast, error) {
+func (m *Module) update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInput) (*ent.Broadcast, error) {
 	if err := checkName(f.Name.Ptr()); err != nil {
 		return nil, err
 	}
-	cur, err := m.Get(ctx, s, id)
+	cur, err := m.row(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -482,13 +482,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 	return m.editDraft(ctx, s, id, u)
 }
 
-// SetSegment points a draft at a Segment, or at all contacts when segmentID
+// setSegment points a draft at a Segment, or at all contacts when segmentID
 // is nil. It never schedules or sends.
-func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmentID *int64) (*ent.Broadcast, error) {
+func (m *Module) setSegment(ctx context.Context, s *ent.Scoped, id int64, segmentID *int64) (*ent.Broadcast, error) {
 	if segmentID != nil {
 		if _, err := keptSegment(ctx, s, *segmentID); err != nil {
 			// A foreign or unknown broadcast is still reported as such first.
-			if _, getErr := m.Get(ctx, s, id); getErr != nil {
+			if _, getErr := m.row(ctx, s, id); getErr != nil {
 				return nil, getErr
 			}
 			return nil, err
@@ -505,20 +505,20 @@ func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmen
 // or sending Broadcast is work in flight, Live use of itself (ADR 0099).
 var archivable = []broadcast.Status{broadcast.StatusDraft, broadcast.StatusSent, broadcast.StatusFailed}
 
-// Archive puts a draft, sent or failed Broadcast aside (ADR 0100) and returns it: it leaves the
+// archive puts a draft, sent or failed Broadcast aside (ADR 0100) and returns it: it leaves the
 // lists for the archived view, its Recipients, report, tracking and figures stay, and it is
 // read-only until unarchived. A Broadcast is never deleted. A scheduled or sending one is
 // ErrNotArchivable. Archiving an archived Broadcast changes nothing. It holds the Workspace's
 // lock, as a claim does, and the claim refuses an archived draft, so an Archive and a Schedule
 // that race cannot leave an archived Broadcast scheduled.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
+func (m *Module) archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	var archived *ent.Broadcast
 	err := m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		err := ts.Broadcast().Archive(ctx, id, m.out.Now(), broadcast.StatusIn(archivable...))
 		if err != nil && !ent.IsNotFound(err) {
 			return err
 		}
-		got, err := m.Get(ctx, ts, id)
+		got, err := m.row(ctx, ts, id)
 		if err != nil {
 			return err
 		}
@@ -534,9 +534,9 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Bro
 	return archived, nil
 }
 
-// Unarchive brings an archived Broadcast back to the lists, in the status it had, and returns it.
+// unarchive brings an archived Broadcast back to the lists, in the status it had, and returns it.
 // Unarchiving a Broadcast that is not archived changes nothing.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
+func (m *Module) unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	err := s.Broadcast().Unarchive(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
@@ -544,7 +544,7 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.B
 	if err != nil {
 		return nil, err
 	}
-	return m.Get(ctx, s, id)
+	return m.row(ctx, s, id)
 }
 
 // Report is a Broadcast's delivery report: its status, why it is held and its Figures, the Stats
@@ -558,7 +558,7 @@ type Report struct {
 
 // Report reads the Broadcast's delivery figures (see Stats).
 func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, error) {
-	b, err := m.Get(ctx, s, id)
+	b, err := m.row(ctx, s, id)
 	if err != nil {
 		return Report{}, err
 	}
@@ -582,7 +582,7 @@ func (m *Module) editDraft(ctx context.Context, s *ent.Scoped, id int64, u *ent.
 	if n == 0 {
 		return nil, m.notDraftOrNotFound(ctx, s, id)
 	}
-	return m.Get(ctx, s, id)
+	return m.row(ctx, s, id)
 }
 
 func (m *Module) notDraftOrNotFound(ctx context.Context, s *ent.Scoped, id int64) error {
@@ -595,7 +595,7 @@ func (m *Module) notDraftOrNotFound(ctx context.Context, s *ent.Scoped, id int64
 // notArchived is ErrArchived for an archived Broadcast and ErrNotFound for one the Workspace does
 // not have.
 func (m *Module) notArchived(ctx context.Context, s *ent.Scoped, id int64) error {
-	b, err := m.Get(ctx, s, id)
+	b, err := m.row(ctx, s, id)
 	if err != nil {
 		return err
 	}

@@ -121,7 +121,6 @@ type Inputs interface {
 	// goverter:ignore Flow Session
 	SigninCallback(source siteapi.SiteAuthSigninCallbackParams) signup.ProviderSignInInput
 
-	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
