@@ -54,6 +54,32 @@ func (d *Delivery) RunQueued(ctx context.Context, s *ent.Scoped, args SendArgs, 
 	return outcomeOf(err)
 }
 
+// RunInline runs a Broadcast's delivery sequence at once, with no queue: it plans and paces it as a
+// queued run does, then delivers each recipient in order, ignoring the times (they are still
+// computed and recorded). With no retry runtime every send's first attempt is its last, so a failed
+// recipient is given up at once and the run goes on (a bad recipient must not abort the batch); a
+// hold, a Deferral or a live claim stops it, leaving the remaining recipients pending for a later
+// run, and so does a give-up that could not be recorded.
+func (d *Delivery) RunInline(ctx context.Context, s *ent.Scoped, id int64) error {
+	return d.run(ctx, s, id, inline{d: d, s: s}, triggerPlan)
+}
+
+// inline is the synchronous scheduler of RunInline: it delivers each send in order at once.
+type inline struct {
+	d *Delivery
+	s *ent.Scoped
+}
+
+func (i inline) Schedule(ctx context.Context, _ int64, sends []Send) error {
+	for _, send := range sends {
+		out := i.d.DeliverRecipient(ctx, i.s, send.RecipientID, Attempt{Number: 1, Limit: 1})
+		if out.Err != nil && !out.GaveUp {
+			return out.Err
+		}
+	}
+	return nil
+}
+
 // boundToSchedule reports whether a queued plan job still answers the Broadcast's schedule. A job
 // to send now (jobScheduledAt nil) always does. A delayed job is bound to the schedule it was
 // enqueued for: unscheduling leaves it queued, so after a reschedule the Broadcast carries a

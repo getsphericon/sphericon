@@ -4,6 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -21,14 +22,11 @@ func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTem
 func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.CreateTemplateInput, _ siteapi.SiteTemplatesCreateParams) (*siteapi.SiteEmailTemplateResource, error) {
 	scoped := workspaceScope(ctx)
 
-	tpl, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
+	saved, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.EmailTemplateToResource(tpl)
-	if res.Warnings, err = h.lintWarnings(ctx, scoped, tpl.Subject, req.Body, tpl.Body); err != nil {
-		return nil, err
-	}
+	res := savedTemplate(saved)
 	return &res, nil
 }
 
@@ -49,14 +47,11 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.UpdateT
 
 	id := int64(params.ID)
 
-	tpl, err := h.templates.Update(ctx, scoped, id, inputs.TemplateUpdate(req))
+	saved, err := h.templates.Update(ctx, scoped, id, inputs.TemplateUpdate(req))
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.EmailTemplateToResource(tpl)
-	if res.Warnings, err = h.lintWarnings(ctx, scoped, tpl.Subject, req.Body, tpl.Body); err != nil {
-		return nil, err
-	}
+	res := savedTemplate(saved)
 	return &res, nil
 }
 
@@ -69,4 +64,11 @@ func (h *Handlers) SiteTemplatesDelete(ctx context.Context, params siteapi.SiteT
 		return err
 	}
 	return nil
+}
+
+// savedTemplate maps a saved Template and attaches the lint warnings of its content (ADR 0040).
+func savedTemplate(saved emailtemplates.Saved) siteapi.SiteEmailTemplateResource {
+	res := mapper.EmailTemplateToResource(saved.Template)
+	res.Warnings = mapper.LintFindingsToResource(saved.Warnings)
+	return res
 }

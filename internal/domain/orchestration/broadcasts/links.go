@@ -13,7 +13,7 @@ import (
 // retention window. Machine clicks are left out. The unique click figure (Stats.Clicked) comes
 // from the rollup and does not expire.
 func (m *Module) LinkClicksOf(ctx context.Context, s *ent.Scoped, id int64) ([]linkclick.Clicks, error) {
-	if _, err := m.Get(ctx, s, id); err != nil {
+	if _, err := m.row(ctx, s, id); err != nil {
 		return nil, err
 	}
 	return linkclick.ByLink(ctx, s, linkclick.Between{}, event.BroadcastID(id))

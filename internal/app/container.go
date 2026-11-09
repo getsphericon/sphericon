@@ -781,7 +781,7 @@ var contentPackage = do.Package(
 		return emaildoc.New(), nil
 	}),
 	do.Lazy(func(i do.Injector) (*emailtemplates.Module, error) {
-		return emailtemplates.New(do.MustInvoke[*emaildoc.Renderer](i)), nil
+		return emailtemplates.New(do.MustInvoke[*emaildoc.Renderer](i), brandkits.Brands{}), nil
 	}),
 	do.Lazy(func(i do.Injector) (*brandkits.Module, error) {
 		return brandkits.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*emailtemplates.Module](i)), nil

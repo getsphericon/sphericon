@@ -73,7 +73,7 @@ func TestMCPEmailSchemaDescribesTheDocumentAnAgentMayWrite(t *testing.T) {
 func TestMCPAgentCopiesAStarterTemplateAndEditsItsDocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	starters, err := brandkits.New(env.Bus, emailtemplates.New(testhelper.Renderer())).RecreateStarterTemplates(ctx, env.DB.Scoped(fixtures.InitechID))
+	starters, err := brandkits.New(env.Bus, emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})).RecreateStarterTemplates(ctx, env.DB.Scoped(fixtures.InitechID))
 	require.NoError(t, err)
 	starter := starters[0]
 	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.InitechID, "templates:read", "templates:write"))

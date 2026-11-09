@@ -178,7 +178,7 @@ func Boot() (*Env, func(), error) {
 		memberships: ms,
 		bus:         bus,
 
-		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New())),
+		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New(), brandkits.Brands{})),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), time.Now, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }

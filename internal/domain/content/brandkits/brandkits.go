@@ -52,6 +52,10 @@ type Input struct {
 
 // Get returns the Workspace's Brand kit: the saved one, or the defaults with Saved false.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped) (Kit, error) {
+	return get(ctx, s)
+}
+
+func get(ctx context.Context, s *ent.Scoped) (Kit, error) {
 	row, err := s.BrandKit().Query().Only(ctx)
 	if ent.IsNotFound(err) {
 		return Defaults(), nil
@@ -62,14 +66,19 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped) (Kit, error) {
 	return kitOf(row), nil
 }
 
-// Lint runs the lint of ADR 0040 over a message against the Workspace's Brand kit (none saved:
-// no brand warnings). Its warnings are advice for the author; only its Error blocks.
-func (m *Module) Lint(ctx context.Context, s *ent.Scoped, subject, body string) (emailrender.Report, error) {
-	kit, err := m.Get(ctx, s)
+// Brands reads the brand the lint of ADR 0040 compares a message to (emailtemplates.Brands). It
+// holds nothing, so the templates module, which the starters are written through, takes it without
+// taking the Module.
+type Brands struct{}
+
+// Brand is the Workspace's Brand kit as the lint compares a message to it: nil while none is saved,
+// so there are no brand warnings.
+func (Brands) Brand(ctx context.Context, s *ent.Scoped) (*emailrender.Brand, error) {
+	kit, err := get(ctx, s)
 	if err != nil {
-		return emailrender.Report{}, err
+		return nil, err
 	}
-	return emailrender.Lint(subject, body, kit.Brand()), nil
+	return kit.Brand(), nil
 }
 
 // Save stores the Brand kit. The first save creates it and, in the same transaction, the starter
@@ -204,12 +213,7 @@ func (m *Module) renderStarters(ctx context.Context, kit Kit) ([]renderedStarter
 func (m *Module) createStarters(ctx context.Context, s *ent.Scoped, starters []renderedStarter) ([]*ent.EmailTemplate, error) {
 	var made []*ent.EmailTemplate
 	for _, r := range starters {
-		tpl, err := m.templates.Create(ctx, s, emailtemplates.CreateInput{
-			Name:     r.starter.Name,
-			Subject:  &r.starter.Subject,
-			Doc:      r.starter.Doc,
-			Prepared: &r.authored,
-		})
+		tpl, err := m.templates.CreatePrepared(ctx, s, r.starter.Name, r.starter.Subject, r.starter.Doc, r.authored)
 		if err != nil {
 			return nil, err
 		}
