@@ -2,6 +2,7 @@ import { Badge, Button, Group } from '@mantine/core'
 import type { UseMutationOptions } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { useConfirmation } from '../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { draftState } from './draftState.ts'
 
@@ -58,13 +59,16 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   )
 }
 
-// The same draft actions can be owned by a resource mutation or by an editor session.
+// The same draft actions can be owned by a resource mutation or by an editor session. While the
+// editor holds unsaved edits, `unsaved` is its leave dialog's message, and Revert asks first in
+// those words: it discards them.
 export function DraftActions({
   pending,
   publishable,
   publishing,
   reverting,
   disabled = false,
+  unsaved,
   onPublish,
   onRevert,
 }: {
@@ -73,10 +77,25 @@ export function DraftActions({
   publishing: boolean
   reverting: boolean
   disabled?: boolean
+  unsaved?: string
   onPublish: () => void
   onRevert: () => void
 }) {
   const { t } = useTranslation()
+  const confirm = useConfirmation()
+  const revert = () => {
+    if (unsaved === undefined) {
+      onRevert()
+      return
+    }
+    confirm({
+      title: t(($) => $.draft.revertUnsavedTitle),
+      description: unsaved,
+      confirmLabel: t(($) => $.draft.revert),
+      cancelLabel: t(($) => $.leave.stay),
+      onConfirm: onRevert,
+    })
+  }
   return (
     <Group gap="xs" wrap="nowrap">
       {pending && (
@@ -85,7 +104,7 @@ export function DraftActions({
         </Badge>
       )}
       {pending && (
-        <Button variant="default" loading={reverting} disabled={disabled} onClick={onRevert}>
+        <Button variant="default" loading={reverting} disabled={disabled} onClick={revert}>
           {t(($) => $.draft.revert)}
         </Button>
       )}

@@ -1,6 +1,4 @@
-import { assertEvent, assign, emit, fromPromise, setup } from 'xstate'
-
-import { draftState } from '../../components/draftState.ts'
+import { defineEditorSession, draftGuards } from '../../editing/editorSession.ts'
 import {
   siteAutomationsPublish,
   siteAutomationsRevert,
@@ -15,8 +13,11 @@ import type { AutomationGraph } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 import { HTTP_NODE_TYPE } from './nodes.ts'
 
-type Operation = 'save' | 'publish' | 'revert'
 type Path = SiteAutomationsUpdateData['path']
+export interface AutomationContent {
+  name: string
+  graph: AutomationGraph
+}
 interface Submission {
   body: SiteAutomationsUpdateData['body'] & { name: string }
   graph: AutomationGraph
@@ -95,200 +96,95 @@ function acknowledge(submission: Submission, resource: SiteAutomationResource) {
   }
 }
 
-interface SessionInput {
+interface AutomationSubject {
   path: Path
   resource: SiteAutomationResource
+  // The version the canvas opens with, as a graph, and the node labels Revert rebuilds one with.
   graph: AutomationGraph
   labels: Record<string, string>
 }
-interface SessionContext extends Omit<SessionInput, 'graph'> {
-  saved: string
-  canvas: { graph: AutomationGraph; revision: number }
-  result: 'success' | 'error'
-}
-type SessionEvent =
-  | { type: 'SAVE'; submission: Submission }
-  | { type: 'PUBLISH'; current: string }
-  | { type: 'REVERT' }
-  | { type: 'REFRESH'; resource: SiteAutomationResource }
-type SessionNotice =
-  | {
-      type: 'accepted'
-      operation: Operation
-      resource: SiteAutomationResource
-      identities?: HttpIdentity[]
-    }
-  | { type: 'failed'; operation: Operation; error: unknown }
 
-const types: {
-  context?: SessionContext
-  input?: SessionInput
-  events?: SessionEvent
-  emitted?: SessionNotice
-} = {}
-
-// Current content belongs to the form/canvas, the submission to the invoked actor, and the
-// acknowledged fingerprint to this session. Only explicit Revert replaces the canvas.
-export const editorSession = setup({
-  types,
-  actors: {
-    save: fromPromise(
-      async ({
-        input,
-        signal,
-      }: {
-        input: { path: Path; submission: Submission }
-        signal: AbortSignal
-      }) => {
-        const { data } = await siteAutomationsUpdate({
-          path: input.path,
-          body: input.submission.body,
+// The canvas adapter: the content is the name in the bar and the graph on the canvas.
+export const automationAdapter = {
+  id: 'automationEditor',
+  open: ({ resource, graph }: AutomationSubject): AutomationContent => ({
+    name: resource.name,
+    graph,
+  }),
+  fingerprint: ({ name, graph }: AutomationContent) => automationSnapshot(name, graph),
+  submit: ({ name, graph }: AutomationContent) => automationSubmission(name, graph),
+  save: async ({
+    subject,
+    submission,
+    signal,
+  }: {
+    subject: AutomationSubject
+    submission: Submission
+    signal: AbortSignal
+  }) => {
+    const { data } = await siteAutomationsUpdate({
+      path: subject.path,
+      body: submission.body,
+      signal,
+      throwOnError: true,
+    })
+    return data
+  },
+  acknowledge,
+  // A receipt enriches still-present submitted nodes with their stored identity. Newer fields,
+  // positions and edges stay as edited, and the canvas is not reloaded.
+  fold: (current: AutomationContent, receipt: ReturnType<typeof acknowledge>) => ({
+    content:
+      receipt.identities.length === 0
+        ? current
+        : {
+            ...current,
+            graph: {
+              ...current.graph,
+              nodes: applyHttpIdentities(current.graph.nodes, receipt.identities),
+            },
+          },
+    replaces: false,
+  }),
+  operations: {
+    PUBLISH: {
+      request: async ({ subject, signal }: { subject: AutomationSubject; signal: AbortSignal }) => {
+        const { data } = await siteAutomationsPublish({
+          path: subject.path,
           signal,
           throwOnError: true,
         })
-        return acknowledge(input.submission, data)
+        return data
       },
-    ),
-    publish: fromPromise(async ({ input, signal }: { input: Path; signal: AbortSignal }) => {
-      const { data } = await siteAutomationsPublish({ path: input, signal, throwOnError: true })
-      return data
-    }),
-    revert: fromPromise(async ({ input, signal }: { input: Path; signal: AbortSignal }) => {
-      const { data } = await siteAutomationsRevert({ path: input, signal, throwOnError: true })
-      return data
-    }),
-  },
-  guards: {
-    publishable: ({ context, event }) => {
-      assertEvent(event, 'PUBLISH')
-      return draftState({
-        active: context.resource.status === 'active',
-        hasLive: context.resource.live !== null,
-        hasDraft: context.resource.draft !== null,
-        dirty: event.current !== context.saved,
-      }).publishable
+      available: draftGuards.publishable,
     },
-    revertible: ({ context }) => context.resource.live !== null && context.resource.draft !== null,
-  },
-}).createMachine({
-  id: 'automationEditor',
-  initial: 'idle',
-  context: ({ input }) => ({
-    path: input.path,
-    resource: input.resource,
-    labels: input.labels,
-    saved: automationSnapshot(input.resource.name, input.graph),
-    canvas: { graph: input.graph, revision: 0 },
-    result: 'error',
-  }),
-  // A query refresh may update lifecycle metadata, never the local canvas or its receipt.
-  on: { REFRESH: { actions: assign({ resource: ({ event }) => event.resource }) } },
-  states: {
-    idle: {
-      on: {
-        SAVE: 'saving',
-        PUBLISH: { target: 'publishing', guard: 'publishable' },
-        REVERT: { target: 'reverting', guard: 'revertible' },
+    REVERT: {
+      request: async ({ subject, signal }: { subject: AutomationSubject; signal: AbortSignal }) => {
+        const { data } = await siteAutomationsRevert({
+          path: subject.path,
+          signal,
+          throwOnError: true,
+        })
+        return data
       },
-    },
-    saving: {
-      invoke: {
-        src: 'save',
-        input: ({ context, event }) => {
-          assertEvent(event, 'SAVE')
-          return { path: context.path, submission: event.submission }
-        },
-        onDone: {
-          target: 'idle',
-          actions: [
-            assign(({ event }) => ({
-              resource: event.output.resource,
-              saved: event.output.fingerprint,
-              result: 'success',
-            })),
-            emit(({ event }): SessionNotice => ({
-              type: 'accepted',
-              operation: 'save',
-              resource: event.output.resource,
-              identities: event.output.identities,
-            })),
-          ],
-        },
-        onError: {
-          target: 'idle',
-          actions: [
-            assign({ result: 'error' }),
-            emit(({ event }): SessionNotice => ({
-              type: 'failed',
-              operation: 'save',
-              error: event.error,
-            })),
-          ],
-        },
-      },
-    },
-    publishing: {
-      tags: 'readOnly',
-      invoke: {
-        src: 'publish',
-        input: ({ context }) => context.path,
-        onDone: {
-          target: 'idle',
-          actions: [
-            assign({ resource: ({ event }) => event.output }),
-            emit(({ event }): SessionNotice => ({
-              type: 'accepted',
-              operation: 'publish',
-              resource: event.output,
-            })),
-          ],
-        },
-        onError: {
-          target: 'idle',
-          actions: emit(({ event }): SessionNotice => ({
-            type: 'failed',
-            operation: 'publish',
-            error: event.error,
-          })),
-        },
-      },
-    },
-    reverting: {
-      tags: 'readOnly',
-      invoke: {
-        src: 'revert',
-        input: ({ context }) => context.path,
-        onDone: {
-          target: 'idle',
-          actions: [
-            assign(({ context, event }) => {
-              const live = event.output.live
-              if (!live) {
-                throw new Error('Revert returned an Automation without a live version')
-              }
-              const graph = stepsToGraph(live, live.steps, context.labels)
-              return {
-                resource: event.output,
-                saved: automationSnapshot(event.output.name, graph),
-                canvas: { graph, revision: context.canvas.revision + 1 },
-              }
-            }),
-            emit(({ event }): SessionNotice => ({
-              type: 'accepted',
-              operation: 'revert',
-              resource: event.output,
-            })),
-          ],
-        },
-        onError: {
-          target: 'idle',
-          actions: emit(({ event }): SessionNotice => ({
-            type: 'failed',
-            operation: 'revert',
-            error: event.error,
-          })),
-        },
+      available: draftGuards.revertible,
+      // Revert is the one operation that replaces the canvas: with the live version.
+      replaces: (
+        resource: SiteAutomationResource,
+        subject: AutomationSubject,
+      ): AutomationContent => {
+        const live = resource.live
+        if (!live) {
+          throw new Error('Revert returned an Automation without a live version')
+        }
+        return { name: resource.name, graph: stepsToGraph(live, live.steps, subject.labels) }
       },
     },
   },
-})
+}
+
+// Current content belongs to the bar and the canvas, the submission to the pending Save, and the
+// acknowledged fingerprint to this session. Only explicit Revert replaces the canvas.
+export const editorSession = defineEditorSession(automationAdapter)
+
+export type AutomationOperation = keyof typeof automationAdapter.operations

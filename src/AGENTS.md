@@ -13,7 +13,7 @@
   rebuild the tree by hand. Route guards read the workspaces list through `requireWorkspaces`
   (`src/guards.ts`, the shared query cache) and redirect to `/login` on 401. Tests mount a page with
   `renderWithRouter(ui, routeMount(Route, params))`, which mirrors the route's ancestry.
-- Layers are checked by easement (`easement.yml`, `mise run check:arch`): `src/components`, `hooks`,
+- Layers are checked by easement (`easement.yml`, `mise run check:arch`): `src/components`, `editing`, `hooks`,
   `layouts`, `resources` and `utils` never import a page; a page never imports a `*.lazy.tsx`;
   only `*.lazy.tsx` route files import a page; a feature directory under `src/pages` never imports
   another feature's (what two features share, such as the Condition builder, lives in

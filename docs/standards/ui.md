@@ -188,6 +188,36 @@ form a person can leave half-typed renders `LeaveDialog`: it covers a link, Back
 and names what would be lost. No "don't ask again". It is not shown when nothing changed or the
 changes are saved.
 
+## Editor sessions
+
+An editor of a saved resource runs an editor session (`src/editing/editorSession.ts`, through
+`useEditorSession`). The page hands it the mounted editor's current content to read and write; its
+kind of resource supplies an adapter: how to fingerprint content, build a submission or refuse an
+invalid one, fold an acknowledgement into content that has moved on, and its operations (Publish,
+Revert, …). Whether the editor is unsaved, and whether an operation may start, comes from the
+session, never from the page. The Automation editor is the first; its canvas adapter is in
+`src/pages/automations/editorSession.ts`.
+
+- **Three contents.** The current content belongs to the editor: the form or the canvas. The
+  submitted content is what a Save captured before its request. The acknowledged content is what
+  the server confirmed; its fingerprint is taken from the submission, never rebuilt from the
+  response. The editor is unsaved while the current content differs from the acknowledged one.
+- **Edits stay enabled during Save.** An edit made while Save is pending stays, and stays unsaved
+  after the acknowledgement. The other operations act on stored content, so the editor is
+  read-only while one of them is pending, and one operation runs at a time: Publish and Revert
+  wait for Save, and Publish waits for unsaved edits to be saved.
+- **Only the session replaces content**: an explicit Revert, or a Save whose submission still
+  equals the current content and which takes the server's normalized form of it. Only then are the
+  stateful field editors reloaded. Revert over unsaved edits asks first, in the leave dialog's
+  words.
+- **A query refresh updates metadata only**: a refetched resource changes the draft and status
+  badges and what the operations allow, never the content. Changes made in another tab or by
+  another person are not merged.
+- **The acknowledgement is the write's success.** The cache write and the toast follow it; the
+  invalidation of related lists starts after it and is not part of the operation, so a failed
+  refetch never reads as a failed Save. An outcome that arrives after the editor closed does
+  nothing.
+
 ## Writing
 
 Every string in the app, a message, a button, a hint:

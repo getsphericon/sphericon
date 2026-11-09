@@ -156,6 +156,11 @@ test('Revert replaces local content with live and prevents editing during the op
   await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('unsaved_event')
   await screen.getByLabelText('Name', { exact: false }).fill('Unsaved local name')
   await screen.getByRole('button', { name: 'Revert' }).click()
+  const confirmation = screen.getByRole('dialog', { name: 'Revert without saving?' })
+  await expect
+    .element(confirmation.getByText('Your changes to this automation are not saved.'))
+    .toBeInTheDocument()
+  await confirmation.getByRole('button', { name: 'Revert' }).click()
   await received.promise
   try {
     await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
