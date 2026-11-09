@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -24,7 +23,7 @@ func (h *Handlers) SiteSecondFactorGetStatus(ctx context.Context) (*siteapi.Site
 	}
 	return &siteapi.SiteSecondFactorStatus{
 		Enabled: st.Enabled, Pending: st.Pending, RecoveryCodesRemaining: narrow.Int32(st.RecoveryCodesRemaining),
-		PasswordSet: u.PasswordHash != "", IdentityProofFresh: u.PasswordHash == "" && h.identityProofFresh(ctx),
+		PasswordSet: u.PasswordHash != "", IdentityProofFresh: sessionProof(ctx, "").StandsInFor(u, h.now()),
 	}, nil
 }
 
@@ -116,39 +115,24 @@ func sessionUser(ctx context.Context) (*ent.User, error) {
 	return a.User, nil
 }
 
-// identityProofTTL is how long a Sign-in provider login (ADR 0048) or a Passkey check (ADR 0052)
-// stands in for the password of a User who has none: the proof is the time carried by the
-// session, so it needs no store and ends by itself.
-const identityProofTTL = 5 * time.Minute
-
 // identityProof is the User of the session and the proof of identity they offer for a step that
 // asks for the password (users.Module.ProveIdentity, ADR 0020, ADR 0048): the password typed, and
-// whether the session holds a Sign-in provider login or a Passkey check of the last
-// identityProofTTL. The step's module proves it.
+// the times of the session's Sign-in provider login and Passkey check. The step's module proves it.
 func (h *Handlers) identityProof(ctx context.Context, password siteapi.OptString) (*ent.User, users.IdentityProof, error) {
 	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, users.IdentityProof{}, err
 	}
-	return u, users.IdentityProof{Password: password.Value, Fresh: h.identityProofFresh(ctx)}, nil
+	return u, sessionProof(ctx, password.Value), nil
 }
 
-// identityProofFresh is whether the request's session holds a Sign-in provider login or a
-// Passkey check recent enough to count as a proof.
-func (h *Handlers) identityProofFresh(ctx context.Context) bool {
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		return false
+// sessionProof is the proof of identity the request's session holds, with the password typed.
+func sessionProof(ctx context.Context, password string) users.IdentityProof {
+	proof := users.IdentityProof{Password: password}
+	if a := auth.GetSiteAuth(ctx); a != nil {
+		proof.ProviderLoginAt, proof.PasskeyCheckAt = a.ProviderLoginAt, a.PasskeyCheckAt
 	}
-	return h.fresh(a.ProviderLoginAt) || h.fresh(a.PasskeyCheckAt)
-}
-
-func (h *Handlers) fresh(at time.Time) bool {
-	if at.IsZero() {
-		return false
-	}
-	age := h.now().Sub(at)
-	return age >= 0 && age <= identityProofTTL
+	return proof
 }
 
 // currentSession is how the request's session began, to hand to the session that replaces it.

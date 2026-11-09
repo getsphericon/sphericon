@@ -170,7 +170,7 @@ func TestAUserWithNoPasswordEnrollsOnlyWithAFreshSessionProof(t *testing.T) {
 	pia := env.DB.User.GetX(t.Context(), fixtures.ProviderOnlyPiaID)
 
 	_, stale := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{})
-	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{Fresh: true})
+	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{ProviderLoginAt: time.Now()})
 
 	require.ErrorIs(t, stale, users.ErrIdentityProofRequired)
 	require.NoError(t, err)

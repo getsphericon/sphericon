@@ -183,7 +183,7 @@ func TestAUserWithAPasswordProvesTheirIdentityWithIt(t *testing.T) {
 	r := newProfileRig(t, proveByHash{})
 
 	right := r.acc.ProveIdentity(t.Context(), r.john, users.IdentityProof{Password: fixtures.OwnerJohnPassword})
-	wrong := r.acc.ProveIdentity(t.Context(), r.john, users.IdentityProof{Password: "wrong", Fresh: true})
+	wrong := r.acc.ProveIdentity(t.Context(), r.john, users.IdentityProof{Password: "wrong", ProviderLoginAt: time.Now()})
 
 	require.NoError(t, right)
 	require.ErrorIs(t, wrong, errWrongPassword, "a fresh session proof never stands in for a password the User has")
@@ -196,7 +196,7 @@ func TestAUserWithNoPasswordProvesTheirIdentityWithAFreshSessionProof(t *testing
 	pia, err := r.acc.User(t.Context(), fixtures.ProviderOnlyPiaID)
 	require.NoError(t, err)
 
-	fresh := r.acc.ProveIdentity(t.Context(), pia, users.IdentityProof{Fresh: true})
+	fresh := r.acc.ProveIdentity(t.Context(), pia, users.IdentityProof{PasskeyCheckAt: time.Now()})
 	stale := r.acc.ProveIdentity(t.Context(), pia, users.IdentityProof{Password: "anything"})
 
 	require.NoError(t, fresh)

@@ -23,7 +23,7 @@ func (h *Handlers) SitePasskeysList(ctx context.Context) (*siteapi.SitePasskeyLi
 	}
 	items := mapper.PasskeysToResources(rows)
 	return &siteapi.SitePasskeyList{
-		Items: items, Available: h.passkeys.Available(), PasswordSet: u.PasswordHash != "", IdentityProofFresh: u.PasswordHash == "" && h.identityProofFresh(ctx),
+		Items: items, Available: h.passkeys.Available(), PasswordSet: u.PasswordHash != "", IdentityProofFresh: sessionProof(ctx, "").StandsInFor(u, h.now()),
 	}, nil
 }
 
@@ -92,7 +92,7 @@ func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (*siteapi.SitePas
 // SitePasskeysFinishCheck verifies a fresh Passkey check of the session's own User (the
 // passkeys module's Check, whose every refusal is the one 403). The acting session is reissued
 // with the time of the check, which stands in for the password for a few minutes
-// (identityProofTTL).
+// (users.IdentityProof.FreshAt).
 func (h *Handlers) SitePasskeysFinishCheck(ctx context.Context, req *siteapi.SitePasskeyCheckInput, params siteapi.SitePasskeysFinishCheckParams) (*siteapi.SitePasskeysFinishCheckNoContent, error) {
 	u, err := sessionUser(ctx)
 	if err != nil {
