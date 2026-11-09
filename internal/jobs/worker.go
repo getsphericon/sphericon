@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
@@ -79,9 +80,11 @@ type Deps struct {
 	SystemSender messaging.EmailSender
 	// Notices issues the Notices of the domain events (ADR 0105).
 	Notices *noticedelivery.UseCase
-	Catalog *messaging.Catalog
-	Rules   *rules.Module
-	Users   *users.Module
+	// Callbacks reads again a Delivery notice that came before its message (the late notice job).
+	Callbacks *callbackinterpretation.UseCase
+	Catalog   *messaging.Catalog
+	Rules     *rules.Module
+	Users     *users.Module
 	// SecondFactor reminds the Users whose Two-factor grace ends soon (ADR 0020).
 	SecondFactor *secondfactors.Module
 	Orders       *orders.Module
@@ -126,7 +129,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	stepper := deps.StepExecution
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, stepper))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
-	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, now))
+	river.AddWorker(workers, NewLateNoticeWorker(entClient, deps.Callbacks))
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus, stepper)})
 	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules))

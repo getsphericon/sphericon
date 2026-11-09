@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -20,7 +21,7 @@ const (
 )
 
 func recorder(env *testhelper.TestEnv) *engagement.Recorder {
-	return engagement.New(env.DB, env.Bus, env.Tracker, env.Machine, time.Now)
+	return engagement.New(env.DB, env.Bus, contacts.New(env.Bus), env.Tracker, env.Machine, time.Now)
 }
 
 func openToken(t *testing.T, env *testhelper.TestEnv, messageID int64) string {

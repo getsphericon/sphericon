@@ -123,8 +123,8 @@ the raw client in a fixed order, and sweeps them by id and compare-and-swap
 primary key, so no check guards it and it is no unchecked operation.
 A use case need not guard a removal: an operation whose subject's owner would have to call a
 module above it is one too, and so is one that reads modules of several contexts. A Visitor
-identification (`internal/usecase/visitoridentification`, built in
-`internal/server` with the collect surface) upserts the Contact through `contacts`, binds the
+identification (`internal/usecase/visitoridentification`, built in the container like every
+use case and handed to the collect surface) upserts the Contact through `contacts`, binds the
 Visitor through `visitors`, announces its chats through `bindings` (sending, above the Contact)
 and stitches its Events through the bus, in one transaction. The Ingest hook's reading of a provider's callbacks
 (`callbackinterpretation`) opens the request's transaction and changes Outbound messages, Suppressions,

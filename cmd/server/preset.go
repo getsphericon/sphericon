@@ -66,7 +66,8 @@ func presetTestCommand() *cli.Command {
 				return err
 			}
 			if cmd.String("payload") == "" {
-				return commandline.WritePresetTests(out(cmd), p.Name(), p.RunTests(ctx))
+				results := p.RunTests(ctx)
+				return commandline.WritePresetTests(out(cmd), p.Name(), results)
 			}
 			req, params, now, err := sample(cmd)
 			if err != nil {

@@ -84,7 +84,10 @@ func messageRow(m *ent.OutboundMessage) MessageRow {
 }
 
 // Messages serves a page of the Workspace's Outbound messages stream.
-func Messages(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+func (st *Streams) Messages(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+	if !st.offered() {
+		return Page{}, ErrNotOffered
+	}
 	return Read(token, limit, func(after Cursor, n int) ([]MessageRow, error) {
 		rows, err := s.OutboundMessage().Query().
 			Where(predicate.OutboundMessage(Seek(after))).

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	entgen "github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
 	"github.com/getsphericon/sphericon/internal/api/oauth"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -274,7 +275,7 @@ func TestTheCrossOriginGuardTrustsTheAppAndAllowlistedOrigins(t *testing.T) {
 
 func TestAnAppURLThatIsNoOriginFailsTheServer(t *testing.T) {
 	_, err := server.New(&config.Config{AppURL: "not a url"}, nil, nil, nil, &apisite.Deps{Clock: time.Now}, nil, ratelimit.New(config.RateLimits{}),
-		http.NotFoundHandler(), http.NotFoundHandler(), http.NotFoundHandler(), http.NotFoundHandler(), nil,
+		apicollect.NewHandlers(nil, nil, nil, time.Now), http.NotFoundHandler(), http.NotFoundHandler(), http.NotFoundHandler(), http.NotFoundHandler(), nil,
 		oauth.New(nil, nil, "not a url", ""))
 
 	assert.ErrorContains(t, err, "trusted origin")

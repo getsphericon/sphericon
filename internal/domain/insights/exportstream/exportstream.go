@@ -4,8 +4,9 @@
 // row schema. A stream adds only its row type (with Position), its fetch query and its
 // operation; see events.go for the smallest example.
 //
-// Core code: the license gate is the caller's (internal/api/external asks the Edition),
-// nothing here knows about licenses.
+// Core code: Streams asks the Edition whether the `export` license is on (and the Audit log
+// whether the `audit` one is) before it serves a stream; without it a stream is ErrNotOffered,
+// which every surface maps once (review rule 15).
 package exportstream
 
 import (
@@ -20,6 +21,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -31,6 +33,29 @@ var ErrBadCursor = validation.UnknownReference("exportstream: invalid cursor", i
 // ErrNotOffered means the Instance does not offer the Export streams: without the `export`
 // license the feature is absent, like /staff, and a stream is not found (ADR 0045).
 var ErrNotOffered = validation.NotFound("exportstream: the export streams are not offered", i18n.ErrorsNotFound)
+
+// License is the Edition's answer whether the `export` feature is licensed (ADR 0045).
+type License interface {
+	Licensed() bool
+}
+
+// Streams serves the Export streams of a Workspace behind their licenses.
+type Streams struct {
+	export License
+	audit  *auditlog.Log
+}
+
+// New builds the streams over the `export` license and the Audit log, whose own license gates
+// the Audit stream.
+func New(export License, audit *auditlog.Log) *Streams {
+	return &Streams{export: export, audit: audit}
+}
+
+// offered reports whether the Instance offers the Export streams.
+func (st *Streams) offered() bool { return st != nil && st.export != nil && st.export.Licensed() }
+
+// auditOffered reports whether it offers the Audit stream: the `audit` license besides `export`.
+func (st *Streams) auditOffered() bool { return st.offered() && st.audit.Licensed() }
 
 // Cursor is a position in a stream: every row at or after (At, ID) in (updated_at, id)
 // order. The zero Cursor is the beginning of the stream. It is inclusive, and the cursor a

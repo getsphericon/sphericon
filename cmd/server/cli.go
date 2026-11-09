@@ -19,9 +19,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgradenote"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
@@ -37,7 +37,7 @@ type core interface {
 	StaffMembers() (*staffmembers.Module, error)
 	ServiceCredentials() (*servicecredentials.Module, error)
 	SecretReencryption() (*secretreencryption.UseCase, error)
-	Bus() (*events.Bus, error)
+	EventHistory() (*eventhistory.UseCase, error)
 }
 
 // deps is what the commands reach outside themselves for.
@@ -69,7 +69,10 @@ func newDeps(env string) deps {
 			if err != nil {
 				return nil, nil, err
 			}
-			return a, func() { cleanup.Shutdown(a.Shutdown(ctx)) }, nil
+			return a, func() {
+				report := a.Shutdown(ctx)
+				cleanup.Shutdown(report)
+			}, nil
 		},
 	}
 }

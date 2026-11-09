@@ -26,7 +26,7 @@ func TestPublicationCanBeInspectedWithoutPayloadOrNewWork(t *testing.T) {
 	require.NoError(t, err)
 	kind := jobs.MessageObservationArgs{}.Kind()
 	before := env.JobsOf(t, kind)
-	page, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.AcmePublicID, events.JournalQuery{Name: events.NameEmailOpened})
+	page, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.AcmeID, events.JournalQuery{Name: events.NameEmailOpened})
 	require.NoError(t, err)
 	require.Len(t, page.Entries, 1)
 	entry := page.Entries[0]
@@ -51,9 +51,9 @@ func TestPublicationCanBeInspectedWithoutPayloadOrNewWork(t *testing.T) {
 func TestJournalInspectionKeepsWorkspaceAndInstanceHistorySeparate(t *testing.T) {
 	env := testhelper.Setup(t)
 	query := events.JournalQuery{Name: fixtures.JournalOldestName}
-	globex, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.GlobexPublicID, query)
+	globex, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.GlobexID, query)
 	require.NoError(t, err)
-	other, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.KramericaPublicID, query)
+	other, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.KramericaID, query)
 	require.NoError(t, err)
 	instance, err := env.Bus.InstanceJournal(t.Context(), events.JournalQuery{})
 	require.NoError(t, err)
@@ -64,16 +64,14 @@ func TestJournalInspectionKeepsWorkspaceAndInstanceHistorySeparate(t *testing.T)
 	assert.Equal(t, fixtures.JournalOtherWorkspaceEventID, other.Entries[0].EventID)
 	assert.Equal(t, fixtures.JournalInstanceEventID, instance.Entries[0].EventID)
 	assert.Empty(t, instance.Entries[0].RetainedConsumers)
-	missing, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.KramericaPublicID, events.JournalQuery{EventID: fixtures.JournalOldestEventID})
+	missing, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.KramericaID, events.JournalQuery{EventID: fixtures.JournalOldestEventID})
 	require.NoError(t, err)
 	assert.Empty(t, missing.Entries, "an event id cannot cross the selected scope")
-	_, err = env.Bus.WorkspaceJournal(t.Context(), "NoSuchId", query)
-	require.Error(t, err, "an unknown Workspace is refused, never read as the Instance")
 }
 
 func TestJournalInspectionCombinesExactFiltersWithRecordedTimeBounds(t *testing.T) {
 	env := testhelper.Setup(t)
-	globex := fixtures.GlobexPublicID
+	globex := int64(fixtures.GlobexID)
 	from := time.Date(2026, 11, 8, 4, 0, 0, 0, time.UTC)
 	before := from.Add(2 * time.Minute)
 	page, err := env.Bus.WorkspaceJournal(t.Context(), globex, events.JournalQuery{Name: fixtures.JournalOldestName, From: from, Before: before})
@@ -104,7 +102,7 @@ func TestJournalInspectionCombinesExactFiltersWithRecordedTimeBounds(t *testing.
 
 func TestJournalInspectionBoundsOutputAndSortsRetainedConsumerNames(t *testing.T) {
 	env := testhelper.Setup(t)
-	globex := fixtures.GlobexPublicID
+	globex := int64(fixtures.GlobexID)
 	bounded, err := env.Bus.WorkspaceJournal(t.Context(), globex, events.JournalQuery{Name: fixtures.JournalOldestName, Limit: 1})
 	require.NoError(t, err)
 	require.Len(t, bounded.Entries, 1)

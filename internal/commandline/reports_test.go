@@ -86,14 +86,6 @@ func TestRetireKeepsOnlyThePrimary(t *testing.T) {
 	assert.ErrorIs(t, err, secrets.ErrCiphertext)
 }
 
-func TestAKeysetChangeNeedsAKeyset(t *testing.T) {
-	_, rotateErr := commandline.RotateKeyset("")
-	_, retireErr := commandline.RetireKeyset("")
-
-	require.ErrorIs(t, rotateErr, commandline.ErrNoKeyset)
-	require.ErrorIs(t, retireErr, commandline.ErrNoKeyset)
-}
-
 func TestReencryptionReportOfARunThatRewroteSaysToRunAgain(t *testing.T) {
 	var out bytes.Buffer
 

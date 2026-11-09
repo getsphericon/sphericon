@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // Journal read limits bound operator output independently of replay and API pagination.
@@ -55,27 +54,20 @@ type JournalPage struct {
 	Truncated bool           `json:"truncated"`
 }
 
-// WorkspaceJournal reads only the Workspace named by its id (ADR 0043), the address an operator
-// types, including while it awaits deletion. One that is unknown is an error.
-func (b *Bus) WorkspaceJournal(ctx context.Context, publicID string, in JournalQuery) (JournalPage, error) {
-	return b.readJournal(ctx, func(ctx context.Context, client *ent.Client) (predicate.EventJournalEntry, error) {
-		id, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).OnlyID(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("workspace %q: %w", publicID, err)
-		}
-		return eventjournalentry.WorkspaceID(id), nil
-	}, in)
+// WorkspaceJournal reads only the facts of the Workspace workspaceID, including while it awaits
+// deletion. The operator names it by its id (ADR 0043), which its owner resolves
+// (internal/usecase/eventhistory).
+func (b *Bus) WorkspaceJournal(ctx context.Context, workspaceID int64, in JournalQuery) (JournalPage, error) {
+	return b.readJournal(ctx, eventjournalentry.WorkspaceID(workspaceID), in)
 }
 
 // InstanceJournal reads only facts belonging to no Workspace. It never reads all Workspaces.
 func (b *Bus) InstanceJournal(ctx context.Context, in JournalQuery) (JournalPage, error) {
-	return b.readJournal(ctx, func(context.Context, *ent.Client) (predicate.EventJournalEntry, error) {
-		return eventjournalentry.WorkspaceIDIsNil(), nil
-	}, in)
+	return b.readJournal(ctx, eventjournalentry.WorkspaceIDIsNil(), in)
 }
 
-// readJournal reads the entries scope selects; scope runs in the read's transaction.
-func (b *Bus) readJournal(ctx context.Context, scope func(context.Context, *ent.Client) (predicate.EventJournalEntry, error), in JournalQuery) (JournalPage, error) {
+// readJournal reads the entries where selects.
+func (b *Bus) readJournal(ctx context.Context, where predicate.EventJournalEntry, in JournalQuery) (JournalPage, error) {
 	page := JournalPage{Entries: []JournalEntry{}}
 	if in.Limit == 0 {
 		in.Limit = DefaultJournalLimit
@@ -87,10 +79,6 @@ func (b *Bus) readJournal(ctx context.Context, scope func(context.Context, *ent.
 		return page, errors.New("events: journal recorded-time interval must be nonempty")
 	}
 	err := b.within(ctx, func(client *ent.Client, _ *txPublisher) error {
-		where, err := scope(ctx, client)
-		if err != nil {
-			return err
-		}
 		query := client.EventJournalEntry.Query().Where(where)
 		if in.Name != "" {
 			query.Where(eventjournalentry.Name(in.Name))

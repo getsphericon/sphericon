@@ -112,8 +112,7 @@ type UseCase struct {
 
 // New builds the use case on the raw client an ingest key is resolved with, the bus the facts'
 // System events are published through, the Integrations module and the Instance clock the hook
-// reads. A nil integ serves only the facts that need neither a Preset nor a bot (a late Delivery
-// notice).
+// reads. A nil integ serves only the facts that need neither a Preset nor a bot.
 func New(client *ent.Client, bus *events.Bus, integ Integrations, now func() time.Time) *UseCase {
 	return &UseCase{client: client, bus: bus, integ: integ, now: now}
 }
