@@ -53,8 +53,8 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    session (`admission.Module.Admit`, `internal/domain/identity/admission`): from the user's Membership of the Workspace an
    operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership with
    `callerMembership(ctx)`). On every operation that carries a session, the admission then
-   admits the User (`secondfactors.Module.Admit`, `internal/domain/identity/secondfactors/admission.go`, the one decision
-   of both surfaces): it refuses first a User with a required acceptance pending (403
+   admits the User (`users.Module.CheckAcceptance`, then `secondfactors.Module.CheckRequirement`, the
+   one decision of both surfaces): it refuses first a User with a required acceptance pending (403
    `acceptance_pending`, ADR 0062) unless the operation is marked
    `@allowedWhileAcceptancePending` in TypeSpec, the one list of what a gated User may call;
    an unmarked operation is refused, the mark lifts only the gate (a Workspace's operation still
@@ -72,7 +72,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    token with a `membership_id`, ADR 0061: a Connection, which names its `oauth_client_id`, or a
    Personal token, which names none; `internal/domain/identity/apitokens/kinds.go` tells them apart) is looked up
    with its Membership: the scope acts as its User, the acceptance gate and the Two-factor
-   requirement apply (`secondfactors.Module.Admit`, as on /site: 403 `acceptance_pending` or
+   requirement apply (`admission.Module.AdmitMembership`, as on /site: 403 `acceptance_pending` or
    `second_factor_required`), and the Role bounds its scopes on every request (`memberships.MayGrant`,
    the bound the OAuth consent and the minting of a Personal token apply too); the Workspace's API
    token meets neither;

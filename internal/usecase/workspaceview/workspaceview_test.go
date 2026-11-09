@@ -70,7 +70,7 @@ func TestOfMembersCarriesTheGraceUnderTheRequirement(t *testing.T) {
 	assert.Nil(t, graceOf(t, views, fixtures.InitechID), "a Workspace without the requirement")
 }
 
-// A strong session meets the requirement by itself (secondfactors.Module.Admit), so it has no grace
+// A strong session meets the requirement by itself (admission.Module.Admit), so it has no grace
 // to count down.
 func TestOfMembersGivesAStrongSessionNoGrace(t *testing.T) {
 	env := testhelper.Setup(t)

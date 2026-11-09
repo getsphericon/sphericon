@@ -73,7 +73,7 @@ type Caller struct {
 	Actor events.Actor
 	// StrongSession is a session that passed a Second factor step or began with a Passkey (ADR
 	// 0052): it meets the Two-factor requirement by itself, so it has no grace to count down, as
-	// secondfactors.Module.Admit decides.
+	// admission.Module.Admit decides.
 	StrongSession bool
 }
 

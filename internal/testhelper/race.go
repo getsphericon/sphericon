@@ -150,12 +150,9 @@ func (r *WorkspaceRace) HoldOpen(t *testing.T, s *ent.Scoped, write func(ts *ent
 }
 
 // ProvenUsers is the Users a Second factor module built by hand for a race takes
-// (secondfactors.Users): every User is admitted and every identity proof holds, so a race test
-// drives the factor's lifecycle, not the proof.
+// (secondfactors.Users): every identity proof holds, so a race test drives the factor's
+// lifecycle, not the proof.
 type ProvenUsers struct{}
-
-// CheckAcceptance admits every User.
-func (ProvenUsers) CheckAcceptance(context.Context, int64) error { return nil }
 
 // ProveIdentity holds for every User.
 func (ProvenUsers) ProveIdentity(context.Context, *ent.User, users.IdentityProof) error { return nil }

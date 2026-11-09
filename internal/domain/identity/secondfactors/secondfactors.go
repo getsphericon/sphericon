@@ -4,7 +4,7 @@
 // confirming, verifying a code, regenerating the codes and disabling. It reads the factor for
 // everyone who needs it (the login, the sign-in, the notices, the re-encryption), and owns the
 // Second factor deadline of a Workspace that requires one: the grace, its reminders and its part
-// of the admission of a request (Admit).
+// of the admission of a request (CheckRequirement).
 //
 // A User enrolls in two phases: a pending secret is created, then confirmed with a valid code
 // before it counts. The secret is sealed with the instance cipher; a TOTP code is single-use (the
@@ -71,11 +71,9 @@ const (
 	MethodRecoveryCode Method = "recovery_code"
 )
 
-// Users is what the module asks of the User: their part of the admission of a request, which a
-// required acceptance pending refuses (users.Module.CheckAcceptance), and the proof of identity the
-// User's own changes of their factor take (users.Module.ProveIdentity).
+// Users is what the module asks of the User: the proof of identity the User's own changes of their
+// factor take (users.Module.ProveIdentity).
 type Users interface {
-	CheckAcceptance(ctx context.Context, userID int64) error
 	ProveIdentity(ctx context.Context, u *ent.User, proof users.IdentityProof) error
 }
 
@@ -88,8 +86,7 @@ type Module struct {
 	now    func() time.Time
 }
 
-// New builds the module. u is the User's part of Admit and the proof of identity of the User's
-// own steps; now is the Instance clock TOTP codes and the Two-factor grace are checked against.
+// New builds the module. u proves the identity of the User's own steps; now is the Instance clock TOTP codes and the Two-factor grace are checked against.
 func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, u Users, now func() time.Time) *Module {
 	return &Module{ent: client, bus: bus, cipher: cipher, users: u, now: now}
 }

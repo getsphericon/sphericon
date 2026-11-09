@@ -722,7 +722,7 @@ var identityPackage = do.Package(
 	// The admission of a request made on a User's session (ADR 0061): /site's Access and the OAuth
 	// consent's decision.
 	do.Lazy(func(i do.Injector) (*admission.Module, error) {
-		return admission.New(do.MustInvoke[*memberships.Module](i), do.MustInvoke[*secondfactors.Module](i)), nil
+		return admission.New(do.MustInvoke[*memberships.Module](i), do.MustInvoke[*users.Module](i), do.MustInvoke[*secondfactors.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*secondfactorreset.UseCase, error) {
 		return secondfactorreset.New(do.MustInvoke[*events.Bus](i)), nil
@@ -945,7 +945,7 @@ var surfacesPackage = do.Package(
 	// The Bearer-token handler of /api and of /mcp, which rides the same token auth: one, so
 	// both meet the same acceptance gate and the same clock.
 	do.Lazy(func(i do.Injector) (*apiauth.ExternalSecurityHandler, error) {
-		return server.ExternalSecurity(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[apiexternal.Deps](i)), nil
+		return server.ExternalSecurity(do.MustInvoke[*ent.Client](i), do.MustInvoke[*admission.Module](i), do.MustInvoke[apiexternal.Deps](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*externalAPI, error) {
 		h, err := server.NewExternalAPI(do.MustInvoke[apiexternal.Deps](i), do.MustInvoke[*apiauth.ExternalSecurityHandler](i))
