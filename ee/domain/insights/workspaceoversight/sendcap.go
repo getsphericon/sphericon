@@ -14,7 +14,7 @@ func (m *Module) SendCaps() providerlimit.SendCaps { return m.sendCaps }
 
 // SentLast24h counts the messages the Workspace w sent over the last 24 hours, the figure the
 // console shows next to its Send cap, through a scope over w after its row is loaded
-// (docs/architecture.md, scope list item 7) and the same read as /site's (providerlimit).
+// (docs/architecture/workspace-scoping.md, scope list item 7) and the same read as /site's (providerlimit).
 func (m *Module) SentLast24h(ctx context.Context, w *ent.Workspace) (int, error) {
 	if err := m.licensed(); err != nil {
 		return 0, err

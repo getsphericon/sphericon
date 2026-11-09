@@ -39,7 +39,7 @@ type HoldChange = holds.Change
 // configured maximum. ErrWorkspaceNotFound for an unknown Workspace.
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
-// loaded (docs/architecture.md, list item 7).
+// loaded (docs/architecture/workspace-scoping.md, list item 7).
 func (m *Module) SetHold(ctx context.Context, cred *ent.ServiceCredential, workspaceID, key string, in HoldInput) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err

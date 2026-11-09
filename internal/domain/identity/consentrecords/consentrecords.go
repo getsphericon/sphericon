@@ -8,7 +8,7 @@
 // answer (Write), reads a User's current answers (Module.Current) and many Users' current consent
 // to the operator's mailings (Mailings, for the service feed of Users). The records belong to the
 // User, not to a Workspace, so the package works on the raw *ent.Client (it is in the closed list
-// of docs/architecture.md): the Consent record table and nothing else.
+// of docs/architecture/workspace-scoping.md): the Consent record table and nothing else.
 package consentrecords
 
 import (

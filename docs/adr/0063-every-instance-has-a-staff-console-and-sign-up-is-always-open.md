@@ -51,7 +51,7 @@ itself stops being something to open or close.
   the whole `/staff` prefix answers 404, and `sphericon staff create` refuses, naming the variable
   to set. Nobody needs it to try the product.
 - The SaaS deployment creates its Staff member and sets its Sign-up items before it is published.
-- The Staff member's store and sign-in leave `ee/staff` for the core; `docs/architecture.md` and its
+- The Staff member's store and sign-in leave `ee/staff` for the core; `docs/architecture/backend.md` and its
   closed list of packages that hold the raw client follow.
 - The `/staff` surface is no longer a 404 without the license: its core routes answer on every
   Instance, its Enterprise routes keep answering 404 without the `staff` feature.

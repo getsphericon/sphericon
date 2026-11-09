@@ -12,7 +12,7 @@ import (
 
 // SecretSweeps are the DKIM private keys of the Sending domains of every Workspace, the discarded
 // ones included, as the Secret re-encryption sweeps them (secrets.Cipher.Reencrypt). They read and
-// swap on the raw client, and use it for nothing else (docs/architecture.md, Workspace scoping).
+// swap on the raw client, and use it for nothing else (docs/architecture/workspace-scoping.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	return []secrets.Sweep{{
 		Column: "sending_domains.dkim_private_key_encrypted",

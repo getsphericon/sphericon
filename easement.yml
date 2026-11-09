@@ -1,5 +1,5 @@
 # Architecture gate (https://github.com/mokevnin/easement): `mise run check:arch`.
-# The boundaries below are the ones docs/architecture.md states in prose; a violation names
+# The boundaries below are the ones docs/architecture/modules.md states in prose; a violation names
 # the rule's `because`, so read it before reaching for a baseline entry.
 version: 1
 
@@ -264,7 +264,7 @@ forbid_symbol:
   - name: github.com/riverqueue/river.NewPeriodicJob
     allow: *job-schedulers
     because: *river-scheduling-because
-  # The raw ent client: its holders are the closed list of docs/architecture.md (Workspace scoping).
+  # The raw ent client: its holders are the closed list of docs/architecture/workspace-scoping.md (Workspace scoping).
   - name: github.com/getsphericon/sphericon/ent.Client
     allow:
       [
@@ -286,7 +286,7 @@ forbid_symbol:
         usecase-raw,
         wiring,
       ]
-    because: a handler, a domain module or a use case takes a *ent.Scoped so every query is workspace-bound, a use case the one its driver built; raw access is the closed list of docs/architecture.md (Workspace scoping), a small package in the raw-client component of its context (`domain-<context>-raw`, `infra-raw` for the infrastructure), never a field of a module, a use case or a handler
+    because: a handler, a domain module or a use case takes a *ent.Scoped so every query is workspace-bound, a use case the one its driver built; raw access is the closed list of docs/architecture/workspace-scoping.md (Workspace scoping), a small package in the raw-client component of its context (`domain-<context>-raw`, `infra-raw` for the infrastructure), never a field of a module, a use case or a handler
   # The ent client's hooks and the upgrade types: only the wiring installs and reads them.
   - name: github.com/getsphericon/sphericon/internal/domain/contacts/emailcase.Hook
     allow: &client-builders [wiring]
@@ -325,7 +325,7 @@ x-no-surface-gen: &no-surface-gen
   because: no core tier and no Enterprise module or use case imports an API surface's generated package (ADR 0102); a vocabulary shared with a contract is generated into the kernel, as the user scope vocabulary is into internal/kernel/tokenscope, or into the module that owns it, as the Service credential scopes are into ee/domain/identity/servicecredentials
 x-no-container: &no-container
   - name: github.com/samber/do
-    because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture.md, Backend architecture)
+    because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture/backend.md, DI)
 # The global i18next instance belongs to @workflowbuilder/sdk, which re-initialises it at import time;
 # the app runs on its own instance (src/i18n.ts). The types (`TFunction`, `i18n`) stay allowed.
 x-no-global-i18n: &no-global-i18n
@@ -520,7 +520,7 @@ components:
   # Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the steps
   # that make a User Verified with its first one, and Notice delivery, which reads a User or a
   # Workspace's Owners by the ids an event names. They hold the raw client (the closed list of
-  # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
+  # docs/architecture/workspace-scoping.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
   usecase-raw:
     in:
@@ -540,14 +540,14 @@ components:
   # the bottom: identity -> contacts -> content -> sending -> orchestration -> insights -> instance.
   # Each context is a few components, one per privilege, named `domain-<context>[-<part>]`:
   # `domain-<context>` (the glob of the context's directory: the modules that hold no raw client),
-  # `domain-<context>-raw` (the closed list of its raw-client holders, docs/architecture.md,
+  # `domain-<context>-raw` (the closed list of its raw-client holders, docs/architecture/workspace-scoping.md,
   # Workspace scoping), and a component of its own where a rule binds part of a context only. A
   # context's modules may import each other (a context only orders packages, it is no box with a
   # facade), so its components name each other in `may_depend_on`, with every component of the
   # contexts below and nothing above: the kernel, the infrastructure and ent are open to all
   # (common). Every package of the core is in a tier or a context; there is no catch-all.
   # The raw-client components follow the closed list "The raw *ent.Client is allowed only in" of
-  # docs/architecture.md (Workspace scoping), kept in step with it. A package is the unit, so the
+  # docs/architecture/workspace-scoping.md (Workspace scoping), kept in step with it. A package is the unit, so the
   # doc's narrower grants (`capturedmessages` only `Purge`, `automations` only `FenceOn`,
   # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and
   # `SecretSweeps`, `integrations`, `webhookendpoints`, `rules`, `automations`, `users` and
@@ -563,13 +563,13 @@ components:
   # Its bottom: the Workspace with its settings and its deletion window, and the Memberships with the
   # Permissions, the Owners and the notices to them. Every module may read a Workspace, ask a
   # Permission or tell the Owners something, so these two import no domain module; both hold the
-  # raw client (the closed list of docs/architecture.md, Workspace scoping).
+  # raw client (the closed list of docs/architecture/workspace-scoping.md, Workspace scoping).
   domain-identity-base:
     { in: [internal/domain/identity/workspaces, internal/domain/identity/memberships] }
   # User deletion's module: the one caller of memberships.LeaveDoomedWorkspaceIn (the only Owner
   # leaving a Workspace in its deletion window), which every other component is forbidden.
   domain-identity-users: { in: internal/domain/identity/users }
-  # The raw-client holders of identity (docs/architecture.md, Workspace scoping).
+  # The raw-client holders of identity (docs/architecture/workspace-scoping.md, Workspace scoping).
   domain-identity-raw:
     in:
       [
@@ -609,7 +609,7 @@ components:
   # Integrations and the Presets that read their callbacks, the Sending domains with their DKIM and
   # DMARC primitives, the Tracking domains and their host changes, the Bindings of Telegram
   # chats, the Message tokens (messagetoken), the Link clicks (linkclick), reputation, the Private relay ranges of Machine
-  # engagement and the Captured messages. Its raw-client holders (docs/architecture.md, Workspace scoping) are
+  # engagement and the Captured messages. Its raw-client holders (docs/architecture/workspace-scoping.md, Workspace scoping) are
   # `domain-sending-raw`.
   domain-sending-raw:
     in:
@@ -630,7 +630,7 @@ components:
   # Broadcasts, the Automations with their stored Steps (automationstep), the Rules and the
   # Webhook endpoints, with the one shape of a refused removal (liveuse), a leaf below the modules
   # that return it, and the Removal check at its top (removalcheck, a component of its own). Its
-  # raw-client holders (docs/architecture.md, Workspace scoping) are `domain-orchestration-raw`.
+  # raw-client holders (docs/architecture/workspace-scoping.md, Workspace scoping) are `domain-orchestration-raw`.
   domain-orchestration-raw:
     in:
       [
@@ -692,7 +692,7 @@ components:
   # (aggregates), logging and OpenTelemetry, and the process's
   # configuration (`config`, read by them). It imports only the kernel and never a domain module.
   infra: { in: [internal/infra, config] }
-  # The infrastructure packages that hold the raw client (the closed list of docs/architecture.md,
+  # The infrastructure packages that hold the raw client (the closed list of docs/architecture/workspace-scoping.md,
   # Workspace scoping): the bus (docs/design/domain-events.md), which stores an Event and queues the
   # jobs of the consumers the wiring registers on it, the database package's schema guard, and the
   # Login throttle, whose counters belong to an address, not a Workspace.

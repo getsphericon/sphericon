@@ -14,7 +14,7 @@
 //
 // The Second factor belongs to the User, not a Workspace, so there is no *ent.Scoped to take:
 // this use case holds the raw *ent.Client (the User is reached by id), one of the closed list of
-// docs/architecture.md (Workspace scoping).
+// docs/architecture/workspace-scoping.md (Workspace scoping).
 package secondfactorcheck
 
 import (

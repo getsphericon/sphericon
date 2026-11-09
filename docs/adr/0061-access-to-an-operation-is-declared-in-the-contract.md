@@ -123,7 +123,7 @@ Sending, Automations, Rules and imports stay a member's work.
 ## Consequences
 
 - ADRs 0016, 0051 and 0057 are amended in place to point here.
-- `docs/architecture.md`, list item 1 of the scoped-client construction points, moves from
+- `docs/architecture/workspace-scoping.md`, list item 1 of the scoped-client construction points, moves from
   `Handlers.scopedFor` / `scopedWithRoleFor` to the middleware when it is built.
 - A Connection and a Personal token need their Membership in the schema; an API token does not get
   one.

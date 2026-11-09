@@ -13,7 +13,7 @@ import (
 // (auditentries.Log.Entries), through a scope over the Workspace the Staff member is looking at,
 // so the query carries no hand-written Workspace predicate; ErrWorkspaceNotFound
 // when the Workspace does not exist. With WorkspaceDeliverability and SentLast24h it is one of
-// the three console reads this package builds a Workspace scope for (docs/architecture.md, scope
+// the three console reads this package builds a Workspace scope for (docs/architecture/workspace-scoping.md, scope
 // list item 7).
 //
 // It is gated by the `staff` feature alone: the console is the Staff member's tool and

@@ -14,7 +14,7 @@
 //
 // It holds the raw *ent.Client only in Due, which lists the domains of every Workspace due a
 // check before any scope exists, and in DevTXTLookup, the end-to-end suite's resolver
-// (docs/architecture.md, Workspace scoping).
+// (docs/architecture/workspace-scoping.md, Workspace scoping).
 package sendingdomains
 
 import (

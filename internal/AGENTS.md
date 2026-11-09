@@ -79,7 +79,7 @@ under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
 ## Domain contexts
 
 A domain module lives in `internal/domain/<context>/<module>` (ADR 0102; the order of the contexts
-and their easement components are "Domain contexts" in `docs/architecture.md`): identity,
+and their easement components are "Domain contexts" in `docs/architecture/modules.md`): identity,
 contacts, content, sending, orchestration, insights and instance
 (`internal/domain/identity/{workspaces,memberships,users,...}`,
 `internal/domain/contacts/{contacts,segments,tags,...}`, `internal/domain/content/{emailtemplates,...}`,
@@ -93,12 +93,12 @@ of the contexts below; its tests are not checked, so a test may build what it ne
 as before. A module moves with its tests, in the same `_test` package and with the same assertions.
 Only paths change: a relative path a test reads (`signinprovider`'s `../../../../openapi`) gets the new
 depth, and the list of `RecordAudit` call sites in `internal/api/site/audit_explicit_test.go` names
-the moved files. The move recipe is at the end of that section of `docs/architecture.md`.
+the moved files. The move recipe is at the end of that section of `docs/architecture/modules.md`.
 
 ## Use cases
 
-A use case (`internal/usecase/<name>`, ADR 0102; the recipe is "Use cases" in
-`docs/architecture.md`) owns the tests of its operation, in its own `_test` package through its
+A use case (`internal/usecase/<name>`, ADR 0102; the recipe is in
+`docs/architecture/use-cases.md`) owns the tests of its operation, in its own `_test` package through its
 exports: when a check moves out of a domain module into a use case, its test moves with it and keeps
 its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's race with the writes the
 Removal check reads under the Workspace lock, `internal/usecase/customfieldretyping` a Custom field

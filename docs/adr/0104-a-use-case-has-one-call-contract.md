@@ -45,7 +45,7 @@ A caller had to learn each package's shape anew, and a reviewer could check none
 - **A method takes `ctx`, then the scope, then at most two required arguments.**
   - The scope is the `*ent.Scoped` of the Workspace the operation acts in.
   - An operation that belongs to no Workspace when it starts takes no scope argument. Its use case
-    holds the raw client from `New` (the closed list of `docs/architecture.md`, Workspace scoping),
+    holds the raw client from `New` (the closed list of `docs/architecture/workspace-scoping.md`, Workspace scoping),
     because a driver holds no raw client to pass. A method that joined its caller's transaction
     would take that transaction's client as its scope. None does: the deletion of a User spends a
     Second factor code through the function `secondfactorcheck.UseCase.DeletionCode` hands it.
@@ -92,7 +92,7 @@ A caller had to learn each package's shape anew, and a reviewer could check none
   an argument, each driver reads the time on its own, and two operations of the same request can see
   two different moments.
 - **The raw client as an argument of a cross-Workspace operation.** A driver holds no raw client
-  (`docs/architecture.md`), so it could not pass one. The use cases that need one hold it.
+  (`docs/architecture/workspace-scoping.md`), so it could not pass one. The use cases that need one hold it.
 - **An ast-grep rule.** The checks need types (`*ent.Scoped`, `error`, `io.Writer`), so the rule
   is an analyzer of our own.
 

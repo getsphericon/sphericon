@@ -133,7 +133,7 @@ context gets a package of its own by the same test.
   client, `abusedetector` joins `ee-domain-insights-raw`, and `ee-usecase-raw` keeps one use case.
   The Outbound send reads the Template a Transactional send references through ent, as a module
   reads another's rows (ADR 0102), so sending imports no content module.
-- `docs/architecture.md` ("Use cases") states this test, and `internal/AGENTS.md` lists the tests
+- `docs/architecture/use-cases.md` ("Use cases") states this test, and `internal/AGENTS.md` lists the tests
   that stay with a use case.
 - ADR 0104's call contract still binds only the use cases. Its Abuse detector, which it turned from
   a `Detector` into a `UseCase`, is a domain module's operation again.

@@ -16,7 +16,7 @@ import (
 // every version, the draft and those of a deleted Rule too, since a Firing reads its version; each
 // field is sealed on its own, and a version is swapped whole, as the Secret re-encryption sweeps
 // them (secrets.Cipher.Reencrypt). They read and swap on the raw client, and use it for nothing else
-// (docs/architecture.md, Workspace scoping).
+// (docs/architecture/workspace-scoping.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	return []secrets.Sweep{{
 		Column: "rule_versions.actions",
