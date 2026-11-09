@@ -101,5 +101,5 @@ func (r integrationRace) broadcast(t *testing.T) *ent.Broadcast {
 	t.Helper()
 	b, err := r.sends.Get(context.Background(), r.Scope, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
-	return b.Broadcast
+	return b
 }

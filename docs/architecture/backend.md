@@ -110,9 +110,11 @@ whether the session is issued again) are `users.Module.ChangeProfile`, which tak
 (marked `goverter:ignore` with the reason). A resource `/site` and `/api` both answer is built once
 below them (ADR 0111): the Integration's `integrations.View`, the Segment preview of `segments`,
 the Workspace summary of `workspacesummary`; each surface maps the same values into its own
-contract. Hand-built values are limited to response wrappers
-(`*ListOK`, `*Headers`) and aggregates with no single source (setup checklist, lint findings,
-the integration config `oneOf`).
+contract. What one contract shows and the other does not is a separate operation, so the other never
+pays for it: `/site` calls `broadcasts.Views` (a Broadcast's figures, Progress and lint) and
+`emailtemplates.Views` (the lint of a save), `/api` the modules, which answer the row. Hand-built
+values are limited to response wrappers (`*ListOK`, `*Headers`) and aggregates with no single source
+(setup checklist, lint findings, the integration config `oneOf`).
 
 ## Authentication context
 

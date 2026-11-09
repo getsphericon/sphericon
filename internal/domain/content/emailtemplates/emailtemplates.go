@@ -34,8 +34,8 @@ var (
 )
 
 // Module holds no Workspace state: every call receives the Workspace-scoped client (ADR 0017).
-// It holds the document renderer a save with a document runs, and the Brand kit a save and a lint
-// compare a message to.
+// It holds the document renderer a save with a document runs, and the Brand kit a lint compares a
+// message to: Lint, and the lint of a save in Views.
 type Module struct {
 	renderer *emaildoc.Renderer
 	brands   Brands
@@ -89,28 +89,6 @@ func (m *Module) lint(ctx context.Context, s *ent.Scoped, subject, body string) 
 	return emailrender.Lint(subject, body, brand), nil
 }
 
-// Saved is a Template a save stored, with the lint warnings of its content (ADR 0040): advice for
-// the author, which never block the save.
-type Saved struct {
-	Template *ent.EmailTemplate
-	Warnings []emailrender.Finding
-}
-
-// saved lints what a save stored: the body as the write gave it, before the sanitizer, so a
-// construct the save removed is still named; otherwise the stored body (a document's rendered HTML,
-// or a write of the subject alone). A message that cannot render was refused by the save.
-func (m *Module) saved(ctx context.Context, s *ent.Scoped, tpl *ent.EmailTemplate, written *string) (Saved, error) {
-	body := tpl.Body
-	if written != nil {
-		body = *written
-	}
-	report, err := m.lint(ctx, s, tpl.Subject, body)
-	if err != nil {
-		return Saved{}, err
-	}
-	return Saved{Template: tpl, Warnings: report.Warnings}, nil
-}
-
 // CreateInput is a new Template; nil Subject and Body keep their defaults.
 type CreateInput struct {
 	Name    string
@@ -149,22 +127,17 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.EmailTe
 	return tpl, err
 }
 
-// Create stores a Template and returns it with the lint warnings of its content. A blank name is
-// ErrBlankName; a subject, body or document that cannot render is emailrender.ErrInvalidContent;
-// the body is stored sanitized.
-func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Saved, error) {
+// Create stores a Template and returns it. A blank name is ErrBlankName; a subject, body or
+// document that cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
+func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.EmailTemplate, error) {
 	if err := checkName(&in.Name); err != nil {
-		return Saved{}, err
+		return nil, err
 	}
 	c, err := emailrender.ResolveContent(ctx, m.renderer, in.Subject, in.Body, in.Doc, ErrBodyAndDoc)
 	if err != nil {
-		return Saved{}, err
+		return nil, err
 	}
-	tpl, err := create(ctx, s, in.Name, in.Subject, c, in.Doc)
-	if err != nil {
-		return Saved{}, err
-	}
-	return m.saved(ctx, s, tpl, in.Body)
+	return create(ctx, s, in.Name, in.Subject, c, in.Doc)
 }
 
 // CreatePrepared stores a Template of a document already rendered by Prepare, for a caller that
@@ -189,16 +162,15 @@ func create(ctx context.Context, s *ent.Scoped, name string, subject *string, c 
 	return tpl, mapWriteError(err)
 }
 
-// Update applies the given fields and returns the Template with the lint warnings of its content.
-// A blank name is ErrBlankName.
-func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (Saved, error) {
+// Update applies the given fields and returns the Template. A blank name is ErrBlankName.
+func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
 	if err := checkName(in.Name.Ptr()); err != nil {
-		return Saved{}, err
+		return nil, err
 	}
 	doc, _ := in.Doc.Get()
 	c, err := emailrender.ResolveContent(ctx, m.renderer, in.Subject.Ptr(), in.Body.Ptr(), doc, ErrBodyAndDoc)
 	if err != nil {
-		return Saved{}, err
+		return nil, err
 	}
 	update := s.EmailTemplate().UpdateOneID(id).
 		SetNillableName(in.Name.Ptr()).
@@ -212,12 +184,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	tpl, err := update.Save(ctx)
 	if ent.IsNotFound(err) {
-		return Saved{}, ErrNotFound
+		return nil, ErrNotFound
 	}
-	if err != nil {
-		return Saved{}, mapWriteError(err)
-	}
-	return m.saved(ctx, s, tpl, in.Body.Ptr())
+	return tpl, mapWriteError(err)
 }
 
 // Delete removes a Template.

@@ -802,6 +802,10 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*emailtemplates.Module, error) {
 		return emailtemplates.New(do.MustInvoke[*emaildoc.Renderer](i), brandkits.Brands{}), nil
 	}),
+	// The views answer a save with its lint, for the surfaces whose contract shows it.
+	do.Lazy(func(i do.Injector) (*emailtemplates.Views, error) {
+		return emailtemplates.NewViews(do.MustInvoke[*emailtemplates.Module](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*brandkits.Module, error) {
 		return brandkits.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*emailtemplates.Module](i)), nil
 	}),
@@ -890,6 +894,11 @@ var contentPackage = do.Package(
 	// Schedule and the progress estimate ask the Send route of Outbound send.
 	do.Lazy(func(i do.Injector) (*broadcasts.Module, error) {
 		return broadcasts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i)), nil
+	}),
+	// The views answer with a Broadcast's figures, Progress and lint, for the surfaces whose contract
+	// shows them.
+	do.Lazy(func(i do.Injector) (*broadcasts.Views, error) {
+		return broadcasts.NewViews(do.MustInvoke[*broadcasts.Module](i)), nil
 	}),
 )
 
@@ -1112,10 +1121,12 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Unsubscribe:           do.MustInvoke[*unsubscriberecording.UseCase](i),
 		Bindings:              do.MustInvoke[*bindings.Module](i),
 		Templates:             do.MustInvoke[*emailtemplates.Module](i),
+		TemplateViews:         do.MustInvoke[*emailtemplates.Views](i),
 		BrandKit:              do.MustInvoke[*brandkits.Module](i),
 		Automations:           do.MustInvoke[*automations.Module](i),
 		Rules:                 do.MustInvoke[*rules.Module](i),
 		Broadcasts:            do.MustInvoke[*broadcasts.Module](i),
+		BroadcastViews:        do.MustInvoke[*broadcasts.Views](i),
 		SendingDomains:        do.MustInvoke[*sendingdomains.Module](i),
 		SendingDomainDeletion: do.MustInvoke[*sendingdomaindeletion.UseCase](i),
 		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),

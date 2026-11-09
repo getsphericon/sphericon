@@ -22,7 +22,7 @@ func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTem
 func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.CreateTemplateInput, _ siteapi.SiteTemplatesCreateParams) (*siteapi.SiteEmailTemplateResource, error) {
 	scoped := workspaceScope(ctx)
 
-	saved, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
+	saved, err := h.templateViews.Create(ctx, scoped, inputs.TemplateCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.UpdateT
 
 	id := int64(params.ID)
 
-	saved, err := h.templates.Update(ctx, scoped, id, inputs.TemplateUpdate(req))
+	saved, err := h.templateViews.Update(ctx, scoped, id, inputs.TemplateUpdate(req))
 	if err != nil {
 		return nil, err
 	}

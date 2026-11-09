@@ -13,12 +13,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// View is a Broadcast as the surfaces show it, built once below their contracts (ADR 0111): the
-// row and its delivery figures, which are derived from its recipients and their Outbound messages
-// rather than stored on it (Stats). The view of one Broadcast (Get, Send) adds its Progress while it
-// is sending (ADR 0023); a list leaves it out, as it costs a query per sending row. The view a save
-// returns (Create, Update) adds the lint warnings of its email content (ADR 0040), advice for the
-// author that never blocks the save.
+// View is a Broadcast as the author's screens show it, built once below their contracts (ADR 0111):
+// the row and its delivery figures, which are derived from its recipients and their Outbound
+// messages rather than stored on it (Stats). The view of one Broadcast (Get, Send) adds its Progress
+// while it is sending (ADR 0023); a list leaves it out, as it costs a query per sending row. The
+// view a save returns (Create, Update) adds the lint warnings of its email content (ADR 0040),
+// advice for the author that never blocks the save.
 type View struct {
 	*ent.Broadcast
 
@@ -27,19 +27,31 @@ type View struct {
 	Warnings []emailrender.Finding
 }
 
+// Views are the Module's operations answered with the View: the figures, the Progress and the lint
+// cost queries the row alone does not, so only a surface whose contract shows them calls Views, and
+// one that shows the row calls the Module.
+type Views struct {
+	m *Module
+}
+
+// NewViews builds the views over the operations of m.
+func NewViews(m *Module) *Views {
+	return &Views{m: m}
+}
+
 // Get returns the view of one Broadcast of the Workspace, its Progress included.
-func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
-	b, err := m.row(ctx, s, id)
+func (v *Views) Get(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
+	b, err := v.m.Get(ctx, s, id)
 	if err != nil {
 		return View{}, err
 	}
-	return m.detailed(ctx, s, b)
+	return v.detailed(ctx, s, b)
 }
 
 // List returns one page of the Workspace's Broadcasts that f lets through, in order, with their
 // figures: two grouped queries for the whole page, and no Progress.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter, order Order) (pagination.Page[View], error) {
-	page, err := m.list(ctx, s, p, f, order)
+func (v *Views) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter, order Order) (pagination.Page[View], error) {
+	page, err := v.m.List(ctx, s, p, f, order)
 	if err != nil {
 		return pagination.Page[View]{}, err
 	}
@@ -52,10 +64,10 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f
 	}), nil
 }
 
-// Create makes a draft Broadcast on the Channel of its content (create) and returns its view, with
-// the lint warnings of the content as written.
-func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (View, error) {
-	b, err := m.create(ctx, s, f)
+// Create makes a draft Broadcast (Module.Create) and returns its view, with the lint warnings of
+// the content as written.
+func (v *Views) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (View, error) {
+	b, err := v.m.Create(ctx, s, f)
 	if err != nil {
 		return View{}, err
 	}
@@ -63,13 +75,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (View
 	if c, ok := f.Content.(EmailContentInput); ok {
 		written = c.Body
 	}
-	return m.saved(ctx, s, b, written)
+	return v.saved(ctx, s, b, written)
 }
 
-// Update applies a patch to a draft (update) and returns its view, with the lint warnings of its
-// content.
-func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInput) (View, error) {
-	b, err := m.update(ctx, s, id, f)
+// Update applies a patch to a draft (Module.Update) and returns its view, with the lint warnings of
+// its content.
+func (v *Views) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInput) (View, error) {
+	b, err := v.m.Update(ctx, s, id, f)
 	if err != nil {
 		return View{}, err
 	}
@@ -77,67 +89,49 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 	if c, ok := f.Content.(EmailContentPatch); ok {
 		written = c.Body.Ptr()
 	}
-	return m.saved(ctx, s, b, written)
+	return v.saved(ctx, s, b, written)
 }
 
-// Send moves a draft or scheduled Broadcast to sending (send) and returns its view, its Progress
-// included.
-func (m *Module) Send(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
-	b, err := m.send(ctx, s, id)
+// Send moves a draft or scheduled Broadcast to sending (Module.Send) and returns its view, its
+// Progress included.
+func (v *Views) Send(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
+	b, err := v.m.Send(ctx, s, id)
 	if err != nil {
 		return View{}, err
 	}
-	return m.detailed(ctx, s, b)
+	return v.detailed(ctx, s, b)
 }
 
-// Schedule schedules a draft or scheduled Broadcast at when (schedule) and returns its view.
-func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (View, error) {
-	b, err := m.schedule(ctx, s, id, when)
+// Schedule schedules a draft or scheduled Broadcast at when (Module.Schedule) and returns its view.
+func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (View, error) {
+	b, err := v.m.Schedule(ctx, s, id, when)
 	if err != nil {
 		return View{}, err
 	}
-	return m.figured(ctx, s, b)
+	return v.figured(ctx, s, b)
 }
 
-// Unschedule returns a scheduled Broadcast to draft (unschedule) and returns its view.
-func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
-	b, err := m.unschedule(ctx, s, id)
+// Archive puts a draft, sent or failed Broadcast aside (Module.Archive) and returns its view: its
+// figures stay.
+func (v *Views) Archive(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
+	b, err := v.m.Archive(ctx, s, id)
 	if err != nil {
 		return View{}, err
 	}
-	return m.figured(ctx, s, b)
+	return v.figured(ctx, s, b)
 }
 
-// SetSegment points a draft at a Segment, or at all contacts (setSegment), and returns its view.
-func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmentID *int64) (View, error) {
-	b, err := m.setSegment(ctx, s, id, segmentID)
+// Unarchive brings an archived Broadcast back to the lists (Module.Unarchive) and returns its view.
+func (v *Views) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
+	b, err := v.m.Unarchive(ctx, s, id)
 	if err != nil {
 		return View{}, err
 	}
-	return m.figured(ctx, s, b)
-}
-
-// Archive puts a draft, sent or failed Broadcast aside (archive) and returns its view: its figures
-// stay.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
-	b, err := m.archive(ctx, s, id)
-	if err != nil {
-		return View{}, err
-	}
-	return m.figured(ctx, s, b)
-}
-
-// Unarchive brings an archived Broadcast back to the lists (unarchive) and returns its view.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
-	b, err := m.unarchive(ctx, s, id)
-	if err != nil {
-		return View{}, err
-	}
-	return m.figured(ctx, s, b)
+	return v.figured(ctx, s, b)
 }
 
 // figured builds the view of b with its figures.
-func (m *Module) figured(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
+func (v *Views) figured(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
 	figures, err := StatsFor(ctx, s, b)
 	if err != nil {
 		return View{}, err
@@ -147,8 +141,8 @@ func (m *Module) figured(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (
 
 // detailed builds the view of the one Broadcast b with its figures and, while it is sending, its
 // Progress at the Instance's now.
-func (m *Module) detailed(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
-	d, err := m.Detail(ctx, s, b, m.out.Now())
+func (v *Views) detailed(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
+	d, err := v.m.Detail(ctx, s, b, v.m.out.Now())
 	if err != nil {
 		return View{}, err
 	}
@@ -160,10 +154,10 @@ func (m *Module) detailed(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) 
 // before the sanitizer, so a construct the save removed is still named; otherwise the stored body
 // (a document's rendered HTML, or a write of the subject alone). A message that cannot render was
 // refused by the save.
-func (m *Module) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, written *string) (View, error) {
-	v, err := m.figured(ctx, s, b)
+func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, written *string) (View, error) {
+	view, err := v.figured(ctx, s, b)
 	if err != nil || b.Channel != channels.Email {
-		return v, err
+		return view, err
 	}
 	brand, err := brandkits.Brands{}.Brand(ctx, s)
 	if err != nil {
@@ -173,6 +167,6 @@ func (m *Module) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, wri
 	if written != nil {
 		body = *written
 	}
-	v.Warnings = emailrender.Lint(lo.FromPtr(b.Subject), body, brand).Warnings
-	return v, nil
+	view.Warnings = emailrender.Lint(lo.FromPtr(b.Subject), body, brand).Warnings
+	return view, nil
 }
