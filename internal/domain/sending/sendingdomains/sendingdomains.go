@@ -232,9 +232,5 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Sending
 
 // List returns one page of the Workspace's kept Sending domains, ascending by id.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.SendingDomain], error) {
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.SendingDomain().Query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.SendingDomain, error) {
-			return s.SendingDomain().Query().Order(ent.Asc(sendingdomain.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, s.SendingDomain().Query().Order(ent.Asc(sendingdomain.FieldID)))
 }

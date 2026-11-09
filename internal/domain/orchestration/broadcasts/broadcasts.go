@@ -409,24 +409,17 @@ type ListFilter struct {
 
 // List returns one page of the Workspace's Broadcasts that f lets through, in order.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter, order Order) (pagination.Page[*ent.Broadcast], error) {
-	rows := func() *ent.BroadcastQuery {
-		q := s.Broadcast().Query()
-		if f.Archived {
-			q = s.Broadcast().QueryArchived()
-		}
-		if len(f.Statuses) > 0 {
-			q = q.Where(broadcast.StatusIn(f.Statuses...))
-		}
-		if f.Channel != nil {
-			q = q.Where(broadcast.ChannelEQ(*f.Channel))
-		}
-		return q
+	q := s.Broadcast().Query()
+	if f.Archived {
+		q = s.Broadcast().QueryArchived()
 	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Broadcast, error) {
-			return rows().Order(order.terms()...).Limit(limit).Offset(offset).All(ctx)
-		})
+	if len(f.Statuses) > 0 {
+		q = q.Where(broadcast.StatusIn(f.Statuses...))
+	}
+	if f.Channel != nil {
+		q = q.Where(broadcast.ChannelEQ(*f.Channel))
+	}
+	return pagination.List(ctx, p, q.Order(order.terms()...))
 }
 
 // Order is the order of the Broadcast list.

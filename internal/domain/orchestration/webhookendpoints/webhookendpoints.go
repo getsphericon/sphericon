@@ -306,22 +306,11 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (Endpoint, er
 
 // List returns one page of the Workspace's endpoints, ascending by id.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[Endpoint], error) {
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.WebhookEndpoint().Query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]Endpoint, error) {
-			rows, err := s.WebhookEndpoint().Query().
-				Order(ent.Asc(webhookendpoint.FieldID)).Limit(limit).Offset(offset).All(ctx)
-			if err != nil {
-				return nil, err
-			}
-			out := make([]Endpoint, len(rows))
-			for i, e := range rows {
-				if out[i], err = m.open(e); err != nil {
-					return nil, err
-				}
-			}
-			return out, nil
-		})
+	page, err := pagination.List(ctx, p, s.WebhookEndpoint().Query().Order(ent.Asc(webhookendpoint.FieldID)))
+	if err != nil {
+		return pagination.Page[Endpoint]{}, err
+	}
+	return pagination.MapErr(page, m.open)
 }
 
 // generateSecret returns a Standard Webhooks signing secret: the "whsec_" prefix

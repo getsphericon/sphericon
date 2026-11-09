@@ -212,34 +212,21 @@ type WorkspaceUsage struct {
 // period, by Workspace id. It reads the stored rows and never recounts.
 func List(ctx context.Context, client *ent.Client, period time.Time, p pagination.Params) (pagination.Page[WorkspaceUsage], error) {
 	period = PeriodOf(period)
-	distinct := func() *ent.UsageQuery {
-		return client.Usage.Query().Where(entusage.PeriodStart(period)).Unique(true)
+	inPeriod := entusage.PeriodStart(period)
+	page, err := pagination.List(ctx, p, client.Workspace.Query().
+		Where(workspace.HasUsagesWith(inPeriod)).
+		WithUsages(func(q *ent.UsageQuery) { q.Where(inPeriod).Order(ent.Asc(entusage.FieldMetric)) }).
+		Order(ent.Asc(workspace.FieldID)))
+	if err != nil {
+		return pagination.Page[WorkspaceUsage]{}, err
 	}
-	return pagination.List(ctx, p,
-		distinct().Select(entusage.FieldWorkspaceID).Count,
-		func(ctx context.Context, limit, offset int) ([]WorkspaceUsage, error) {
-			var ids []int64
-			if err := distinct().Order(ent.Asc(entusage.FieldWorkspaceID)).Limit(limit).Offset(offset).
-				Select(entusage.FieldWorkspaceID).Scan(ctx, &ids); err != nil {
-				return nil, err
-			}
-			rows, err := client.Usage.Query().
-				Where(entusage.PeriodStart(period), entusage.WorkspaceIDIn(ids...)).
-				Order(ent.Asc(entusage.FieldWorkspaceID), ent.Asc(entusage.FieldMetric)).
-				All(ctx)
-			if err != nil {
-				return nil, err
-			}
-			out := make([]WorkspaceUsage, 0, len(ids))
-			for _, r := range rows {
-				if n := len(out); n == 0 || out[n-1].WorkspaceID != r.WorkspaceID {
-					out = append(out, WorkspaceUsage{WorkspaceID: r.WorkspaceID, Period: period})
-				}
-				w := &out[len(out)-1]
-				w.Figures = append(w.Figures, figureOf(r))
-			}
-			return out, nil
-		})
+	return pagination.Map(page, func(w *ent.Workspace) WorkspaceUsage {
+		out := WorkspaceUsage{WorkspaceID: w.ID, Period: period}
+		for _, r := range w.Edges.Usages {
+			out.Figures = append(out.Figures, figureOf(r))
+		}
+		return out
+	}), nil
 }
 
 // Get is the stored figures of one Workspace for the period, by metric. It reads the

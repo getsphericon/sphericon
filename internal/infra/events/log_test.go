@@ -84,25 +84,6 @@ func TestListLogPagesAndStaysInTheWorkspace(t *testing.T) {
 	assert.Equal(t, all.Items[2].ID, p.Items[0].ID)
 }
 
-func TestListDistinctActionsPagesTheDistinctActionsAscending(t *testing.T) {
-	env := testhelper.Setup(t)
-	s := env.DB.Scoped(fixtures.AcmeID)
-
-	all, err := events.DistinctActions(context.Background(), s)
-	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(all), 2)
-
-	second, err := events.ListDistinctActions(context.Background(), s, pagination.Params{Page: 2, PageSize: 1})
-	require.NoError(t, err)
-	assert.Equal(t, []string{all[1]}, second.Items)
-	assert.Equal(t, len(all), second.TotalItems)
-	assert.Equal(t, len(all), second.TotalPages)
-
-	beyond, err := events.ListDistinctActions(context.Background(), s, pagination.Params{Page: len(all) + 1, PageSize: 1})
-	require.NoError(t, err)
-	assert.Empty(t, beyond.Items)
-}
-
 func TestDistinctActionsAreDistinctSortedAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

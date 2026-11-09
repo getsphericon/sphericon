@@ -18,17 +18,43 @@ type opt struct {
 
 func (o opt) Get() (int32, bool) { return o.v, o.ok }
 
-// catalogue serves a fixed set of numbers through the two closures List takes.
-func catalogue(n int) (count func(context.Context) (int, error), page func(context.Context, int, int) ([]int, error)) {
-	count = func(context.Context) (int, error) { return n, nil }
-	page = func(_ context.Context, limit, offset int) ([]int, error) {
-		out := []int{}
-		for i := offset; i < min(offset+limit, n); i++ {
-			out = append(out, i)
-		}
-		return out, nil
+// numbers is a query over 0..n-1 that behaves like an ent builder: Limit and Offset mutate it and
+// return it, Clone copies it, and Count and All honour the limit and offset already set.
+type numbers struct {
+	n             int
+	limit, offset *int
+	countErr      error
+	allErr        error
+	none          bool
+}
+
+func (q *numbers) Clone() *numbers { c := *q; return &c }
+
+func (q *numbers) Limit(n int) *numbers { q.limit = &n; return q }
+
+func (q *numbers) Offset(n int) *numbers { q.offset = &n; return q }
+
+func (q *numbers) rows() []int {
+	out := []int{}
+	for i := range q.n {
+		out = append(out, i)
 	}
-	return count, page
+	if q.offset != nil {
+		out = out[min(*q.offset, len(out)):]
+	}
+	if q.limit != nil {
+		out = out[:min(*q.limit, len(out))]
+	}
+	return out
+}
+
+func (q *numbers) Count(context.Context) (int, error) { return len(q.rows()), q.countErr }
+
+func (q *numbers) All(context.Context) ([]int, error) {
+	if q.none {
+		return nil, q.allErr
+	}
+	return q.rows(), q.allErr
 }
 
 func TestParamsNormalizesOptionalPageParams(t *testing.T) {
@@ -38,8 +64,7 @@ func TestParamsNormalizesOptionalPageParams(t *testing.T) {
 }
 
 func TestListReturnsTheRequestedPageWithItsEnvelope(t *testing.T) {
-	count, fetch := catalogue(5)
-	p, err := pagination.List(context.Background(), pagination.Params{Page: 2, PageSize: 2}, count, fetch)
+	p, err := pagination.List(context.Background(), pagination.Params{Page: 2, PageSize: 2}, &numbers{n: 5})
 	require.NoError(t, err)
 	assert.Equal(t, []int{2, 3}, p.Items)
 	assert.Equal(t, 2, p.Page)
@@ -48,9 +73,19 @@ func TestListReturnsTheRequestedPageWithItsEnvelope(t *testing.T) {
 	assert.Equal(t, 3, p.TotalPages)
 }
 
+func TestListPagesOneQueryAgainAndAgain(t *testing.T) {
+	q := &numbers{n: 5}
+	_, err := pagination.List(context.Background(), pagination.Params{Page: 2, PageSize: 2}, q)
+	require.NoError(t, err)
+
+	p, err := pagination.List(context.Background(), pagination.Params{Page: 3, PageSize: 2}, q)
+	require.NoError(t, err)
+	assert.Equal(t, []int{4}, p.Items)
+	assert.Equal(t, 5, p.TotalItems)
+}
+
 func TestListBeyondTheLastPageIsEmptyAndSerializesAsArray(t *testing.T) {
-	count, fetch := catalogue(5)
-	p, err := pagination.List(context.Background(), pagination.Params{Page: 9, PageSize: 2}, count, fetch)
+	p, err := pagination.List(context.Background(), pagination.Params{Page: 9, PageSize: 2}, &numbers{n: 5})
 	require.NoError(t, err)
 	assert.Empty(t, p.Items)
 	assert.Equal(t, 5, p.TotalItems)
@@ -59,10 +94,8 @@ func TestListBeyondTheLastPageIsEmptyAndSerializesAsArray(t *testing.T) {
 	assert.Contains(t, string(body), `"items":[]`)
 }
 
-func TestListNilFetchResultSerializesAsArray(t *testing.T) {
-	p, err := pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 2},
-		func(context.Context) (int, error) { return 0, nil },
-		func(context.Context, int, int) ([]int, error) { return nil, nil })
+func TestListNilRowsSerializeAsArray(t *testing.T) {
+	p, err := pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 2}, &numbers{none: true})
 	require.NoError(t, err)
 	body, err := json.Marshal(p)
 	require.NoError(t, err)
@@ -71,13 +104,9 @@ func TestListNilFetchResultSerializesAsArray(t *testing.T) {
 }
 
 func TestListReportsCountAndFetchErrors(t *testing.T) {
-	_, fetch := catalogue(1)
-	_, err := pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 1},
-		func(context.Context) (int, error) { return 0, assert.AnError }, fetch)
+	_, err := pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 1}, &numbers{n: 1, countErr: assert.AnError})
 	require.ErrorIs(t, err, assert.AnError)
 
-	count, _ := catalogue(1)
-	_, err = pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 1}, count,
-		func(context.Context, int, int) ([]int, error) { return nil, assert.AnError })
+	_, err = pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 1}, &numbers{n: 1, allErr: assert.AnError})
 	assert.ErrorIs(t, err, assert.AnError)
 }

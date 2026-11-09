@@ -170,15 +170,7 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, des
 // List returns one page of the Workspace's active Suppressions, newest first, or of its
 // lifted ones when lifted is true.
 func List(ctx context.Context, s *ent.Scoped, p pagination.Params, lifted bool) (pagination.Page[*ent.Suppression], error) {
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return query(s, lifted).Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Suppression, error) {
-			return query(s, lifted).
-				Order(ent.Desc(entsuppression.FieldID)).
-				Limit(limit).
-				Offset(offset).
-				All(ctx)
-		})
+	return pagination.List(ctx, p, query(s, lifted).Order(ent.Desc(entsuppression.FieldID)))
 }
 
 // query is the Workspace's active Suppressions, or its lifted ones.

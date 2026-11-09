@@ -396,12 +396,7 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, e
 // List returns one page of the Workspace's Rules with their live and draft versions, newest
 // first.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Rule], error) {
-	rows := func() *ent.RuleQuery { return s.Rule().Query() }
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Rule, error) {
-			return withVersions(rows()).Order(ent.Desc(rule.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, withVersions(s.Rule().Query()).Order(ent.Desc(rule.FieldID)))
 }
 
 // withVersions loads a Rule's live and draft versions with their Trigger events.
@@ -468,12 +463,8 @@ func (m *Module) Firings(ctx context.Context, s *ent.Scoped, ruleID int64, p pag
 	if _, err := m.Get(ctx, s, ruleID); err != nil {
 		return pagination.Page[*ent.RuleFiring]{}, err
 	}
-	rows := func() *ent.RuleFiringQuery { return s.RuleFiring().Query().Where(rulefiring.RuleID(ruleID)) }
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.RuleFiring, error) {
-			return rows().Order(ent.Desc(rulefiring.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+		s.RuleFiring().Query().Where(rulefiring.RuleID(ruleID)).Order(ent.Desc(rulefiring.FieldID)))
 }
 
 // Triggers returns a Rule version's Trigger event actions, in order, as Get and List load them.

@@ -122,18 +122,11 @@ func (m *Module) ListWorkspaces(ctx context.Context, review abusedetector.Review
 	if err := m.licensed(); err != nil {
 		return pagination.Page[*ent.Workspace]{}, err
 	}
-	query := func() *ent.WorkspaceQuery {
-		q := m.ent.Workspace.Query()
-		if search != "" {
-			q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(search), entworkspace.NameContainsFold(search)))
-		}
-		return q.Where(review.Predicate())
+	q := m.ent.Workspace.Query()
+	if search != "" {
+		q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(search), entworkspace.NameContainsFold(search)))
 	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Workspace, error) {
-			return query().Order(ent.Desc(entworkspace.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, q.Where(review.Predicate()).Order(ent.Desc(entworkspace.FieldID)))
 }
 
 // WorkspaceDetail is what the Staff console shows of one Workspace.

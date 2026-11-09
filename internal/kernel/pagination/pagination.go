@@ -91,19 +91,26 @@ func ParamsOf(page, pageSize optional) Params {
 	return Params{Page: p, PageSize: s}
 }
 
-// List builds one page from two closures: the total count, and the rows for a
-// limit and offset. Ent builders share no interface, hence closures. Items is never nil.
-func List[T any](
-	ctx context.Context,
-	p Params,
-	count func(context.Context) (int, error),
-	fetch func(ctx context.Context, limit, offset int) ([]T, error),
-) (Page[T], error) {
-	total, err := count(ctx)
+// Query is what List needs of a query: every generated ent *XQuery satisfies it, with Q the
+// query itself and T its row. Limit and Offset mutate the builder and return it, so List
+// starts each use from a Clone.
+type Query[Q any, T any] interface {
+	Clone() Q
+	Limit(n int) Q
+	Offset(n int) Q
+	Count(ctx context.Context) (int, error)
+	All(ctx context.Context) ([]T, error)
+}
+
+// List is one page of an ordered query: its total count, and its rows for the page. The order
+// belongs on the query, which also serves the count: ent drops ORDER BY from a count query. The
+// query given is left as it was. Items is never nil.
+func List[Q Query[Q, T], T any](ctx context.Context, p Params, q Q) (Page[T], error) {
+	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return Page[T]{}, err
 	}
-	items, err := fetch(ctx, p.PageSize, p.Offset())
+	items, err := q.Clone().Limit(p.PageSize).Offset(p.Offset()).All(ctx)
 	if err != nil {
 		return Page[T]{}, err
 	}

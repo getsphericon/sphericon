@@ -208,30 +208,19 @@ func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagin
 	if err != nil {
 		return pagination.Page[*ent.Contact]{}, ErrInvalidCondition.With(err.Error())
 	}
-	rows := func() *ent.ContactQuery {
-		return ws.Contact().Query().Where(pred).WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) })
-	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Contact, error) {
-			return rows().Order(ent.Asc(contact.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, ws.Contact().Query().Where(pred).
+		WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) }).
+		Order(ent.Asc(contact.FieldID)))
 }
 
 // List returns one page of the Workspace's Segments, ascending by id: the kept ones, or with
 // archived the archived ones.
 func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Segment], error) {
-	rows := func() *ent.SegmentQuery {
-		if archived {
-			return ws.Segment().QueryArchived()
-		}
-		return ws.Segment().Query()
+	q := ws.Segment().Query()
+	if archived {
+		q = ws.Segment().QueryArchived()
 	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Segment, error) {
-			return rows().Order(ent.Asc(segment.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, q.Order(ent.Asc(segment.FieldID)))
 }
 
 // Archive puts a Segment aside (ADR 0100): it leaves the lists and new work, and Unarchive brings

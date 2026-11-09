@@ -15,18 +15,11 @@ func (m *Module) Enrollments(ctx context.Context, s *ent.Scoped, automationID in
 	if _, err := s.Automation().Get(ctx, automationID); err != nil {
 		return pagination.Page[*ent.AutomationRun]{}, notFound(err)
 	}
-	query := func() *ent.AutomationRunQuery {
-		q := s.AutomationRun().Query().Where(automationrun.AutomationID(automationID))
-		if status != "" {
-			q = q.Where(automationrun.StatusEQ(automationrun.Status(status)))
-		}
-		return q
+	q := s.AutomationRun().Query().Where(automationrun.AutomationID(automationID))
+	if status != "" {
+		q = q.Where(automationrun.StatusEQ(automationrun.Status(status)))
 	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.AutomationRun, error) {
-			return query().Order(ent.Desc(automationrun.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, q.Order(ent.Desc(automationrun.FieldID)))
 }
 
 // Enrollment returns one Enrollment of an Automation. ErrEnrollmentNotFound when the Workspace
