@@ -7,6 +7,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
@@ -19,22 +20,22 @@ func (h *Handlers) SiteUserGetMe(ctx context.Context) (*siteapi.SiteUserResource
 	if err != nil {
 		return nil, err
 	}
-	return h.userResource(ctx, u)
+	pending, err := h.consentRecords.Pending(ctx, u.ID)
+	if err != nil {
+		return nil, err
+	}
+	return h.userResource(u, pending), nil
 }
 
 // userResource is the User's profile with the Sign-up survey due only while the User carries the
 // marker and the Instance still asks the survey (a switch turned off or a lapsed license stops
 // asking at once, for a User marked earlier too), and the required acceptances pending for them
 // (ADR 0062).
-func (h *Handlers) userResource(ctx context.Context, u *ent.User) (*siteapi.SiteUserResource, error) {
-	pending, err := h.consentRecords.Pending(ctx, u.ID)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) userResource(u *ent.User, pending []signupitems.Document) *siteapi.SiteUserResource {
 	res := mapper.UserToResource(u)
 	res.SignupSurveyDue = u.SignupSurveyDueAt != nil && h.signupSurvey.Enabled()
 	res.AcceptancesPending = mapper.SignupItemsToSite(pending)
-	return res, nil
+	return res
 }
 
 // SiteUserAcceptPending accepts every required acceptance pending for the signed-in User at the
@@ -44,10 +45,11 @@ func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteA
 	if err != nil {
 		return nil, err
 	}
-	if err := h.consentRecords.AcceptPending(ctx, u.ID, inputs.ReAcceptances(req.Items)); err != nil {
+	pending, err := h.consentRecords.AcceptPending(ctx, u.ID, inputs.ReAcceptances(req.Items))
+	if err != nil {
 		return nil, err
 	}
-	return h.userResource(ctx, u)
+	return h.userResource(u, pending), nil
 }
 
 // SiteUserUpdateMe changes the authenticated User's name, time zone, Regional format and/or password through users,
@@ -67,15 +69,11 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 		NewPassword:         req.NewPassword.Or(""),
 		CurrentPassword:     req.CurrentPassword.Or(""),
 	}
-	changed, err := h.users.ChangeProfile(ctx, u, change, h.proveCurrentPassword)
+	changed, err := h.users.ChangeProfile(ctx, u, change)
 	if err != nil {
 		return nil, err
 	}
-	profile, err := h.userResource(ctx, changed.User)
-	if err != nil {
-		return nil, err
-	}
-	res := &siteapi.SiteUserResourceHeaders{Response: *profile}
+	res := &siteapi.SiteUserResourceHeaders{Response: *h.userResource(changed.User, changed.Pending)}
 	if changed.PasswordChanged {
 		cookie, err := h.sessions.Issue(changed.User, currentSession(ctx))
 		if err != nil {
@@ -95,16 +93,7 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	if err != nil {
 		return err
 	}
-
-	newEmail, err := users.NewEmailFor(u, string(req.NewEmail))
-	if err != nil {
-		return err
-	}
-	if err := h.proveCurrentPassword(ctx, u, req.CurrentPassword); err != nil {
-		return err
-	}
-	// Whether the new address is Taken is never told to the requester (ADR 0031).
-	return h.requests.EmailChange(ctx, u, newEmail)
+	return h.requests.EmailChange(ctx, u, string(req.NewEmail), req.CurrentPassword)
 }
 
 // SiteUserSignOutEverywhere ends every session of the authenticated user, on
@@ -118,21 +107,6 @@ func (h *Handlers) SiteUserSignOutEverywhere(ctx context.Context) (*siteapi.Site
 		return nil, err
 	}
 	return &siteapi.SiteUserSignOutEverywhereNoContent{SetCookie: h.sessions.Cleared().String()}, nil
-}
-
-// proveCurrentPassword is the profile's proof of the current password (users.Prove): the
-// login module's one prove path (throttle first, decoy hash, a failure counted on the Login
-// budget). It returns nil when the password is the User's and login.ErrPasswordIncorrect when
-// it is not; while the address's delay runs it returns the 429 error even for a right password.
-func (h *Handlers) proveCurrentPassword(ctx context.Context, u *ent.User, password string) error {
-	res, err := h.login.Prove(ctx, u.Email, u.PasswordHash, password)
-	if err != nil {
-		return err
-	}
-	if res.Proof == login.ProofThrottled {
-		return loginDelayError(ctx, res.Delay)
-	}
-	return nil
 }
 
 // loginDelayError is the 429 rejection of a running Login throttle delay.

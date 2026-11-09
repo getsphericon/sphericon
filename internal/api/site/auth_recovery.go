@@ -5,6 +5,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // SiteAuthForgotPassword asks for a reset link to be mailed (users.Requests.PasswordReset). It
@@ -54,47 +55,24 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 // User, it continues under a fresh token in the same response. The link alone
 // never signs anyone in.
 func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.SiteConfirmEmailChangeInput, params siteapi.SiteAuthConfirmEmailChangeParams) (*siteapi.SiteAuthConfirmEmailChangeOK, error) {
-	change, err := h.links.EmailChange(ctx, req.Token)
-	if err != nil {
-		return nil, err
-	}
-	uid := change.UserID
-	// Checked before the change: the epoch bump ends this session too.
-	acting, err := h.holdsSession(ctx, params.JWT.Or(""), uid)
-	if err != nil {
-		return nil, err
-	}
+	raw := params.JWT.Or("")
 	// A token that records no known method is an invalid session: it is not continued.
-	sess, valid := h.sessions.SessionOf(params.JWT.Or(""))
-	acting = acting && valid
-	if err := h.links.ConfirmEmailChange(ctx, change); err != nil {
+	var holder users.SessionHolder
+	sess, valid := h.sessions.SessionOf(raw)
+	if id, epoch, ok := h.sessions.Holder(raw); ok && valid {
+		holder = users.SessionHolder{UserID: id, Epoch: epoch}
+	}
+	confirmed, err := h.links.ConfirmEmailChange(ctx, req.Token, holder)
+	if err != nil {
 		return nil, err
 	}
 	res := &siteapi.SiteAuthConfirmEmailChangeOK{}
-	if acting {
-		u, err := h.users.User(ctx, uid)
-		if err != nil {
-			return nil, err
-		}
-		cookie, err := h.sessions.Issue(u, sess)
+	if confirmed.Continues {
+		cookie, err := h.sessions.Issue(confirmed.User, sess)
 		if err != nil {
 			return nil, err
 		}
 		res.SetCookie = siteapi.NewOptString(cookie.String())
 	}
 	return res, nil
-}
-
-// holdsSession reports whether a raw session token is a current session of the
-// User uid: it verifies and carries uid and that User's present epoch.
-func (h *Handlers) holdsSession(ctx context.Context, raw string, uid int64) (bool, error) {
-	id, epoch, ok := h.sessions.Holder(raw)
-	if !ok || id != uid {
-		return false, nil
-	}
-	u, err := h.users.User(ctx, uid)
-	if err != nil {
-		return false, err
-	}
-	return u.SessionEpoch == epoch, nil
 }

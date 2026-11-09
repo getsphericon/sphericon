@@ -55,6 +55,22 @@ type InvitationAcceptance struct {
 	SessionEmail string
 }
 
+// acceptancePasswordForm is the password an acceptance sends, checked against the password rule.
+type acceptancePasswordForm struct {
+	Password string `json:"password" validate:"omitempty,password_not_blank,password_length"`
+}
+
+// AcceptInvitationLink accepts the pending Invitation whose link carries token (AcceptInvitation):
+// invitations.ErrInvitationLinkNotFound, before anything else is checked, when it names none. The
+// token is the authorization, so no Workspace is known up front.
+func (a *Module) AcceptInvitationLink(ctx context.Context, token string, in InvitationAcceptance) error {
+	inv, err := invitations.PendingByToken(ctx, a.ent, token, a.now())
+	if err != nil {
+		return err
+	}
+	return a.AcceptInvitation(ctx, inv, in)
+}
+
 // AcceptInvitation turns a pending Invitation into a Membership. A Verified User is
 // attached only with their own session (ErrSignInRequired without one, ErrWrongAccount
 // for another User's), decided on the row read inside the transaction, and is asked nothing
@@ -69,8 +85,13 @@ type InvitationAcceptance struct {
 // the current one. If the address was verified meanwhile that is ErrSignInRequired too
 // (wrapping ErrAlreadyVerified): the address now has a Verified User, who signs in to accept. The
 // Membership is created (a duplicate is not an error), the Invitation marked accepted and
-// the acceptance audited, all in one transaction.
+// the acceptance audited, all in one transaction. A password sent is checked against the password
+// rule first, whether or not it is asked.
 func (a *Module) AcceptInvitation(ctx context.Context, inv *ent.Invitation, in InvitationAcceptance) error {
+	// A password that is sent must pass its rule, whether or not the transaction asks for one.
+	if err := validation.Form(acceptancePasswordForm{Password: in.Password}); err != nil {
+		return err
+	}
 	// The answers are checked before the transaction, which says on the row it reads whether
 	// they are asked at all.
 	consents, err := a.consents.Check(ctx, in.SignupItems, consentrecord.SourceInvitation)

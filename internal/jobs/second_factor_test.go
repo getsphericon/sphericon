@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -79,11 +80,11 @@ func TestSecondFactorReminderShowsTheDeadlineInTheUserTimeZone(t *testing.T) {
 
 func TestNoSecondFactorReminderForAUserWhoEnrolledOrWhoseGraceEnded(t *testing.T) {
 	env := testhelper.Setup(t)
-	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), fixtures.UmbrellaMemberNinaID)
+	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.UmbrellaMemberNinaID), users.IdentityProof{Password: fixtures.UmbrellaMemberNinaPassword})
 	require.NoError(t, err)
 	code, err := totp.GenerateCode(enrollment.Secret, time.Now())
 	require.NoError(t, err)
-	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), fixtures.UmbrellaMemberNinaID, secondfactors.ConfirmInput{EnrollmentID: enrollment.ID, Code: code})
+	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.UmbrellaMemberNinaID), users.IdentityProof{Password: fixtures.UmbrellaMemberNinaPassword}, secondfactors.ConfirmInput{EnrollmentID: enrollment.ID, Code: code})
 	require.NoError(t, err)
 
 	remind(t, env, ninaDeadline.Add(-12*time.Hour))

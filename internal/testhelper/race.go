@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -147,6 +148,17 @@ func (r *WorkspaceRace) HoldOpen(t *testing.T, s *ent.Scoped, write func(ts *ent
 	t.Cleanup(release)
 	return release
 }
+
+// ProvenUsers is the Users a Second factor module built by hand for a race takes
+// (secondfactors.Users): every User is admitted and every identity proof holds, so a race test
+// drives the factor's lifecycle, not the proof.
+type ProvenUsers struct{}
+
+// CheckAcceptance admits every User.
+func (ProvenUsers) CheckAcceptance(context.Context, int64) error { return nil }
+
+// ProveIdentity holds for every User.
+func (ProvenUsers) ProveIdentity(context.Context, *ent.User, users.IdentityProof) error { return nil }
 
 // AcceptingQueue is a job queue for a bus over a RealDB that takes every job and keeps none: a race
 // test asks what the transactions committed, not what they queued.

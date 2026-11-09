@@ -211,8 +211,8 @@ func (l *Links) Verification(ctx context.Context, token, browser, password strin
 	return uid, &replacement, nil
 }
 
-// EmailChange is what an email change link asks: the User and the address to change to.
-type EmailChange struct {
+// emailChange is what an email change link asks: the User and the address to change to.
+type emailChange struct {
 	UserID   int64
 	NewEmail string
 }
@@ -223,9 +223,9 @@ func (l *Links) EmailChangeLink(u *ent.User, newEmail string) (string, error) {
 	return l.tokens.Mint(authtoken.PurposeEmailChange, u.ID, u.Email, emailChangeLinkTTL, map[string]string{claimNewEmail: newEmail})
 }
 
-// EmailChange reads an email change link: ErrConfirmLinkInvalid when it does not stand,
+// emailChange reads an email change link: ErrConfirmLinkInvalid when it does not stand,
 // ErrConfirmLinkBad when it names no address.
-func (l *Links) EmailChange(ctx context.Context, token string) (EmailChange, error) {
+func (l *Links) emailChange(ctx context.Context, token string) (emailChange, error) {
 	uid, extra, err := l.parse(token, authtoken.PurposeEmailChange, func(id int64) (string, error) {
 		u, err := l.users.User(ctx, id)
 		if err != nil {
@@ -234,24 +234,55 @@ func (l *Links) EmailChange(ctx context.Context, token string) (EmailChange, err
 		return u.Email, nil
 	}, ErrConfirmLinkInvalid)
 	if err != nil {
-		return EmailChange{}, err
+		return emailChange{}, err
 	}
 	newEmail := strings.TrimSpace(extra[claimNewEmail])
 	if newEmail == "" {
-		return EmailChange{}, ErrConfirmLinkBad
+		return emailChange{}, ErrConfirmLinkBad
 	}
-	return EmailChange{UserID: uid, NewEmail: newEmail}, nil
+	return emailChange{UserID: uid, NewEmail: newEmail}, nil
 }
 
-// ConfirmEmailChange applies the change a link asked (Module.ChangeEmail). The new address
-// was proven by following the link, so it is Verified. An address Taken meanwhile (the unique
-// index guards the race) is ErrConfirmLinkInvalid, never "in use" (ADR 0031).
-func (l *Links) ConfirmEmailChange(ctx context.Context, c EmailChange) error {
-	err := l.users.ChangeEmail(ctx, c.UserID, c.NewEmail)
-	if errors.Is(err, ErrEmailTaken) {
-		return ErrConfirmLinkInvalid
+// SessionHolder is the session the confirming request carried, as its signature reads it: the
+// User it belongs to and the session epoch it was issued under. The zero SessionHolder is none.
+type SessionHolder struct {
+	UserID int64
+	Epoch  int64
+}
+
+// EmailChangeConfirmed is what confirming an email change left: the User with the new address,
+// and whether the confirming request's session was a current one of that User, which continues
+// under a fresh session though the change ended every session (ADR 0020).
+type EmailChangeConfirmed struct {
+	User      *ent.User
+	Continues bool
+}
+
+// ConfirmEmailChange applies the change the email change link token asks (Module.ChangeEmail):
+// ErrConfirmLinkInvalid or ErrConfirmLinkBad when the link does not stand. The new address was
+// proven by following the link, so it is Verified. An address Taken meanwhile (the unique index
+// guards the race) is ErrConfirmLinkInvalid, never "in use" (ADR 0031). The link alone never
+// signs anyone in: the change continues only holder, when it is a session of the link's User at
+// the epoch it had before the change.
+func (l *Links) ConfirmEmailChange(ctx context.Context, token string, holder SessionHolder) (EmailChangeConfirmed, error) {
+	c, err := l.emailChange(ctx, token)
+	if err != nil {
+		return EmailChangeConfirmed{}, err
 	}
-	return err
+	// Read before the change: its epoch bump ends the holder's session too.
+	before, err := l.users.User(ctx, c.UserID)
+	if err != nil {
+		return EmailChangeConfirmed{}, err
+	}
+	saved, err := l.users.ChangeEmail(ctx, c.UserID, c.NewEmail)
+	if errors.Is(err, ErrEmailTaken) {
+		return EmailChangeConfirmed{}, ErrConfirmLinkInvalid
+	}
+	if err != nil {
+		return EmailChangeConfirmed{}, err
+	}
+	continues := holder.UserID == before.ID && holder.Epoch == before.SessionEpoch
+	return EmailChangeConfirmed{User: saved, Continues: continues}, nil
 }
 
 // deletionBinding keys a deletion link to the User's session epoch, so signing out everywhere

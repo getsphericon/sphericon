@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -26,29 +27,52 @@ type ProfileChange struct {
 	CurrentPassword     string
 }
 
-// Prove is the proof of a User's current password, which the adapter supplies: the login
-// module's one prove path (its throttle first, the decoy hash, a failure counted on the Login
-// budget). It returns nil when password is the User's and its refusal otherwise (a wrong
-// password, or, while the throttle's delay runs, the delay even for a right password).
-type Prove func(ctx context.Context, u *ent.User, password string) error
+// Prover proves a User's current password the way a login does (ADR 0025): the login module's one
+// prove path (login.Module.ProvePassword), its throttle first, the decoy hash, a failure counted on
+// the Login budget. It returns nil when password is the account's and its refusal otherwise (a
+// wrong password, or, while the throttle's delay runs, the delay even for a right password). The
+// login module sits above this one, so the composition root hands it in (WithProver).
+type Prover interface {
+	ProvePassword(ctx context.Context, address, passwordHash, password string) error
+}
+
+// WithProver gives the module the proof of a User's current password, which every step that asks
+// for it takes (ProveIdentity, ChangeProfile, Requests.EmailChange).
+func WithProver(p Prover) Option {
+	return func(a *Module) { a.prover = p }
+}
+
+// provePassword proves that password is u's current one (Prover).
+func (a *Module) provePassword(ctx context.Context, u *ent.User, password string) error {
+	return a.prover.ProvePassword(ctx, u.Email, u.PasswordHash, password)
+}
 
 // ErrIdentityProofRequired is a step that asks for the password, of a User who has none and
 // whose session holds no fresh proof instead (ADR 0048): a Passkey check or a provider login.
 var ErrIdentityProofRequired = validation.Denied("users: a fresh identity proof is required", i18n.ErrorsIdentityProofRequired)
 
+// IdentityProof is what a signed-in User offers for a step that asks for the password (ADR 0020,
+// ADR 0048): the password typed, and whether their session holds a Sign-in provider login or a
+// Passkey check recent enough to stand in for it.
+type IdentityProof struct {
+	Password string
+	Fresh    bool
+}
+
 // ProveIdentity is the proof the steps that ask for the password need (ADR 0020, ADR 0048). A
-// User with a password proves it through prove, the way a login does (ADR 0025): while the
-// account's Login throttle delay runs it fails even for the right password, a wrong password
-// counts as a failure of the account, and a right one does not reset the counter (only a
-// completed login does, else a session holder could clear a run of second-step guesses). A User
-// with no password proves instead what freshProof reports: a Sign-in provider login or a Passkey
-// check recent enough, carried by the session; there is nothing to guess, so nothing is
-// counted, and without one the step is refused with ErrIdentityProofRequired.
-func ProveIdentity(ctx context.Context, u *ent.User, password string, freshProof bool, prove Prove) error {
+// User with a password proves it the way a login does (Prover, ADR 0025): while the account's
+// Login throttle delay runs it fails even for the right password, a wrong password counts as a
+// failure of the account, and a right one does not reset the counter (only a completed login
+// does, else a session holder could clear a run of second-step guesses). A User with no password
+// proves instead what proof.Fresh reports: a Sign-in provider login or a Passkey check recent
+// enough, carried by the session; there is nothing to guess, so nothing is counted, and without
+// one the step is refused with ErrIdentityProofRequired. A step proves before its transaction,
+// so a refused proof is counted whatever the step would have decided.
+func (a *Module) ProveIdentity(ctx context.Context, u *ent.User, proof IdentityProof) error {
 	if u.PasswordHash != "" {
-		return prove(ctx, u, password)
+		return a.provePassword(ctx, u, proof.Password)
 	}
-	if freshProof {
+	if proof.Fresh {
 		return nil
 	}
 	return ErrIdentityProofRequired
@@ -79,6 +103,9 @@ func NewEmailFor(u *ent.User, typed string) (string, error) {
 // ProfileChanged is what a profile change left.
 type ProfileChanged struct {
 	User *ent.User
+	// Pending is the required acceptances pending for the User after the change (ADR 0062), which
+	// their profile shows.
+	Pending []signupitems.Document
 	// PasswordChanged reports that the change ended every session of the User (ADR 0020): the
 	// acting session continues only under a fresh one, stamped with the new epoch.
 	PasswordChanged bool
@@ -93,11 +120,23 @@ type newPasswordForm struct {
 // u. A blank name is refused, and so is a time zone the zone database does not know
 // (ErrUnknownZone) and a Regional format that is no well-formed tag (ErrMalformedRegionalFormat); a new
 // password is checked against the password rule before the current one is proven, so a
-// refused one costs no hash, and it needs the current password, proven through prove. A
-// refused field is a *validation.FieldsError, and prove's refusal (a wrong current password, a
-// running throttle delay) comes back as it is. Nothing is written unless every rule holds; a change that asks for nothing writes
-// nothing and returns u.
-func (a *Module) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChange, prove Prove) (ProfileChanged, error) {
+// refused one costs no hash, and it needs the current password, proven through the Prover. A
+// refused field is a *validation.FieldsError, and the Prover's refusal (a wrong current password,
+// a running throttle delay) comes back as it is. Nothing is written unless every rule holds; a
+// change that asks for nothing writes nothing and returns u. Either way it returns the required
+// acceptances pending for the User, which their profile shows.
+func (a *Module) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChange) (ProfileChanged, error) {
+	changed, err := a.changeProfile(ctx, u, c)
+	if err != nil {
+		return ProfileChanged{}, err
+	}
+	if changed.Pending, err = a.consents.Pending(ctx, u.ID); err != nil {
+		return ProfileChanged{}, err
+	}
+	return changed, nil
+}
+
+func (a *Module) changeProfile(ctx context.Context, u *ent.User, c ProfileChange) (ProfileChanged, error) {
 	w := profileWrite{
 		Timezone:            c.Timezone,
 		ClearTimezone:       c.ClearTimezone && c.Timezone == nil,
@@ -132,7 +171,7 @@ func (a *Module) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChange
 		if c.CurrentPassword == "" {
 			return ProfileChanged{}, validation.Refused("currentPassword", i18n.T(i18n.ErrorsCurrentPasswordRequired, nil))
 		}
-		if err := prove(ctx, u, c.CurrentPassword); err != nil {
+		if err := a.provePassword(ctx, u, c.CurrentPassword); err != nil {
 			return ProfileChanged{}, err
 		}
 		h, err := a.passwords.Hash(c.NewPassword)

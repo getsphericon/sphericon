@@ -52,6 +52,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
@@ -644,9 +645,13 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*memberships.Module, error) {
 		return memberships.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
-	// The Users (ADR 0102), over the raw client.
+	// The Users (ADR 0102), over the raw client. A step that asks for the current password proves it
+	// through the login module's prove path, over the Users' Login throttle (ADR 0025).
 	do.Lazy(func(i do.Injector) (*users.Module, error) {
-		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i), do.MustInvoke[Clock](i)), nil
+		passwords := do.MustInvoke[*credentials.Hasher](i)
+		prover := login.New(login.Config[*ent.User]{Throttle: do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), Passwords: passwords})
+		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), passwords, do.MustInvoke[*consentrecords.Module](i), do.MustInvoke[Clock](i),
+			users.WithProver(prover)), nil
 	}),
 	// The creation of a Verified User's Workspace (a use case, ADR 0102). On an Instance that has
 	// Send caps (ADR 0067) a new Workspace starts with the Instance's default; elsewhere it has none.
@@ -730,7 +735,7 @@ var identityPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*passkeys.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return passkeys.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), cfg.AppURL, cfg.JWTSecret, do.MustInvoke[Clock](i))
+		return passkeys.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*users.Module](i), cfg.AppURL, cfg.JWTSecret, do.MustInvoke[Clock](i))
 	}),
 )
 

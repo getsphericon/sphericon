@@ -18,6 +18,8 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys/passkeysunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
@@ -42,17 +44,31 @@ func New(bus *events.Bus) *UseCase {
 	return &UseCase{bus: bus}
 }
 
-// Reset clears the User's Second factor, Recovery codes and Passkeys and bumps the session
-// epoch, ending every session of theirs: an Owner or Admin resetting a member of the
-// Workspace behind s. It records `user.second_factor_reset` by actor in that Workspace
-// only. ErrNothingToReset without an active or pending factor or a Passkey (nothing changes).
-func (m *UseCase) Reset(ctx context.Context, s *ent.Scoped, userID int64, actor events.Actor) error {
+// Caller is the member of the Workspace who resets another's Second factor: their User, their Role
+// there and the actor the reset is recorded by.
+type Caller struct {
+	UserID int64
+	Role   membership.Role
+	Actor  events.Actor
+}
+
+// Reset clears the Second factor, Recovery codes and Passkeys of the member whose Membership is
+// membershipID in the Workspace behind s, and bumps their session epoch, ending every session of
+// theirs. The caller may reset them as memberships.SecondFactorResetTarget decides (owners:manage
+// for an Owner's, never their own), read in the reset's transaction. It records
+// `user.second_factor_reset` by the caller's actor in that Workspace only. ErrNothingToReset
+// without an active or pending factor or a Passkey (nothing changes).
+func (m *UseCase) Reset(ctx context.Context, s *ent.Scoped, membershipID int64, caller Caller) error {
 	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := resetIn(ctx, tx, userID)
+		target, err := memberships.SecondFactorResetTarget(ctx, tx.Scoped(s.WorkspaceID()), caller.UserID, caller.Role, membershipID)
 		if err != nil {
 			return err
 		}
-		return users.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, s.WorkspaceID())
+		u, err := resetIn(ctx, tx, target.UserID)
+		if err != nil {
+			return err
+		}
+		return users.RecordActionOnUserIn(ctx, pub, caller.Actor, u, events.ActionUserSecondFactorReset, nil, s.WorkspaceID())
 	})
 }
 

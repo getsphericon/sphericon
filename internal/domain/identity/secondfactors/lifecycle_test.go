@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -99,7 +100,7 @@ func newFactorRace(t *testing.T) factorRace {
 	bus := events.New(pool, entclient.NewTx, clock)
 	bus.UseJobs(testhelper.AcceptingQueue{})
 	return factorRace{client: client, bus: bus, now: now,
-		factors: secondfactors.New(client, bus, testhelper.Cipher(t), nil, clock)}
+		factors: secondfactors.New(client, bus, testhelper.Cipher(t), testhelper.ProvenUsers{}, clock)}
 }
 
 // pause holds the first write matches selects, after its operation loaded and checked the User
@@ -171,17 +172,17 @@ func enrollmentCode(t *testing.T, secret string, at time.Time) string {
 
 func TestLifecycleAnOlderStartCannotReplaceAConfirmedFactor(t *testing.T) {
 	r := newFactorRace(t)
-	first, err := r.factors.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	first, err := r.factors.StartEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	ready, release := r.pause(t, startsEnrollment)
 	result := make(chan error, 1)
 	go func() {
-		_, err := r.factors.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+		_, err := r.factors.StartEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 		result <- err
 	}()
 	testhelper.Receive(t, ready, "replacement enrollment reached its conditional write")
 	code := enrollmentCode(t, first.Secret, r.now)
-	_, err = r.factors.ConfirmEnrollment(t.Context(), fixtures.OwnerJohnID, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
+	_, err = r.factors.ConfirmEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
 	require.NoError(t, err)
 	release()
 
@@ -196,17 +197,17 @@ func TestLifecycleAnOlderStartCannotReplaceAConfirmedFactor(t *testing.T) {
 
 func TestLifecycleConfirmationCannotActivateAReplacementSecret(t *testing.T) {
 	r := newFactorRace(t)
-	first, err := r.factors.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	first, err := r.factors.StartEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	ready, release := r.pause(t, endsSessions)
 	code := enrollmentCode(t, first.Secret, r.now)
 	result := make(chan error, 1)
 	go func() {
-		_, err := r.factors.ConfirmEnrollment(t.Context(), fixtures.OwnerJohnID, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
+		_, err := r.factors.ConfirmEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
 		result <- err
 	}()
 	testhelper.Receive(t, ready, "confirmation checked the original secret")
-	_, err = r.factors.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	_, err = r.factors.StartEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	release()
 
@@ -224,9 +225,9 @@ func TestLifecycleConfirmationNamesTheEnrollmentNotJustAValidCode(t *testing.T) 
 	env, c := setup(t)
 	before, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
-	first, err := env.SecondFactor.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	first, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
-	second, err := env.SecondFactor.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	second, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	assert.Greater(t, second.ID, first.ID)
 	pendingUser, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
@@ -234,14 +235,14 @@ func TestLifecycleConfirmationNamesTheEnrollmentNotJustAValidCode(t *testing.T) 
 	assert.Equal(t, before.SessionEpoch, pendingUser.SessionEpoch, "opening a QR does not end sessions")
 	code := enrollmentCode(t, second.Secret, c.now())
 
-	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), fixtures.OwnerJohnID, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
+	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	status, err := env.SecondFactor.Status(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	assert.True(t, status.Pending)
 	assert.Zero(t, status.RecoveryCodesRemaining)
-	issued, err := env.SecondFactor.ConfirmEnrollment(t.Context(), fixtures.OwnerJohnID, secondfactors.ConfirmInput{EnrollmentID: second.ID, Code: code})
+	issued, err := env.SecondFactor.ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: second.ID, Code: code})
 	require.NoError(t, err)
 	assert.Equal(t, before.SessionEpoch+1, issued.User.SessionEpoch)
 	assert.NotEmpty(t, issued.RecoveryCodes)
@@ -249,7 +250,7 @@ func TestLifecycleConfirmationNamesTheEnrollmentNotJustAValidCode(t *testing.T) 
 
 func TestLifecycleAnAuditFailureRollsBackConfirmationAndCodes(t *testing.T) {
 	r := newFactorRace(t)
-	enrollment, err := r.factors.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	enrollment, err := r.factors.StartEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	before, err := r.client.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
@@ -266,7 +267,7 @@ func TestLifecycleAnAuditFailureRollsBackConfirmationAndCodes(t *testing.T) {
 	})
 	code := enrollmentCode(t, enrollment.Secret, r.now)
 
-	_, err = r.factors.ConfirmEnrollment(t.Context(), fixtures.OwnerJohnID, secondfactors.ConfirmInput{EnrollmentID: enrollment.ID, Code: code})
+	_, err = r.factors.ConfirmEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: enrollment.ID, Code: code})
 
 	require.ErrorIs(t, err, events.ErrNoJobQueue)
 	after, err := r.client.User.Get(t.Context(), fixtures.OwnerJohnID)
