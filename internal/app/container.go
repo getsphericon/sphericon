@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
@@ -61,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/userlogin"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
@@ -718,6 +720,11 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*secondfactors.Module, error) {
 		return secondfactors.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*users.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
+	// The admission of a request made on a User's session (ADR 0061): /site's Access and the OAuth
+	// consent's decision.
+	do.Lazy(func(i do.Injector) (*admission.Module, error) {
+		return admission.New(do.MustInvoke[*memberships.Module](i), do.MustInvoke[*secondfactors.Module](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*secondfactorreset.UseCase, error) {
 		return secondfactorreset.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
@@ -727,6 +734,19 @@ var identityPackage = do.Package(
 		return userdeletion.New(do.MustInvoke[*events.Bus](i), usersModule,
 			users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i)), do.MustInvoke[*secondfactors.Module](i),
 			do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), do.MustInvoke[*credentials.Hasher](i)), nil
+	}),
+	// The User's Login (ADR 0020): the login module over the Users, their Second factors and
+	// Passkeys, on the Users' Login throttle.
+	do.Lazy(func(i do.Injector) (*userlogin.Module, error) {
+		return userlogin.New(userlogin.Config{
+			Users:               do.MustInvoke[*users.Module](i),
+			SecondFactors:       do.MustInvoke[*secondfactors.Module](i),
+			Passkeys:            do.MustInvoke[*passkeys.Module](i),
+			Throttle:            do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin),
+			Passwords:           do.MustInvoke[*credentials.Hasher](i),
+			Challenges:          do.MustInvoke[*authtoken.Signer](i),
+			RequireVerification: do.MustInvoke[*config.Config](i).RequireEmailVerification,
+		}), nil
 	}),
 	do.Lazy(func(i do.Injector) (*passkeys.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -883,7 +903,7 @@ var surfacesPackage = do.Package(
 	}),
 	// OAuth 2.1 for MCP connectors (ADR 0016).
 	do.Lazy(func(i do.Injector) (*oauthclients.Module, error) {
-		return oauthclients.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer, do.MustInvoke[Clock](i)), nil
+		return oauthclients.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer, do.MustInvoke[*admission.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Audit log the surfaces read (ADR 0022), over the Enterprise Edition's reader: refused as
 	// unlicensed when the License lacks it.
@@ -1057,63 +1077,63 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		return apisite.Deps{}, err
 	}
 	return apisite.Deps{
-		SignupSurvey:             do.MustInvoke[*signupsurveyresponses.Module](i),
-		SignupItems:              do.MustInvoke[*signupitems.Module](i),
-		ConsentRecords:           do.MustInvoke[*consentrecords.Module](i),
-		Instance:                 do.MustInvoke[*instancestates.Module](i),
-		Deletion:                 do.MustInvoke[*workspacedeletion.UseCase](i),
-		AccountLink:              accountLink,
-		WorkspaceSummary:         do.MustInvoke[*workspacesummary.UseCase](i),
-		Attention:                do.MustInvoke[*needsattentionreport.UseCase](i),
-		SetupChecklist:           do.MustInvoke[*setupchecklist.Module](i),
-		SupportEmail:             cfg.SupportEmail,
-		Origins:                  apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
-		Users:                    do.MustInvoke[*users.Module](i),
-		Invitations:              do.MustInvoke[*invitations.Module](i),
-		Workspaces:               do.MustInvoke[*workspaces.Module](i),
-		Memberships:              do.MustInvoke[*memberships.Module](i),
-		Passwords:                do.MustInvoke[*credentials.Hasher](i),
-		Attempts:                 do.MustInvoke[*throttle.Attempts](i),
-		OAuth:                    do.MustInvoke[*oauthclients.Module](i),
-		Bus:                      bus,
-		Webhooks:                 do.MustInvoke[*webhookendpoints.Module](i),
-		Outbound:                 do.MustInvoke[*outboundmessages.Module](i),
-		Segments:                 do.MustInvoke[*segments.Module](i),
-		Contacts:                 do.MustInvoke[*contacts.Module](i),
-		Erasure:                  do.MustInvoke[*contacterasure.UseCase](i),
-		Tags:                     do.MustInvoke[*tags.Module](i),
-		TagDeletion:              do.MustInvoke[*tagdeletion.UseCase](i),
-		CustomFieldRetyping:      do.MustInvoke[*customfieldretyping.UseCase](i),
-		Unsubscribe:              do.MustInvoke[*unsubscriberecording.UseCase](i),
-		Bindings:                 do.MustInvoke[*bindings.Module](i),
-		Templates:                do.MustInvoke[*emailtemplates.Module](i),
-		BrandKit:                 do.MustInvoke[*brandkits.Module](i),
-		Automations:              do.MustInvoke[*automations.Module](i),
-		Rules:                    do.MustInvoke[*rules.Module](i),
-		Broadcasts:               do.MustInvoke[*broadcasts.Module](i),
-		SendingDomains:           do.MustInvoke[*sendingdomains.Module](i),
-		SendingDomainDeletion:    do.MustInvoke[*sendingdomaindeletion.UseCase](i),
-		TrackingDomains:          do.MustInvoke[*trackingdomains.Module](i),
-		JoinDomains:              do.MustInvoke[*joindomains.Module](i),
-		Integrations:             do.MustInvoke[*integrations.Module](i),
-		IntegrationDeletion:      do.MustInvoke[*integrationdeletion.UseCase](i),
-		CapturedMessages:         do.MustInvoke[*capturedmessages.Module](i),
-		Tokens:                   do.MustInvoke[*authtoken.Signer](i),
-		Sessions:                 do.MustInvoke[*apiauth.Sessions](i),
-		Tracker:                  do.MustInvoke[*messagetoken.Tracker](i),
-		AppURL:                   cfg.AppURL,
-		Audit:                    do.MustInvoke[*auditlog.Log](i),
-		SecondFactor:             do.MustInvoke[*secondfactors.Module](i),
-		SecondFactorReset:        do.MustInvoke[*secondfactorreset.UseCase](i),
-		WorkspaceCreation:        do.MustInvoke[*workspacecreation.UseCase](i),
-		SignUp:                   do.MustInvoke[*signup.UseCase](i),
-		UserDeletion:             do.MustInvoke[*userdeletion.UseCase](i),
-		Passkeys:                 do.MustInvoke[*passkeys.Module](i),
-		Analytics:                do.MustInvoke[*analyticsreport.UseCase](i),
-		Clock:                    do.MustInvoke[Clock](i),
-		RequireEmailVerification: cfg.RequireEmailVerification,
-		Signin:                   do.MustInvoke[*signinprovider.Providers](i),
-		Migrations:               do.MustInvoke[apisite.Migrations](i),
+		SignupSurvey:          do.MustInvoke[*signupsurveyresponses.Module](i),
+		SignupItems:           do.MustInvoke[*signupitems.Module](i),
+		ConsentRecords:        do.MustInvoke[*consentrecords.Module](i),
+		Instance:              do.MustInvoke[*instancestates.Module](i),
+		Deletion:              do.MustInvoke[*workspacedeletion.UseCase](i),
+		AccountLink:           accountLink,
+		WorkspaceSummary:      do.MustInvoke[*workspacesummary.UseCase](i),
+		Attention:             do.MustInvoke[*needsattentionreport.UseCase](i),
+		SetupChecklist:        do.MustInvoke[*setupchecklist.Module](i),
+		SupportEmail:          cfg.SupportEmail,
+		Origins:               apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
+		Users:                 do.MustInvoke[*users.Module](i),
+		Invitations:           do.MustInvoke[*invitations.Module](i),
+		Workspaces:            do.MustInvoke[*workspaces.Module](i),
+		Memberships:           do.MustInvoke[*memberships.Module](i),
+		Attempts:              do.MustInvoke[*throttle.Attempts](i),
+		OAuth:                 do.MustInvoke[*oauthclients.Module](i),
+		Bus:                   bus,
+		Webhooks:              do.MustInvoke[*webhookendpoints.Module](i),
+		Outbound:              do.MustInvoke[*outboundmessages.Module](i),
+		Segments:              do.MustInvoke[*segments.Module](i),
+		Contacts:              do.MustInvoke[*contacts.Module](i),
+		Erasure:               do.MustInvoke[*contacterasure.UseCase](i),
+		Tags:                  do.MustInvoke[*tags.Module](i),
+		TagDeletion:           do.MustInvoke[*tagdeletion.UseCase](i),
+		CustomFieldRetyping:   do.MustInvoke[*customfieldretyping.UseCase](i),
+		Unsubscribe:           do.MustInvoke[*unsubscriberecording.UseCase](i),
+		Bindings:              do.MustInvoke[*bindings.Module](i),
+		Templates:             do.MustInvoke[*emailtemplates.Module](i),
+		BrandKit:              do.MustInvoke[*brandkits.Module](i),
+		Automations:           do.MustInvoke[*automations.Module](i),
+		Rules:                 do.MustInvoke[*rules.Module](i),
+		Broadcasts:            do.MustInvoke[*broadcasts.Module](i),
+		SendingDomains:        do.MustInvoke[*sendingdomains.Module](i),
+		SendingDomainDeletion: do.MustInvoke[*sendingdomaindeletion.UseCase](i),
+		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),
+		JoinDomains:           do.MustInvoke[*joindomains.Module](i),
+		Integrations:          do.MustInvoke[*integrations.Module](i),
+		IntegrationDeletion:   do.MustInvoke[*integrationdeletion.UseCase](i),
+		CapturedMessages:      do.MustInvoke[*capturedmessages.Module](i),
+		Tokens:                do.MustInvoke[*authtoken.Signer](i),
+		Sessions:              do.MustInvoke[*apiauth.Sessions](i),
+		Tracker:               do.MustInvoke[*messagetoken.Tracker](i),
+		AppURL:                cfg.AppURL,
+		Audit:                 do.MustInvoke[*auditlog.Log](i),
+		SecondFactor:          do.MustInvoke[*secondfactors.Module](i),
+		Admission:             do.MustInvoke[*admission.Module](i),
+		UserLogin:             do.MustInvoke[*userlogin.Module](i),
+		SecondFactorReset:     do.MustInvoke[*secondfactorreset.UseCase](i),
+		WorkspaceCreation:     do.MustInvoke[*workspacecreation.UseCase](i),
+		SignUp:                do.MustInvoke[*signup.UseCase](i),
+		UserDeletion:          do.MustInvoke[*userdeletion.UseCase](i),
+		Passkeys:              do.MustInvoke[*passkeys.Module](i),
+		Analytics:             do.MustInvoke[*analyticsreport.UseCase](i),
+		Clock:                 do.MustInvoke[Clock](i),
+		Signin:                do.MustInvoke[*signinprovider.Providers](i),
+		Migrations:            do.MustInvoke[apisite.Migrations](i),
 	}, nil
 }
 

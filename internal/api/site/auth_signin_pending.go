@@ -6,7 +6,6 @@ import (
 	"net/url"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/consentrecord"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
@@ -70,24 +69,20 @@ func (h *Handlers) SiteAuthSigninPending(ctx context.Context, params siteapi.Sit
 }
 
 // SiteAuthSigninPendingSubmit completes a pending sign-up with the answers to the Sign-up items
-// (ADR 0062): the answers are checked as the sign-up form's are, the users module creates the
-// User and what comes with it in one transaction, and the session starts as at the end of a
-// provider sign-in, at the time of that sign-in.
+// (ADR 0062): the sign-up use case checks the answers as the provider screen's, creates the User
+// and what comes with it in one transaction and records the login, and the session starts as at
+// the end of a provider sign-in, at the time of that sign-in.
 func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi.SiteSigninPendingSubmitInput) (*siteapi.SiteAuthSigninPendingSubmitNoContent, error) {
 	pending, err := h.openPending(ctx, req.Token)
 	if err != nil {
 		return nil, err
 	}
-	consents, err := h.consentRecords.Check(ctx, inputs.SignupAnswers(req.SignupItems), consentrecord.SourceProviderScreen)
-	if err != nil {
-		return nil, err
-	}
-	done, err := h.signUp.CompletePendingSignup(ctx, pending.ID, consents)
+	done, err := h.signUp.CompletePendingSignup(ctx, pending.ID, inputs.SignupAnswers(req.SignupItems))
 	if err != nil {
 		return nil, err
 	}
 	held := done.PendingSignup
-	cookie, err := h.issueSession(ctx, done.User, held.Provider, auth.Session{Method: auth.MethodProvider, ProviderLoginAt: held.CreatedAt})
+	cookie, err := h.sessions.Issue(done.User, auth.Session{Method: auth.MethodProvider, ProviderLoginAt: held.CreatedAt})
 	if err != nil {
 		return nil, err
 	}

@@ -4,12 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
-	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 )
 
@@ -30,12 +27,12 @@ func (h *Handlers) SitePasskeyLoginBegin(context.Context) (*siteapi.SitePasskeyL
 	}, nil
 }
 
-// SitePasskeyLoginFinish logs in with the authenticator's response. It runs through the login
-// module as its third step: the User is found by the credential id, the Login throttle is
+// SitePasskeyLoginFinish logs in with the authenticator's response. It runs through the User's
+// Login (userlogin.Module.Passkey), the login module's third step: the User is found by the credential id, the Login throttle is
 // consulted for that User before anything is verified, and every other refusal (an unknown
 // credential, a response that does not verify, a spent or expired challenge, the verification
-// gate) is the one 401 and counts nothing. The session is issued through the one issuer, with
-// the Passkey method: it replaces the password and the Second factor.
+// gate) is the one 401 and counts nothing. The login is recorded by Passkey and the session issued
+// with the Passkey method: it replaces the password and the Second factor.
 func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.SitePasskeyLoginInput, params siteapi.SitePasskeyLoginFinishParams) (*siteapi.SiteLoginResultHeaders, error) {
 	response, err := credentialJSON(req.Credential)
 	if err != nil {
@@ -49,36 +46,7 @@ func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.Site
 	case login.PasskeyThrottled:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
 	case login.PasskeyAuthenticated:
-		cookie, err := h.issueSession(ctx, res.Principal, users.LoginPasskey, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
-		if err != nil {
-			return nil, err
-		}
-		return &siteapi.SiteLoginResultHeaders{
-			SetCookie: siteapi.NewOptString(cookie.String()),
-			Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
-		}, nil
+		return h.sessionStarted(res.Principal, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
 	}
 	return nil, errors.New("login: unhandled passkey outcome")
-}
-
-// findPasskeyLogin is the site's PasskeyFind for the login module: the User the response's
-// credential id belongs to.
-func (h *Handlers) findPasskeyLogin(ctx context.Context, a login.PasskeyAssertion) (login.Pending[*ent.User], error) {
-	u, err := h.passkeys.FindLogin(ctx, a.Response)
-	if errors.Is(err, passkeys.ErrPasskeyUnknown) || errors.Is(err, passkeys.ErrPasskeysUnavailable) {
-		return login.Pending[*ent.User]{}, login.ErrPasskeyUnknown
-	}
-	if err != nil {
-		return login.Pending[*ent.User]{}, err
-	}
-	return login.Pending[*ent.User]{Principal: u, Address: u.Email, Method: users.LoginPasskey}, nil
-}
-
-// verifyPasskeyLogin is the site's PasskeyVerify for the login module.
-func (h *Handlers) verifyPasskeyLogin(ctx context.Context, p login.Pending[*ent.User], a login.PasskeyAssertion) error {
-	err := h.passkeys.FinishLogin(ctx, p.Principal, a.Ceremony, a.Response)
-	if passkeys.CeremonyFailed(err) || errors.Is(err, passkeys.ErrPasskeysUnavailable) {
-		return login.ErrPasskeyInvalid
-	}
-	return err
 }

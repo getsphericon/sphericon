@@ -2,7 +2,8 @@
 // (ADR 0016, phase 2) and what belongs to a client (ADR 0102): the client a connector registers
 // (RFC 7591) or names by its Client ID Metadata Document, and the authorization code a signed-in
 // User's consent records. The consent screen is a SPA route; the signed-in user's decision arrives
-// through the site API and is handled by [Module.Decide]. A code is claimed by [ClaimCodeIn] only
+// through the site API and is handled by [Module.Decide], which admits the User to the Workspace
+// the decision names first, as every operation of a Workspace is (admission, ADR 0061). A code is claimed by [ClaimCodeIn] only
 // after its own check of the client, the redirect URI and the PKCE verifier; exchanging it for a
 // Connection (ADR 0061), the API token the grant issues, and the Connection's refresh tokens are
 // internal/domain/identity/apitokens's (ADR 0110); the protocol's endpoints are the driver
@@ -30,7 +31,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -80,14 +83,22 @@ type Module struct {
 	ent *ent.Client
 	// fetcher downloads Client ID Metadata Documents; it must be an SSRF-hardened client.
 	fetcher webhook.Doer
+	// admit admits the User deciding to the Workspace their decision names.
+	admit Admitter
 	// now is the Instance clock a code and a cached metadata document expire by.
 	now func() time.Time
 }
 
+// Admitter admits a request made on a User's session to a Workspace (admission.Module.Admit).
+type Admitter interface {
+	Admit(ctx context.Context, r admission.Request) (admission.Admitted, error)
+}
+
 // New builds the module over the ent client; fetcher downloads Client ID Metadata Documents and
-// must come from webhook.NewClient or NewClientAllowing; now is the Instance clock.
-func New(client *ent.Client, fetcher webhook.Doer, now func() time.Time) *Module {
-	return &Module{ent: client, fetcher: fetcher, now: now}
+// must come from webhook.NewClient or NewClientAllowing; admit admits the User whose decision
+// Decide records; now is the Instance clock.
+func New(client *ent.Client, fetcher webhook.Doer, admit Admitter, now func() time.Time) *Module {
+	return &Module{ent: client, fetcher: fetcher, admit: admit, now: now}
 }
 
 // Request is a validated authorization request, ready for the consent screen.
@@ -109,15 +120,15 @@ type Request struct {
 	RequiredPermissions map[string]memberships.Permission
 }
 
-// Decision is the signed-in user's answer to an authorization request. Membership is the
-// User's Membership of the Workspace the Connection will belong to, as the caller resolved it.
+// Decision is the signed-in user's answer to an authorization request. Admission is the request
+// made on the User's session, naming the Workspace the Connection will belong to.
 type Decision struct {
 	ClientID      string
 	RedirectURI   string
 	State         string
 	CodeChallenge string
 	Scope         string
-	Membership    *ent.Membership
+	Admission     admission.Request
 	Approve       bool
 	AllowSend     bool
 	AllowSetup    bool
@@ -142,8 +153,20 @@ func (s *Module) Describe(ctx context.Context, clientID, redirectURI, scope stri
 }
 
 // Decide records the user's decision and returns the URL to send their browser
-// to: back to the client with a one-time code, or with access_denied.
+// to: back to the client with a one-time code, or with access_denied. The User is admitted to the
+// Workspace the decision names before anything else, as Access admits the Membership of any
+// operation of a Workspace: workspaces.ErrNotFound for a Workspace the User is no member of (or
+// none named), then the refusals of the admission. Any member may approve, but only the scopes
+// their Role may grant (memberships.MayGrant).
 func (s *Module) Decide(ctx context.Context, d Decision) (string, error) {
+	if d.Admission.Workspace == "" {
+		return "", workspaces.ErrNotFound
+	}
+	admitted, err := s.admit.Admit(ctx, d.Admission)
+	if err != nil {
+		return "", err
+	}
+	member := admitted.Membership
 	client, err := s.Client(ctx, d.ClientID, d.RedirectURI)
 	if err != nil {
 		return "", err
@@ -166,7 +189,7 @@ func (s *Module) Decide(ctx context.Context, d Decision) (string, error) {
 	}
 	// Any member may approve, but only the scopes their Role may grant (ADR 0061): the consent
 	// screen offers no other, and the first one beyond the Role refuses the whole decision.
-	if err := memberships.MayGrant(d.Membership.Role, granted); err != nil {
+	if err := memberships.MayGrant(member.Role, granted); err != nil {
 		return "", err
 	}
 
@@ -174,8 +197,8 @@ func (s *Module) Decide(ctx context.Context, d Decision) (string, error) {
 	_, err = s.ent.OAuthCode.Create().
 		SetCodeHash(hashSecret(code)).
 		SetClientID(client.ID).
-		SetWorkspaceID(d.Membership.WorkspaceID).
-		SetMembershipID(d.Membership.ID).
+		SetWorkspaceID(member.WorkspaceID).
+		SetMembershipID(member.ID).
 		SetRedirectURI(d.RedirectURI).
 		SetCodeChallenge(d.CodeChallenge).
 		SetScopes(granted).
