@@ -14,17 +14,26 @@ import {
   siteAuthResendVerificationMutation,
   siteLegalDocumentsSignupItemsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { SignupItemKind } from '../../generated/site/types.gen.ts'
 import type { SiteSignUpInput } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { requiresEmailVerification } from '../../instance.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
+import { getFieldErrors } from '../../utils/apiErrors.ts'
 import { secondsFromNow } from '../../utils/datetime.ts'
-import { signupItemAnswers } from '../../utils/signupItems.ts'
+import { signupItemAnswers, signupItemField, signupItemInputId } from '../../utils/signupItems.ts'
 
 // Seconds the resend button waits after a send; the server's per-IP limit stays the real gate.
 const RESEND_COOLDOWN_SECONDS = 60
+
+// The inputs of the form the API can refuse by name, in its problem's `errors`, in page order.
+const FORM_FIELDS = ['name', 'email', 'password'] as const
+
+function isFormField(field: string): field is (typeof FORM_FIELDS)[number] {
+  return (FORM_FIELDS as readonly string[]).includes(field)
+}
 
 export function SignUpPage() {
   const { t } = useTranslation()
@@ -74,6 +83,29 @@ export function SignUpPage() {
       }
     },
     onError: (error) => {
+      // A refusal of one of the form's own inputs shows under that input, and SignupItemFields
+      // shows a refused item under its box; the first refused element on the page takes the focus
+      // (UI standard, Errors). Only when every refusal is shown in place is the toast left out.
+      const fieldErrors = getFieldErrors(error) ?? {}
+      const refused = FORM_FIELDS.filter((field) => fieldErrors[field]?.[0])
+      for (const field of refused) {
+        form.setFieldError(field, fieldErrors[field]?.[0])
+      }
+      // The boxes come after the inputs on the page, in the order of the items.
+      const boxes = items.filter((item) => item.kind !== SignupItemKind.NOTICE)
+      const refusedBox = boxes.find((item) => fieldErrors[signupItemField(item.key)]?.[0])
+      const first = refused[0]
+        ? form.getInputNode(refused[0])
+        : refusedBox &&
+          document.querySelector<HTMLElement>(`#${CSS.escape(signupItemInputId(refusedBox.key))}`)
+      first?.focus()
+      const shownAtItem = new Set(boxes.map((item) => signupItemField(item.key)))
+      const named = Object.keys(fieldErrors)
+      const allShown =
+        named.length > 0 && named.every((field) => isFormField(field) || shownAtItem.has(field))
+      if (allShown) {
+        return
+      }
       notify({
         color: 'red',
         title: t(($) => $.signUp.errorTitle),
@@ -169,12 +201,16 @@ export function SignUpPage() {
             autoComplete="new-password"
             required
             {...form.getInputProps('password')}
+            // Mantine's PasswordInput leaves aria-invalid off its input (withAria: false).
+            aria-invalid={form.errors.password ? true : undefined}
           />
           <PasswordInput
             label={t(($) => $.signUp.confirmPasswordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('confirm')}
+            // Mantine's PasswordInput leaves aria-invalid off its input (withAria: false).
+            aria-invalid={form.errors.confirm ? true : undefined}
           />
 
           <SignupItemFields

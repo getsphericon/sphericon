@@ -50,6 +50,67 @@ test('shows the API error and stays on the form when the Sign-up fails', async (
   await expect.element(screen.getByRole('button', { name: 'Sign up' })).toBeInTheDocument()
 })
 
+test('shows a refused field under that field, and signs up once it is corrected', async () => {
+  let attempts = 0
+  worker.use(
+    handleSiteAuthSignUp(() => {
+      attempts += 1
+      return attempts === 1
+        ? problem(422, {
+            detail: 'the password must be 8 to 256 characters long',
+            errors: { password: ['the password must be 8 to 256 characters long'] },
+          })
+        : new HttpResponse(null, { status: 202 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<SignUpPage />)
+
+  await fillAndSubmit(screen)
+
+  const password = screen.getByLabelText(/^Password/)
+  await expect
+    .element(password)
+    .toHaveAccessibleDescription(/the password must be 8 to 256 characters long/)
+  await expect.element(password).toHaveAttribute('aria-invalid', 'true')
+  await expect.element(password).toHaveFocus()
+  expect(screen.getByText('Sign-up failed').query()).toBeNull()
+
+  await password.fill('a longer password')
+  await expect
+    .element(password)
+    .not.toHaveAccessibleDescription(/the password must be 8 to 256 characters long/)
+  await expect.element(password).not.toHaveAttribute('aria-invalid')
+  await screen.getByLabelText(/^Confirm password/).fill('a longer password')
+  await screen.getByRole('button', { name: 'Sign up' }).click()
+
+  await expect.element(screen.getByText('Check your email')).toBeInTheDocument()
+})
+
+test('still tells a refusal it cannot show at a field, next to the refused field', async () => {
+  worker.use(
+    handleSiteAuthSignUp(() =>
+      problem(422, {
+        detail: 'the Sign-up items changed, reload the page',
+        errors: {
+          password: ['the password must be 8 to 256 characters long'],
+          signupItems: ['the Sign-up items changed, reload the page'],
+        },
+      }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<SignUpPage />)
+
+  await fillAndSubmit(screen)
+
+  await expect
+    .element(screen.getByLabelText(/^Password/))
+    .toHaveAccessibleDescription(/the password must be 8 to 256 characters long/)
+  await expect.element(screen.getByText('Sign-up failed')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('the Sign-up items changed, reload the page'))
+    .toBeInTheDocument()
+})
+
 test('falls back to the generic message when the error has no detail', async () => {
   worker.use(handleSiteAuthSignUp(() => problem(500, {})))
   const { screen } = await renderWithRouter(<SignUpPage />)
@@ -210,7 +271,7 @@ test('shows the refusal of a required acceptance under its box', async () => {
   await expect.element(screen.getByRole('checkbox', { name: 'Terms of service' })).toBeVisible()
   await fillAndSubmit(screen)
 
-  await expect
-    .element(screen.getByRole('checkbox', { name: 'Terms of service' }))
-    .toHaveAccessibleDescription(/accept the Terms of service to sign up/)
+  const terms = screen.getByRole('checkbox', { name: 'Terms of service' })
+  await expect.element(terms).toHaveAccessibleDescription(/accept the Terms of service to sign up/)
+  await expect.element(terms).toHaveFocus()
 })

@@ -5,7 +5,7 @@ import { SignupItemKind } from '../generated/site/types.gen.ts'
 import type { SiteSignupItem } from '../generated/site/types.gen.ts'
 import { Route as legalDocumentRoute } from '../routes/legal.$key.tsx'
 import { getFieldError } from '../utils/apiErrors.ts'
-import { signupItemField } from '../utils/signupItems.ts'
+import { signupItemField, signupItemInputId } from '../utils/signupItems.ts'
 import { AnchorLink } from './RouterLink.tsx'
 
 interface SignupItemFieldsProps {
@@ -36,6 +36,7 @@ export function SignupItemFields({ items, ticked, onTick, error }: SignupItemFie
     ) : (
       <Checkbox
         key={item.key}
+        id={signupItemInputId(item.key)}
         label={item.title}
         checked={ticked[item.key] === true}
         onChange={(event) => onTick(item.key, event.currentTarget.checked)}

@@ -33,6 +33,11 @@ export function signupItemField(key: string) {
   return `${answersField}.${key}`
 }
 
+// The id of the item's checkbox, so a form can focus the box whose answer was refused.
+export function signupItemInputId(key: string) {
+  return `signup-item-${key}`
+}
+
 // Whether publishing a new version of the item stops every User who has not accepted it (ADR
 // 0062): a required acceptance does; a deleted one cannot be published at all.
 export function publishStopsUsers(item: Pick<StaffSignupItemResource, 'kind'>) {
