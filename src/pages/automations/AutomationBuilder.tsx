@@ -10,21 +10,19 @@ import {
 } from '@workflowbuilder/sdk'
 import type {
   DidSaveStatus,
-  IntegrationDataFormat,
   OnSaveExternal,
   WorkflowBuilderPlugin,
   WorkflowBuilderIsValidConnection,
 } from '@workflowbuilder/sdk'
-import { useMachine } from '@xstate/react'
 // easement:disable-next-line symbol -- the builder subtree runs on the SDK's global instance (src/i18n.ts)
 import i18next from 'i18next'
 import { useCallback, useEffect, useMemo } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
-import { waitFor } from 'xstate'
-import type { ActorRefFrom, SnapshotFrom } from 'xstate'
+import type { SnapshotFrom } from 'xstate'
 
 import { DraftActions } from '../../components/DraftControls.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
+import { useEditorSession } from '../../editing/useEditorSession.ts'
 import {
   siteAutomationsGetQueryKey,
   siteAutomationsListQueryKey,
@@ -38,8 +36,8 @@ import { useNotify } from '../../hooks/useNotify.ts'
 import { i18n } from '../../i18n.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { stepsToGraph } from './definition.ts'
-import type { AutomationGraph } from './definition.ts'
-import { applyHttpIdentities, automationSubmission, editorSession } from './editorSession.ts'
+import { automationAdapter, editorSession } from './editorSession.ts'
+import type { AutomationContent, AutomationOperation } from './editorSession.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { httpBodyRenderer, httpHeadersRenderer } from './httpRenderer.ts'
 import {
@@ -48,7 +46,6 @@ import {
   telegramIntegrationRenderer,
 } from './integrationRenderer.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
-import { automationSnapshot } from './leaveSnapshot.ts'
 import { messageRenderer } from './messageRenderer.ts'
 import { useAutomationNodeTypes } from './nodes.ts'
 import { smsTextRenderer } from './smsRenderer.ts'
@@ -169,20 +166,25 @@ function BuilderBar({
   form,
   workspaceId,
   session,
-  send,
+  dirty,
+  can,
+  run,
   onSave,
 }: {
   form: AutomationBarForm
   workspaceId: string
   session: SnapshotFrom<typeof editorSession>
-  send: ActorRefFrom<typeof editorSession>['send']
-  onSave: (graph: AutomationGraph) => Promise<DidSaveStatus>
+  dirty: (content: AutomationContent) => boolean
+  can: (operation: AutomationOperation) => boolean
+  run: (operation: AutomationOperation) => void
+  onSave: () => Promise<DidSaveStatus>
 }) {
   const { t } = useTranslation()
-  const canvasNodes = useStore((state) => state.nodes)
-  const canvasEdges = useStore((state) => state.edges)
-  const { resource: automation } = session.context
-  const current = automationSnapshot(form.values.name, { nodes: canvasNodes, edges: canvasEdges })
+  // Subscribed, so the bar re-renders on every edit of the canvas.
+  const nodes = useStore((state) => state.nodes)
+  const edges = useStore((state) => state.edges)
+  const { resource: automation, operation } = session.context
+  const unsaved = dirty({ name: form.values.name, graph: { nodes, edges } })
   const busy = !session.matches('idle')
 
   return (
@@ -208,26 +210,20 @@ function BuilderBar({
             loading={session.matches('saving')}
             disabled={busy}
             onClick={() => {
-              const { nodes, edges } = useStore.getState()
-              void onSave({ nodes, edges })
+              void onSave()
             }}
           >
             {t(($) => $.actions.save)}
           </Button>
           <DraftActions
             pending={automation.live !== null && automation.draft !== null}
-            publishable={session.can({ type: 'PUBLISH', current })}
-            publishing={session.matches('publishing')}
-            reverting={session.matches('reverting')}
+            publishable={can('PUBLISH')}
+            publishing={operation === 'PUBLISH'}
+            reverting={operation === 'REVERT'}
             disabled={busy}
-            onPublish={() => {
-              const { nodes, edges } = useStore.getState()
-              send({
-                type: 'PUBLISH',
-                current: automationSnapshot(form.getValues().name, { nodes, edges }),
-              })
-            }}
-            onRevert={() => send({ type: 'REVERT' })}
+            {...(unsaved && { unsaved: t(($) => $.automations.leaveMessage) })}
+            onPublish={() => run('PUBLISH')}
+            onRevert={() => run('REVERT')}
           />
         </Group>
       </Group>
@@ -259,86 +255,88 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
     [nodeTypes],
   )
   const initialGraph = useMemo(() => stepsToGraph(edited, edited.steps, labels), [edited, labels])
-  const [session, send, actor] = useMachine(editorSession, {
-    input: {
+  const listKey = siteAutomationsListQueryKey({ path: { workspaceId } })
+  const getKey = siteAutomationsGetQueryKey({ path: { workspaceId, id: automation.id } })
+  const {
+    snapshot: session,
+    dirty,
+    can,
+    run,
+    save,
+  } = useEditorSession(automationAdapter, editorSession, {
+    subject: {
       path: { workspaceId, id: automation.id },
       resource: automation,
       graph: initialGraph,
       labels,
     },
+    // The bar's name and the SDK's canvas store hold the current content.
+    editor: {
+      read: () => {
+        const { nodes, edges } = useStore.getState()
+        return { name: form.getValues().name, graph: { nodes, edges } }
+      },
+      write: ({ name, graph }) => {
+        if (form.getValues().name !== name) {
+          form.setValues({ name })
+        }
+        useStore.setState({ nodes: graph.nodes, edges: graph.edges })
+      },
+    },
+    effects: {
+      // The write's response is authoritative. An older GET is cancelled before its cache is
+      // replaced; the list is reconciled in the background and never reloads the canvas.
+      store: (resource) => {
+        void queryClient.cancelQueries({ queryKey: getKey })
+        queryClient.setQueryData(getKey, resource)
+      },
+      invalidate: () => {
+        void queryClient.invalidateQueries({ queryKey: listKey })
+      },
+      accepted: (operation) => {
+        const messages = {
+          SAVE: t(($) => $.notifications.automationUpdated),
+          PUBLISH: t(($) => $.notifications.automationPublished),
+          REVERT: t(($) => $.notifications.automationReverted),
+        }
+        notify({
+          color: 'teal',
+          title: t(($) => $.notifications.successTitle),
+          message: messages[operation],
+        })
+      },
+      failed: (operation, error) => {
+        notify({
+          color: 'red',
+          title:
+            operation === 'SAVE'
+              ? t(($) => $.alerts.automationSaveErrorTitle)
+              : t(($) => $.alerts.automationStatusErrorTitle),
+          message: apiErrorMessage(
+            error,
+            operation === 'SAVE'
+              ? t(($) => $.alerts.automationSaveErrorMessage)
+              : t(($) => $.notifications.errorMessage),
+          ),
+        })
+      },
+    },
   })
 
-  useEffect(() => {
-    send({ type: 'REFRESH', resource: automation })
-  }, [send, automation])
-
-  useEffect(() => {
-    const accepted = actor.on('accepted', ({ operation, resource, identities }) => {
-      // Reconcile identity only, against the submitted node ID. Newer fields, positions and
-      // edges stay as edited; a node deleted or replaced while saving is left alone.
-      if (identities?.length) {
-        const store = useStore.getState()
-        useStore.setState({ nodes: applyHttpIdentities(store.nodes, identities) })
-      }
-      const queryKey = siteAutomationsGetQueryKey({ path: { workspaceId, id: resource.id } })
-      // The write's response is authoritative. Cancel an older GET before replacing its cache;
-      // background list reconciliation neither delays acknowledgement nor reloads the canvas.
-      void queryClient.cancelQueries({ queryKey })
-      queryClient.setQueryData(queryKey, resource)
-      void queryClient.invalidateQueries({
-        queryKey: siteAutomationsListQueryKey({ path: { workspaceId } }),
-      })
-      if (operation === 'revert') {
-        form.setValues({ name: resource.name })
-      }
-      const messages = {
-        save: t(($) => $.notifications.automationUpdated),
-        publish: t(($) => $.notifications.automationPublished),
-        revert: t(($) => $.notifications.automationReverted),
-      }
-      notify({
-        color: 'teal',
-        title: t(($) => $.notifications.successTitle),
-        message: messages[operation],
-      })
-    })
-    const failed = actor.on('failed', ({ operation, error }) => {
-      notify({
-        color: 'red',
-        title:
-          operation === 'save'
-            ? t(($) => $.alerts.automationSaveErrorTitle)
-            : t(($) => $.alerts.automationStatusErrorTitle),
-        message: apiErrorMessage(
-          error,
-          operation === 'save'
-            ? t(($) => $.alerts.automationSaveErrorMessage)
-            : t(($) => $.notifications.errorMessage),
-        ),
-      })
-    })
-    return () => {
-      accepted.unsubscribe()
-      failed.unsubscribe()
-    }
-  }, [actor, workspaceId, queryClient, form, notify, apiErrorMessage, t])
-
-  const saveGraph = useCallback(
-    async (graph: AutomationGraph): Promise<DidSaveStatus> => {
-      if (!actor.getSnapshot().matches('idle')) {
-        return 'alreadyStarted'
-      }
+  // The bar's Save and the SDK's imperative save action share one capture and its exclusivity: the
+  // session reads the canvas store, which holds what the SDK hands its save action.
+  const saveCanvas = useCallback(async (): Promise<DidSaveStatus> => {
+    const result = await save((submission) => {
       if (form.validate().hasErrors) {
-        return 'error'
+        return false
       }
-      const submission = automationSubmission(form.getValues().name, graph)
       if (!submission) {
         notify({
           color: 'red',
           title: t(($) => $.automations.triggerMissingTitle),
           message: t(($) => $.automations.triggerMissing),
         })
-        return 'error'
+        return false
       }
       if (submission.dropped > 0) {
         notify({
@@ -347,24 +345,12 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
           message: t(($) => $.automations.branchesUnsupported),
         })
       }
-      actor.send({ type: 'SAVE', submission })
-      try {
-        const settled = await waitFor(actor, (state) => state.matches('idle'))
-        return settled.context.result
-      } catch {
-        // A stopped session has no receipt to return to the SDK. Its invocation cannot change
-        // another editor, even if the server already committed before the request was aborted.
-        return 'error'
-      }
-    },
-    [actor, form, notify, t],
-  )
+      return true
+    })
+    return result === 'busy' ? 'alreadyStarted' : result
+  }, [save, form, notify, t])
 
-  // The SDK's imperative save action shares the toolbar's captured submission and exclusivity.
-  const onDataSave = useCallback<OnSaveExternal>(
-    async (data: IntegrationDataFormat) => saveGraph({ nodes: data.nodes, edges: data.edges }),
-    [saveGraph],
-  )
+  const onDataSave = useCallback<OnSaveExternal>(async () => saveCanvas(), [saveCanvas])
 
   const integration = useMemo(() => ({ strategy: 'props' as const, onDataSave }), [onDataSave])
 
@@ -396,12 +382,12 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
             language, theme and read-only toggles) is swapped for <BuilderBar />, and
             ThemeSync keeps the canvas theme in step with Mantine's color scheme. */}
           <WorkflowBuilder.Root
-            key={session.context.canvas.revision}
+            key={session.context.content.revision}
             name={session.context.resource.name}
             layoutDirection="DOWN"
             nodeTypes={nodeTypes}
-            initialNodes={session.context.canvas.graph.nodes}
-            initialEdges={session.context.canvas.graph.edges}
+            initialNodes={session.context.content.value.graph.nodes}
+            initialEdges={session.context.content.value.graph.edges}
             integration={integration}
             isValidConnection={isValidConnection}
             jsonForm={jsonForm}
@@ -410,7 +396,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
             <ThemeSync />
             <EditorReadOnly readOnly={session.hasTag('readOnly')} />
             <QuietRestore />
-            <LeaveGuard name={form.values.name} saved={session.context.saved} />
+            <LeaveGuard name={form.values.name} dirty={dirty} />
             <Box pos="relative" w="100%" h="100dvh">
               <WorkflowBuilder.Canvas />
               <I18nextProvider i18n={i18n}>
@@ -418,8 +404,10 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
                   form={form}
                   workspaceId={workspaceId}
                   session={session}
-                  send={send}
-                  onSave={saveGraph}
+                  dirty={dirty}
+                  can={can}
+                  run={run}
+                  onSave={saveCanvas}
                 />
               </I18nextProvider>
               <Box pos="absolute" top={88} left={16}>

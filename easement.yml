@@ -283,9 +283,10 @@ components:
   web-pages:
     in: src/pages/*
     isolated: true
-    because: a page feature never imports another feature's page; what two features share lives in src/components, src/hooks or src/utils
+    because: a page feature never imports another feature's page; what two features share lives in src/components, src/editing, src/hooks or src/utils
   web-console: { in: src/console }
-  web-shared: { in: [src/components, src/hooks, src/layouts, src/resources, src/utils] }
+  web-shared:
+    in: [src/components, src/editing, src/hooks, src/layouts, src/resources, src/utils]
   # The files directly under src/: router, guards, theme, instance, i18n, entry points.
   web-app: { in: 'src/*' }
 

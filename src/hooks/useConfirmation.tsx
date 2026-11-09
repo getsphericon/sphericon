@@ -11,6 +11,7 @@ interface ConfirmationOptions {
   // no generic text (docs/standards/ui.md, "Deleting").
   description: ReactNode
   confirmLabel?: ReactNode
+  cancelLabel?: ReactNode
   // The additional confirmation: the confirm button stays disabled until this exact name is typed.
   // For a deletion that cannot be undone, or a credential or endpoint something live depends on.
   typedName?: string | undefined
@@ -20,7 +21,14 @@ interface ConfirmationOptions {
 export function useConfirmation() {
   const { t } = useTranslation()
 
-  return ({ title, description, confirmLabel, typedName, onConfirm }: ConfirmationOptions) => {
+  return ({
+    title,
+    description,
+    confirmLabel,
+    cancelLabel,
+    typedName,
+    onConfirm,
+  }: ConfirmationOptions) => {
     const resolvedTitle = title ?? t(($) => $.confirmations.deleteTitle)
     const resolvedLabel = confirmLabel ?? t(($) => $.actions.delete)
 
@@ -28,7 +36,7 @@ export function useConfirmation() {
       modals.openConfirmModal({
         title: resolvedTitle,
         children: <Text>{description}</Text>,
-        labels: { cancel: t(($) => $.actions.cancel), confirm: resolvedLabel },
+        labels: { cancel: cancelLabel ?? t(($) => $.actions.cancel), confirm: resolvedLabel },
         confirmProps: { color: 'red' },
         onConfirm,
       })

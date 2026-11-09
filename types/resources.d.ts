@@ -1060,7 +1060,8 @@ export default interface Resources {
     "draft": {
       "pending": "Unpublished changes",
       "publish": "Publish",
-      "revert": "Revert"
+      "revert": "Revert",
+      "revertUnsavedTitle": "Revert without saving?"
     },
     "eventActions": {
       "auditEntry": "Audit log entry",

@@ -165,7 +165,7 @@ test.each([
   const before = actor.getSnapshot().context
   actor.send(event)
   const settled = await waitFor(actor, (state) => state.matches('idle'))
-  expect(settled.context.canvas).toBe(before.canvas)
+  expect(settled.context.content).toBe(before.content)
   expect(settled.context.saved).toBe(before.saved)
   expect(settled.context.resource).toBe(before.resource)
   expect(settled.can({ type: 'SAVE', submission: capture('Retry') })).toBe(true)
@@ -177,7 +177,7 @@ test('a refresh updates lifecycle metadata without replacing content or its rece
   actor.send({ type: 'REFRESH', resource: { ...RESOURCE, draft: null } })
   const after = actor.getSnapshot().context
   expect(after.resource.draft).toBeNull()
-  expect(after.canvas).toBe(before.canvas)
+  expect(after.content).toBe(before.content)
   expect(after.saved).toBe(before.saved)
   expect(actor.getSnapshot().can({ type: 'REVERT' })).toBe(false)
 })
