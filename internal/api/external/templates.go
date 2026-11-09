@@ -18,11 +18,11 @@ func (h *Handlers) TemplatesList(ctx context.Context, params externalapi.Templat
 
 func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateTemplateInput) (*externalapi.TemplateResource, error) {
 	scoped := auth.TokenScoped(ctx)
-	saved, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
+	tpl, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.EmailTemplateToResource(saved.Template)
+	res := mapper.EmailTemplateToResource(tpl)
 	return &res, nil
 }
 
@@ -42,11 +42,11 @@ func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateT
 	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
-	saved, err := h.templates.Update(ctx, scoped, id, inputs.TemplateUpdate(req))
+	tpl, err := h.templates.Update(ctx, scoped, id, inputs.TemplateUpdate(req))
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.EmailTemplateToResource(saved.Template)
+	res := mapper.EmailTemplateToResource(tpl)
 	return &res, nil
 }
 

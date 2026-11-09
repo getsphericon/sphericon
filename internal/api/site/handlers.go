@@ -78,6 +78,7 @@ type Handlers struct {
 	bus             *events.Bus
 	webhooks        *webhookendpoints.Module
 	broadcasts      *broadcasts.Module
+	broadcastViews  *broadcasts.Views
 	sendingDomains  *sendingdomains.Module
 	trackingDomains *trackingdomains.Module
 	joinDomains     *joindomains.Module
@@ -101,6 +102,7 @@ type Handlers struct {
 	sendingDomainDeletion *sendingdomaindeletion.UseCase
 	bindings              *bindings.Module
 	templates             *emailtemplates.Module
+	templateViews         *emailtemplates.Views
 	brandKit              *brandkits.Module
 	automations           *automations.Module
 	rules                 *rules.Module
@@ -177,10 +179,12 @@ type Deps struct {
 	CustomFieldRetyping *customfieldretyping.UseCase
 	Bindings            *bindings.Module
 	Templates           *emailtemplates.Module
+	TemplateViews       *emailtemplates.Views
 	BrandKit            *brandkits.Module
 	Automations         *automations.Module
 	Rules               *rules.Module
 	Broadcasts          *broadcasts.Module
+	BroadcastViews      *broadcasts.Views
 	SendingDomains      *sendingdomains.Module
 	TrackingDomains     *trackingdomains.Module
 	JoinDomains         *joindomains.Module
@@ -262,8 +266,8 @@ func NewHandlers(d *Deps) *Handlers {
 	}
 	h := &Handlers{
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, deletion: d.Deletion, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
-		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
-		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts,
+		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, templateViews: d.TemplateViews, brandKit: d.BrandKit,
+		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, secondFactorReset: d.SecondFactorReset, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceSummary: d.WorkspaceSummary, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,

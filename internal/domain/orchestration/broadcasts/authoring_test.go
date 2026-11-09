@@ -46,7 +46,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 	for _, b := range page.Items {
 		assert.EqualValues(t, fixtures.AcmeID, b.WorkspaceID)
 	}
-	ids := lo.Map(page.Items, func(b broadcasts.View, _ int) int64 { return b.ID })
+	ids := lo.Map(page.Items, func(b *ent.Broadcast, _ int) int64 { return b.ID })
 	assert.IsDecreasing(t, ids, "newest first")
 }
 

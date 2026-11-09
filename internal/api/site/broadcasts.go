@@ -26,7 +26,7 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 	ws := workspaceScope(ctx)
 
 	order := inputs.BroadcastsOrder(params.Order.Or(siteapi.SiteBroadcastsOrderNewest))
-	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.BroadcastsListFilter(params), order)
+	page, err := h.broadcastViews.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.BroadcastsListFilter(params), order)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.Create
 	if err != nil {
 		return nil, err
 	}
-	v, err := h.broadcasts.Create(ctx, ws, in)
+	v, err := h.broadcastViews.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	v, err := h.broadcasts.Get(ctx, ws, id)
+	v, err := h.broadcastViews.Get(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.Update
 	if err != nil {
 		return nil, err
 	}
-	v, err := h.broadcasts.Update(ctx, ws, id, in)
+	v, err := h.broadcastViews.Update(ctx, ws, id, in)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	v, err := h.broadcasts.Archive(ctx, ws, id)
+	v, err := h.broadcastViews.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	v, err := h.broadcasts.Unarchive(ctx, ws, id)
+	v, err := h.broadcastViews.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 
 	id := int64(params.ID)
 
-	v, err := h.broadcasts.Send(ctx, ws, id)
+	v, err := h.broadcastViews.Send(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 
 	id := int64(params.ID)
 
-	v, err := h.broadcasts.Schedule(ctx, ws, id, time.Time(req.ScheduledAt))
+	v, err := h.broadcastViews.Schedule(ctx, ws, id, time.Time(req.ScheduledAt))
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -23,7 +22,7 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 	if err != nil {
 		return nil, err
 	}
-	return mapper.BroadcastsListPage(pagination.Map(page, func(v broadcasts.View) *ent.Broadcast { return v.Broadcast })), nil
+	return mapper.BroadcastsListPage(page), nil
 }
 
 func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.CreateBroadcastInput) (*externalapi.BroadcastResource, error) {
@@ -33,21 +32,21 @@ func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.Create
 	if err != nil {
 		return nil, err
 	}
-	v, err := h.broadcasts.Create(ctx, ws, in)
+	b, err := h.broadcasts.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(v.Broadcast)
+	res := mapper.BroadcastToResource(b)
 	return &res, nil
 }
 
 func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.BroadcastsGetParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
-	v, err := h.broadcasts.Get(ctx, auth.TokenScoped(ctx), id)
+	b, err := h.broadcasts.Get(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(v.Broadcast)
+	res := mapper.BroadcastToResource(b)
 	return &res, nil
 }
 
@@ -57,11 +56,11 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 	if err != nil {
 		return nil, err
 	}
-	v, err := h.broadcasts.Update(ctx, auth.TokenScoped(ctx), id, in)
+	b, err := h.broadcasts.Update(ctx, auth.TokenScoped(ctx), id, in)
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(v.Broadcast)
+	res := mapper.BroadcastToResource(b)
 	return &res, nil
 }
 
@@ -69,11 +68,11 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.BroadcastsArchiveParams) (*externalapi.BroadcastResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	v, err := h.broadcasts.Archive(ctx, ws, id)
+	b, err := h.broadcasts.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(v.Broadcast)
+	res := mapper.BroadcastToResource(b)
 	return &res, nil
 }
 
@@ -81,21 +80,21 @@ func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.Bro
 func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.BroadcastsUnarchiveParams) (*externalapi.BroadcastResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	v, err := h.broadcasts.Unarchive(ctx, ws, id)
+	b, err := h.broadcasts.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(v.Broadcast)
+	res := mapper.BroadcastToResource(b)
 	return &res, nil
 }
 
 func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.SetBroadcastSegmentInput, params externalapi.BroadcastsSetSegmentParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
-	v, err := h.broadcasts.SetSegment(ctx, auth.TokenScoped(ctx), id, convert.Int64Ptr(req.SegmentId))
+	b, err := h.broadcasts.SetSegment(ctx, auth.TokenScoped(ctx), id, convert.Int64Ptr(req.SegmentId))
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(v.Broadcast)
+	res := mapper.BroadcastToResource(b)
 	return &res, nil
 }
 
@@ -104,21 +103,21 @@ func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.Se
 // MCP they additionally need mcp:send (the x-mcp send flag).
 func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.ScheduleBroadcastInput, params externalapi.BroadcastsScheduleParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
-	v, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, time.Time(req.ScheduledAt))
+	b, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, time.Time(req.ScheduledAt))
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(v.Broadcast)
+	res := mapper.BroadcastToResource(b)
 	return &res, nil
 }
 
 func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.BroadcastsUnscheduleParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
-	v, err := h.broadcasts.Unschedule(ctx, auth.TokenScoped(ctx), id)
+	b, err := h.broadcasts.Unschedule(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(v.Broadcast)
+	res := mapper.BroadcastToResource(b)
 	return &res, nil
 }
 
