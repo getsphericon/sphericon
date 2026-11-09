@@ -5,7 +5,7 @@
 // License key; the Enterprise sections of the console (ee/domain/insights/workspaceoversight) build on it.
 //
 // A Staff member belongs to no Workspace, so this package works on the raw *ent.Client (it is in
-// the closed list of docs/architecture.md): the Staff member table and nothing else.
+// the closed list of docs/architecture/workspace-scoping.md): the Staff member table and nothing else.
 package staffmembers
 
 import (

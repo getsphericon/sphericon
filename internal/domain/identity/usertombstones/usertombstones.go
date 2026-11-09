@@ -16,7 +16,7 @@
 // order: every Consent record, whatever its item, is written in a transaction, so a writer that
 // forgets it is refused before it looks at any row. The hook reads Consent records and Sign-up
 // items to find the Users a change belongs to, which is why this package is on the closed list
-// of raw-client packages in docs/architecture.md.
+// of raw-client packages in docs/architecture/workspace-scoping.md.
 package usertombstones
 
 import (

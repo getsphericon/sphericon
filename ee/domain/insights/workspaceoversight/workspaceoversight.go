@@ -17,7 +17,7 @@
 // (internal/domain/identity/staffmembers) and run on every Instance.
 //
 // The console's Workspace metadata belongs to no Workspace, so this package works on the raw
-// *ent.Client (it is in the closed list of docs/architecture.md): the Workspace rows, the
+// *ent.Client (it is in the closed list of docs/architecture/workspace-scoping.md): the Workspace rows, the
 // suspension state and the rates the console shows, which are tenant metadata rather than a
 // Workspace's data. Two reads build a Workspace scope, each over the one Workspace the Staff
 // member is looking at, because the module they ride takes one: the Audit log

@@ -17,7 +17,7 @@ import (
 
 // Module builds Orders and their Movements from stored order Events and credits each Order to
 // the message last clicked (ADR 0064). Its functions take the Workspace-scoped client; the one
-// place that scopes it is the event subscriber (docs/architecture.md).
+// place that scopes it is the event subscriber (docs/architecture/events-and-jobs.md).
 type Module struct {
 	currency CurrencyAdopter
 }

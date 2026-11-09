@@ -12,7 +12,7 @@ import (
 
 // SecretSweeps are the TOTP secrets of every Staff member, as the Secret re-encryption sweeps them
 // (secrets.Cipher.Reencrypt). They read and swap on the raw client, and use it for nothing else
-// (docs/architecture.md, Workspace scoping).
+// (docs/architecture/workspace-scoping.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	return []secrets.Sweep{{
 		Column: "staff_members.totp_secret_encrypted",

@@ -8,7 +8,7 @@
 // answer) are the driver internal/api/oauth.
 //
 // A code or a refresh token is a secret that names its grant before any scope exists, so the use
-// case holds the raw *ent.Client (one of the closed list of docs/architecture.md, Workspace
+// case holds the raw *ent.Client (one of the closed list of docs/architecture/workspace-scoping.md, Workspace
 // scoping): it opens the exchange's transaction and scopes the Connection's writes to the
 // Workspace the claimed grant names.
 package connectionissuance

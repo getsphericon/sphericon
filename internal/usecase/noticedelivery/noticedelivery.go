@@ -14,7 +14,7 @@
 //
 // An event of a User's account belongs to no Workspace, and a Workspace's Owners are read across
 // the Instance by the Workspace's id, so there is no *ent.Scoped to take: this use case holds the
-// raw *ent.Client, one of the closed list of docs/architecture.md (Workspace scoping).
+// raw *ent.Client, one of the closed list of docs/architecture/workspace-scoping.md (Workspace scoping).
 package noticedelivery
 
 import (

@@ -13,7 +13,7 @@ import (
 // SecretSweeps are the stored secrets of the Integrations of every Workspace, the discarded ones
 // included: the provider config and the inbound params, as the Secret re-encryption sweeps them
 // (secrets.Cipher.Reencrypt). They read and swap on the raw client, and use it for nothing else
-// (docs/architecture.md, Workspace scoping).
+// (docs/architecture/workspace-scoping.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	page := func(of func(*ent.Integration) string) func(context.Context, int64, int) ([]secrets.Stored, error) {
 		return func(ctx context.Context, after int64, n int) ([]secrets.Stored, error) {
