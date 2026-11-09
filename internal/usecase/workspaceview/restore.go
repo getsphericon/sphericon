@@ -1,4 +1,4 @@
-package workspacesummary
+package workspaceview
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 
 // ErrNotRestorable refuses restoring a Workspace past its deletion window or already erased. It
 // wraps the lifecycle.ErrInvalidTransition the cycle refused the move with.
-var ErrNotRestorable = validation.Conflict("workspacesummary: the workspace can no longer be restored", i18n.ErrorsWorkspaceNotRestorable)
+var ErrNotRestorable = validation.Conflict("workspaceview: the workspace can no longer be restored", i18n.ErrorsWorkspaceNotRestorable)
 
 // RestoreInput is a restore of a deleted Workspace: the Workspace by its public id, the User who
 // restores it, the actor the Audit log records and whether the User's session meets the Two-factor

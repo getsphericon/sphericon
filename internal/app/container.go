@@ -122,7 +122,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -869,11 +869,12 @@ var contentPackage = do.Package(
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
 		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
-	// The Workspace summary and the operations of a member that answer with it (a use case, ADR
-	// 0111), creating a Verified User's Workspace among them: on an Instance that has Send caps (ADR
-	// 0067) a new Workspace starts with the Instance's default; elsewhere it has none.
-	do.Lazy(func(i do.Injector) (*workspacesummary.UseCase, error) {
-		return workspacesummary.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspacesummary.Modules{
+	// The Workspace view: the Workspace summary and the operations of a member that answer with it
+	// (a use case, ADR 0111), creating a Verified User's Workspace among them: on an Instance that
+	// has Send caps (ADR 0067) a new Workspace starts with the Instance's default; elsewhere it has
+	// none.
+	do.Lazy(func(i do.Injector) (*workspaceview.UseCase, error) {
+		return workspaceview.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspaceview.Modules{
 			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
@@ -1042,7 +1043,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	return apiexternal.Deps{
 		Clock:                 do.MustInvoke[Clock](i),
 		Workspaces:            do.MustInvoke[*workspaces.Module](i),
-		WorkspaceSummary:      do.MustInvoke[*workspacesummary.UseCase](i),
+		WorkspaceView:         do.MustInvoke[*workspaceview.UseCase](i),
 		Bus:                   do.MustInvoke[*events.Bus](i),
 		Webhooks:              do.MustInvoke[*webhookendpoints.Module](i),
 		Outbound:              do.MustInvoke[*outboundmessages.Module](i),
@@ -1089,7 +1090,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Instance:              do.MustInvoke[*instancestates.Module](i),
 		Deletion:              do.MustInvoke[*workspacedeletion.UseCase](i),
 		AccountLink:           accountLink,
-		WorkspaceSummary:      do.MustInvoke[*workspacesummary.UseCase](i),
+		WorkspaceView:         do.MustInvoke[*workspaceview.UseCase](i),
 		Attention:             do.MustInvoke[*needsattentionreport.UseCase](i),
 		SetupChecklist:        do.MustInvoke[*setupchecklist.Module](i),
 		SupportEmail:          cfg.SupportEmail,

@@ -89,7 +89,9 @@ Two facts about easement 0.5.1 bear on the fix:
     URI and the PKCE verifier. `connectionissuance` goes. A code or a refresh token is looked up
     before any Workspace scope exists, so `apitokens` joins the closed list of raw-client holders.
   - `workspaces` checks the typed name when it deletes a Workspace. Restoring one needs a Membership
-    that holds the delete Permission, so it stays a use case.
+    that holds the delete Permission, so it stays a use case. (Amended by #1218: that use case is
+    the Workspace view, which answers the restore with the Owner's view of the Workspace, not the
+    deletion cycle; see [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]].)
   - User deletion becomes a use case. `LeaveDoomedWorkspaceIn` becomes an unchecked operation like
     the others, and `x-user-deletion-forbids` goes.
   - The Erasure steps that the foreign keys already do go: `automations.EraseRuns`,

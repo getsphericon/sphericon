@@ -21,7 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // tokenScopes are everything the scenario steps need; a test's token carries them all.
@@ -91,7 +91,7 @@ func (k collectKey) ApiKeyAuth(context.Context, collectapi.OperationName) (colle
 }
 
 // NewWorkspace is the arrange step: a User, a Workspace and its first API token, made
-// with internal/domain/identity/users, internal/usecase/workspacesummary and internal/domain/identity/apitokens (the bootstrap token is not used, it
+// with internal/domain/identity/users, internal/usecase/workspaceview and internal/domain/identity/apitokens (the bootstrap token is not used, it
 // only addresses the oldest Workspace). Its Inbox deletes the test's own mail on cleanup.
 func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	tb.Helper()
@@ -100,7 +100,7 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 
 	user, err := e.users.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
 	require.NoError(tb, err)
-	created, err := e.creation.Create(ctx, workspacesummary.CreateInput{UserID: user.ID, Name: "e2e " + id})
+	created, err := e.creation.Create(ctx, workspaceview.CreateInput{UserID: user.ID, Name: "e2e " + id})
 	require.NoError(tb, err)
 	ws := created.Summary.Workspace
 	scoped, _, err := e.memberships.Scope(ctx, user.ID, ws.PublicID)

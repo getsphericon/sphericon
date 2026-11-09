@@ -1,22 +1,22 @@
-// Package workspacesummary is the use case of the Workspace summary (GLOSSARY, ADR 0111): a
-// Workspace as its members and agents read it, built once below /site and /api, which map the
-// same values into their own contracts. It reads identity (the Workspace and, for a User, the
-// Memberships) and sending (the Holds on the Workspace, its Send cap with the last 24 hours of
-// sends and the lengths a message is written against), so it is a use case, not a module of
-// either context.
+// Package workspaceview is the use case of the Workspace view (ADR 0111, amended by #1218): the
+// operations of the Workspace screens, each of which answers with the Workspace summary (GLOSSARY)
+// as the caller sees it. The summary is built once below /site and /api, which map the same values
+// into their own contracts. It reads identity (the Workspace and, for a User, the Memberships) and
+// sending (the Holds on the Workspace, its Send cap with the last 24 hours of sends and the lengths
+// a message is written against), so it is a use case, not a module of either context.
 //
 // A member reads it as a View: the summary with their Membership and their grace under the
 // Workspace's Two-factor requirement, which a strong session meets. Every operation of a member on
-// a Workspace that answers with that View is here, since use cases do not import each other: the
-// change in identity and the read of sending that follows it are one operation. Those are the
-// changes of its settings, creating a Workspace (ADR 0043: the Workspace with its Owner Membership
-// and the Send cap it starts with, ADR 0067) and restoring one inside its deletion window. What
-// depends on the surface (the Permissions a Role maps to, the Instance's own addresses) is the
-// surface's mapping.
+// a Workspace that answers with that View is here, since use cases do not import each other and a
+// driver makes one call: the change in identity and the read of sending that follows it are one
+// operation. Those are the changes of its settings, creating a Workspace (ADR 0043: the Workspace
+// with its Owner Membership and the Send cap it starts with, ADR 0067) and restoring one inside its
+// deletion window. What depends on the surface (the Permissions a Role maps to, the Instance's own
+// addresses) is the surface's mapping.
 //
 // It takes the raw client and the bus's transactions: a Workspace being created belongs to no
 // scope until it exists, and a deleted one has no scope its Owner can reach until it is restored.
-package workspacesummary
+package workspaceview
 
 import (
 	"context"
@@ -84,7 +84,7 @@ type UpdateInput struct {
 	PostalAddress *string
 }
 
-// UseCase reads the Workspace summary, and makes the changes of a Workspace that answer with it.
+// UseCase reads the Workspace view, and makes the changes of a Workspace that answer with it.
 type UseCase struct {
 	client          *ent.Client
 	bus             *events.Bus

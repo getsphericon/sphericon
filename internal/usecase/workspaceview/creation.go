@@ -1,4 +1,4 @@
-package workspacesummary
+package workspaceview
 
 import (
 	"context"

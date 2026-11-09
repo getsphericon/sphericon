@@ -109,7 +109,7 @@ whether the session is issued again) are `users.Module.ChangeProfile`, which tak
 `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
 (marked `goverter:ignore` with the reason). A resource `/site` and `/api` both answer is built once
 below them (ADR 0111): the Integration's `integrations.View`, the Segment preview of `segments`,
-the Workspace summary of `workspacesummary`; each surface maps the same values into its own
+the Workspace summary of the Workspace view (`workspaceview`); each surface maps the same values into its own
 contract. Hand-built values are limited to response wrappers
 (`*ListOK`, `*Headers`) and aggregates with no single source (setup checklist, lint findings,
 the integration config `oneOf`).

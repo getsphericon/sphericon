@@ -64,7 +64,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -179,9 +179,9 @@ type TestEnv struct {
 	// ceremony (ADR 0051).
 	AppURL string
 
-	// WorkspaceSummary reads the Workspace summary the surfaces map, and makes the changes of a
+	// WorkspaceView reads the Workspace summary the surfaces map, and makes the changes of a
 	// Workspace that answer with it, creating and restoring one among them (ADR 0111).
-	WorkspaceSummary *workspacesummary.UseCase
+	WorkspaceView *workspaceview.UseCase
 
 	// Holds is the module the sender's freeze check reads, for a test that builds its own
 	// Outbound module.
@@ -556,7 +556,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		RemovalCheck:      do.MustInvoke[*removalcheck.Module](injector),
 		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
 		Holds:             do.MustInvoke[*holds.Holds](injector),
-		WorkspaceSummary:  do.MustInvoke[*workspacesummary.UseCase](injector),
+		WorkspaceView:     do.MustInvoke[*workspaceview.UseCase](injector),
 		Orders:            do.MustInvoke[*orders.Module](injector),
 		edition:           edition,
 		license:           lic,

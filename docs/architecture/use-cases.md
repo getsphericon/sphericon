@@ -53,7 +53,7 @@ Workspace row on through
 `TombstoneIn` (deleting one checks only its typed name, so it is `workspaces.Module.Delete`,
 ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with the OAuth codes that name it removed by `oauthclientsunchecked.DeleteCodesIn` and every
 job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)), both in the tombstone's transaction; and the
-Workspace summary (`internal/usecase/workspacesummary`), which answers a member's operations on a Workspace with it: it creates a Workspace, writing it through
+Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace, writing it through
 `workspacesunchecked.CreateIn` and its Owner Membership through `membershipsunchecked.AddCreatorIn` with the Send cap it
 starts with (`instancestates.DefaultSendCapIn`, ADR 0067), and moves a deleted one back through
 `workspacesunchecked.RestoreIn`; and the Sign-up
@@ -126,7 +126,7 @@ Visitor through `visitors`, announces its chats through `bindings` (sending, abo
 and stitches its Events through the bus, in one transaction. The Ingest hook's reading of a provider's callbacks
 (`callbackinterpretation`) opens the request's transaction and changes Outbound messages, Suppressions,
 Unsubscribes, Confirmations and Bindings through their modules; the Analytics reports (`analyticsreport`), what Needs
-attention (`needsattentionreport`) only read. The Workspace summary (`workspacesummary`) reads, and
+attention (`needsattentionreport`) only read. The Workspace view (`workspaceview`) reads the Workspace summary, and
 makes the changes of a Workspace a member answers with it, its creation and its restore included:
 a change in identity, then the read of sending.
 The consent of a Destination (`internal/domain/contacts/confirmations`,
