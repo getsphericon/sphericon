@@ -42,10 +42,10 @@ the fixtures are sealed with, and never loads the configuration for it.
 
 **A document is saved through a fake export.** A runtime of the editor's code takes seconds to
 start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Setup` and of a module a
-test builds itself (`emailtemplates.New(testhelper.Renderer())`), runs our own checks and fakes the
-editor's schema check and export: the body is the document's text as paragraphs. A test of what the
-export makes of a document takes `testhelper.RealRenderer()`, and asserts the brand or the markup
-only there. The nightly run sets `SPHERICON_TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
+test builds itself (`emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})`), runs our own
+checks and fakes the editor's schema check and export: the body is the document's text as
+paragraphs. A test of what the export makes of a document takes `testhelper.RealRenderer()`, and
+asserts the brand or the markup only there. The nightly run sets `SPHERICON_TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
 
 **Build test scenarios on the committed fixtures (review rules 10 and 11).** Reference fixture rows through the catalog constants below
 (`fixtures.BroadcastDraftID`, `fixtures.ContactAliceID`, `fixtures.SegmentActiveID`, …),
