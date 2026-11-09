@@ -141,7 +141,7 @@ func (l *Links) PasswordResetLink(u *ent.User) (string, error) {
 
 // PasswordReset reads a reset link and the new password it sets: the password rule first (a
 // refused one costs no hash), then the link (ErrResetLinkInvalid). It returns the User the link
-// names and the new password's hash, for the reset (internal/usecase/workspacecreation, which
+// names and the new password's hash, for the reset (internal/usecase/signup, which
 // completes the Sign-up of an Unverified User).
 func (l *Links) PasswordReset(ctx context.Context, token, password string) (userID int64, passwordHash string, err error) {
 	if err := validation.Form(passwordForm{Password: password}); err != nil {
@@ -173,7 +173,7 @@ func (l *Links) VerificationLink(u *ent.User, browserHash string) (string, error
 }
 
 // Verification reads a verification link (ADR 0030) for the completion of its Sign-up
-// (internal/usecase/workspacecreation): the User it names and the password hash to set, nil to
+// (internal/usecase/signup): the User it names and the password hash to set, nil to
 // keep the one stored at Sign-up. browser is the Sign-up browser cookie the request carries, ""
 // for none: the Sign-up browser keeps the password stored at Sign-up, and any other browser must
 // send password, which replaces it. The link is single use and scoped to the address it was sent

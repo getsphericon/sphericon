@@ -67,7 +67,7 @@ func (m *Module) LinkScope(workspaceID int64) *ent.Scoped {
 }
 
 // Update renames the scoped Workspace and, when postalAddress is non-nil,
-// sets (or clears, with "") its postal address. A change is recorded as a
+// sets (or clears, with "") its postal address, trimmed so whitespace alone clears it. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is
 // the tenant root and has no scoped wrapper, so this is an explicit path.
 // The name is trimmed; an empty one is ErrNameEmpty.
@@ -84,7 +84,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		}
 		upd := tx.Workspace.UpdateOneID(s.WorkspaceID()).SetName(name)
 		if postalAddress != nil {
-			upd = upd.SetPostalAddress(*postalAddress)
+			upd = upd.SetPostalAddress(strings.TrimSpace(*postalAddress))
 		}
 		updated, err = upd.Save(ctx)
 		if err != nil {

@@ -81,7 +81,7 @@ func (a *Module) PendingSignup(ctx context.Context, id int64, now time.Time) (*e
 // Verified User with the provider's address and name, or takes over the Unverified User that
 // holds the address, as a provider sign-in without items does, its Linked identity, the Consent
 // records of the answers and the Membership of the Invitation the flow began from. The caller
-// creates the first Workspace on the same transaction (internal/usecase/workspacecreation).
+// creates the first Workspace on the same transaction (internal/usecase/signup).
 // surveyDue marks the User as owing the Sign-up survey, unless the sign-up accepts an Invitation.
 // It returns the User and the pending sign-up it came from. ErrPendingSignupGone when the pending
 // sign-up is no longer open, its Invitation no longer pending, or its address or provider

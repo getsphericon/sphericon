@@ -6,10 +6,16 @@
 // either context.
 //
 // A member reads it as a View: the summary with their Membership and their grace under the
-// Workspace's Two-factor requirement, which a strong session meets. A change of the Workspace a
-// member makes from its settings answers with that View, so the change in identity and the read of
-// sending that follows it are one operation here. What depends on the surface (the Permissions a
-// Role maps to, the Instance's own addresses) is the surface's mapping.
+// Workspace's Two-factor requirement, which a strong session meets. Every operation of a member on
+// a Workspace that answers with that View is here, since use cases do not import each other: the
+// change in identity and the read of sending that follows it are one operation. Those are the
+// changes of its settings, creating a Workspace (ADR 0043: the Workspace with its Owner Membership
+// and the Send cap it starts with, ADR 0067) and restoring one inside its deletion window. What
+// depends on the surface (the Permissions a Role maps to, the Instance's own addresses) is the
+// surface's mapping.
+//
+// It takes the raw client and the bus's transactions: a Workspace being created belongs to no
+// scope until it exists, and a deleted one has no scope its Owner can reach until it is restored.
 package workspacesummary
 
 import (
@@ -20,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -79,16 +86,22 @@ type UpdateInput struct {
 
 // UseCase reads the Workspace summary, and makes the changes of a Workspace that answer with it.
 type UseCase struct {
+	client          *ent.Client
+	bus             *events.Bus
 	workspaces      *workspaces.Module
 	memberships     *memberships.Module
 	secondFactors   *secondfactors.Module
 	holds           *holds.Holds
 	outbound        *outboundmessages.Module
 	trackingDomains *trackingdomains.Module
+	states          *instancestates.Module
+	newPublicID     func() string
 	now             func() time.Time
 }
 
-// Modules are the modules the use case reads and changes the Workspace through.
+// Modules are the modules the use case reads and changes the Workspace through. States gives the
+// Send cap a new Workspace starts with (instancestates.Module.StartingSendCapIn, ADR 0067); nil,
+// as in a test, gives it none.
 type Modules struct {
 	Workspaces      *workspaces.Module
 	Memberships     *memberships.Module
@@ -96,14 +109,19 @@ type Modules struct {
 	Holds           *holds.Holds
 	Outbound        *outboundmessages.Module
 	TrackingDomains *trackingdomains.Module
+	States          *instancestates.Module
 }
 
-// New builds the use case over the modules it reads and changes; now is the Instance clock a
-// Two-factor requirement starts at.
-func New(mods Modules, now func() time.Time) *UseCase {
+// New builds the use case over the raw client a deleted Workspace is found with, the bus whose
+// transactions create and restore one, and the modules it reads and changes; newPublicID draws a
+// Workspace id (workspaceid.New; a test gives one that collides to watch workspacesunchecked.CreateIn
+// draw again), and now is the Instance clock a Two-factor requirement starts at and a deletion
+// window is measured on.
+func New(client *ent.Client, bus *events.Bus, mods Modules, newPublicID func() string, now func() time.Time) *UseCase {
 	return &UseCase{
-		workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors, holds: mods.Holds,
-		outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, now: now,
+		client: client, bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
+		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, states: mods.States,
+		newPublicID: newPublicID, now: now,
 	}
 }
 
@@ -114,15 +132,6 @@ func (u *UseCase) Of(ctx context.Context, s *ent.Scoped) (Summary, error) {
 		return Summary{}, err
 	}
 	return u.summarize(ctx, s, ws)
-}
-
-// OfMember is the View of the Workspace of the scope s for the caller c.
-func (u *UseCase) OfMember(ctx context.Context, s *ent.Scoped, c Caller) (View, error) {
-	ws, err := u.workspaces.Get(ctx, s)
-	if err != nil {
-		return View{}, err
-	}
-	return u.view(ctx, s, c, ws)
 }
 
 // OfMembers is the View of every live Workspace the User is a member of, oldest Workspace first,

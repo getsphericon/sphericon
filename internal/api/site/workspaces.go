@@ -3,7 +3,6 @@ package site
 import (
 	"context"
 	"slices"
-	"strings"
 
 	"github.com/samber/lo"
 
@@ -25,7 +24,7 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 	if a == nil {
 		return []siteapi.SiteWorkspaceResource{}, nil
 	}
-	views, err := h.workspaceSummary.OfMembers(ctx, a.User.ID, a.Session.Method.Strong())
+	views, err := h.workspaceSummary.OfMembers(ctx, a.User.ID, a.Method.Strong())
 	if err != nil {
 		return nil, err
 	}
@@ -73,15 +72,9 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	if a == nil {
 		return nil, &ent.NotFoundError{}
 	}
-	ws, err := h.workspaceCreation.CreateWorkspace(ctx, a.User.ID, req.Name)
-	if err != nil {
-		return nil, err
-	}
-	s, m, err := h.memberships.Scope(ctx, a.User.ID, ws.PublicID)
-	if err != nil {
-		return nil, err
-	}
-	v, err := h.workspaceSummary.OfMember(ctx, s, workspacesummary.Caller{Membership: m, StrongSession: a.Session.Method.Strong()})
+	in := inputs.WorkspaceCreate(req)
+	in.UserID, in.StrongSession = a.User.ID, a.Method.Strong()
+	v, err := h.workspaceSummary.Create(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -139,14 +132,7 @@ func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required b
 
 // SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, _ siteapi.SiteWorkspacesUpdateParams) (*siteapi.SiteWorkspaceResource, error) {
-	var postal *string
-	// postalAddress is optional in the contract: absent = leave unchanged, present
-	// (incl. empty string) = set/clear. Trimmed so a whitespace-only value clears it.
-	if req.PostalAddress.Set {
-		v := strings.TrimSpace(req.PostalAddress.Value)
-		postal = &v
-	}
-	v, err := h.workspaceSummary.Update(ctx, workspaceScope(ctx), h.summaryCaller(ctx), workspacesummary.UpdateInput{Name: req.Name, PostalAddress: postal})
+	v, err := h.workspaceSummary.Update(ctx, workspaceScope(ctx), h.summaryCaller(ctx), inputs.WorkspaceUpdate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -218,16 +204,8 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 		return nil, workspaces.ErrNotFound
 	}
 	in := inputs.WorkspaceRestore(params)
-	in.UserID, in.Actor = a.User.ID, h.actor(ctx)
-	if _, err := h.deletion.Restore(ctx, in); err != nil {
-		return nil, err
-	}
-	// The Workspace is live again, so the caller's Owner Membership resolves like any other.
-	s, m, err := h.memberships.Scope(ctx, a.User.ID, string(params.ID))
-	if err != nil {
-		return nil, err
-	}
-	v, err := h.workspaceSummary.OfMember(ctx, s, workspacesummary.Caller{Membership: m, Actor: in.Actor, StrongSession: a.Session.Method.Strong()})
+	in.UserID, in.Actor, in.StrongSession = a.User.ID, h.actor(ctx), a.Method.Strong()
+	v, err := h.workspaceSummary.Restore(ctx, in)
 	if err != nil {
 		return nil, err
 	}

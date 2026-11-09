@@ -35,7 +35,7 @@ import (
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
-	workspacedeletion "github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
+	workspacesummary "github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 )
 
 type InputsImpl struct{}
@@ -926,12 +926,30 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhookendpo
 	}
 	return webhookendpointsUpdateInput
 }
-func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) workspacedeletion.RestoreInput {
-	var workspacedeletionRestoreInput workspacedeletion.RestoreInput
-	// workspacedeletionRestoreInput.UserID: ignore
-	workspacedeletionRestoreInput.PublicID = string(source.ID)
-	// workspacedeletionRestoreInput.Actor: ignore
-	return workspacedeletionRestoreInput
+func (c *InputsImpl) WorkspaceCreate(source *site.SiteCreateWorkspaceInput) workspacesummary.CreateInput {
+	var workspacesummaryCreateInput workspacesummary.CreateInput
+	if source != nil {
+		// workspacesummaryCreateInput.UserID: ignore
+		workspacesummaryCreateInput.Name = (*source).Name
+		// workspacesummaryCreateInput.StrongSession: ignore
+	}
+	return workspacesummaryCreateInput
+}
+func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) workspacesummary.RestoreInput {
+	var workspacesummaryRestoreInput workspacesummary.RestoreInput
+	// workspacesummaryRestoreInput.UserID: ignore
+	workspacesummaryRestoreInput.PublicID = string(source.ID)
+	// workspacesummaryRestoreInput.Actor: ignore
+	// workspacesummaryRestoreInput.StrongSession: ignore
+	return workspacesummaryRestoreInput
+}
+func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) workspacesummary.UpdateInput {
+	var workspacesummaryUpdateInput workspacesummary.UpdateInput
+	if source != nil {
+		workspacesummaryUpdateInput.Name = (*source).Name
+		workspacesummaryUpdateInput.PostalAddress = stringPtrIn((*source).PostalAddress)
+	}
+	return workspacesummaryUpdateInput
 }
 func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
 	var consentrecordsReAcceptance consentrecords.ReAcceptance

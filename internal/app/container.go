@@ -118,7 +118,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 
@@ -648,11 +647,6 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*users.Module, error) {
 		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
-	// The creation of a Verified User's Workspace (a use case, ADR 0102). On an Instance that has
-	// Send caps (ADR 0067) a new Workspace starts with the Instance's default; elsewhere it has none.
-	do.Lazy(func(i do.Injector) (*workspacecreation.UseCase, error) {
-		return workspacecreation.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*instancestates.Module](i), workspaceid.New), nil
-	}),
 	// The Sign-up and the steps that make a User Verified with its first Workspace (a use case,
 	// ADR 0102), which starts with the Instance's default Send cap where the Instance has them,
 	// and the sign-in through a Sign-in provider (ADR 0111).
@@ -850,12 +844,16 @@ var contentPackage = do.Package(
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
 		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
+	// The Workspace summary and the operations of a member that answer with it (a use case, ADR
+	// 0111), creating a Verified User's Workspace among them: on an Instance that has Send caps (ADR
+	// 0067) a new Workspace starts with the Instance's default; elsewhere it has none.
 	do.Lazy(func(i do.Injector) (*workspacesummary.UseCase, error) {
-		return workspacesummary.New(workspacesummary.Modules{
+		return workspacesummary.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspacesummary.Modules{
 			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
-		}, do.MustInvoke[Clock](i)), nil
+			States: do.MustInvoke[*instancestates.Module](i),
+		}, workspaceid.New, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
 		return analyticsreport.New(do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil
@@ -1108,7 +1106,6 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Audit:                    do.MustInvoke[*auditlog.Log](i),
 		SecondFactor:             do.MustInvoke[*secondfactors.Module](i),
 		SecondFactorReset:        do.MustInvoke[*secondfactorreset.UseCase](i),
-		WorkspaceCreation:        do.MustInvoke[*workspacecreation.UseCase](i),
 		SignUp:                   do.MustInvoke[*signup.UseCase](i),
 		UserDeletion:             do.MustInvoke[*userdeletion.UseCase](i),
 		Passkeys:                 do.MustInvoke[*passkeys.Module](i),
