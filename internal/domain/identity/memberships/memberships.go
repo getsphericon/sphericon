@@ -55,6 +55,26 @@ func (ms *Module) Scope(ctx context.Context, userID int64, publicID string) (*en
 	return ms.ScopeOf(m), m, nil
 }
 
+// Restorable is the id of the deleted Workspace publicID whose User's Role holds workspace:delete
+// (its Owners, ADR 0061): the Membership a restore needs. Any other Workspace, live, of which the
+// User is no member, whose User's Role does not hold the Permission, or already erased (the erase
+// removes the Memberships), is workspaces.ErrNotFound: a deleted Workspace is not exposed to
+// anyone else. The deletion window is not asked: a Workspace past it is found, and its restore
+// refused by the cycle.
+func (ms *Module) Restorable(ctx context.Context, userID int64, publicID string) (int64, error) {
+	m, err := ms.client.Membership.Query().
+		Where(membership.UserID(userID), HoldersOf(PermWorkspaceDelete),
+			membership.HasWorkspaceWith(workspace.PublicID(publicID), workspaces.Deleted())).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return 0, workspaces.ErrNotFound
+	}
+	if err != nil {
+		return 0, err
+	}
+	return m.WorkspaceID, nil
+}
+
 // ScopeOf is the scoped client of a loaded Membership's Workspace, acting as its User
 // (the User edge, when loaded, names the actor). It is Scope without the lookup, for a
 // caller that already holds the Membership.

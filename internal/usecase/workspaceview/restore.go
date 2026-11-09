@@ -6,10 +6,6 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -34,34 +30,25 @@ type RestoreInput struct {
 // Restore ends the deletion of the Workspace in.PublicID for a User and answers its View for them:
 // it clears discarded_at, which lifts only the pending-deletion Hold (a suspension or Staff hold
 // stays). A Workspace whose User's Role does not hold workspace:delete (ADR 0061), or one that is
-// not deleted, is workspaces.ErrNotFound: a deleted Workspace is not exposed to anyone else. A
+// not deleted, is workspaces.ErrNotFound (memberships.Module.Restorable): a deleted Workspace is
+// not exposed to anyone else. A
 // Workspace past its window or already erased is ErrNotRestorable (a
 // lifecycle.ErrInvalidTransition). Recorded as `workspace.restore` in the same transaction. The
 // restore's move is the module's unchecked operation (workspacesunchecked.RestoreIn, ADR 0110): it
 // needs a Membership that holds the delete Permission, which the lookup here checks.
 func (u *UseCase) Restore(ctx context.Context, in RestoreInput) (View, error) {
 	// An erased Workspace has no Memberships left (the erase removes them), so the lookup
-	// below finds nothing and the API answers 404: no one can be authorized to restore it.
+	// finds nothing and the API answers 404: no one can be authorized to restore it.
 	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the table.
-	workspaceID, err := u.client.Workspace.Query().
-		Where(workspace.PublicID(in.PublicID), workspace.DiscardedAtNotNil(),
-			workspace.HasMembershipsWith(membership.UserID(in.UserID), memberships.HoldersOf(memberships.PermWorkspaceDelete))).
-		OnlyID(ctx)
-	if ent.IsNotFound(err) {
-		return View{}, workspaces.ErrNotFound
-	}
+	workspaceID, err := u.memberships.Restorable(ctx, in.UserID, in.PublicID)
 	if err != nil {
 		return View{}, err
 	}
 	err = u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		err := workspacesunchecked.RestoreIn(ctx, tx, workspaceID, u.now())
+		ws, err := workspacesunchecked.RestoreIn(ctx, tx, workspaceID, u.now())
 		if errors.Is(err, lifecycle.ErrInvalidTransition) {
 			return fmt.Errorf("%w: %w", ErrNotRestorable, err)
 		}
-		if err != nil {
-			return err
-		}
-		ws, err := tx.Workspace.Get(ctx, workspaceID)
 		if err != nil {
 			return err
 		}

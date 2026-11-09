@@ -63,10 +63,13 @@ func CreateIn(ctx context.Context, tx *ent.Client, name string, newPublicID func
 }
 
 // RestoreIn moves the Workspace id from pending deletion back to active inside tx, only while
-// it is inside its deletion window at now. One past it, already erased or not deleted is
-// lifecycle.ErrInvalidTransition and nothing changes.
-func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
-	return workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerRestore)
+// it is inside its deletion window at now, and returns it as it now reads. One past it, already
+// erased or not deleted is lifecycle.ErrInvalidTransition and nothing changes.
+func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (*ent.Workspace, error) {
+	if err := workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerRestore); err != nil {
+		return nil, err
+	}
+	return tx.Workspace.Get(ctx, id)
 }
 
 // TombstoneIn moves the Workspace id from pending deletion to erased inside tx: it writes the

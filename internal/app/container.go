@@ -874,7 +874,7 @@ var contentPackage = do.Package(
 	// has Send caps (ADR 0067) a new Workspace starts with the Instance's default; elsewhere it has
 	// none.
 	do.Lazy(func(i do.Injector) (*workspaceview.UseCase, error) {
-		return workspaceview.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspaceview.Modules{
+		return workspaceview.New(do.MustInvoke[*events.Bus](i), workspaceview.Modules{
 			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),

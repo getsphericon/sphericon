@@ -14,8 +14,8 @@
 // deletion window. What depends on the surface (the Permissions a Role maps to, the Instance's own
 // addresses) is the surface's mapping.
 //
-// It takes the raw client and the bus's transactions: a Workspace being created belongs to no
-// scope until it exists, and a deleted one has no scope its Owner can reach until it is restored.
+// It takes the bus's raw transactions: a Workspace being created belongs to no scope until it
+// exists, and a deleted one has no scope its Owner can reach until it is restored.
 package workspaceview
 
 import (
@@ -86,7 +86,6 @@ type UpdateInput struct {
 
 // UseCase reads the Workspace view, and makes the changes of a Workspace that answer with it.
 type UseCase struct {
-	client          *ent.Client
 	bus             *events.Bus
 	workspaces      *workspaces.Module
 	memberships     *memberships.Module
@@ -100,8 +99,7 @@ type UseCase struct {
 }
 
 // Modules are the modules the use case reads and changes the Workspace through. States gives the
-// Send cap a new Workspace starts with (instancestates.Module.StartingSendCapIn, ADR 0067); nil,
-// as in a test, gives it none.
+// Send cap a new Workspace starts with (instancestates.Module.StartingSendCapIn, ADR 0067).
 type Modules struct {
 	Workspaces      *workspaces.Module
 	Memberships     *memberships.Module
@@ -112,14 +110,12 @@ type Modules struct {
 	States          *instancestates.Module
 }
 
-// New builds the use case over the raw client a deleted Workspace is found with, the bus whose
-// transactions create and restore one, and the modules it reads and changes; newPublicID draws a
-// Workspace id (workspaceid.New; a test gives one that collides to watch workspacesunchecked.CreateIn
-// draw again), and now is the Instance clock a Two-factor requirement starts at and a deletion
-// window is measured on.
-func New(client *ent.Client, bus *events.Bus, mods Modules, newPublicID func() string, now func() time.Time) *UseCase {
+// New builds the use case over the bus whose transactions create and restore a Workspace and the
+// modules it reads and changes; newPublicID draws a Workspace id (workspaceid.New), and now is the
+// Instance clock a Two-factor requirement starts at and a deletion window is measured on.
+func New(bus *events.Bus, mods Modules, newPublicID func() string, now func() time.Time) *UseCase {
 	return &UseCase{
-		client: client, bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
+		bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
 		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, states: mods.States,
 		newPublicID: newPublicID, now: now,
 	}
