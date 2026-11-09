@@ -105,8 +105,9 @@ coding standards in `CODING_STANDARDS.md`.
   (`internal/jobs`, component `runner`), the Enterprise job runner (`ee/jobs`, component
   `ee-runner`, with the runner's rules, ADR 0111) and the command line (the `sphericon` binary's
   commands in `cmd/server` and their driver package `internal/commandline`, which holds what they
-  print, component `cli`, ADR 0111): each receives input, calls a domain module or a use case and
-  returns or records the result (review rule 5), and no core tier imports one. A domain module
+  print, component `cli`, ADR 0111): each receives input, calls one operation of a domain module or
+  a use case and returns or records the result (review rule 5, analyzer `driverops`), and no core
+  tier imports one. A domain module
   writes to no `io.Writer` (ADR 0111, analyzer `domainwriter`): it returns a value or an iterator
   (`iter.Seq2`), which a command prints and an HTTP handler streams (`internal/kernel/seqreader`
   turns the chunks of an export into the response's body). A command takes the

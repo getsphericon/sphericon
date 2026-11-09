@@ -103,15 +103,19 @@ type checker struct {
 	// costs memoizes a declared function's cost; busy marks one being costed, so recursion ends.
 	costs map[*ast.FuncDecl]cost
 	busy  map[*ast.FuncDecl]bool
+	// err is the first function ctrlflow built no graph for; the run fails with it.
+	err error
 }
 
 func run(pass *analysis.Pass) (any, error) {
 	if !isDriver(pass.Pkg.Path()) {
 		return nil, nil
 	}
+	// Without the control-flow graphs no function could be costed, and the package would pass
+	// unread: a missing prerequisite fails the run instead.
 	cfgs, ok := pass.ResultOf[ctrlflow.Analyzer].(*ctrlflow.CFGs)
 	if !ok {
-		return nil, nil
+		return nil, fmt.Errorf("driverops: no result of %s for %s", ctrlflow.Analyzer.Name, pass.Pkg.Path())
 	}
 	c := &checker{
 		pass:  pass,
@@ -142,12 +146,12 @@ func run(pass *analysis.Pass) (any, error) {
 					c.report(n.Pos(), n.Name.Name, c.declCost(n))
 				}
 			case *ast.FuncLit:
-				c.report(n.Pos(), "a function literal", c.graphCost(c.cfgs.FuncLit(n)))
+				c.report(n.Pos(), "a function literal", c.graphCost(n.Pos(), c.cfgs.FuncLit(n)))
 			}
 			return true
 		})
 	}
-	return nil, nil
+	return nil, c.err
 }
 
 func (c *checker) report(pos token.Pos, name string, k cost) {
@@ -169,17 +173,21 @@ func (c *checker) declCost(fn *ast.FuncDecl) cost {
 		return cost{}
 	}
 	c.busy[fn] = true
-	k := c.graphCost(c.cfgs.FuncDecl(fn))
+	k := c.graphCost(fn.Pos(), c.cfgs.FuncDecl(fn))
 	delete(c.busy, fn)
 	c.costs[fn] = k
 	return k
 }
 
-// graphCost is the costliest path from the entry of g. Blocks are condensed into their strongly
-// connected components: a component with a cycle is a loop, and an operation inside it runs once
-// per turn.
-func (c *checker) graphCost(g *cfg.CFG) cost {
+// graphCost is the costliest path from the entry of g, the graph of the function at pos. Blocks
+// are condensed into their strongly connected components: a component with a cycle is a loop, and
+// an operation inside it runs once per turn. A function with a body always has a graph, so a
+// missing one is an error of the run, never a function that costs nothing.
+func (c *checker) graphCost(pos token.Pos, g *cfg.CFG) cost {
 	if g == nil || len(g.Blocks) == 0 {
+		if c.err == nil {
+			c.err = fmt.Errorf("driverops: %s built no control-flow graph for the function at %s", ctrlflow.Analyzer.Name, c.pass.Fset.Position(pos))
+		}
 		return cost{}
 	}
 	comps, of := components(g.Blocks[0])

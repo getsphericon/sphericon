@@ -35,8 +35,8 @@ or `AGENTS.md`.
 ## Layers and boundaries
 
 5. **Business logic is a layer of its own.** The drivers (handlers of every surface, MCP, jobs,
-   event subscribers and the commands of the command line) only receive input, call a domain
-   module or a use case and return the result; they hold no logic. A table is written only by the domain module that owns it (ADR 0102): any
+   event subscribers and the commands of the command line) only receive input, call one operation
+   of a domain module or a use case and return the result; they hold no logic (ADR 0111). A table is written only by the domain module that owns it (ADR 0102): any
    other package, a use case included, reads it and changes it only through a function of its owner.
    A write whose check needs a module its owner may not call is an unchecked operation of the
    owner's subpackage `<module>unchecked` (the owner's own for this rule), which only a use case
