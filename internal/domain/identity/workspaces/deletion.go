@@ -20,7 +20,8 @@ import (
 // pending_deletion, erased. Deleting is this module's operation, checked by the typed name (Delete);
 // restoring needs a Membership that holds the delete Permission and erasing every owner's rows, so
 // those two moves are unchecked operations of internal/domain/identity/workspaces/workspacesunchecked
-// (RestoreIn and TombstoneIn, ADR 0110), which the use case internal/usecase/workspacedeletion calls.
+// (RestoreIn and TombstoneIn, ADR 0110): the Workspace view (internal/usecase/workspaceview)
+// restores, the deletion cycle (internal/usecase/workspacedeletion) erases.
 // The table of legal moves is declared here once (DeletionCycle), and each package writes only its
 // own moves: a storage's Write is the compare-and-swap of its moves, and the Workspace table is
 // written only in this module and its subpackage.
