@@ -29,8 +29,9 @@ type ProviderDescriptor struct {
 // scoped handle (zero fields when a sender is built outside a send, e.g. for a quota
 // lookup).
 type Deps struct {
-	// Signer DKIM-signs outbound mail per ADR 0010; may be nil.
-	Signer Signer
+	// DKIMKeys finds the key outbound mail is DKIM-signed with (ADR 0010); nil for
+	// mail that goes out unsigned (system mail).
+	DKIMKeys DKIMKeys
 	// Capturer keeps the messages of a provider that delivers nowhere outside (the
 	// Test inbox); may be nil, and a provider that delivers outside ignores it.
 	Capturer Capturer

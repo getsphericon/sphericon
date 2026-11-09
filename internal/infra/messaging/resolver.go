@@ -53,7 +53,7 @@ func (r *Resolver) Sender(_ context.Context, s *ent.Scoped, row *ent.Integration
 	if err != nil {
 		return nil, fmt.Errorf("decrypt integration %d config: %w", row.ID, err)
 	}
-	deps := Deps{Signer: NewDKIMSigner(s, r.cipher)}
+	deps := Deps{DKIMKeys: NewDKIMKeys(s, r.cipher)}
 	if r.capturers != nil {
 		deps.Capturer = r.capturers(s, row.ID)
 	}

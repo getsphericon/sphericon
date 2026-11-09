@@ -21,32 +21,30 @@ import (
 // automation surfaces.
 var ErrUnverifiedSendingDomain = errors.New("sender domain is not a verified sending domain")
 
-// dkimSigner is the workspace-bound Signer: it maps an outbound From address to
-// the workspace's verified sending domain and builds a native go-mail DKIM
-// signer from the domain's Tink-encrypted private key (ADR 0010). Bound to one
-// workspace so every lookup is workspace-scoped.
-type dkimSigner struct {
+// dkimKeys is the workspace-bound DKIMKeys: it maps an outbound From address to
+// the workspace's verified sending domain and opens the domain's Tink-encrypted
+// private key (ADR 0010). Bound to one workspace so every lookup is workspace-scoped.
+type dkimKeys struct {
 	scope  *ent.Scoped
 	cipher *secrets.Cipher
 }
 
-// NewDKIMSigner builds a Signer for the Workspace the scoped client is confined to.
-func NewDKIMSigner(s *ent.Scoped, cipher *secrets.Cipher) Signer {
-	return &dkimSigner{scope: s, cipher: cipher}
+// NewDKIMKeys builds the DKIMKeys of the Workspace the scoped client is confined to.
+func NewDKIMKeys(s *ent.Scoped, cipher *secrets.Cipher) DKIMKeys {
+	return &dkimKeys{scope: s, cipher: cipher}
 }
 
-// DKIMSigner returns a signer for fromEmail's domain when that domain is a
-// verified sending domain in this workspace, or (nil, nil) otherwise — an
-// unverified or unknown From is left unsigned here (the send gate is slice 3).
-// The match is on the exact From domain; a subdomain of a verified domain does
-// not match and is left unsigned.
-func (s *dkimSigner) DKIMSigner(ctx context.Context, fromEmail string) (*mail.DKIMSigner, error) {
+// Key returns the key of fromEmail's domain when that domain is a verified sending
+// domain in this workspace, or (nil, nil) otherwise; BuildSignedMessage turns that
+// into ErrUnverifiedSendingDomain. The match is on the exact From domain; a
+// subdomain of a verified domain does not match.
+func (k *dkimKeys) Key(ctx context.Context, fromEmail string) (*DKIMKey, error) {
 	domain := DomainOf(fromEmail)
 	if domain == "" {
 		return nil, nil
 	}
 
-	row, err := s.scope.SendingDomain().Query().
+	row, err := k.scope.SendingDomain().Query().
 		Where(
 			sendingdomain.Domain(domain),
 			dkimstate.Verified(),
@@ -59,7 +57,7 @@ func (s *dkimSigner) DKIMSigner(ctx context.Context, fromEmail string) (*mail.DK
 		return nil, err
 	}
 
-	privPEM, err := s.cipher.Decrypt(row.DkimPrivateKeyEncrypted)
+	privPEM, err := k.cipher.Decrypt(row.DkimPrivateKeyEncrypted)
 	if err != nil {
 		return nil, fmt.Errorf("messaging: decrypt dkim key for %s: %w", domain, err)
 	}
@@ -67,15 +65,12 @@ func (s *dkimSigner) DKIMSigner(ctx context.Context, fromEmail string) (*mail.DK
 	if err != nil {
 		return nil, fmt.Errorf("messaging: parse dkim key for %s: %w", domain, err)
 	}
-	// Default signer signs the standard header set with relaxed canonicalization.
-	// The one-click List-Unsubscribe headers are added to the signed set per-message
-	// in BuildSignedMIME (only marketing sends carry them) — see the note there.
-	return mail.NewDKIMSigner(row.Domain, row.DkimSelector, key), nil
+	return &DKIMKey{Domain: row.Domain, Selector: row.DkimSelector, Signer: key}, nil
 }
 
 // HasVerifiedSendingDomain reports whether fromEmail's domain is a verified
 // sending domain in the workspace. It is the plan-time counterpart to the
-// send-time gate in BuildSignedMIME, letting callers (e.g. broadcast planning)
+// send-time gate in BuildSignedMessage, letting callers (e.g. broadcast planning)
 // reject up front instead of failing every recipient. An empty/malformed
 // fromEmail reports false.
 func HasVerifiedSendingDomain(ctx context.Context, s *ent.Scoped, fromEmail string) (bool, error) {

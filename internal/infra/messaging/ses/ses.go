@@ -1,7 +1,8 @@
-// Package ses implements the Amazon SES email provider. It builds the message
-// with the shared messaging.BuildMIME (same MIME as the smtp provider) and
-// hands the raw bytes to the SES v2 SendEmail (Content.Raw), so any custom headers
-// (List-Unsubscribe, DKIM later) survive intact — the structured Simple content would strip them.
+// Package ses implements the Amazon SES email provider. It builds and signs the
+// message with the shared messaging.BuildSignedMessage (the same bytes the smtp
+// provider sends) and hands them to the SES v2 SendEmail (Content.Raw), so the
+// custom headers (List-Unsubscribe, DKIM-Signature) survive intact — the structured
+// Simple content would strip them.
 //
 // The client is built directly on aws-sdk-go-v2's sesv2 client with an optional
 // BaseEndpoint override so the same provider can target AWS SES or an
@@ -9,7 +10,6 @@
 package ses
 
 import (
-	"bytes"
 	"cmp"
 	"context"
 	"encoding/json"
@@ -67,7 +67,7 @@ func NewDescriptor(client aws.HTTPClient) messaging.ProviderDescriptor {
 		Provider: providers.SES,
 		Validate: validate,
 		Build: func(raw []byte, deps messaging.Deps) (any, error) {
-			return build(raw, deps.Signer, client)
+			return build(raw, deps.DKIMKeys, client)
 		},
 	}
 }
@@ -101,12 +101,12 @@ func validEndpoint(endpoint string) error {
 	return nil
 }
 
-func build(raw []byte, signer messaging.Signer, client aws.HTTPClient) (any, error) {
+func build(raw []byte, keys messaging.DKIMKeys, client aws.HTTPClient) (any, error) {
 	cfg, err := parse(raw)
 	if err != nil {
 		return nil, err
 	}
-	return &sender{cfg: cfg, signer: signer, http: client}, nil
+	return &sender{cfg: cfg, keys: keys, http: client}, nil
 }
 
 func parse(raw []byte) (Config, error) {
@@ -118,9 +118,9 @@ func parse(raw []byte) (Config, error) {
 }
 
 type sender struct {
-	cfg    Config
-	signer messaging.Signer
-	http   aws.HTTPClient
+	cfg  Config
+	keys messaging.DKIMKeys
+	http aws.HTTPClient
 }
 
 // DefaultFrom reports the integration's configured From (see messaging.DefaultFromer).
@@ -131,13 +131,9 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 	msg.FromName = cmp.Or(msg.FromName, s.cfg.FromName)
 	msg.ReplyTo = cmp.Or(msg.ReplyTo, s.cfg.ReplyTo)
 
-	m, err := messaging.BuildSignedMIME(ctx, msg, s.signer)
+	wire, err := messaging.BuildSignedMessage(ctx, msg, s.keys)
 	if err != nil {
 		return messaging.Receipt{}, err
-	}
-	var raw bytes.Buffer
-	if _, err := m.WriteTo(&raw); err != nil {
-		return messaging.Receipt{}, fmt.Errorf("ses: render message: %w", err)
 	}
 
 	client := s.client()
@@ -146,7 +142,7 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 		// display name. It must match a verified SES identity.
 		FromEmailAddress: aws.String(msg.From),
 		Destination:      &types.Destination{ToAddresses: []string{msg.To}},
-		Content:          &types.EmailContent{Raw: &types.RawMessage{Data: raw.Bytes()}},
+		Content:          &types.EmailContent{Raw: &types.RawMessage{Data: wire.Bytes}},
 	})
 	if err != nil {
 		// Only the daily quota needs wording: SES uses the same code for it and

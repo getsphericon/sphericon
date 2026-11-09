@@ -3,9 +3,12 @@
 [Architecture](../architecture.md) → Outbound calls and email rendering
 
 Email via `internal/infra/messaging`
-(per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
-(wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
-bytes for SES v2 `SendEmail` (raw content).
+(per-workspace providers: smtp/ses). Both providers send the bytes of
+`messaging.BuildSignedMessage`: wneessen/go-mail builds the MIME message unsigned, and
+emersion/go-msgauth DKIM-signs its bytes with the key of the From's verified Sending domain
+(ADR 0010), relaxed header and body canonicalization, the one-click headers in the signed set
+on marketing mail (ADR 0012). smtp sends them through the SMTP client go-mail dials, ses as
+the raw content of SES v2 `SendEmail`. System mail has no keys and goes out unsigned.
 
 ## Retry decisions
 

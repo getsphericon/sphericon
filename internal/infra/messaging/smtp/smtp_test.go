@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/dkimtest"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
@@ -146,9 +147,14 @@ func (s *session) Logout() error { return nil }
 
 func build(t *testing.T, cfg smtp.Config) messaging.EmailSender {
 	t.Helper()
+	return buildWith(t, cfg, messaging.Deps{})
+}
+
+func buildWith(t *testing.T, cfg smtp.Config, deps messaging.Deps) messaging.EmailSender {
+	t.Helper()
 	raw := fmt.Sprintf(`{"host":%q,"port":%d,"username":%q,"password":%q,"from":%q,"fromName":%q,"replyTo":%q}`,
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName, cfg.ReplyTo)
-	built, err := smtp.NewDescriptor(true).Build([]byte(raw), messaging.Deps{})
+	built, err := smtp.NewDescriptor(true).Build([]byte(raw), deps)
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
@@ -174,6 +180,41 @@ func TestSendDeliversWithConfiguredDefaults(t *testing.T) {
 	assert.Contains(t, got[0].data, "plain body")
 	assert.Contains(t, got[0].data, strings.Trim(receipt.MessageID, "<>"))
 	assert.Empty(t, got[0].username, "no credentials configured means no AUTH")
+}
+
+// A Workspace's marketing message reaches the server DKIM-signed, its one-click headers in the
+// signed set, and the signature verifies on the bytes the server received.
+func TestSendDeliversTheMessageDKIMSigned(t *testing.T) {
+	srv := newTestServer(t.Context(), t, false)
+	keys := dkimtest.New(t, "acme.com")
+	sender := buildWith(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "news@acme.com", FromName: "Acme"},
+		messaging.Deps{DKIMKeys: keys})
+
+	receipt, err := sender.Send(t.Context(), messaging.EmailMessage{
+		To: "rcpt@example.com", Subject: "Hello", HTML: "<p>hi</p>", Text: "hi",
+		ListUnsubscribeURL: "https://acme.com/e/u/tok",
+	})
+	require.NoError(t, err)
+
+	got := srv.captured()
+	require.Len(t, got, 1)
+	assert.Contains(t, got[0].from, "news@acme.com")
+	assert.Contains(t, got[0].rcpt, "rcpt@example.com")
+	assert.Contains(t, got[0].data, receipt.MessageID)
+	signed := keys.Verify(t, []byte(got[0].data))
+	assert.Subset(t, signed, []string{"From", "Subject", "List-Unsubscribe", "List-Unsubscribe-Post"})
+}
+
+// A Workspace's message from a domain that is not a verified Sending domain never reaches the
+// server.
+func TestSendRefusesAnUnverifiedFromDomain(t *testing.T) {
+	srv := newTestServer(t.Context(), t, false)
+	sender := buildWith(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "news@other.com"},
+		messaging.Deps{DKIMKeys: dkimtest.New(t, "acme.com")})
+
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+	require.ErrorIs(t, err, messaging.ErrUnverifiedSendingDomain)
+	assert.Empty(t, srv.captured())
 }
 
 func TestSendMessageFromOverridesDefault(t *testing.T) {

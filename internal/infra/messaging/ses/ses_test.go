@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/dkimtest"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -68,6 +69,15 @@ func newSESAPIWithErrorType(t *testing.T, status int, errorType, body string) *s
 	return api
 }
 
+// rawMessage is the MIME message of the last SendEmail call, decoded from its raw content.
+func (a *sesAPI) rawMessage(t *testing.T) []byte {
+	t.Helper()
+	data := a.body["Content"].(map[string]any)["Raw"].(map[string]any)["Data"].(string)
+	mime, err := base64.StdEncoding.DecodeString(data)
+	require.NoError(t, err)
+	return mime
+}
+
 const okBody = `{"MessageId":"ses-msg-42"}`
 
 const rejectedBody = `{"message":"identity not verified"}`
@@ -83,8 +93,13 @@ func build(t *testing.T, endpoint string) messaging.EmailSender {
 
 func buildWithClient(t *testing.T, endpoint string, client *http.Client) messaging.EmailSender {
 	t.Helper()
+	return buildWithDeps(t, endpoint, client, messaging.Deps{})
+}
+
+func buildWithDeps(t *testing.T, endpoint string, client *http.Client, deps messaging.Deps) messaging.EmailSender {
+	t.Helper()
 	raw := fmt.Sprintf(`{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com","fromName":"Acme","endpoint":%q}`, endpoint)
-	built, err := ses.NewDescriptor(client).Build([]byte(raw), messaging.Deps{})
+	built, err := ses.NewDescriptor(client).Build([]byte(raw), deps)
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
@@ -107,12 +122,28 @@ func TestSendRawContent(t *testing.T) {
 	assert.Contains(t, api.auth, "AKIATEST/", "request is SigV4-signed with the configured key")
 	assert.Contains(t, api.auth, "/eu-west-1/ses/")
 
-	data := api.body["Content"].(map[string]any)["Raw"].(map[string]any)["Data"].(string)
-	mime, err := base64.StdEncoding.DecodeString(data)
-	require.NoError(t, err)
+	mime := api.rawMessage(t)
 	assert.Contains(t, string(mime), "Subject: Hello")
 	assert.Contains(t, string(mime), "\"Acme\" <noreply@acme.com>")
 	assert.Contains(t, string(mime), "List-Unsubscribe: <https://x.test/u>", "custom headers survive in the raw message")
+}
+
+// A Workspace's marketing message goes to SES as a DKIM-signed raw message, its one-click
+// headers in the signed set, and the signature verifies on the bytes SES received.
+func TestSendRawContentIsDKIMSigned(t *testing.T) {
+	api := newSESAPI(t, http.StatusOK, okBody)
+	keys := dkimtest.New(t, "acme.com")
+	sender := buildWithDeps(t, api.srv.URL, http.DefaultClient, messaging.Deps{DKIMKeys: keys})
+
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{
+		To: "rcpt@example.com", Subject: "Hello", HTML: "<p>hi</p>", Text: "hi",
+		ListUnsubscribeURL: "https://acme.com/e/u/tok",
+	})
+	require.NoError(t, err)
+
+	mime := api.rawMessage(t)
+	signed := keys.Verify(t, mime)
+	assert.Subset(t, signed, []string{"From", "Subject", "List-Unsubscribe", "List-Unsubscribe-Post"})
 }
 
 func TestSendMessageFromOverridesDefault(t *testing.T) {
@@ -411,8 +442,6 @@ func TestSendPutsTheConfiguredReplyToOnTheMessage(t *testing.T) {
 	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
 	require.NoError(t, err)
 
-	data := api.body["Content"].(map[string]any)["Raw"].(map[string]any)["Data"].(string)
-	mime, err := base64.StdEncoding.DecodeString(data)
-	require.NoError(t, err)
+	mime := api.rawMessage(t)
 	assert.Contains(t, string(mime), "Reply-To: <help@acme.com>")
 }
