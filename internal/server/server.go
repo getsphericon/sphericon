@@ -33,7 +33,7 @@ import (
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	apistaff "github.com/getsphericon/sphericon/internal/api/staff"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
-	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
@@ -170,11 +170,11 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 }
 
 // ExternalSecurity is the Bearer-token handler of /api and of /mcp, which rides the same token
-// auth: built from the external API's Deps and the Second factors that admit a User's own token,
-// so both meet the same acceptance gate and the same clock.
-func ExternalSecurity(client *ent.Client, factors *secondfactors.Module, deps apiexternal.Deps) *apiauth.ExternalSecurityHandler {
+// auth: built from the external API's Deps and the admission of a User's own token, so both meet
+// the same acceptance gate and the same clock.
+func ExternalSecurity(client *ent.Client, admit *admission.Module, deps apiexternal.Deps) *apiauth.ExternalSecurityHandler {
 	return apiauth.NewExternalSecurityHandler(apiauth.ExternalSecurityDeps{
-		Ent: client, Bus: deps.Bus, SecondFactor: factors, Clock: deps.Clock,
+		Ent: client, Bus: deps.Bus, Admission: admit, Clock: deps.Clock,
 	})
 }
 

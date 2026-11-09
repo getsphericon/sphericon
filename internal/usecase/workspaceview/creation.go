@@ -1,4 +1,4 @@
-package workspacesummary
+package workspaceview
 
 import (
 	"context"
@@ -36,12 +36,9 @@ func (u *UseCase) Create(ctx context.Context, in CreateInput) (View, error) {
 	}
 	var ws *ent.Workspace
 	err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		usr, err := tx.User.Get(ctx, in.UserID)
+		usr, err := users.VerifiedIn(ctx, tx, in.UserID)
 		if err != nil {
 			return err
-		}
-		if usr.EmailVerifiedAt == nil {
-			return users.ErrEmailNotVerified
 		}
 		if ws, err = u.createIn(ctx, tx, in.UserID, name); err != nil {
 			return err
@@ -58,12 +55,9 @@ func (u *UseCase) Create(ctx context.Context, in CreateInput) (View, error) {
 // createIn creates the Workspace and its owner Membership on tx, with a fresh Workspace id and
 // the Send cap a new Workspace starts with.
 func (u *UseCase) createIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
-	var sendCap *int
-	if u.states != nil {
-		var err error
-		if sendCap, err = u.states.StartingSendCapIn(ctx, tx); err != nil {
-			return nil, err
-		}
+	sendCap, err := u.states.StartingSendCapIn(ctx, tx)
+	if err != nil {
+		return nil, err
 	}
 	ws, err := workspacesunchecked.CreateIn(ctx, tx, name, u.newPublicID, sendCap)
 	if err != nil {

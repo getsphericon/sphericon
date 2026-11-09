@@ -1,22 +1,22 @@
-// Package workspacesummary is the use case of the Workspace summary (GLOSSARY, ADR 0111): a
-// Workspace as its members and agents read it, built once below /site and /api, which map the
-// same values into their own contracts. It reads identity (the Workspace and, for a User, the
-// Memberships) and sending (the Holds on the Workspace, its Send cap with the last 24 hours of
-// sends and the lengths a message is written against), so it is a use case, not a module of
-// either context.
+// Package workspaceview is the use case of the Workspace view (ADR 0111, amended by #1218): the
+// operations of the Workspace screens, each of which answers with the Workspace summary (GLOSSARY)
+// as the caller sees it. The summary is built once below /site and /api, which map the same values
+// into their own contracts. It reads identity (the Workspace and, for a User, the Memberships) and
+// sending (the Holds on the Workspace, its Send cap with the last 24 hours of sends and the lengths
+// a message is written against), so it is a use case, not a module of either context.
 //
 // A member reads it as a View: the summary with their Membership and their grace under the
 // Workspace's Two-factor requirement, which a strong session meets. Every operation of a member on
-// a Workspace that answers with that View is here, since use cases do not import each other: the
-// change in identity and the read of sending that follows it are one operation. Those are the
-// changes of its settings, creating a Workspace (ADR 0043: the Workspace with its Owner Membership
-// and the Send cap it starts with, ADR 0067) and restoring one inside its deletion window. What
-// depends on the surface (the Permissions a Role maps to, the Instance's own addresses) is the
-// surface's mapping.
+// a Workspace that answers with that View is here, since use cases do not import each other and a
+// driver makes one call: the change in identity and the read of sending that follows it are one
+// operation. Those are the changes of its settings, creating a Workspace (ADR 0043: the Workspace
+// with its Owner Membership and the Send cap it starts with, ADR 0067) and restoring one inside its
+// deletion window. What depends on the surface (the Permissions a Role maps to, the Instance's own
+// addresses) is the surface's mapping.
 //
-// It takes the raw client and the bus's transactions: a Workspace being created belongs to no
-// scope until it exists, and a deleted one has no scope its Owner can reach until it is restored.
-package workspacesummary
+// It takes the bus's raw transactions: a Workspace being created belongs to no scope until it
+// exists, and a deleted one has no scope its Owner can reach until it is restored.
+package workspaceview
 
 import (
 	"context"
@@ -73,7 +73,7 @@ type Caller struct {
 	Actor events.Actor
 	// StrongSession is a session that passed a Second factor step or began with a Passkey (ADR
 	// 0052): it meets the Two-factor requirement by itself, so it has no grace to count down, as
-	// secondfactors.Module.Admit decides.
+	// admission.Module.Admit decides.
 	StrongSession bool
 }
 
@@ -84,9 +84,8 @@ type UpdateInput struct {
 	PostalAddress *string
 }
 
-// UseCase reads the Workspace summary, and makes the changes of a Workspace that answer with it.
+// UseCase reads the Workspace view, and makes the changes of a Workspace that answer with it.
 type UseCase struct {
-	client          *ent.Client
 	bus             *events.Bus
 	workspaces      *workspaces.Module
 	memberships     *memberships.Module
@@ -100,8 +99,7 @@ type UseCase struct {
 }
 
 // Modules are the modules the use case reads and changes the Workspace through. States gives the
-// Send cap a new Workspace starts with (instancestates.Module.StartingSendCapIn, ADR 0067); nil,
-// as in a test, gives it none.
+// Send cap a new Workspace starts with (instancestates.Module.StartingSendCapIn, ADR 0067).
 type Modules struct {
 	Workspaces      *workspaces.Module
 	Memberships     *memberships.Module
@@ -112,14 +110,12 @@ type Modules struct {
 	States          *instancestates.Module
 }
 
-// New builds the use case over the raw client a deleted Workspace is found with, the bus whose
-// transactions create and restore one, and the modules it reads and changes; newPublicID draws a
-// Workspace id (workspaceid.New; a test gives one that collides to watch workspacesunchecked.CreateIn
-// draw again), and now is the Instance clock a Two-factor requirement starts at and a deletion
-// window is measured on.
-func New(client *ent.Client, bus *events.Bus, mods Modules, newPublicID func() string, now func() time.Time) *UseCase {
+// New builds the use case over the bus whose transactions create and restore a Workspace and the
+// modules it reads and changes; newPublicID draws a Workspace id (workspaceid.New), and now is the
+// Instance clock a Two-factor requirement starts at and a deletion window is measured on.
+func New(bus *events.Bus, mods Modules, newPublicID func() string, now func() time.Time) *UseCase {
 	return &UseCase{
-		client: client, bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
+		bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
 		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, states: mods.States,
 		newPublicID: newPublicID, now: now,
 	}

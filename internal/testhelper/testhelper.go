@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
@@ -64,7 +65,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -179,9 +180,9 @@ type TestEnv struct {
 	// ceremony (ADR 0051).
 	AppURL string
 
-	// WorkspaceSummary reads the Workspace summary the surfaces map, and makes the changes of a
+	// WorkspaceView reads the Workspace summary the surfaces map, and makes the changes of a
 	// Workspace that answer with it, creating and restoring one among them (ADR 0111).
-	WorkspaceSummary *workspacesummary.UseCase
+	WorkspaceView *workspaceview.UseCase
 
 	// Holds is the module the sender's freeze check reads, for a test that builds its own
 	// Outbound module.
@@ -230,6 +231,8 @@ type TestEnv struct {
 	// SecondFactor is the module the server enrolls, verifies and reads Second factors with,
 	// on the env's clock (ADR 0020).
 	SecondFactor *secondfactors.Module
+	// Admission admits a request on a User's own credential, a token of theirs included (ADR 0061).
+	Admission *admission.Module
 	// SecondFactorReset is the use case the server resets a member's Second factor and
 	// Passkeys with (ADR 0102).
 	SecondFactorReset *secondfactorreset.UseCase
@@ -556,7 +559,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		RemovalCheck:      do.MustInvoke[*removalcheck.Module](injector),
 		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
 		Holds:             do.MustInvoke[*holds.Holds](injector),
-		WorkspaceSummary:  do.MustInvoke[*workspacesummary.UseCase](injector),
+		WorkspaceView:     do.MustInvoke[*workspaceview.UseCase](injector),
 		Orders:            do.MustInvoke[*orders.Module](injector),
 		edition:           edition,
 		license:           lic,
@@ -574,6 +577,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		PrivateRelay:      relay,
 		Confirmations:     confirmations,
 		SecondFactor:      do.MustInvoke[*secondfactors.Module](injector),
+		Admission:         do.MustInvoke[*admission.Module](injector),
 		SecondFactorReset: do.MustInvoke[*secondfactorreset.UseCase](injector),
 		UserDeletion:      do.MustInvoke[*userdeletion.UseCase](injector),
 		SignUp:            do.MustInvoke[*signup.UseCase](injector),

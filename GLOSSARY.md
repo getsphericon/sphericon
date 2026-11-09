@@ -26,9 +26,14 @@ _Avoid_: slug
 The read of a Workspace as its members and agents see it, built once for every surface: the
 Workspace with its settings, the Holds on its sending, its **Send cap** with the sends of the last
 24 hours, and the lengths a text message is written against (a short tracked link, the longest
-SMS). A member reads it with their Role and their Second factor grace, which a strong session does
-not count down; the Permissions of the Role are added by the surface.
+SMS). A member reads it as their **Workspace view**.
 _Avoid_: Workspace profile, overview (that is the dashboard page)
+
+**Workspace view**:
+A **Workspace summary** as one member sees it: with their Role and their Second factor grace,
+which a strong session does not count down; the Permissions of the Role are added by the surface.
+Every change a member makes to a Workspace from its screens (creating it, restoring it, changing
+its settings) answers with the member's Workspace view.
 
 **Contact**:
 The single record for a person in a workspace — whether fully identified or still anonymous.

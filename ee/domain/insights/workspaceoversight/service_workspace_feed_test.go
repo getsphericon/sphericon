@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // feedPage reads one page of the Workspace feed from cursor.
@@ -124,7 +124,7 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	created, err := h.env.WorkspaceSummary.Create(t.Context(), workspacesummary.CreateInput{UserID: fixtures.MemberMaryID, Name: "Hooli"})
+	created, err := h.env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: "Hooli"})
 	require.NoError(t, err)
 	ws := created.Summary.Workspace
 
@@ -167,7 +167,7 @@ func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *test
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	_, err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.InitechCoOwnerOwenID, Email: fixtures.InitechCoOwnerOwenEmail, Password: fixtures.InitechCoOwnerOwenPassword})
+	err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.InitechCoOwnerOwenID, Email: fixtures.InitechCoOwnerOwenEmail, Password: fixtures.InitechCoOwnerOwenPassword})
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)
@@ -265,7 +265,7 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	assert.Equal(t, got, again)
 	assert.Equal(t, afterDelete, replayed)
 
-	_, err = h.env.WorkspaceSummary.Restore(t.Context(), workspacesummary.RestoreInput{UserID: 5, PublicID: fixtures.InitechPublicID, Actor: actor})
+	_, err = h.env.WorkspaceView.Restore(t.Context(), workspaceview.RestoreInput{UserID: 5, PublicID: fixtures.InitechPublicID, Actor: actor})
 	require.NoError(t, err)
 	got, _ = feedFrom(t, c, afterDelete)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))

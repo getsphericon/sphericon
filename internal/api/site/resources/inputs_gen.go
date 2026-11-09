@@ -35,7 +35,7 @@ import (
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
-	workspacesummary "github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	workspaceview "github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 type InputsImpl struct{}
@@ -925,30 +925,30 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhookendpo
 	}
 	return webhookendpointsUpdateInput
 }
-func (c *InputsImpl) WorkspaceCreate(source *site.SiteCreateWorkspaceInput) workspacesummary.CreateInput {
-	var workspacesummaryCreateInput workspacesummary.CreateInput
+func (c *InputsImpl) WorkspaceCreate(source *site.SiteCreateWorkspaceInput) workspaceview.CreateInput {
+	var workspaceviewCreateInput workspaceview.CreateInput
 	if source != nil {
-		// workspacesummaryCreateInput.UserID: ignore
-		workspacesummaryCreateInput.Name = (*source).Name
-		// workspacesummaryCreateInput.StrongSession: ignore
+		// workspaceviewCreateInput.UserID: ignore
+		workspaceviewCreateInput.Name = (*source).Name
+		// workspaceviewCreateInput.StrongSession: ignore
 	}
-	return workspacesummaryCreateInput
+	return workspaceviewCreateInput
 }
-func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) workspacesummary.RestoreInput {
-	var workspacesummaryRestoreInput workspacesummary.RestoreInput
-	// workspacesummaryRestoreInput.UserID: ignore
-	workspacesummaryRestoreInput.PublicID = string(source.ID)
-	// workspacesummaryRestoreInput.Actor: ignore
-	// workspacesummaryRestoreInput.StrongSession: ignore
-	return workspacesummaryRestoreInput
+func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) workspaceview.RestoreInput {
+	var workspaceviewRestoreInput workspaceview.RestoreInput
+	// workspaceviewRestoreInput.UserID: ignore
+	workspaceviewRestoreInput.PublicID = string(source.ID)
+	// workspaceviewRestoreInput.Actor: ignore
+	// workspaceviewRestoreInput.StrongSession: ignore
+	return workspaceviewRestoreInput
 }
-func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) workspacesummary.UpdateInput {
-	var workspacesummaryUpdateInput workspacesummary.UpdateInput
+func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) workspaceview.UpdateInput {
+	var workspaceviewUpdateInput workspaceview.UpdateInput
 	if source != nil {
-		workspacesummaryUpdateInput.Name = (*source).Name
-		workspacesummaryUpdateInput.PostalAddress = stringPtrIn((*source).PostalAddress)
+		workspaceviewUpdateInput.Name = (*source).Name
+		workspaceviewUpdateInput.PostalAddress = stringPtrIn((*source).PostalAddress)
 	}
-	return workspacesummaryUpdateInput
+	return workspaceviewUpdateInput
 }
 func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
 	var consentrecordsReAcceptance consentrecords.ReAcceptance

@@ -97,6 +97,19 @@ func canonicalRegionalFormat(typed string) (string, error) {
 // verification gate of the password login.
 var ErrEmailNotVerified = validation.Unverified("users: the email is not verified", i18n.ErrorsEmailVerificationRequired)
 
+// VerifiedIn loads the User id in the caller's transaction, refused with ErrEmailNotVerified while
+// it is Unverified: a Verified User's later Workspace is created on the transaction that loads it.
+func VerifiedIn(ctx context.Context, tx *ent.Client, id int64) (*ent.User, error) {
+	u, err := tx.User.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if u.EmailVerifiedAt == nil {
+		return nil, ErrEmailNotVerified
+	}
+	return u, nil
+}
+
 // User loads a User by id.
 func (a *Module) User(ctx context.Context, id int64) (*ent.User, error) {
 	return a.ent.User.Get(ctx, id)

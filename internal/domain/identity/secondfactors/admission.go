@@ -18,44 +18,19 @@ const GracePeriod = 7 * 24 * time.Hour
 // withholds it from the User (ADR 0020). Every surface answers it 403 second_factor_required.
 var ErrSecondFactorRequired = validation.SecondFactorRequired("secondfactor: the second factor is required", i18n.ErrorsSecondFactorRequired)
 
-// Admission is a request made on a User's own credential, as Admit decides it: a site session, or
-// the token of a Connection. The Workspace's API token is no User's and is never admitted here.
-type Admission struct {
-	// UserID is the User the credential is of.
-	UserID int64
-	// Membership is the User's Membership of the Workspace the operation addresses, its
-	// Workspace loaded; nil for an operation of no Workspace.
-	Membership *ent.Membership
-	// StrongSession is a session that passed a Second factor step or began with a Passkey (ADR
-	// 0052): it meets the Two-factor requirement by itself. A token is never one.
-	StrongSession bool
-	// WhileAcceptancePending and WhileWithheld are what the operation's contract lets through: a
-	// required acceptance pending, and the Two-factor requirement withholding the User.
-	WhileAcceptancePending bool
-	WhileWithheld          bool
-	// At is when the request is made, the time the Two-factor grace is checked against.
-	At time.Time
-}
-
-// Admit is nil when the User may act now, on every surface alike (ADR 0061). It refuses first a
-// User with a required acceptance pending (users.ErrAcceptancePending), then, in a Workspace, one
-// the Workspace's Two-factor requirement withholds (ErrSecondFactorRequired), each unless the
-// operation lets it through, so a User both gated and withheld is refused alike everywhere. What
-// the User's Role allows is the Permissions' to say, not Admit's.
-func (m *Module) Admit(ctx context.Context, r Admission) error {
-	if !r.WhileAcceptancePending {
-		if err := m.users.CheckAcceptance(ctx, r.UserID); err != nil {
-			return err
-		}
-	}
-	if r.Membership == nil || r.WhileWithheld || r.StrongSession {
+// CheckRequirement is nil unless the Two-factor requirement of a Workspace withholds its member
+// at the time at (ErrSecondFactorRequired): requiredAt is when the Workspace's requirement began
+// (nil for none), memberSince when the member's Membership was made, and the member is the User
+// userID.
+// A member is withheld once their grace ends (GracePeriod after the later of the two) and they
+// have no Second factor. Whether a request may pass anyway (a strong session, an operation that
+// lets a withheld User through) is the admission's to say, not the requirement's.
+func (m *Module) CheckRequirement(ctx context.Context, userID int64, requiredAt *time.Time, memberSince, at time.Time) error {
+	end, ok := graceEnds(requiredAt, memberSince)
+	if !ok || at.Before(end) {
 		return nil
 	}
-	end, ok := graceEnds(r.Membership.Edges.Workspace.SecondFactorRequiredAt, r.Membership.CreatedAt)
-	if !ok || r.At.Before(end) {
-		return nil
-	}
-	has, err := m.Active(ctx, r.UserID)
+	has, err := m.Active(ctx, userID)
 	if err != nil {
 		return err
 	}

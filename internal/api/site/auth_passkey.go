@@ -2,12 +2,10 @@ package site
 
 import (
 	"context"
-	"errors"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
-	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 )
 
 // SitePasskeyLoginBegin answers the request options for a usernameless Passkey login and sets
@@ -42,15 +40,9 @@ func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	switch res.Outcome {
-	case login.PasskeyThrottled:
-		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
-	case login.PasskeyAuthenticated:
-		cookie, err := h.sessions.Issue(res.Principal, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
-		if err != nil {
-			return nil, err
-		}
-		return sessionResult(cookie), nil
+	cookie, err := h.sessions.Issue(res.Principal, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("login: unhandled passkey outcome")
+	return sessionResult(cookie), nil
 }

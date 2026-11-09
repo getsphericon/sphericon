@@ -8,7 +8,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
-	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 )
 
 // SiteAuthLogin is the one route that starts a session (ADR 0020), by the User's Login
@@ -30,8 +29,6 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 		return nil, err
 	}
 	switch res.Outcome {
-	case login.Throttled:
-		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
 	case login.SecondFactor:
 		return &siteapi.SiteLoginResultHeaders{Response: siteapi.SiteLoginResult{
 			Outcome:   siteapi.SiteLoginOutcomeChallenge,

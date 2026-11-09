@@ -37,7 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
@@ -112,13 +112,13 @@ type Inputs interface {
 	// from the session, which the handler assigns.
 	// goverter:map ID PublicID
 	// goverter:ignore UserID Actor StrongSession
-	WorkspaceRestore(source siteapi.SiteWorkspacesRestoreParams) workspacesummary.RestoreInput
+	WorkspaceRestore(source siteapi.SiteWorkspacesRestoreParams) workspaceview.RestoreInput
 	// The creating User and whether the session is strong come from the session, which the
 	// handler assigns.
 	// goverter:ignore UserID StrongSession
-	WorkspaceCreate(source *siteapi.SiteCreateWorkspaceInput) workspacesummary.CreateInput
+	WorkspaceCreate(source *siteapi.SiteCreateWorkspaceInput) workspaceview.CreateInput
 	// An absent postal address leaves it unchanged; a present one, empty included, sets it.
-	WorkspaceUpdate(source *siteapi.SiteUpdateWorkspaceInput) workspacesummary.UpdateInput
+	WorkspaceUpdate(source *siteapi.SiteUpdateWorkspaceInput) workspaceview.UpdateInput
 	// The Sign-up browser is the request's cookie, a parameter the handler assigns.
 	// goverter:ignore Browser
 	VerifyEmailLink(source *siteapi.SiteVerifyEmailInput) signup.VerifyEmailLinkInput

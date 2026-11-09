@@ -246,7 +246,7 @@ func TestADeletedUserIsATombstone(t *testing.T) {
 	c := controlPlane(t, h)
 	_, saved := usersFrom(t, c, "")
 
-	_, err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
+	err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
 	require.NoError(t, err)
 
 	got, saved := usersFrom(t, c, saved)
@@ -269,7 +269,7 @@ func TestTheFeedPagesFromATombstoneOnToTheUsersChangedAfterIt(t *testing.T) {
 	c := controlPlane(t, h)
 	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now)
 	_, saved := usersFrom(t, c, "")
-	_, err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
+	err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
 	require.NoError(t, err)
 	john, err := h.env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)

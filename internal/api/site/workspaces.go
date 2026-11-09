@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // SiteWorkspacesList returns the workspaces the authenticated user is a member of.
@@ -24,23 +24,23 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 	if a == nil {
 		return []siteapi.SiteWorkspaceResource{}, nil
 	}
-	views, err := h.workspaceSummary.OfMembers(ctx, a.User.ID, a.Method.Strong())
+	views, err := h.workspaceView.OfMembers(ctx, a.User.ID, a.Method.Strong())
 	if err != nil {
 		return nil, err
 	}
-	return lo.Map(views, func(v workspacesummary.View, _ int) siteapi.SiteWorkspaceResource { return h.workspaceResource(v) }), nil
+	return lo.Map(views, func(v workspaceview.View, _ int) siteapi.SiteWorkspaceResource { return h.workspaceResource(v) }), nil
 }
 
-// summaryCaller is the caller of an operation on the Workspace it addresses, as the Workspace
-// summary takes them: their Membership, the actor and whether their session is strong.
-func (h *Handlers) summaryCaller(ctx context.Context) workspacesummary.Caller {
-	return workspacesummary.Caller{Membership: callerMembership(ctx), Actor: h.actor(ctx), StrongSession: currentSession(ctx).Method.Strong()}
+// viewCaller is the caller of an operation on the Workspace it addresses, as the Workspace
+// view takes them: their Membership, the actor and whether their session is strong.
+func (h *Handlers) viewCaller(ctx context.Context) workspaceview.Caller {
+	return workspaceview.Caller{Membership: callerMembership(ctx), Actor: h.actor(ctx), StrongSession: currentSession(ctx).Method.Strong()}
 }
 
 // workspaceResource maps the Workspace summary as the member of the View sees it, with their Role
 // and Permissions, their grace end under the Two-factor requirement (ADR 0020) and the Instance's
 // addresses besides the app's own.
-func (h *Handlers) workspaceResource(v workspacesummary.View) siteapi.SiteWorkspaceResource {
+func (h *Handlers) workspaceResource(v workspaceview.View) siteapi.SiteWorkspaceResource {
 	sum := v.Summary
 	r := mapper.WorkspaceToResource(sum.Workspace)
 	r.Role = mapper.MembershipRoleToResource(v.Membership.Role)
@@ -74,7 +74,7 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	}
 	in := inputs.WorkspaceCreate(req)
 	in.UserID, in.StrongSession = a.User.ID, a.Method.Strong()
-	v, err := h.workspaceSummary.Create(ctx, in)
+	v, err := h.workspaceView.Create(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (h *Handlers) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context
 // on or off and answers its Workspace as the caller now sees it. Switching it on tells the Users
 // without a Second factor (workspaces.Module.SetSecondFactorRequirement publishes it).
 func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required bool) (siteapi.SiteWorkspaceResource, error) {
-	v, err := h.workspaceSummary.SetSecondFactorRequirement(ctx, workspaceScope(ctx), h.summaryCaller(ctx), required)
+	v, err := h.workspaceView.SetSecondFactorRequirement(ctx, workspaceScope(ctx), h.viewCaller(ctx), required)
 	if err != nil {
 		return siteapi.SiteWorkspaceResource{}, err
 	}
@@ -132,7 +132,7 @@ func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required b
 
 // SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, _ siteapi.SiteWorkspacesUpdateParams) (*siteapi.SiteWorkspaceResource, error) {
-	v, err := h.workspaceSummary.Update(ctx, workspaceScope(ctx), h.summaryCaller(ctx), inputs.WorkspaceUpdate(req))
+	v, err := h.workspaceView.Update(ctx, workspaceScope(ctx), h.viewCaller(ctx), inputs.WorkspaceUpdate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 
 // SiteWorkspacesSetTimezone sets the Workspace time zone (Permission workspace:timezone, ADR 0057).
 func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, _ siteapi.SiteWorkspacesSetTimezoneParams) (*siteapi.SiteWorkspaceResource, error) {
-	v, err := h.workspaceSummary.SetTimezone(ctx, workspaceScope(ctx), h.summaryCaller(ctx), string(req.Timezone))
+	v, err := h.workspaceView.SetTimezone(ctx, workspaceScope(ctx), h.viewCaller(ctx), string(req.Timezone))
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	}
 	in := inputs.WorkspaceRestore(params)
 	in.UserID, in.Actor, in.StrongSession = a.User.ID, h.actor(ctx), a.Method.Strong()
-	v, err := h.workspaceSummary.Restore(ctx, in)
+	v, err := h.workspaceView.Restore(ctx, in)
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,7 @@
 // Deleting one checks only its typed name, the Workspace's own rule, so it is the module's
 // (workspaces.Module.Delete, ADR 0110); the use case answers it, as it lists the deleted ones,
 // with whether its Owner is its only one, which the Memberships say. Restoring one answers the
-// Workspace summary its Owner reads, so it is internal/usecase/workspacesummary's. The cycle's
+// Workspace summary its Owner reads, so it is internal/usecase/workspaceview's. The cycle's
 // table and the window with the erase date are the Workspace's own (workspaces.DeletionCycle,
 // workspaces.DeletionWindow), and its erase move is the module's unchecked operation
 // (workspacesunchecked.TombstoneIn, ADR 0110): the erase removes the Workspace's rows, then, in

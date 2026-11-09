@@ -5,7 +5,7 @@
 // sign-up. Each step writes the User's part through the users module's ...In functions and, on
 // the same transaction, creates the User's first Workspace with its Owner Membership and the Send
 // cap it starts with (ADR 0067) through workspaces and memberships, so no identity module reads
-// the Send caps. A Verified User's later Workspaces are internal/usecase/workspacesummary's.
+// the Send caps. A Verified User's later Workspaces are internal/usecase/workspaceview's.
 //
 // The sign-in through a Sign-in provider is here whole (ADR 0111): the provider's answer, the
 // Invitation the flow began from, the Sign-up items, the decision, the Second factor and the

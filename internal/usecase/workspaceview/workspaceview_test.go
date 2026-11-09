@@ -1,4 +1,4 @@
-package workspacesummary_test
+package workspaceview_test
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // The Workspace summary is the Workspace with what its sending stands on: an active Staff hold is
@@ -20,7 +20,7 @@ func TestOfReadsTheWorkspaceWithItsHolds(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 
-	sum, err := env.WorkspaceSummary.Of(t.Context(), env.DB.Scoped(fixtures.AcmeID))
+	sum, err := env.WorkspaceView.Of(t.Context(), env.DB.Scoped(fixtures.AcmeID))
 
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.AcmeID), sum.Workspace.ID)
@@ -33,7 +33,7 @@ func TestOfReadsTheWorkspaceWithItsHolds(t *testing.T) {
 func TestOfMembersSummarizesEveryWorkspaceOfTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	views, err := env.WorkspaceSummary.OfMembers(t.Context(), fixtures.OwnerJohnID, false)
+	views, err := env.WorkspaceView.OfMembers(t.Context(), fixtures.OwnerJohnID, false)
 
 	require.NoError(t, err)
 	require.Len(t, views, 1, "John is a member of Acme alone")
@@ -46,7 +46,7 @@ func TestOfMembersSummarizesEveryWorkspaceOfTheUser(t *testing.T) {
 var ritaGraceEnds = time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC)
 
 // graceOf is the grace end of the view of the Workspace workspaceID among views, nil for none.
-func graceOf(t *testing.T, views []workspacesummary.View, workspaceID int64) *time.Time {
+func graceOf(t *testing.T, views []workspaceview.View, workspaceID int64) *time.Time {
 	t.Helper()
 	for _, v := range views {
 		if v.Membership.WorkspaceID == workspaceID {
@@ -61,7 +61,7 @@ func graceOf(t *testing.T, views []workspacesummary.View, workspaceID int64) *ti
 func TestOfMembersCarriesTheGraceUnderTheRequirement(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	views, err := env.WorkspaceSummary.OfMembers(t.Context(), fixtures.UmbrellaOwnerRitaID, false)
+	views, err := env.WorkspaceView.OfMembers(t.Context(), fixtures.UmbrellaOwnerRitaID, false)
 
 	require.NoError(t, err)
 	umbrella := graceOf(t, views, fixtures.UmbrellaID)
@@ -70,12 +70,12 @@ func TestOfMembersCarriesTheGraceUnderTheRequirement(t *testing.T) {
 	assert.Nil(t, graceOf(t, views, fixtures.InitechID), "a Workspace without the requirement")
 }
 
-// A strong session meets the requirement by itself (secondfactors.Module.Admit), so it has no grace
+// A strong session meets the requirement by itself (admission.Module.Admit), so it has no grace
 // to count down.
 func TestOfMembersGivesAStrongSessionNoGrace(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	views, err := env.WorkspaceSummary.OfMembers(t.Context(), fixtures.UmbrellaOwnerRitaID, true)
+	views, err := env.WorkspaceView.OfMembers(t.Context(), fixtures.UmbrellaOwnerRitaID, true)
 
 	require.NoError(t, err)
 	assert.Nil(t, graceOf(t, views, fixtures.UmbrellaID))
@@ -90,7 +90,7 @@ func TestSwitchingTheRequirementOnStartsTheCallersGrace(t *testing.T) {
 	s, m, err := memberships.New(env.DB, env.Bus).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.InitechPublicID)
 	require.NoError(t, err)
 
-	v, err := env.WorkspaceSummary.SetSecondFactorRequirement(t.Context(), s, workspacesummary.Caller{Membership: m}, true)
+	v, err := env.WorkspaceView.SetSecondFactorRequirement(t.Context(), s, workspaceview.Caller{Membership: m}, true)
 
 	require.NoError(t, err)
 	require.NotNil(t, v.Summary.Workspace.SecondFactorRequiredAt)

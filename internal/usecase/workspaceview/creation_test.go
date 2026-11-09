@@ -1,4 +1,4 @@
-package workspacesummary_test
+package workspaceview_test
 
 import (
 	"testing"
@@ -12,14 +12,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 // A created Workspace has a Workspace id, and its creator reads it as its Owner.
 func TestCreateAnswersTheWorkspaceItsOwnerReads(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	v, err := env.WorkspaceSummary.Create(t.Context(), workspacesummary.CreateInput{UserID: fixtures.MemberMaryID, Name: " Fresh "})
+	v, err := env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: " Fresh "})
 	require.NoError(t, err)
 
 	assert.Regexp(t, workspaceid.Pattern, v.Summary.Workspace.PublicID)
@@ -32,7 +32,7 @@ func TestCreateAnswersTheWorkspaceItsOwnerReads(t *testing.T) {
 func TestCreateRefusesAnEmptyName(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.WorkspaceSummary.Create(t.Context(), workspacesummary.CreateInput{UserID: fixtures.MemberMaryID, Name: "  "})
+	_, err := env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: "  "})
 
 	require.ErrorIs(t, err, workspaces.ErrNameEmpty)
 }
@@ -40,7 +40,7 @@ func TestCreateRefusesAnEmptyName(t *testing.T) {
 func TestCreateRefusesAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.WorkspaceSummary.Create(t.Context(), workspacesummary.CreateInput{UserID: fixtures.FreshUnverifiedUserID, Name: "Fresh"})
+	_, err := env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.FreshUnverifiedUserID, Name: "Fresh"})
 
 	require.ErrorIs(t, err, users.ErrEmailNotVerified)
 }

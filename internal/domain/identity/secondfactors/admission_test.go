@@ -22,14 +22,14 @@ var (
 	afterRitasEnd = time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC)
 )
 
-// newModule builds the Module of the test's database, whose acceptance part is the Users'.
+// newModule builds the Module of the test's database.
 func newModule(env *testhelper.TestEnv) *secondfactors.Module {
 	acceptance := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
 	return secondfactors.New(env.DB, env.Bus, env.Cipher, acceptance, time.Now)
 }
 
 // admission builds the Module of the test's database and loads userID's Membership of the
-// Workspace publicID names, as a surface would before admitting it.
+// Workspace publicID names, as the admission does before it asks the requirement.
 func admission(t *testing.T, env *testhelper.TestEnv, userID int64, publicID string) (*secondfactors.Module, *ent.Membership) {
 	t.Helper()
 	_, m, err := memberships.New(env.DB, env.Bus).Scope(t.Context(), userID, publicID)
@@ -37,59 +37,32 @@ func admission(t *testing.T, env *testhelper.TestEnv, userID int64, publicID str
 	return newModule(env), m
 }
 
-func TestAMemberWithNothingPendingIsAdmitted(t *testing.T) {
-	env := testhelper.Setup(t)
-	acc, m := admission(t, env, fixtures.MemberMaryID, fixtures.AcmePublicID)
-
-	err := acc.Admit(t.Context(), secondfactors.Admission{UserID: fixtures.MemberMaryID, Membership: m, At: afterRitasEnd})
-
-	require.NoError(t, err)
+// check asks the requirement of the Workspace of m about its member at at.
+func check(t *testing.T, factors *secondfactors.Module, m *ent.Membership, at time.Time) error {
+	t.Helper()
+	return factors.CheckRequirement(t.Context(), m.UserID, m.Edges.Workspace.SecondFactorRequiredAt, m.CreatedAt, at)
 }
 
-func TestAUserWithARequiredAcceptancePendingIsRefusedInAndOutOfAWorkspace(t *testing.T) {
+func TestAWorkspaceWithNoRequirementWithholdsNoOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc, m := admission(t, env, fixtures.MemberMaryID, fixtures.AcmePublicID)
-	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
+	factors, m := admission(t, env, fixtures.MemberMaryID, fixtures.AcmePublicID)
 
-	inWorkspace := acc.Admit(t.Context(), secondfactors.Admission{UserID: fixtures.MemberMaryID, Membership: m})
-	outside := acc.Admit(t.Context(), secondfactors.Admission{UserID: fixtures.MemberMaryID})
-	letThrough := acc.Admit(t.Context(), secondfactors.Admission{UserID: fixtures.MemberMaryID, Membership: m, WhileAcceptancePending: true})
-
-	require.ErrorIs(t, inWorkspace, users.ErrAcceptancePending)
-	require.ErrorIs(t, outside, users.ErrAcceptancePending)
-	require.NoError(t, letThrough)
+	require.NoError(t, check(t, factors, m, afterRitasEnd))
 }
 
 func TestTheTwoFactorRequirementWithholdsAMemberOnceTheGraceEnds(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc, m := admission(t, env, fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
-	admit := func(r secondfactors.Admission) error {
-		r.UserID, r.Membership = fixtures.UmbrellaOwnerRitaID, m
-		return acc.Admit(t.Context(), r)
-	}
+	factors, m := admission(t, env, fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
 
-	require.NoError(t, admit(secondfactors.Admission{At: inRitasGrace}), "within the grace")
-	require.ErrorIs(t, admit(secondfactors.Admission{At: afterRitasEnd}), secondfactors.ErrSecondFactorRequired, "after it")
-	require.NoError(t, admit(secondfactors.Admission{At: afterRitasEnd, StrongSession: true}), "a strong session meets the requirement")
-	require.NoError(t, admit(secondfactors.Admission{At: afterRitasEnd, WhileWithheld: true}), "an operation that lets a withheld User through")
-}
-
-func TestTheTwoFactorRequirementDoesNotWithholdOutsideItsWorkspace(t *testing.T) {
-	env := testhelper.Setup(t)
-	acc := newModule(env)
-
-	err := acc.Admit(t.Context(), secondfactors.Admission{UserID: fixtures.UmbrellaOwnerRitaID, At: afterRitasEnd})
-
-	require.NoError(t, err)
+	require.NoError(t, check(t, factors, m, inRitasGrace), "within the grace")
+	require.ErrorIs(t, check(t, factors, m, afterRitasEnd), secondfactors.ErrSecondFactorRequired, "after it")
 }
 
 func TestAMemberWithASecondFactorIsNeverWithheld(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc, m := admission(t, env, fixtures.SecondFactorSamID, fixtures.UmbrellaPublicID)
+	factors, m := admission(t, env, fixtures.SecondFactorSamID, fixtures.UmbrellaPublicID)
 
-	err := acc.Admit(t.Context(), secondfactors.Admission{UserID: fixtures.SecondFactorSamID, Membership: m, At: afterRitasEnd})
-
-	require.NoError(t, err)
+	require.NoError(t, check(t, factors, m, afterRitasEnd))
 }
 
 func TestALaterMembershipHasAGraceOfItsOwn(t *testing.T) {
@@ -106,18 +79,6 @@ func TestALaterMembershipHasAGraceOfItsOwn(t *testing.T) {
 	require.True(t, ninaHasOne)
 	assert.Equal(t, time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC), ritasEnd.UTC())
 	assert.Equal(t, nina.CreatedAt.Add(secondfactors.GracePeriod), ninasEnd)
-}
-
-func TestAUserBothGatedAndWithheldIsRefusedForTheAcceptanceFirst(t *testing.T) {
-	env := testhelper.Setup(t)
-	acc, m := admission(t, env, fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
-	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-
-	both := acc.Admit(t.Context(), secondfactors.Admission{UserID: fixtures.UmbrellaOwnerRitaID, Membership: m, At: afterRitasEnd})
-	acceptanceLifted := acc.Admit(t.Context(), secondfactors.Admission{UserID: fixtures.UmbrellaOwnerRitaID, Membership: m, At: afterRitasEnd, WhileAcceptancePending: true})
-
-	require.ErrorIs(t, both, users.ErrAcceptancePending)
-	require.ErrorIs(t, acceptanceLifted, secondfactors.ErrSecondFactorRequired)
 }
 
 func TestAMemberWithASecondFactorHasNoDeadline(t *testing.T) {

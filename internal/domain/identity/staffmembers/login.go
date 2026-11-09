@@ -70,12 +70,12 @@ func (m *Module) CheckPassword(ctx context.Context, email, password string) (Pas
 	return PasswordStep{Result: res, Enrolment: key}, nil
 }
 
-// Complete is the second login step, run by the login module. On Authenticated the
-// principal is the Staff member as stored after the step (a confirming code bumps the
-// session epoch, which the session must carry).
+// Complete is the second login step, run by the login module. Its principal is the Staff member
+// as stored after the step (a confirming code bumps the session epoch, which the session must
+// carry).
 func (m *Module) Complete(ctx context.Context, challenge, code string) (login.SecondResult[*ent.StaffMember], error) {
 	res, err := m.login.SecondFactor(ctx, challenge, code)
-	if err != nil || res.Outcome != login.SecondAuthenticated {
+	if err != nil {
 		return res, err
 	}
 	res.Principal, err = m.ent.StaffMember.Get(ctx, res.Principal.ID)

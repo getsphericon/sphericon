@@ -2,7 +2,7 @@
 // creation of a Workspace, which refuses an Unverified User and writes the creator's Owner
 // Membership on the same transaction, and the restore and the erase of the deletion cycle, which
 // need a Membership that holds the delete Permission and every owner's rows removed. Their checks
-// are the use cases' (internal/usecase/workspacesummary, which creates and restores one,
+// are the use cases' (internal/usecase/workspaceview, which creates and restores one,
 // internal/usecase/signup and internal/usecase/workspacedeletion); only a use case may import this package. The workspaces
 // module does not import it; it declares the cycle's table (workspaces.DeletionCycle), whose
 // restore and erase moves are written here.
@@ -35,7 +35,7 @@ const publicIDAttempts = 3
 // when the one drawn is taken, a fault after publicIDAttempts draws), a fresh collect key and the
 // Send cap it starts with (ADR 0067; nil for none). A Workspace is reached through its Memberships,
 // so the caller writes its Owner Membership on the same transaction (membershipsunchecked.AddCreatorIn):
-// the use cases internal/usecase/workspacesummary and internal/usecase/signup, which refuse an
+// the use cases internal/usecase/workspaceview and internal/usecase/signup, which refuse an
 // Unverified User first (ADR 0030, ADR 0043).
 func CreateIn(ctx context.Context, tx *ent.Client, name string, newPublicID func() string, sendCap *int) (*ent.Workspace, error) {
 	collectKey, err := credentials.GenerateCollectKey()
@@ -63,10 +63,13 @@ func CreateIn(ctx context.Context, tx *ent.Client, name string, newPublicID func
 }
 
 // RestoreIn moves the Workspace id from pending deletion back to active inside tx, only while
-// it is inside its deletion window at now. One past it, already erased or not deleted is
-// lifecycle.ErrInvalidTransition and nothing changes.
-func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
-	return workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerRestore)
+// it is inside its deletion window at now, and returns it as it now reads. One past it, already
+// erased or not deleted is lifecycle.ErrInvalidTransition and nothing changes.
+func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (*ent.Workspace, error) {
+	if err := workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerRestore); err != nil {
+		return nil, err
+	}
+	return tx.Workspace.Get(ctx, id)
 }
 
 // TombstoneIn moves the Workspace id from pending deletion to erased inside tx: it writes the

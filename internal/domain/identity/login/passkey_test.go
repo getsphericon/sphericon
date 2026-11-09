@@ -82,8 +82,7 @@ func TestAVerifiedPasskeyAuthenticatesWithoutASecondStep(t *testing.T) {
 
 	res := r.passkey(t, userResponse(fixtures.SecondFactorSamID))
 
-	assert.Equal(t, login.PasskeyAuthenticated, res.Outcome, "a Second factor does not follow a Passkey")
-	assert.Equal(t, int64(fixtures.SecondFactorSamID), res.Principal.ID)
+	assert.Equal(t, int64(fixtures.SecondFactorSamID), res.Principal.ID, "a Second factor does not follow a Passkey")
 }
 
 func TestAResponseThatNamesNoCredentialFailsAndMovesNoCounter(t *testing.T) {
@@ -103,7 +102,7 @@ func TestAResponseThatDoesNotVerifyFailsAndCountsNothing(t *testing.T) {
 	}
 
 	assert.Zero(t, delayOf(t, r.login, fixtures.OwnerJohnEmail))
-	assert.Equal(t, login.PasskeyAuthenticated, r.passkey(t, userResponse(fixtures.OwnerJohnID)).Outcome)
+	r.passkey(t, userResponse(fixtures.OwnerJohnID))
 }
 
 func TestTheThrottleOfTheUserFoundPrecedesTheVerification(t *testing.T) {
@@ -112,11 +111,10 @@ func TestTheThrottleOfTheUserFoundPrecedesTheVerification(t *testing.T) {
 		require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	}
 
-	res := r.passkey(t, userResponse(fixtures.OwnerJohnID))
+	wait := waitOf(t, r.passkeyErr(t, userResponse(fixtures.OwnerJohnID)))
 
-	assert.Equal(t, login.PasskeyThrottled, res.Outcome)
-	assert.Positive(t, res.Wait)
-	assert.Equal(t, 2, res.Limit)
+	assert.Positive(t, wait.Wait)
+	assert.Equal(t, 2, wait.Limit)
 	assert.Zero(t, adapter.verifyHits, "a correct response is not even checked while the delay runs")
 }
 
@@ -125,11 +123,11 @@ func TestAPasskeyLoginWorksAgainOnceTheDelayHasPassed(t *testing.T) {
 	for range 2 {
 		require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	}
-	require.Equal(t, login.PasskeyThrottled, r.passkey(t, userResponse(fixtures.OwnerJohnID)).Outcome)
+	waitOf(t, r.passkeyErr(t, userResponse(fixtures.OwnerJohnID)))
 
 	r.clock.t = r.clock.t.Add(2 * time.Second)
 
-	assert.Equal(t, login.PasskeyAuthenticated, r.passkey(t, userResponse(fixtures.OwnerJohnID)).Outcome)
+	assert.Equal(t, int64(fixtures.OwnerJohnID), r.passkey(t, userResponse(fixtures.OwnerJohnID)).Principal.ID)
 }
 
 func TestTheVerificationGateRefusesAPasskeyLoginLikeAnyOtherFailure(t *testing.T) {
@@ -148,7 +146,7 @@ func TestTheVerificationGateRefusesAPasskeyLoginLikeAnyOtherFailure(t *testing.T
 func TestAVerifiedPasskeyResetsTheCounter(t *testing.T) {
 	r, _ := newPasskeyRig(t)
 	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
-	require.Equal(t, login.PasskeyAuthenticated, r.passkey(t, userResponse(fixtures.OwnerJohnID)).Outcome)
+	r.passkey(t, userResponse(fixtures.OwnerJohnID))
 
 	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials, "the count restarted at the Passkey login")
@@ -159,5 +157,5 @@ func TestAFailedCounterResetDoesNotCostAVerifiedPasskeyLogin(t *testing.T) {
 
 	res := r.passkey(t, userResponse(fixtures.OwnerJohnID))
 
-	assert.Equal(t, login.PasskeyAuthenticated, res.Outcome)
+	assert.Equal(t, int64(fixtures.OwnerJohnID), res.Principal.ID)
 }

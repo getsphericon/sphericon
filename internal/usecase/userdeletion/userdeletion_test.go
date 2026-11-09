@@ -53,7 +53,7 @@ func TestDeleteRefusesAProofThatNoLongerFitsTheUser(t *testing.T) {
 		})
 	}))
 
-	_, err = env.UserDeletion.Delete(ctx, samRequest())
+	err = env.UserDeletion.Delete(ctx, samRequest())
 
 	require.ErrorIs(t, err, users.ErrProofStale)
 	_, err = env.DB.User.Get(ctx, fixtures.SecondFactorSamID)
@@ -68,10 +68,9 @@ func TestDeleteSpendsTheCodeOfAProofThatStillFits(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	res, err := env.UserDeletion.Delete(ctx, samRequest())
+	err := env.UserDeletion.Delete(ctx, samRequest())
 
 	require.NoError(t, err)
-	assert.Equal(t, userdeletion.Deleted, res.Outcome)
 	_, err = env.DB.User.Get(ctx, fixtures.SecondFactorSamID)
 	assert.True(t, ent.IsNotFound(err))
 }
@@ -83,7 +82,7 @@ func TestDeleteRefusesAWrongCode(t *testing.T) {
 	req := samRequest()
 	req.Code = fixtures.SecondFactorSamSpentRecoveryCode
 
-	_, err := env.UserDeletion.Delete(ctx, req)
+	err := env.UserDeletion.Delete(ctx, req)
 
 	require.ErrorIs(t, err, secondfactors.ErrDeletionCodeInvalid)
 	_, err = env.DB.User.Get(ctx, fixtures.SecondFactorSamID)
@@ -111,7 +110,7 @@ func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
 	errs := make([]error, len(owners))
 	var wg sync.WaitGroup
 	for i, req := range owners {
-		wg.Go(func() { _, errs[i] = deletion.Delete(t.Context(), req) })
+		wg.Go(func() { errs[i] = deletion.Delete(t.Context(), req) })
 	}
 	wg.Wait()
 

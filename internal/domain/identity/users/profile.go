@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
@@ -51,12 +52,37 @@ func (a *Module) provePassword(ctx context.Context, u *ent.User, password string
 // whose session holds no fresh proof instead (ADR 0048): a Passkey check or a provider login.
 var ErrIdentityProofRequired = validation.Denied("users: a fresh identity proof is required", i18n.ErrorsIdentityProofRequired)
 
+// identityProofTTL is how long a Sign-in provider login (ADR 0048) or a Passkey check (ADR 0052)
+// stands in for the password of a User who has none: the proof is the time carried by the
+// session, so it needs no store and ends by itself.
+const identityProofTTL = 5 * time.Minute
+
 // IdentityProof is what a signed-in User offers for a step that asks for the password (ADR 0020,
-// ADR 0048): the password typed, and whether their session holds a Sign-in provider login or a
-// Passkey check recent enough to stand in for it.
+// ADR 0048): the password typed, and when their session last held a Sign-in provider login and a
+// Passkey check (zero for none), either of which stands in for it while recent enough.
 type IdentityProof struct {
-	Password string
-	Fresh    bool
+	Password        string
+	ProviderLoginAt time.Time
+	PasskeyCheckAt  time.Time
+}
+
+// FreshAt is whether the session holds, at now, a Sign-in provider login or a Passkey check of
+// the last identityProofTTL. A time ahead of now is no proof.
+func (p IdentityProof) FreshAt(now time.Time) bool {
+	recent := func(at time.Time) bool {
+		if at.IsZero() {
+			return false
+		}
+		age := now.Sub(at)
+		return age >= 0 && age <= identityProofTTL
+	}
+	return recent(p.ProviderLoginAt) || recent(p.PasskeyCheckAt)
+}
+
+// StandsInFor is whether the proof, at now, stands in for the password of u: u has none and the
+// session's proof is fresh (FreshAt). A User with a password proves it by typing it.
+func (p IdentityProof) StandsInFor(u *ent.User, now time.Time) bool {
+	return u.PasswordHash == "" && p.FreshAt(now)
 }
 
 // ProveIdentity is the proof the steps that ask for the password need (ADR 0020, ADR 0048). A
@@ -64,15 +90,15 @@ type IdentityProof struct {
 // Login throttle delay runs it fails even for the right password, a wrong password counts as a
 // failure of the account, and a right one does not reset the counter (only a completed login
 // does, else a session holder could clear a run of second-step guesses). A User with no password
-// proves instead what proof.Fresh reports: a Sign-in provider login or a Passkey check recent
-// enough, carried by the session; there is nothing to guess, so nothing is counted, and without
+// proves instead a Sign-in provider login or a Passkey check recent enough (IdentityProof.FreshAt
+// on the module's clock), carried by the session; there is nothing to guess, so nothing is counted, and without
 // one the step is refused with ErrIdentityProofRequired. A step proves before its transaction,
 // so a refused proof is counted whatever the step would have decided.
 func (a *Module) ProveIdentity(ctx context.Context, u *ent.User, proof IdentityProof) error {
 	if u.PasswordHash != "" {
 		return a.provePassword(ctx, u, proof.Password)
 	}
-	if proof.Fresh {
+	if proof.FreshAt(a.now()) {
 		return nil
 	}
 	return ErrIdentityProofRequired

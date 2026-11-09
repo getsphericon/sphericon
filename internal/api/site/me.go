@@ -6,10 +6,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 )
 
@@ -107,9 +105,4 @@ func (h *Handlers) SiteUserSignOutEverywhere(ctx context.Context) (*siteapi.Site
 		return nil, err
 	}
 	return &siteapi.SiteUserSignOutEverywhereNoContent{SetCookie: h.sessions.Cleared().String()}, nil
-}
-
-// loginDelayError is the 429 rejection of a running Login throttle delay.
-func loginDelayError(ctx context.Context, d login.Delay) error {
-	return ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, d.Limit, d.Wait, d.Now)
 }

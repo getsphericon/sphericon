@@ -1,4 +1,4 @@
-package workspacesummary_test
+package workspaceview_test
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
+	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
 var restoredAt = time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
@@ -43,9 +43,9 @@ func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {
 }
 
 // restore is Olga, an Owner of Initech, restoring it.
-func restore(t *testing.T, env *testhelper.TestEnv) (workspacesummary.View, error) {
+func restore(t *testing.T, env *testhelper.TestEnv) (workspaceview.View, error) {
 	t.Helper()
-	return env.WorkspaceSummary.Restore(t.Context(), workspacesummary.RestoreInput{
+	return env.WorkspaceView.Restore(t.Context(), workspaceview.RestoreInput{
 		UserID: fixtures.InitechOwnerOlgaID, PublicID: fixtures.InitechPublicID, Actor: events.Actor{Kind: events.ActorUser},
 	})
 }
@@ -69,7 +69,7 @@ func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 
 	_, err := restore(t, env)
 
-	require.ErrorIs(t, err, workspacesummary.ErrNotRestorable)
+	require.ErrorIs(t, err, workspaceview.ErrNotRestorable)
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	assert.NotNil(t, initech(t, env).DiscardedAt, "a Workspace past its window stays deleted")
 }

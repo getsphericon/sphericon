@@ -348,14 +348,24 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped) (*ent.Workspace, error)
 	return s.Workspace(ctx)
 }
 
-// IDByPublicIDIn resolves a Workspace id (ADR 0043) to the internal key, in the caller's
-// transaction: an operator addresses a Workspace by its id (a suspension from the command line).
-func IDByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
-	id, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).OnlyID(ctx)
+// ByPublicIDIn loads the Workspace a Workspace id (ADR 0043) names, live or deleted, through client
+// (the raw client or the caller's transaction): an operator addresses a Workspace by its id (a
+// suspension from the command line, the Staff console). An unknown id is an ent NotFound error.
+func ByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (*ent.Workspace, error) {
+	w, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).Only(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("workspace %q: %w", publicID, err)
+		return nil, fmt.Errorf("workspace %q: %w", publicID, err)
 	}
-	return id, nil
+	return w, nil
+}
+
+// IDByPublicIDIn is the internal key of the Workspace ByPublicIDIn loads.
+func IDByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
+	w, err := ByPublicIDIn(ctx, client, publicID)
+	if err != nil {
+		return 0, err
+	}
+	return w.ID, nil
 }
 
 // IDByPublicID resolves a Workspace id (ADR 0043) an operator types to the internal key, whatever

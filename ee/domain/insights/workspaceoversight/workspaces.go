@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -75,10 +76,11 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *en
 	return m.changeOf(ctx, id, changed)
 }
 
-// workspace loads a Workspace row by its id (ADR 0043), the only address the console and the
-// service endpoints take. ErrWorkspaceNotFound for an unknown id; the id is case-sensitive.
+// workspace loads a Workspace row by its id (ADR 0043, workspaces.ByPublicIDIn), the only address
+// the console and the service endpoints take. ErrWorkspaceNotFound for an unknown id; the id is
+// case-sensitive.
 func (m *Module) workspace(ctx context.Context, publicID string) (*ent.Workspace, error) {
-	w, err := m.ent.Workspace.Query().Where(entworkspace.PublicID(publicID)).Only(ctx)
+	w, err := workspaces.ByPublicIDIn(ctx, m.ent, publicID)
 	if ent.IsNotFound(err) {
 		return nil, ErrWorkspaceNotFound
 	}
