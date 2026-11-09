@@ -7,16 +7,15 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/getsphericon/sphericon/config"
-	"go.opentelemetry.io/otel"
+	"github.com/XSAM/otelsql"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/embedded"
+
+	"github.com/getsphericon/sphericon/config"
 )
 
-const otelScope = "github.com/getsphericon/sphericon/internal/db"
-
-// Pool label values: the only label on the pool gauges, so cardinality is
-// bounded by the number of pools (two).
+// Pool attribute values of the pool metrics (RegisterPoolMetrics).
 const (
 	PoolSQL   = "sql"
 	PoolRiver = "river"
@@ -56,39 +55,39 @@ func OpenRiverListener(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pgxpool.NewWithConfig(ctx, cfg)
 }
 
-// RegisterPoolMetrics exports both pools' statistics as OTel observable gauges
-// on the global meter provider (so they surface wherever that provider is
-// scraped), labelled only by pool name. Either pool may be nil.
+// RegisterPoolMetrics exports both pools' statistics through otelsql (the db.sql.connection.*
+// metrics) on the global meter provider, so they surface wherever that provider is scraped. The
+// pool attribute is their one label of ours, so cardinality is bounded by the number of pools
+// (two). Either pool may be nil.
 func RegisterPoolMetrics(sqlDB, riverDB *sql.DB) (metric.Registration, error) {
-	meter := otel.Meter(otelScope)
-	var errs []error
-	mk := func(name, desc string) metric.Int64ObservableGauge {
-		g, err := meter.Int64ObservableGauge("db.pool."+name, metric.WithDescription(desc))
-		errs = append(errs, err)
-		return g
-	}
-	open := mk("open", "Connections currently open (in use plus idle).")
-	inUse := mk("in_use", "Connections currently in use.")
-	idle := mk("idle", "Idle connections.")
-	maxOpen := mk("max", "Configured maximum number of connections.")
-	waitCount := mk("wait_count", "Cumulative number of connection requests that had to wait (sql.DBStats.WaitCount).")
-	if err := errors.Join(errs...); err != nil {
-		return nil, err
-	}
-
-	return meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		for pool, d := range map[string]*sql.DB{PoolSQL: sqlDB, PoolRiver: riverDB} {
-			if d == nil {
-				continue
-			}
-			st := d.Stats()
-			a := metric.WithAttributes(attribute.String("pool", pool))
-			o.ObserveInt64(open, int64(st.OpenConnections), a)
-			o.ObserveInt64(inUse, int64(st.InUse), a)
-			o.ObserveInt64(idle, int64(st.Idle), a)
-			o.ObserveInt64(maxOpen, int64(st.MaxOpenConnections), a)
-			o.ObserveInt64(waitCount, st.WaitCount, a)
+	var regs registrations
+	for _, p := range []struct {
+		name string
+		db   *sql.DB
+	}{{PoolSQL, sqlDB}, {PoolRiver, riverDB}} {
+		if p.db == nil {
+			continue
 		}
-		return nil
-	}, open, inUse, idle, maxOpen, waitCount)
+		reg, err := otelsql.RegisterDBStatsMetrics(p.db, otelsql.WithAttributes(attribute.String("pool", p.name)))
+		if err != nil {
+			return nil, errors.Join(err, regs.Unregister())
+		}
+		regs.all = append(regs.all, reg)
+	}
+	return &regs, nil
+}
+
+// registrations unregisters the callbacks of every pool at once.
+type registrations struct {
+	embedded.Registration
+
+	all []metric.Registration
+}
+
+func (r *registrations) Unregister() error {
+	errs := make([]error, 0, len(r.all))
+	for _, reg := range r.all {
+		errs = append(errs, reg.Unregister())
+	}
+	return errors.Join(errs...)
 }

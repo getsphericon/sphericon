@@ -50,8 +50,8 @@ func TestOpenRiverDBAppliesMaxConns(t *testing.T) {
 	assert.Equal(t, 11, riverDB.Stats().MaxOpenConnections)
 }
 
-// Pool stats surface in a scrape of the global meter provider, labelled only
-// by pool name.
+// Both pools' stats surface in a scrape of the global meter provider as otelsql's
+// db.sql.connection.* metrics, told apart by the pool attribute.
 func TestPoolMetricsAppearInScrape(t *testing.T) {
 	cfg := testConfig(t)
 	pool := config.DBPool{MaxOpenConns: 7, MaxIdleConns: 7, ConnMaxLifetime: time.Minute, RiverMaxConns: 11}
@@ -81,10 +81,13 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	body, err := io.ReadAll(rec.Result().Body)
 	require.NoError(t, err)
 
-	assert.Regexp(t, `db_pool_max\{[^}]*pool="sql"\} 7`, string(body))
-	assert.Regexp(t, `db_pool_max\{[^}]*pool="river"\} 11`, string(body))
-	assert.Contains(t, string(body), "db_pool_in_use")
-	assert.Contains(t, string(body), "db_pool_idle")
-	assert.Regexp(t, `db_pool_wait_count\{[^}]*pool="sql"\}`, string(body))
-	assert.Regexp(t, `db_pool_wait_count\{[^}]*pool="river"\}`, string(body))
+	text := string(body)
+	for name, maxOpen := range map[string]string{"sql": "7", "river": "11"} {
+		assert.Regexp(t, `db_sql_connection_max_open\{[^}]*pool="`+name+`"[^}]*\} `+maxOpen, text)
+		for _, status := range []string{"inuse", "idle"} {
+			assert.Regexp(t, `db_sql_connection_open\{[^}]*pool="`+name+`"[^}]*status="`+status+`"[^}]*\}`, text)
+		}
+		assert.Regexp(t, `db_sql_connection_wait_total\{[^}]*pool="`+name+`"[^}]*\}`, text)
+	}
+	assert.NotContains(t, text, "db_pool_", "the hand-written gauges are gone")
 }
