@@ -32,7 +32,7 @@ func newRig(t *testing.T) rig {
 	t.Helper()
 	env := testhelper.Setup(t)
 	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
-	keys, err := passkeys.New(env.DB, env.Bus, "https://app.example", "secret", time.Now)
+	keys, err := passkeys.New(env.DB, env.Bus, acc, "https://app.example", "secret", time.Now)
 	require.NoError(t, err)
 	module := userlogin.New(userlogin.Config{
 		Users:               acc,

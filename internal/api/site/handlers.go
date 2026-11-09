@@ -132,8 +132,7 @@ type Handlers struct {
 	signupItems *signupitems.Module
 	// consentRecords is the Users' decisions on the Sign-up items (ADR 0062).
 	consentRecords *consentrecords.Module
-	// login is the User's Login: the password, second and Passkey steps of signing in and the
-	// proof of the password (ADR 0020).
+	// login is the User's Login: the password, second and Passkey steps of signing in (ADR 0020).
 	login *userlogin.Module
 	// signin is the Sign-in providers of the Instance (ADR 0048).
 	signin *signinprovider.Providers
@@ -214,8 +213,7 @@ type Deps struct {
 	SecondFactor *secondfactors.Module
 	// Admission admits a request made on a session to the operation it addresses (ADR 0061).
 	Admission *admission.Module
-	// UserLogin is the User's Login: signing in by password, Second factor or Passkey, and the
-	// proof of the password (ADR 0020).
+	// UserLogin is the User's Login: signing in by password, Second factor or Passkey (ADR 0020).
 	UserLogin *userlogin.Module
 	// SecondFactorReset clears a member's Second factor and Passkeys (a use case, ADR 0102).
 	SecondFactorReset *secondfactorreset.UseCase

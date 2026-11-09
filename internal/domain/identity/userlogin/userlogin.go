@@ -114,11 +114,6 @@ func (m *Module) Passkey(ctx context.Context, a login.PasskeyAssertion) (login.P
 	return res, err
 }
 
-// Prove proves the password of a signed-in User (login.Module.Prove) on the Users' Login throttle.
-func (m *Module) Prove(ctx context.Context, address, passwordHash, password string) (login.ProofResult, error) {
-	return m.login.Prove(ctx, address, passwordHash, password)
-}
-
 // Challenge signs the second step's challenge of User u, bound to binding
 // (secondfactors.Module.ChallengeBinding), so it stops verifying after one successful second step
 // (or any epoch bump or password change), with no store. method (users.LoginPassword or a Sign-in
