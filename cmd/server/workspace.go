@@ -31,7 +31,7 @@ func workspaceCommand(d deps) *cli.Command {
 					return err
 				}
 				changed, err := suspender.SuspendByPublicID(ctx, id, suspension.CLI, reason)
-				return commandline.ReportSuspended(out(cmd), id, changed, err)
+				return commandline.Suspension.Report(out(cmd), id, changed, err)
 			}),
 		},
 		&cli.Command{
@@ -46,7 +46,7 @@ func workspaceCommand(d deps) *cli.Command {
 				}
 				id := cmd.StringArg("id")
 				changed, err := suspender.UnsuspendByPublicID(ctx, id, suspension.CLI)
-				return commandline.ReportUnsuspended(out(cmd), id, changed, err)
+				return commandline.Unsuspension.Report(out(cmd), id, changed, err)
 			}),
 		},
 	)

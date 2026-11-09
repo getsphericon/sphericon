@@ -29,9 +29,6 @@ func ReportSecondFactorReset(w io.Writer, email string, err error) error {
 	return nil
 }
 
-// ErrNoKeyset means SPHERICON_ENCRYPTION_KEY is empty, so there is no keyset to rotate or retire.
-var ErrNoKeyset = errors.New("SPHERICON_ENCRYPTION_KEY is not set: there is no keyset to change")
-
 // KeysetChange is a keyset `sphericon encryption-key rotate` or `retire` made, and what the
 // Self-hoster does with it next.
 type KeysetChange struct {
@@ -40,21 +37,20 @@ type KeysetChange struct {
 }
 
 // RotateKeyset adds a new primary key to the configured keyset; the old keys stay for decryption.
+// An empty keyset is secrets.ErrNoKeyset.
 func RotateKeyset(current string) (KeysetChange, error) {
 	return changeKeyset(current, secrets.Rotate,
 		"new keyset on stdout: set it as SPHERICON_ENCRYPTION_KEY on every replica and restart; the old keys stay for decryption.\nThen run `sphericon encryption-key reencrypt`.\n")
 }
 
-// RetireKeyset drops every key but the primary from the configured keyset.
+// RetireKeyset drops every key but the primary from the configured keyset. An empty keyset is
+// secrets.ErrNoKeyset.
 func RetireKeyset(current string) (KeysetChange, error) {
 	return changeKeyset(current, secrets.Retire,
 		"retired keyset on stdout. Run it only after `sphericon encryption-key reencrypt` reported no rewritten and no raced value, and keep the old keyset as long as you keep a backup taken before the re-encryption.\n")
 }
 
 func changeKeyset(current string, apply func(string) (string, error), next string) (KeysetChange, error) {
-	if current == "" {
-		return KeysetChange{}, ErrNoKeyset
-	}
 	keyset, err := apply(current)
 	if err != nil {
 		return KeysetChange{}, err

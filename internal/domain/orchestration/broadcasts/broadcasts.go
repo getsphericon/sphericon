@@ -63,6 +63,12 @@ var (
 // welcome emails (the same isolation jobs.QueueWebhooks gives outbound webhooks).
 const Queue = "broadcasts"
 
+// RecipientAttempts is how many attempts a recipient's send job is given: the last failed one
+// gives the recipient up (Delivery.DeliverRecipient), and its failure stays on the recipient's
+// row. A hard bounce does not recover, so a runner's default retry budget would only hold the
+// Broadcast in sending; a runner queues each recipient's job with this many attempts.
+const RecipientAttempts = 3
+
 // SendArgs is the fan-out (plan) job payload: which Broadcast to dispatch. The worker plans
 // the audience and queues one job per recipient, so no single job carries the whole send.
 type SendArgs struct {

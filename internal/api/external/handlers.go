@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -79,16 +80,9 @@ type Handlers struct {
 	// tokens mints the first token of the Instance by its bootstrap token.
 	tokens *apitokens.Module
 	audit  *auditlog.Log
-	export ExportStreams
+	export *exportstream.Streams
 	// unsubscribe records an opt-out (a use case, ADR 0102).
 	unsubscribe *unsubscriberecording.UseCase
-}
-
-// ExportStreams is the license seam of the Enterprise Export streams (ADR 0045),
-// implemented by ee/domain/insights/erasures. Core serves the streams itself (internal/domain/insights/exportstream) and
-// asks only whether the `export` feature is licensed: without it every stream answers 404.
-type ExportStreams interface {
-	Licensed() bool
 }
 
 // Deps is everything the /api handlers are built from. The domain modules are
@@ -128,7 +122,8 @@ type Deps struct {
 	// Tokens mints the first token of the Instance by its bootstrap token (apitokens.Module).
 	Tokens *apitokens.Module
 	Audit  *auditlog.Log
-	Export ExportStreams
+	// Export serves the Export streams behind their licenses (ADR 0045).
+	Export *exportstream.Streams
 	// Clock is the Instance clock (app.Clock) the handlers read, and the security handler checks a
 	// Connection's Two-factor requirement against. Required.
 	Clock func() time.Time

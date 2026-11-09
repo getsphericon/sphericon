@@ -4,18 +4,21 @@
 //
 // It is the part of outboundmessages that holds the raw client: an open or a click token names an
 // Outbound message, and a short link's token a tracked link, before any scope exists, so the
-// Workspace is read off that row (docs/architecture/workspace-scoping.md, Workspace scoping).
+// Workspace is read off that row (docs/architecture/workspace-scoping.md, Workspace scoping). The
+// message's Contact is read through its owner, contacts, in that Workspace's scope.
 package engagement
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -48,14 +51,16 @@ type Hit struct {
 type Recorder struct {
 	client   *ent.Client
 	bus      *events.Bus
+	contacts *contacts.Module
 	tracker  *messagetoken.Tracker
 	detector *privaterelayranges.Detector
 	now      func() time.Time
 }
 
-// New builds the Recorder. now is the Instance clock a hit is observed at.
-func New(client *ent.Client, bus *events.Bus, tracker *messagetoken.Tracker, detector *privaterelayranges.Detector, now func() time.Time) *Recorder {
-	return &Recorder{client: client, bus: bus, tracker: tracker, detector: detector, now: now}
+// New builds the Recorder. people reads the Contact a message went to; now is the Instance clock a
+// hit is observed at.
+func New(client *ent.Client, bus *events.Bus, people *contacts.Module, tracker *messagetoken.Tracker, detector *privaterelayranges.Detector, now func() time.Time) *Recorder {
+	return &Recorder{client: client, bus: bus, contacts: people, tracker: tracker, detector: detector, now: now}
 }
 
 // Open records an open of the message the token names. Every open is an Event of its own: a
@@ -104,10 +109,12 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 }
 
 // record publishes the Event eventOf builds for a hit on the message. A hit on a Tracking host
-// is refused unless the message is that host's Workspace's. A message whose Contact is gone
-// (erased), or whose address was cleared, records nothing silently; a read that fails for any
-// other reason, or a failed publish, records nothing and is logged, since a tracked link never
-// refuses its recipient (ADR 0025).
+// is refused unless the message is that host's Workspace's: a message that is gone, or another
+// Workspace's, is ErrNotFound, and a read that fails cannot tell, so its error is returned: the
+// driver logs it, answering an open its pixel and a click a 500 (ADR 0038). A message whose Contact is gone (erased), or whose
+// address was cleared, records nothing silently; once the hit's Workspace is known, a read that
+// fails for any other reason, or a failed publish, records nothing and is logged, since a tracked
+// link never refuses its recipient (ADR 0025).
 func (r *Recorder) record(ctx context.Context, messageID int64, hit Hit, eventOf func(e engaged, machine bool, at time.Time) events.DomainEvent) error {
 	var (
 		msg *ent.OutboundMessage
@@ -115,7 +122,12 @@ func (r *Recorder) record(ctx context.Context, messageID int64, hit Hit, eventOf
 	)
 	if hit.Host != 0 {
 		msg, err = r.client.OutboundMessage.Get(ctx, messageID)
-		if err != nil || msg.WorkspaceID != hit.Host {
+		switch {
+		case ent.IsNotFound(err):
+			return ErrNotFound
+		case err != nil:
+			return fmt.Errorf("engagement: read message %d: %w", messageID, err)
+		case msg.WorkspaceID != hit.Host:
 			return ErrNotFound
 		}
 	}
@@ -124,7 +136,9 @@ func (r *Recorder) record(ctx context.Context, messageID int64, hit Hit, eventOf
 	}
 	if msg == nil {
 		if msg, err = r.client.OutboundMessage.Get(ctx, messageID); err != nil {
-			logLookup(ctx, messageID, err)
+			if !ent.IsNotFound(err) {
+				logLookup(ctx, messageID, err)
+			}
 			return nil
 		}
 	}
@@ -156,19 +170,20 @@ func (r *Recorder) engagedOf(ctx context.Context, msg *ent.OutboundMessage) (eng
 		}
 		return engaged{msg: msg, email: msg.Destination}, true
 	}
-	c, err := r.client.Scoped(msg.WorkspaceID).Contact().Get(ctx, *msg.ContactID)
+	c, err := r.contacts.Get(ctx, r.client.Scoped(msg.WorkspaceID), *msg.ContactID)
 	if err != nil {
-		logLookup(ctx, msg.ID, err)
+		if !errors.Is(err, contacts.ErrNotFound) {
+			logLookup(ctx, msg.ID, err)
+		}
 		return engaged{}, false
 	}
 	return engaged{msg: msg, contact: c, email: lo.FromPtr(c.Email)}, true
 }
 
-// logLookup logs a failed lookup of a hit's message or Contact, unless the row is simply gone.
+// logLookup logs a failed lookup of a hit's message or Contact; a row that is simply gone is no
+// failure, and its caller does not log it.
 func logLookup(ctx context.Context, messageID int64, err error) {
-	if !ent.IsNotFound(err) {
-		logging.FromContext(ctx).Error("engagement: lookup failed", "message_id", messageID, "err", err)
-	}
+	logging.FromContext(ctx).Error("engagement: lookup failed", "message_id", messageID, "err", err)
 }
 
 func (e engaged) contactID() int64 {

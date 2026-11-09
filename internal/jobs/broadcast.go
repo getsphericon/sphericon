@@ -18,11 +18,6 @@ import (
 // batches rather than one giant statement.
 const recipientInsertChunk = 1000
 
-// recipientMaxAttempts caps per-recipient send retries. A hard bounce won't
-// recover, so the default 25 is wrong here; the failed recipient row records
-// the last error.
-const recipientMaxAttempts = 3
-
 // SendRecipientArgs is one per-recipient send. BroadcastID rides along so the
 // worker can finalize without an extra lookup.
 type SendRecipientArgs struct {
@@ -63,7 +58,9 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[broadcast
 	if err != nil {
 		return err
 	}
-	return riverResult(w.del.RunQueued(ctx, s, job.Args, riverSends{rc: river.ClientFromContext[*sql.Tx](ctx), workspaceID: s.WorkspaceID()}))
+	sched := riverSends{rc: river.ClientFromContext[*sql.Tx](ctx), workspaceID: s.WorkspaceID()}
+	out := w.del.RunQueued(ctx, s, job.Args, sched)
+	return riverResult(out)
 }
 
 // riverSends is the river adapter of the module's scheduling seam: one recipient job per send,
@@ -81,7 +78,7 @@ func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []bro
 			// A plan job retried after inserting some chunks plans the same recipients again:
 			// river refuses a second job with the same args while the first is in any state
 			// but cancelled or discarded, so each recipient keeps one job.
-			opts := &river.InsertOpts{Queue: broadcasts.Queue, MaxAttempts: recipientMaxAttempts, UniqueOpts: river.UniqueOpts{ByArgs: true}}
+			opts := &river.InsertOpts{Queue: broadcasts.Queue, MaxAttempts: broadcasts.RecipientAttempts, UniqueOpts: river.UniqueOpts{ByArgs: true}}
 			if !send.At.IsZero() {
 				opts.ScheduledAt = send.At
 			}
@@ -121,7 +118,8 @@ func (w *SendRecipientWorker) Work(ctx context.Context, job *river.Job[SendRecip
 		return err // no such recipient: erased with its Contact after the job was queued
 	}
 	attempt := broadcasts.Attempt{Number: job.Attempt, Limit: job.MaxAttempts}
-	return riverResult(w.del.DeliverRecipient(ctx, s, job.Args.RecipientID, attempt))
+	out := w.del.DeliverRecipient(ctx, s, job.Args.RecipientID, attempt)
+	return riverResult(out)
 }
 
 // riverResult is the module's outcome as river reads it: a wait is a snooze, which spends no

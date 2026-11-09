@@ -6,7 +6,6 @@ import (
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 )
 
 // StaffInstanceSetDefaultSendCap sets the Send cap of new Workspaces as the signed-in Staff member
@@ -32,17 +31,13 @@ func (h *Handlers) StaffInstanceClearDefaultSendCap(ctx context.Context) (*staff
 
 // StaffInstanceListAuditEntries is a page of the Instance audit log (ADR 0070), newest first.
 func (h *Handlers) StaffInstanceListAuditEntries(ctx context.Context, params staffapi.StaffInstanceListAuditEntriesParams) (*staffapi.StaffInstanceAuditEntryList, error) {
-	cursor, err := auditlog.Cursor(params.Cursor.Or(""))
+	page, err := h.instance.AuditEntries(ctx, params.Cursor.Or(""), int(params.Limit.Value))
 	if err != nil {
 		return nil, err
 	}
-	page, err := h.instance.AuditEntries(ctx, cursor, int(params.Limit.Value))
-	if err != nil {
-		return nil, err
-	}
-	out := &staffapi.StaffInstanceAuditEntryList{Items: mapper.InstanceAuditEntriesToResources(page.Items)}
-	if page.Next > 0 {
-		out.NextCursor = staffapi.NewOptNilString(auditlog.NextCursor(page.Next))
+	out := &staffapi.StaffInstanceAuditEntryList{Items: mapper.InstanceAuditEntriesToResources(page.Entries)}
+	if page.Next != "" {
+		out.NextCursor = staffapi.NewOptNilString(page.Next)
 	}
 	return out, nil
 }

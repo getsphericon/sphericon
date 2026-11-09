@@ -46,3 +46,16 @@ func TestCreateOwnerOfATakenEmailIsRefused(t *testing.T) {
 	require.ErrorIs(t, err, users.ErrEmailTaken)
 	assert.Empty(t, password)
 }
+
+func TestCreateOwnerRefusesANameEmptyToTheEye(t *testing.T) {
+	env := testhelper.Setup(t)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+
+	password, err := env.SignUp.CreateOwner(t.Context(), "ada@example.com", "   ")
+
+	require.ErrorIs(t, err, users.ErrNameInvalid)
+	assert.Empty(t, password)
+	taken, err := acc.EmailTaken(t.Context(), "ada@example.com")
+	require.NoError(t, err)
+	assert.False(t, taken, "a refusal creates no User")
+}

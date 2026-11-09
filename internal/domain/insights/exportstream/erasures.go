@@ -47,7 +47,10 @@ func erasureRow(e *ent.Erasure) ErasureRow {
 }
 
 // Erasures serves a page of the Workspace's Erasures stream.
-func Erasures(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+func (st *Streams) Erasures(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+	if !st.offered() {
+		return Page{}, ErrNotOffered
+	}
 	return Read(token, limit, func(after Cursor, n int) ([]ErasureRow, error) {
 		rows, err := s.Erasure().Query().
 			Where(predicate.Erasure(Seek(after))).

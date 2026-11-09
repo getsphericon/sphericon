@@ -72,9 +72,15 @@ func New(d Deps) http.Handler {
 	appURL := strings.TrimRight(d.AppURL, "/")
 
 	mux.HandleFunc("GET /e/o/{token}", func(w http.ResponseWriter, r *http.Request) {
-		if err := d.Engagement.Open(r.Context(), r.PathValue("token"), hit(r, d.Limiter)); errors.Is(err, engagement.ErrNotFound) {
+		err := d.Engagement.Open(r.Context(), r.PathValue("token"), hit(r, d.Limiter))
+		switch {
+		case errors.Is(err, engagement.ErrNotFound):
 			http.NotFound(w, r)
 			return
+		case err != nil && !errors.Is(err, engagement.ErrInvalidToken):
+			// The pixel is answered all the same: an open the Recorder could not check records
+			// nothing, and the image shows nothing of the message.
+			logging.FromContext(r.Context()).Error("tracking: open lookup failed", "err", err)
 		}
 		w.Header().Set("Content-Type", "image/gif")
 		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
@@ -86,8 +92,11 @@ func New(d Deps) http.Handler {
 		switch {
 		case errors.Is(err, engagement.ErrInvalidToken):
 			http.Error(w, "invalid token", http.StatusBadRequest)
-		case err != nil:
+		case errors.Is(err, engagement.ErrNotFound):
 			http.NotFound(w, r)
+		case err != nil:
+			logging.FromContext(r.Context()).Error("tracking: click lookup failed", "err", err)
+			http.Error(w, "lookup failed", http.StatusInternalServerError)
 		default:
 			http.Redirect(w, r, dest, http.StatusFound)
 		}

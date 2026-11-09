@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 )
 
 // eventsCommand is `sphericon events`: `list` inspects the publication metadata one Workspace or
@@ -34,7 +35,7 @@ func eventsCommand(d deps) *cli.Command {
 				&cli.IntFlag{Name: "limit", Value: events.DefaultJournalLimit, Usage: "maximum entries in newest-first output; truncated reports omitted matches"},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
-				bus, err := c.Bus()
+				history, err := c.EventHistory()
 				if err != nil {
 					return err
 				}
@@ -42,12 +43,8 @@ func eventsCommand(d deps) *cli.Command {
 					Name: cmd.String("name"), EventID: cmd.String("event-id"),
 					From: cmd.Timestamp("from"), Before: cmd.Timestamp("before"), Limit: cmd.Int("limit"),
 				}
-				var page events.JournalPage
-				if cmd.Bool("instance") {
-					page, err = bus.InstanceJournal(ctx, query)
-				} else {
-					page, err = bus.WorkspaceJournal(ctx, cmd.String("workspace"), query)
-				}
+				of := eventhistory.Of{Instance: cmd.Bool("instance"), Workspace: cmd.String("workspace")}
+				page, err := history.List(ctx, of, query)
 				if err != nil {
 					return err
 				}
@@ -74,11 +71,11 @@ func eventsCommand(d deps) *cli.Command {
 				if err != nil {
 					return fmt.Errorf("--before: %w", err)
 				}
-				bus, err := c.Bus()
+				history, err := c.EventHistory()
 				if err != nil {
 					return err
 				}
-				result, err := bus.Replay(ctx, cmd.String("workspace"), events.ReplayRequest{
+				result, err := history.Replay(ctx, cmd.String("workspace"), events.ReplayRequest{
 					Consumer: cmd.String("consumer"), From: from, Before: before,
 					Limit: cmd.Int("limit"), DryRun: cmd.Bool("dry-run"),
 				})

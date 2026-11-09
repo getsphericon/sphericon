@@ -67,9 +67,13 @@ func auditRow(e *ent.AuditEntry) AuditRow {
 	}
 }
 
-// Audit serves a page of the Workspace's Audit stream. The caller has checked the `audit`
-// license, which is an Enterprise feature of the entries themselves.
-func Audit(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+// Audit serves a page of the Workspace's Audit stream. It needs the `audit` license as well as
+// `export`, since the entries themselves are an Enterprise feature: without it the stream is
+// ErrNotOffered, like the Audit log read is without its license.
+func (st *Streams) Audit(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+	if !st.auditOffered() {
+		return Page{}, ErrNotOffered
+	}
 	return Read(token, limit, func(after Cursor, n int) ([]AuditRow, error) {
 		rows, err := s.AuditEntry().Query().
 			Where(predicate.AuditEntry(Seek(after))).

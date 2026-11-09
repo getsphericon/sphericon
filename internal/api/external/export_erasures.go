@@ -5,18 +5,13 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 )
 
 // ExportErasures serves the Erasures stream (ADR 0045): NDJSON rows, the next cursor in the
 // X-Next-Cursor header, behind the same gate as every Export stream.
 func (h *Handlers) ExportErasures(ctx context.Context, params externalapi.ExportErasuresParams) (*externalapi.ExportErasuresOKHeaders, error) {
-	if !h.exportLicensed() {
-		return nil, exportstream.ErrNotOffered
-	}
-
 	limit := int(params.Limit.Value)
-	page, err := exportstream.Erasures(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
+	page, err := h.export.Erasures(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
 	if err != nil {
 		return nil, err
 	}

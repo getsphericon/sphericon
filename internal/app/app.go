@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
@@ -432,10 +433,15 @@ func (a *App) Memberships() (*memberships.Module, error) {
 }
 
 // Bus is the event bus from the DI container, for harnesses that must change data
-// inside a transaction (events.Bus.WithinScopedTx) like the product's own write paths, and for
-// the command that replays a report consumer (events.Bus.Replay).
+// inside a transaction (events.Bus.WithinScopedTx) like the product's own write paths.
 func (a *App) Bus() (*events.Bus, error) {
 	return do.Invoke[*events.Bus](a.injector)
+}
+
+// EventHistory is the Event history use case from the DI container, which `sphericon events`
+// lists and replays through.
+func (a *App) EventHistory() (*eventhistory.UseCase, error) {
+	return do.Invoke[*eventhistory.UseCase](a.injector)
 }
 
 func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {

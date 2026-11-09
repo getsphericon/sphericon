@@ -43,7 +43,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/server/spa"
-	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 )
 
 // New composes the HTTP handler: the ogen servers of the surfaces, the drivers of the public
@@ -53,10 +52,10 @@ import (
 // (SchemaGuard). limiter is the process's request budgets, shared with the internal listener.
 // links serves the tracked links (`/e/`, `/c/`) and hooks the Ingest hook (`/hooks/`); the
 // container builds them (internal/api/tracking, internal/api/hooks), and domains is the
-// Instance-wide Tracking host index the host gate reads (ADR 0038). oauthServer is the OAuth
-// server's protocol endpoints, which the container builds over the API tokens module.
-func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, domains *trackingdomains.Module, limiter *ratelimit.Limiter, links, hooks, external, mcp, staff http.Handler, oauthServer *oauth.Server) (http.Handler, error) {
-	bus := site.Bus
+// Instance-wide Tracking host index the host gate reads (ADR 0038). collect is the handlers of the
+// Collect API, which the container builds over the use cases they call (ADR 0111). oauthServer is
+// the OAuth server's protocol endpoints, which the container builds over the API tokens module.
+func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, domains *trackingdomains.Module, limiter *ratelimit.Limiter, collect *apicollect.Handlers, links, hooks, external, mcp, staff http.Handler, oauthServer *oauth.Server) (http.Handler, error) {
 	mux := http.NewServeMux()
 
 	// Login and logout are /site operations (ADR 0020), and the login operation is
@@ -115,7 +114,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(
-		apicollect.NewHandlers(bus, site.Bindings, visitoridentification.New(bus, site.Clock), site.Clock),
+		collect,
 		apiauth.NewCollectSecurityHandler(client),
 		collectapi.WithPathPrefix(collectPrefix),
 		collectapi.WithErrorHandler(problem.ErrorHandler),
