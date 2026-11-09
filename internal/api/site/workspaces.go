@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 )
 
@@ -165,9 +166,9 @@ func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.S
 
 // deletedWorkspaceResource is a Workspace in its deletion window with the date its data
 // will be erased.
-func deletedWorkspaceResource(w *ent.Workspace, onlyOwner bool) siteapi.SiteDeletedWorkspaceResource {
-	res := mapper.DeletedWorkspaceToResource(w)
-	res.OnlyOwner = onlyOwner
+func deletedWorkspaceResource(d workspacedeletion.DeletedWorkspace) siteapi.SiteDeletedWorkspaceResource {
+	res := mapper.DeletedWorkspaceToResource(d.Workspace)
+	res.OnlyOwner = d.OnlyOwner
 	return res
 }
 
@@ -182,27 +183,18 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	sole, err := h.deletion.SoleOwned(ctx, lo.Map(items, func(m *ent.Membership, _ int) int64 { return m.WorkspaceID }))
-	if err != nil {
-		return nil, err
-	}
-	return lo.Map(items, func(m *ent.Membership, _ int) siteapi.SiteDeletedWorkspaceResource {
-		return deletedWorkspaceResource(m.Edges.Workspace, sole[m.WorkspaceID])
+	return lo.Map(items, func(d workspacedeletion.DeletedWorkspace, _ int) siteapi.SiteDeletedWorkspaceResource {
+		return deletedWorkspaceResource(d)
 	}), nil
 }
 
 // SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
 func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, _ siteapi.SiteWorkspacesDeleteParams) (*siteapi.SiteDeletedWorkspaceResource, error) {
-	s := workspaceScope(ctx)
-	w, err := h.workspaces.Delete(ctx, s, h.actor(ctx), req.Name)
+	d, err := h.deletion.Delete(ctx, workspaceScope(ctx), h.actor(ctx), req.Name)
 	if err != nil {
 		return nil, err
 	}
-	sole, err := h.deletion.SoleOwned(ctx, []int64{w.ID})
-	if err != nil {
-		return nil, err
-	}
-	r := deletedWorkspaceResource(w, sole[w.ID])
+	r := deletedWorkspaceResource(d)
 	return &r, nil
 }
 

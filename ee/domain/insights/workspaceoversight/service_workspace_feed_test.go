@@ -240,7 +240,8 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
 	now := time.Now().UTC().Truncate(time.Second)
-	deletion := workspacedeletion.New(h.env.DB, h.env.Bus, func() time.Time { return now })
+	clock := func() time.Time { return now }
+	deletion := workspacedeletion.New(h.env.DB, h.env.Bus, workspaces.New(h.env.DB, h.env.Bus, clock), clock)
 	actor := events.Actor{Kind: events.ActorUser}
 	initech := h.env.DB.Scoped(fixtures.InitechID)
 	ws, err := initech.Workspace(t.Context())

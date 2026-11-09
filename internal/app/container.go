@@ -689,7 +689,7 @@ var identityPackage = do.Package(
 	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; its
 	// erase removes every Workspace-owned table's rows itself, the Enterprise Edition's too (ADR 0110).
 	do.Lazy(func(i do.Injector) (*workspacedeletion.UseCase, error) {
-		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*workspaces.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
 	// client, with its Release check (a daily job, the line at start and the banner of an owner)
