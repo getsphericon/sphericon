@@ -12,7 +12,7 @@
 // transaction, where the log row would be a separate statement that a crash loses.
 // The hook reads the Tracking domains a change touches by id, across Workspaces for a bulk
 // write, which is why this package is on the closed list of raw-client packages in
-// docs/architecture.md.
+// docs/architecture/workspace-scoping.md.
 package trackinghostchanges
 
 import (

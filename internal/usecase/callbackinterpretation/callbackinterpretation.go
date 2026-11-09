@@ -103,7 +103,7 @@ type Integrations interface {
 // UseCase interprets the facts of every Ingest hook request.
 type UseCase struct {
 	// client finds the Integration an ingest key names and scopes to its Workspace, before any
-	// scope exists (docs/architecture.md, Workspace scoping).
+	// scope exists (docs/architecture/workspace-scoping.md, Workspace scoping).
 	client *ent.Client
 	bus    *events.Bus
 	integ  Integrations

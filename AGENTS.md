@@ -102,9 +102,11 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
 
 The rules of the code are in `docs/`, read before you write or review:
 
-- `docs/architecture.md`, before you touch code that queries the database, builds a `*ent.Scoped` or adds
-  a package that needs the ent client (section "Workspace scoping", the two closed lists), and for the
-  API surfaces, sign-in, the Enterprise Edition, async work and email.
+- `docs/architecture.md`: the system map and links to implementation details by task.
+- `docs/architecture/workspace-scoping.md`, before you query the database, build a `*ent.Scoped` or
+  add a package that needs the ent client: the two closed lists of scoped-client construction and raw-client holders.
+- `docs/architecture/modules.md` and `docs/architecture/use-cases.md`, before you place or move a
+  module or operation: dependency direction, ownership and coordination.
 - `docs/standards/review-rules.md`: the numbered rules every change is checked against; a check's message names
   its number.
 - `CODING_STANDARDS.md`: tests, plain-table schema, no custom CSS, theming, lint.

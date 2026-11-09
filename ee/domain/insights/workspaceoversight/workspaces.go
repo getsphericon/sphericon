@@ -101,7 +101,7 @@ func publicIDsOf[T any](ctx context.Context, m *Module, items []T, key func(T) i
 }
 
 // scopeOver loads the Workspace row and scopes over it: the one place the console and the
-// service endpoints turn a Workspace id into a scope (docs/architecture.md, scope list item 7).
+// service endpoints turn a Workspace id into a scope (docs/architecture/workspace-scoping.md, scope list item 7).
 // ErrWorkspaceNotFound for an unknown Workspace.
 func (m *Module) scopeOver(ctx context.Context, publicID string) (*ent.Scoped, error) {
 	w, err := m.workspace(ctx, publicID)

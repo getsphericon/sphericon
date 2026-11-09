@@ -4,7 +4,7 @@
 //
 // It is the part of outboundmessages that holds the raw client: an open or a click token names an
 // Outbound message, and a short link's token a tracked link, before any scope exists, so the
-// Workspace is read off that row (docs/architecture.md, Workspace scoping).
+// Workspace is read off that row (docs/architecture/workspace-scoping.md, Workspace scoping).
 package engagement
 
 import (

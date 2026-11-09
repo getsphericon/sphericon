@@ -6,7 +6,7 @@
 //
 // The User belongs to no Workspace, so there is no *ent.Scoped to take: this use case holds the
 // raw *ent.Client of its transaction (the User is reached by id), one of the closed list of
-// docs/architecture.md (Workspace scoping).
+// docs/architecture/workspace-scoping.md (Workspace scoping).
 package userdeletion
 
 import (

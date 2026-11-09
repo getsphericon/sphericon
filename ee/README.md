@@ -27,7 +27,7 @@ advanced-retention control (`ee/usecase/auditlogretention`, `retention` feature)
 
 ## Layout
 
-The same tiers as the core (ADR 0102, `docs/architecture.md`, "Enterprise Edition layout"): domain
+The same tiers as the core (ADR 0102, `docs/architecture/enterprise.md`, "Enterprise Edition layout"): domain
 modules in `ee/domain/<context>/<module>`, in the core's contexts, use cases in `ee/usecase/<name>`,
 the Enterprise surfaces in `ee/api`, the Edition that assembles them in `ee/ee.go`, and the License
 key's gate in `ee/licensekey`. `easement.yml` checks the boundaries: the core never imports `ee/`.

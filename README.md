@@ -3,7 +3,8 @@
 <p align="center">
   Open-core marketing automation you can run yourself.<br />
   <a href="https://getsphericon.com/docs/">Documentation</a> ·
-  <a href="https://getsphericon.com/docs/self-hosting">Self-hosting</a>
+  <a href="https://getsphericon.com/docs/self-hosting">Self-hosting</a> ·
+  <a href="ROADMAP.md">Roadmap</a>
 </p>
 
 <p align="center">

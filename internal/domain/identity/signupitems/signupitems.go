@@ -5,7 +5,7 @@
 // current version, and the current version of one item's document.
 //
 // The items belong to the Instance, not to a Workspace, so the package works on the raw
-// *ent.Client (it is in the closed list of docs/architecture.md): it writes the Sign-up item,
+// *ent.Client (it is in the closed list of docs/architecture/workspace-scoping.md): it writes the Sign-up item,
 // Legal document draft and Legal document version tables and nothing else, and reads the Staff
 // member who published a version. Publishing is recorded on the version itself (who and when);
 // the per-Workspace Audit log is not used.

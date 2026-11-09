@@ -75,5 +75,5 @@ nothing that the following write needs.
   scope. The Integration and Sending domain deletions' readers take it.
 - The race above gets one test on a real commit (`testhelper.RealDB`). It shows that the promotion
   waits for the deletion.
-- The Workspace lock paragraph of `docs/architecture.md` lists the type instead of the writes, with
+- The Workspace lock paragraph of `docs/architecture/lifecycles.md` lists the type instead of the writes, with
   the code.

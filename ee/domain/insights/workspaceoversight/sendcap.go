@@ -19,7 +19,7 @@ type SendCapChange struct {
 
 // sentLast24h counts the messages the Workspace w sent over the last 24 hours, the figure the
 // console shows next to its Send cap, through a scope over w after its row is loaded
-// (docs/architecture.md, scope list item 7) and the same read as /site's (providerlimit).
+// (docs/architecture/workspace-scoping.md, scope list item 7) and the same read as /site's (providerlimit).
 func (m *Module) sentLast24h(ctx context.Context, w *ent.Workspace) (int, error) {
 	return providerlimit.SentLast24h(ctx, m.ent.Scoped(w.ID), m.now())
 }

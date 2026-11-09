@@ -42,7 +42,7 @@ var (
 // endpoint's operations, and mints the first token of an Instance by its bootstrap token
 // (Bootstrap). A code or a refresh token is a secret that names its grant before any Workspace
 // scope exists, so the module holds the raw *ent.Client (one of the closed list of
-// docs/architecture.md, Workspace scoping): it opens the exchange's transaction and scopes the
+// docs/architecture/workspace-scoping.md, Workspace scoping): it opens the exchange's transaction and scopes the
 // Connection's writes to the Workspace the claimed grant names.
 type Module struct {
 	ent        *ent.Client

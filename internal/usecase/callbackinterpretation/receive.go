@@ -95,7 +95,7 @@ func (m *UseCase) Receive(ctx context.Context, in Callback) error {
 	}
 
 	// The Workspace comes from the ingest key, a secret of the Integration's (list item 6 of
-	// docs/architecture.md, Workspace scoping).
+	// docs/architecture/workspace-scoping.md, Workspace scoping).
 	s := events.Ingest(m.client.Scoped(row.WorkspaceID))
 	if err := m.Interpret(ctx, s, InterpretInput{Integration: row, Preset: p.Name(), Result: res}); err != nil {
 		log.Error("ingest hook: interpreting the facts failed", "integration_id", row.ID, "err", err)

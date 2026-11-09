@@ -16,7 +16,7 @@ import (
 // Workspace: every version, not only the latest, since an Enrollment still stands on an old one;
 // each field is sealed on its own, and a version is swapped whole, as the Secret re-encryption
 // sweeps them (secrets.Cipher.Reencrypt). They read and swap on the raw client, and use it for
-// nothing else (docs/architecture.md, Workspace scoping).
+// nothing else (docs/architecture/workspace-scoping.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	return []secrets.Sweep{{
 		Column: "automation_versions.steps",

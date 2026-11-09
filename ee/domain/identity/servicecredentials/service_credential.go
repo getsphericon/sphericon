@@ -4,7 +4,7 @@
 // `sphericon service-credential` commands print. Its scope vocabulary (Scope) is generated from
 // the service contract (scopes_gen.go), so the module never imports the surface's generated code.
 // A credential belongs to no Workspace, so the module works on the raw *ent.Client (the closed
-// list of docs/architecture.md). Every entry point checks the `staff` license feature.
+// list of docs/architecture/workspace-scoping.md). Every entry point checks the `staff` license feature.
 //
 // Governed by ee/LICENSE, not the AGPL.
 package servicecredentials

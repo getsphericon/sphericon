@@ -85,5 +85,5 @@ removed. Its deletion cycle ends in a tombstone (`workspaces.TombstoneIn`, ADR 0
 - `signupitems` answers a taken key with `Conflict`, like the others.
 - `automations`' enrollment, `confirmations`, `channelstop` and `unsubscriberecording` write their
   idempotent rows with `ON CONFLICT DO NOTHING`.
-- Review rules 8 and 15 and the "Only the owner writes a table" paragraph of `docs/architecture.md`
+- Review rules 8 and 15 and the "Only the owner writes a table" paragraph of `docs/architecture/modules.md`
   change with the code, not before it.

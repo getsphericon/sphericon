@@ -69,7 +69,7 @@ Workspace.
   one transaction, and is no longer released.
 - **A module's own follow-up work is not an event.** A job a module queues for its own rows after a
   write (a saved Integration's quota lookup) is queued in the write's transaction
-  (`events.Bus.WithinScopedEnqueueTx`), as `docs/architecture.md` (Async) requires, not published.
+  (`events.Bus.WithinScopedEnqueueTx`), as `docs/architecture/events-and-jobs.md` (Async) requires, not published.
 
 ## Considered Options
 
