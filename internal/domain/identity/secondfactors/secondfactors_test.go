@@ -166,11 +166,11 @@ func TestTheUsersOwnStepsAreRefusedWithoutTheirPassword(t *testing.T) {
 
 // ADR 0048: a User with no password proves their identity with a fresh session proof instead.
 func TestAUserWithNoPasswordEnrollsOnlyWithAFreshSessionProof(t *testing.T) {
-	env, _ := setup(t)
+	env, c := setup(t)
 	pia := env.DB.User.GetX(t.Context(), fixtures.ProviderOnlyPiaID)
 
 	_, stale := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{})
-	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{ProviderLoginAt: time.Now()})
+	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{ProviderLoginAt: c.now()})
 
 	require.ErrorIs(t, stale, users.ErrIdentityProofRequired)
 	require.NoError(t, err)
