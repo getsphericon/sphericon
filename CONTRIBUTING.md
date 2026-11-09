@@ -160,8 +160,9 @@ Then `/mcp` in Claude Code shows `sphericon` connected, and "list the Brightpath
 `contacts_list`; "create a contact dev@brightpath.example" calls `contacts_create`. `mise run
 db:seed` removes what you wrote.
 
-The Staff console is at `https://sphericon.localhost/console` (Enterprise, license feature
-`staff`: without a license key it answers 404). Sign-in needs a password and a TOTP code:
+The Staff console is at `https://sphericon.localhost/console`. It runs on every Instance without a
+license key (ADR 0063) once `SPHERICON_STAFF_JWT_SECRET` is set, as the dev stack sets it; only its
+Enterprise sections need the license feature `staff`. Sign-in needs a password and a TOTP code:
 
 | Staff member                 | Password   | TOTP                            |
 | ---------------------------- | ---------- | ------------------------------- |

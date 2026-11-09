@@ -1,8 +1,10 @@
 # Email verification gates access
 
 > **Amended by [[0060-an-instance-runs-in-one-mode]]:** `SPHERICON_REQUIRE_EMAIL_VERIFICATION` is gone.
-> The gate is on in `saas` and not required in `selfhosted`, where the only sign-up is the first
-> Owner's and an Invitation link proves its address. The text below is the decision as first taken.
+> The gate is on in `saas` and not required in `selfhosted`. ADR 0060 also closed `selfhosted` sign-up
+> after the first Owner; [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]] reopened
+> it, so a `selfhosted` sign-up creates a Verified User without proving the address. The text below is
+> the decision as first taken.
 
 A Sign-up takes a name, an email and a password. It creates an Unverified User that cannot
 log in and owns no Workspace until its email is proven by a link sent to it. The password given
