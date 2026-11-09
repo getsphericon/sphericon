@@ -8,6 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/getsphericon/sphericon/tools/analyzers/domainwriter"
+	"github.com/getsphericon/sphericon/tools/analyzers/driverops"
 	"github.com/getsphericon/sphericon/tools/analyzers/entrywrite"
 	"github.com/getsphericon/sphericon/tools/analyzers/handmapper"
 	"github.com/getsphericon/sphericon/tools/analyzers/noprint"
@@ -31,7 +32,7 @@ func New(any) (register.LinterPlugin, error) {
 
 // BuildAnalyzers lists the analyzers; add a new one here.
 func (Plugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
-	return []*analysis.Analyzer{noprint.Analyzer, rawsql.Analyzer, handmapper.Analyzer, entrywrite.Analyzer, statemoment.Analyzer, testwrites.Analyzer, usecaseshape.Analyzer, domainwriter.Analyzer}, nil
+	return []*analysis.Analyzer{noprint.Analyzer, rawsql.Analyzer, handmapper.Analyzer, entrywrite.Analyzer, statemoment.Analyzer, testwrites.Analyzer, usecaseshape.Analyzer, domainwriter.Analyzer, driverops.Analyzer}, nil
 }
 
 // GetLoadMode asks for types, which every analyzer here needs.

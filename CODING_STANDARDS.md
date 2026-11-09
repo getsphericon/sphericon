@@ -129,6 +129,18 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   parameter of a function, a method, a function literal or a function type, and a struct field that
   holds one. The fix is a value or an iterator (`iter.Seq2`) the module returns: the command line
   prints a report (`internal/commandline`), and an HTTP handler streams an export.
+- **Rule 5, `driverops`.** A driver function calls one operation of the core (ADR 0111). The drivers
+  are the packages under `internal/api` and `ee/api`, `internal/mcpserver`, `internal/jobs`, `ee/jobs`,
+  `internal/commandline` and `cmd/server`; an operation is a call into a package under
+  `internal/domain`, `ee/domain`, `internal/usecase` or `ee/usecase` that takes a `context.Context`, so
+  reading the actor or the scope and mapping to and from the contract are none. The count follows the
+  function's control flow: one operation on each branch of a `switch` is one per run, while two on
+  one path, or one in a loop, are a finding. A function of the driver package that the driver calls
+  counts its operations at the call site, so a helper hides none, and a function literal (a command's
+  action, a consumer) is a driver function of its own. Test files are not read, and a package whose
+  control-flow graphs are missing fails the run instead of passing unread. The fix is in the core:
+  the composition moves into the domain module that owns its rule, or into a use case when it spans
+  several, and the driver makes that one call.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns
