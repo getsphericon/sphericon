@@ -1,6 +1,6 @@
 // Package smtp implements the SMTP email provider on top of wneessen/go-mail.
-// It shares messaging.BuildMIME with the SES provider so the wire message is
-// identical across providers; only the transport differs.
+// It sends the bytes of messaging.BuildSignedMessage, as the SES provider does, so
+// the wire message is identical across providers; only the transport differs.
 package smtp
 
 import (
@@ -9,12 +9,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/textproto"
 	"slices"
 
 	"github.com/wneessen/go-mail"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -45,7 +47,7 @@ func NewDescriptor(allowPrivate bool) messaging.ProviderDescriptor {
 		Provider: providers.SMTP,
 		Validate: func(raw []byte) error { return validate(raw, allowPrivate) },
 		Build: func(raw []byte, deps messaging.Deps) (any, error) {
-			return build(raw, deps.Signer, allowPrivate)
+			return build(raw, deps.DKIMKeys, allowPrivate)
 		},
 	}
 }
@@ -70,12 +72,12 @@ func validate(raw []byte, allowPrivate bool) error {
 	return nil
 }
 
-func build(raw []byte, signer messaging.Signer, allowPrivate bool) (any, error) {
+func build(raw []byte, keys messaging.DKIMKeys, allowPrivate bool) (any, error) {
 	cfg, err := parse(raw)
 	if err != nil {
 		return nil, err
 	}
-	return &sender{cfg: cfg, signer: signer, allowPrivate: allowPrivate}, nil
+	return &sender{cfg: cfg, keys: keys, allowPrivate: allowPrivate}, nil
 }
 
 func parse(raw []byte) (Config, error) {
@@ -88,7 +90,7 @@ func parse(raw []byte) (Config, error) {
 
 type sender struct {
 	cfg          Config
-	signer       messaging.Signer
+	keys         messaging.DKIMKeys
 	allowPrivate bool
 }
 
@@ -100,7 +102,7 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 	msg.FromName = cmp.Or(msg.FromName, s.cfg.FromName)
 	msg.ReplyTo = cmp.Or(msg.ReplyTo, s.cfg.ReplyTo)
 
-	m, err := messaging.BuildSignedMIME(ctx, msg, s.signer)
+	wire, err := messaging.BuildSignedMessage(ctx, msg, s.keys)
 	if err != nil {
 		return messaging.Receipt{}, err
 	}
@@ -128,15 +130,53 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 	if err != nil {
 		return messaging.Receipt{}, fmt.Errorf("smtp: client: %w", err)
 	}
-	if err := client.DialAndSendWithContext(ctx, m); err != nil {
+	if err := deliver(ctx, client, wire); err != nil {
 		// Only a transient (4xx) reply can mean "too fast"; a permanent one never does.
-		var sendErr *mail.SendError
-		if errors.As(err, &sendErr) && sendErr.IsTemp() {
+		reply, isReply := errors.AsType[*textproto.Error](err)
+		transient := isReply && reply.Code/100 == 4
+		if transient {
 			if busy := messaging.ClassifyReply(err.Error()); busy != nil {
 				return messaging.Receipt{}, fmt.Errorf("%w: %w", busy, err)
 			}
 		}
 		return messaging.Receipt{}, err
 	}
-	return messaging.Receipt{MessageID: m.GetMessageID()}, nil
+	return messaging.Receipt{MessageID: wire.MessageID}, nil
+}
+
+// deliver connects as client is configured to (dialer, TLS policy, auth) and sends the bytes of
+// wire, signed as they are, in one mail transaction. Ending the session (QUIT) is a cleanup step:
+// the server has answered for the message by then, and failing the send over it would send the
+// message again.
+func deliver(ctx context.Context, client *mail.Client, wire messaging.Wire) error {
+	conn, err := client.DialToSMTPClientWithContext(ctx)
+	if err != nil {
+		return fmt.Errorf("smtp: dial: %w", err)
+	}
+	defer func() {
+		quitErr := client.CloseWithSMTPClient(conn)
+		cleanup.Report("end the smtp session", quitErr)
+	}()
+
+	if err := conn.Mail(wire.Sender); err != nil {
+		return fmt.Errorf("smtp: mail from: %w", err)
+	}
+	for _, rcpt := range wire.Recipients {
+		if err := conn.Rcpt(rcpt); err != nil {
+			return fmt.Errorf("smtp: rcpt to: %w", err)
+		}
+	}
+	data, err := conn.Data()
+	if err != nil {
+		return fmt.Errorf("smtp: data: %w", err)
+	}
+	if _, err := data.Write(wire.Bytes); err != nil {
+		return fmt.Errorf("smtp: write message: %w", err)
+	}
+	// The server answers the message itself when its data ends: an accepted or refused message
+	// is known only here.
+	if err := data.Close(); err != nil {
+		return fmt.Errorf("smtp: end data: %w", err)
+	}
+	return nil
 }

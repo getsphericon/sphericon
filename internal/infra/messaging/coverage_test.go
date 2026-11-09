@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/wneessen/go-mail"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -98,53 +96,53 @@ func TestBuildMIMEInvalidAddresses(t *testing.T) {
 	assert.ErrorContains(t, err, "invalid to address")
 }
 
-type failingSigner struct{ err error }
+type failingKeys struct{ err error }
 
-func (f failingSigner) DKIMSigner(context.Context, string) (*mail.DKIMSigner, error) {
+func (f failingKeys) Key(context.Context, string) (*messaging.DKIMKey, error) {
 	return nil, f.err
 }
 
-func TestBuildSignedMIMEPropagatesBuildAndSignerErrors(t *testing.T) {
-	_, err := messaging.BuildSignedMIME(context.Background(),
-		messaging.EmailMessage{From: "bad", To: "a@b.com", Text: "x"}, failingSigner{})
+func TestBuildSignedMessagePropagatesBuildAndKeyErrors(t *testing.T) {
+	_, err := messaging.BuildSignedMessage(context.Background(),
+		messaging.EmailMessage{From: "bad", To: "a@b.com", Text: "x"}, failingKeys{})
 	require.ErrorContains(t, err, "invalid from address")
 
-	boom := errors.New("signer down")
-	_, err = messaging.BuildSignedMIME(context.Background(),
-		messaging.EmailMessage{From: "a@b.com", To: "c@d.com", Text: "x"}, failingSigner{err: boom})
+	boom := errors.New("keys down")
+	_, err = messaging.BuildSignedMessage(context.Background(),
+		messaging.EmailMessage{From: "a@b.com", To: "c@d.com", Text: "x"}, failingKeys{err: boom})
 	assert.ErrorIs(t, err, boom)
 }
 
-func TestDKIMSignerEmptyDomain(t *testing.T) {
+func TestDKIMKeysEmptyDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	dk, err := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), env.Cipher).DKIMSigner(context.Background(), "no-at-sign")
+	dk, err := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher).Key(context.Background(), "no-at-sign")
 	require.NoError(t, err)
 	assert.Nil(t, dk)
 }
 
-func TestDKIMSignerQueryError(t *testing.T) {
+func TestDKIMKeysQueryError(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), env.Cipher).DKIMSigner(ctx, "hi@mail.acme.com")
+	_, err := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher).Key(ctx, "hi@mail.acme.com")
 	assert.Error(t, err)
 }
 
-func TestDKIMSignerBrokenKeyMaterial(t *testing.T) {
+func TestDKIMKeysBrokenKeyMaterial(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	cipher := env.Cipher
 
 	// Ciphertext that does not decrypt under the workspace cipher.
 	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetDkimPrivateKeyEncrypted("not-a-ciphertext").ExecX(ctx)
-	_, err := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@"+fixtures.SendingDomainVerifiedDomain)
+	_, err := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), cipher).Key(ctx, "hi@"+fixtures.SendingDomainVerifiedDomain)
 	require.ErrorContains(t, err, "decrypt dkim key")
 
 	// Decrypts fine but is not a PEM private key.
 	sealed, err := cipher.Encrypt([]byte("definitely not PEM"))
 	require.NoError(t, err)
 	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetDkimPrivateKeyEncrypted(sealed).ExecX(ctx)
-	_, err = messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@"+fixtures.SendingDomainVerifiedDomain)
+	_, err = messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), cipher).Key(ctx, "hi@"+fixtures.SendingDomainVerifiedDomain)
 	assert.ErrorContains(t, err, "parse dkim key")
 }
 

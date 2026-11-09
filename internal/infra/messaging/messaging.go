@@ -13,8 +13,7 @@ package messaging
 import (
 	"cmp"
 	"context"
-
-	"github.com/wneessen/go-mail"
+	"crypto"
 )
 
 // EmailMessage is the channel-specific payload for email sends. HTML is used
@@ -111,15 +110,21 @@ func DeliversOutside(sender EmailSender) bool {
 	return true
 }
 
-// Signer resolves the native DKIM signer for an outbound message (ADR 0010).
-// Signing is sphericon-native and transport-independent: the same signer applies
-// identically across providers because both serialize the message via go-mail's
-// WriteTo, which signs when a DKIM signer is set.
-type Signer interface {
-	// DKIMSigner returns a go-mail DKIM signer for mail sent from fromEmail, or
-	// (nil, nil) when fromEmail's domain has no verified sending domain in scope
-	// (slice 2 signs when possible; the send gate for unverified From is slice 3).
-	DKIMSigner(ctx context.Context, fromEmail string) (*mail.DKIMSigner, error)
+// DKIMKeys finds the DKIM key an outbound message is signed with (ADR 0010).
+// Signing is sphericon-native and transport-independent: BuildSignedMessage signs
+// the serialized message with the key, and every provider sends those bytes.
+type DKIMKeys interface {
+	// Key returns the key of fromEmail's domain, or (nil, nil) when that domain is
+	// not a verified sending domain in scope.
+	Key(ctx context.Context, fromEmail string) (*DKIMKey, error)
+}
+
+// DKIMKey is a verified Sending domain's DKIM identity: the signing domain (d=), the
+// selector its public key is published under (s=) and the private key.
+type DKIMKey struct {
+	Domain   string
+	Selector string
+	Signer   crypto.Signer
 }
 
 // FormatSender renders an email sender as "Name <addr>" when a display name is
