@@ -104,36 +104,40 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   Workspace-owned table's rows through its scoped wrapper and write nothing else. The moves of `ent.VersionedStore` are not
   read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/versioneddefinition`. Not
   read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
-  function of the owner that makes the write, which the writer calls. An entry point does not write through
-  ent at all: there every write is a finding worded for the entry point. The handlers
-  of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect`, `staff`, `oauth`, `tracking`, `hooks`, `tlsask` and `ee/api/staff`) do not read through ent either:
-  a `Get`, `GetX`, a `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a
-  function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
-  transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
-  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the OAuth
-  server, the tracked links, the Ingest hook and the TLS question (`internal/api/{oauth,tracking,hooks,tlsask}`),
-  the Enterprise handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs`, `ee/jobs` and `internal/server`. The helpers the
-  analyzers share about the generated package are in `tools/analyzers/entx`.
+  function of the owner that makes the write, which the writer calls. An entry point (a driver of
+  `tools/analyzers/tier`) does not write through ent at all: there every write is a finding worded for the
+  entry point. The HTTP handlers (`tier.IsHandler`: `internal/api/site`, `external`, `collect`, `staff`,
+  `oauth`, `tracking`, `hooks`, `tlsask` and `ee/api`) do not read through ent either: a `Get`, `GetX`, a
+  `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a function of the
+  module that owns the entity; the other entry points may read. Nor does a handler there open a transaction
+  (a `Within…` method of the events bus): the module it calls does. The wiring, the router in
+  `internal/server` included, is no entry point. The helpers the analyzers share about the generated
+  package are in `tools/analyzers/entx`.
 - **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
   `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function
   other than `New`, a `New` that returns anything but `*UseCase`, an exported type other than `UseCase`
   with a method that takes a `context.Context`, a method that returns `*UseCase` (a builder), an exported
   method with more than two results, a second result that is not `error` or named results, more than two
   arguments after `ctx` and the scope (`*ent.Scoped` or `*ent.Client`), a `now` argument, a
-  `func() time.Time` argument, an `io.Writer` argument, a `[]error` result and any use of `time.Now`. The
+  `func() time.Time` argument, a `[]error` result and any use of `time.Now`. The
   fix is the shape the ADR states: a dependency or the clock is a parameter of `New`, a third or an
-  optional argument goes into a typed `XInput`, two values into a named result struct, what became of a batch's items
-  into `batch.Result` (`internal/kernel/batch`), and a report is written by its driver.
-- **Rule 5, `domainwriter`.** The domain tier writes to no `io.Writer` (ADR 0111). In a package under
-  `internal/domain` or `ee/domain` (test files are not read) the analyzer refuses an `io.Writer`
-  parameter of a function, a method, a function literal or a function type, and a struct field that
-  holds one. The fix is a value or an iterator (`iter.Seq2`) the module returns: the command line
-  prints a report (`internal/commandline`), and an HTTP handler streams an export.
+  optional argument goes into a typed `XInput`, two values into a named result struct, and what became of a batch's items
+  into `batch.Result` (`internal/kernel/batch`). An `io.Writer` is `nowriter`'s.
+- **Rule 5, `nowriter`.** The domain and the use case tiers write to no `io.Writer` (ADR 0104, ADR 0111).
+  In a package under `internal/domain`, `ee/domain`, `internal/usecase` or `ee/usecase` (test files are
+  not read) the analyzer refuses an `io.Writer` parameter of a function, a method, a function literal or
+  a function type, and a struct field that holds one. The fix is a value or an iterator (`iter.Seq2`) the
+  module or the use case returns: the command line prints a report (`internal/commandline`), and an HTTP
+  handler streams an export.
+- **The tiers are stated once.** Which packages are the wiring, the drivers, the use cases and the
+  domain is `tools/analyzers/tier`, which every analyzer above reads; its test checks it against the
+  rows of `layers` in `easement.yml`, so a new driver or a moved tier changes both.
 - **Rule 5, `driverops`.** A driver function calls one operation of the core (ADR 0111). The drivers
-  are the packages under `internal/api` and `ee/api`, `internal/mcpserver`, `internal/jobs`, `ee/jobs`,
-  `internal/commandline` and `cmd/server`; an operation is a call into a package under
-  `internal/domain`, `ee/domain`, `internal/usecase` or `ee/usecase` that takes a `context.Context`, so
-  reading the actor or the scope and mapping to and from the contract are none. The count follows the
+  are those of `tools/analyzers/tier`: the packages under `internal/api` and `ee/api`, `internal/mcpserver`,
+  `internal/jobs`, `ee/jobs`, `internal/commandline` and `cmd/server`, not the wiring (`internal/server`,
+  `internal/app`, `ee/ee.go`); an operation is a call into a package of the domain or the use case tier
+  that takes a `context.Context`, so reading the actor or the scope and mapping to and from the contract
+  are none. The count follows the
   function's control flow: one operation on each branch of a `switch` is one per run, while two on
   one path, or one in a loop, are a finding. A function of the driver package that the driver calls
   counts its operations at the call site, so a helper hides none, and a function literal (a command's

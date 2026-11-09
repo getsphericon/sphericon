@@ -17,7 +17,10 @@ func TestDriverops(t *testing.T) {
 		"github.com/getsphericon/sphericon/internal/jobs",
 		"github.com/getsphericon/sphericon/cmd/server",
 		"github.com/getsphericon/sphericon/ee/api/staff",
-		"github.com/getsphericon/sphericon/internal/usecase/compose")
+		"github.com/getsphericon/sphericon/internal/usecase/compose",
+		"github.com/getsphericon/sphericon/internal/commandline",
+		"github.com/getsphericon/sphericon/internal/server",
+		"github.com/getsphericon/sphericon/internal/api/auth")
 }
 
 // TestAMissingControlFlowGraphFailsTheRun: a driver package whose control-flow graphs the runner

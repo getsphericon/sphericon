@@ -22,13 +22,15 @@
 // scoped wrappers, which exist for the Workspace-owned entities alone: a Delete or Purge (or their
 // One and OneID forms) on one, or a generic function instantiated with its delete builder.
 //
-// An entry point (a handler of any surface, an MCP tool, a job or an event subscriber) receives input
-// and calls a domain module or a use case; it owns no table, so every write there is a finding, worded
-// for the entry point. The handlers of the API surfaces (`surfaces`) do not read through ent either: a
-// call that starts a read (Get, GetX, a Query method, or Workspace on the scoped client) on a type of
-// the ent package is a finding there, and the read goes into the module that owns the entity. The other
-// entry points may read. Nor does such a handler open a transaction (a Within… method of the events
-// bus): the module does.
+// An entry point is a driver of the statement of the tiers (tools/analyzers/tier): a handler of any
+// surface, an MCP tool, a job or an event subscriber, a command. It receives input and calls a domain
+// module or a use case; it owns no table, so every write there is a finding, worded for the entry
+// point. The HTTP handlers (tier.IsHandler) do not read through ent either: a call that starts a read
+// (Get, GetX, a Query method, or Workspace on the scoped client) on a type of the ent package is a
+// finding there, and the read goes into the module that owns the entity. The other entry points may
+// read. Nor does such a handler open a transaction (a Within… method of the events bus): the module
+// does. The wiring (the router in internal/server included) is no entry point: a write there is any
+// other package's, refused unless the package owns the table.
 package entrywrite
 
 import (
@@ -46,32 +48,11 @@ import (
 
 	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
+	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
-const module = "github.com/getsphericon/sphericon/"
-
 // eventsPath is the package of the events bus, whose Within… methods open a transaction.
-const eventsPath = module + "internal/infra/events"
-
-// surfaces are the entry points that read through a domain module too: the handlers of the API
-// surfaces and of the public endpoints with no contract (the tracked links, the Ingest hook, the
-// edge's TLS question).
-var surfaces = []string{
-	"internal/api/site",
-	"internal/api/external",
-	"internal/api/collect",
-	"internal/api/staff",
-	"internal/api/oauth",
-	"internal/api/tracking",
-	"internal/api/hooks",
-	"internal/api/tlsask",
-	"ee/api/staff",
-}
-
-// entryPoints are the packages that receive input from outside (an API surface, MCP, a queue, the
-// ingest hooks) and hand it to a domain module, with the router that mounts them: the job runners
-// are the core's and the Enterprise Edition's.
-var entryPoints = append(slices.Clone(surfaces), "internal/mcpserver", "internal/jobs", "ee/jobs", "internal/server")
+const eventsPath = tier.Module + "internal/infra/events"
 
 // owners names, for each ent entity, the package that owns its table: the only one that writes it
 // (ADR 0102). A domain module owns the tables of its domain; the infrastructure owns the few that
@@ -192,19 +173,11 @@ var builders = map[string]bool{
 var upserts = map[string]bool{"OnConflict": true, "OnConflictColumns": true, "OnConflictColumnsWhere": true}
 
 func isIn(path, pkg string) bool {
-	return path == module+pkg || strings.HasPrefix(path, module+pkg+"/")
-}
-
-func isEntryPoint(path string) bool {
-	return slices.ContainsFunc(entryPoints, func(p string) bool { return isIn(path, p) })
-}
-
-func isSurface(path string) bool {
-	return slices.ContainsFunc(surfaces, func(p string) bool { return isIn(path, p) })
+	return path == tier.Module+pkg || strings.HasPrefix(path, tier.Module+pkg+"/")
 }
 
 func isRead(path string) bool {
-	return strings.HasPrefix(path, module) && !slices.ContainsFunc(unread, func(p string) bool { return isIn(path, p) })
+	return strings.HasPrefix(path, tier.Module) && !slices.ContainsFunc(unread, func(p string) bool { return isIn(path, p) })
 }
 
 // startsRead reports whether a method of the ent package named name starts a read: the generated
@@ -230,7 +203,7 @@ func run(pass *analysis.Pass) (any, error) {
 	if !isRead(path) {
 		return nil, nil
 	}
-	c := checker{pass: pass, path: path, entry: isEntryPoint(path), reads: isSurface(path), erase: isIn(path, eraser)}
+	c := checker{pass: pass, path: path, entry: tier.IsDriver(path), reads: tier.IsHandler(path), erase: isIn(path, eraser)}
 	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !ok {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
@@ -333,7 +306,7 @@ func (c checker) write(pos token.Pos, what, entity string) {
 	if isIn(c.path, owner) {
 		return
 	}
-	pkg := strings.TrimPrefix(c.path, module)
+	pkg := strings.TrimPrefix(c.path, tier.Module)
 	c.pass.Reportf(pos, "%s", rule.Message(5,
 		pkg+" writes "+entity+" ("+what+"), a table "+owner+" owns",
 		"give "+owner+" a function that makes the write and call it from here (ADR 0102: only the owner writes a table)"))

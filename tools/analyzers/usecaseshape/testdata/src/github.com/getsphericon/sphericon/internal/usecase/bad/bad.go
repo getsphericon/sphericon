@@ -2,7 +2,6 @@ package bad
 
 import (
 	"context"
-	"io"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -33,8 +32,6 @@ func (*UseCase) Unscoped(context.Context, int64, string, string) error { return 
 func (*UseCase) At(_ context.Context, _ *ent.Scoped, now time.Time) error { return nil } // want `rule 5: At takes now`
 
 func (*UseCase) Clocked(context.Context, func() time.Time) error { return nil } // want `rule 5: Clocked takes a clock`
-
-func (*UseCase) Report(io.Writer, error) error { return nil } // want `rule 5: Report takes an io.Writer`
 
 func (*UseCase) Stamp(context.Context) time.Time {
 	return time.Now() // want `rule 5: the use case reads time.Now`

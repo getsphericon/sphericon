@@ -1,8 +1,8 @@
-// Package domainwriter keeps the domain tier off io.Writer (ADR 0111, review rule 5): a package
-// under internal/domain or ee/domain returns a value or an iterator (iter.Seq2), and the driver
-// writes it. It refuses an io.Writer parameter of any function, method, function literal or
-// function type, and a struct field that holds one.
-package domainwriter
+// Package nowriter keeps the domain and the use case tiers off io.Writer (ADR 0104, ADR 0111,
+// review rule 5): a package of either tier (tools/analyzers/tier) returns a value or an iterator
+// (iter.Seq2), and the driver writes it. It refuses an io.Writer parameter of any function, method,
+// function literal or function type, and a struct field that holds one.
+package nowriter
 
 import (
 	"go/ast"
@@ -12,21 +12,20 @@ import (
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
+	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
-// Analyzer reports an io.Writer in the domain tier.
+// Analyzer reports an io.Writer in the domain or the use case tier.
 var Analyzer = &analysis.Analyzer{
-	Name: "domainwriter",
-	Doc:  "refuses an io.Writer parameter or field in internal/domain and ee/domain (ADR 0111)",
+	Name: "nowriter",
+	Doc:  "refuses an io.Writer parameter or field in the domain and the use case tiers (ADR 0104, ADR 0111)",
 	Run:  run,
 }
-
-const module = "github.com/getsphericon/sphericon/"
 
 const fix = "return a value or an iterator (iter.Seq2) and let the driver (the CLI, the API or the job runner) write it (ADR 0111)"
 
 func run(pass *analysis.Pass) (any, error) {
-	if !isDomain(pass.Pkg.Path()) {
+	if !tier.IsCore(pass.Pkg.Path()) {
 		return nil, nil
 	}
 	for _, file := range pass.Files {
@@ -54,11 +53,6 @@ func run(pass *analysis.Pass) (any, error) {
 		})
 	}
 	return nil, nil
-}
-
-// isDomain holds for a package of either domain tier.
-func isDomain(path string) bool {
-	return strings.HasPrefix(path, module+"internal/domain/") || strings.HasPrefix(path, module+"ee/domain/")
 }
 
 // checkParams reports the signature once when one of its parameters is an io.Writer.

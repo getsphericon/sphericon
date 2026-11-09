@@ -22,7 +22,7 @@ commands in `cmd/server` and their driver package `internal/commandline`, which 
 print, component `cli`, ADR 0111): each receives input, calls one operation of a domain module or
 a use case and returns or records the result (review rule 5, analyzer `driverops`), and no core
 tier imports one. A domain module
-writes to no `io.Writer` (ADR 0111, analyzer `domainwriter`): it returns a value or an iterator
+or a use case writes to no `io.Writer` (ADR 0104, ADR 0111, analyzer `nowriter`): it returns a value or an iterator
 (`iter.Seq2`), which a command prints and an HTTP handler streams (`internal/kernel/seqreader`
 turns the chunks of an export into the response's body). A command takes the
 modules and use cases it calls from the command app (`app.NewCommandApp`), whose accessors build
