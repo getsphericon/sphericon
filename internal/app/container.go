@@ -851,8 +851,11 @@ var contentPackage = do.Package(
 		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*workspacesummary.UseCase, error) {
-		return workspacesummary.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*memberships.Module](i), do.MustInvoke[*holds.Holds](i),
-			do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*trackingdomains.Module](i)), nil
+		return workspacesummary.New(workspacesummary.Modules{
+			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
+			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
+			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
+		}, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
 		return analyticsreport.New(do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil

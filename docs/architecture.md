@@ -394,7 +394,9 @@ coding standards in `CODING_STANDARDS.md`.
   and stitches its Events through the bus, in one transaction. The Ingest hook's reading of a provider's callbacks
   (`callbackinterpretation`) opens the request's transaction and changes Outbound messages, Suppressions,
   Unsubscribes, Confirmations and Bindings through their modules; the Analytics reports (`analyticsreport`), what Needs
-  attention (`needsattentionreport`) and the Workspace summary (`workspacesummary`) only read.
+  attention (`needsattentionreport`) only read. The Workspace summary (`workspacesummary`) reads, and
+  makes the changes of a Workspace a member answers with it: a change in identity, then the read of
+  sending.
   The consent of a Destination (`internal/domain/contacts/confirmations`,
   `internal/domain/contacts/unsubscribes` and `internal/domain/contacts/channelstop`, the stops read in
   the Channel) sits in the contacts context, below the Broadcasts and Automations an unsubscribe

@@ -24,36 +24,26 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 	if a == nil {
 		return []siteapi.SiteWorkspaceResource{}, nil
 	}
-	members, err := h.workspaceSummary.OfMembers(ctx, a.User.ID)
+	views, err := h.workspaceSummary.OfMembers(ctx, a.User.ID, a.Session.Method.Strong())
 	if err != nil {
 		return nil, err
 	}
-	resources := make([]siteapi.SiteWorkspaceResource, len(members))
-	for i, m := range members {
-		if resources[i], err = h.workspaceResource(ctx, m.Membership, m.Summary); err != nil {
-			return nil, err
-		}
-	}
-	return resources, nil
+	return lo.Map(views, func(v workspacesummary.View, _ int) siteapi.SiteWorkspaceResource { return h.workspaceResource(v) }), nil
 }
 
-// summarizedWorkspace is the Workspace of s, whose Membership m the caller holds, as the
-// Membership's User sees it after a change of it.
-func (h *Handlers) summarizedWorkspace(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
-	sum, err := h.workspaceSummary.Of(ctx, s)
-	if err != nil {
-		return siteapi.SiteWorkspaceResource{}, err
-	}
-	return h.workspaceResource(ctx, m, sum)
+// summaryCaller is the caller of an operation on the Workspace it addresses, as the Workspace
+// summary takes them: their Membership, the actor and whether their session is strong.
+func (h *Handlers) summaryCaller(ctx context.Context) workspacesummary.Caller {
+	return workspacesummary.Caller{Membership: callerMembership(ctx), Actor: h.actor(ctx), StrongSession: currentSession(ctx).Method.Strong()}
 }
 
-// workspaceResource maps the Workspace summary as the Membership's User sees it, with their Role
+// workspaceResource maps the Workspace summary as the member of the View sees it, with their Role
 // and Permissions, their grace end under the Two-factor requirement (ADR 0020) and the Instance's
-// addresses besides the app's own. The Membership's User edge must be loaded.
-func (h *Handlers) workspaceResource(ctx context.Context, m *ent.Membership, sum workspacesummary.Summary) (siteapi.SiteWorkspaceResource, error) {
-	m = withWorkspace(m, sum.Workspace)
+// addresses besides the app's own.
+func (h *Handlers) workspaceResource(v workspacesummary.View) siteapi.SiteWorkspaceResource {
+	sum := v.Summary
 	r := mapper.WorkspaceToResource(sum.Workspace)
-	r.Role = mapper.MembershipRoleToResource(m.Role)
+	r.Role = mapper.MembershipRoleToResource(v.Membership.Role)
 	if suspension.Is(sum.Workspace) && h.supportEmail != "" {
 		r.SupportEmail = siteapi.NewOptNilString(h.supportEmail)
 	}
@@ -62,25 +52,17 @@ func (h *Handlers) workspaceResource(ctx context.Context, m *ent.Membership, sum
 	if sum.TrackingTarget != "" {
 		r.TrackingTarget = siteapi.NewOptString(sum.TrackingTarget)
 	}
-	held := memberships.Permissions(m.Role)
+	held := memberships.Permissions(v.Membership.Role)
 	r.Permissions = mapper.PermissionsToResources(held)
 	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, memberships.PermAccountLinkOpen)
-	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
-	// no grace to count down: this is the decision secondfactors.Module.Admit makes.
-	if !currentSession(ctx).Method.Strong() {
-		end, ok, err := h.secondFactor.Deadline(ctx, m)
-		if err != nil {
-			return r, err
-		}
-		if ok {
-			r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
-		}
+	if end := v.SecondFactorGraceEndsAt; end != nil {
+		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*end))
 	}
 	r.Holds = mapper.HoldsToResources(sum.Holds)
 	r.SendCap = mapper.SendCapStatusToResource(sum.SendCap)
 	r.ShortLinkLength = narrow.Int32(sum.ShortLinkLength)
 	r.SmsMaxLength = mapper.SmsLengthLimitToResource(sum.SMSMaxLength)
-	return r, nil
+	return r
 }
 
 // SiteWorkspacesCreate creates a Workspace for the authenticated User, who becomes its
@@ -98,10 +80,11 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	if err != nil {
 		return nil, err
 	}
-	r, err := h.summarizedWorkspace(ctx, s, m)
+	v, err := h.workspaceSummary.OfMember(ctx, s, workspacesummary.Caller{Membership: m, StrongSession: a.Session.Method.Strong()})
 	if err != nil {
 		return nil, err
 	}
+	r := h.workspaceResource(v)
 	return &r, nil
 }
 
@@ -118,13 +101,6 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, _ siteapi.Site
 		return nil, err
 	}
 	return &siteapi.SiteAccountLinkResource{URL: h.accountLink.Address(), Token: token, ExpiresAt: siteapi.Timestamp(expires)}, nil
-}
-
-// withWorkspace is the Membership with its Workspace replaced by w (after an update).
-func withWorkspace(m *ent.Membership, w *ent.Workspace) *ent.Membership {
-	c := *m
-	c.Edges.Workspace = w
-	return &c
 }
 
 // SiteWorkspacesRequireSecondFactor switches the Workspace's Two-factor requirement on (Permission
@@ -153,17 +129,15 @@ func (h *Handlers) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context
 // on or off and answers its Workspace as the caller now sees it. Switching it on tells the Users
 // without a Second factor (workspaces.Module.SetSecondFactorRequirement publishes it).
 func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required bool) (siteapi.SiteWorkspaceResource, error) {
-	s, m := workspaceScope(ctx), callerMembership(ctx)
-	if _, err := h.workspaces.SetSecondFactorRequirement(ctx, s, h.actor(ctx), required, h.now()); err != nil {
+	v, err := h.workspaceSummary.SetSecondFactorRequirement(ctx, workspaceScope(ctx), h.summaryCaller(ctx), required)
+	if err != nil {
 		return siteapi.SiteWorkspaceResource{}, err
 	}
-	return h.summarizedWorkspace(ctx, s, m)
+	return h.workspaceResource(v), nil
 }
 
 // SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, _ siteapi.SiteWorkspacesUpdateParams) (*siteapi.SiteWorkspaceResource, error) {
-	s, m := workspaceScope(ctx), callerMembership(ctx)
-
 	var postal *string
 	// postalAddress is optional in the contract: absent = leave unchanged, present
 	// (incl. empty string) = set/clear. Trimmed so a whitespace-only value clears it.
@@ -171,26 +145,21 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		v := strings.TrimSpace(req.PostalAddress.Value)
 		postal = &v
 	}
-	if _, err := h.workspaces.Update(ctx, s, h.actor(ctx), req.Name, postal); err != nil {
-		return nil, err
-	}
-	resource, err := h.summarizedWorkspace(ctx, s, m)
+	v, err := h.workspaceSummary.Update(ctx, workspaceScope(ctx), h.summaryCaller(ctx), workspacesummary.UpdateInput{Name: req.Name, PostalAddress: postal})
 	if err != nil {
 		return nil, err
 	}
+	resource := h.workspaceResource(v)
 	return &resource, nil
 }
 
 // SiteWorkspacesSetTimezone sets the Workspace time zone (Permission workspace:timezone, ADR 0057).
 func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, _ siteapi.SiteWorkspacesSetTimezoneParams) (*siteapi.SiteWorkspaceResource, error) {
-	s, m := workspaceScope(ctx), callerMembership(ctx)
-	if _, err := h.workspaces.SetTimezone(ctx, s, h.actor(ctx), string(req.Timezone)); err != nil {
-		return nil, err
-	}
-	resource, err := h.summarizedWorkspace(ctx, s, m)
+	v, err := h.workspaceSummary.SetTimezone(ctx, workspaceScope(ctx), h.summaryCaller(ctx), string(req.Timezone))
 	if err != nil {
 		return nil, err
 	}
+	resource := h.workspaceResource(v)
 	return &resource, nil
 }
 
@@ -266,10 +235,11 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	r, err := h.summarizedWorkspace(ctx, s, m)
+	v, err := h.workspaceSummary.OfMember(ctx, s, workspacesummary.Caller{Membership: m, Actor: in.Actor, StrongSession: a.Session.Method.Strong()})
 	if err != nil {
 		return nil, err
 	}
+	r := h.workspaceResource(v)
 	return &r, nil
 }
 
