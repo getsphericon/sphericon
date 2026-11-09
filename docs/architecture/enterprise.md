@@ -64,8 +64,8 @@ Workspaces). The use case (`ee-usecase-raw`, an isolated instance holding the ra
 `auditlogretention` (the advanced-retention prune over `workspaces` and the Audit log). The `export` license gate is the Edition's own (`ee.ExportStreams`).
 An Enterprise domain module imports the core's modules of its context and the contexts below
 and the Enterprise modules of those contexts, never a module above nor a use case; an Enterprise
-use case imports domain modules only, never an unchecked operation of the core (`domain-unchecked`
-admits only the core's use cases; the Edition's own would be `ee-domain-unchecked`, ADR 0110) and is imported only by `ee/api`, the Edition and the wiring. The boundary with the core is
+use case imports domain modules only, never an unchecked operation of the core (`domain-<context>-unchecked`
+admits only the core's use cases; the Edition's own would be `ee-domain-<context>-unchecked`, ADR 0110) and is imported only by `ee/api`, the Edition and the wiring. The boundary with the core is
 unchanged: no core component may import an `ee` component, and each `ee` component names its
 importers; the command line (`cli`) may import the Service credentials, which only it issues,
 rotates and revokes (ADR 0026).

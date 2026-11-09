@@ -162,7 +162,7 @@ every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys`
 Workspace), the unchecked operations of those identity modules
 that join their use case's raw transaction (ADR 0110: `workspacesunchecked`, `membershipsunchecked`,
 `usersunchecked`, `passkeysunchecked`, `secondfactorsunchecked` and `oauthclientsunchecked`, in the
-component `domain-unchecked`, which only a use case imports), the use cases `internal/usecase/secondfactorreset` (a
+component `domain-identity-unchecked`, which only a use case imports), the use cases `internal/usecase/secondfactorreset` (a
 Second factor reset, ADR 0020: one transaction across the Second factor and the Passkeys, none of
 which a Workspace owns),
 `internal/usecase/workspacesummary` (a Workspace created with its Owner Membership, ADR 0043: no Workspace

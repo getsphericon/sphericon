@@ -10,7 +10,7 @@ version: 1
 # The list holds what only the program's builders use (ADR 0110): the raw client, the ent hooks and
 # guards, the upgrade boundaries and river's workers. A module's function that only some callers
 # may call is fenced by place, never here: it lives in a subpackage whose component names its
-# importers, as the unchecked operations do (`domain-unchecked`).
+# importers, as the unchecked operations do (`domain-<context>-unchecked`).
 forbid_symbol:
   # The job runners schedule work (ADR 0102, ADR 0111): a domain module or a use case does the work
   # as a function and may queue a job (its args, river's insert), but it declares no worker and no
@@ -32,9 +32,9 @@ forbid_symbol:
         domain-identity-base,
         domain-identity-raw,
         domain-instance-raw,
+        domain-identity-unchecked,
         domain-orchestration-raw,
         domain-sending-raw,
-        domain-unchecked,
         ee-domain-identity-raw,
         ee-domain-insights-raw,
         ee-edition,
@@ -77,13 +77,6 @@ forbid_symbol:
     allow: *client-builders
     because: *upgrade-because
 
-# No core tier (kernel, infrastructure, domain) and no Enterprise module or use case imports a
-# surface's generated package: what the core shares with a contract is generated into the kernel
-# (the scope vocabulary, internal/kernel/tokenscope), and an Enterprise vocabulary into the module
-# that owns it (the Service credential scopes, ee/domain/identity/servicecredentials).
-x-no-surface-gen: &no-surface-gen
-  name: gen-surfaces
-  because: no core tier and no Enterprise module or use case imports an API surface's generated package (ADR 0102); a vocabulary shared with a contract is generated into the kernel, as the user scope vocabulary is into internal/kernel/tokenscope, or into the module that owns it, as the Service credential scopes are into ee/domain/identity/servicecredentials
 x-no-container: &no-container
   - &no-container-do
     name: github.com/samber/do
@@ -263,15 +256,22 @@ components:
     allow_importers:
       [ee-domain-insights-raw, ee-usecase, ee-usecase-raw, ee-api, ee-runner, ee-edition, wiring]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
-  # What stays unchecked in the Enterprise Edition (ADR 0110), as in the core (`domain-unchecked`): a
-  # subpackage `<module>unchecked` of an Enterprise module, imported only by an Enterprise use case.
-  # None exists today.
-  ee-domain-unchecked:
-    in: ['ee/**/*unchecked']
+  # What stays unchecked in the Enterprise Edition (ADR 0110), as in the core
+  # (`domain-<context>-unchecked`): a subpackage `<module>unchecked` of an Enterprise module, imported
+  # only by an Enterprise use case, one component per context so that it reaches no more than its
+  # owner's context may. None exists today.
+  ee-domain-identity-unchecked:
+    in: ['ee/domain/identity/**/*unchecked']
     priority: 1
     optional: true
-    allow_importers: [ee-usecase, ee-usecase-raw]
-    because: an unchecked operation leaves its check to the use case that calls it (ADR 0110), so only an Enterprise use case imports it, after the check; call the use case
+    allow_importers: &ee-unchecked-importers [ee-usecase, ee-usecase-raw]
+    because: &ee-unchecked-because an unchecked operation leaves its check to the use case that calls it (ADR 0110), so only an Enterprise use case imports it, after the check; call the use case
+  ee-domain-insights-unchecked:
+    in: ['ee/domain/insights/**/*unchecked']
+    priority: 1
+    optional: true
+    allow_importers: *ee-unchecked-importers
+    because: *ee-unchecked-because
 
   # Frontend (src/AGENTS.md). Generated clients are leaves; a route file binds a page lazily and
   # never imports it, so a page may import its route's `Route` without a cycle.
@@ -390,7 +390,7 @@ components:
   # endpoint's exchange of a code or a refresh token) are left to review. The composition roots, `internal/api/auth`
   # and the job runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`,
   # which do not forbid the client, and so are the unchecked operations of the identity modules
-  # that join their use case's raw transaction, which sit in `domain-unchecked`.
+  # that join their use case's raw transaction, which sit in `domain-identity-unchecked`.
   #
   # Identity, the bottom context: the Workspaces, the Memberships, the Users, the Invitations, the
   # Join domains, the API tokens, the Staff members, the OAuth clients, the second step of signing
@@ -530,14 +530,56 @@ components:
   # Removal check, the steps of a Contact's Erasure, the deletion cycle and the creation of a
   # Workspace, User deletion's and the Second factor reset's removals). Only a use case of the core
   # imports one, after its check: no driver, no domain module, no Enterprise package. A new unchecked
-  # operation is a function of its owner's subpackage, which this component takes by its name. Its
-  # packages that take a transaction's raw client are in the closed list of docs/architecture/workspace-scoping.md
-  # (Workspace scoping). The priority puts a subpackage here rather than in its owner's component.
-  domain-unchecked:
-    in: ['internal/**/*unchecked']
+  # operation is a function of its owner's subpackage, which the component of its owner's context
+  # takes by its name: one per context, the infrastructure's included (the bus's Erasure step), each
+  # in `layers` right above its context, so that a subpackage reaches no more than its owner's context
+  # may. The contexts with none today have theirs too (optional), so a first one is fenced. Its
+  # packages that take a transaction's raw client, all of identity, are in the closed list of
+  # docs/architecture/workspace-scoping.md (Workspace scoping). The priority puts a subpackage here
+  # rather than in its owner's component.
+  domain-identity-unchecked:
+    in: ['internal/domain/identity/**/*unchecked']
     priority: 1
-    allow_importers: [usecase, usecase-raw]
-    because: an unchecked operation leaves its check to the use case that calls it (ADR 0110), so only a use case of the core imports it, after the check; call the use case
+    allow_importers: &unchecked-importers [usecase, usecase-raw]
+    because: &unchecked-because an unchecked operation leaves its check to the use case that calls it (ADR 0110), so only a use case of the core imports it, after the check; call the use case
+  domain-contacts-unchecked:
+    in: ['internal/domain/contacts/**/*unchecked']
+    priority: 1
+    allow_importers: *unchecked-importers
+    because: *unchecked-because
+  domain-content-unchecked:
+    in: ['internal/domain/content/**/*unchecked']
+    priority: 1
+    optional: true
+    allow_importers: *unchecked-importers
+    because: *unchecked-because
+  domain-sending-unchecked:
+    in: ['internal/domain/sending/**/*unchecked']
+    priority: 1
+    allow_importers: *unchecked-importers
+    because: *unchecked-because
+  domain-orchestration-unchecked:
+    in: ['internal/domain/orchestration/**/*unchecked']
+    priority: 1
+    allow_importers: *unchecked-importers
+    because: *unchecked-because
+  domain-insights-unchecked:
+    in: ['internal/domain/insights/**/*unchecked']
+    priority: 1
+    optional: true
+    allow_importers: *unchecked-importers
+    because: *unchecked-because
+  domain-instance-unchecked:
+    in: ['internal/domain/instance/**/*unchecked']
+    priority: 1
+    optional: true
+    allow_importers: *unchecked-importers
+    because: *unchecked-because
+  infra-unchecked:
+    in: ['internal/infra/**/*unchecked']
+    priority: 1
+    allow_importers: *unchecked-importers
+    because: *unchecked-because
 
   # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
   # providers, the outbound HTTP calls, the throttles, the ent aggregate functions the reports share
@@ -559,7 +601,11 @@ components:
   ent: { in: ent }
   # The generated ogen packages of the API surfaces, which only the drivers, the wiring and the
   # Enterprise Edition import, and the Telemetry contract's client, which the Telemetry report of
-  # the Instance state (instancestates) uses.
+  # the Instance state (instancestates) uses. `layers` puts the surfaces' packages above the use
+  # cases, so no use case, domain module, infrastructure or kernel package of the core or of the
+  # Enterprise Edition imports one (ADR 0102): a vocabulary shared with a contract is generated into
+  # the kernel, as the user scope vocabulary is into internal/kernel/tokenscope, or into the module
+  # that owns it, as the Service credential scopes are into ee/domain/identity/servicecredentials.
   gen-surfaces: { in: gen }
   gen-telemetry: { in: gen/telemetry }
 
@@ -601,11 +647,11 @@ components:
 # security handlers and the Problem mapping, and the surfaces' generated packages, which no use case
 # and no domain module sees. The use cases, core and Enterprise, are an open layer (ADR 0111): a
 # driver calls a domain module directly when one module holds the operation, and a use case when it
-# spans several; `ee-api` reaches the Enterprise use cases. Below them the unchecked operations,
-# which only a use case imports (ADR 0110), and the contexts from instance down to identity, each a
-# few components, the Enterprise modules of a context above the core's, the readers of the Removal
-# check above their owners and a context's raw-client holders above the rest of it. Then the
-# infrastructure, and the kernel with the License key's gate, which import nothing of ours. `common`
+# spans several; `ee-api` reaches the Enterprise use cases. Below them the contexts from instance
+# down to identity, each a few components: the unchecked operations of a context on top of it, which
+# only a use case imports (ADR 0110), the Enterprise modules of a context above the core's, the
+# readers of the Removal check above their owners and a context's raw-client holders above the rest
+# of it. Then the unchecked operations of the infrastructure, the infrastructure, and the kernel with the License key's gate, which import nothing of ours. `common`
 # opens the infrastructure and the kernel to every component whatever the order: the
 # infrastructure's two components import each other, and the kernel's own `must_not_depend_on` keeps
 # it below them. `allow_importers` closes a component the order would open (the Enterprise Edition,
@@ -633,34 +679,43 @@ layers:
   - [api-auth, api-problem]
   - gen-surfaces
   - [usecase, usecase-raw, ee-usecase, ee-usecase-raw]
-  - [domain-unchecked, ee-domain-unchecked]
   # Instance, the top context.
+  - domain-instance-unchecked
   - domain-instance-raw
   - domain-instance
   # Insights.
+  - ee-domain-insights-unchecked
   - ee-domain-insights-raw
   - ee-domain-insights
+  - domain-insights-unchecked
   - domain-insights
   # Orchestration.
   - domain-orchestration-removalcheck
   - domain-orchestration-removalcheck-readers
+  - domain-orchestration-unchecked
   - domain-orchestration-raw
   - domain-orchestration
   # Sending.
+  - domain-sending-unchecked
   - domain-sending-raw
   - domain-sending
   # Content.
+  - domain-content-unchecked
   - domain-content
   # Contacts.
   - domain-contacts-removalcheck-readers
+  - domain-contacts-unchecked
   - domain-contacts
   # Identity, the bottom context.
+  - ee-domain-identity-unchecked
   - ee-domain-identity-raw
   - ee-domain-identity
+  - domain-identity-unchecked
   - domain-identity-raw
   - domain-identity
   - domain-identity-base
   # The infrastructure and the kernel.
+  - infra-unchecked
   - [infra, infra-raw]
   - [kernel, ee-licensekey]
 
@@ -710,63 +765,57 @@ rules:
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   domain-contacts:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: contacts sits above identity in the domain tier (ADR 0102), so a contacts module imports the kernel, the infrastructure, ent, the other contacts modules and identity's, never a module of a context above (a Template, an Integration, a Broadcast, an Automation, a Rule) nor a use case; an operation that needs one is a use case above both
   domain-content:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: content sits above contacts in the domain tier (ADR 0102), so a content module imports the kernel, the infrastructure, ent, the other content modules and those of identity and contacts, never a module of a context above (an Integration, an Outbound message, a Broadcast, an Automation, a Rule) nor a use case; an operation that needs one is a use case above both
   domain-sending-raw:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: sending sits above content in the domain tier (ADR 0102), so a sending module imports the kernel, the infrastructure, ent, the other sending modules and those of identity, contacts and content, never a module of a context above (a Broadcast, an Automation, a Rule, a Webhook endpoint) nor a use case; an operation that needs one is a use case above both
   domain-sending:
     may_depend_on:
       - name: domain-sending-raw
         because: a context's modules import each other, and its raw-client holders are a component of their own only for the `allow` of ent.Client; `layers` puts them above the rest of the context, so the edge down to them is written here
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: sending sits above content in the domain tier (ADR 0102), so a sending module imports the kernel, the infrastructure, ent, the other sending modules and those of identity, contacts and content, never a module of a context above (a Broadcast, an Automation, a Rule, a Webhook endpoint) nor a use case; an operation that needs one is a use case above both
   domain-orchestration-raw:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: orchestration sits above sending in the domain tier (ADR 0102), so an orchestration module imports the kernel, the infrastructure, ent, the other orchestration modules and those of identity, contacts, content and sending, never a module of a context above (the Setup checklist, an Export stream, the Instance state) nor a use case; an operation that needs one is a use case above both
   domain-orchestration:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: orchestration sits above sending in the domain tier (ADR 0102), so an orchestration module imports the kernel, the infrastructure, ent, the other orchestration modules and those of identity, contacts, content and sending, never a module of a context above (the Setup checklist, an Export stream, the Instance state) nor a use case; an operation that needs one is a use case above both
   domain-orchestration-removalcheck:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: the Removal check sits at the top of orchestration (ADR 0102), so it imports the readers of the modules that may hold a row and the other orchestration modules, never a module of a context above nor a use case
   domain-contacts-removalcheck-readers:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: a reader belongs to its owner's context (ADR 0102), so a contacts reader imports its owner and the modules of contacts and below, never a module of a context above nor a use case
   domain-orchestration-removalcheck-readers:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: a reader belongs to its owner's context (ADR 0102), so an orchestration reader imports its owner, the modules beside it and those below, never a module of a context above nor a use case
   domain-insights:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: insights sits above orchestration in the domain tier (ADR 0102), so an insights package imports the kernel, the infrastructure, ent and the packages of its own context and of the contexts below, never a module of the instance context (the Instance state, an upgrade) nor a use case; an operation that needs one is a use case above both
   domain-instance-raw:
     may_depend_on:
       - name: gen-telemetry
         because: the Telemetry report is instancestates' own operation (ADR 0112) and sends through the Telemetry contract's client, which stays outside `layers` so that no other module sees it
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context and the Telemetry contract's client its Telemetry report sends with (ADR 0112), never a use case
   domain-instance:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context, never a use case
-  domain-unchecked:
-    must_not_depend_on: [*no-surface-gen]
+  domain-identity-unchecked: &unchecked-rule
     forbid_external: *no-container
-    because: an unchecked operation belongs to its owner (ADR 0110), so it imports its owner and what its owner may import, never a use case
+    because: an unchecked operation belongs to its owner (ADR 0110), so it imports its owner and what its owner's context may import, never a use case
+  domain-contacts-unchecked: *unchecked-rule
+  domain-content-unchecked: *unchecked-rule
+  domain-sending-unchecked: *unchecked-rule
+  domain-orchestration-unchecked: *unchecked-rule
+  domain-insights-unchecked: *unchecked-rule
+  domain-instance-unchecked: *unchecked-rule
+  infra-unchecked: *unchecked-rule
   tools:
     may_depend_on: []
     forbid_external: *no-container
@@ -776,26 +825,21 @@ rules:
     forbid_external: *no-container
     because: test support loads the committed fixtures through the modules' own functions where one exists (an Invitation's token) and knows no driver
   usecase:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)
   usecase-raw:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); these hold the raw client because their rows belong to no Workspace when they start, and like the raw-client holders of the core they install no ent hook
   domain-identity-base:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
   domain-identity-raw:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
   domain-identity:
     may_depend_on:
       - name: domain-identity-raw
         because: a context's modules import each other, and its raw-client holders are a component of their own only for the `allow` of ent.Client; `layers` puts them above the rest of the context, so the edge down to them is written here
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
   runner:
@@ -812,11 +856,9 @@ rules:
     forbid_external: *no-container
     because: a command of the repository runs a generator, a CI check or the development database, never the application
   infra:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: infrastructure imports only the kernel and never a domain module (ADR 0102); a domain module, a use case, a driver or the wiring reaches it. The bus's consumers are registered by the wiring, and the ent client's hooks are installed there (internal/app/entclient)
   infra-raw:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: infrastructure imports only the kernel and never a domain module (ADR 0102); a domain module, a use case, a driver or the wiring reaches it. The bus's consumers are registered by the wiring, and the ent client's hooks are installed there (internal/app/entclient)
   kernel:
@@ -827,7 +869,6 @@ rules:
         because: the kernel sits below the infrastructure; a package that publishes an Event, reads the configuration or calls out is infrastructure or a domain module, not the kernel (ADR 0102)
       - name: ent
         because: the kernel knows no table; a package that queries through ent is infrastructure or a domain module (ADR 0102)
-      - *no-surface-gen
     # internal/kernel/cleanup reads the container for its shutdown report, the one exception the doc names.
     forbid_external: *no-container
     because: the kernel is the bottom tier (ADR 0102); it imports nothing of ours outside internal/kernel, so every tier can use it
@@ -850,37 +891,28 @@ rules:
     forbid_external: *no-container
     because: the Enterprise job runner receives a job and calls an Enterprise module or use case (review rule 5, ADR 0111), never a surface, the Edition or the core's runner
   ee-licensekey:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: the License key's gate imports nothing of ours, so every Enterprise package can ask it what the License switches on
   ee-usecase:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); it imports no unchecked operation of the core, which only the core's own use cases import (`domain-unchecked`, ADR 0110)
+    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); it imports no unchecked operation of the core, which only the core's own use cases import (`domain-<context>-unchecked`, ADR 0110)
   ee-usecase-raw:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); these hold the raw client because they work across Workspaces, and they import no unchecked operation of the core (`domain-unchecked`, ADR 0110) and install no ent hook of the core
+    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); these hold the raw client because they work across Workspaces, and they import no unchecked operation of the core (`domain-<context>-unchecked`, ADR 0110) and install no ent hook of the core
   ee-domain-identity-raw:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: an Enterprise identity module sits in the bottom context (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the identity modules of the core and of the Edition, never a module of a context above nor a use case; it reads a contract's vocabulary from what is generated into it, never from a surface's generated package
   ee-domain-identity:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: an Enterprise identity module sits in the bottom context (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the identity modules of the core and of the Edition, never a module of a context above nor a use case; it reads a contract's vocabulary from what is generated into it, never from a surface's generated package
   ee-domain-insights-raw:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: an Enterprise insights module sits above orchestration (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the modules of the core and of the Edition of its context and the contexts below, never an instance module nor a use case; an operation that needs one is a use case
   ee-domain-insights:
-    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     because: an Enterprise insights module sits above orchestration (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the modules of the core and of the Edition of its context and the contexts below, never an instance module nor a use case; an operation that needs one is a use case
-  ee-domain-unchecked:
-    must_not_depend_on: [*no-surface-gen]
-    forbid_external: *no-container
-    because: an unchecked operation belongs to its owner (ADR 0110), so it imports its owner and what its owner may import, never a use case
+  ee-domain-identity-unchecked: *unchecked-rule
+  ee-domain-insights-unchecked: *unchecked-rule
   wiring:
     may_depend_on:
       - name: gen-telemetry
