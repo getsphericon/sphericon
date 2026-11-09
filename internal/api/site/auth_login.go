@@ -3,8 +3,8 @@ package site
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
@@ -38,22 +38,21 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 			Challenge: siteapi.NewOptString(res.Challenge),
 		}}, nil
 	case login.Authenticated:
-		return h.sessionStarted(res.Principal, auth.Session{Method: auth.MethodPassword})
+		cookie, err := h.sessions.Issue(res.Principal, auth.Session{Method: auth.MethodPassword})
+		if err != nil {
+			return nil, err
+		}
+		return sessionResult(cookie), nil
 	}
 	return nil, fmt.Errorf("login: unhandled outcome %d", res.Outcome)
 }
 
-// sessionStarted answers a sign-in the User's Login granted (and recorded) with the session
-// cookie.
-func (h *Handlers) sessionStarted(u *ent.User, sess auth.Session) (*siteapi.SiteLoginResultHeaders, error) {
-	cookie, err := h.sessions.Issue(u, sess)
-	if err != nil {
-		return nil, err
-	}
+// sessionResult is the answer of a sign-in that started a session: its cookie.
+func sessionResult(cookie *http.Cookie) *siteapi.SiteLoginResultHeaders {
 	return &siteapi.SiteLoginResultHeaders{
 		SetCookie: siteapi.NewOptString(cookie.String()),
 		Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
-	}, nil
+	}
 }
 
 // SiteAuthLogout ends the session on this browser by clearing its cookie. A token

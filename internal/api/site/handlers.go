@@ -132,8 +132,6 @@ type Handlers struct {
 	signupItems *signupitems.Module
 	// consentRecords is the Users' decisions on the Sign-up items (ADR 0062).
 	consentRecords *consentrecords.Module
-	// challenges signs the reference of a pending sign-up on the env clock (ADR 0062).
-	challenges *authtoken.Signer
 	// login is the User's Login: the password, second and Passkey steps of signing in and the
 	// proof of the password (ADR 0020).
 	login *userlogin.Module
@@ -276,7 +274,6 @@ func NewHandlers(d *Deps) *Handlers {
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, secondFactorReset: d.SecondFactorReset, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceSummary: d.WorkspaceSummary, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
-		challenges: d.Tokens,
 		login:      d.UserLogin,
 	}
 	return h

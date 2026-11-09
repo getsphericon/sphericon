@@ -27,7 +27,11 @@ func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLo
 	case login.SecondThrottled:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
 	case login.SecondAuthenticated:
-		return h.sessionStarted(res.Principal, auth.Session{Method: auth.MethodSecondFactor, ProviderLoginAt: res.ProviderLoginAt})
+		cookie, err := h.sessions.Issue(res.Principal, auth.Session{Method: auth.MethodSecondFactor, ProviderLoginAt: res.ProviderLoginAt})
+		if err != nil {
+			return nil, err
+		}
+		return sessionResult(cookie), nil
 	}
 	return nil, fmt.Errorf("login: unhandled outcome %d", res.Outcome)
 }

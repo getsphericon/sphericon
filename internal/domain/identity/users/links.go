@@ -69,7 +69,8 @@ const (
 )
 
 // Links mints and reads the links the self-service account flows mail (password reset, email
-// verification, email change, User deletion, "this was not me"). Each is an authtoken of its
+// verification, email change, User deletion, "this was not me") and the reference of a pending
+// sign-up. Each is an authtoken of its
 // purpose, keyed to a value that changes once its action lands, so it works once with no
 // store. A link that does not stand is refused with its flow's sentinel; deciding that is
 // this type's, so no handler parses a token.
@@ -321,4 +322,47 @@ func (l *Links) UndoNotMe(ctx context.Context, token string) error {
 		return ErrNotMeLinkInvalid
 	}
 	return nil
+}
+
+// PendingSignupReference mints the signed reference of a pending sign-up (ADR 0062), which the
+// screen that asks the Sign-up items carries: valid as long as the pending sign-up is open, and
+// keyed to its provider subject, so it names nothing once the row is gone.
+func (l *Links) PendingSignupReference(p *ent.PendingSignup) (string, error) {
+	return l.tokens.Mint(authtoken.PurposePendingSignup, p.ID, p.Subject, PendingSignupTTL, nil)
+}
+
+// PendingSignup is the pending sign-up a signed reference names while it is open, or
+// ErrPendingSignupGone for a reference that is forged, expired or names nothing open; other
+// errors are the store's.
+func (l *Links) PendingSignup(ctx context.Context, reference string) (*ent.PendingSignup, error) {
+	var pending *ent.PendingSignup
+	_, _, err := l.tokens.Parse(reference, authtoken.PurposePendingSignup, func(id int64) (string, error) {
+		p, err := l.users.pendingSignup(ctx, id, l.users.now())
+		if err != nil {
+			return "", err
+		}
+		pending = p
+		return p.Subject, nil
+	})
+	if bindingErr, ok := errors.AsType[*authtoken.BindingError](err); ok && !errors.Is(bindingErr, ErrPendingSignupGone) {
+		return nil, bindingErr.Err
+	}
+	if err != nil {
+		return nil, ErrPendingSignupGone
+	}
+	return pending, nil
+}
+
+// DeclinePendingSignup deletes the pending sign-up a signed reference names: the person declined
+// the Sign-up items and nothing is created. A reference that names nothing open any more is
+// declined already.
+func (l *Links) DeclinePendingSignup(ctx context.Context, reference string) error {
+	pending, err := l.PendingSignup(ctx, reference)
+	if errors.Is(err, ErrPendingSignupGone) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return l.users.declinePendingSignup(ctx, pending.ID)
 }

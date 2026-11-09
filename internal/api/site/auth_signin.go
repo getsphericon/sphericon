@@ -88,7 +88,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 	}
 	switch res.Outcome {
 	case signup.PendingSignupKept:
-		token, err := h.pendingReference(res.Pending)
+		token, err := h.links.PendingSignupReference(res.Pending)
 		if err != nil {
 			return nil, err
 		}

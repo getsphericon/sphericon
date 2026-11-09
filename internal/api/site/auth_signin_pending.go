@@ -2,15 +2,11 @@ package site
 
 import (
 	"context"
-	"errors"
 	"net/url"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 )
 
 // signinPendingPath is the SPA's screen that asks the Sign-up items of a pending sign-up.
@@ -30,36 +26,9 @@ func (h *Handlers) signinHeld(flow signinprovider.Flow, token string) *siteapi.S
 	}
 }
 
-// pendingReference is the signed reference of a pending sign-up: valid as long as the pending
-// sign-up is open, and keyed to its provider subject, so it names nothing once the row is gone.
-func (h *Handlers) pendingReference(pending *ent.PendingSignup) (string, error) {
-	return h.challenges.Mint(authtoken.PurposePendingSignup, pending.ID, pending.Subject, users.PendingSignupTTL, nil)
-}
-
-// openPending is the pending sign-up a signed reference names while it is open, or
-// users.ErrPendingSignupGone for a reference that is forged, expired or names nothing open.
-func (h *Handlers) openPending(ctx context.Context, token string) (*ent.PendingSignup, error) {
-	var pending *ent.PendingSignup
-	_, _, err := h.challenges.Parse(token, authtoken.PurposePendingSignup, func(id int64) (string, error) {
-		p, err := h.users.PendingSignup(ctx, id, h.now())
-		if err != nil {
-			return "", err
-		}
-		pending = p
-		return p.Subject, nil
-	})
-	if bindingErr, ok := errors.AsType[*authtoken.BindingError](err); ok && !errors.Is(bindingErr, users.ErrPendingSignupGone) {
-		return nil, bindingErr.Err
-	}
-	if err != nil {
-		return nil, users.ErrPendingSignupGone
-	}
-	return pending, nil
-}
-
 // SiteAuthSigninPending shows the screen of a pending sign-up who the provider proved.
 func (h *Handlers) SiteAuthSigninPending(ctx context.Context, params siteapi.SiteAuthSigninPendingParams) (*siteapi.SitePendingSignup, error) {
-	pending, err := h.openPending(ctx, params.Token)
+	pending, err := h.links.PendingSignup(ctx, params.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -69,15 +38,11 @@ func (h *Handlers) SiteAuthSigninPending(ctx context.Context, params siteapi.Sit
 }
 
 // SiteAuthSigninPendingSubmit completes a pending sign-up with the answers to the Sign-up items
-// (ADR 0062): the sign-up use case checks the answers as the provider screen's, creates the User
-// and what comes with it in one transaction and records the login, and the session starts as at
-// the end of a provider sign-in, at the time of that sign-in.
+// (ADR 0062): the sign-up use case resolves the reference, checks the answers as the provider
+// screen's, creates the User and what comes with it in one transaction and records the login, and
+// the session starts as at the end of a provider sign-in, at the time of that sign-in.
 func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi.SiteSigninPendingSubmitInput) (*siteapi.SiteAuthSigninPendingSubmitNoContent, error) {
-	pending, err := h.openPending(ctx, req.Token)
-	if err != nil {
-		return nil, err
-	}
-	done, err := h.signUp.CompletePendingSignup(ctx, pending.ID, inputs.SignupAnswers(req.SignupItems))
+	done, err := h.signUp.CompletePendingSignup(ctx, req.Token, inputs.SignupAnswers(req.SignupItems))
 	if err != nil {
 		return nil, err
 	}
@@ -92,12 +57,5 @@ func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi
 // SiteAuthSigninPendingDecline deletes a pending sign-up: nothing is created. A reference that
 // names nothing open any more is declined already.
 func (h *Handlers) SiteAuthSigninPendingDecline(ctx context.Context, req *siteapi.SiteSigninPendingDeclineInput) error {
-	pending, err := h.openPending(ctx, req.Token)
-	if errors.Is(err, users.ErrPendingSignupGone) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	return h.users.DeclinePendingSignup(ctx, pending.ID)
+	return h.links.DeclinePendingSignup(ctx, req.Token)
 }

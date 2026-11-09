@@ -46,7 +46,11 @@ func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.Site
 	case login.PasskeyThrottled:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
 	case login.PasskeyAuthenticated:
-		return h.sessionStarted(res.Principal, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
+		cookie, err := h.sessions.Issue(res.Principal, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
+		if err != nil {
+			return nil, err
+		}
+		return sessionResult(cookie), nil
 	}
 	return nil, errors.New("login: unhandled passkey outcome")
 }

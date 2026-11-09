@@ -334,7 +334,7 @@ coding standards in `CODING_STANDARDS.md`.
   completion of a pending sign-up, calling the `users` functions for the User's part
   (`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
   `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`; the completion of a pending sign-up also
-  checks the answers and records `user.login`), the sign-in through a Sign-in provider
+  resolves its signed reference through `users.Links`, checks the answers and records `user.login`), the sign-in through a Sign-in provider
   being its `SignInWithProvider` whole (ADR 0111: the provider's answer, the Invitation, the Sign-up
   items, the decision, the link of a link flow, the Second factor and `user.login`; it returns what
   happened, signed in, a Second factor due, a Pending sign-up or an identity linked, and the callback
