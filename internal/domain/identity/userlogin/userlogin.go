@@ -94,21 +94,21 @@ func (m *Module) Password(ctx context.Context, address, password string) (login.
 }
 
 // SecondFactor is the second step for a challenge and a code as typed (login.Module.SecondFactor).
-// A SecondAuthenticated result is recorded as `user.login` with the method the challenge carries:
+// Its result is recorded as `user.login` with the method the challenge carries:
 // a password, or the Sign-in provider whose login it follows.
 func (m *Module) SecondFactor(ctx context.Context, challenge, code string) (login.SecondResult[*ent.User], error) {
 	res, err := m.login.SecondFactor(ctx, challenge, code)
-	if err == nil && res.Outcome == login.SecondAuthenticated {
+	if err == nil {
 		m.recordLogin(ctx, res.Principal, res.Method)
 	}
 	return res, err
 }
 
 // Passkey is the Passkey login for a response as the browser sent it (login.Module.Passkey). A
-// PasskeyAuthenticated result is recorded as `user.login` by Passkey.
+// result is recorded as `user.login` by Passkey.
 func (m *Module) Passkey(ctx context.Context, a login.PasskeyAssertion) (login.PasskeyResult[*ent.User], error) {
 	res, err := m.login.Passkey(ctx, a)
-	if err == nil && res.Outcome == login.PasskeyAuthenticated {
+	if err == nil {
 		m.recordLogin(ctx, res.Principal, users.LoginPasskey)
 	}
 	return res, err

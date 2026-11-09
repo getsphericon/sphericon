@@ -95,7 +95,6 @@ func TestTheSecondStepRecordsTheLoginByTheMethodThatBeganIt(t *testing.T) {
 	second, err := r.module.SecondFactor(t.Context(), first.Challenge, samsCode(t))
 
 	require.NoError(t, err)
-	assert.Equal(t, login.SecondAuthenticated, second.Outcome)
 	assert.Equal(t, users.LoginPassword, second.Method)
 	assert.Equal(t, map[int64]any{fixtures.GlobexID: users.LoginPassword, fixtures.UmbrellaID: users.LoginPassword}, r.logins(t, fixtures.SecondFactorSamID))
 }

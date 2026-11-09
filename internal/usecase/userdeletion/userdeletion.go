@@ -40,25 +40,6 @@ type Request struct {
 	Code string
 }
 
-// Outcome is what a deletion decided.
-type Outcome int
-
-const (
-	// Throttled: the address's Login throttle delay is running. Result.Wait, Limit and Now say
-	// how long.
-	Throttled Outcome = iota + 1
-	// Deleted: the User is gone.
-	Deleted
-)
-
-// Result is the one answer of Delete.
-type Result struct {
-	// Delay is set for Throttled.
-	login.Delay
-
-	Outcome Outcome
-}
-
 // UseCase deletes Users.
 type UseCase struct {
 	bus     *events.Bus
@@ -86,7 +67,7 @@ func New(bus *events.Bus, usersModule *users.Module, links *users.Links, factors
 //     login.ErrPasswordIncorrect and counted on the Login throttle); a User with none proves the
 //     mailbox with the deletion link (users.ErrConfirmLinkInvalid), after the Login throttle is
 //     consulted, since nothing in that proof feeds it (ADR 0025). While the delay runs the
-//     answer is Throttled and nothing is checked;
+//     refusal is its *ratelimit.WaitError and nothing is checked;
 //   - a User with a Second factor confirms with a code, spent inside the deletion's transaction
 //     so only if it commits; a wrong one is secondfactors.ErrDeletionCodeInvalid, counted like a
 //     wrong password.
@@ -101,30 +82,22 @@ func New(bus *events.Bus, usersModule *users.Module, links *users.Links, factors
 // read is users.ErrProofStale. Every Membership then goes through its Workspace's scope with the
 // User as actor of a `membership.delete` Audit entry, and the User row is deleted, which publishes
 // events.UserDeleted.
-func (uc *UseCase) Delete(ctx context.Context, req Request) (Result, error) {
+func (uc *UseCase) Delete(ctx context.Context, req Request) error {
 	u, err := uc.users.DeletionSubject(ctx, req.UserID, req.Email)
 	if err != nil {
-		return Result{}, err
+		return err
 	}
 	hadPassword := u.PasswordHash != ""
 	if hadPassword {
-		proof, err := uc.login.Prove(ctx, u.Email, u.PasswordHash, req.Password)
-		if err != nil {
-			return Result{}, err
-		}
-		if proof.Proof == login.ProofThrottled {
-			return Result{Outcome: Throttled, Delay: proof.Delay}, nil
+		if err := uc.login.ProvePassword(ctx, u.Email, u.PasswordHash, req.Password); err != nil {
+			return err
 		}
 	} else {
-		delay, throttled, err := uc.login.Throttled(ctx, u.Email)
-		if err != nil {
-			return Result{}, err
-		}
-		if throttled {
-			return Result{Outcome: Throttled, Delay: delay}, nil
+		if err := uc.login.CheckThrottle(ctx, u.Email); err != nil {
+			return err
 		}
 		if err := uc.links.CheckDeletionLink(req.Token, u); err != nil {
-			return Result{}, err
+			return err
 		}
 	}
 
@@ -134,13 +107,10 @@ func (uc *UseCase) Delete(ctx context.Context, req Request) (Result, error) {
 	if errors.Is(err, secondfactors.ErrDeletionCodeInvalid) {
 		// The wrong code is counted like a wrong password (ADR 0025), after the rollback.
 		if cerr := uc.login.CountFailure(ctx, u.Email); cerr != nil {
-			return Result{}, cerr
+			return cerr
 		}
 	}
-	if err != nil {
-		return Result{}, err
-	}
-	return Result{Outcome: Deleted}, nil
+	return err
 }
 
 // deleteIn is the deletion's transaction tx, for the User userID whose proof read hadPassword.

@@ -16,7 +16,7 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 	if err != nil {
 		return nil, err
 	}
-	res, err := h.userDeletion.Delete(ctx, userdeletion.Request{
+	err = h.userDeletion.Delete(ctx, userdeletion.Request{
 		UserID:   userID,
 		Email:    string(req.Email),
 		Password: req.CurrentPassword.Or(""),
@@ -25,9 +25,6 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 	})
 	if err != nil {
 		return nil, err
-	}
-	if res.Outcome == userdeletion.Throttled {
-		return nil, loginDelayError(ctx, res.Delay)
 	}
 	return &siteapi.SiteUserDeleteUserNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }

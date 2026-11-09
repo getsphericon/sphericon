@@ -167,7 +167,7 @@ func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *test
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	_, err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.InitechCoOwnerOwenID, Email: fixtures.InitechCoOwnerOwenEmail, Password: fixtures.InitechCoOwnerOwenPassword})
+	err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.InitechCoOwnerOwenID, Email: fixtures.InitechCoOwnerOwenEmail, Password: fixtures.InitechCoOwnerOwenPassword})
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)

@@ -2,12 +2,9 @@ package site
 
 import (
 	"context"
-	"fmt"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/identity/login"
-	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 )
 
 // SiteAuthSecondFactor is the second login step of a User with a Second factor
@@ -23,15 +20,9 @@ func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLo
 	if err != nil {
 		return nil, err
 	}
-	switch res.Outcome {
-	case login.SecondThrottled:
-		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
-	case login.SecondAuthenticated:
-		cookie, err := h.sessions.Issue(res.Principal, auth.Session{Method: auth.MethodSecondFactor, ProviderLoginAt: res.ProviderLoginAt})
-		if err != nil {
-			return nil, err
-		}
-		return sessionResult(cookie), nil
+	cookie, err := h.sessions.Issue(res.Principal, auth.Session{Method: auth.MethodSecondFactor, ProviderLoginAt: res.ProviderLoginAt})
+	if err != nil {
+		return nil, err
 	}
-	return nil, fmt.Errorf("login: unhandled outcome %d", res.Outcome)
+	return sessionResult(cookie), nil
 }
