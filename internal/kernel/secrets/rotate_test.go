@@ -89,3 +89,11 @@ func TestCurrentRejectsAValueWithNoKeyId(t *testing.T) {
 	_, err := testCipher(t).Current("AAAA")
 	assert.ErrorIs(t, err, secrets.ErrCiphertext)
 }
+
+func TestAKeysetChangeNeedsAKeyset(t *testing.T) {
+	_, rotateErr := secrets.Rotate("")
+	_, retireErr := secrets.Retire(" \n")
+
+	require.ErrorIs(t, rotateErr, secrets.ErrNoKeyset)
+	require.ErrorIs(t, retireErr, secrets.ErrNoKeyset)
+}

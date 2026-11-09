@@ -33,14 +33,15 @@ func upgradeCommand() *cli.Command {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (%s)", cmd.Args().First(), upgrade.Usage)
 			}
-			return commandline.WriteUpgrade(out(cmd), upgrade.Run(ctx, upgrade.Request{
+			progress := upgrade.Run(ctx, upgrade.Request{
 				From:    cmd.String("from"),
 				Version: cmd.String("version"),
 				Yes:     cmd.Bool("yes"),
 				Check:   cmd.Bool("check"),
 				Restart: cmd.Bool("restart"),
 				Service: cmd.String("service"),
-			}))
+			})
+			return commandline.WriteUpgrade(out(cmd), progress)
 		},
 	}
 }

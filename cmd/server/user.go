@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/urfave/cli/v3"
@@ -27,10 +26,7 @@ func userCommand(d deps) *cli.Command {
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				email := cmd.StringArg("email")
-				name := strings.TrimSpace(strings.Join(cmd.StringArgs("name"), " "))
-				if name == "" {
-					return errors.New("a name is required")
-				}
+				name := strings.Join(cmd.StringArgs("name"), " ")
 				signUp, err := c.SignUp()
 				if err != nil {
 					return err
@@ -50,7 +46,8 @@ func userCommand(d deps) *cli.Command {
 					return err
 				}
 				email := cmd.StringArg("email")
-				return commandline.ReportSecondFactorReset(out(cmd), email, reset.ResetByStaff(ctx, email, "cli"))
+				err = reset.ResetByStaff(ctx, email, "cli")
+				return commandline.ReportSecondFactorReset(out(cmd), email, err)
 			}),
 		},
 	)

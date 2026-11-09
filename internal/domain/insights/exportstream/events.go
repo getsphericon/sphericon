@@ -57,7 +57,10 @@ func utc(t *time.Time) *time.Time {
 }
 
 // Events serves a page of the Workspace's Events stream.
-func Events(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+func (st *Streams) Events(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
+	if !st.offered() {
+		return Page{}, ErrNotOffered
+	}
 	return Read(token, limit, func(after Cursor, n int) ([]EventRow, error) {
 		rows, err := s.Event().Query().
 			Where(predicate.Event(Seek(after))).

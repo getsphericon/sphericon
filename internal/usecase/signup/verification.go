@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"net/mail"
+	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -199,11 +200,13 @@ var ErrOwnerEmailInvalid = validation.RefuseField(validation.FieldEmail, "signup
 // CreateOwner is the Instance operator's way to make an Owner from a shell (ADR 0042): a
 // Verified User with a generated password and its first Workspace, named
 // users.FirstWorkspaceName, exactly as SignUpVerified makes them. The password is returned once;
-// an address that does not parse is refused, and a taken one is users.ErrEmailTaken.
+// an address that does not parse is refused, and a taken one is users.ErrEmailTaken. The name is
+// kept trimmed, and one empty to the eye is users.ErrNameInvalid.
 func (u *UseCase) CreateOwner(ctx context.Context, email, name string) (string, error) {
 	if _, err := mail.ParseAddress(email); err != nil {
 		return "", ErrOwnerEmailInvalid.With(email)
 	}
+	name = strings.TrimSpace(name)
 	password := rand.Text()
 	hash, err := u.passwords.Hash(password)
 	if err != nil {

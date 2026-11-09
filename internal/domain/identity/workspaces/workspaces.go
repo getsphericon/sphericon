@@ -358,6 +358,17 @@ func IDByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (i
 	return id, nil
 }
 
+// IDByPublicID resolves a Workspace id (ADR 0043) an operator types to the internal key, whatever
+// the Workspace's deletion state: the event history of a Workspace is read while it awaits
+// deletion. An unknown one is ErrNotFound.
+func (m *Module) IDByPublicID(ctx context.Context, publicID string) (int64, error) {
+	id, err := IDByPublicIDIn(ctx, m.client, publicID)
+	if ent.IsNotFound(err) {
+		return 0, fmt.Errorf("%w: %w", ErrNotFound, err)
+	}
+	return id, err
+}
+
 // Live is a Workspace that is not deleted (ADR 0043): every lookup that must not reach a
 // deleted Workspace (its Members' scope, the lists, the Instance-wide readers) uses it, so
 // "live" is stated once.

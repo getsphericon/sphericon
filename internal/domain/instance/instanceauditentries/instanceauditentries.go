@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -37,20 +38,35 @@ func Record(ctx context.Context, tx *ent.Client, staffMemberID int64, action str
 	return nil
 }
 
+// Page is one page of the log, newest first, and the cursor of the next page ("" on the last).
+type Page struct {
+	Entries []*ent.InstanceAuditEntry
+	Next    string
+}
+
 // Entries is a page of the log, newest first, each with the Staff member who made it: at most
-// limit entries older than the entry cursor (0 starts from the newest), and the cursor of the next
-// page (0 on the last page).
-func Entries(ctx context.Context, client *ent.Client, cursor int64, limit int) (pagination.IDPage[*ent.InstanceAuditEntry], error) {
+// limit entries older than the one cursor names ("" starts from the newest). A cursor is the
+// Audit log's (auditlog.Cursor): one the log never handed out is auditlog.ErrBadCursor.
+func Entries(ctx context.Context, client *ent.Client, cursor string, limit int) (Page, error) {
+	after, err := auditlog.Cursor(cursor)
+	if err != nil {
+		return Page{}, err
+	}
 	q := client.InstanceAuditEntry.Query().
 		WithStaffMember().
 		Order(ent.Desc(instanceauditentry.FieldID)).
 		Limit(limit + 1)
-	if cursor > 0 {
-		q = q.Where(instanceauditentry.IDLT(cursor))
+	if after > 0 {
+		q = q.Where(instanceauditentry.IDLT(after))
 	}
 	rows, err := q.All(ctx)
 	if err != nil {
-		return pagination.IDPage[*ent.InstanceAuditEntry]{}, fmt.Errorf("read the instance audit log: %w", err)
+		return Page{}, fmt.Errorf("read the instance audit log: %w", err)
 	}
-	return pagination.ByID(rows, limit, func(e *ent.InstanceAuditEntry) int64 { return e.ID }), nil
+	page := pagination.ByID(rows, limit, func(e *ent.InstanceAuditEntry) int64 { return e.ID })
+	out := Page{Entries: page.Items}
+	if page.Next > 0 {
+		out.Next = auditlog.NextCursor(page.Next)
+	}
+	return out, nil
 }

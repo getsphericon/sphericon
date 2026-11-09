@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apihooks "github.com/getsphericon/sphericon/internal/api/hooks"
 	"github.com/getsphericon/sphericon/internal/api/oauth"
@@ -67,6 +68,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
@@ -111,6 +113,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
+	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
@@ -121,6 +124,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 
@@ -543,6 +547,7 @@ var jobsPackage = do.Package(
 			Cipher:          do.MustInvoke[*secrets.Cipher](i),
 			SystemSender:    do.MustInvoke[SystemSender](i).EmailSender,
 			Notices:         do.MustInvoke[*noticedelivery.UseCase](i),
+			Callbacks:       do.MustInvoke[*callbackinterpretation.UseCase](i),
 			Catalog:         do.MustInvoke[*messaging.Catalog](i),
 			Rules:           do.MustInvoke[*rules.Module](i),
 			Users:           do.MustInvoke[*users.Module](i),
@@ -814,6 +819,12 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*customfieldretyping.UseCase, error) {
 		return customfieldretyping.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i)), nil
 	}),
+	do.Lazy(func(i do.Injector) (*eventhistory.UseCase, error) {
+		return eventhistory.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*events.Bus](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*visitoridentification.UseCase, error) {
+		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
@@ -826,7 +837,7 @@ var contentPackage = do.Package(
 	// The opens and clicks of the Outbound messages (ADR 0053): a token names a message before any
 	// scope exists, so it holds the raw client.
 	do.Lazy(func(i do.Injector) (*engagement.Recorder, error) {
-		return engagement.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*messagetoken.Tracker](i),
+		return engagement.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*messagetoken.Tracker](i),
 			do.MustInvoke[*privaterelayranges.Detector](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// Webhooks: the audit.entry rule asks the Edition whether the license is active.
@@ -1006,6 +1017,11 @@ var surfacesPackage = do.Package(
 			AppURL:      do.MustInvoke[*config.Config](i).AppURL,
 		})}, nil
 	}),
+	// The handlers of the Collect API, over the Visitor identification use case (ADR 0111).
+	do.Lazy(func(i do.Injector) (*apicollect.Handlers, error) {
+		return apicollect.NewHandlers(do.MustInvoke[*events.Bus](i), do.MustInvoke[*bindings.Module](i),
+			do.MustInvoke[*visitoridentification.UseCase](i), do.MustInvoke[Clock](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*hooksHandler, error) {
 		return &hooksHandler{apihooks.New(do.MustInvoke[*callbackinterpretation.UseCase](i))}, nil
 	}),
@@ -1026,7 +1042,7 @@ var surfacesPackage = do.Package(
 	do.Lazy(func(i do.Injector) (Handler, error) {
 		h, err := server.New(do.MustInvoke[*config.Config](i), do.MustInvoke[Database](i).DB, do.MustInvoke[*db.SchemaWatch](i), do.MustInvoke[*ent.Client](i),
 			new(do.MustInvoke[apisite.Deps](i)), do.MustInvoke[*trackingdomains.Module](i), do.MustInvoke[*ratelimit.Limiter](i),
-			do.MustInvoke[*linksHandler](i).Handler, do.MustInvoke[*hooksHandler](i).Handler,
+			do.MustInvoke[*apicollect.Handlers](i), do.MustInvoke[*linksHandler](i).Handler, do.MustInvoke[*hooksHandler](i).Handler,
 			do.MustInvoke[*externalAPI](i).Handler, do.MustInvoke[*mcpHandler](i).Handler, do.MustInvoke[*staffHandler](i).Handler,
 			do.MustInvoke[*oauth.Server](i))
 		if err != nil {
@@ -1068,7 +1084,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),
 		Tokens:                do.MustInvoke[*apitokens.Module](i),
 		Audit:                 do.MustInvoke[*auditlog.Log](i),
-		Export:                edition.Export,
+		Export:                exportstream.New(edition.Export, do.MustInvoke[*auditlog.Log](i)),
 
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
 	}, nil
