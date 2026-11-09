@@ -148,3 +148,23 @@ Two facts about easement 0.5.1 bear on the fix:
   gains the Workspace erase.
 - A `forbid_symbol` list that fences one module's functions (the readers of a Removal check, if it
   lands) becomes a subpackage with its own component.
+
+## Amendment: one component per context, and two removals the list missed
+
+- **The unchecked subpackages are fenced per context.** One component for the core's subpackages
+  sat in `layers` above every context, so an identity subpackage could import an instance module
+  and a contacts one an orchestration module, though its owner may import neither. Each context
+  has a component of its own instead, `domain-<context>-unchecked`
+  (`internal/domain/<context>/**/*unchecked`), with `allow_importers: [usecase, usecase-raw]`,
+  placed in `layers` right above its context: a subpackage imports its owner and what its owner's
+  context may, and no more. The bus's Erasure step (`eventsunchecked`) has `infra-unchecked` above
+  the infrastructure, and the Enterprise Edition `ee-domain-<context>-unchecked`. A context with no
+  subpackage today keeps an optional component, so its first one is fenced. Only
+  `domain-identity-unchecked` may use `ent.Client`: its subpackages join their use case's raw
+  transaction.
+- **The list of what stays unchecked also holds** `usersunchecked.DeleteIn`, the User row of User
+  deletion, whose check needs `memberships` and `secondfactors` beside `users`, and
+  `oauthclientsunchecked.DeleteCodesIn`, the authorization codes that name a Workspace. The erase
+  removes a Workspace's rows through `*ent.Scoped`, and a code is no scoped row (it is looked up
+  before any scope exists), so the erase removes the codes through their owner's subpackage, in its
+  last transaction.

@@ -84,11 +84,14 @@ subpackage of its owner named `<module>unchecked`
 does not import; the owner exports for it only what writes nothing (a state table such as
 `workspaces.DeletionCycle` or `secondfactors.Machine`, a compare-and-swap condition, an Audit
 entry, a read under a lock), and the write itself is the subpackage's, which `entrywrite` takes as
-its owner's. easement holds every such subpackage of the core in one component,
-`domain-unchecked` (`internal/**/*unchecked`), with `allow_importers: [usecase, usecase-raw]`, so
-only a use case imports one: no handler, job, MCP tool, command, other domain module, Enterprise
-package nor the owner bypasses the check. The Enterprise Edition's are `ee-domain-unchecked`
-(`ee/**/*unchecked`), imported only by its own use cases; none exists today. No `forbid_symbol`
+its owner's. easement holds the subpackages of each context in a component of its own,
+`domain-<context>-unchecked` (`internal/domain/<context>/**/*unchecked`, and `infra-unchecked` for
+the bus's), each with `allow_importers: [usecase, usecase-raw]`, so only a use case imports one: no
+handler, job, MCP tool, command, other domain module, Enterprise package nor the owner bypasses the
+check. Each sits in `layers` right above its context, so a subpackage reaches its owner and what
+its owner's context may, never a context above. The Enterprise Edition's are
+`ee-domain-<context>-unchecked` (`ee/domain/<context>/**/*unchecked`), imported only by its own use
+cases; none exists today. No `forbid_symbol`
 names an unchecked operation: that list holds only what the program's builders use (the raw
 client, the ent hooks and guards, the upgrade boundaries, river's workers). They are the Live
 use writes behind the Removal check (`tagsunchecked.DeleteIn`, the retype

@@ -1,11 +1,9 @@
 // Package driverops checks that a driver function calls one operation of the core (ADR 0111,
 // review rule 5).
 //
-// A driver is the code that receives input from outside the program: the API surfaces under
-// internal/api and ee/api, MCP, the job runners internal/jobs and ee/jobs, and the command line
-// (cmd/server and internal/commandline). An operation of the core is a call into a domain module
-// or a use case (internal/domain, ee/domain, internal/usecase, ee/usecase) that takes a
-// context.Context. Reading the actor or the scope the middleware put in the context and mapping to
+// A driver is the code that receives input from outside the program, and an operation of the core
+// is a call into a domain module or a use case that takes a context.Context: which packages those
+// are is the statement of the tiers (tools/analyzers/tier). Reading the actor or the scope the middleware put in the context and mapping to
 // and from the contract take no such call, so they are no operation.
 //
 // The count follows the function's control flow: a driver that calls one operation on each branch
@@ -29,6 +27,7 @@ import (
 	"golang.org/x/tools/go/cfg"
 
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
+	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
 // Analyzer reports a driver function that calls more than one operation of the core.
@@ -39,36 +38,7 @@ var Analyzer = &analysis.Analyzer{
 	Requires: []*analysis.Analyzer{ctrlflow.Analyzer},
 }
 
-const module = "github.com/getsphericon/sphericon/"
-
 const fix = "move the composition into the domain module that owns its rule, or into a use case when it spans several, so the driver makes one call (ADR 0111)"
-
-// isDriver holds for a package that receives input from outside the program.
-func isDriver(path string) bool {
-	rel, ok := strings.CutPrefix(path, module)
-	if !ok {
-		return false
-	}
-	switch rel {
-	case "internal/mcpserver", "internal/jobs", "ee/jobs", "internal/commandline", "cmd/server":
-		return true
-	}
-	return strings.HasPrefix(rel, "internal/api/") || strings.HasPrefix(rel, "ee/api/")
-}
-
-// isCore holds for a package of the domain or the use case tier, of either edition.
-func isCore(path string) bool {
-	rel, ok := strings.CutPrefix(path, module)
-	if !ok {
-		return false
-	}
-	for _, tier := range []string{"internal/domain/", "ee/domain/", "internal/usecase/", "ee/usecase/"} {
-		if strings.HasPrefix(rel, tier) {
-			return true
-		}
-	}
-	return false
-}
 
 // cost is what a path of a function calls: the most operations along one path, and whether an
 // operation runs in a loop.
@@ -108,7 +78,7 @@ type checker struct {
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	if !isDriver(pass.Pkg.Path()) {
+	if !tier.IsDriver(pass.Pkg.Path()) {
 		return nil, nil
 	}
 	// Without the control-flow graphs no function could be costed, and the package would pass
@@ -237,7 +207,7 @@ func (c *checker) callCost(call *ast.CallExpr) cost {
 	if f == nil || f.Pkg() == nil {
 		return cost{}
 	}
-	if isCore(f.Pkg().Path()) && takesContext(f) {
+	if tier.IsCore(f.Pkg().Path()) && takesContext(f) {
 		return cost{n: 1, ops: []string{name(f)}}
 	}
 	if fn, ok := c.decls[f]; ok {
