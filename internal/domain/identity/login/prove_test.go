@@ -1,6 +1,7 @@
 package login_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -57,4 +59,21 @@ func hashOf(t *testing.T, password string) string {
 	hash, err := testhelper.Passwords().Hash(password)
 	require.NoError(t, err)
 	return hash
+}
+
+func TestProvingAPasswordAnswersARunningDelayAsTheLoginAccountsRateLimit(t *testing.T) {
+	r := newRig(t)
+	hash := hashOf(t, fixtures.OwnerJohnPassword)
+	require.NoError(t, r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, fixtures.OwnerJohnPassword))
+	require.ErrorIs(t, r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, "wrong"), login.ErrPasswordIncorrect)
+	require.ErrorIs(t, r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, "wrong"), login.ErrPasswordIncorrect)
+
+	err := r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, fixtures.OwnerJohnPassword)
+
+	wait, ok := errors.AsType[*ratelimit.WaitError](err)
+	require.True(t, ok, "a right password is refused while the delay runs, got %v", err)
+	assert.Equal(t, ratelimit.PolicyLoginAccount, wait.Policy)
+	assert.Positive(t, wait.Wait)
+	assert.Equal(t, 2, wait.Limit)
+	assert.Equal(t, r.clock.now(), wait.At)
 }

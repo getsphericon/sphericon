@@ -28,14 +28,14 @@ func (h *Handlers) SiteSecondFactorGetStatus(ctx context.Context) (*siteapi.Site
 	}, nil
 }
 
-// SiteSecondFactorStartEnrollment creates a pending TOTP secret (ADR 0020) once the
-// password is proven: a hijacked session alone cannot enroll a factor of its own.
+// SiteSecondFactorStartEnrollment creates a pending TOTP secret (ADR 0020) once the User proves
+// their identity (the module's step): a hijacked session alone cannot enroll a factor of its own.
 func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *siteapi.SiteSecondFactorStartInput) (*siteapi.SiteSecondFactorEnrollment, error) {
-	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	e, err := h.secondFactor.StartEnrollment(ctx, userID)
+	e, err := h.secondFactor.StartEnrollment(ctx, u, proof)
 	if err != nil {
 		return nil, err
 	}
@@ -46,11 +46,11 @@ func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *sit
 // and a valid code, returns the Recovery codes once and reissues the acting session
 // (the epoch moved).
 func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *siteapi.SiteSecondFactorConfirmInput) (*siteapi.SiteRecoveryCodesHeaders, error) {
-	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	issued, err := h.secondFactor.ConfirmEnrollment(ctx, userID, inputs.SecondFactorConfirm(req))
+	issued, err := h.secondFactor.ConfirmEnrollment(ctx, u, proof, inputs.SecondFactorConfirm(req))
 	if err != nil {
 		return nil, err
 	}
@@ -64,11 +64,11 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 // SiteSecondFactorRegenerateRecoveryCodes replaces the Recovery codes after the
 // password is proven, and reissues the acting session.
 func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, req *siteapi.SiteRecoveryCodesInput) (*siteapi.SiteRecoveryCodesHeaders, error) {
-	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	issued, err := h.secondFactor.RegenerateRecoveryCodes(ctx, userID)
+	issued, err := h.secondFactor.RegenerateRecoveryCodes(ctx, u, proof)
 	if err != nil {
 		return nil, err
 	}
@@ -82,15 +82,15 @@ func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, 
 // SiteSecondFactorDisable removes the Second factor after the password and a
 // current code are proven, and reissues the acting session.
 func (h *Handlers) SiteSecondFactorDisable(ctx context.Context, req *siteapi.SiteSecondFactorDisableInput) (*siteapi.SiteSecondFactorDisableNoContent, error) {
-	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.secondFactor.Disable(ctx, userID, req.Code)
+	saved, err := h.secondFactor.Disable(ctx, u, proof, req.Code)
 	if err != nil {
 		return nil, err
 	}
-	cookie, err := h.sessions.Issue(u, currentSession(ctx).WithoutSecondFactor())
+	cookie, err := h.sessions.Issue(saved, currentSession(ctx).WithoutSecondFactor())
 	if err != nil {
 		return nil, err
 	}
@@ -121,20 +121,16 @@ func sessionUser(ctx context.Context) (*ent.User, error) {
 // session, so it needs no store and ends by itself.
 const identityProofTTL = 5 * time.Minute
 
-// proveIdentity is the proof the steps that ask for the password need (users.ProveIdentity,
-// ADR 0020, ADR 0048) for the User of the session: the password through the login module's one
-// prove path, or for a User with none a Sign-in provider login or a Passkey check of the last
-// identityProofTTL, carried by the session. It returns the User's id once the proof holds, and
-// the refusal otherwise.
-func (h *Handlers) proveIdentity(ctx context.Context, password siteapi.OptString) (int64, error) {
+// identityProof is the User of the session and the proof of identity they offer for a step that
+// asks for the password (users.Module.ProveIdentity, ADR 0020, ADR 0048): the password typed, and
+// whether the session holds a Sign-in provider login or a Passkey check of the last
+// identityProofTTL. The step's module proves it.
+func (h *Handlers) identityProof(ctx context.Context, password siteapi.OptString) (*ent.User, users.IdentityProof, error) {
 	u, err := sessionUser(ctx)
 	if err != nil {
-		return 0, err
+		return nil, users.IdentityProof{}, err
 	}
-	if err := users.ProveIdentity(ctx, u, password.Value, h.identityProofFresh(ctx), h.proveCurrentPassword); err != nil {
-		return 0, err
-	}
-	return u.ID, nil
+	return u, users.IdentityProof{Password: password.Value, Fresh: h.identityProofFresh(ctx)}, nil
 }
 
 // identityProofFresh is whether the request's session holds a Sign-in provider login or a

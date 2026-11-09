@@ -13,7 +13,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -50,13 +52,33 @@ func verify(t *testing.T, env *testhelper.TestEnv, userID int64, code string) (s
 	return env.SecondFactor.Verify(t.Context(), login.Pending[*ent.User]{Principal: &ent.User{ID: userID}, Binding: b}, code)
 }
 
+// janeResets is Jane, an Owner, resetting a member's Second factor as actor.
+func janeResets(actor events.Actor) secondfactorreset.Caller {
+	return secondfactorreset.Caller{UserID: fixtures.OwnerJaneID, Role: membership.RoleOwner, Actor: actor}
+}
+
+// Nobody resets their own Second factor as a member's: they disable it in their account, which
+// takes a password and a code. Nothing changes.
+func TestResetOfTheCallersOwnSecondFactorIsRefused(t *testing.T) {
+	env, _ := setup(t)
+	ctx := t.Context()
+	sam := secondfactorreset.Caller{UserID: fixtures.SecondFactorSamID, Role: membership.RoleOwner, Actor: events.Actor{Kind: events.ActorUser, ID: "9"}}
+
+	err := env.SecondFactorReset.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, sam)
+
+	require.ErrorIs(t, err, memberships.ErrResetOwnSecondFactor)
+	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
+	require.NoError(t, err)
+	assert.True(t, st.Enabled)
+}
+
 func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
 	env, c := setup(t)
 	ctx := t.Context()
 	session := env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 
 	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
-	require.NoError(t, env.SecondFactorReset.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SecondFactorSamID, jane))
+	require.NoError(t, env.SecondFactorReset.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(jane)))
 
 	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
@@ -76,7 +98,7 @@ func TestResetIsAuditedInTheActingWorkspaceOnly(t *testing.T) {
 	ctx := t.Context()
 	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
 
-	require.NoError(t, env.SecondFactorReset.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SecondFactorSamID, jane))
+	require.NoError(t, env.SecondFactorReset.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(jane)))
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	got, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionUserSecondFactorReset)).All(ctx)
@@ -94,7 +116,7 @@ func TestResetWithoutASecondFactorChangesNothing(t *testing.T) {
 	before, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
 	require.NoError(t, err)
 
-	err = env.SecondFactorReset.Reset(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.OwnerJohnID, events.Actor{Kind: events.ActorUser, ID: "2"})
+	err = env.SecondFactorReset.Reset(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AcmeOwnerMembershipID, janeResets(events.Actor{Kind: events.ActorUser, ID: "2"}))
 	require.ErrorIs(t, err, secondfactorreset.ErrNothingToReset)
 
 	after, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)

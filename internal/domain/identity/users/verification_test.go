@@ -2,6 +2,7 @@ package users_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -79,4 +81,24 @@ func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
 	memberships := env.DB.Scoped(fixtures.AcmeID).Membership().Query().Where(membership.UserID(oscar.ID)).AllX(t.Context())
 	require.Len(t, memberships, 1)
 	assert.Equal(t, membership.RoleAdmin, memberships[0].Role)
+}
+
+// An Invitation's link is accepted by its token: a token that names no pending Invitation is
+// refused before anything sent is checked, and a password sent must pass its rule.
+func TestAnInvitationLinkIsAcceptedByItsToken(t *testing.T) {
+	env := testhelper.Setup(t)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+
+	unknown := acc.AcceptInvitationLink(t.Context(), "inv_unknown", users.InvitationAcceptance{Password: "short"})
+	short := acc.AcceptInvitationLink(t.Context(), fixtures.InvitationAcmeOscarToken, users.InvitationAcceptance{Password: "short", SessionEmail: fixtures.OutsiderOscarEmail})
+	accepted := acc.AcceptInvitationLink(t.Context(), fixtures.InvitationAcmeOscarToken, users.InvitationAcceptance{SessionEmail: fixtures.OutsiderOscarEmail})
+
+	require.ErrorIs(t, unknown, invitations.ErrInvitationLinkNotFound)
+	fields, ok := errors.AsType[*validation.FieldsError](short)
+	require.True(t, ok, "got %v", short)
+	assert.Contains(t, fields.Fields, "password")
+	require.NoError(t, accepted)
+	joined, err := env.DB.Membership.Query().Where(membership.UserID(fixtures.OutsiderOscarID), membership.WorkspaceID(fixtures.AcmeID)).Exist(t.Context())
+	require.NoError(t, err)
+	assert.True(t, joined)
 }

@@ -52,11 +52,7 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.
 // password, or a fresh provider login) and the authenticator's response checks out; the owner
 // is told by mail. Every session of the User goes on.
 func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *siteapi.SitePasskeyRegistrationInput, params siteapi.SitePasskeysFinishRegistrationParams) (*siteapi.SitePasskey, error) {
-	name, err := passkeys.PasskeyName(string(req.Name))
-	if err != nil {
-		return nil, err
-	}
-	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +60,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 	if err != nil {
 		return nil, err
 	}
-	_, row, err := h.passkeys.FinishRegistration(ctx, userID, params.PASSKEY.Or(""), response, name)
+	_, row, err := h.passkeys.FinishRegistration(ctx, u, proof, passkeys.Registration{Ceremony: params.PASSKEY.Or(""), Response: response, Name: string(req.Name)})
 	if err != nil {
 		return nil, err
 	}
@@ -159,23 +155,19 @@ func (h *Handlers) SitePasskeysRename(ctx context.Context, req *siteapi.SitePass
 // password, or a fresh provider login). It ends the other sessions, reissues the acting one and
 // mails the owner.
 func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePasskeyRemoveInput, params siteapi.SitePasskeysRemoveParams) (*siteapi.SitePasskeysRemoveNoContent, error) {
-	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	u, _, err := h.passkeys.Remove(ctx, userID, int64(params.ID))
-	if err != nil {
-		return nil, err
-	}
-	remaining, err := h.passkeys.List(ctx, userID)
+	removal, err := h.passkeys.Remove(ctx, u, proof, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
 	sess := currentSession(ctx)
-	if len(remaining) == 0 {
+	if removal.NoneLeft {
 		sess = sess.WithoutPasskeys()
 	}
-	cookie, err := h.sessions.Issue(u, sess)
+	cookie, err := h.sessions.Issue(removal.User, sess)
 	if err != nil {
 		return nil, err
 	}

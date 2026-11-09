@@ -44,7 +44,7 @@ type Admission struct {
 // the User's Role allows is the Permissions' to say, not Admit's.
 func (m *Module) Admit(ctx context.Context, r Admission) error {
 	if !r.WhileAcceptancePending {
-		if err := m.acceptance.CheckAcceptance(ctx, r.UserID); err != nil {
+		if err := m.users.CheckAcceptance(ctx, r.UserID); err != nil {
 			return err
 		}
 	}

@@ -96,20 +96,28 @@ const (
 // relying party id is the host of the Instance's public URL. A Passkey belongs to the
 // User, so it works on the raw *ent.Client.
 type Module struct {
-	ent *ent.Client
-	bus *events.Bus
-	wa  *webauthn.WebAuthn
-	key []byte
-	now func() time.Time
+	ent   *ent.Client
+	bus   *events.Bus
+	users Users
+	wa    *webauthn.WebAuthn
+	key   []byte
+	now   func() time.Time
+}
+
+// Users is the proof of identity a User's change of their own Passkeys takes
+// (users.Module.ProveIdentity).
+type Users interface {
+	ProveIdentity(ctx context.Context, u *ent.User, proof users.IdentityProof) error
 }
 
 // New builds the module for the Instance at appURL (SPHERICON_APP_URL): its host
 // is the relying party id and its origin the only one a ceremony may come from. An Instance
 // served on an IP address gets a module that is not Available (a relying party id must be a
 // domain), so booting never fails over it. secret is
-// the Instance's JWT secret, from which the ceremony cookie's key is derived. now is the
-// Instance clock the cookie's expiry is checked against, which is required.
-func New(client *ent.Client, bus *events.Bus, appURL, secret string, now func() time.Time) (*Module, error) {
+// the Instance's JWT secret, from which the ceremony cookie's key is derived. identity proves who a
+// User is who registers or removes a Passkey. now is the Instance clock the cookie's expiry is
+// checked against, which is required.
+func New(client *ent.Client, bus *events.Bus, identity Users, appURL, secret string, now func() time.Time) (*Module, error) {
 	u, err := url.Parse(appURL)
 	if err != nil || u.Hostname() == "" {
 		return nil, fmt.Errorf("passkeys: the app URL %q has no host", appURL)
@@ -118,7 +126,7 @@ func New(client *ent.Client, bus *events.Bus, appURL, secret string, now func() 
 		return nil, errors.New("passkeys: the module needs the Instance clock")
 	}
 	if net.ParseIP(u.Hostname()) != nil {
-		return &Module{ent: client, bus: bus, now: now}, nil
+		return &Module{ent: client, bus: bus, users: identity, now: now}, nil
 	}
 	required := true
 	wa, err := webauthn.New(&webauthn.Config{
@@ -143,7 +151,7 @@ func New(client *ent.Client, bus *events.Bus, appURL, secret string, now func() 
 	}
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte("passkey_ceremony"))
-	return &Module{ent: client, bus: bus, wa: wa, key: mac.Sum(nil), now: now}, nil
+	return &Module{ent: client, bus: bus, users: identity, wa: wa, key: mac.Sum(nil), now: now}, nil
 }
 
 // Available reports whether Passkeys work on this Instance: its public URL has a host name.
@@ -206,51 +214,64 @@ func (p *Module) Rename(ctx context.Context, userID, id int64, name string) (*en
 	return p.ent.Passkey.UpdateOneID(row.ID).SetName(name).Save(ctx)
 }
 
-// Remove deletes the User's Passkey id and bumps the session epoch, ending every session of the
-// User, in one transaction, which publishes events.PasskeyChange (the owner is told, ADR 0105). It returns the saved User, for reissuing the acting session, and the
-// removed Passkey. The caller has proven the User's identity. ErrPasskeyNotFound when the
-// Passkey is not theirs; ErrLastSignIn when it is the last way the User can sign in.
-func (p *Module) Remove(ctx context.Context, userID, id int64) (*ent.User, *ent.Passkey, error) {
-	var (
-		saved *ent.User
-		row   *ent.Passkey
-	)
+// Removal is what removing a Passkey left: the saved User, for reissuing the acting session, the
+// removed Passkey, and whether the User holds no Passkey any more.
+type Removal struct {
+	User     *ent.User
+	Passkey  *ent.Passkey
+	NoneLeft bool
+}
+
+// Remove deletes the Passkey id of the User u once they prove their identity
+// (users.Module.ProveIdentity), and bumps the session epoch, ending every session of the User, in
+// one transaction, which publishes events.PasskeyChange (the owner is told, ADR 0105).
+// ErrPasskeyNotFound when the Passkey is not theirs; ErrLastSignIn when it is the last way the
+// User can sign in.
+func (p *Module) Remove(ctx context.Context, u *ent.User, proof users.IdentityProof, id int64) (Removal, error) {
+	if err := p.users.ProveIdentity(ctx, u, proof); err != nil {
+		return Removal{}, err
+	}
+	userID := u.ID
+	var removal Removal
 	err := p.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := tx.User.Get(ctx, userID)
+		held, err := tx.User.Get(ctx, userID)
 		if err != nil {
 			return err
 		}
-		if row, err = tx.Passkey.Query().Where(passkey.ID(id), passkey.UserID(userID)).Only(ctx); err != nil {
+		row, err := tx.Passkey.Query().Where(passkey.ID(id), passkey.UserID(userID)).Only(ctx)
+		if err != nil {
 			if ent.IsNotFound(err) {
 				return ErrPasskeyNotFound
 			}
 			return err
 		}
-		if u.PasswordHash == "" {
-			others, err := tx.Passkey.Query().Where(passkey.UserID(userID), passkey.IDNEQ(id)).Exist(ctx)
-			if err != nil {
-				return err
-			}
+		others, err := tx.Passkey.Query().Where(passkey.UserID(userID), passkey.IDNEQ(id)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if held.PasswordHash == "" && !others {
 			linked, err := tx.UserIdentity.Query().Where(useridentity.UserID(userID)).Exist(ctx)
 			if err != nil {
 				return err
 			}
-			if !others && !linked {
+			if !linked {
 				return ErrLastSignIn
 			}
 		}
 		if err := tx.Passkey.DeleteOneID(id).Exec(ctx); err != nil {
 			return err
 		}
-		if saved, err = users.BumpSessionEpochIn(ctx, tx, userID); err != nil {
+		saved, err := users.BumpSessionEpochIn(ctx, tx, userID)
+		if err != nil {
 			return err
 		}
-		return pub.Publish(ctx, &events.PasskeyChange{Action: events.NameUserPasskeyRemoved, UserID: u.ID, Email: u.Email, Name: row.Name})
+		removal = Removal{User: saved, Passkey: row, NoneLeft: !others}
+		return pub.Publish(ctx, &events.PasskeyChange{Action: events.NameUserPasskeyRemoved, UserID: held.ID, Email: held.Email, Name: row.Name})
 	})
 	if err != nil {
-		return nil, nil, err
+		return Removal{}, err
 	}
-	return saved, row, nil
+	return removal, nil
 }
 
 // BeginRegistration starts adding a Passkey to u: the creation options for the browser (JSON)
@@ -281,9 +302,18 @@ func (p *Module) BeginRegistration(ctx context.Context, u *ent.User) (options []
 	return options, ceremony, nil
 }
 
-// FinishRegistration completes the ceremony begun under cookie for User userID, with the
-// authenticator's response (the browser's RegistrationResponseJSON), and stores the Passkey
-// under name. The caller has proven the User's identity. One transaction spends the
+// Registration is the finish of a Passkey's registration: the ceremony cookie its begin step set,
+// the authenticator's response (the browser's RegistrationResponseJSON) and the name the User
+// gives the Passkey.
+type Registration struct {
+	Ceremony string
+	Response []byte
+	Name     string
+}
+
+// FinishRegistration completes the ceremony begun for the User u and stores the Passkey under its
+// name (PasskeyName, checked first), once the User proves their identity
+// (users.Module.ProveIdentity). One transaction spends the
 // challenge, stores the Passkey and publishes events.PasskeyChange (the owner is told, ADR 0105);
 // it returns the User and the stored Passkey. The session
 // epoch stays: a new way to sign in takes nothing from the sessions already open (ADR 0052).
@@ -291,8 +321,15 @@ func (p *Module) BeginRegistration(ctx context.Context, u *ent.User) (options []
 // A ceremony that cannot finish is ErrRegistrationFailed, wrapping its cause: ErrCeremony for an
 // unusable cookie, ErrChallengeSpent when the ceremony already finished, ErrPasskeyRefused when
 // the response is not acceptable (including an authenticator that did not verify the user).
-func (p *Module) FinishRegistration(ctx context.Context, userID int64, ceremony string, response []byte, name string) (*ent.User, *ent.Passkey, error) {
-	saved, row, err := p.finishRegistration(ctx, userID, ceremony, response, name)
+func (p *Module) FinishRegistration(ctx context.Context, u *ent.User, proof users.IdentityProof, in Registration) (*ent.User, *ent.Passkey, error) {
+	name, err := PasskeyName(in.Name)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := p.users.ProveIdentity(ctx, u, proof); err != nil {
+		return nil, nil, err
+	}
+	saved, row, err := p.finishRegistration(ctx, u.ID, in.Ceremony, in.Response, name)
 	if CeremonyFailed(err) {
 		return nil, nil, fmt.Errorf("%w: %w", ErrRegistrationFailed, err)
 	}

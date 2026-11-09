@@ -3,6 +3,7 @@ package login
 import (
 	"context"
 
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 )
 
@@ -47,6 +48,21 @@ func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password s
 		return ProofResult{}, err
 	}
 	return ProofResult{}, ErrPasswordIncorrect
+}
+
+// ProvePassword is Prove for a step of a signed-in account that answers a running delay as a rate
+// limit (users.Prover): nil when password is the account's, ErrPasswordIncorrect when it is not,
+// and while the address's delay runs a *ratelimit.WaitError of the per-account login policy, even
+// for a right password, which every surface answers as the password step's 429.
+func (m *Module[P]) ProvePassword(ctx context.Context, address, passwordHash, password string) error {
+	res, err := m.Prove(ctx, address, passwordHash, password)
+	if err != nil {
+		return err
+	}
+	if res.Proof == ProofThrottled {
+		return &ratelimit.WaitError{Wait: res.Wait, Limit: res.Limit, Policy: ratelimit.PolicyLoginAccount, At: res.Now}
+	}
+	return nil
 }
 
 // Throttled consults the address's delay without proving anything, for a profile action

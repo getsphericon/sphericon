@@ -71,25 +71,27 @@ const (
 	MethodRecoveryCode Method = "recovery_code"
 )
 
-// Acceptance is the User's part of the admission of a request: a required acceptance pending
-// refuses it (users.Module.CheckAcceptance).
-type Acceptance interface {
+// Users is what the module asks of the User: their part of the admission of a request, which a
+// required acceptance pending refuses (users.Module.CheckAcceptance), and the proof of identity the
+// User's own changes of their factor take (users.Module.ProveIdentity).
+type Users interface {
 	CheckAcceptance(ctx context.Context, userID int64) error
+	ProveIdentity(ctx context.Context, u *ent.User, proof users.IdentityProof) error
 }
 
 // Module enrolls, verifies and removes Second factors, and reads them.
 type Module struct {
-	ent        *ent.Client
-	bus        *events.Bus
-	cipher     *secrets.Cipher
-	acceptance Acceptance
-	now        func() time.Time
+	ent    *ent.Client
+	bus    *events.Bus
+	cipher *secrets.Cipher
+	users  Users
+	now    func() time.Time
 }
 
-// New builds the module. acceptance is the User's part of Admit; now is the Instance clock TOTP
-// codes and the Two-factor grace are checked against.
-func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, acceptance Acceptance, now func() time.Time) *Module {
-	return &Module{ent: client, bus: bus, cipher: cipher, acceptance: acceptance, now: now}
+// New builds the module. u is the User's part of Admit and the proof of identity of the User's
+// own steps; now is the Instance clock TOTP codes and the Two-factor grace are checked against.
+func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, u Users, now func() time.Time) *Module {
+	return &Module{ent: client, bus: bus, cipher: cipher, users: u, now: now}
 }
 
 // factorOf reads the User's factor row on client, nil when the User never enrolled.
@@ -155,10 +157,15 @@ type Enrollment struct {
 	QRCode string // PNG data URI of the URI
 }
 
-// StartEnrollment creates a pending secret for the User, replacing an earlier
-// pending one. ErrAlreadyActive when a Second factor is active: replacing it takes
-// disabling it first (password and a current code).
-func (m *Module) StartEnrollment(ctx context.Context, userID int64) (*Enrollment, error) {
+// StartEnrollment creates a pending secret for the User u once they prove their identity
+// (users.Module.ProveIdentity: a hijacked session alone cannot enroll a factor of its own),
+// replacing an earlier pending one. ErrAlreadyActive when a Second factor is active: replacing it
+// takes disabling it first (password and a current code).
+func (m *Module) StartEnrollment(ctx context.Context, u *ent.User, proof users.IdentityProof) (*Enrollment, error) {
+	if err := m.users.ProveIdentity(ctx, u, proof); err != nil {
+		return nil, err
+	}
+	userID := u.ID
 	var enrollment *Enrollment
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		before, err := SnapshotIn(ctx, tx, userID)
@@ -192,12 +199,16 @@ type ConfirmInput struct {
 	Code         string
 }
 
-// ConfirmEnrollment activates the pending secret when code is a current code for
-// it. It issues the Recovery codes (returned once), bumps the session epoch and
+// ConfirmEnrollment activates the pending secret of the User u, once they prove their identity
+// (users.Module.ProveIdentity), when code is a current code for it. It issues the Recovery codes (returned once), bumps the session epoch and
 // records `user.second_factor_enroll`, all in one transaction, and returns the
 // stored User for reissuing the acting session with the codes. ErrNoPending without a pending
 // enrollment, ErrInvalidCode on a wrong code.
-func (m *Module) ConfirmEnrollment(ctx context.Context, userID int64, in ConfirmInput) (*CodesIssued, error) {
+func (m *Module) ConfirmEnrollment(ctx context.Context, u *ent.User, proof users.IdentityProof, in ConfirmInput) (*CodesIssued, error) {
+	if err := m.users.ProveIdentity(ctx, u, proof); err != nil {
+		return nil, err
+	}
+	userID := u.ID
 	var issued *CodesIssued
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		before, err := SnapshotIn(ctx, tx, userID)
@@ -232,10 +243,14 @@ func (m *Module) ConfirmEnrollment(ctx context.Context, userID int64, in Confirm
 	return issued, err
 }
 
-// RegenerateRecoveryCodes replaces the User's Recovery codes with a fresh set
-// (returned once; the previous set stops working), bumps the session epoch and
+// RegenerateRecoveryCodes replaces the Recovery codes of the User u, once they prove their identity
+// (users.Module.ProveIdentity), with a fresh set (returned once; the previous set stops working), bumps the session epoch and
 // records `user.recovery_codes_regenerate`. ErrNotActive without a Second factor.
-func (m *Module) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*CodesIssued, error) {
+func (m *Module) RegenerateRecoveryCodes(ctx context.Context, u *ent.User, proof users.IdentityProof) (*CodesIssued, error) {
+	if err := m.users.ProveIdentity(ctx, u, proof); err != nil {
+		return nil, err
+	}
+	userID := u.ID
 	var issued *CodesIssued
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		before, err := SnapshotIn(ctx, tx, userID)
@@ -259,15 +274,20 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*Co
 	return issued, err
 }
 
-// Disable removes the User's Second factor when code is a current TOTP code or an
-// unused Recovery code (the caller has checked the password). It clears the factor
+// Disable removes the Second factor of the User u, once they prove their identity
+// (users.Module.ProveIdentity), when code is a current TOTP code or an unused Recovery code. It
+// clears the factor
 // and its Recovery codes, bumps the session epoch and records
 // `user.second_factor_disable`. ErrNotActive without a Second factor,
 // ErrInvalidCode on a wrong code.
-func (m *Module) Disable(ctx context.Context, userID int64, code string) (*ent.User, error) {
+func (m *Module) Disable(ctx context.Context, u *ent.User, proof users.IdentityProof, code string) (*ent.User, error) {
+	if err := m.users.ProveIdentity(ctx, u, proof); err != nil {
+		return nil, err
+	}
+	userID := u.ID
 	var saved *ent.User
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := users.LockIn(ctx, tx, userID)
+		locked, err := users.LockIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
@@ -278,7 +298,7 @@ func (m *Module) Disable(ctx context.Context, userID int64, code string) (*ent.U
 		if !active(f) {
 			return ErrNotActive
 		}
-		_, verified, err := m.verify(ctx, tx, pub, Snapshot{User: u, Factor: f}, code)
+		_, verified, err := m.verify(ctx, tx, pub, Snapshot{User: locked, Factor: f}, code)
 		if err != nil {
 			return err
 		}

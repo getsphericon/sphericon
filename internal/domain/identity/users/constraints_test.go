@@ -31,7 +31,7 @@ func TestCreatingAUserWithATakenAddressIsRefused(t *testing.T) {
 func TestChangingTheEmailToATakenAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := usersModule(env).ChangeEmail(t.Context(), fixtures.MemberMaryID, fixtures.OwnerJohnEmail)
+	_, err := usersModule(env).ChangeEmail(t.Context(), fixtures.MemberMaryID, fixtures.OwnerJohnEmail)
 
 	require.ErrorIs(t, err, users.ErrEmailTaken)
 	mary, err := env.DB.User.Get(t.Context(), fixtures.MemberMaryID)

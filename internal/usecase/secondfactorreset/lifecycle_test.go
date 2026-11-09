@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -25,7 +26,7 @@ import (
 
 func TestLifecycleResetCancelsPendingEnrollment(t *testing.T) {
 	env, _ := setup(t)
-	_, err := env.SecondFactor.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	_, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	before, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
@@ -44,17 +45,17 @@ func TestLifecycleResetCancelsPendingEnrollment(t *testing.T) {
 
 func TestLifecycleResetNeverReusesAnEnrollmentIdentity(t *testing.T) {
 	env, c := setup(t)
-	first, err := env.SecondFactor.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	first, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	err = env.SecondFactorReset.ResetByStaff(t.Context(), fixtures.OwnerJohnEmail, "cli")
 	require.NoError(t, err)
-	second, err := env.SecondFactor.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	second, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	assert.Greater(t, second.ID, first.ID)
 	code, err := totp.GenerateCode(second.Secret, c.now())
 	require.NoError(t, err)
 
-	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), fixtures.OwnerJohnID, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
+	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 }
@@ -77,7 +78,7 @@ func newFactorRace(t *testing.T) factorRace {
 	bus := events.New(pool, entclient.NewTx, clock)
 	bus.UseJobs(testhelper.AcceptingQueue{})
 	return factorRace{client: client, bus: bus, now: now,
-		factors: secondfactors.New(client, bus, testhelper.Cipher(t), nil, clock),
+		factors: secondfactors.New(client, bus, testhelper.Cipher(t), testhelper.ProvenUsers{}, clock),
 		reset:   secondfactorreset.New(bus)}
 }
 
@@ -115,14 +116,14 @@ func (r factorRace) pause(t *testing.T) (paused <-chan struct{}, unblock func())
 
 func TestLifecycleConfirmationCannotUndoAReset(t *testing.T) {
 	r := newFactorRace(t)
-	first, err := r.factors.StartEnrollment(t.Context(), fixtures.OwnerJohnID)
+	first, err := r.factors.StartEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	ready, release := r.pause(t)
 	code, err := totp.GenerateCode(first.Secret, r.now)
 	require.NoError(t, err)
 	result := make(chan error, 1)
 	go func() {
-		_, err := r.factors.ConfirmEnrollment(t.Context(), fixtures.OwnerJohnID, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
+		_, err := r.factors.ConfirmEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
 		result <- err
 	}()
 	testhelper.Receive(t, ready, "confirmation checked the secret before reset")
@@ -145,7 +146,7 @@ func TestLifecycleRegenerationCannotRecreateCodesAfterReset(t *testing.T) {
 	ready, release := r.pause(t)
 	result := make(chan error, 1)
 	go func() {
-		_, err := r.factors.RegenerateRecoveryCodes(t.Context(), fixtures.SecondFactorSamID)
+		_, err := r.factors.RegenerateRecoveryCodes(t.Context(), r.client.User.GetX(t.Context(), fixtures.SecondFactorSamID), users.IdentityProof{Password: fixtures.SecondFactorSamPassword})
 		result <- err
 	}()
 	testhelper.Receive(t, ready, "regeneration checked the active factor")

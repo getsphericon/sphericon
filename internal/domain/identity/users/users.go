@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
@@ -43,16 +44,19 @@ type Module struct {
 	bus       *events.Bus
 	passwords *credentials.Hasher
 	consents  Consents
+	prover    Prover
 	// now is the Instance clock an address is verified and proven by, and a Sign-up ages by.
 	now func() time.Time
 }
 
 // Consents answers a form's answers against the Sign-up items in effect: the Consent records they
 // make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check), and says
-// whether a User has a required acceptance pending (consentrecords.Module.Gated).
+// whether a User has a required acceptance pending (consentrecords.Module.Gated) and which
+// (consentrecords.Module.Pending).
 type Consents interface {
 	Check(ctx context.Context, answers []consentrecords.Answer, source consentrecord.Source) (consentrecords.Consents, error)
 	Gated(ctx context.Context, userID int64) (bool, error)
+	Pending(ctx context.Context, userID int64) ([]signupitems.Document, error)
 }
 
 // Option tunes Module.
@@ -442,11 +446,12 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 // ChangeEmail swaps the login email for one proven by a confirmation link, so it is
 // stored verified, and bumps the session epoch: every session issued before the
 // change ends (ADR 0020). The new address is proven now, so it is a domain-join step
-// (ADR 0051) in the same transaction. An address taken meanwhile is ErrEmailTaken.
-func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) error {
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+// (ADR 0051) in the same transaction. It returns the saved User; an address taken meanwhile is
+// ErrEmailTaken.
+func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*ent.User, error) {
+	var u *ent.User
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		now := a.now()
-		var u *ent.User
 		err := constraints.Write(ctx, tx, func() error {
 			var err error
 			u, err = tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
@@ -458,4 +463,8 @@ func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) err
 		_, err = ApplyDomainJoinIn(ctx, tx, pub, u)
 		return err
 	})
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
 }

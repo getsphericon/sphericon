@@ -134,13 +134,14 @@ func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 	assert.Equal(t, "nora@new.test", string(got[0].Email.Value))
 
 	name := "Nora Renamed"
-	_, err = acc.ChangeProfile(t.Context(), created, users.ProfileChange{Name: &name}, nil)
+	_, err = acc.ChangeProfile(t.Context(), created, users.ProfileChange{Name: &name})
 	require.NoError(t, err)
 	got, saved = usersFrom(t, c, saved)
 	require.Equal(t, []int64{created.ID}, userIDs(got))
 	assert.Equal(t, name, got[0].Name.Value)
 
-	require.NoError(t, acc.ChangeEmail(t.Context(), created.ID, "nora@moved.test"))
+	_, err = acc.ChangeEmail(t.Context(), created.ID, "nora@moved.test")
+	require.NoError(t, err)
 	got, _ = usersFrom(t, c, saved)
 	require.Equal(t, []int64{created.ID}, userIDs(got))
 	assert.Equal(t, "nora@moved.test", string(got[0].Email.Value))
@@ -273,7 +274,7 @@ func TestTheFeedPagesFromATombstoneOnToTheUsersChangedAfterIt(t *testing.T) {
 	john, err := h.env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	name := "John Renamed"
-	_, err = acc.ChangeProfile(t.Context(), john, users.ProfileChange{Name: &name}, nil)
+	_, err = acc.ChangeProfile(t.Context(), john, users.ProfileChange{Name: &name})
 	require.NoError(t, err)
 
 	first := userPage(t, c, saved, 1)

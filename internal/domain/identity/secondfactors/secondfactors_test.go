@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -137,4 +138,41 @@ func TestVerifyWithoutASecondFactor(t *testing.T) {
 	env, _ := setup(t)
 	_, err := verify(t, env, fixtures.OwnerJohnID, "123456")
 	require.ErrorIs(t, err, secondfactors.ErrNotActive)
+}
+
+// ADR 0020: each of the User's own steps proves their identity before it changes anything, so a
+// hijacked session alone neither enrolls, regenerates nor disables a factor.
+func TestTheUsersOwnStepsAreRefusedWithoutTheirPassword(t *testing.T) {
+	env, c := setup(t)
+	john := env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID)
+	sam := env.DB.User.GetX(t.Context(), fixtures.SecondFactorSamID)
+	wrong := users.IdentityProof{Password: "wrong"}
+
+	_, start := env.SecondFactor.StartEnrollment(t.Context(), john, wrong)
+	_, regenerate := env.SecondFactor.RegenerateRecoveryCodes(t.Context(), sam, wrong)
+	_, disable := env.SecondFactor.Disable(t.Context(), sam, wrong, samCode(t, c))
+
+	require.ErrorIs(t, start, login.ErrPasswordIncorrect)
+	require.ErrorIs(t, regenerate, login.ErrPasswordIncorrect)
+	require.ErrorIs(t, disable, login.ErrPasswordIncorrect)
+	johns, err := env.SecondFactor.Status(t.Context(), fixtures.OwnerJohnID)
+	require.NoError(t, err)
+	assert.False(t, johns.Pending, "nothing was enrolled")
+	sams, err := env.SecondFactor.Status(t.Context(), fixtures.SecondFactorSamID)
+	require.NoError(t, err)
+	assert.True(t, sams.Enabled, "nothing was disabled")
+	assert.Equal(t, sam.SessionEpoch, env.DB.User.GetX(t.Context(), fixtures.SecondFactorSamID).SessionEpoch)
+}
+
+// ADR 0048: a User with no password proves their identity with a fresh session proof instead.
+func TestAUserWithNoPasswordEnrollsOnlyWithAFreshSessionProof(t *testing.T) {
+	env, _ := setup(t)
+	pia := env.DB.User.GetX(t.Context(), fixtures.ProviderOnlyPiaID)
+
+	_, stale := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{})
+	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{Fresh: true})
+
+	require.ErrorIs(t, stale, users.ErrIdentityProofRequired)
+	require.NoError(t, err)
+	assert.NotEmpty(t, enrollment.Secret)
 }

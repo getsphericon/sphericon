@@ -79,12 +79,21 @@ func (r *Requests) Verification(ctx context.Context, typed, browser string) erro
 	return nil
 }
 
-// EmailChange asks for the change of u's login address to newEmail (NewEmailFor), once the caller
-// has proven it is u. Whether newEmail is Taken is never told to the requester: every request takes
-// a slot of the address's budget and publishes exactly one event for it, the request of the
-// confirm link when it is free, the claim of the address, whose owner is told without a token, when
-// it is Taken; a spent budget publishes it undelivered.
-func (r *Requests) EmailChange(ctx context.Context, u *ent.User, newEmail string) error {
+// EmailChange asks for the change of u's login address to the address typed, once u proves their
+// current password. The address is checked first (NewEmailFor), so a refused one costs no proof;
+// the password is proven the way a login does (Prover), its refusal coming back as it is.
+// Whether the new address is Taken is never told to the requester (ADR 0031): every request
+// takes a slot of the address's budget and publishes exactly one event for it, the request of the
+// confirm link when it is free, the claim of the address, whose owner is told without a token,
+// when it is Taken; a spent budget publishes it undelivered.
+func (r *Requests) EmailChange(ctx context.Context, u *ent.User, typed, password string) error {
+	newEmail, err := NewEmailFor(u, typed)
+	if err != nil {
+		return err
+	}
+	if err := r.users.provePassword(ctx, u, password); err != nil {
+		return err
+	}
 	granted, err := r.attempts.Take(ctx, throttle.KindEmailChange, newEmail)
 	if err != nil {
 		return err
