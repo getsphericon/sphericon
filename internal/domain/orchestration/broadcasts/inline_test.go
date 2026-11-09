@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 )
 
 // With no retry runtime every send's first attempt is its last: a failed recipient is given up at
@@ -31,19 +31,29 @@ func TestRunInlineGivesUpAFailedRecipientAndGoesOn(t *testing.T) {
 	assert.Equal(t, st.Recipients, st.Failed, "every recipient was tried and given up")
 }
 
-// A hold stops the run: nothing was consumed, and the recipients stay pending for a later one.
-func TestRunInlineStopsAtAHold(t *testing.T) {
-	d := newDelivery(t, time.Now)
-	d.res.err = messaging.ErrNoProvider
+// A Deferral stops the run: nothing was consumed, and the recipients stay pending for a later one.
+// On a clock that stands still, with the Provider limit of the Workspace's default Integration
+// spent before the run, so no token refills between the sends.
+func TestRunInlineStopsAtADeferral(t *testing.T) {
+	d := newDelivery(t, atFixedNow())
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
+	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
+		res, err := d.out.Send(d.t.Context(), d.s, outboundmessages.Request{
+			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
+			Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
+		})
+		require.NoError(t, err)
+		require.Equal(t, outboundmessages.Sent, res.Outcome)
+	}
 
 	err := d.del.RunInline(d.t.Context(), d.s, fixtures.BroadcastDraftID)
-	var held *broadcasts.HeldError
-	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outboundmessages.HoldNoIntegration, held.Reason)
+	var deferred *broadcasts.DeferredError
+	require.ErrorAs(t, err, &deferred)
 
 	figures, err := broadcasts.StatsOf(d.t.Context(), d.s, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	st := figures[fixtures.BroadcastDraftID]
 	require.Positive(t, st.Recipients)
 	assert.Equal(t, st.Recipients, st.Pending, "no recipient was consumed")
+	assert.Len(t, d.box.sent, 3, "only the transactional sends went out")
 }
