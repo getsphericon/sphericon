@@ -336,7 +336,8 @@ components:
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
   # *ent.Scoped to take: the Second factor reset of a User, the Callback interpretation, whose
   # ingest key names the Integration and so its Workspace, the deletion cycle of a Workspace, which
-  # lists the Workspaces that have no scope yet, the creation of a Workspace, the Sign-up with the
+  # lists the Workspaces that have no scope yet, the Workspace summary, which creates a Workspace and
+  # restores a deleted one, the Sign-up with the
   # steps that make a User Verified with its first one, Notice delivery, which reads a User or a
   # Workspace's Owners by the ids an event names, and User deletion, which reaches the User by id
   # and leaves each of their Workspaces in turn. They hold the raw client (the closed list of
@@ -348,7 +349,7 @@ components:
         'internal/usecase/secondfactorreset*',
         'internal/usecase/callbackinterpretation*',
         'internal/usecase/workspacedeletion*',
-        'internal/usecase/workspacecreation*',
+        'internal/usecase/workspacesummary*',
         'internal/usecase/signup*',
         'internal/usecase/noticedelivery*',
         'internal/usecase/userdeletion*',

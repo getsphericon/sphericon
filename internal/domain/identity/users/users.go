@@ -10,7 +10,7 @@
 // The module takes the raw client: a User belongs to no Workspace, and the actors it serves (a
 // sign-up, a link, a provider callback, an Invitation's token) have no Workspace known up front
 // (ADR 0017). The steps that make a User Verified create its first Workspace on the same
-// transaction, so they are the use case internal/usecase/workspacecreation, which calls the
+// transaction, so they are the use case internal/usecase/signup, which calls the
 // ...In functions here for the User's part (ADR 0102).
 package users
 
@@ -254,7 +254,7 @@ const FirstWorkspaceName = "Personal"
 // email verification (ADR 0030): Verified at once with its password, and the Consent records of
 // its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up survey. The caller has
 // checked the name (CheckName) and creates the first Workspace on the same transaction
-// (internal/usecase/workspacecreation). A taken address is ErrEmailTaken.
+// (internal/usecase/signup). A taken address is ErrEmailTaken.
 func CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser, at time.Time) (*ent.User, error) {
 	var u *ent.User
 	err := constraints.Write(ctx, tx, func() error {
@@ -336,7 +336,7 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 // ResetVerifiedPassword sets a Verified User's password from a reset link (ADR 0030): a password
 // change recorded like ChangeProfile, which ends every earlier session. The link was mailed to the
 // login address, so following it proves the address. An Unverified User's reset completes the
-// Sign-up instead (internal/usecase/workspacecreation).
+// Sign-up instead (internal/usecase/signup).
 func (a *Module) ResetVerifiedPassword(ctx context.Context, id int64, passwordHash string) (*ent.User, error) {
 	return a.updateProfile(ctx, id, profileWrite{PasswordHash: &passwordHash}, true)
 }

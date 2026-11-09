@@ -121,7 +121,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 
@@ -655,11 +654,6 @@ var identityPackage = do.Package(
 		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), passwords, do.MustInvoke[*consentrecords.Module](i), do.MustInvoke[Clock](i),
 			users.WithProver(prover)), nil
 	}),
-	// The creation of a Verified User's Workspace (a use case, ADR 0102). On an Instance that has
-	// Send caps (ADR 0067) a new Workspace starts with the Instance's default; elsewhere it has none.
-	do.Lazy(func(i do.Injector) (*workspacecreation.UseCase, error) {
-		return workspacecreation.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*instancestates.Module](i), workspaceid.New), nil
-	}),
 	// The Sign-up and the steps that make a User Verified with its first Workspace (a use case,
 	// ADR 0102), which starts with the Instance's default Send cap where the Instance has them,
 	// and the sign-in through a Sign-in provider (ADR 0111).
@@ -696,7 +690,7 @@ var identityPackage = do.Package(
 	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; its
 	// erase removes every Workspace-owned table's rows itself, the Enterprise Edition's too (ADR 0110).
 	do.Lazy(func(i do.Injector) (*workspacedeletion.UseCase, error) {
-		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*workspaces.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
 	// client, with its Release check (a daily job, the line at start and the banner of an owner)
@@ -875,9 +869,16 @@ var contentPackage = do.Package(
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
 		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
+	// The Workspace summary and the operations of a member that answer with it (a use case, ADR
+	// 0111), creating a Verified User's Workspace among them: on an Instance that has Send caps (ADR
+	// 0067) a new Workspace starts with the Instance's default; elsewhere it has none.
 	do.Lazy(func(i do.Injector) (*workspacesummary.UseCase, error) {
-		return workspacesummary.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*memberships.Module](i), do.MustInvoke[*holds.Holds](i),
-			do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*trackingdomains.Module](i)), nil
+		return workspacesummary.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspacesummary.Modules{
+			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
+			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
+			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
+			States: do.MustInvoke[*instancestates.Module](i),
+		}, workspaceid.New, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
 		return analyticsreport.New(do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil
@@ -1131,7 +1132,6 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Admission:             do.MustInvoke[*admission.Module](i),
 		UserLogin:             do.MustInvoke[*userlogin.Module](i),
 		SecondFactorReset:     do.MustInvoke[*secondfactorreset.UseCase](i),
-		WorkspaceCreation:     do.MustInvoke[*workspacecreation.UseCase](i),
 		SignUp:                do.MustInvoke[*signup.UseCase](i),
 		UserDeletion:          do.MustInvoke[*userdeletion.UseCase](i),
 		Passkeys:              do.MustInvoke[*passkeys.Module](i),

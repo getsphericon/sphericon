@@ -35,7 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 )
 
 type App struct {
@@ -419,10 +419,10 @@ func (a *App) Users() (*users.Module, error) {
 	return do.Invoke[*users.Module](a.injector)
 }
 
-// WorkspaceCreation is the product's Workspace creation use case from the DI container, for the
-// same harnesses: they create a Workspace for a User they made.
-func (a *App) WorkspaceCreation() (*workspacecreation.UseCase, error) {
-	return do.Invoke[*workspacecreation.UseCase](a.injector)
+// WorkspaceSummary is the product's Workspace summary use case from the DI container, for the
+// same harnesses: they create a Workspace for a User they made through it.
+func (a *App) WorkspaceSummary() (*workspacesummary.UseCase, error) {
+	return do.Invoke[*workspacesummary.UseCase](a.injector)
 }
 
 // Memberships is the product's Memberships module from the DI container, for the same harnesses:

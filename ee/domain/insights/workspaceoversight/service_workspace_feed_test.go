@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 )
 
 // feedPage reads one page of the Workspace feed from cursor.
@@ -124,8 +124,9 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	ws, err := h.env.WorkspaceCreation.CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Hooli")
+	created, err := h.env.WorkspaceSummary.Create(t.Context(), workspacesummary.CreateInput{UserID: fixtures.MemberMaryID, Name: "Hooli"})
 	require.NoError(t, err)
+	ws := created.Summary.Workspace
 
 	got, _ := feedFrom(t, c, saved)
 	require.Equal(t, []string{ws.PublicID}, feedIDs(got))
@@ -240,7 +241,6 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
 	now := time.Now().UTC().Truncate(time.Second)
-	deletion := workspacedeletion.New(h.env.DB, h.env.Bus, func() time.Time { return now })
 	actor := events.Actor{Kind: events.ActorUser}
 	initech := h.env.DB.Scoped(fixtures.InitechID)
 	ws, err := initech.Workspace(t.Context())
@@ -265,7 +265,7 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	assert.Equal(t, got, again)
 	assert.Equal(t, afterDelete, replayed)
 
-	_, err = deletion.Restore(t.Context(), workspacedeletion.RestoreInput{UserID: 5, PublicID: fixtures.InitechPublicID, Actor: actor})
+	_, err = h.env.WorkspaceSummary.Restore(t.Context(), workspacesummary.RestoreInput{UserID: 5, PublicID: fixtures.InitechPublicID, Actor: actor})
 	require.NoError(t, err)
 	got, _ = feedFrom(t, c, afterDelete)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))

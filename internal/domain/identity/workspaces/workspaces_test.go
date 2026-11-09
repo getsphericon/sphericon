@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -37,4 +38,20 @@ func TestTheOldestLiveWorkspaceIsNeverADeletedOne(t *testing.T) {
 	next, err := a.OldestLiveID(t.Context())
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.GlobexID, next)
+}
+
+// A postal address is trimmed, so one of whitespace alone clears it, as an empty one does.
+func TestUpdateTrimsThePostalAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := workspaces.New(env.DB, env.Bus, time.Now)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	padded, blank := "  1 Main St  ", "   "
+
+	set, err := m.Update(t.Context(), s, events.Actor{Kind: events.ActorUser}, "Acme", &padded)
+	require.NoError(t, err)
+	cleared, err := m.Update(t.Context(), s, events.Actor{Kind: events.ActorUser}, "Acme", &blank)
+	require.NoError(t, err)
+
+	assert.Equal(t, "1 Main St", set.PostalAddress)
+	assert.Empty(t, cleared.PostalAddress)
 }

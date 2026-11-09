@@ -2,7 +2,7 @@
 // creator's Owner Membership, written only with its new Workspace once the creator is known to be
 // Verified, and the leave of the only Owner of a Workspace in its deletion window, which only User
 // deletion makes after it has refused a User who solely owns a live Workspace (ADR 0050). Their
-// checks are the use cases' (internal/usecase/workspacecreation, internal/usecase/signup and
+// checks are the use cases' (internal/usecase/workspacesummary, internal/usecase/signup and
 // internal/usecase/userdeletion); only a use case may import this package. The memberships module
 // does not import it.
 package membershipsunchecked
@@ -18,7 +18,7 @@ import (
 
 // AddCreatorIn writes, in tx, the Owner Membership of the User who creates the Workspace
 // workspaceID (source creator, ADR 0043), on the transaction that creates the Workspace
-// (workspacesunchecked.CreateIn): the use cases internal/usecase/workspacecreation and
+// (workspacesunchecked.CreateIn): the use cases internal/usecase/workspacesummary and
 // internal/usecase/signup, which refuse an Unverified User first (ADR 0030).
 func AddCreatorIn(ctx context.Context, tx *ent.Client, userID, workspaceID int64) error {
 	_, err := tx.Membership.Create().

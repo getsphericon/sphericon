@@ -64,7 +64,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacesummary"
 
 	// The pgx driver behind database/sql.
@@ -180,7 +179,8 @@ type TestEnv struct {
 	// ceremony (ADR 0051).
 	AppURL string
 
-	// WorkspaceSummary reads the Workspace summary the surfaces map (ADR 0111).
+	// WorkspaceSummary reads the Workspace summary the surfaces map, and makes the changes of a
+	// Workspace that answer with it, creating and restoring one among them (ADR 0111).
 	WorkspaceSummary *workspacesummary.UseCase
 
 	// Holds is the module the sender's freeze check reads, for a test that builds its own
@@ -236,9 +236,6 @@ type TestEnv struct {
 	// UserDeletion is the use case the server deletes a User with at their own ask (ADR 0050).
 	UserDeletion *userdeletion.UseCase
 
-	// WorkspaceCreation is the use case the server creates a Verified User's Workspaces with
-	// (ADR 0102).
-	WorkspaceCreation *workspacecreation.UseCase
 	// SignUp is the use case the server signs Users up with and makes them Verified with their
 	// first Workspace, an Owner made from a shell among them (ADR 0102).
 	SignUp *signup.UseCase
@@ -579,7 +576,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SecondFactor:      do.MustInvoke[*secondfactors.Module](injector),
 		SecondFactorReset: do.MustInvoke[*secondfactorreset.UseCase](injector),
 		UserDeletion:      do.MustInvoke[*userdeletion.UseCase](injector),
-		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
 		SignUp:            do.MustInvoke[*signup.UseCase](injector),
 		StepExecution:     do.MustInvoke[*automations.StepExecution](injector),
 		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
