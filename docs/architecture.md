@@ -1,5 +1,8 @@
 # Architecture
 
+Start with the [architecture overview](architecture-overview.md) for the target model, dependency
+direction and data flows. This reference holds the detailed implementation guidance.
+
 The shape of the backend and the rules its code follows. Review rules are in `docs/standards/review-rules.md`,
 coding standards in `CODING_STANDARDS.md`.
 
