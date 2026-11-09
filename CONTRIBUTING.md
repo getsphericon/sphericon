@@ -1,8 +1,9 @@
 # Contributing to sphericon
 
 Thanks for helping. This page covers the legal side, the pull request rules and how to run the
-project locally. The architecture is in [`docs/architecture.md`](docs/architecture.md), the coding
-standards and the rules every change is reviewed against in [`docs/standards/`](docs/standards/),
+project locally. Start with the [architecture overview](docs/architecture-overview.md) for the target
+model and its data flows; the [architecture reference](docs/architecture.md) holds the details. The coding
+standards and the rules every change is reviewed against are in [`docs/standards/`](docs/standards/),
 the domain language in [`GLOSSARY.md`](GLOSSARY.md) and the decisions behind it in
 [`docs/adr/`](docs/adr/). A coding agent starts from [`AGENTS.md`](AGENTS.md).
 
