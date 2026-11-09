@@ -56,7 +56,7 @@ export function UserMenu({
   return (
     <Menu position="bottom-end" withinPortal>
       <Menu.Target>
-        <UnstyledButton>
+        <UnstyledButton aria-label={t(($) => $.userMenu.menuLabel)}>
           <Group gap="xs" wrap="nowrap">
             <Avatar radius="xl" size={32} color="blue">
               {label ? label.charAt(0).toUpperCase() : <IconUser size={18} />}
