@@ -4,13 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/XSAM/otelsql"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/embedded"
 
 	"github.com/getsphericon/sphericon/config"
 )
@@ -58,36 +58,23 @@ func OpenRiverListener(ctx context.Context, url string) (*pgxpool.Pool, error) {
 // RegisterPoolMetrics exports both pools' statistics through otelsql (the db.sql.connection.*
 // metrics) on the global meter provider, so they surface wherever that provider is scraped. The
 // pool attribute is their one label of ours, so cardinality is bounded by the number of pools
-// (two). Either pool may be nil.
-func RegisterPoolMetrics(sqlDB, riverDB *sql.DB) (metric.Registration, error) {
-	var regs registrations
-	for _, p := range []struct {
-		name string
-		db   *sql.DB
-	}{{PoolSQL, sqlDB}, {PoolRiver, riverDB}} {
-		if p.db == nil {
-			continue
-		}
-		reg, err := otelsql.RegisterDBStatsMetrics(p.db, otelsql.WithAttributes(attribute.String("pool", p.name)))
-		if err != nil {
-			return nil, errors.Join(err, regs.Unregister())
-		}
-		regs.all = append(regs.all, reg)
+// (two). The function it returns unregisters both.
+func RegisterPoolMetrics(sqlDB, riverDB *sql.DB) (func() error, error) {
+	sqlReg, err := registerPoolMetrics(PoolSQL, sqlDB)
+	if err != nil {
+		return nil, err
 	}
-	return &regs, nil
+	riverReg, err := registerPoolMetrics(PoolRiver, riverDB)
+	if err != nil {
+		return nil, errors.Join(err, sqlReg.Unregister())
+	}
+	return func() error { return errors.Join(sqlReg.Unregister(), riverReg.Unregister()) }, nil
 }
 
-// registrations unregisters the callbacks of every pool at once.
-type registrations struct {
-	embedded.Registration
-
-	all []metric.Registration
-}
-
-func (r *registrations) Unregister() error {
-	errs := make([]error, 0, len(r.all))
-	for _, reg := range r.all {
-		errs = append(errs, reg.Unregister())
+func registerPoolMetrics(pool string, d *sql.DB) (metric.Registration, error) {
+	reg, err := otelsql.RegisterDBStatsMetrics(d, otelsql.WithAttributes(attribute.String("pool", pool)))
+	if err != nil {
+		return nil, fmt.Errorf("register the %s pool metrics: %w", pool, err)
 	}
-	return errors.Join(errs...)
+	return reg, nil
 }

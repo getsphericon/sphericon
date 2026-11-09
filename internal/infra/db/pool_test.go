@@ -72,9 +72,9 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	otel.SetMeterProvider(mp)
 	t.Cleanup(func() { otel.SetMeterProvider(prev); cleanup.Report("shut mp down", mp.Shutdown(context.Background())) })
 
-	registration, err := db.RegisterPoolMetrics(sqlDB, riverDB)
+	unregister, err := db.RegisterPoolMetrics(sqlDB, riverDB)
 	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Report("unregister the gauge", registration.Unregister()) })
+	t.Cleanup(func() { cleanup.Report("unregister the pool metrics", unregister()) })
 
 	rec := httptest.NewRecorder()
 	promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", nil))
@@ -82,12 +82,16 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	require.NoError(t, err)
 
 	text := string(body)
-	for name, maxOpen := range map[string]string{"sql": "7", "river": "11"} {
-		assert.Regexp(t, `db_sql_connection_max_open\{[^}]*pool="`+name+`"[^}]*\} `+maxOpen, text)
-		for _, status := range []string{"inuse", "idle"} {
-			assert.Regexp(t, `db_sql_connection_open\{[^}]*pool="`+name+`"[^}]*status="`+status+`"[^}]*\}`, text)
-		}
-		assert.Regexp(t, `db_sql_connection_wait_total\{[^}]*pool="`+name+`"[^}]*\}`, text)
+
+	// The alerts read these series (charts/sphericon/files/alerts.yaml).
+	for _, series := range []string{
+		`db_sql_connection_max_open\{[^}]*pool="sql"[^}]*\} 7`,
+		`db_sql_connection_max_open\{[^}]*pool="river"[^}]*\} 11`,
+		`db_sql_connection_open\{[^}]*pool="sql"[^}]*status="inuse"[^}]*\} 0`,
+		`db_sql_connection_open\{[^}]*pool="river"[^}]*status="inuse"[^}]*\} 0`,
+		`db_sql_connection_wait_total\{[^}]*pool="sql"[^}]*\} 0`,
+		`db_sql_connection_wait_total\{[^}]*pool="river"[^}]*\} 0`,
+	} {
+		assert.Regexp(t, series, text)
 	}
-	assert.NotContains(t, text, "db_pool_", "the hand-written gauges are gone")
 }
