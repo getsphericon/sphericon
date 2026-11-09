@@ -129,7 +129,7 @@ func TestRegistrationNamesAndBoundsClients(t *testing.T) {
 func TestStorageFailureIsAServerError(t *testing.T) {
 	mux := http.NewServeMux()
 	closed := closedClient(t)
-	clients := oauthclients.New(closed, oauthclients.NewFetcher(webhook.Allowlist{}), time.Now)
+	clients := oauthclients.New(closed, oauthclients.NewFetcher(webhook.Allowlist{}), nil, time.Now)
 	oauth.New(apitokens.New(closed, nil, "", time.Now), clients, "https://app.test", "https://app.test").Mount(mux)
 	do := func(req *http.Request) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()

@@ -60,9 +60,12 @@ coding standards in `CODING_STANDARDS.md`.
   second steps and for `Prove` (the password check behind second-factor and profile actions):
   address normalization, the throttle consulted first (ADR 0025), the decoy hash, the verification
   gate (ADR 0030), failure counting and the challenge. It holds no database client; an adapter
-  supplies the `Store`, `Throttle`, challenge `Parse`/`Verify` and issues the session. `/site`
-  (`internal/api/site/auth_login.go`) and `internal/domain/identity/staffmembers` (`login.go`, the second adapter, ADR 0026) are
-  the two adapters: add sign-in rules in the module, not in a handler. User deletion
+  supplies the `Store`, `Throttle`, challenge `Parse`/`Verify`, and a surface issues the session.
+  `internal/domain/identity/userlogin` (the User's Login: the Users, their Second factors and Passkeys, the
+  verification gate, the challenge and the `user.login` entry of each step that signs a User in) and
+  `internal/domain/identity/staffmembers` (`login.go`, the second adapter, ADR 0026) are the two adapters,
+  both in identity: add sign-in rules in the module, not in a handler, which only turns the outcome into a
+  session. User deletion
   (`internal/usecase/userdeletion`) proves the password through the same module's `Prove`, over the
   Users' throttle and the same hasher, and counts a wrong Second factor code with `CountFailure`. The throttle is
   `throttle.Attempts.For(kind)` (`internal/infra/throttle`), a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
@@ -183,7 +186,8 @@ coding standards in `CODING_STANDARDS.md`.
   Workspace, ask a Permission or tell the Owners something), the raw-client holders `apitokens`, `consentrecords`,
   `invitations`, `joindomains`, `oauthclients`, `passkeys`, `secondfactors`, `signupitems`,
   `signupsurveyresponses`, `staffmembers`, `suspension`, `users`, `usertombstones` and `workspacefeed`
-  (`domain-identity-raw`), and `login`, `signinprovider` and `accountlink` (`domain-identity`).
+  (`domain-identity-raw`), and `login`, `userlogin`, `admission`, `signinprovider` and `accountlink`
+  (`domain-identity`).
   An identity module imports no module of another context: not `providerlimit`, not `contacts`.
   Contacts, above it, is one component (`domain-contacts`, the glob of
   `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
@@ -329,7 +333,8 @@ coding standards in `CODING_STANDARDS.md`.
   links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
   completion of a pending sign-up, calling the `users` functions for the User's part
   (`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
-  `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`), the sign-in through a Sign-in provider
+  `Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`; the completion of a pending sign-up also
+  resolves its signed reference through `users.Links`, checks the answers and records `user.login`), the sign-in through a Sign-in provider
   being its `SignInWithProvider` whole (ADR 0111: the provider's answer, the Invitation, the Sign-up
   items, the decision, the link of a link flow, the Second factor and `user.login`; it returns what
   happened, signed in, a Second factor due, a Pending sign-up or an identity linked, and the callback
@@ -471,9 +476,10 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
   `client.Scoped(<int64>)`. Tests use `env.DB.Scoped(fixtures.AcmeID)`.
 - **`*ent.Scoped` is built only in a closed list of places:**
   1. site: `memberships.Module.Scope`, behind the ogen middleware `Handlers.Access`
-     (`internal/api/site/access.go`, ADR 0061), from the user's Membership of the Workspace an
-     operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership with
-     `callerMembership(ctx)`). On every operation that carries a session, the middleware then
+     (`internal/api/site/access.go`, ADR 0061), through the one call that admits a request made on a
+     session (`admission.Module.Admit`, `internal/domain/identity/admission`): from the user's Membership of
+     the Workspace an operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership
+     with `callerMembership(ctx)`). On every operation that carries a session, the admission then
      admits the User (`secondfactors.Module.Admit`, `internal/domain/identity/secondfactors/admission.go`, the one decision
      of both surfaces): it refuses first a User with a required acceptance pending (403
      `acceptance_pending`, ADR 0062) unless the operation is marked
@@ -485,8 +491,8 @@ or roll back together. Failure counters remain unaudited; the HTTP request holds
      ADR 0020) unless the operation is marked `@allowedWhileWithheld` (only lifting the
      requirement), and last applies the Permissions the operation declares in TypeSpec
      (`@requiresPermissions`, generated into `operationAccess`). Two operations name their
-     Workspace elsewhere and call `memberships.Module.Scope` themselves: `SiteOAuthDecide` (in its
-     body, then `secondfactors.Module.Admit` as the middleware does) and `SiteWorkspacesCreate` /
+     Workspace elsewhere: `SiteOAuthDecide` (in its body: `oauthclients.Module.Decide` admits the User
+     to it through `admission.Module.Admit` as the middleware does) and `SiteWorkspacesCreate` /
      `SiteWorkspacesRestore` (a Workspace that was not live before);
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
      in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`. A User's own token (an API

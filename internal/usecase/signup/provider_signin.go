@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
@@ -304,16 +305,30 @@ func (u *UseCase) takeOver(ctx context.Context, holderID int64, in users.Provide
 }
 
 // CompletePendingSignup is the person's answers to the Sign-up items completing the pending
-// sign-up with id (ADR 0062): in one transaction it takes the pending sign-up (open at now), creates
-// the Verified User with the provider's address and name, or takes over the Unverified User that
-// holds the address, as a provider sign-in without items does, its Linked identity, the Consent records
-// of the answers, the Membership of the Invitation the flow began from (users.Module.CompletePendingSignupIn),
-// and the first Workspace, as a provider sign-up without items does. The User owes the Sign-up survey when
-// the Instance asks for it (SignUpConfig.SurveyDue), unless the sign-up accepts an Invitation. It returns the
-// User and the pending sign-up it came from. users.ErrPendingSignupGone when the pending sign-up is no longer
-// open, its Invitation no longer pending, or its address or provider account was taken meanwhile; nothing is
-// written then.
-func (u *UseCase) CompletePendingSignup(ctx context.Context, id int64, consents consentrecords.Consents) (*SignupCompleted, error) {
+// sign-up a signed reference names (ADR 0062, users.Links.PendingSignup). A reference that names
+// nothing open is users.ErrPendingSignupGone. The answers are checked next, as the provider screen's
+// (SignUpConfig.Consents), and a refused one is the *validation.FieldsError that names it, with
+// nothing written and the pending sign-up still open. Then, in one transaction, it takes the
+// pending sign-up (open at now), creates the Verified User with the provider's address and name, or
+// takes over the Unverified User that holds the address, as a provider sign-in without items does,
+// its Linked identity, the Consent records of the answers, the Membership of the Invitation the
+// flow began from (users.Module.CompletePendingSignupIn), and the first Workspace, as a provider
+// sign-up without items does. The User owes the Sign-up survey when the Instance asks for it
+// (SignUpConfig.SurveyDue), unless the sign-up accepts an Invitation. The sign-in it ends is
+// recorded as `user.login` by the provider, as SignInWithProvider records one; an entry that fails
+// is logged and does not undo the sign-up. It returns the User and the pending sign-up it came
+// from. users.ErrPendingSignupGone when the pending sign-up is no longer open, its Invitation no
+// longer pending, or its address or provider account was taken meanwhile; nothing is written then.
+func (u *UseCase) CompletePendingSignup(ctx context.Context, reference string, answers []consentrecords.Answer) (*SignupCompleted, error) {
+	pending, err := u.links.PendingSignup(ctx, reference)
+	if err != nil {
+		return nil, err
+	}
+	id := pending.ID
+	consents, err := u.signUp.Consents.Check(ctx, answers, consentrecord.SourceProviderScreen)
+	if err != nil {
+		return nil, err
+	}
 	surveyDue := u.signUp.SurveyDue != nil && u.signUp.SurveyDue()
 	now := u.now()
 	var taken *ent.PendingSignup
@@ -324,6 +339,9 @@ func (u *UseCase) CompletePendingSignup(ctx context.Context, id int64, consents 
 	})
 	if err != nil {
 		return nil, err
+	}
+	if err := u.users.RecordLogin(ctx, completed, taken.Provider); err != nil {
+		slog.ErrorContext(ctx, "audit: login not recorded", "error", err)
 	}
 	return &SignupCompleted{User: completed, PendingSignup: taken}, nil
 }

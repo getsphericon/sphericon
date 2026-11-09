@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -60,6 +61,7 @@ type rig struct {
 	queue    requests
 	module   *signup.UseCase
 	consents *consentrecords.Module
+	links    *users.Links
 }
 
 type option func(*users.Module, *signup.SignUpConfig)
@@ -114,8 +116,9 @@ func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, bud
 	for _, o := range opts {
 		o(acc, &cfg)
 	}
-	module := signup.New(bus, acc, nil, testhelper.Passwords(), nil, cfg, signup.SignInConfig{}, time.Now)
-	return rig{db: client, queue: q, module: module, consents: consents}
+	links := users.NewLinks(acc, authtoken.New("secret", time.Now))
+	module := signup.New(bus, acc, links, testhelper.Passwords(), nil, cfg, signup.SignInConfig{}, time.Now)
+	return rig{db: client, queue: q, module: module, consents: consents, links: links}
 }
 
 func (r rig) signUp(t *testing.T, name, email, password string) signup.SignUpResult {

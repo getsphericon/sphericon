@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
@@ -18,10 +17,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
-	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
@@ -29,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/identity/userlogin"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
@@ -48,7 +48,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
-	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
@@ -76,9 +75,7 @@ type Handlers struct {
 	invitations     *invitations.Module
 	workspaces      *workspaces.Module
 	memberships     *memberships.Module
-	passwords       *credentials.Hasher
 	deletion        *workspacedeletion.UseCase
-	attempts        *throttle.Attempts
 	bus             *events.Bus
 	webhooks        *webhookendpoints.Module
 	broadcasts      *broadcasts.Module
@@ -116,6 +113,7 @@ type Handlers struct {
 	analytics             *analyticsreport.UseCase
 	sessions              *auth.Sessions
 	secondFactor          *secondfactors.Module
+	admission             *admission.Module
 	secondFactorReset     *secondfactorreset.UseCase
 	workspaceCreation     *workspacecreation.UseCase
 	signUp                *signup.UseCase
@@ -127,9 +125,6 @@ type Handlers struct {
 	instance              *instancestates.Module
 	workspaceSummary      *workspacesummary.UseCase
 	origins               Origins
-	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
-	// not required in selfhosted (ADR 0060).
-	requireVerification bool
 	// signupSurvey is the Sign-up survey: whether a public sign-up marks its User as owing it,
 	// and the submit.
 	signupSurvey *signupsurveyresponses.Module
@@ -137,10 +132,9 @@ type Handlers struct {
 	signupItems *signupitems.Module
 	// consentRecords is the Users' decisions on the Sign-up items (ADR 0062).
 	consentRecords *consentrecords.Module
-	// challenges signs the login challenge on the env clock (ADR 0020).
-	challenges *authtoken.Signer
-	// login is the password step of signing in (ADR 0020).
-	login *login.Module[*ent.User]
+	// login is the User's Login: the password, second and Passkey steps of signing in and the
+	// proof of the password (ADR 0020).
+	login *userlogin.Module
 	// signin is the Sign-in providers of the Instance (ADR 0048).
 	signin *signinprovider.Providers
 	// unsubscribe records an opt-out (a use case, ADR 0102).
@@ -166,15 +160,12 @@ type Deps struct {
 	// and their changes (ADR 0102).
 	Workspaces  *workspaces.Module
 	Memberships *memberships.Module
-	// Passwords hashes the password a User sets (sign-up, reset, a verified link's new one).
-	Passwords *credentials.Hasher
 	// Deletion is the Workspace deletion cycle (ADR 0043).
 	Deletion *workspacedeletion.UseCase
 	// Instance is the Instance state, whose Release check (ADR 0032) finds the newer release an
 	// owner is told of.
 	Instance *instancestates.Module
-	// Attempts counts failed logins and password-reset mails per account (ADR
-	// 0025); login and forgot-password share it.
+	// Attempts counts the password-reset mails per account (ADR 0025).
 	Attempts    *throttle.Attempts
 	OAuth       *oauthclients.Module
 	Bus         *events.Bus
@@ -219,9 +210,13 @@ type Deps struct {
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
-	// SecondFactor enrolls, verifies and reads a User's TOTP Second factor, and admits a
-	// request under a Workspace's Two-factor requirement (ADR 0020).
+	// SecondFactor enrolls, verifies and reads a User's TOTP Second factor (ADR 0020).
 	SecondFactor *secondfactors.Module
+	// Admission admits a request made on a session to the operation it addresses (ADR 0061).
+	Admission *admission.Module
+	// UserLogin is the User's Login: signing in by password, Second factor or Passkey, and the
+	// proof of the password (ADR 0020).
+	UserLogin *userlogin.Module
 	// SecondFactorReset clears a member's Second factor and Passkeys (a use case, ADR 0102).
 	SecondFactorReset *secondfactorreset.UseCase
 	// WorkspaceCreation creates a Verified User's Workspace (a use case, ADR 0102).
@@ -244,10 +239,6 @@ type Deps struct {
 	// WorkspaceSummary reads a Workspace as its members see it (a use case, ADR 0111): its Holds
 	// come from the module the send path reads, so the same license gate applies (ADR 0009).
 	WorkspaceSummary *workspacesummary.UseCase
-	// RequireEmailVerification is the email verification gate (ADR 0030): when false,
-	// a Sign-up takes a password and yields a Verified User at once, and login
-	// checks no verification.
-	RequireEmailVerification bool
 	// SignupSurvey is the Sign-up survey module (built with signupsurveyresponses.Enabled).
 	SignupSurvey *signupsurveyresponses.Module
 	// SignupItems is the Instance's Sign-up items and their Legal documents.
@@ -276,16 +267,15 @@ func NewHandlers(d *Deps) *Handlers {
 		panic("site: Deps.Clock is required: the handlers read the Instance clock")
 	}
 	h := &Handlers{
-		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
+		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, deletion: d.Deletion, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, secondFactorReset: d.SecondFactorReset, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceSummary: d.WorkspaceSummary, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, secondFactorReset: d.SecondFactorReset, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceSummary: d.WorkspaceSummary, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
-		challenges: d.Tokens,
+		login:      d.UserLogin,
 	}
-	h.login = h.newLogin()
 	return h
 }
 

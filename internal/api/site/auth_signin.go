@@ -88,14 +88,14 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 	}
 	switch res.Outcome {
 	case signup.PendingSignupKept:
-		token, err := h.pendingReference(res.Pending)
+		token, err := h.links.PendingSignupReference(res.Pending)
 		if err != nil {
 			return nil, err
 		}
 		return h.signinHeld(flow, token), nil
 	case signup.SecondFactorDue:
 		// The login page finishes it through the same second step as after a password.
-		challenge, err := h.signLoginChallenge(res.User, res.ChallengeBinding, flow.Provider, res.At)
+		challenge, err := h.login.Challenge(res.User, res.ChallengeBinding, flow.Provider, res.At)
 		if err != nil {
 			return nil, err
 		}
