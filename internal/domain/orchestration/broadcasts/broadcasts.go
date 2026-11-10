@@ -176,10 +176,18 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
 	var claimed *ent.Broadcast
 	err := m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
-		if err := m.notArchived(ctx, ts, id); err != nil {
-			return err
+		// The move lands only on a Broadcast that is not archived (ADR 0109); a refused one that is
+		// archived is ErrArchived.
+		unarchived := func(u *ent.BroadcastScopedUpdate) {
+			u.Where(broadcast.ArchivedAtIsNil())
+			if set != nil {
+				set(u)
+			}
 		}
-		if err := fire(ctx, ts, id, t, set); err != nil {
+		if err := fire(ctx, ts, id, t, unarchived); err != nil {
+			if archived := m.notArchived(ctx, ts, id); archived != nil {
+				return archived
+			}
 			return notSendable(err)
 		}
 		var err error

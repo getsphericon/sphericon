@@ -110,8 +110,9 @@ func (s *Module) Get(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segmen
 }
 
 // Update validates a changed condition exactly as Create does, then applies the change, under the
-// Workspace's lock as Create. An archived Segment is ErrArchived: it is read-only until it is
-// unarchived (ADR 0100), and Archive takes the same lock, so the check holds for the write.
+// Workspace's lock as Create, for the references the condition names. An archived Segment is
+// ErrArchived: it is read-only until it is unarchived (ADR 0100), so the change is an update
+// conditioned on its not being archived (ADR 0109).
 func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
 	name, err := validation.NamePatch(in.Name)
 	if err != nil {
@@ -120,23 +121,23 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 	in.Name = name
 	var seg *ent.Segment
 	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
-		current, err := ts.Segment().Get(ctx, id)
-		if err != nil {
-			return err
-		}
-		if current.ArchivedAt != nil {
-			return ErrArchived
-		}
 		if cond, ok := in.Condition.Get(); ok {
 			if err := s.Validate(ctx, ts, cond); err != nil {
 				return err
 			}
 		}
-		q := ts.Segment().UpdateOneID(id)
+		q := ts.Segment().UpdateOneID(id).Where(segment.ArchivedAtIsNil())
 		patch.ApplySet(in.Name, q.SetName)
 		patch.ApplySet(in.Condition, q.SetCondition)
 		seg, err = q.Save(ctx)
-		return err
+		if !ent.IsNotFound(err) {
+			return err
+		}
+		// The update missed: the Segment is archived, or the Workspace has none of this id.
+		if _, err := ts.Segment().Get(ctx, id); err != nil {
+			return err
+		}
+		return ErrArchived
 	})
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
