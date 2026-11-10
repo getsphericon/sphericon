@@ -114,7 +114,7 @@ func (Integration) Fields() []ent.Field {
 		// provider accepts, which clears it. Nil is not refused. Unlike provider_enforcement it is
 		// found at send time, not read from the provider.
 		field.Time("provider_refused_at").
-			Annotations(Attribute(reasonLatest)).
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		// When the quota was last looked up, successfully or not.
@@ -126,7 +126,7 @@ func (Integration) Fields() []ent.Field {
 		// service) in the failing run it is still in; the UI warns while it is set and a
 		// later success clears it. A further failure keeps the first moment.
 		field.Time("provider_quota_failed_at").
-			Annotations(Attribute(reasonLatest)).
+			Annotations(Attribute(reasonFoundRun)).
 			Optional().
 			Nillable(),
 	}

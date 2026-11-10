@@ -13,6 +13,7 @@ const (
 	StateFormBroadcastStatus                   = "machine"
 	StateFormInstanceStateNoticeAcknowledgedAt = "latch"
 	StateFormIntegrationDiscardedAt            = "latch"
+	StateFormIntegrationProviderRefusedAt      = "machine"
 	StateFormInvitationAcceptedAt              = "latch"
 	StateFormJoinDomainVerifiedAt              = "machine"
 	StateFormOAuthCodeUsedAt                   = "latch"
