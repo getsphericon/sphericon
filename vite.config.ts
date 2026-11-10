@@ -135,6 +135,10 @@ export default defineConfig({
     // typespec/lib's tests compile TypeSpec, which needs node: `mise run test:typespec` runs them.
     exclude: [...configDefaults.exclude, '.cache/**', '.claude/**', 'typespec/**'],
     setupFiles: ['./src/test/setup.tsx'],
+    // Every test starts from its mocks as declared: what one test made a mock answer, or a spy it
+    // put on an object, does not carry into the next.
+    mockReset: true,
+    restoreMocks: true,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}', 'packages/analytics/src/**/*.ts'],
