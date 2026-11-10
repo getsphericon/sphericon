@@ -2,6 +2,7 @@ package outboundmessages
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // FindByProviderMessageID is the Outbound message a Delivery notice names by the provider's
@@ -103,12 +105,19 @@ func FindOrigin(ctx context.Context, s *ent.Scoped, id int64) (Ref, error) {
 }
 
 // StampFinal sets a message's final delivery state, delivered or undelivered (ADR 0079), and
-// reports whether it did. A message moves only forward: the first final report stamps it, and a
-// later one of either kind, a redelivery included, changes nothing. An undelivered stamp keeps the
-// provider's error code, nil when it gave none.
+// reports whether it did. Only a message the provider accepted (sent) takes one, and it moves only
+// forward: the first final report stamps it, and a later one of either kind, a redelivery
+// included, changes nothing. An undelivered stamp keeps the provider's error code, nil when it
+// gave none.
+//
+// undelivered_at is a latch (ADR 0109), and the write that sets either moment is conditioned on
+// both being null; the table refuses a row with both (outbound_messages_final_report_check).
 func StampFinal(ctx context.Context, s *ent.Scoped, id int64, result DeliveryResult, code string, at time.Time) (bool, error) {
 	u := s.OutboundMessage().Update().
-		Where(outboundmessage.ID(id), outboundmessage.DeliveredAtIsNil(), outboundmessage.UndeliveredAtIsNil())
+		Where(
+			outboundmessage.ID(id), outboundmessage.StatusEQ(outboundmessage.StatusSent),
+			outboundmessage.DeliveredAtIsNil(), outboundmessage.UndeliveredAtIsNil(),
+		)
 	switch result {
 	case ResultDelivered:
 		u.SetDeliveredAt(at)
@@ -119,11 +128,17 @@ func StampFinal(ctx context.Context, s *ent.Scoped, id int64, result DeliveryRes
 	default:
 		return false, fmt.Errorf("unknown delivery result %q", result)
 	}
-	n, err := u.Save(ctx)
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := u.Save(ctx)
+		return n == 1, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return false, nil
+	}
 	if err != nil {
 		return false, fmt.Errorf("stamp message %d %s: %w", id, result, err)
 	}
-	return n == 1, nil
+	return true, nil
 }
 
 // DeliveryResult is one of the stamps of a message's delivery result.

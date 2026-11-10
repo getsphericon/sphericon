@@ -3376,10 +3376,11 @@ func init() {
 		Table: "outbound_messages",
 	}
 	OutboundMessagesTable.Annotation.Checks = map[string]string{
-		"outbound_messages_channel_check":     "channel IN ('email', 'telegram', 'sms')",
-		"outbound_messages_destination_lower": "destination = lower(destination)",
-		"outbound_messages_kind_check":        "kind IN ('broadcast', 'automation', 'transactional')",
-		"outbound_messages_status_check":      "status IN ('pending', 'sent', 'skipped', 'failed')",
+		"outbound_messages_channel_check":      "channel IN ('email', 'telegram', 'sms')",
+		"outbound_messages_destination_lower":  "destination = lower(destination)",
+		"outbound_messages_final_report_check": "delivered_at IS NULL OR undelivered_at IS NULL",
+		"outbound_messages_kind_check":         "kind IN ('broadcast', 'automation', 'transactional')",
+		"outbound_messages_status_check":       "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}
 	PasskeysTable.ForeignKeys[0].RefTable = UsersTable
 	PasskeysTable.Annotation = &entsql.Annotation{
