@@ -2,13 +2,13 @@ package jobs
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 )
 
 // startTokensSchedule is when the purge of Start tokens runs: daily at an off-peak hour, 04:00 UTC.
@@ -39,7 +39,7 @@ func (w *PruneStartTokensWorker) Work(ctx context.Context, _ *river.Job[PruneSta
 		return err
 	}
 	if deleted > 0 {
-		logging.FromContext(ctx).Info("lapsed and used start tokens pruned", "deleted", deleted)
+		slog.InfoContext(ctx, "lapsed and used start tokens pruned", "deleted", deleted)
 	}
 	return nil
 }

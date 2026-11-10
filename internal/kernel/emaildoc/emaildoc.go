@@ -172,10 +172,10 @@ func (r *Renderer) Warm(ctx context.Context) <-chan struct{} {
 		began := time.Now()
 		err := r.withRuntime(ctx, r.config(), true, func(*vm) error { return nil })
 		if err != nil {
-			slog.Warn("document runtime warm-up failed", "error", err, "duration_ms", time.Since(began).Milliseconds())
+			slog.WarnContext(ctx, "document runtime warm-up failed", "error", err, "duration_ms", time.Since(began).Milliseconds())
 			return
 		}
-		slog.Info("document runtime ready", "duration_ms", time.Since(began).Milliseconds())
+		slog.InfoContext(ctx, "document runtime ready", "duration_ms", time.Since(began).Milliseconds())
 	}()
 	return done
 }

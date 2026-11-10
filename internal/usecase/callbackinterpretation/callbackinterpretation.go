@@ -11,12 +11,12 @@ package callbackinterpretation
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
@@ -161,7 +161,7 @@ func (m *UseCase) interpret(ctx context.Context, s *ent.Scoped, row *ent.Integra
 		for i := range res.Notices {
 			n := &res.Notices[i]
 			if string(n.Channel) != string(row.Channel) {
-				logging.FromContext(ctx).Warn("ingest: a Delivery notice of another Channel than its Integration's is dropped",
+				slog.WarnContext(ctx, "ingest: a Delivery notice of another Channel than its Integration's is dropped",
 					"integration_id", row.ID, "preset", presetName, "channel", n.Channel, "event_id", n.ID)
 				continue
 			}
@@ -172,7 +172,7 @@ func (m *UseCase) interpret(ctx context.Context, s *ent.Scoped, row *ent.Integra
 		for i := range res.InboundMessages {
 			msg := &res.InboundMessages[i]
 			if string(msg.Channel) != string(row.Channel) {
-				logging.FromContext(ctx).Warn("ingest: an Inbound message of another Channel than its Integration's is dropped",
+				slog.WarnContext(ctx, "ingest: an Inbound message of another Channel than its Integration's is dropped",
 					"integration_id", row.ID, "preset", presetName, "channel", msg.Channel, "event_id", msg.ID)
 				continue
 			}

@@ -32,7 +32,7 @@ func accessLog(next http.Handler) http.Handler {
 		if status == 0 {
 			status = http.StatusOK
 		}
-		logging.FromContext(r.Context()).Log(r.Context(), accessLevel(r.URL.Path, status), "request",
+		slog.Log(r.Context(), accessLevel(r.URL.Path, status), "request",
 			"method", r.Method,
 			"path", logging.RedactedPath(r.URL.Path),
 			"status", status,

@@ -42,7 +42,7 @@ func migrateCommand(env string) *cli.Command {
 			if err != nil {
 				return err
 			}
-			slog.Info("migrations applied", "count", applied)
+			slog.InfoContext(ctx, "migrations applied", "count", applied)
 			return nil
 		},
 	}

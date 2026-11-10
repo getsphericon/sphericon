@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -297,6 +298,31 @@ func TestConfigLoadRejectsAnInvalidSystemEmailReplyTo(t *testing.T) {
 			t.Setenv("SPHERICON_SYSTEM_EMAIL_REPLY_TO", value)
 			_, err := config.Load("test")
 			require.ErrorContains(t, err, "SPHERICON_SYSTEM_EMAIL_REPLY_TO")
+		})
+	}
+}
+
+// The log level is info unless set, and the level the variable names when it is.
+func TestConfigLoadLogLevel(t *testing.T) {
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+	require.Equal(t, slog.LevelInfo, cfg.LogLevel, "info unless set")
+
+	t.Setenv("SPHERICON_LOG_LEVEL", "warn")
+	cfg, err = config.Load("test")
+	require.NoError(t, err)
+	require.Equal(t, slog.LevelWarn, cfg.LogLevel)
+}
+
+// A log level slog does not know stops the start instead of meaning info.
+func TestConfigLoadRejectsAnUnknownLogLevel(t *testing.T) {
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
+	for _, value := range []string{"warning", "verbose", " info "} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv("SPHERICON_LOG_LEVEL", value)
+			_, err := config.Load("test")
+			require.ErrorContains(t, err, "SPHERICON_LOG_LEVEL: ")
 		})
 	}
 }

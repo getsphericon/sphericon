@@ -2,13 +2,13 @@ package callbackinterpretation
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
@@ -49,7 +49,7 @@ func (tx Tx) deferNotice(ctx context.Context, n preset.DeliveryNotice) error {
 		return nil // nothing would ever find its message
 	}
 	if tx.attempt >= len(LateNoticeDelays) {
-		logging.FromContext(ctx).Info("ingest: a delivery notice matched no message and is dropped",
+		slog.InfoContext(ctx, "ingest: a delivery notice matched no message and is dropped",
 			"integration_id", tx.Integration.ID, "event_id", n.ID, "attempts", tx.attempt+1)
 		return nil
 	}

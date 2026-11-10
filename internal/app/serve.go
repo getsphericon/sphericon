@@ -27,7 +27,7 @@ func Serve(ctx context.Context, env string) error {
 	// request-scoped handler emit through it from here on.
 	logging.Setup(cfg)
 	build := buildinfo.Current()
-	slog.Info("starting sphericon", "version", build.Version, "commit", build.Commit)
+	slog.InfoContext(ctx, "starting sphericon", "version", build.Version, "commit", build.Commit)
 
 	// Install the global OTel providers (traces + metrics). The ogen servers and
 	// job/event instrumentation pick these up from the globals. The shutdown is
@@ -41,7 +41,7 @@ func Serve(ctx context.Context, env string) error {
 		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), stopTimeout)
 		defer cancel()
 		if err := telShutdown(shutdownCtx); err != nil {
-			slog.Error("telemetry shutdown", "err", err)
+			slog.ErrorContext(shutdownCtx, "telemetry shutdown", "err", err)
 		}
 	}()
 
@@ -71,14 +71,14 @@ func Serve(ctx context.Context, env string) error {
 	case <-ctx.Done():
 	case err := <-application.Done():
 		if err != nil {
-			slog.Error("server stopped", "err", err)
+			slog.ErrorContext(ctx, "server stopped", "err", err)
 		}
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), stopTimeout)
 	defer cancel()
 	if err := application.Close(shutdownCtx); err != nil {
-		slog.Error("shutdown incomplete", "err", err)
+		slog.ErrorContext(shutdownCtx, "shutdown incomplete", "err", err)
 	}
 	return nil
 }

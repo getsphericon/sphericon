@@ -5,6 +5,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"net"
 	"net/mail"
@@ -236,9 +237,9 @@ type Config struct {
 	// neither (a half-configured provider stops the start). A provider not in the map is off.
 	Signin map[string]SigninCredentials
 
-	// Logging: level is one of debug|info|warn|error; format is text|json.
+	// Logging: the least level a line is written at; format is text|json.
 	// Dev defaults to a human-readable coloured text handler, prod to JSON.
-	LogLevel  string
+	LogLevel  slog.Level
 	LogFormat string
 
 	// OtelServiceName is the service.name reported on OTel traces/metrics. The
@@ -495,8 +496,9 @@ type environment struct {
 	// The OAuth client secret that goes with `SPHERICON_SIGNIN_GITHUB_CLIENT_ID`.
 	SigninGitHubClientSecret string `env:"SPHERICON_SIGNIN_GITHUB_CLIENT_SECRET"`
 
-	// The log level: `debug`, `info`, `warn` or `error`; anything else is `info`.
-	LogLevel string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
+	// The log level: `debug`, `info`, `warn` or `error`, in any case; a value that names no level
+	// stops the start.
+	LogLevel slog.Level `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
 	// The log format: `json`, or `text` for coloured human-readable lines.
 	LogFormat string `env:"SPHERICON_LOG_FORMAT"`
 	// The `service.name` reported on OpenTelemetry traces and metrics.
@@ -624,7 +626,7 @@ func Port(envName string) (string, error) {
 func parseEnvironment(vars map[string]string, envName string) (environment, error) {
 	e := profileDefaults(envName)
 	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
-		return environment{}, fmt.Errorf("read environment: %w", err)
+		return environment{}, fmt.Errorf("read environment: %w", namedByVariable(err))
 	}
 	if err := validateEnvironment(&e); err != nil {
 		return environment{}, err

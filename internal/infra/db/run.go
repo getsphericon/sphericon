@@ -64,7 +64,7 @@ func migrateOnStart(ctx context.Context, cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("migrate within %s: %w", cfg.MigrateTimeout, err)
 	}
-	slog.Info("migrations applied", "count", applied)
+	slog.InfoContext(ctx, "migrations applied", "count", applied)
 	return nil
 }
 

@@ -3,12 +3,12 @@ package outboundmessages
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 )
 
 // reserve takes one token from the Provider limit of the route's Integration (ADR 0023) and from
@@ -48,7 +48,7 @@ func (m *Module) spendCall(ctx context.Context, s *ent.Scoped, r Route, messageI
 	}
 	res := providerlimit.Reservation{IntegrationID: r.Integration.ID, Limits: r.Limits}
 	if err := providerlimit.Spend(ctx, s, m.bus.WithinAuditTx, res, m.now()); err != nil {
-		logging.FromContext(ctx).Warn("outbound: spend of the provider limit failed", "message_id", messageID, "err", err)
+		slog.WarnContext(ctx, "outbound: spend of the provider limit failed", "message_id", messageID, "err", err)
 	}
 }
 

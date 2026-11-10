@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -63,6 +64,25 @@ func rule(tag, param string) string {
 	default:
 		return fmt.Sprintf("breaks the rule %s=%s", tag, param)
 	}
+}
+
+// namedByVariable names the variable in each refusal of err, env's error for the values it could
+// not read as their field's type, so a refusal reads `SPHERICON_LOG_LEVEL: slog: level string
+// "warning": unknown name` instead of naming the Go field. A refusal of no single field is kept
+// as it is.
+func namedByVariable(err error) error {
+	all, ok := errors.AsType[env.AggregateError](err)
+	if !ok {
+		return err
+	}
+	refusals := make([]error, 0, len(all.Errors))
+	for _, refusal := range all.Errors {
+		if parse, ok := errors.AsType[env.ParseError](refusal); ok {
+			refusal = fmt.Errorf("%s: %w", fieldVariable(parse.Name), parse.Err)
+		}
+		refusals = append(refusals, refusal)
+	}
+	return errors.Join(refusals...)
 }
 
 // fieldVariable is the variable of the environment field a cross-field rule names.

@@ -13,15 +13,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// captureLogs routes the default logger to a buffer at debug level for the test.
+// captureLogs routes the process's logger to a buffer, as JSON at debug level, for the test.
 func captureLogs(t *testing.T) *bytes.Buffer {
 	t.Helper()
 	var buf bytes.Buffer
 	prev := slog.Default()
-	slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug})))
+	slog.SetDefault(logging.New(&config.Config{LogFormat: "json", LogLevel: slog.LevelDebug}, &buf))
 	t.Cleanup(func() { slog.SetDefault(prev) })
 	return &buf
 }

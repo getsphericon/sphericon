@@ -131,7 +131,7 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 		}
 		switch {
 		case pending > 0 && g.AllowPending:
-			slog.Warn("starting on a database that has not run its migrations; requests answer 503 until they run",
+			slog.WarnContext(ctx, "starting on a database that has not run its migrations; requests answer 503 until they run",
 				"pending", pending)
 		case pending > 0:
 			return &RefusalError{message: fmt.Sprintf(

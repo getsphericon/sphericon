@@ -152,13 +152,13 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 		token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if !ok || token == "" {
 			challenge(w, "")
-			writeProblem(w, http.StatusUnauthorized, "missing bearer token")
+			writeProblem(r.Context(), w, http.StatusUnauthorized, "missing bearer token")
 			return
 		}
 		if _, err := auth.Authenticate(r.Context(), externalapi.BearerAuth{Token: token}); err != nil {
 			if errors.Is(err, apiauth.ErrUnauthorized) {
 				challenge(w, `error="invalid_token"`)
-				writeProblem(w, http.StatusUnauthorized, "invalid bearer token")
+				writeProblem(r.Context(), w, http.StatusUnauthorized, "invalid bearer token")
 				return
 			}
 			// A rate limit, or a valid credential refused for a reason of its own (a Connection
@@ -190,7 +190,7 @@ func boundToRequest(ctx context.Context) (context.Context, context.CancelFunc) {
 }
 
 // writeProblem renders an RFC 7807 problem.
-func writeProblem(w http.ResponseWriter, code int, detail string) {
+func writeProblem(ctx context.Context, w http.ResponseWriter, code int, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(code)
 	body := map[string]any{
@@ -199,7 +199,7 @@ func writeProblem(w http.ResponseWriter, code int, detail string) {
 		"detail": detail,
 	}
 	if err := json.NewEncoder(w).Encode(body); err != nil {
-		slog.Warn("write problem response", "error", err)
+		slog.WarnContext(ctx, "write problem response", "error", err)
 	}
 }
 

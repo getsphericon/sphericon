@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/netip"
 	"slices"
@@ -29,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/internal/infra/db"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 )
 
 // RangesURL is where Apple publishes the Private Relay egress ranges, one CSV row per range
@@ -137,7 +137,7 @@ func (d *Detector) loaded(ctx context.Context) *bart.Lite {
 	}
 	rows, err := d.client.PrivateRelayRange.Query().Select(privaterelayrange.FieldCidr).Strings(ctx)
 	if err != nil {
-		logging.FromContext(ctx).Error("machine: the Private Relay ranges cannot be read, the last table keeps serving", "err", err)
+		slog.ErrorContext(ctx, "machine: the Private Relay ranges cannot be read, the last table keeps serving", "err", err)
 		d.retryAt = d.now().Add(reloadRetry)
 		return d.ranges
 	}
