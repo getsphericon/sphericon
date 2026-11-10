@@ -3,7 +3,6 @@ package sendingdomains_test
 import (
 	"context"
 	"errors"
-	"net"
 	"slices"
 	"strings"
 	"testing"
@@ -18,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/devdns"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -50,44 +50,26 @@ func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {
 	assert.NotContains(t, ids, int64(fixtures.SendingDomainArchivedID))
 }
 
-func TestDevTXTLookup_trustsSeededDomains(t *testing.T) {
+// devLookup is the end-to-end suite's resolver over the Sending domains' records.
+func devLookup(env *testhelper.TestEnv) domainname.TXTLookup {
+	return devdns.Lookup(sendingdomains.DevRecords(env.DB))
+}
+
+func TestDevRecords_trustsSeededDomains(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	row, err := domains(env, sendingdomains.DevTXTLookup(env.DB)).Verify(context.Background(), acme(env), fixtures.SendingDomainUnverifiedID)
+	row, err := domains(env, devLookup(env)).Verify(context.Background(), acme(env), fixtures.SendingDomainUnverifiedID)
 
 	require.NoError(t, err)
 	assert.True(t, dkimstate.Is(row), "dev lookup makes a seeded domain verify")
 }
 
-// The same lookup answers a Join domain's proof record from the stored token, so a domain an
-// Owner adds verifies in dev and e2e without DNS; a domain nobody claims is NXDOMAIN.
-func TestDevTXTLookup_answersAJoinDomainsRecordFromItsToken(t *testing.T) {
-	env := testhelper.Setup(t)
-	pending, err := env.DB.JoinDomain.Get(t.Context(), fixtures.JoinDomainPendingID)
-	require.NoError(t, err)
-
-	records, err := sendingdomains.DevTXTLookup(env.DB)(t.Context(), "_sphericon-join."+pending.Domain+".")
-
-	require.NoError(t, err)
-	assert.Equal(t, []string{pending.Token}, records)
-}
-
-func TestDevTXTLookup_aJoinDomainNobodyClaimsIsNotFound(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	_, err := sendingdomains.DevTXTLookup(env.DB)(t.Context(), "_sphericon-join.unclaimed.test.")
-
-	var dnsErr *net.DNSError
-	require.ErrorAs(t, err, &dnsErr)
-	assert.True(t, dnsErr.IsNotFound)
-}
-
 // The end-to-end resolver answers a Sending domain's DMARC record with the suggested one, so a
 // domain a scenario adds is bulk-ready too.
-func TestDevTXTLookup_answersASendingDomainsDMARCRecord(t *testing.T) {
+func TestDevRecords_answersASendingDomainsDMARCRecord(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := domains(env, sendingdomains.DevTXTLookup(env.DB)).Recheck(t.Context(), acme(env), fixtures.SendingDomainUnverifiedID)
+	err := domains(env, devLookup(env)).Recheck(t.Context(), acme(env), fixtures.SendingDomainUnverifiedID)
 
 	require.NoError(t, err)
 	row, err := env.DB.SendingDomain.Get(t.Context(), fixtures.SendingDomainUnverifiedID)

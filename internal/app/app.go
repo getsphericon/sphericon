@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
@@ -25,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/infra/devdns"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/sidelistener"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
@@ -117,10 +119,11 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 	}
 	injector := Container(cfg)
 	if o.e2eDKIMLookup {
-		// The e2e suite's domains self-verify through DevTXTLookup, which echoes a Sending
-		// domain's own stored key.
+		// The e2e suite's domains self-verify: devdns answers each record from the rows of the
+		// module that proves it.
 		do.Override(injector, func(i do.Injector) (domainname.TXTLookup, error) {
-			return sendingdomains.DevTXTLookup(do.MustInvoke[*ent.Client](i)), nil
+			client := do.MustInvoke[*ent.Client](i)
+			return devdns.Lookup(sendingdomains.DevRecords(client), joindomains.DevRecords(client)), nil
 		})
 	}
 

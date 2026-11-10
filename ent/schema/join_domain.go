@@ -41,10 +41,12 @@ func (JoinDomain) Fields() []ent.Field {
 		field.String("token").
 			NotEmpty().
 			Annotations(Sensitive{}),
-		// When the domain most recently became verified (nil = pending).
+		// When the domain most recently became verified (nil = pending). A machine, not a latch: a
+		// record found gone, or a hand-over to another Workspace, clears it (joindomains).
 		field.Time("verified_at").
 			Optional().
-			Nillable(),
+			Nillable().
+			Annotations(State{Form: FormMachine}),
 		// When the TXT record was most recently checked (nil = never checked yet).
 		field.Time("last_checked_at").
 			Optional().
