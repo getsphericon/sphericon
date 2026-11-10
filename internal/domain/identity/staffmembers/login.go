@@ -174,7 +174,7 @@ func (m *Module) parseChallenge(ctx context.Context, challenge string) (login.Pe
 		return login.Pending[*ent.StaffMember]{}, loadErr
 	}
 	if err != nil {
-		return login.Pending[*ent.StaffMember]{}, login.ErrChallengeInvalid
+		return login.Pending[*ent.StaffMember]{}, fmt.Errorf("%w: %w", login.ErrNoChallenge, err)
 	}
 	return login.Pending[*ent.StaffMember]{Principal: op, Address: op.Email, Method: users.LoginPassword, Binding: held}, nil
 }
@@ -184,40 +184,41 @@ func (m *Module) parseChallenge(ctx context.Context, challenge string) (login.Pe
 // challenge cannot both succeed. At first login the code also confirms the enrolment
 // (and bumps the session epoch). A wrong code changes nothing, so rolling back loses
 // nothing.
-func (m *Module) verifyCode(ctx context.Context, p login.Pending[*ent.StaffMember], code string) error {
+func (m *Module) verifyCode(ctx context.Context, p login.Pending[*ent.StaffMember], code string) (login.Verdict, error) {
 	tx, err := m.ent.Tx(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	if err := m.verify(ctx, tx, p.Principal.ID, p.Binding, code); err != nil {
+	verdict, err := m.verify(ctx, tx, p.Principal.ID, p.Binding, code)
+	if err != nil || verdict != login.CodeAccepted {
 		_ = tx.Rollback()
-		return err
+		return verdict, err
 	}
-	return tx.Commit()
+	return verdict, tx.Commit()
 }
 
-func (m *Module) verify(ctx context.Context, tx *ent.Tx, id int64, held, code string) error {
+func (m *Module) verify(ctx context.Context, tx *ent.Tx, id int64, held, code string) (login.Verdict, error) {
 	op, err := tx.StaffMember.Query().Where(entstaffmember.ID(id)).ForUpdate().Only(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if op.TotpSecretEncrypted == "" || binding(op) != held {
-		return login.ErrChallengeInvalid
+		return login.ChallengeGone, nil
 	}
 	raw, err := m.cipher.Decrypt(op.TotpSecretEncrypted)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	step, ok, err := totp.Match(string(raw), code, m.now(), op.TotpLastStep)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if !ok {
-		return login.ErrInvalidCode
+		return login.CodeWrong, nil
 	}
 	upd := tx.StaffMember.UpdateOneID(id).SetTotpLastStep(step)
 	if !Enrolled(op) {
 		upd = upd.SetTotpConfirmedAt(m.now()).AddSessionEpoch(1)
 	}
-	return upd.Exec(ctx)
+	return login.CodeAccepted, upd.Exec(ctx)
 }

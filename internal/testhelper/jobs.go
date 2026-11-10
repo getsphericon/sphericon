@@ -28,7 +28,7 @@ import (
 // ent client rides), so nothing here touches the river table directly.
 
 // maxQueuedJobs bounds a JobsOf read; a test queues a handful.
-// contract-copy: a test helper read bound; not in the contract
+// A test helper read bound; not in the contract.
 const maxQueuedJobs = 1000
 
 func (env *TestEnv) riverClient(tb testing.TB) *river.Client[*sql.Tx] {

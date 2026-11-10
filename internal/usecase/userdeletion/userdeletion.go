@@ -128,10 +128,10 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 		return err
 	}
 	if len(live) > 0 {
-		return &users.DeletionRefusedError{Reason: users.ErrSoleOwner, Workspaces: live}
+		return users.RefuseSoleOwner(live)
 	}
 	if (u.PasswordHash != "") != hadPassword {
-		return &users.DeletionRefusedError{Reason: users.ErrProofStale}
+		return users.RefuseProofStale()
 	}
 	if err := uc.factors.DeletionCode(ctx, tx, pub, u, code); err != nil {
 		return err

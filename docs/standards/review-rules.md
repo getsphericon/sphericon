@@ -47,6 +47,12 @@ or `AGENTS.md`.
    one way (ADR 0104): its `New` takes every dependency and the clock, and each method takes the
    context, the scope and at most two required arguments (the rest in a typed input, the actor
    among them) and returns one value or a named result, with errors of the shared taxonomy.
+   Every exported write of a domain module normalises and checks all of its input itself (ADR 0107):
+   no doc comment says "the caller has checked", and a driver checks no rule of a row. The contract's
+   bounds reach the owner generated from the contract, never as a copy; the rules every owner shares
+   (a name, an address in its Email case, a password) are the kernel's, and a refusal has one form.
+   A module refuses in its own words, never with another module's refusal, which a caller only
+   matches. A job ends on a refusal and retries on any other error, by that rule alone.
 6. **Knowledge has one place.** A rule or a shape is stated once; no second copy of it elsewhere. For
    the API that place is TypeSpec, and none of the following is declared anywhere else: operations
    (path, method, name), request and response shapes, value constraints (length, range, format,

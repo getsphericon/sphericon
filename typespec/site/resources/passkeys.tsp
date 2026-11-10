@@ -2,12 +2,6 @@ using TypeSpec.Http;
 
 namespace Sphericon;
 
-/** What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
- * spaces are trimmed before the name is stored, so a name of spaces only is refused too. */
-@minLength(1)
-@maxLength(100)
-scalar PasskeyName extends string;
-
 /** The relying party of a Passkey ceremony: this Instance */
 model SitePasskeyRelyingParty {
   /** The relying party id: the host of the Instance's public URL */
@@ -85,7 +79,7 @@ model SitePasskey {
   id: EntityId;
 
   /** What the User calls it, to tell their Passkeys apart */
-  name: PasskeyName;
+  name: Name;
 
   /** When the Passkey was registered */
   createdAt: Timestamp;
@@ -115,7 +109,7 @@ model SitePasskeyList {
 /** The new name of a Passkey */
 model SitePasskeyRenameInput {
   /** What to call the Passkey, to tell it from the User's others */
-  name: PasskeyName;
+  name: Name;
 }
 
 /** The proof of identity a removal asks for */
@@ -148,7 +142,7 @@ model SitePasskeyRegistrationInput {
   currentPassword?: string;
 
   /** What to call the Passkey, to tell it from the User's others */
-  name: PasskeyName;
+  name: Name;
 
   /** The authenticator's response to the creation options */
   credential: SitePasskeyRegistrationResponse;

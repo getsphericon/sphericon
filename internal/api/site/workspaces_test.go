@@ -222,7 +222,7 @@ func TestSiteWorkspacesUpdateIsForOwnerAndAdminOnly(t *testing.T) {
 	params := siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.InitechPublicID}
 
 	for _, email := range []string{fixtures.InitechOwnerOlgaEmail, fixtures.InitechAdminAdaEmail} {
-		renamed, err := env.SiteActor(t, email).SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Initech " + email}, params)
+		renamed, err := env.SiteActor(t, email).SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: siteapi.Name("Initech " + email)}, params)
 		require.NoError(t, err)
 		assert.Equal(t, siteapi.WorkspaceId(fixtures.InitechPublicID), renamed.ID)
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -84,7 +85,7 @@ func (Brands) Brand(ctx context.Context, s *ent.Scoped) (*emailrender.Brand, err
 // Save stores the Brand kit. The first save creates it and, in the same transaction, the starter
 // Templates in its brand; a later save replaces the values and creates nothing. No message
 // already written is read or written: the values were copied into each when it was authored.
-// An invalid value is a *validation.Error: the kit's values are inlined into the CSS and HTML of the
+// An invalid value is a validation refusal of its field: the kit's values are inlined into the CSS and HTML of the
 // starter documents, so they are checked strictly.
 func (m *Module) Save(ctx context.Context, s *ent.Scoped, in Input) (Kit, error) {
 	in, err := validate(in)
@@ -272,7 +273,7 @@ func validate(in Input) (Input, error) {
 		{"buttonTextColor", &in.ButtonTextColor},
 	} {
 		if !hexColor.MatchString(*c.value) {
-			return in, &validation.Error{Field: c.field, Message: i18n.T(i18n.ErrorsBrandkitColor, map[string]any{"Field": c.field})}
+			return in, ErrInvalidColor.On(c.field).Args(map[string]any{"Field": c.field})
 		}
 		*c.value = strings.ToLower(*c.value)
 	}
@@ -281,17 +282,35 @@ func validate(in Input) (Input, error) {
 		value string
 	}{{"headingFont", in.HeadingFont}, {"bodyFont", in.BodyFont}} {
 		if !fontFamily.MatchString(f.value) {
-			return in, &validation.Error{Field: f.field, Message: i18n.T(i18n.ErrorsBrandkitFont, map[string]any{"Field": f.field})}
+			return in, ErrInvalidFont.On(f.field).Args(map[string]any{"Field": f.field})
 		}
 	}
+	if err := validation.MaxLength("logoUrl", in.LogoURL, bounds.BrandKitLogoURLMaxLength); err != nil {
+		return in, err
+	}
 	if !validLogo(in.LogoURL) {
-		return in, &validation.Error{Field: "logoUrl", Message: i18n.T(i18n.ErrorsBrandkitLogo, nil)}
+		return in, ErrInvalidLogo
+	}
+	if err := validation.Range("buttonRadius", in.ButtonRadius,
+		bounds.BrandKitButtonRadiusMin, bounds.BrandKitButtonRadiusMax); err != nil {
+		return in, err
+	}
+	if err := validation.MaxLength("footerText", in.FooterText, bounds.BrandKitFooterTextMaxLength); err != nil {
+		return in, err
 	}
 	if !validFooter(in.FooterText) {
-		return in, &validation.Error{Field: "footerText", Message: i18n.T(i18n.ErrorsBrandkitFooter, nil)}
+		return in, ErrInvalidFooter
 	}
 	return in, nil
 }
+
+// The refusals of a Brand kit's values.
+var (
+	ErrInvalidColor  = validation.Refuse("brandkits: invalid color", i18n.ErrorsBrandkitColor)
+	ErrInvalidFont   = validation.Refuse("brandkits: invalid font", i18n.ErrorsBrandkitFont)
+	ErrInvalidLogo   = validation.RefuseField("logoUrl", "brandkits: invalid logo", i18n.ErrorsBrandkitLogo)
+	ErrInvalidFooter = validation.RefuseField("footerText", "brandkits: invalid footer", i18n.ErrorsBrandkitFooter)
+)
 
 // validLogo accepts no logo, or an absolute http(s) URL with no character that could leave the
 // attribute it is written into or start Liquid markup.

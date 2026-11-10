@@ -257,7 +257,7 @@ func TestSiteSegmentsUpdateContractRejectsNullCondition(t *testing.T) {
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusBadRequest), bad.Status)
 
 	// Absent condition still updates the name and keeps the Condition.
-	updated, err := reader.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptString("Renamed")}, params)
+	updated, err := reader.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptName("Renamed")}, params)
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", updated.Name)
 	assert.Equal(t, stored.Condition, updated.Condition)

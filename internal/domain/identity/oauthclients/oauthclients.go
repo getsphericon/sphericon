@@ -69,7 +69,8 @@ const (
 
 	// MaxRedirectURIs bounds the redirect URIs a client registers.
 	MaxRedirectURIs = 10
-	// contract-copy: the OAuth dynamic client registration protocol is not in the contract
+	// maxClientName bounds a registered client's name; the registration protocol is not in the
+	// contract, so the bound is this module's own.
 	maxClientName = 100
 	defaultClient = "MCP client"
 
@@ -270,10 +271,29 @@ func hashSecret(secret string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// The refusals of a registration's redirect URIs (RFC 7591 invalid_redirect_uri).
+var (
+	// ErrRedirectURIsCount is a registration with no redirect URI or more than MaxRedirectURIs.
+	ErrRedirectURIsCount = validation.RefuseField("redirect_uris", "oauthclients: wrong number of redirect URIs",
+		i18n.ErrorsOauthRedirectUrisCount)
+	// ErrRedirectURIInvalid is a redirect URI ValidRedirectURI refuses.
+	ErrRedirectURIInvalid = validation.RefuseField("redirect_uris", "oauthclients: invalid redirect URI",
+		i18n.ErrorsOauthRedirectUriInvalid)
+)
+
 // Register stores a client of dynamic client registration (RFC 7591) under a fresh client_id:
 // named name, trimmed and bounded (a blank name is "MCP client"), and allowed exactly
-// redirectURIs, which the caller has checked (ValidRedirectURI, MaxRedirectURIs).
+// redirectURIs: one to MaxRedirectURIs of them, each one ValidRedirectURI accepts
+// (ErrRedirectURIsCount, ErrRedirectURIInvalid).
 func (s *Module) Register(ctx context.Context, name string, redirectURIs []string) (*ent.OAuthClient, error) {
+	if len(redirectURIs) == 0 || len(redirectURIs) > MaxRedirectURIs {
+		return nil, ErrRedirectURIsCount.Args(map[string]any{"Max": MaxRedirectURIs})
+	}
+	for _, u := range redirectURIs {
+		if !ValidRedirectURI(u) {
+			return nil, ErrRedirectURIInvalid
+		}
+	}
 	name = strings.TrimSpace(name)
 	if name == "" {
 		name = defaultClient

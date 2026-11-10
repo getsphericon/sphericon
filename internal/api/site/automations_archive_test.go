@@ -135,7 +135,7 @@ func TestSiteAnArchivedAutomationIsReadOnly(t *testing.T) {
 	before, err := c.SiteAutomationsGet(ctx, params)
 	require.NoError(t, err)
 
-	_, edited := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")},
+	_, edited := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptName("Renamed")},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
 	_, published := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
 	_, reverted := c.SiteAutomationsRevert(ctx, siteapi.SiteAutomationsRevertParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})

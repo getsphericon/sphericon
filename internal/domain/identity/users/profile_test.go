@@ -91,7 +91,7 @@ func TestABlankProfileNameIsRefused(t *testing.T) {
 
 	_, err := r.acc.ChangeProfile(t.Context(), r.john, users.ProfileChange{Name: new("   ")})
 
-	assert.Equal(t, map[string][]string{"name": {i18n.T(i18n.ErrorsNameEmpty, nil)}}, refusedFields(t, err))
+	assert.Equal(t, map[string][]string{"name": {i18n.T(i18n.ErrorsNameRequired, nil)}}, refusedFields(t, err))
 	assert.Equal(t, r.john.Name, r.stored(t).Name)
 }
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/samber/lo"
@@ -14,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -130,17 +128,14 @@ var ErrTelegramSource = validation.RefuseField("sendingSource", "consent: a tele
 // accepted here; a source-scoped one comes from the link in a message (the unsubscribe use case).
 // Idempotent.
 func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string, now time.Time) (*ent.Unsubscribe, error) {
-	dest := strings.TrimSpace(destination)
-	if dest == "" {
-		return nil, unsubscribes.ErrDestinationEmpty
-	}
-	if !suppressions.ValidDestination("telegram", dest) {
-		return nil, unsubscribes.ErrDestinationInvalid
+	dest, err := unsubscribes.Destination(channels.Telegram, destination)
+	if err != nil {
+		return nil, err
 	}
 	if source != eligibility.SourceEverything {
 		return nil, ErrTelegramSource
 	}
-	err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return StopTelegram(ctx, ts, pub, TelegramStop{
 			Destination: dest, Via: events.UnsubscribedByManual, Now: now,
 			DedupKey: "manual:" + dest + ":" + strconv.FormatInt(now.UnixNano(), 10),

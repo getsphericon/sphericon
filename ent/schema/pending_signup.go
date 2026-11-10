@@ -21,7 +21,7 @@ type PendingSignup struct {
 
 func (PendingSignup) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "pending_signups"},
+		WithLowerCheck(entsql.Annotation{Table: "pending_signups"}, "email"),
 	}
 }
 

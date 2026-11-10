@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 )
 
@@ -26,14 +27,6 @@ const MaxText = 4096
 
 // MaxCaption is the longest caption Telegram accepts under a photo, in characters.
 const MaxCaption = 1024
-
-// MaxButtons is the most link buttons a message carries, one per row.
-// contract-copy: the contract caps `buttons` at 8 too; the domain refuses it for callers that skip the API
-const MaxButtons = 8
-
-// MaxUnsubscribeButton is the longest label of an unsubscribe button, in characters.
-// contract-copy: the contract caps `unsubscribeButton` at 64 too; the domain refuses it for callers that skip the API
-const MaxUnsubscribeButton = 64
 
 // Limit is the longest text a message may carry: a caption when it has an image, else a text.
 func Limit(hasImage bool) int {
@@ -146,20 +139,23 @@ func blockedAddr(addr netip.Addr) bool {
 	return addr.Zone() != "" || publicAddrs.SafeAddr(addr) != nil
 }
 
-// CheckUnsubscribeButton refuses a label of an unsubscribe button longer than MaxUnsubscribeButton
+// CheckUnsubscribeButton refuses a label of an unsubscribe button longer than the contract allows
+// (bounds.TelegramUnsubscribeButtonMaxLength)
 // characters. Blank means no button.
 func CheckUnsubscribeButton(label string) error {
-	if n := utf8.RuneCountInString(strings.TrimSpace(label)); n > MaxUnsubscribeButton {
-		return fmt.Errorf("%w: the unsubscribe button's label is %d characters long, up to %d", ErrContent, n, MaxUnsubscribeButton)
+	if n := utf8.RuneCountInString(strings.TrimSpace(label)); n > bounds.TelegramUnsubscribeButtonMaxLength {
+		return fmt.Errorf("%w: the unsubscribe button's label is %d characters long, up to %d", ErrContent, n,
+			bounds.TelegramUnsubscribeButtonMaxLength)
 	}
 	return nil
 }
 
-// CheckButtons refuses more than MaxButtons buttons, a button with no label and one whose URL is
+// CheckButtons refuses more buttons than the contract allows (bounds.TelegramButtonsMaxItems), a
+// button with no label and one whose URL is
 // not an absolute http or https URL.
 func CheckButtons(buttons []Button) error {
-	if len(buttons) > MaxButtons {
-		return fmt.Errorf("%w: at most %d buttons, got %d", ErrContent, MaxButtons, len(buttons))
+	if len(buttons) > bounds.TelegramButtonsMaxItems {
+		return fmt.Errorf("%w: at most %d buttons, got %d", ErrContent, bounds.TelegramButtonsMaxItems, len(buttons))
 	}
 	for i, b := range buttons {
 		if strings.TrimSpace(b.Label) == "" {

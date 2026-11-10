@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -273,10 +274,10 @@ func TestCreateAndUpdateRefuseABlankName(t *testing.T) {
 
 	for _, name := range []string{"", "  \t\n"} {
 		_, err := m.Create(ctx, s, broadcasts.CreateInput{Name: &name})
-		require.ErrorIs(t, err, broadcasts.ErrBlankName)
+		require.ErrorIs(t, err, validation.ErrNameBlank)
 
 		_, err = m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Name: patch.Set(name)})
-		require.ErrorIs(t, err, broadcasts.ErrBlankName)
+		require.ErrorIs(t, err, validation.ErrNameBlank)
 		assert.Equal(t, fixtures.BroadcastDraftName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Name)
 	}
 }

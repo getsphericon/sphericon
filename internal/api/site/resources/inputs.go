@@ -53,6 +53,9 @@ import (
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend stringPatch
+// goverter:extend namePatch
+// goverter:extend nameIn
+// goverter:extend namePtrIn
 // goverter:extend nilStringPatch
 // goverter:extend nilEmailPatch
 // goverter:extend nilTimeZonePatch
@@ -260,6 +263,9 @@ type Inputs interface {
 }
 
 func stringPatch(o siteapi.OptString) patch.Field[string] { return convert.Patch(o) }
+func namePatch(o siteapi.OptName) patch.Field[string]     { return convert.StringPatch(o) }
+func nameIn(n siteapi.Name) string                        { return string(n) }
+func namePtrIn(o siteapi.OptName) *string                 { return convert.StringPtr(o) }
 
 // customFieldTypePatch is a Custom field's new type as the enum's value: the module reads it as its own.
 func customFieldTypePatch(o siteapi.OptSiteCustomFieldType) patch.Field[string] {

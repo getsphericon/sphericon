@@ -30,7 +30,7 @@ func TestExternalRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 		res := kept
 		_, discardedAt := res.DiscardedAt.Get()
 		assert.True(t, discardedAt, "the Rule is kept, marked discarded")
-		_, err = c.RulesUpdate(ctx, &externalapi.UpdateRuleInput{Name: externalapi.NewOptString("renamed")},
+		_, err = c.RulesUpdate(ctx, &externalapi.UpdateRuleInput{Name: externalapi.NewOptName("renamed")},
 			externalapi.RulesUpdateParams{ID: id})
 		testhelper.ExternalRefusal(t, err, http.StatusNotFound, "a deleted Rule changes no more")
 	}

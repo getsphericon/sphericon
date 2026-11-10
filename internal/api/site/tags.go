@@ -33,7 +33,7 @@ func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.ApplyTagInput
 	scoped := workspaceScope(ctx)
 	id := int64(params.ContactId)
 
-	t, err := h.contacts.ApplyTag(ctx, scoped, id, req.Name)
+	t, err := h.contacts.ApplyTag(ctx, scoped, id, string(req.Name))
 	if err != nil {
 		return nil, err
 	}

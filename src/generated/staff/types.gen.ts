@@ -74,6 +74,13 @@ export type LocaleTag = string;
 export type MaxPerDay = number;
 
 /**
+ * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
+ * Broadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding
+ * spaces are trimmed before the name is stored, and a name that is empty then is refused (422).
+ */
+export type Name = string;
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const ProblemCode = {

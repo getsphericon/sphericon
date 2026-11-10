@@ -21,6 +21,8 @@ import (
 
 	"github.com/itchyny/gojq"
 	"github.com/santhosh-tekuri/jsonschema/v6"
+
+	kernelchannels "github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // Limits on what one request may make the engine do.
@@ -30,7 +32,7 @@ const (
 	// MaxProgramBytes is the largest transform program.
 	MaxProgramBytes = 16 << 10
 	// MaxFacts is the most facts (of every kind together) one request may yield.
-	// contract-copy: provider preset cap on facts per request; not in the contract
+	// Provider preset cap on facts per request; not in the contract.
 	MaxFacts = 100
 	// TransformTimeout bounds one run of a transform.
 	TransformTimeout = 100 * time.Millisecond
@@ -68,7 +70,7 @@ const (
 )
 
 // MaxReasonChars caps a notice's provider reason, in characters.
-// contract-copy: cap of the reason an email delivery Event keeps; not in the contract
+// Cap of the reason an email delivery Event keeps; not in the contract.
 const MaxReasonChars = 500
 
 // DeliveryNotice is the normalized shape of a delivery result, one of the facts a Preset
@@ -108,8 +110,11 @@ type Channel string
 
 // channels are the Channels of ADR 0074. A Channel sphericon does not build yet is still read
 // here: the Ingest hook drops a message whose Channel is not its Integration's.
-// contract-copy: every Channel of ADR 0074 a Preset may name; the contract lists only the built ones
-var channels = []Channel{"email", "sms", "whatsapp", "telegram", "web_push", "mobile_push"}
+// The Channels sphericon builds are the kernel's; the others are named here until they are built.
+var channels = []Channel{
+	Channel(kernelchannels.Email), Channel(kernelchannels.SMS), "whatsapp", Channel(kernelchannels.Telegram),
+	"web_push", "mobile_push",
+}
 
 // The kinds a transform names the two facts by that are not Delivery notices; a Delivery notice
 // is named by its own Kind. `sphericon preset test` prints a fact under the same kind.
@@ -122,10 +127,10 @@ const (
 // wrote them, and refusing would have the provider redeliver the request forever.
 const (
 	// MaxTextChars caps an Inbound message's text, in characters (Telegram's message limit).
-	// contract-copy: cap of the text a provider preset reads from an inbound message; not in the contract
+	// Cap of the text a provider preset reads from an inbound message; not in the contract.
 	MaxTextChars = 4096
 	// MaxPayloadChars caps the payload of a pressed button, in characters.
-	// contract-copy: cap of a button payload a provider preset reads; not in the contract
+	// Cap of a button payload a provider preset reads; not in the contract.
 	MaxPayloadChars = 1024
 )
 

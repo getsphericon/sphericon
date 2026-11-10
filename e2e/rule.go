@@ -39,7 +39,7 @@ func (w *Workspace) PublishRule(r Rule) {
 		})
 	}
 	res, err := w.site.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
-		Name:          "e2e rule " + uniq(),
+		Name:          siteapi.Name("e2e rule " + uniq()),
 		TriggerEvents: []string{r.TriggerEvent},
 		Actions:       actions,
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})

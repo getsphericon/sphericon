@@ -14,9 +14,11 @@ import (
 	"net/url"
 	"strings"
 
+	"golang.org/x/net/http/httpguts"
+
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"golang.org/x/net/http/httpguts"
 )
 
 // Limits of a call (ADR 0039): they keep one call from exhausting the queue.
@@ -198,6 +200,9 @@ func Seal(c *secrets.Cipher, in, prev Spec, what string) (Spec, error) {
 	}
 	if _, err := RenderBody(in.Body, nil); err != nil {
 		return out, invalid("body: %s", BodyDetail(err))
+	}
+	if len(in.Headers) > bounds.HTTPCallHeadersMaxItems {
+		return out, invalid("has at most %d headers", bounds.HTTPCallHeadersMaxItems)
 	}
 	kept := map[string]string{}
 	for _, h := range prev.Headers {

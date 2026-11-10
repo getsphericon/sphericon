@@ -854,6 +854,11 @@
         "maximum": 100000000,
         "description": "A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap"
       },
+      "Name": {
+        "type": "string",
+        "maxLength": 100,
+        "description": "What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a\nBroadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding\nspaces are trimmed before the name is stored, and a name that is empty then is refused (422)."
+      },
       "ProblemCode": {
         "type": "string",
         "enum": [

@@ -24,7 +24,6 @@ import (
 	"context"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/samber/lo"
@@ -46,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/events/eventsunchecked"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -289,7 +289,7 @@ func resolve(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
 		t.VisitorIDs = append(t.VisitorIDs, v.VisitorID)
 	}
 	if c.Email != nil {
-		t.Destinations = append(t.Destinations, strings.ToLower(*c.Email))
+		t.Destinations = append(t.Destinations, emailcase.Of(*c.Email))
 	}
 	if c.Phone != nil {
 		t.Phone = *c.Phone

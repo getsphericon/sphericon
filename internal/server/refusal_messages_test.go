@@ -46,12 +46,12 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "not a draft", want: "only draft broadcasts can be changed",
 			site: func(c *siteapi.Client) error {
-				_, err := c.SiteBroadcastsUpdate(t.Context(), &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("x")},
+				_, err := c.SiteBroadcastsUpdate(t.Context(), &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName("x")},
 					siteapi.SiteBroadcastsUpdateParams{WorkspaceId: ws, ID: site(fixtures.BroadcastSentID)})
 				return err
 			},
 			ext: func(c *externalapi.Client) error {
-				_, err := c.BroadcastsUpdate(t.Context(), &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("x")},
+				_, err := c.BroadcastsUpdate(t.Context(), &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("x")},
 					externalapi.BroadcastsUpdateParams{ID: ext(fixtures.BroadcastSentID)})
 				return err
 			},

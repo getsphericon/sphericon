@@ -124,7 +124,7 @@ model SiteRuleResource {
 
 /** Site request body for creating a Rule: it is created inactive, with its definition as the draft */
 model SiteCreateRuleInput {
-  name: string;
+  name: Name;
 
   /** The Event actions that make the Rule fire; at least one */
   @minItems(1)
@@ -138,7 +138,7 @@ model SiteCreateRuleInput {
 
 /** Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's. */
 model SiteUpdateRuleInput {
-  name?: string;
+  name?: Name;
 
   /** The Event actions that make the Rule fire; at least one */
   @minItems(1)

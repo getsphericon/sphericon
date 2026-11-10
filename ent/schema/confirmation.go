@@ -28,7 +28,7 @@ type Confirmation struct {
 
 func (Confirmation) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("confirmations", Confirmation{}.Fields()),
+		WithLowerCheck(TableWithEnumChecks("confirmations", Confirmation{}.Fields()), "destination"),
 	}
 }
 

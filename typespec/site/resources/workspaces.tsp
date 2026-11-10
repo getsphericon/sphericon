@@ -145,7 +145,7 @@ model SiteAccountLinkResource {
 /** Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change. */
 model SiteUpdateWorkspaceInput {
   /** New display name */
-  name: string;
+  name: Name;
 
   /** Physical postal address for the marketing email footer (CAN-SPAM). Omit to
    * leave it unchanged; send an empty string to clear it. */
@@ -155,7 +155,7 @@ model SiteUpdateWorkspaceInput {
 /** Create a Workspace (ADR 0043) */
 model SiteCreateWorkspaceInput {
   /** Display name: free text, not unique */
-  name: string;
+  name: Name;
 }
 
 /** Delete a Workspace (ADR 0043): the typed name must equal the stored name. */

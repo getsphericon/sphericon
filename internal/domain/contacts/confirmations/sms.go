@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -58,6 +59,15 @@ func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channe
 		return nil, err
 	}
 	return standing, nil
+}
+
+// ConfirmContactSMSIn is ConfirmSMSIn for the phone of a Contact: ErrNoPhone when the Contact has
+// none (number is empty), as the SMS consent an intake carries for a Contact.
+func ConfirmContactSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, ev Evidence) (*ent.Confirmation, error) {
+	if number == "" {
+		return nil, ErrNoPhone
+	}
+	return ConfirmSMSIn(ctx, s, pub, number, ev)
 }
 
 // ConfirmSMSIn records an imported SMS Confirmation of number with its evidence, inside the
@@ -203,6 +213,18 @@ func (ev Evidence) checked() (Evidence, error) {
 		return Evidence{}, ErrSourceEmpty
 	case out.Brand == "":
 		return Evidence{}, ErrBrandEmpty
+	}
+	for _, f := range []struct {
+		field, value string
+		lo, hi       int
+	}{
+		{"wording", out.Wording, bounds.ConsentWordingMinLength, bounds.ConsentWordingMaxLength},
+		{"source", out.Source, bounds.ConsentSourceMinLength, bounds.ConsentSourceMaxLength},
+		{"brand", out.Brand, bounds.ConsentBrandMinLength, bounds.ConsentBrandMaxLength},
+	} {
+		if err := validation.Length(f.field, f.value, f.lo, f.hi); err != nil {
+			return Evidence{}, err
+		}
 	}
 	return out, nil
 }

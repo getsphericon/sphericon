@@ -49,12 +49,9 @@ forbid_symbol:
       ]
     because: a handler, a domain module or a use case takes a *ent.Scoped so every query is workspace-bound, a use case the one its driver built; raw access is the closed list of docs/architecture/workspace-scoping.md (Workspace scoping), a small package in the raw-client component of its context (`domain-<context>-raw`, `infra-raw` for the infrastructure), never a field of a module, a use case or a handler
   # The ent client's hooks and the upgrade types: only the wiring installs and reads them.
-  - name: github.com/getsphericon/sphericon/internal/domain/contacts/emailcase.Hook
+  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Hook
     allow: &client-builders [wiring]
     because: &ent-hooks-because the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); no other package installs one
-  - name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Hook
-    allow: *client-builders
-    because: *ent-hooks-because
   - name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Guard
     allow: *client-builders
     because: *ent-hooks-because
@@ -430,8 +427,7 @@ components:
   # Contacts, above identity: the Contacts with their Custom fields and Tags, the Segments and the
   # Conditions they hold, the consent of a Destination (the Confirmations, the Unsubscribes and the
   # stops read in the Channel, channelstop), the Suppressions, eligibility, the Visitors, the Orders
-  # and the Event recording (eventrecording, ADR 0112), with the Contact row lock (contactlock) and the hook that keeps stored addresses lower-cased
-  # (emailcase: it targets the Contacts as well as identity's Users and Invitations). None holds the
+  # and the Event recording (eventrecording, ADR 0112), with the Contact row lock (contactlock). None holds the
   # raw client, so the context is one component; a raw-client holder would get
   # `domain-contacts-raw`. Counting an unsubscribe on a Broadcast and ending an Enrollment is the
   # unsubscribe use case's (internal/usecase/unsubscriberecording): the orchestration modules are
@@ -616,11 +612,12 @@ components:
     in: 'cmd/*'
     isolated: true
   # The packages behind the repository's own commands under cmd/ that are not the application: the
-  # generators (scopegen, the fixture catalog, goverter's enum transformer) and the CI checks
-  # (contractcopy, prcheck, upgradecheck). No tier, no driver and no wiring imports one.
+  # generators (scopegen, boundgen, the fixture catalog, goverter's enum transformer) and the CI
+  # checks (contractcopy, prcheck, upgradecheck). No tier, no driver and no wiring imports one.
   tools:
     in:
       [
+        internal/boundgen,
         internal/contractcopy,
         internal/fixtures/fixturegen,
         internal/goverterenum,

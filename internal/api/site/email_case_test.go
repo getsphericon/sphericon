@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// An address is one account whatever case it is typed in (internal/domain/contacts/emailcase): it
+// An address is one account whatever case it is typed in (internal/kernel/emailcase): it
 // is stored lower-cased, so a second Sign-up in another case finds the first one instead of making
 // a second account that sign-in could never reach.
 func TestAnAddressInAnotherCaseIsTheSameAccount(t *testing.T) {

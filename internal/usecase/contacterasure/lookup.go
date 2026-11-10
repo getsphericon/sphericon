@@ -2,8 +2,6 @@ package contacterasure
 
 import (
 	"context"
-	"net/mail"
-	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
@@ -31,13 +29,12 @@ type Holdings struct {
 	CapturedMessages int
 }
 
-// normalizeEmail returns the canonical form of an address, the one form an address is matched
-// in (trimmed and lowercased), and refuses anything that is not a single plain address (no
-// display name, no list) with ErrInvalidEmail. Lookup and Erase both read an address through it.
+// normalizeEmail returns the address in its Email case, the one form an address is matched in, and
+// refuses anything the rule of a stored address refuses (validation.Email: no display name, no
+// list) with ErrInvalidEmail. Lookup and Erase both read an address through it.
 func normalizeEmail(raw string) (string, error) {
-	email := strings.ToLower(strings.TrimSpace(raw))
-	addr, err := mail.ParseAddress(email)
-	if err != nil || addr.Address != email {
+	email, err := validation.Email(validation.FieldEmail, raw)
+	if err != nil {
 		return "", ErrInvalidEmail
 	}
 	return email, nil

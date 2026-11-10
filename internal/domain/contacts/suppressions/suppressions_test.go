@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -100,14 +101,14 @@ func TestRemoveLiftsAndReportsAMissingOrLiftedRow(t *testing.T) {
 }
 
 func TestNormalizeDestinationTrimsAndLowerCases(t *testing.T) {
-	assert.Equal(t, "a@x.com", suppressions.NormalizeDestination(" A@X.com "))
+	assert.Equal(t, "a@x.com", emailcase.Of(" A@X.com "))
 }
 
 func TestNormalizeDestinationProperties(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		raw := rapid.String().Draw(t, "raw")
-		once := suppressions.NormalizeDestination(raw)
-		assert.Equal(t, once, suppressions.NormalizeDestination(once), "idempotent")
+		once := emailcase.Of(raw)
+		assert.Equal(t, once, emailcase.Of(once), "idempotent")
 		assert.Equal(t, strings.ToLower(once), once, "no lower-case form left")
 		assert.Equal(t, strings.TrimSpace(once), once, "trimmed")
 	})

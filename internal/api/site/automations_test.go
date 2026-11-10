@@ -59,7 +59,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 
 	// Update renames.
 	upd, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
-		Name: siteapi.NewOptString("Onboarding"),
+		Name: siteapi.NewOptName("Onboarding"),
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	updRes := upd

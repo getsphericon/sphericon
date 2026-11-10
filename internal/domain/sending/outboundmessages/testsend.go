@@ -7,12 +7,12 @@ import (
 	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -183,7 +183,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 	if !ok {
 		return Result{}, fmt.Errorf("outbound: %T is no email adapter", route.Sender)
 	}
-	to := suppressions.NormalizeDestination(req.To)
+	to := emailcase.Of(req.To)
 	msg, err := m.renderTest(ctx, s, ws, req, to)
 	if err != nil {
 		return failedContent(err)
@@ -266,8 +266,8 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 	if err != nil {
 		return Result{}, fmt.Errorf("outbound: the user who asks for a test send: %w", err)
 	}
-	to := suppressions.NormalizeDestination(req.To)
-	if to != suppressions.NormalizeDestination(asker.Email) {
+	to := emailcase.Of(req.To)
+	if to != emailcase.Of(asker.Email) {
 		return Result{Outcome: Refused, Reason: RefuseOtherRecipient}, nil
 	}
 	if m.system == nil {

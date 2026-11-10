@@ -7,7 +7,6 @@ package suppressions
 
 import (
 	"context"
-	"net/mail"
 	"regexp"
 	"strings"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
@@ -34,13 +34,6 @@ var (
 	// ErrNotFound: no such Suppression in this Workspace.
 	ErrNotFound = validation.NotFound("suppression: not found", i18n.ErrorsSuppressionNotFound)
 )
-
-// NormalizeDestination is the single definition of "normalized destination":
-// lower-cased and trimmed. Suppression and Unsubscribe rows store destinations this
-// way, and every lookup must apply it so the readers of those rows agree on one form.
-func NormalizeDestination(dest string) string {
-	return strings.ToLower(strings.TrimSpace(dest))
-}
 
 // ForEvent is the rule that decides whether a delivery event suppresses its address, and
 // why: a complaint (events.NameEmailComplained) always does, a bounce (events.NameEmailBounced)
@@ -104,7 +97,7 @@ func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 }
 
 func add(ctx context.Context, s *ent.Scoped, e Entry) (bool, error) {
-	dest := NormalizeDestination(e.Destination)
+	dest := emailcase.Of(e.Destination)
 	if dest == "" {
 		return false, ErrDestinationEmpty
 	}
@@ -144,9 +137,11 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, des
 	// providers), and a number is stored in E.164, read with the country code it must carry.
 	switch channel {
 	case channels.Email:
-		if addr, err := mail.ParseAddress(NormalizeDestination(destination)); err != nil || addr.Address != NormalizeDestination(destination) {
+		address, err := validation.Email("destination", destination)
+		if err != nil {
 			return nil, ErrDestinationInvalid
 		}
+		destination = address
 	case channels.SMS:
 		if strings.TrimSpace(destination) == "" {
 			return nil, ErrDestinationEmpty
@@ -163,7 +158,7 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, des
 		return nil, err
 	}
 	return s.Suppression().Query().
-		Where(entsuppression.ChannelEQ(channel), entsuppression.DestinationEQ(NormalizeDestination(destination)), entsuppression.LiftedAtIsNil()).
+		Where(entsuppression.ChannelEQ(channel), entsuppression.DestinationEQ(emailcase.Of(destination)), entsuppression.LiftedAtIsNil()).
 		Only(ctx)
 }
 

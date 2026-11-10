@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -49,7 +50,7 @@ func TestAccountEmail(t *testing.T) {
 		"a@" + strings.Repeat("b.", 126) + "com": false, // longer than 254
 	}
 	for email, want := range cases {
-		assert.Equalf(t, want, validation.AccountEmail(email), "%q", email)
+		assert.Equalf(t, want, validation.IsAccountEmail(email), "%q", email)
 	}
 }
 
@@ -76,7 +77,7 @@ func FuzzAccountEmail(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, s string) {
-		ok := validation.AccountEmail(s)
+		ok := validation.IsAccountEmail(s)
 		local, domain, _ := strings.Cut(s, "@")
 		require.Truef(t, !ok || len(s) <= 254, "%q: accepted past 254 octets", s)
 		require.Truef(t, !ok || strings.Count(s, "@") == 1, "%q: accepted without exactly one @", s)
@@ -137,7 +138,7 @@ func TestDisplayName(t *testing.T) {
 		"Grace\xff":                        false, // not UTF-8
 	}
 	for name, want := range cases {
-		assert.Equalf(t, want, validation.DisplayName(name), "%q", name)
+		assert.Equalf(t, want, validation.IsDisplayName(name), "%q", name)
 	}
 }
 
@@ -146,9 +147,9 @@ func FuzzDisplayName(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, s string) {
-		ok := validation.DisplayName(s)
+		ok := validation.IsDisplayName(s)
 		require.Truef(t, !ok || utf8.ValidString(s), "%q: accepted invalid UTF-8", s)
-		require.Truef(t, !ok || utf8.RuneCountInString(s) <= validation.NameMaxLength, "%q: accepted past the limit", s)
+		require.Truef(t, !ok || utf8.RuneCountInString(s) <= bounds.UserNameMaxLength, "%q: accepted past the limit", s)
 		require.Truef(t, !ok || !strings.ContainsFunc(s, unicode.IsControl), "%q: accepted a control character", s)
 		require.Truef(t, !ok || !strings.ContainsFunc(s, func(r rune) bool { return unicode.Is(unicode.Bidi_Control, r) }), "%q: accepted a bidirectional control", s)
 		require.Truef(t, !ok || !strings.ContainsFunc(s, func(r rune) bool { return unicode.In(r, unicode.Zl, unicode.Zp) }), "%q: accepted a line or paragraph separator", s)

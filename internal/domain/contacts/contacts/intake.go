@@ -82,9 +82,6 @@ func confirmSMS(ctx context.Context, s *ent.Scoped, pub events.Publisher, res Re
 		return nil
 	}
 	number := lo.CoalesceOrEmpty(lo.FromPtr(res.Phone), lo.FromPtr(res.Contact.Phone))
-	if number == "" {
-		return confirmations.ErrNoPhone
-	}
-	_, err := confirmations.ConfirmSMSIn(ctx, s, pub, number, *ev)
+	_, err := confirmations.ConfirmContactSMSIn(ctx, s, pub, number, *ev)
 	return err
 }

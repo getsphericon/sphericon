@@ -19,7 +19,7 @@ model ApiTokenListResponse {
 }
 
 model CreateApiTokenInput {
-  name: string;
+  name: Name;
   scopes: ApiTokenScope[];
   expiresAt?: Timestamp | null;
 }

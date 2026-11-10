@@ -6,7 +6,7 @@
 // internal/usecase/integrationdeletion, which checks its Live use first (ADR 0102).
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
-// the View or a domain error: validation.Error (a 422), ErrDefaultConflict (a 409), or
+// the View or a domain error: a validation refusal (a 422), ErrDefaultConflict (a 409), or
 // ErrNotFound for an unknown id.
 package integrations
 
@@ -14,7 +14,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -26,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -201,8 +201,11 @@ type UpdateInput struct {
 
 // Create validates and stores an Integration, sealing its credentials, and answers its View.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (View, error) {
-	name, err := validName(in.Name)
+	name, err := validation.Name(in.Name)
 	if err != nil {
+		return View{}, err
+	}
+	if err := checkProviderLimit(in.MaxPerSecond, in.MaxPerDay); err != nil {
 		return View{}, err
 	}
 	provider, channel, plaintext, err := m.encode(in.Config)
@@ -323,11 +326,14 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	// transaction opens.
 	var name *string
 	if raw, ok := in.Name.Get(); ok {
-		n, err := validName(raw)
+		n, err := validation.Name(raw)
 		if err != nil {
 			return View{}, err
 		}
 		name = &n
+	}
+	if err := checkProviderLimit(in.MaxPerSecond.Ptr(), in.MaxPerDay.Ptr()); err != nil {
+		return View{}, err
 	}
 	var sealed *string
 	var tg telegramEdit
@@ -404,7 +410,7 @@ func (m *Module) sealEditedConfig(row *ent.Integration, cfg *ConfigInput) (*stri
 		return nil, err
 	}
 	if provider != row.Provider {
-		return nil, &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationKindMismatch, nil)}
+		return nil, refuse(fieldConfig, i18n.ErrorsIntegrationKindMismatch, nil)
 	}
 	prev, err := m.cipher.Decrypt(row.ConfigEncrypted)
 	if err != nil {
@@ -461,18 +467,37 @@ func requireProviderLimit(endpoint string, perSecond, perDay *int) error {
 	if endpoint == "" {
 		return nil
 	}
-	msg := i18n.T(i18n.ErrorsIntegrationProviderLimitRequired, nil)
-	missing := map[string][]string{}
+	var missing []error
 	if perSecond == nil {
-		missing[validation.FieldMaxPerSecond] = []string{msg}
+		missing = append(missing, ErrProviderLimitRequired.On(validation.FieldMaxPerSecond))
 	}
 	if perDay == nil {
-		missing[validation.FieldMaxPerDay] = []string{msg}
+		missing = append(missing, ErrProviderLimitRequired.On(validation.FieldMaxPerDay))
 	}
-	if len(missing) == 0 {
-		return nil
+	return validation.Fields(missing...)
+}
+
+// ErrProviderLimitRequired is a Provider limit an SES Integration with a custom endpoint leaves out.
+var ErrProviderLimitRequired = validation.Refuse("integrations: the provider limit is required",
+	i18n.ErrorsIntegrationProviderLimitRequired)
+
+// checkProviderLimit refuses a Provider limit outside the contract's bounds; nil leaves it unset.
+func checkProviderLimit(perSecond, perDay *int) error {
+	var refusals []error
+	if perSecond != nil {
+		refusals = append(refusals, validation.Range(validation.FieldMaxPerSecond, *perSecond,
+			bounds.MaxPerSecondMin, bounds.MaxPerSecondMax))
 	}
-	return &validation.FieldsError{Fields: missing}
+	if perDay != nil {
+		refusals = append(refusals, validation.Range(validation.FieldMaxPerDay, *perDay,
+			bounds.MaxPerDayMin, bounds.MaxPerDayMax))
+	}
+	return validation.Fields(refusals...)
+}
+
+// refuse is the refusal of the request field named field, worded by key with args.
+func refuse(field string, key i18n.ID, args map[string]any) error {
+	return validation.RefuseField(field, "integrations: "+key.Key(), key).Args(args)
 }
 
 // keepsProviderLimit applies requireProviderLimit to what an Update leaves: the edited SES
@@ -492,15 +517,6 @@ func (m *Module) keepsProviderLimit(row *ent.Integration, in UpdateInput) error 
 		endpoint = stored.SES.Endpoint
 	}
 	return requireProviderLimit(endpoint, in.MaxPerSecond.Over(row.MaxPerSecond), in.MaxPerDay.Over(row.MaxPerDay))
-}
-
-func validName(raw string) (string, error) {
-	name := strings.TrimSpace(raw)
-	if name == "" {
-		msg := i18n.T(i18n.ErrorsNameEmpty, nil)
-		return "", &validation.Error{Field: "name", Message: msg}
-	}
-	return name, nil
 }
 
 // discoverQuota queues a saved Integration's send quota lookup (ADR 0023) on q, the transaction of
@@ -597,8 +613,9 @@ func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, [
 	return provider, channel, plaintext, nil
 }
 
-func configError(err error) *validation.Error {
-	return &validation.Error{Field: fieldConfig, Message: err.Error()}
+// configError is a provider config the catalog refuses, worded by the catalog's own reason.
+func configError(err error) error {
+	return refuse(fieldConfig, i18n.ErrorsIntegrationConfigInvalid, map[string]any{detailKey: err.Error()})
 }
 
 // mergeSecrets carries forward a stored secret that the client did not resupply. Secrets
@@ -651,8 +668,8 @@ func mergeSecrets(provider providers.Provider, next, prev []byte) ([]byte, error
 	return next, nil
 }
 
-func secretRequired() *validation.Error {
-	return &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationSecretRequired, nil)}
+func secretRequired() error {
+	return refuse(fieldConfig, i18n.ErrorsIntegrationSecretRequired, nil)
 }
 
 // RedactedConfig is the read-side provider config: no password, no secret key.

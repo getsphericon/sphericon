@@ -1,14 +1,13 @@
 // Package contractcopy is rule 6 ("knowledge has one place") for the values a TypeSpec contract
 // declares: it reads the generated openapi/*.openapi.json for its enums, numeric limits and the
-// fields of its object schemas, and reports a hand-written Go or TypeScript copy of them (in
-// TypeScript also a list of options and a type or zod object with a schema's fields), and a
-// fixture scope the contract does not declare. Go is read through go/parser, TypeScript through patterns (the frontend has no Go types
-// to ask).
+// fields of its object schemas, and reports a hand-written copy of them: a Go list or case list of
+// an enum's values, and in TypeScript also a list of options, a type or zod object with a schema's
+// fields and a constant equal to a limit; and a fixture scope the contract does not declare. Go is
+// read through go/parser, TypeScript through patterns (the frontend has no Go types to ask).
 //
-// Typed Go const blocks are the domain's own vocabulary and are not read.
-//
-// A value that only looks like a contract value (an OAuth limit, an internal cap) carries
-// `// contract-copy: <reason>` on its line or the line above; a bare marker is still a finding.
+// Typed Go const blocks are the domain's own vocabulary and are not read. A Go bound is not read
+// either: the contract's bounds are generated into internal/kernel/bounds (ADR 0107), and a test
+// refuses one its owner does not use, so a Go copy has nothing left to restate.
 package contractcopy
 
 import (
@@ -20,9 +19,6 @@ import (
 	"slices"
 	"strings"
 )
-
-// marker is the annotation that documents a value as not being a contract copy.
-const marker = "contract-copy:"
 
 // fix is the one remedy every finding ends with.
 const fix = "generate it from TypeSpec"
@@ -44,8 +40,7 @@ func shapeKey(fields []string) string {
 }
 
 func message(what string) string {
-	return fmt.Sprintf("rule 6: %s; a value that is not in the contract carries `// %s <reason>`; fix: %s",
-		what, marker, fix)
+	return fmt.Sprintf("rule 6: %s; fix: %s", what, fix)
 }
 
 // Check loads the contract from specDir and scans root for copies.

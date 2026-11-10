@@ -31,10 +31,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -58,10 +57,10 @@ var (
 	ErrInvalidCredentials = validation.Unauthorized("login: invalid credentials", i18n.ErrorsInvalidCredentials)
 	// ErrChallengeInvalid is the second step's refusal of a challenge that no longer stands
 	// (forged, expired, spent, moved, its account gone or its factor gone). It has no trusted
-	// address, so nothing is counted. An adapter's Parse and Verify return it too.
+	// address, so nothing is counted.
 	ErrChallengeInvalid = validation.Unauthorized("login: challenge invalid", i18n.ErrorsLoginChallengeInvalid)
 	// ErrInvalidCode is the second step's refusal of a wrong code, counted against the same
-	// budget as a wrong password. An adapter's Verify returns it too.
+	// budget as a wrong password.
 	ErrInvalidCode = validation.Unauthorized("login: invalid code", i18n.ErrorsSecondFactorCodeInvalid)
 	// ErrPasskeyFailed is every refusal of a Passkey login, indistinguishably: an unknown
 	// credential, a response that does not verify (no user verification included), a spent or
@@ -71,6 +70,10 @@ var (
 	// account without one). The failure is counted on the same budget as a login failure.
 	ErrPasswordIncorrect = validation.Denied("login: current password incorrect", i18n.ErrorsCurrentPasswordIncorrect)
 )
+
+// ErrNoChallenge is what an adapter's Parse returns for a challenge that does not stand; the
+// second step refuses it with ErrChallengeInvalid.
+var ErrNoChallenge = errors.New("login: no such challenge")
 
 // ErrPasskeyUnknown is what an adapter's PasskeyFind returns for a response that names no
 // credential (malformed, or a credential nobody registered).
@@ -156,20 +159,20 @@ type Config[P any] struct {
 	// Passwords hashes the decoy a password is checked against when no account matches: the
 	// hasher the stored passwords were made with, so the check costs the same.
 	Passwords *credentials.Hasher
-	// Gate, when set, reports that an account may not sign in yet (an Unverified User,
-	// ADR 0030). It is consulted for every known account, before the password result is
-	// acted on: the password step refuses a gated account with users.ErrEmailNotVerified,
-	// counting nothing and minting no challenge.
-	Gate func(P) bool
+	// Gate, when set, is the refusal of an account that may not sign in yet (an Unverified
+	// User, ADR 0030), in its owner's words, and nil for one that may. It is consulted for every
+	// known account, before the password result is acted on: the password step returns its
+	// refusal, counting nothing and minting no challenge.
+	Gate func(P) error
 	// Challenge mints the second step's token for an account with a second factor.
 	Challenge func(ctx context.Context, principal P) (string, error)
-	// Parse turns a challenge token into its Pending, or returns ErrChallengeInvalid.
+	// Parse turns a challenge token into its Pending, or returns ErrNoChallenge when it does not
+	// stand (forged, expired, used, or its account or factor gone), which the step refuses with
+	// ErrChallengeInvalid.
 	Parse func(ctx context.Context, token string) (Pending[P], error)
 	// Verify checks a code for a Pending under the adapter's lock (a TOTP code, or a
-	// recovery code, which it spends). It returns ErrInvalidCode for a wrong code and
-	// ErrChallengeInvalid when the challenge stopped standing (the factor is gone, or a
-	// racing second step moved it first).
-	Verify func(ctx context.Context, p Pending[P], code string) error
+	// recovery code, which it spends) and says what it found (Verdict).
+	Verify func(ctx context.Context, p Pending[P], code string) (Verdict, error)
 	// PasskeyFind names the account (Pending.Principal and the throttle key Pending.Address)
 	// a Passkey response belongs to, by its credential id, or returns ErrPasskeyUnknown. It
 	// verifies nothing. Left nil, the surface has no Passkey login.
@@ -179,6 +182,20 @@ type Config[P any] struct {
 	// hold.
 	PasskeyVerify func(ctx context.Context, p Pending[P], a PasskeyAssertion) error
 }
+
+// Verdict is what an adapter's Verify found of a second step's code: the step words the refusal
+// of each (ErrInvalidCode, ErrChallengeInvalid) itself.
+type Verdict int
+
+const (
+	// CodeAccepted is a code that holds.
+	CodeAccepted Verdict = iota
+	// CodeWrong is a wrong code, counted against the address's budget.
+	CodeWrong
+	// ChallengeGone is a challenge that stopped standing (the factor is gone, or a racing second
+	// step moved it first).
+	ChallengeGone
+)
 
 // Module is the password step.
 type Module[P any] struct {
@@ -205,7 +222,7 @@ func (m *Module[P]) throttle(ctx context.Context, address string) error {
 // error: the running delay (*ratelimit.WaitError), users.ErrEmailNotVerified for a gated
 // account, ErrInvalidCredentials otherwise.
 func (m *Module[P]) Password(ctx context.Context, address, password string) (Result[P], error) {
-	address = throttle.NormalizeEmail(address)
+	address = emailcase.Of(address)
 
 	if err := m.throttle(ctx, address); err != nil {
 		return Result[P]{}, err
@@ -217,8 +234,10 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 	}
 	ok := m.verify(acc.PasswordHash, password)
 
-	if found && m.cfg.Gate != nil && m.cfg.Gate(acc.Principal) {
-		return Result[P]{}, users.ErrEmailNotVerified
+	if found && m.cfg.Gate != nil {
+		if err := m.cfg.Gate(acc.Principal); err != nil {
+			return Result[P]{}, err
+		}
 	}
 	if !found || !ok {
 		if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
@@ -247,23 +266,28 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 // factor resets the counter, and a reset that fails is logged, not fatal.
 func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (SecondResult[P], error) {
 	p, err := m.cfg.Parse(ctx, challenge)
+	if errors.Is(err, ErrNoChallenge) {
+		return SecondResult[P]{}, ErrChallengeInvalid
+	}
 	if err != nil {
 		return SecondResult[P]{}, err
 	}
-	address := throttle.NormalizeEmail(p.Address)
+	address := emailcase.Of(p.Address)
 
 	if err := m.throttle(ctx, address); err != nil {
 		return SecondResult[P]{}, err
 	}
 
-	switch err := m.cfg.Verify(ctx, p, code); {
-	case errors.Is(err, ErrInvalidCode):
+	switch verdict, err := m.cfg.Verify(ctx, p, code); {
+	case err != nil:
+		return SecondResult[P]{}, err
+	case verdict == CodeWrong:
 		if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
 			return SecondResult[P]{}, err
 		}
 		return SecondResult[P]{}, ErrInvalidCode
-	case err != nil:
-		return SecondResult[P]{}, err
+	case verdict == ChallengeGone:
+		return SecondResult[P]{}, ErrChallengeInvalid
 	}
 	if err := m.cfg.Throttle.RecordSuccess(ctx, address); err != nil {
 		// The second factor is committed (a code is spent); a counter that did not reset
@@ -291,12 +315,12 @@ func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyRes
 	if err != nil {
 		return PasskeyResult[P]{}, err
 	}
-	address := throttle.NormalizeEmail(p.Address)
+	address := emailcase.Of(p.Address)
 
 	if err := m.throttle(ctx, address); err != nil {
 		return PasskeyResult[P]{}, err
 	}
-	if m.cfg.Gate != nil && m.cfg.Gate(p.Principal) {
+	if m.cfg.Gate != nil && m.cfg.Gate(p.Principal) != nil {
 		// The same refusal as any other: a Passkey login does not tell that the address waits.
 		return PasskeyResult[P]{}, ErrPasskeyFailed
 	}

@@ -2,8 +2,6 @@ package bad
 
 var allowed = []string{"contacts:read", "contacts:write", "events:read"}
 
-const maxNameLength = 137
-
 func ok(s string) bool {
 	switch s {
 	case "contacts:read", "contacts:write", "events:read":
@@ -11,6 +9,3 @@ func ok(s string) bool {
 	}
 	return false
 }
-
-// contract-copy:
-const maxPage = 250

@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -110,5 +111,5 @@ func TestANameLeftBlankRefusesTheRegistrationBeforeAnyProof(t *testing.T) {
 
 	_, _, err := m.FinishRegistration(t.Context(), pat, users.IdentityProof{Password: "wrong"}, passkeys.Registration{Name: "  "})
 
-	require.ErrorIs(t, err, passkeys.ErrPasskeyNameEmpty)
+	require.ErrorIs(t, err, validation.ErrNameBlank)
 }

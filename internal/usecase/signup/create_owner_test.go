@@ -9,8 +9,8 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 func TestCreateOwnerRefusesAMalformedEmail(t *testing.T) {
@@ -19,7 +19,7 @@ func TestCreateOwnerRefusesAMalformedEmail(t *testing.T) {
 
 	_, err := env.SignUp.CreateOwner(t.Context(), "not-an-email", "Ada")
 
-	require.ErrorIs(t, err, signup.ErrOwnerEmailInvalid)
+	require.ErrorIs(t, err, validation.ErrEmailInvalid)
 	taken, err := acc.EmailTaken(t.Context(), "not-an-email")
 	require.NoError(t, err)
 	assert.False(t, taken, "a refusal creates no User")
@@ -53,7 +53,7 @@ func TestCreateOwnerRefusesANameEmptyToTheEye(t *testing.T) {
 
 	password, err := env.SignUp.CreateOwner(t.Context(), "ada@example.com", "   ")
 
-	require.ErrorIs(t, err, users.ErrNameInvalid)
+	require.ErrorIs(t, err, validation.ErrUserNameRequired)
 	assert.Empty(t, password)
 	taken, err := acc.EmailTaken(t.Context(), "ada@example.com")
 	require.NoError(t, err)

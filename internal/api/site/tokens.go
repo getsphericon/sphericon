@@ -42,7 +42,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdateTokenInput, params siteapi.SiteTokensUpdateParams) (*siteapi.SiteApiTokenResource, error) {
 	scoped := workspaceScope(ctx)
 
-	row, err := apitokens.Rename(ctx, scoped, int64(params.ID), req.Name)
+	row, err := apitokens.Rename(ctx, scoped, int64(params.ID), string(req.Name))
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ type Invitation struct {
 
 func (Invitation) Annotations() []schema.Annotation {
 	table := TableWithEnumChecks("invitations", Invitation{}.Fields())
-	name, expr := LowerEmailCheck("invitations")
+	name, expr := LowerCheck("invitations", "email")
 	table.Checks[name] = expr
 	return []schema.Annotation{table}
 }

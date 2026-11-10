@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/html"
 	"pgregory.net/rapid"
 
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -210,7 +211,7 @@ func TestCheckButtonsRefusesTooManyBlankLabelsAndBadURLs(t *testing.T) {
 }
 
 func make8(b telegramrender.Button) []telegramrender.Button {
-	out := make([]telegramrender.Button, telegramrender.MaxButtons)
+	out := make([]telegramrender.Button, bounds.TelegramButtonsMaxItems)
 	for i := range out {
 		out[i] = b
 	}

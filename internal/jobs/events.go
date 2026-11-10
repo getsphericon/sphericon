@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -205,7 +204,8 @@ func NewSuppressEventWorker(client *ent.Client) *SuppressEventWorker {
 }
 
 // Work adds the event's destination to the Workspace's Suppression list when the action implies a
-// global do-not-send (hard bounce, complaint). No-op for other actions or a missing email.
+// global do-not-send (hard bounce, complaint). No-op for other actions; a missing email is the
+// Suppression module's refusal, which ends the job (RefusalsEnd).
 // Idempotent: a redelivered or repeated event keeps the original entry rather than erroring or
 // overwriting its reason.
 func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressEventArgs]) error {
@@ -223,10 +223,8 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 	// The Workspace comes from the event envelope: a consumer has no membership or
 	// api token, so this is a scope source outside the site/external/job list.
 	s := w.ent.Scoped(env.WorkspaceID)
+	// A refused destination ends the job (RefusalsEnd); any other error retries it.
 	err = suppressions.Add(ctx, s, suppressions.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
-	if errors.Is(err, suppressions.ErrDestinationEmpty) {
-		return nil
-	}
 	if err != nil {
 		return fmt.Errorf("suppress %q: %w", p.Email, err)
 	}

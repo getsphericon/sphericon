@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"errors"
 	"slices"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -115,7 +115,7 @@ func factsOf(known, holder *ent.User, in ProviderLogin) SigninFacts {
 // may not have. A third party's name never refuses a sign-in.
 func providerName(in ProviderLogin) string {
 	name := strings.TrimSpace(in.Name)
-	if CheckName(name) != nil {
+	if _, err := validation.UserName(name); err != nil {
 		return ""
 	}
 	return name
@@ -126,7 +126,7 @@ func providerName(in ProviderLogin) string {
 // password. Its email is proven now; the caller creates its first Workspace and records
 // `user.email_verify` on the same transaction (internal/usecase/signup).
 func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin, now time.Time) (*ent.User, error) {
-	email := strings.TrimSpace(in.Email)
+	email := emailcase.Of(in.Email)
 	name := providerName(in)
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
@@ -154,7 +154,7 @@ func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin,
 
 var (
 	// ErrIdentityInUse is a provider account that is already linked to another User.
-	ErrIdentityInUse = errors.New("users: the provider account is linked to another user")
+	ErrIdentityInUse = validation.Conflict("users: the provider account is linked to another user", i18n.ErrorsIdentityInUse)
 	// ErrIdentityNotFound is an identity that is not the User's.
 	ErrIdentityNotFound = validation.NotFound("users: no such linked identity", i18n.ErrorsLinkedIdentityNotFound)
 	// ErrLastSignIn is an unlink that would leave the User with no way to sign in.

@@ -15,8 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The AI assistance section of the pull request template is filled in, and each `contract-copy:`
-  # marker the change adds is declared in the body. A bot's pull request (dependabot) has no template
+  # The AI assistance section of the pull request template is filled in. A bot's pull request (dependabot) has no template
   # to fill in, and neither has the release pull request, which release-please opens as the maintainer
   # when it runs with a personal access token: a skipped job counts as passed for a required check.
   # A fork cannot borrow the release branch name, because the head must live in this repository.
@@ -49,7 +48,6 @@ jobs:
       - name: Check the pull request body
         env:
           SPHERICON_PR_BODY: ${{ github.event.pull_request.body }}
-          SPHERICON_BASE: ${{ github.event.pull_request.base.sha }}
         run: mise run check:pr-body
 
   # The repository squashes a pull request with its title, and release-please reads that title, so it

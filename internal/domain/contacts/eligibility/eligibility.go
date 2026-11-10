@@ -22,10 +22,9 @@
 // respects Suppression. Whether the workspace requires confirmed opt-in is read
 // inside the rule, so no caller can forget the confirmation gate.
 //
-// Stored destinations and contact.email are both lower-cased on write (contact.email by
-// internal/domain/contacts/emailcase, held by the contacts_email_lower CHECK), so the Contact-side
-// comparison is a plain equality, while Check normalizes its input with
-// suppression.NormalizeDestination.
+// Stored destinations and contact.email are both in their Email case (internal/kernel/emailcase,
+// held by each column's lower-case CHECK), so the Contact-side comparison is a plain equality,
+// while Check puts its input in its Email case too.
 package eligibility
 
 import (
@@ -44,9 +43,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 )
 
 // Reasons a destination is ineligible.
@@ -80,7 +79,7 @@ type Decision struct {
 // client; HAVING TRUE turns the select into a single-group one, so exactly one row
 // comes back whether or not the Workspace has any Suppression.
 func Check(ctx context.Context, s *ent.Scoped, channel, dest, source string) (Decision, error) {
-	d := suppressions.NormalizeDestination(dest)
+	d := emailcase.Of(dest)
 	if d == "" {
 		return Decision{Eligible: true}, nil
 	}

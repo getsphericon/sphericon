@@ -1,6 +1,6 @@
 // Package entclient builds the application's ent clients with the hooks every client carries: the
-// lower-casing of stored addresses and the change positions of the Workspace and User feeds and of
-// the Tracking host log. It is the wiring's, so the database package knows none of those modules.
+// change positions of the Workspace and User feeds and of the Tracking host log. It is the
+// wiring's, so the database package knows none of those modules.
 package entclient
 
 import (
@@ -10,7 +10,6 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/emailcase"
 	"github.com/getsphericon/sphericon/internal/domain/identity/usertombstones"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges"
@@ -20,7 +19,7 @@ import (
 // is made only inside a transaction (events.Bus.WithinTx).
 func New(sqlDB *sql.DB) *ent.Client {
 	c := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
-	c.Use(emailcase.Hook, workspacefeed.Guard, usertombstones.Guard, trackinghostchanges.Guard)
+	c.Use(workspacefeed.Guard, usertombstones.Guard, trackinghostchanges.Guard)
 	return c
 }
 
@@ -37,6 +36,6 @@ func NewOnTx(sqlDB *sql.DB) *ent.Client {
 // same hooks.
 func NewTx(drv dialect.Driver) *ent.Client {
 	c := ent.NewClient(ent.Driver(drv))
-	c.Use(emailcase.Hook, workspacefeed.Hook, usertombstones.Hook, trackinghostchanges.Hook)
+	c.Use(workspacefeed.Hook, usertombstones.Hook, trackinghostchanges.Hook)
 	return c
 }

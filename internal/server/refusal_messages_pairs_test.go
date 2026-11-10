@@ -86,7 +86,7 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			},
 		},
 		{
-			name: "tag name is required", want: "name is required",
+			name: "a blank tag name", want: "name must not be empty",
 			site: func(c *siteapi.Client) error {
 				return refusalOf(c.SiteTagsApply(t.Context(), &siteapi.ApplyTagInput{Name: " "},
 					siteapi.SiteTagsApplyParams{WorkspaceId: ws, ContactId: fixtures.ContactAliceID}))

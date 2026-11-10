@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -43,8 +44,7 @@ func TestOperatorsAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
 
 	rapid.Check(t, func(rt *rapid.T) {
 		field := rapid.SampledFrom([]string{"first_name", "phone"}).Draw(rt, "field")
-		// contract-copy: the operator names of the grammar, not a list this test owns
-		op := rapid.SampledFrom([]string{"eq", "neq", "contains", "beginsWith", "null", "notNull"}).Draw(rt, "operator")
+		op := rapid.SampledFrom([]string{string(siteapi.SiteConditionOperatorEq), string(siteapi.SiteConditionOperatorNeq), string(siteapi.SiteConditionOperatorContains), string(siteapi.SiteConditionOperatorBeginsWith), string(siteapi.SiteConditionOperatorNull), string(siteapi.SiteConditionOperatorNotNull)}).Draw(rt, "operator")
 		want := rapid.SampledFrom([]string{"Anna", "anna", "ELL", "an", "", "zzz"}).Draw(rt, "operand")
 		c := rapid.SampledFrom(contacts).Draw(rt, "contact")
 		have := property(attribute[field](c))
@@ -73,8 +73,8 @@ func TestTriggerLeafIsFalseForAMissingKeyOrAnotherType(t *testing.T) {
 	}
 
 	rapid.Check(t, func(rt *rapid.T) {
-		// contract-copy: operators that need a string; null is tested separately
-		op := rapid.SampledFrom([]string{"eq", "neq", "contains", "beginsWith", "notNull"}).Draw(rt, "operator")
+		// Operators that need a string; null is tested separately.
+		op := rapid.SampledFrom([]string{string(siteapi.SiteConditionOperatorEq), string(siteapi.SiteConditionOperatorNeq), string(siteapi.SiteConditionOperatorContains), string(siteapi.SiteConditionOperatorBeginsWith), string(siteapi.SiteConditionOperatorNotNull)}).Draw(rt, "operator")
 		props := rapid.SampledFrom(notStrings).Draw(rt, "props")
 
 		holds := triggerMatches(rt, s, opsGroup(rule("trigger:amount", op, "10")), props, fixtures.ContactAliceID)

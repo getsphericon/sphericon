@@ -30,21 +30,23 @@ package workspaceoversight
 import (
 	"time"
 
-	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // ErrNotLicensed is the refusal on an instance without the `staff` license: the Enterprise
-// sections are off. It is the Service credentials' refusal, so one sentinel answers for both.
-var ErrNotLicensed = servicecredentials.ErrNotLicensed
+// sections are off.
+var ErrNotLicensed = validation.Unlicensed("workspaceoversight: the staff feature is not licensed", i18n.ErrorsStaffNotLicensed)
 
 // Config is what the Enterprise sections need from the instance.
 type Config struct {
@@ -57,7 +59,7 @@ type Config struct {
 	// warning (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// HoldMaxExpiry is how far ahead a Staff hold's expiry may be set
-	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is DefaultHoldMaxExpiry.
+	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is holds.DefaultMaxExpiry.
 	HoldMaxExpiry time.Duration
 	// SendCaps is whether the Instance has Send caps (ADR 0067). Without them the console shows
 	// no Send cap and its endpoints are not found, whatever the License.
@@ -87,7 +89,7 @@ func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog 
 	}
 	holdMax := cfg.HoldMaxExpiry
 	if holdMax <= 0 {
-		holdMax = DefaultHoldMaxExpiry
+		holdMax = holds.DefaultMaxExpiry
 	}
 	return &Module{
 		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse), holdMax: holdMax, survey: signupsurveyresponses.NewReader(client),

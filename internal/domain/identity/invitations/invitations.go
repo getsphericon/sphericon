@@ -25,7 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -130,9 +130,12 @@ type InviteInput struct {
 // ErrAlreadyMember when the address already has a Membership in the Workspace.
 // An accepted Invitation stays accepted: inviting its address again creates a new row.
 func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, in InviteInput) (*ent.Invitation, string, error) {
-	email := throttle.NormalizeEmail(in.Email)
-	if email == "" {
+	if emailcase.Of(in.Email) == "" {
 		return nil, "", ErrEmailEmpty
+	}
+	email, err := validation.AccountEmail(validation.FieldEmail, in.Email)
+	if err != nil {
+		return nil, "", err
 	}
 	token, err := generateInviteToken()
 	if err != nil {

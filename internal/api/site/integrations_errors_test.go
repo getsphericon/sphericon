@@ -64,12 +64,12 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		in := &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString("Renamed")}
+		in := &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptName("Renamed")}
 		_, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: foreign, ID: id})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: idStr(99999)})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString(" ")},
+		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptName(" ")},
 			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(smtpInput("", "p"))},

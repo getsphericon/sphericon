@@ -24,7 +24,7 @@ type Event struct {
 
 func (Event) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "events"},
+		WithLowerCheck(entsql.Annotation{Table: "events"}, "email"),
 	}
 }
 

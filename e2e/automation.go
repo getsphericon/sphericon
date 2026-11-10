@@ -32,7 +32,7 @@ func (w *Workspace) PublishAutomation(a Automation) int64 {
 		a.Name = "e2e automation " + uniq()
 	}
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name:         a.Name,
+		Name:         externalapi.Name(a.Name),
 		TriggerEvent: a.TriggerEvent,
 		Steps: []externalapi.AutomationStep{{
 			Type:    externalapi.AutomationStepTypeEmail,
@@ -72,7 +72,7 @@ func (w *Workspace) PublishAuthoredAutomation(a AuthoredAutomation) {
 	require.NoError(w.t, err)
 
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name:         "e2e authored automation " + uniq(),
+		Name:         externalapi.Name("e2e authored automation " + uniq()),
 		TriggerEvent: a.TriggerEvent,
 		Steps: []externalapi.AutomationStep{{
 			Type:    externalapi.AutomationStepTypeEmail,
@@ -112,7 +112,7 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 		httpStep.Secret = externalapi.NewOptString(a.Hook.Secret)
 	}
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name:         "e2e http automation " + uniq(),
+		Name:         externalapi.Name("e2e http automation " + uniq()),
 		TriggerEvent: a.TriggerEvent,
 		Steps: []externalapi.AutomationStep{httpStep, {
 			Type:    externalapi.AutomationStepTypeEmail,

@@ -42,6 +42,9 @@ import (
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend stringPatch
+// goverter:extend namePatch
+// goverter:extend nameIn
+// goverter:extend namePtrIn
 // goverter:extend nilStringPatch
 // goverter:extend nilEmailPatch
 // goverter:extend nilTimeZonePatch
@@ -216,6 +219,9 @@ func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *confirmations.Evi
 func backfillIn(backfill bool) bool { return backfill }
 
 func stringPatch(o externalapi.OptString) patch.Field[string] { return convert.Patch(o) }
+func namePatch(o externalapi.OptName) patch.Field[string]     { return convert.StringPatch(o) }
+func nameIn(n externalapi.Name) string                        { return string(n) }
+func namePtrIn(o externalapi.OptName) *string                 { return convert.StringPtr(o) }
 
 // customFieldTypePatch is a Custom field's new type as the enum's value: the module reads it as its own.
 func customFieldTypePatch(o externalapi.OptCustomFieldType) patch.Field[string] {

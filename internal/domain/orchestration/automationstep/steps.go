@@ -67,7 +67,7 @@ type Step struct {
 	UnsubscribeButton string `json:"unsubscribeButton,omitempty"`
 	// ImageURL is the https URL of a Telegram step's image, "" for none.
 	ImageURL string `json:"imageUrl,omitempty"`
-	// Buttons are a Telegram step's link buttons, one per row, at most telegramrender.MaxButtons.
+	// Buttons are a Telegram step's link buttons, one per row, at most bounds.TelegramButtonsMaxItems.
 	Buttons []telegramrender.Button `json:"buttons,omitempty"`
 	// LinkPreview is whether a link in a Telegram step's text unfolds a preview; nil is on.
 	LinkPreview *bool `json:"linkPreview,omitempty"`

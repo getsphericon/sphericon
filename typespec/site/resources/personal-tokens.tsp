@@ -45,7 +45,7 @@ model SitePersonalTokenResource {
 
 /** Mint a Personal token of the caller's own */
 model SiteCreatePersonalTokenInput {
-  name: string;
+  name: Name;
 
   /** Each one a scope the caller's Role may grant (`grantableScopes`) */
   scopes: PersonalScope[];

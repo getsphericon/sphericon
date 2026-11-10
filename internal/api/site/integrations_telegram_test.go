@@ -156,7 +156,7 @@ func TestSiteTelegramUpdateReconnectsTheSameBotOnly(t *testing.T) {
 		before := len(env.Telegram.Requests())
 
 		_, err := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{
-			Name: siteapi.NewOptString("Renamed bot"), Config: siteapi.NewOptIntegrationConfigInput(telegramInput("")),
+			Name: siteapi.NewOptName("Renamed bot"), Config: siteapi.NewOptIntegrationConfigInput(telegramInput("")),
 		})
 
 		require.NoError(t, err)

@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -226,10 +227,16 @@ func (m *Module) State(ctx context.Context) (State, error) {
 // clears it with nil, as the Staff member by (ADR 0067). The change is recorded in the Instance
 // audit log with the old and the new value, in the same transaction; setting the same value or
 // clearing none is a no-op and records nothing. Existing Workspaces keep their Send caps.
-// providerlimit.ErrNoSendCaps on an Instance without Send caps; the bounds are the contract's.
+// providerlimit.ErrNoSendCaps on an Instance without Send caps; a Send cap outside the contract's
+// bounds (bounds.MaxPerDay) is refused.
 func (m *Module) SetDefaultSendCap(ctx context.Context, by *ent.StaffMember, perDay *int) (DefaultSendCapChange, error) {
 	if err := m.sendCaps.Check(); err != nil {
 		return DefaultSendCapChange{}, err
+	}
+	if perDay != nil {
+		if err := validation.Range("perDay", *perDay, bounds.MaxPerDayMin, bounds.MaxPerDayMax); err != nil {
+			return DefaultSendCapChange{}, err
+		}
 	}
 	if _, err := m.Ensure(ctx); err != nil {
 		return DefaultSendCapChange{}, err

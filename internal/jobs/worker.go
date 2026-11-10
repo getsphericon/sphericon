@@ -235,7 +235,7 @@ func BaseConfig() *river.Config {
 // (erasedWorkspace), reading the Workspace over client.
 func WorkerConfig(client *ent.Client) *river.Config {
 	cfg := BaseConfig()
-	cfg.Middleware = append(cfg.Middleware, &erasedWorkspace{client: client})
+	cfg.Middleware = append(cfg.Middleware, &erasedWorkspace{client: client}, &RefusalsEnd{})
 	return cfg
 }
 

@@ -33,7 +33,7 @@ func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 			_, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
 			testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-			_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("hijack")}, externalapi.AutomationsUpdateParams{ID: id})
+			_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptName("hijack")}, externalapi.AutomationsUpdateParams{ID: id})
 			testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 			_, err = c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})

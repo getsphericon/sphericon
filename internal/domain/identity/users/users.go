@@ -32,8 +32,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -97,6 +97,15 @@ func canonicalRegionalFormat(typed string) (string, error) {
 // verification gate of the password login.
 var ErrEmailNotVerified = validation.Unverified("users: the email is not verified", i18n.ErrorsEmailVerificationRequired)
 
+// RequireVerified is the refusal of a User who may not sign in yet because the address is not
+// proven (ADR 0030): ErrEmailNotVerified, and nil for a Verified User. It is the login's gate.
+func RequireVerified(u *ent.User) error {
+	if u.EmailVerifiedAt == nil {
+		return ErrEmailNotVerified
+	}
+	return nil
+}
+
 // VerifiedIn loads the User id in the caller's transaction, refused with ErrEmailNotVerified while
 // it is Unverified: a Verified User's later Workspace is created on the transaction that loads it.
 func VerifiedIn(ctx context.Context, tx *ent.Client, id int64) (*ent.User, error) {
@@ -124,7 +133,7 @@ func (a *Module) UserByEmail(ctx context.Context, email string) (*ent.User, erro
 // UserByEmailIn is UserByEmail in the caller's transaction: a Staff member addresses a User by
 // email at the command line (the Second factor reset).
 func UserByEmailIn(ctx context.Context, tx *ent.Client, email string) (*ent.User, error) {
-	return tx.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).Only(ctx)
+	return tx.User.Query().Where(user.Email(emailcase.Of(email))).Only(ctx)
 }
 
 // UserByLoginAddress loads a User by a normalized login address, ignoring case (an ent
@@ -136,21 +145,35 @@ func (a *Module) UserByLoginAddress(ctx context.Context, address string) (*ent.U
 
 // EmailTaken reports whether an account already uses the login email, whatever its case.
 func (a *Module) EmailTaken(ctx context.Context, email string) (bool, error) {
-	return a.ent.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).Exist(ctx)
+	return a.ent.User.Query().Where(user.Email(emailcase.Of(email))).Exist(ctx)
 }
 
-// ErrNameInvalid means a User's name is one validation.DisplayName refuses: too long, empty to
-// the eye, or holding a character that breaks a line or hides.
-var ErrNameInvalid = errors.New("users: the name is not a valid display name")
+// Form is a person's name, address and password by the rules of a User's: the name trimmed, the
+// address in its Email case, the password as typed.
+type Form struct {
+	Name, Email, Password string
+}
 
-// CheckName checks every way a person names a User. A Sign-in provider's invalid name is
-// dropped instead (providerName).
-func CheckName(name string) error {
-	if !validation.DisplayName(name) {
-		return fmt.Errorf("%w: %w", ErrNameInvalid, validation.Refused(validation.FieldName,
-			i18n.T(i18n.ErrorsNameInvalid, map[string]any{"NameMax": validation.NameMaxLength})))
+// CheckForm checks the name, the address and the password a person gives for a new User by the
+// rules of a User's (validation.UserName, validation.AccountEmail, validation.Password), and
+// returns them normalised, or a *validation.FieldsError naming every refused field. A Sign-up
+// calls it before it hashes the password, so a refused form costs no hash; the writes check the
+// name and the address again.
+func CheckForm(name, email, password string) (Form, error) {
+	name, nameErr := validation.UserName(name)
+	email, emailErr := validation.AccountEmail(validation.FieldEmail, email)
+	err := validation.Fields(nameErr, emailErr, validation.Password(validation.FieldPassword, password))
+	return Form{Name: name, Email: email, Password: password}, err
+}
+
+// checked is n with its name and address checked by the rules of a User's and normalised.
+func (n NewUser) checked() (NewUser, error) {
+	var err error
+	if n.Name, err = validation.UserName(n.Name); err != nil {
+		return n, err
 	}
-	return nil
+	n.Email, err = validation.AccountEmail(validation.FieldEmail, n.Email)
+	return n, err
 }
 
 // CreateUnverified creates the Unverified User of a Sign-up (ADR 0030): its name, email and
@@ -159,11 +182,12 @@ func CheckName(name string) error {
 // address is verified from the Sign-up browser, or replaced on the link. A taken address is
 // ErrEmailTaken. SurveyDue marks the User as owing the Sign-up survey (the Instance asks it).
 func (a *Module) CreateUnverified(ctx context.Context, n NewUser) (*ent.User, error) {
-	if err := CheckName(n.Name); err != nil {
+	n, err := n.checked()
+	if err != nil {
 		return nil, err
 	}
 	var created *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		err := constraints.Write(ctx, tx, func() error {
 			var err error
 			created, err = tx.User.Create().SetName(n.Name).SetEmail(n.Email).SetPasswordHash(n.PasswordHash).
@@ -204,11 +228,13 @@ func (a *Module) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwo
 // CreateUser creates a User whose email is already proven, with a password hash: a
 // User made by the platform itself rather than by a Sign-up. A taken address is ErrEmailTaken.
 func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	if err := CheckName(name); err != nil {
+	n, err := NewUser{Name: name, Email: email}.checked()
+	if err != nil {
 		return nil, err
 	}
+	name, email = n.Name, n.Email
 	var u *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		return constraints.Write(ctx, tx, func() error {
 			var err error
 			u, err = tx.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(a.now()).Save(ctx)
@@ -265,12 +291,16 @@ const FirstWorkspaceName = "Personal"
 
 // CreateVerifiedIn writes, in tx, the User of a Sign-up on an install that does not require
 // email verification (ADR 0030): Verified at once with its password, and the Consent records of
-// its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up survey. The caller has
-// checked the name (CheckName) and creates the first Workspace on the same transaction
-// (internal/usecase/signup). A taken address is ErrEmailTaken.
+// its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up survey. The name and the
+// address are checked by the rules of a User's; the caller creates the first Workspace on the same
+// transaction (internal/usecase/signup). A taken address is ErrEmailTaken.
 func CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser, at time.Time) (*ent.User, error) {
+	n, err := n.checked()
+	if err != nil {
+		return nil, err
+	}
 	var u *ent.User
-	err := constraints.Write(ctx, tx, func() error {
+	err = constraints.Write(ctx, tx, func() error {
 		var err error
 		u, err = tx.User.Create().
 			SetName(n.Name).
@@ -301,9 +331,11 @@ type profileWrite struct {
 // address as proven (a reset link was followed, which was mailed to it).
 func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, proven bool) (*ent.User, error) {
 	if w.Name != nil {
-		if err := CheckName(*w.Name); err != nil {
+		name, err := validation.UserName(*w.Name)
+		if err != nil {
 			return nil, err
 		}
+		w.Name = &name
 	}
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
@@ -462,8 +494,12 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 // (ADR 0051) in the same transaction. It returns the saved User; an address taken meanwhile is
 // ErrEmailTaken.
 func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*ent.User, error) {
+	newEmail, err := validation.AccountEmail(validation.FieldNewEmail, newEmail)
+	if err != nil {
+		return nil, err
+	}
 	var u *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		now := a.now()
 		err := constraints.Write(ctx, tx, func() error {
 			var err error

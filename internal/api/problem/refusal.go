@@ -47,9 +47,7 @@ func refusal(err error) (int, *siteapi.ProblemDetails, bool) {
 		p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors(form.Fields))
 		return http.StatusUnprocessableEntity, p, true
 	}
-	if invalid, ok := errors.AsType[*validation.Error](err); ok {
-		return http.StatusUnprocessableEntity, fieldBody(http.StatusUnprocessableEntity, invalid.Field, invalid.Message), true
-	}
+
 	// A module's sentinel refusal: its kind decides the status. The detail is the message of the
 	// outermost refusal in the chain, so a refusal made With a detail shows it.
 	if refused, ok := errors.AsType[*validation.RefusalError](err); ok {

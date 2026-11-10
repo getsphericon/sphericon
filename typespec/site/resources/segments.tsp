@@ -193,7 +193,7 @@ model SiteSegmentResource {
 /** Site request body for creating a segment */
 model SiteCreateSegmentInput {
   /** Segment name */
-  name: string;
+  name: Name;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
   condition: SiteConditionGroup;
@@ -202,7 +202,7 @@ model SiteCreateSegmentInput {
 /** Site request body for updating a segment */
 model SiteUpdateSegmentInput {
   /** Segment name */
-  name?: string;
+  name?: Name;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
   condition?: SiteConditionGroup;

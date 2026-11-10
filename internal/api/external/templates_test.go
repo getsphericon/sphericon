@@ -42,7 +42,7 @@ func TestExternalTemplatesCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "We miss you", res.Subject)
 
-	updated, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Name: externalapi.NewOptString("Win-back v2")},
+	updated, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Name: externalapi.NewOptName("Win-back v2")},
 		externalapi.TemplatesUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "Win-back v2", updated.Name)
@@ -95,7 +95,7 @@ func TestExternalTemplatesAreWorkspaceScoped(t *testing.T) {
 	}
 	_, err = c.TemplatesGet(ctx, externalapi.TemplatesGetParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	_, err = c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Name: externalapi.NewOptString("hijack")}, externalapi.TemplatesUpdateParams{ID: id})
+	_, err = c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Name: externalapi.NewOptName("hijack")}, externalapi.TemplatesUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	err = c.TemplatesDelete(ctx, externalapi.TemplatesDeleteParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)

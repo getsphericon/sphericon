@@ -3,7 +3,6 @@ package callbackinterpretation
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/samber/lo"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 )
 
 // email reads Delivery notices; email has no Inbound messages or Reachability changes.
@@ -24,7 +24,7 @@ type email struct{ ignore }
 // empty, so it never changes. Every kind is published; only a hard bounce and a complaint enter
 // Suppression, which is the suppression consumer's rule.
 func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
-	address := strings.ToLower(strings.TrimSpace(n.Destination))
+	address := emailcase.Of(n.Destination)
 	if address == "" {
 		return nil
 	}

@@ -22,7 +22,7 @@ func userCommand(d deps) *cli.Command {
 			ArgsUsage: "<email> <name...>",
 			Arguments: []cli.Argument{
 				&cli.StringArg{Name: "email", Required: true},
-				&cli.StringArgs{Name: "name", Min: 1, Max: -1},
+				&cli.StringArgs{Name: "name", Max: -1},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				email := cmd.StringArg("email")

@@ -42,7 +42,7 @@ func (h *harness) clearDefaultSendCap(t *testing.T, c *staffapi.Client) {
 // createWorkspace creates a Workspace as John, its Owner, and returns its id.
 func (h *harness) createWorkspace(t *testing.T, name string) string {
 	t.Helper()
-	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: name})
+	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: siteapi.Name(name)})
 	require.NoError(t, err)
 	created := res
 	return string(created.ID)

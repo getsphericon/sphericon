@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -36,13 +37,19 @@ var ErrNotDue = validation.Conflict("signupsurvey: the user does not owe the sur
 // otherText is the refusal of an `other` text sent with a choice that is not `other` (blank
 // false), or of an `other` choice whose text is blank, on field, the contract field that carried
 // the text (`roleOther`).
-func otherText(field string, blank bool) *validation.Error {
-	key := i18n.ErrorsSignupSurveyOtherText
+func otherText(field string, blank bool) error {
 	if blank {
-		key = i18n.ErrorsSignupSurveyOtherBlank
+		return ErrOtherBlank.On(field)
 	}
-	return &validation.Error{Field: field, Message: i18n.T(key, nil)}
+	return ErrOtherWithoutChoice.On(field)
 }
+
+// The refusals of an `other` text, each on the contract field that carried it.
+var (
+	ErrOtherWithoutChoice = validation.Refuse("signupsurvey: an other text without the other choice",
+		i18n.ErrorsSignupSurveyOtherText)
+	ErrOtherBlank = validation.Refuse("signupsurvey: a blank other text", i18n.ErrorsSignupSurveyOtherBlank)
+)
 
 // Enabled is whether the Instance asks the survey: its Mode asks for it (saas) and the `staff`
 // license is held, since only the Staff console reads the answers. A request without the license
@@ -84,7 +91,8 @@ func (m *Module) Enabled() bool { return m != nil && m.enabled }
 // Submit stores the User's answers and clears the "survey due" marker in one transaction, so a
 // response row exists exactly when the marker is gone. ErrNotDue when the Instance no longer asks
 // the survey or the User does not owe it (the clear is a conditional write: of two racing submits one wins), and an
-// *validation.Error on the field of an `other` text without its `other` choice; nothing is stored then.
+// refusal on the field of an `other` text without its `other` choice, a blank one or one too long;
+// nothing is stored then.
 func (m *Module) Submit(ctx context.Context, userID int64, a Answers) error {
 	if !m.Enabled() {
 		return ErrNotDue
@@ -133,6 +141,10 @@ func (a Answers) check() error {
 			return otherText(q.field, false)
 		case q.text != nil && strings.TrimSpace(*q.text) == "":
 			return otherText(q.field, true)
+		case q.text != nil:
+			if err := validation.MaxLength(q.field, *q.text, bounds.SignupSurveyOtherMaxLength); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

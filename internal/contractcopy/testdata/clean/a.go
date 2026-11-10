@@ -1,6 +1,6 @@
 package clean
 
-// contract-copy: OAuth registration cap, not in the contract
+// A Go constant equal to a contract limit is not read: the bounds are generated into Go (ADR 0107).
 const maxNameLength = 137
 
 var colors = []string{"red", "green"}

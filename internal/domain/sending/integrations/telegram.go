@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // A Telegram Integration is a Workspace's own bot (spec #962, "Channel and Integration"). Saving it
@@ -188,7 +187,7 @@ type telegramEdit struct {
 func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in UpdateInput) (telegramEdit, error) {
 	params, _ := in.Params.Get()
 	if name := in.Preset.Over(row.Preset); (in.Preset.Changes() && (name == nil || *name != TelegramPreset)) || len(params) > 0 {
-		return telegramEdit{}, &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTelegramPresetFixed, nil)}
+		return telegramEdit{}, refuse(fieldPreset, i18n.ErrorsIntegrationTelegramPresetFixed, nil)
 	}
 	stored, err := m.telegramConfigOf(row)
 	if err != nil {
@@ -198,7 +197,7 @@ func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in Upda
 	cfg, configGiven := in.Config.Get()
 	if configGiven {
 		if cfg.Telegram == nil {
-			return telegramEdit{}, &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationKindMismatch, nil)}
+			return telegramEdit{}, refuse(fieldConfig, i18n.ErrorsIntegrationKindMismatch, nil)
 		}
 		if token := tokenOf(cfg.Telegram); token != "" {
 			if !telegram.ValidToken(token) {
@@ -219,7 +218,7 @@ func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in Upda
 			return telegramEdit{}, err
 		}
 		if info.ID != stored.BotID {
-			return telegramEdit{}, &validation.Error{Field: fieldToken, Message: i18n.T(i18n.ErrorsIntegrationTelegramOtherBot, nil)}
+			return telegramEdit{}, refuse(fieldToken, i18n.ErrorsIntegrationTelegramOtherBot, nil)
 		}
 		next.Username = info.Username
 	}
@@ -267,19 +266,19 @@ func (m *Module) reconnect(ctx context.Context, row *ent.Integration, token, key
 // any other answer of Telegram in its own words (under id), and an unreachable Telegram as such.
 func telegramRefusal(err error, id i18n.ID) error {
 	if errors.Is(err, messaging.ErrTelegramUnauthorized) {
-		return &validation.Error{Field: fieldToken, Message: i18n.T(i18n.ErrorsIntegrationTelegramTokenRefused, nil)}
+		return refuse(fieldToken, i18n.ErrorsIntegrationTelegramTokenRefused, nil)
 	}
 	if tg, ok := errors.AsType[*messaging.TelegramError](err); ok {
-		return &validation.Error{Field: fieldConfig, Message: i18n.T(id, map[string]any{detailKey: tg.Description})}
+		return refuse(fieldConfig, id, map[string]any{detailKey: tg.Description})
 	}
-	return &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationTelegramUnreachable, map[string]any{detailKey: err.Error()})}
+	return refuse(fieldConfig, i18n.ErrorsIntegrationTelegramUnreachable, map[string]any{detailKey: err.Error()})
 }
 
 // fieldToken is the field a refusal of the bot token is on.
 const fieldToken = "config.token"
 
 func tokenFormatError() error {
-	return &validation.Error{Field: fieldToken, Message: i18n.T(i18n.ErrorsIntegrationTelegramTokenFormat, nil)}
+	return refuse(fieldToken, i18n.ErrorsIntegrationTelegramTokenFormat, nil)
 }
 
 // presetFits refuses a Preset or params a write names that do not fit the provider: a Telegram
@@ -289,21 +288,21 @@ func presetFits(provider providers.Provider, name *string, params map[string]any
 	switch provider {
 	case providers.Telegram:
 		if name != nil || len(params) > 0 {
-			return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTelegramPresetFixed, nil)}
+			return refuse(fieldPreset, i18n.ErrorsIntegrationTelegramPresetFixed, nil)
 		}
 		return nil
 	case providers.Twilio:
 		if name != nil && *name != TwilioPreset {
-			return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTwilioPresetFixed, nil)}
+			return refuse(fieldPreset, i18n.ErrorsIntegrationTwilioPresetFixed, nil)
 		}
 		return nil
 	case providers.SMTP, providers.SES, providers.Inbox:
 	}
 	if name != nil && *name == TelegramPreset {
-		return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationPresetTelegramOnly, nil)}
+		return refuse(fieldPreset, i18n.ErrorsIntegrationPresetTelegramOnly, nil)
 	}
 	if name != nil && *name == TwilioPreset {
-		return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationPresetTwilioOnly, nil)}
+		return refuse(fieldPreset, i18n.ErrorsIntegrationPresetTwilioOnly, nil)
 	}
 	return nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
@@ -22,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/oauth"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -168,8 +170,11 @@ func TestSendClassScopesNeedAnExplicitOptIn(t *testing.T) {
 
 	for allowSend, want := range map[bool][]string{
 		false: {"contacts:read"},
-		// contract-copy: the expected wire scopes of the issued token, an independent source of truth
-		true: {"contacts:read", "emails:send", "broadcasts:send", "automations:publish", "mcp:send"},
+		true: {
+			string(tokenscope.GrantableScopeContactsRead), string(tokenscope.SendScopeEmailsSend),
+			string(tokenscope.SendScopeBroadcastsSend), string(tokenscope.SendScopeAutomationsPublish),
+			string(tokenscope.SendScopeMcpSend),
+		},
 	} {
 		back := consent(t, env, approval(scope, allowSend))
 		rec := exchange(t, env, tokenForm(back.Query().Get("code")))
@@ -423,13 +428,22 @@ func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 		RedirectUri: fixtureRedirectURI,
 	})
 	require.NoError(t, err)
-	// contract-copy: the authoring scopes the shipped prompts use, a chosen subset of the contract's list
-	assert.Subset(t, got.Scopes, []siteapi.GrantableScope{
-		"contacts:read", "contacts:write", "events:read", "events:write",
-		"segments:read", "segments:write", "broadcasts:read", "broadcasts:write",
-		"automations:read", "automations:write", "enrollments:read", "templates:read", "templates:write",
-		"webhooks:read", "webhooks:write", "webhooks:regenerate", "webhooks:test", "custom_fields:read", "sending_domains:read", "integrations:read",
-	})
+	// The authoring scopes the shipped prompts use, a chosen subset of the contract's list.
+	authoring := []tokenscope.GrantableScope{
+		tokenscope.GrantableScopeContactsRead, tokenscope.GrantableScopeContactsWrite,
+		tokenscope.GrantableScopeEventsRead, tokenscope.GrantableScopeEventsWrite,
+		tokenscope.GrantableScopeSegmentsRead, tokenscope.GrantableScopeSegmentsWrite,
+		tokenscope.GrantableScopeBroadcastsRead, tokenscope.GrantableScopeBroadcastsWrite,
+		tokenscope.GrantableScopeAutomationsRead, tokenscope.GrantableScopeAutomationsWrite,
+		tokenscope.GrantableScopeEnrollmentsRead, tokenscope.GrantableScopeTemplatesRead,
+		tokenscope.GrantableScopeTemplatesWrite, tokenscope.GrantableScopeWebhooksRead,
+		tokenscope.GrantableScopeWebhooksWrite, tokenscope.GrantableScopeWebhooksRegenerate,
+		tokenscope.GrantableScopeWebhooksTest, tokenscope.GrantableScopeCustomFieldsRead,
+		tokenscope.GrantableScopeSendingDomainsRead, tokenscope.GrantableScopeIntegrationsRead,
+	}
+	assert.Subset(t, got.Scopes, lo.Map(authoring, func(s tokenscope.GrantableScope, _ int) siteapi.GrantableScope {
+		return siteapi.GrantableScope(s)
+	}))
 	assert.Empty(t, got.SendScopes)
 	assert.NotContains(t, got.Scopes, siteapi.GrantableScope("tokens:write"), "a connector never mints credentials")
 }

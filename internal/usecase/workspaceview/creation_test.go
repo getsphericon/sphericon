@@ -8,8 +8,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
@@ -34,7 +34,7 @@ func TestCreateRefusesAnEmptyName(t *testing.T) {
 
 	_, err := env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: "  "})
 
-	require.ErrorIs(t, err, workspaces.ErrNameEmpty)
+	require.ErrorIs(t, err, validation.ErrNameBlank)
 }
 
 func TestCreateRefusesAnUnverifiedUser(t *testing.T) {

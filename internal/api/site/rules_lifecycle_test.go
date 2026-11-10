@@ -38,7 +38,7 @@ func TestSiteRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 
 		again := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: id})
 		require.NoError(t, again)
-		_, renamed := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Name: siteapi.NewOptString("renamed")},
+		_, renamed := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Name: siteapi.NewOptName("renamed")},
 			siteapi.SiteRulesUpdateParams{WorkspaceId: ws, ID: id})
 		testhelper.SiteRefusal(t, renamed, http.StatusNotFound, "a deleted Rule changes no more")
 		_, published := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: id})

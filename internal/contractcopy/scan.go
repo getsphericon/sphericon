@@ -13,9 +13,6 @@ import (
 	"strings"
 )
 
-// limitName matches the name of a constant that reads as a bound.
-var limitName = regexp.MustCompile(`(?i)^(max|min|default)|(max|min|limit)(imum)?$`)
-
 type finding struct {
 	line int
 	text string
@@ -30,26 +27,16 @@ func format(path string, fs []finding) []string {
 	return out
 }
 
-// documented reports whether a `contract-copy: <reason>` comment with a reason sits on the line or
-// the line above.
-func documented(lines map[int]bool, line int) bool {
-	return lines[line] || lines[line-1]
-}
-
-var markerLine = regexp.MustCompile(`contract-copy:\s*\S`)
-
 func scanGo(path string, c Contract) ([]string, error) {
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
+	file, err := parser.ParseFile(fset, path, nil, 0)
 	if err != nil {
 		return nil, err
 	}
-	notes := markerLines(fset, file)
 	var found []finding
 	flagSet := func(pos token.Pos, values []string, what string) {
-		line := fset.Position(pos).Line
-		if c.copiesEnum(values) && !documented(notes, line) {
-			found = append(found, finding{line, message(what)})
+		if c.copiesEnum(values) {
+			found = append(found, finding{fset.Position(pos).Line, message(what)})
 		}
 	}
 	ast.Inspect(file, func(n ast.Node) bool {
@@ -58,27 +45,10 @@ func scanGo(path string, c Contract) ([]string, error) {
 			flagSet(n.Pos(), literalKeys(n.Elts), "a list of literals repeats a TypeSpec enum")
 		case *ast.CaseClause:
 			flagSet(n.Pos(), stringValues(n.List), "a case list repeats a TypeSpec enum")
-		case *ast.ValueSpec:
-			found = append(found, limitFindings(fset, n, c, notes)...)
 		}
 		return true
 	})
 	return format(path, found), nil
-}
-
-// markerLines are the lines a `contract-copy: <reason>` comment covers: its own and, for a
-// comment group, the line after its last line.
-func markerLines(fset *token.FileSet, file *ast.File) map[int]bool {
-	notes := map[int]bool{}
-	for _, cg := range file.Comments {
-		for _, cm := range cg.List {
-			if markerLine.MatchString(cm.Text) {
-				notes[fset.Position(cm.End()).Line] = true
-				notes[fset.Position(cm.Pos()).Line] = true
-			}
-		}
-	}
-	return notes
 }
 
 // literalKeys are the string literals a composite literal lists: its elements, or the keys of a
@@ -107,28 +77,6 @@ func stringValues(exprs []ast.Expr) []string {
 	return values
 }
 
-// limitFindings are the constants of a declaration named like a limit whose integer value
-// repeats one the contract declares.
-func limitFindings(fset *token.FileSet, vs *ast.ValueSpec, c Contract, notes map[int]bool) []finding {
-	var found []finding
-	for i, name := range vs.Names {
-		if i >= len(vs.Values) || !limitName.MatchString(name.Name) {
-			continue
-		}
-		lit, ok := vs.Values[i].(*ast.BasicLit)
-		if !ok || lit.Kind != token.INT {
-			continue
-		}
-		v, err := strconv.ParseInt(strings.ReplaceAll(lit.Value, "_", ""), 0, 64)
-		line := fset.Position(vs.Pos()).Line
-		if err == nil && c.Limits[v] && !documented(notes, line) {
-			found = append(found, finding{line, message(
-				fmt.Sprintf("%s = %d repeats a limit TypeSpec declares", name.Name, v))})
-		}
-	}
-	return found
-}
-
 func stringLit(e ast.Expr) (string, bool) {
 	lit, ok := e.(*ast.BasicLit)
 	if !ok || lit.Kind != token.STRING {
@@ -154,9 +102,8 @@ var (
 	// mock, is the server's value and not read.
 	tsQueryLimit = regexp.MustCompile(`\bquery:\s*\{[^{}]*?\b(pageSize)\s*:\s*(\d[\d_]*)\b`)
 	// tsDerived is a generated zod schema a field is read from (`trimmed(zButton.shape.label)`).
-	tsDerived  = regexp.MustCompile(`\bz[A-Z]\w*`)
-	tsField    = regexp.MustCompile(`^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*:`)
-	tsNoteLine = regexp.MustCompile(`contract-copy:\s*\S`)
+	tsDerived = regexp.MustCompile(`\bz[A-Z]\w*`)
+	tsField   = regexp.MustCompile(`^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*:`)
 )
 
 func scanTS(path string, c Contract) ([]string, error) {
@@ -165,12 +112,6 @@ func scanTS(path string, c Contract) ([]string, error) {
 		return nil, err
 	}
 	src := string(raw)
-	notes := map[int]bool{}
-	for i, l := range strings.Split(src, "\n") {
-		if tsNoteLine.MatchString(l) {
-			notes[i+1] = true
-		}
-	}
 	lineOf := func(off int) int { return strings.Count(src[:off], "\n") + 1 }
 	var found []finding
 	for _, re := range []*regexp.Regexp{tsArray, tsUnion} {
@@ -180,7 +121,7 @@ func scanTS(path string, c Contract) ([]string, error) {
 				values = append(values, s[1]+s[2])
 			}
 			line := lineOf(m[0])
-			if c.copiesEnum(values) && !documented(notes, line) {
+			if c.copiesEnum(values) {
 				found = append(found, finding{line, message("a literal list or union repeats a TypeSpec enum")})
 			}
 		}
@@ -191,7 +132,7 @@ func scanTS(path string, c Contract) ([]string, error) {
 			values = append(values, s[1]+s[2])
 		}
 		line := lineOf(m[0])
-		if len(values) >= 2 && c.copiesEnum(values) && !documented(notes, line) {
+		if len(values) >= 2 && c.copiesEnum(values) {
 			found = append(found, finding{line, message("the values of a list of options repeat a TypeSpec enum")})
 		}
 	}
@@ -201,24 +142,24 @@ func scanTS(path string, c Contract) ([]string, error) {
 		if derived {
 			continue
 		}
-		if name := c.Shapes[shapeKey(fields)]; len(fields) >= 2 && name != "" && !documented(notes, line) {
+		if name := c.Shapes[shapeKey(fields)]; len(fields) >= 2 && name != "" {
 			found = append(found, finding{line, message(fmt.Sprintf(
 				"a type or schema declares the fields of %s, which the generated client exports", name))})
 		}
 	}
 	for _, re := range []*regexp.Regexp{tsLimit, tsQueryLimit} {
-		found = append(found, limitMatches(src, re, c, notes, lineOf)...)
+		found = append(found, limitMatches(src, re, c, lineOf)...)
 	}
 	return format(path, found), nil
 }
 
 // limitMatches are the matches of re (a name, then an integer) whose value is a contract limit.
-func limitMatches(src string, re *regexp.Regexp, c Contract, notes map[int]bool, lineOf func(int) int) []finding {
+func limitMatches(src string, re *regexp.Regexp, c Contract, lineOf func(int) int) []finding {
 	var found []finding
 	for _, m := range re.FindAllStringSubmatchIndex(src, -1) {
 		v, err := strconv.ParseInt(strings.ReplaceAll(src[m[4]:m[5]], "_", ""), 10, 64)
 		line := lineOf(m[0])
-		if err == nil && c.Limits[v] && !documented(notes, line) {
+		if err == nil && c.Limits[v] {
 			found = append(found, finding{line, message(
 				fmt.Sprintf("%s = %d repeats a limit TypeSpec declares", src[m[2]:m[3]], v))})
 		}

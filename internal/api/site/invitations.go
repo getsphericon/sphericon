@@ -8,7 +8,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // SiteInvitationsList returns the workspace's pending (unaccepted) invitations.
@@ -24,23 +23,11 @@ func (h *Handlers) SiteInvitationsList(ctx context.Context, _ siteapi.SiteInvita
 	return items, nil
 }
 
-// inviteForm is what SiteInvitationsCreate checks beyond the contract, the address trimmed.
-type inviteForm struct {
-	Email string `json:"email" validate:"omitempty,account_email"`
-}
-
 // SiteInvitationsCreate invites an email address to the workspace. Owner/admin
 // only. The one-time accept link is returned (copy-link path), and the Invitation's
 // event mails it to the invitee through the System sender when the Instance has one.
 func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteCreateInvitationInput, _ siteapi.SiteInvitationsCreateParams) (*siteapi.SiteCreateInvitationResponse, error) {
 	s := workspaceScope(ctx)
-
-	// An empty address is the accounts operation's refusal (ErrEmailEmpty); one that is sent
-	// must be an address the invitee can receive mail at.
-	if err := validation.Form(inviteForm{Email: strings.TrimSpace(string(req.Email))}); err != nil {
-		return nil, err
-	}
-
 	a := auth.GetSiteAuth(ctx)
 	in := inputs.InvitationCreate(req)
 	in.InvitedBy = a.User.ID
@@ -98,6 +85,6 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	// Whether a name and a password are needed at all, and their rules, are the acceptance's to
 	// say (a Verified User's address needs neither).
 	return h.users.AcceptInvitationLink(ctx, params.Token, users.InvitationAcceptance{
-		Name: strings.TrimSpace(string(name)), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
+		Name: string(name), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
 	})
 }

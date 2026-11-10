@@ -24,8 +24,7 @@ import (
 var (
 	// ErrContactNotFound: no such Contact in this Workspace.
 	ErrContactNotFound = validation.NotFound("tags: contact not found", i18n.ErrorsContactNotFound)
-	// ErrInvalidName: the Tag name is blank.
-	ErrInvalidName = validation.Refuse("tags: name is required", i18n.ErrorsNameRequired)
+
 	// ErrNotFound: no such Tag in this Workspace.
 	ErrNotFound = validation.NotFound("tags: tag not found", i18n.ErrorsTagNotFound)
 )
@@ -61,10 +60,15 @@ var _ = db.Declare(
 
 // EnsureIn returns the Tag named name, creating it on first use, inside the transaction s is
 // bound to: applying a Tag to a Contact (contacts.ApplyTagIn) auto-creates it, like a Custom field.
+// The name is held to the name rule (validation.Name): trimmed, and refused when blank or too long.
 func EnsureIn(ctx context.Context, s *ent.Scoped, name string) (*ent.Tag, error) {
+	name, err := validation.Name(name)
+	if err != nil {
+		return nil, err
+	}
 	// DO NOTHING, not Ignore: an insert is the audited create of the Tag (ADR 0022),
 	// a conflict writes nothing.
-	err := s.Tag().Create().
+	err = s.Tag().Create().
 		SetName(name).
 		OnConflictColumns(tag.FieldName, tag.FieldWorkspaceID).
 		DoNothing().

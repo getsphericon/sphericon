@@ -45,8 +45,7 @@ model SiteCustomFieldResource {
 /** Request body for updating a custom field: its key never changes */
 model SiteUpdateCustomFieldInput {
   /** Display name */
-  @minLength(1)
-  name?: string;
+  name?: Name;
 
   /** Value type. Stored values are not rewritten: the leaves of the new type read them as they are */
   type?: SiteCustomFieldType;

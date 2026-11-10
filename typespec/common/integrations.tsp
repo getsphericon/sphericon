@@ -85,7 +85,7 @@ union IntegrationConfigInput {
 
 /** Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422 */
 model CreateIntegrationInput {
-  name: string;
+  name: Name;
   enabled?: boolean;
   isDefault?: boolean;
 
@@ -106,7 +106,7 @@ model CreateIntegrationInput {
 
 /** Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret. */
 model UpdateIntegrationInput {
-  name?: string;
+  name?: Name;
   enabled?: boolean;
   isDefault?: boolean;
 

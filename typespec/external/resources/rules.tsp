@@ -126,7 +126,7 @@ model RuleResource {
 
 /** Request body for creating a Rule: it is created inactive, with its definition as the draft */
 model CreateRuleInput {
-  name: string;
+  name: Name;
 
   /** The Event actions that make the Rule fire; at least one */
   @minItems(1)
@@ -140,7 +140,7 @@ model CreateRuleInput {
 
 /** Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's. */
 model UpdateRuleInput {
-  name?: string;
+  name?: Name;
 
   /** The Event actions that make the Rule fire; at least one */
   @minItems(1)

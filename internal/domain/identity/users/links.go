@@ -84,14 +84,23 @@ func NewLinks(a *Module, tokens *authtoken.Signer) *Links {
 	return &Links{users: a, tokens: tokens}
 }
 
-// passwordForm is a new password a link sets, checked against the password rule.
-type passwordForm struct {
-	Password string `json:"password" validate:"required,password_not_blank,password_length"`
+// LinkUsed is err as the answer to a verification link: a User already Verified
+// (ErrAlreadyVerified) is ErrVerifyLinkUsed, the link's own refusal; any other err is itself.
+func LinkUsed(err error) error {
+	if errors.Is(err, ErrAlreadyVerified) {
+		return ErrVerifyLinkUsed
+	}
+	return err
+}
+
+// checkPassword checks a new password a link sets against the password rule.
+func checkPassword(password string) error {
+	return validation.Fields(validation.Password(validation.FieldPassword, password))
 }
 
 // hashPassword checks a new password against the password rule and hashes it.
 func (l *Links) hashPassword(password string) (string, error) {
-	if err := validation.Form(passwordForm{Password: password}); err != nil {
+	if err := checkPassword(password); err != nil {
 		return "", err
 	}
 	return l.users.passwords.Hash(password)
@@ -145,7 +154,7 @@ func (l *Links) PasswordResetLink(u *ent.User) (string, error) {
 // names and the new password's hash, for the reset (internal/usecase/signup, which
 // completes the Sign-up of an Unverified User).
 func (l *Links) PasswordReset(ctx context.Context, token, password string) (userID int64, passwordHash string, err error) {
-	if err := validation.Form(passwordForm{Password: password}); err != nil {
+	if err := checkPassword(password); err != nil {
 		return 0, "", err
 	}
 	uid, _, err := l.parse(token, authtoken.PurposePasswordReset, l.passwordHashOf(ctx), ErrResetLinkInvalid)

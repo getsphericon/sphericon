@@ -421,16 +421,16 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/ApplyTagInput
 type ApplyTagInput struct {
 	// The label to apply; created on first use.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 }
 
 // GetName returns the value of Name.
-func (s *ApplyTagInput) GetName() string {
+func (s *ApplyTagInput) GetName() Name {
 	return s.Name
 }
 
 // SetName sets the value of Name.
-func (s *ApplyTagInput) SetName(val string) {
+func (s *ApplyTagInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -6949,13 +6949,13 @@ type CountryCode string
 
 // Ref: #/components/schemas/CreateApiTokenInput
 type CreateApiTokenInput struct {
-	Name      string          `json:"name"`
+	Name      Name            `json:"name"`
 	Scopes    []ApiTokenScope `json:"scopes"`
 	ExpiresAt OptNilTimestamp `json:"expiresAt"`
 }
 
 // GetName returns the value of Name.
-func (s *CreateApiTokenInput) GetName() string {
+func (s *CreateApiTokenInput) GetName() Name {
 	return s.Name
 }
 
@@ -6970,7 +6970,7 @@ func (s *CreateApiTokenInput) GetExpiresAt() OptNilTimestamp {
 }
 
 // SetName sets the value of Name.
-func (s *CreateApiTokenInput) SetName(val string) {
+func (s *CreateApiTokenInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -7013,7 +7013,7 @@ func (s *CreateApiTokenResponse) SetTokenInfo(val ApiTokenInfo) {
 // Request body for creating an automation (always created inactive).
 // Ref: #/components/schemas/CreateAutomationInput
 type CreateAutomationInput struct {
-	Name         string `json:"name"`
+	Name         Name   `json:"name"`
 	TriggerEvent string `json:"triggerEvent"`
 	// Event actions that end an active enrollment early; none of them may be the trigger. Each follows the
 	// trigger's rule: any customer action, and of the email events only opened, clicked and unsubscribed.
@@ -7025,7 +7025,7 @@ type CreateAutomationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *CreateAutomationInput) GetName() string {
+func (s *CreateAutomationInput) GetName() Name {
 	return s.Name
 }
 
@@ -7050,7 +7050,7 @@ func (s *CreateAutomationInput) GetSteps() []AutomationStep {
 }
 
 // SetName sets the value of Name.
-func (s *CreateAutomationInput) SetName(val string) {
+func (s *CreateAutomationInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -7078,7 +7078,7 @@ func (s *CreateAutomationInput) SetSteps(val []AutomationStep) {
 // Ref: #/components/schemas/CreateBroadcastInput
 type CreateBroadcastInput struct {
 	// Internal broadcast name.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a
 	// broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS
 	// integration is refused with 422.
@@ -7091,7 +7091,7 @@ type CreateBroadcastInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *CreateBroadcastInput) GetName() string {
+func (s *CreateBroadcastInput) GetName() Name {
 	return s.Name
 }
 
@@ -7111,7 +7111,7 @@ func (s *CreateBroadcastInput) GetIntegrationId() OptNilEntityId {
 }
 
 // SetName sets the value of Name.
-func (s *CreateBroadcastInput) SetName(val string) {
+func (s *CreateBroadcastInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -7357,7 +7357,7 @@ func (s *CreateContactInput) SetCustomFields(val OptNilJsonObject) {
 // set before the save; a refusal is a 422.
 // Ref: #/components/schemas/CreateIntegrationInput
 type CreateIntegrationInput struct {
-	Name      string  `json:"name"`
+	Name      Name    `json:"name"`
 	Enabled   OptBool `json:"enabled"`
 	IsDefault OptBool `json:"isDefault"`
 	// Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES
@@ -7378,7 +7378,7 @@ type CreateIntegrationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *CreateIntegrationInput) GetName() string {
+func (s *CreateIntegrationInput) GetName() Name {
 	return s.Name
 }
 
@@ -7418,7 +7418,7 @@ func (s *CreateIntegrationInput) GetParams() OptJsonObject {
 }
 
 // SetName sets the value of Name.
-func (s *CreateIntegrationInput) SetName(val string) {
+func (s *CreateIntegrationInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -7460,7 +7460,7 @@ func (s *CreateIntegrationInput) SetParams(val OptJsonObject) {
 // Request body for creating a Rule: it is created inactive, with its definition as the draft.
 // Ref: #/components/schemas/CreateRuleInput
 type CreateRuleInput struct {
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
 	TriggerEvents []string          `json:"triggerEvents"`
 	Condition     OptConditionGroup `json:"condition"`
@@ -7469,7 +7469,7 @@ type CreateRuleInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *CreateRuleInput) GetName() string {
+func (s *CreateRuleInput) GetName() Name {
 	return s.Name
 }
 
@@ -7489,7 +7489,7 @@ func (s *CreateRuleInput) GetActions() []RuleAction {
 }
 
 // SetName sets the value of Name.
-func (s *CreateRuleInput) SetName(val string) {
+func (s *CreateRuleInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -7512,13 +7512,13 @@ func (s *CreateRuleInput) SetActions(val []RuleAction) {
 // Ref: #/components/schemas/CreateSegmentInput
 type CreateSegmentInput struct {
 	// Segment name.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
 	Condition ConditionGroup `json:"condition"`
 }
 
 // GetName returns the value of Name.
-func (s *CreateSegmentInput) GetName() string {
+func (s *CreateSegmentInput) GetName() Name {
 	return s.Name
 }
 
@@ -7528,7 +7528,7 @@ func (s *CreateSegmentInput) GetCondition() ConditionGroup {
 }
 
 // SetName sets the value of Name.
-func (s *CreateSegmentInput) SetName(val string) {
+func (s *CreateSegmentInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -7600,7 +7600,7 @@ func (s *CreateSuppressionInput) SetDestination(val string) {
 // Ref: #/components/schemas/CreateTemplateInput
 type CreateTemplateInput struct {
 	// Template name.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// Default subject line.
 	Subject OptString `json:"subject"`
 	// HTML body with Liquid merge tags. Write this or `doc`, not both.
@@ -7612,7 +7612,7 @@ type CreateTemplateInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *CreateTemplateInput) GetName() string {
+func (s *CreateTemplateInput) GetName() Name {
 	return s.Name
 }
 
@@ -7632,7 +7632,7 @@ func (s *CreateTemplateInput) GetDoc() OptEditorDocument {
 }
 
 // SetName sets the value of Name.
-func (s *CreateTemplateInput) SetName(val string) {
+func (s *CreateTemplateInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -10594,6 +10594,8 @@ func (s *MessageRevenue) SetAmount(val int64) {
 	s.Amount = val
 }
 
+type Name string
+
 // NewNilAutomationVersion returns new NilAutomationVersion with value set to v.
 func NewNilAutomationVersion(v AutomationVersion) NilAutomationVersion {
 	return NilAutomationVersion{
@@ -11912,6 +11914,52 @@ func (o OptJsonObject) Get() (v JsonObject, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptJsonObject) Or(d JsonObject) JsonObject {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptName returns new OptName with value set to v.
+func NewOptName(v Name) OptName {
+	return OptName{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptName is optional Name.
+type OptName struct {
+	Value Name
+	Set   bool
+}
+
+// IsSet returns true if OptName was set.
+func (o OptName) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptName) Reset() {
+	var v Name
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptName) SetTo(v Name) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptName) Get() (v Name, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptName) Or(d Name) Name {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -18625,7 +18673,7 @@ func (s *UnsubscribeResource) SetCreatedAt(val Timestamp) {
 // and only publishing makes the draft live.
 // Ref: #/components/schemas/UpdateAutomationInput
 type UpdateAutomationInput struct {
-	Name         OptString `json:"name"`
+	Name         OptName   `json:"name"`
 	TriggerEvent OptString `json:"triggerEvent"`
 	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
 	ExitEvents []string `json:"exitEvents"`
@@ -18635,7 +18683,7 @@ type UpdateAutomationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *UpdateAutomationInput) GetName() OptString {
+func (s *UpdateAutomationInput) GetName() OptName {
 	return s.Name
 }
 
@@ -18660,7 +18708,7 @@ func (s *UpdateAutomationInput) GetSteps() []AutomationStep {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateAutomationInput) SetName(val OptString) {
+func (s *UpdateAutomationInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -18688,7 +18736,7 @@ func (s *UpdateAutomationInput) SetSteps(val []AutomationStep) {
 // Ref: #/components/schemas/UpdateBroadcastInput
 type UpdateBroadcastInput struct {
 	// Internal broadcast name.
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps
 	// the content.
 	Content OptBroadcastContentInput `json:"content"`
@@ -18700,7 +18748,7 @@ type UpdateBroadcastInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *UpdateBroadcastInput) GetName() OptString {
+func (s *UpdateBroadcastInput) GetName() OptName {
 	return s.Name
 }
 
@@ -18720,7 +18768,7 @@ func (s *UpdateBroadcastInput) GetIntegrationId() OptNilEntityId {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateBroadcastInput) SetName(val OptString) {
+func (s *UpdateBroadcastInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -18897,13 +18945,13 @@ func (s *UpdateContactInput) SetCustomFields(val OptNilJsonObject) {
 // Ref: #/components/schemas/UpdateCustomFieldInput
 type UpdateCustomFieldInput struct {
 	// Display name.
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// Value type. Stored values are not rewritten: the leaves of the new type read them as they are.
 	Type OptCustomFieldType `json:"type"`
 }
 
 // GetName returns the value of Name.
-func (s *UpdateCustomFieldInput) GetName() OptString {
+func (s *UpdateCustomFieldInput) GetName() OptName {
 	return s.Name
 }
 
@@ -18913,7 +18961,7 @@ func (s *UpdateCustomFieldInput) GetType() OptCustomFieldType {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateCustomFieldInput) SetName(val OptString) {
+func (s *UpdateCustomFieldInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -18926,9 +18974,9 @@ func (s *UpdateCustomFieldInput) SetType(val OptCustomFieldType) {
 // the stored secret.
 // Ref: #/components/schemas/UpdateIntegrationInput
 type UpdateIntegrationInput struct {
-	Name      OptString `json:"name"`
-	Enabled   OptBool   `json:"enabled"`
-	IsDefault OptBool   `json:"isDefault"`
+	Name      OptName `json:"name"`
+	Enabled   OptBool `json:"enabled"`
+	IsDefault OptBool `json:"isDefault"`
 	// Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES
 	// Integration with an `endpoint` cannot be left without it.
 	MaxPerSecond OptNilMaxPerSecond `json:"maxPerSecond"`
@@ -18948,7 +18996,7 @@ type UpdateIntegrationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *UpdateIntegrationInput) GetName() OptString {
+func (s *UpdateIntegrationInput) GetName() OptName {
 	return s.Name
 }
 
@@ -18993,7 +19041,7 @@ func (s *UpdateIntegrationInput) GetRetireSecrets() OptBool {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateIntegrationInput) SetName(val OptString) {
+func (s *UpdateIntegrationInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -19041,7 +19089,7 @@ func (s *UpdateIntegrationInput) SetRetireSecrets(val OptBool) {
 // Actions write the draft, and the ones left out keep the draft's, else the live version's.
 // Ref: #/components/schemas/UpdateRuleInput
 type UpdateRuleInput struct {
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
 	TriggerEvents []string          `json:"triggerEvents"`
 	Condition     OptConditionGroup `json:"condition"`
@@ -19050,7 +19098,7 @@ type UpdateRuleInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *UpdateRuleInput) GetName() OptString {
+func (s *UpdateRuleInput) GetName() OptName {
 	return s.Name
 }
 
@@ -19070,7 +19118,7 @@ func (s *UpdateRuleInput) GetActions() []RuleAction {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateRuleInput) SetName(val OptString) {
+func (s *UpdateRuleInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -19093,13 +19141,13 @@ func (s *UpdateRuleInput) SetActions(val []RuleAction) {
 // Ref: #/components/schemas/UpdateSegmentInput
 type UpdateSegmentInput struct {
 	// Segment name.
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
 	Condition OptConditionGroup `json:"condition"`
 }
 
 // GetName returns the value of Name.
-func (s *UpdateSegmentInput) GetName() OptString {
+func (s *UpdateSegmentInput) GetName() OptName {
 	return s.Name
 }
 
@@ -19109,7 +19157,7 @@ func (s *UpdateSegmentInput) GetCondition() OptConditionGroup {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateSegmentInput) SetName(val OptString) {
+func (s *UpdateSegmentInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -19141,7 +19189,7 @@ func (s *UpdateSendingDomainInput) SetDkimSelector(val OptString) {
 // Ref: #/components/schemas/UpdateTemplateInput
 type UpdateTemplateInput struct {
 	// Template name.
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// Default subject line.
 	Subject OptString `json:"subject"`
 	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
@@ -19153,7 +19201,7 @@ type UpdateTemplateInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *UpdateTemplateInput) GetName() OptString {
+func (s *UpdateTemplateInput) GetName() OptName {
 	return s.Name
 }
 
@@ -19173,7 +19221,7 @@ func (s *UpdateTemplateInput) GetDoc() OptEditorDocument {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateTemplateInput) SetName(val OptString) {
+func (s *UpdateTemplateInput) SetName(val OptName) {
 	s.Name = val
 }
 

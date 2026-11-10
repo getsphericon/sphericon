@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	// contract-copy: byte bound of a provider payload field; not in the contract
+	// Byte bound of a provider payload field; not in the contract.
 	maxIDBytes     = 255
 	maxAddrBytes   = 254
 	maxDomainBytes = 253

@@ -17,7 +17,7 @@ type StaffMember struct {
 
 func (StaffMember) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "staff_members"},
+		WithLowerCheck(entsql.Annotation{Table: "staff_members"}, "email"),
 	}
 }
 

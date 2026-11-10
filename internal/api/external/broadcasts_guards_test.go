@@ -27,7 +27,7 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 			before, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
 			require.NoError(t, err)
 
-			_, err = c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: name, Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
+			_, err = c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: externalapi.Name(name), Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
 			refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)
 
@@ -40,7 +40,7 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 			ctx := context.Background()
 			c := env.ExternalScoped(t, authorScopes...)
 
-			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString(name)},
+			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName(externalapi.Name(name))},
 				externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
 			refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)

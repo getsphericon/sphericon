@@ -461,7 +461,7 @@ func (s *ApplyTagInput) Encode(e *jx.Encoder) {
 func (s *ApplyTagInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
-		e.Str(s.Name)
+		s.Name.Encode(e)
 	}
 }
 
@@ -481,9 +481,7 @@ func (s *ApplyTagInput) Decode(d *jx.Decoder) error {
 		case "name":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
+				if err := s.Name.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -11522,7 +11520,7 @@ func (s *CreateApiTokenInput) Encode(e *jx.Encoder) {
 func (s *CreateApiTokenInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
-		e.Str(s.Name)
+		s.Name.Encode(e)
 	}
 	{
 		e.FieldStart("scopes")
@@ -11558,9 +11556,7 @@ func (s *CreateApiTokenInput) Decode(d *jx.Decoder) error {
 		case "name":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
+				if err := s.Name.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -11773,7 +11769,7 @@ func (s *CreateAutomationInput) Encode(e *jx.Encoder) {
 func (s *CreateAutomationInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
-		e.Str(s.Name)
+		s.Name.Encode(e)
 	}
 	{
 		e.FieldStart("triggerEvent")
@@ -11827,9 +11823,7 @@ func (s *CreateAutomationInput) Decode(d *jx.Decoder) error {
 		case "name":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
+				if err := s.Name.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -11961,7 +11955,7 @@ func (s *CreateBroadcastInput) Encode(e *jx.Encoder) {
 func (s *CreateBroadcastInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
-		e.Str(s.Name)
+		s.Name.Encode(e)
 	}
 	{
 		e.FieldStart("content")
@@ -12000,9 +11994,7 @@ func (s *CreateBroadcastInput) Decode(d *jx.Decoder) error {
 		case "name":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
+				if err := s.Name.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -12518,7 +12510,7 @@ func (s *CreateIntegrationInput) Encode(e *jx.Encoder) {
 func (s *CreateIntegrationInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
-		e.Str(s.Name)
+		s.Name.Encode(e)
 	}
 	{
 		if s.Enabled.Set {
@@ -12585,9 +12577,7 @@ func (s *CreateIntegrationInput) Decode(d *jx.Decoder) error {
 		case "name":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
+				if err := s.Name.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -12731,7 +12721,7 @@ func (s *CreateRuleInput) Encode(e *jx.Encoder) {
 func (s *CreateRuleInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
-		e.Str(s.Name)
+		s.Name.Encode(e)
 	}
 	{
 		e.FieldStart("triggerEvents")
@@ -12778,9 +12768,7 @@ func (s *CreateRuleInput) Decode(d *jx.Decoder) error {
 		case "name":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
+				if err := s.Name.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -12901,7 +12889,7 @@ func (s *CreateSegmentInput) Encode(e *jx.Encoder) {
 func (s *CreateSegmentInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
-		e.Str(s.Name)
+		s.Name.Encode(e)
 	}
 	{
 		e.FieldStart("condition")
@@ -12926,9 +12914,7 @@ func (s *CreateSegmentInput) Decode(d *jx.Decoder) error {
 		case "name":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
+				if err := s.Name.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -13238,7 +13224,7 @@ func (s *CreateTemplateInput) Encode(e *jx.Encoder) {
 func (s *CreateTemplateInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("name")
-		e.Str(s.Name)
+		s.Name.Encode(e)
 	}
 	{
 		if s.Subject.Set {
@@ -13279,9 +13265,7 @@ func (s *CreateTemplateInput) Decode(d *jx.Decoder) error {
 		case "name":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
+				if err := s.Name.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -19433,6 +19417,46 @@ func (s *MessageRevenue) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes Name as json.
+func (s Name) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes Name from json.
+func (s *Name) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode Name to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = Name(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s Name) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *Name) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes AutomationVersion as json.
 func (o NilAutomationVersion) Encode(e *jx.Encoder) {
 	if o.Null {
@@ -20347,6 +20371,39 @@ func (s OptJsonObject) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptJsonObject) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes Name as json.
+func (o OptName) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes Name from json.
+func (o *OptName) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptName to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptName) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptName) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

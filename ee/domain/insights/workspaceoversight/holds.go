@@ -2,29 +2,10 @@ package workspaceoversight
 
 import (
 	"context"
-	"net/url"
-	"time"
 
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/kernel/validation"
-)
-
-// DefaultHoldMaxExpiry is how far ahead a hold's expiry may be set when the instance
-// does not say otherwise: a service that stops renewing frees the Workspace by then.
-const DefaultHoldMaxExpiry = 30 * 24 * time.Hour
-
-var (
-	// ErrHoldExpiryInPast refuses a hold that would already have lapsed.
-	ErrHoldExpiryInPast = validation.RefuseField("expiresAt", "staff: a hold's expiry must be in the future", i18n.ErrorsHoldExpiryInPast)
-	// ErrHoldTooLong refuses a hold whose expiry is beyond the configured maximum; the refusal
-	// names the maximum.
-	ErrHoldTooLong = validation.RefuseField("expiresAt", "staff: a hold's expiry is too far ahead", i18n.ErrorsHoldTooLong)
-	// ErrHoldActionURL refuses an action URL that is not an absolute https URL: it is shown
-	// to the Workspace's Owners as a link, so no other scheme and no credentials in it.
-	ErrHoldActionURL = validation.RefuseField("actionUrl", "staff: a hold's action URL must be an absolute https URL", i18n.ErrorsHoldActionUrlInvalid)
 )
 
 // HoldInput is what a setter states about a hold.
@@ -35,8 +16,8 @@ type HoldChange = holds.Change
 
 // SetHold sets the hold under key on a Workspace, or renews it when it exists: one call
 // does both and repeating it is harmless. It is recorded in the Audit log under the
-// credential's name. The expiry is required to be ahead of now and no further than the
-// configured maximum. ErrWorkspaceNotFound for an unknown Workspace.
+// credential's name. The rules of a hold are its owner's (holds.Set), with the expiry checked
+// against the configured maximum. ErrWorkspaceNotFound for an unknown Workspace.
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
 // loaded (docs/architecture/workspace-scoping.md, list item 7).
@@ -44,23 +25,11 @@ func (m *Module) SetHold(ctx context.Context, cred *ent.ServiceCredential, works
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err
 	}
-	now := m.now()
-	if !in.ExpiresAt.After(now) {
-		return HoldChange{}, ErrHoldExpiryInPast
-	}
-	if in.ExpiresAt.After(now.Add(m.holdMax)) {
-		return HoldChange{}, ErrHoldTooLong.With("at most " + m.holdMax.String() + " from now")
-	}
-	if in.ActionURL != nil {
-		if u, err := url.Parse(*in.ActionURL); err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil {
-			return HoldChange{}, ErrHoldActionURL
-		}
-	}
 	s, err := m.holdScope(ctx, cred, workspaceID)
 	if err != nil {
 		return HoldChange{}, err
 	}
-	return holds.Set(ctx, s, key, cred.Name, in)
+	return holds.Set(ctx, s, key, cred.Name, in, holds.Limits{Now: m.now(), MaxExpiry: m.holdMax})
 }
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded

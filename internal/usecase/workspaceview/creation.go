@@ -3,12 +3,10 @@ package workspaceview
 import (
 	"context"
 	"strconv"
-	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships/membershipsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -26,14 +24,11 @@ type CreateInput struct {
 // Owner Membership with the Send cap it starts with (ADR 0067) and the `workspace.create` Audit
 // entry are written atomically: a Workspace is reached through Memberships, so one without its
 // owner row would be inaccessible. An Unverified User gets users.ErrEmailNotVerified. The name is
-// trimmed; an empty one is workspaces.ErrNameEmpty, refused before the User is read. A User's first
+// held to the name rule by the Workspace's own write (workspacesunchecked.CreateIn). A User's first
 // Workspace, created by the step that makes it Verified, is the Sign-up's (internal/usecase/signup),
 // which composes the same two modules on that step's transaction.
 func (u *UseCase) Create(ctx context.Context, in CreateInput) (View, error) {
-	name := strings.TrimSpace(in.Name)
-	if name == "" {
-		return View{}, workspaces.ErrNameEmpty
-	}
+	name := in.Name
 	var ws *ent.Workspace
 	err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		usr, err := users.VerifiedIn(ctx, tx, in.UserID)

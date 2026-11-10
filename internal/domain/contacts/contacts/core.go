@@ -9,16 +9,9 @@ import (
 
 	"golang.org/x/text/language"
 
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
-)
-
-// The longest a text core attribute, a locale tag and an avatar URL may be. Identify's traits are an
-// untyped object in the collect contract, so a core attribute read from one is held here to the
-// limits the contacts contract declares for the same attribute.
-const (
-	maxTextLength   = 255  // contract-copy: an Identify trait is untyped; the contacts contract's city limit
-	maxLocaleLength = 35   // contract-copy: an Identify trait is untyped; the contract's LocaleTag limit
-	maxAvatarLength = 2048 // contract-copy: an Identify trait is untyped; the contract's ImageUrl limit
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 var countryCodePattern = regexp.MustCompile(`^[A-Z]{2}$`)
@@ -115,7 +108,9 @@ func canonicalLocale(s string) string {
 
 func text(s string) (string, bool) {
 	s = strings.TrimSpace(s)
-	return s, s != "" && utf8.RuneCountInString(s) <= maxTextLength
+	// Identify's traits are an untyped object in the collect contract, so a core attribute read
+	// from one is held to the bound the contacts contract declares for a text attribute.
+	return s, s != "" && utf8.RuneCountInString(s) <= bounds.ContactCityMaxLength
 }
 
 func timeZoneName(s string) (string, bool) {
@@ -134,23 +129,27 @@ func countryCode(s string) (string, bool) {
 
 func localeTag(s string) (string, bool) {
 	s = strings.TrimSpace(s)
-	if s == "" || len(s) > maxLocaleLength {
+	if s == "" || utf8.RuneCountInString(s) > bounds.LocaleTagMaxLength {
 		return "", false
 	}
 	tag, err := language.Parse(s)
 	if err != nil {
 		return "", false
 	}
-	return tag.String(), true
+	// The canonical form is held to the contract's pattern too, as the Contact's write is
+	// (checked), so a trait the write would refuse is dropped instead.
+	canonical := tag.String()
+	return canonical, validation.Pattern("locale", canonical, bounds.LocaleTagPattern) == nil
 }
 
 func avatarURL(s string) (string, bool) {
 	s = strings.TrimSpace(s)
-	if len(s) > maxAvatarLength || strings.ContainsAny(s, " \t\r\n") {
+	if utf8.RuneCountInString(s) > bounds.ImageURLMaxLength || strings.ContainsAny(s, " \t\r\n") {
 		return "", false
 	}
 	u, err := url.Parse(s)
-	return s, err == nil && u.Scheme == "https" && u.Host != ""
+	return s, err == nil && u.Scheme == "https" && u.Host != "" &&
+		validation.Pattern("avatar", s, bounds.ImageURLPattern) == nil
 }
 
 func birthday(s string) (time.Time, bool) {

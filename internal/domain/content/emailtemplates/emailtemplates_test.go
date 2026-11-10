@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -69,7 +70,7 @@ func TestCreateRefusesABlankName(t *testing.T) {
 
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), emailtemplates.CreateInput{Name: ""})
-	require.ErrorIs(t, err, emailtemplates.ErrBlankName)
+	require.ErrorIs(t, err, validation.ErrNameBlank)
 	assert.Equal(t, before, env.DB.EmailTemplate.Query().CountX(ctx), "nothing persisted")
 }
 
@@ -79,7 +80,7 @@ func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Name: patch.Set("")})
-	require.ErrorIs(t, err, emailtemplates.ErrBlankName)
+	require.ErrorIs(t, err, validation.ErrNameBlank)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
 }
 
@@ -123,7 +124,7 @@ func TestCreateRefusesAWhitespaceName(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{}).Create(ctx, env.DB.Scoped(fixtures.AcmeID), emailtemplates.CreateInput{Name: "   "})
-	require.ErrorIs(t, err, emailtemplates.ErrBlankName)
+	require.ErrorIs(t, err, validation.ErrNameBlank)
 }
 
 func TestUpdateRefusesAWhitespaceName(t *testing.T) {
@@ -131,7 +132,7 @@ func TestUpdateRefusesAWhitespaceName(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{}).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Name: patch.Set("  ")})
-	require.ErrorIs(t, err, emailtemplates.ErrBlankName)
+	require.ErrorIs(t, err, validation.ErrNameBlank)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
 }
 

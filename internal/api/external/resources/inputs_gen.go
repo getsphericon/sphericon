@@ -31,7 +31,7 @@ type InputsImpl struct{}
 func (c *InputsImpl) ApiTokenCreate(source *external.CreateApiTokenInput) apitokens.Input {
 	var apitokensInput apitokens.Input
 	if source != nil {
-		apitokensInput.Name = (*source).Name
+		apitokensInput.Name = nameIn((*source).Name)
 		if (*source).Scopes != nil {
 			apitokensInput.Scopes = make([]string, len((*source).Scopes))
 			for i := 0; i < len((*source).Scopes); i++ {
@@ -45,7 +45,7 @@ func (c *InputsImpl) ApiTokenCreate(source *external.CreateApiTokenInput) apitok
 func (c *InputsImpl) AutomationCreate(source *external.CreateAutomationInput) automations.CreateInput {
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
-		automationsCreateInput.Name = (*source).Name
+		automationsCreateInput.Name = nameIn((*source).Name)
 		automationsCreateInput.TriggerEvent = (*source).TriggerEvent
 		if (*source).ExitEvents != nil {
 			automationsCreateInput.ExitEvents = make([]string, len((*source).ExitEvents))
@@ -142,7 +142,7 @@ func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automat
 func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
 	if source != nil {
-		automationsUpdateInput.Name = stringPtrIn((*source).Name)
+		automationsUpdateInput.Name = namePtrIn((*source).Name)
 		automationsUpdateInput.TriggerEvent = stringPtrIn((*source).TriggerEvent)
 		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
 		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
@@ -167,7 +167,7 @@ func (c *InputsImpl) BroadcastChannel(source external.BroadcastChannel) channels
 func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) (broadcasts.CreateInput, error) {
 	var broadcastsCreateInput broadcasts.CreateInput
 	if source != nil {
-		pString := (*source).Name
+		pString := nameIn((*source).Name)
 		broadcastsCreateInput.Name = &pString
 		broadcastsContentInput, err := broadcastContentIn(c, (*source).Content)
 		if err != nil {
@@ -182,7 +182,7 @@ func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) (bro
 func (c *InputsImpl) BroadcastUpdate(source *external.UpdateBroadcastInput) (broadcasts.UpdateInput, error) {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
-		broadcastsUpdateInput.Name = stringPatch((*source).Name)
+		broadcastsUpdateInput.Name = namePatch((*source).Name)
 		broadcastsContentPatch, err := broadcastContentPatch(c, (*source).Content)
 		if err != nil {
 			return broadcastsUpdateInput, err
@@ -296,7 +296,7 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
 	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
 	if source != nil {
-		contactsCustomFieldUpdateInput.Name = stringPatch((*source).Name)
+		contactsCustomFieldUpdateInput.Name = namePatch((*source).Name)
 		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
 	}
 	return contactsCustomFieldUpdateInput
@@ -352,7 +352,7 @@ func (c *InputsImpl) Events(source []external.EventInput, context bool) ([]event
 func (c *InputsImpl) IntegrationCreate(source *external.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
 	if source != nil {
-		integrationsCreateInput.Name = (*source).Name
+		integrationsCreateInput.Name = nameIn((*source).Name)
 		integrationsCreateInput.Enabled = boolPtrIn((*source).Enabled)
 		integrationsCreateInput.IsDefault = boolIn((*source).IsDefault)
 		integrationsCreateInput.MaxPerSecond = maxPerSecondPtrIn((*source).MaxPerSecond)
@@ -370,7 +370,7 @@ func (c *InputsImpl) IntegrationCreate(source *external.CreateIntegrationInput) 
 func (c *InputsImpl) IntegrationUpdate(source *external.UpdateIntegrationInput) (integrations.UpdateInput, error) {
 	var integrationsUpdateInput integrations.UpdateInput
 	if source != nil {
-		integrationsUpdateInput.Name = stringPatch((*source).Name)
+		integrationsUpdateInput.Name = namePatch((*source).Name)
 		integrationsUpdateInput.Enabled = boolPatch((*source).Enabled)
 		integrationsUpdateInput.IsDefault = boolPatch((*source).IsDefault)
 		integrationsUpdateInput.MaxPerSecond = maxPerSecondPatch((*source).MaxPerSecond)
@@ -424,7 +424,7 @@ func (c *InputsImpl) RuleActions(source []external.RuleAction) []rules.Action {
 func (c *InputsImpl) RuleCreate(source *external.CreateRuleInput) (rules.CreateInput, error) {
 	var rulesCreateInput rules.CreateInput
 	if source != nil {
-		rulesCreateInput.Name = (*source).Name
+		rulesCreateInput.Name = nameIn((*source).Name)
 		if (*source).TriggerEvents != nil {
 			rulesCreateInput.TriggerEvents = make([]string, len((*source).TriggerEvents))
 			for i := 0; i < len((*source).TriggerEvents); i++ {
@@ -443,7 +443,7 @@ func (c *InputsImpl) RuleCreate(source *external.CreateRuleInput) (rules.CreateI
 func (c *InputsImpl) RuleUpdate(source *external.UpdateRuleInput) (rules.UpdateInput, error) {
 	var rulesUpdateInput rules.UpdateInput
 	if source != nil {
-		rulesUpdateInput.Name = stringPtrIn((*source).Name)
+		rulesUpdateInput.Name = namePtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
 		pString, err := conditionIn((*source).Condition)
 		if err != nil {
@@ -457,7 +457,7 @@ func (c *InputsImpl) RuleUpdate(source *external.UpdateRuleInput) (rules.UpdateI
 func (c *InputsImpl) SegmentCreate(source *external.CreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput
 	if source != nil {
-		segmentsCreateInput.Name = (*source).Name
+		segmentsCreateInput.Name = nameIn((*source).Name)
 		pString, err := createSegmentCondition((*source).Condition)
 		if err != nil {
 			return segmentsCreateInput, err
@@ -482,7 +482,7 @@ func (c *InputsImpl) SegmentPreview(source *external.PreviewSegmentInput) (segme
 func (c *InputsImpl) SegmentUpdate(source *external.UpdateSegmentInput) (segments.UpdateInput, error) {
 	var segmentsUpdateInput segments.UpdateInput
 	if source != nil {
-		segmentsUpdateInput.Name = stringPatch((*source).Name)
+		segmentsUpdateInput.Name = namePatch((*source).Name)
 		patchField, err := segmentConditionPatch((*source).Condition)
 		if err != nil {
 			return segmentsUpdateInput, err
@@ -559,7 +559,7 @@ func (c *InputsImpl) TelegramButton(source external.TelegramButton) telegramrend
 func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) emailtemplates.CreateInput {
 	var emailtemplatesCreateInput emailtemplates.CreateInput
 	if source != nil {
-		emailtemplatesCreateInput.Name = (*source).Name
+		emailtemplatesCreateInput.Name = nameIn((*source).Name)
 		emailtemplatesCreateInput.Subject = stringPtrIn((*source).Subject)
 		emailtemplatesCreateInput.Body = stringPtrIn((*source).Body)
 		emailtemplatesCreateInput.Doc = documentIn((*source).Doc)
@@ -569,7 +569,7 @@ func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) emailt
 func (c *InputsImpl) TemplateUpdate(source *external.UpdateTemplateInput) emailtemplates.UpdateInput {
 	var emailtemplatesUpdateInput emailtemplates.UpdateInput
 	if source != nil {
-		emailtemplatesUpdateInput.Name = stringPatch((*source).Name)
+		emailtemplatesUpdateInput.Name = namePatch((*source).Name)
 		emailtemplatesUpdateInput.Subject = stringPatch((*source).Subject)
 		emailtemplatesUpdateInput.Body = stringPatch((*source).Body)
 		emailtemplatesUpdateInput.Doc = documentPatch((*source).Doc)

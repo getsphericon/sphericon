@@ -8,7 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -72,7 +72,7 @@ type TransactionalRequest struct {
 // and the send record (ADR 0015). Its result is closed: a Transactional request is never rate
 // limited or deferred (ADR 0023), so a Deferral that comes back is an ErrTransactionalInvariant.
 func (m *Module) SendTransactional(ctx context.Context, s *ent.Scoped, req TransactionalRequest) (TransactionalResult, error) {
-	dest := suppressions.NormalizeDestination(req.Destination)
+	dest := emailcase.Of(req.Destination)
 	if dest == "" {
 		return TransactionalResult{}, ErrTransactionalEmptyDestination
 	}

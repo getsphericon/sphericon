@@ -20,8 +20,8 @@ built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
   `errors.AsType` and `errors.Join`; no error library.** The wrap prefix names the operation, which is
   all a log line needs: a stack taken where the error is wrapped is not where it arose, so it would
   need a wrap at every source (ent, pgx, river) to help. A caller that branches takes a sentinel
-  (it only matches a condition) or a typed error (it needs the data), such as `validation.Error`
-  for a refused input of a domain module.
+  (it only matches a condition) or a typed error (it needs the data), such as
+  `validation.FieldsError` for a form a domain module refused.
 - **Narrowing an integer to the contract's `int32` goes through `narrow.Int32`**
   (`internal/kernel/narrow`), which caps at the bounds instead of wrapping.
 - **A change to a field in an Audit entry's diff is `events.Change(from, to)` or
@@ -66,17 +66,35 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **Rule 6, `check:copies` (`cmd/contractcopy`, in `check`).** It reads the generated `openapi/*.openapi.json`
   and fails on a hand-written copy of its values: a Go list, `case` list or TypeScript array or union of
   literals that restates an enum (all of its values, or three or more that are a quarter of a larger one),
-  the `value`s of a TypeScript list of options (a Select's `data`) that restate an enum, a Go or TypeScript
-  `Max*`/`Min*`/`Default*` constant or a request's `query: { pageSize }` equal to a declared length, range or
-  default, a TypeScript interface, object type or `z.object` whose fields are exactly those of a contract
-  schema (two or more; a `z.object` whose every field reads a generated `z…` schema is derived and passes),
-  and a fixture scope (`fixtures/*.yml`, which cannot import Go) the contract does not declare. A shape is
-  taken from the generated type (`Pick`, `Omit`, an indexed access), a bound from the generated zod
-  (`maxPageSize`, `maxLengthOf`, `maxItemsOf` in `src/utils/bounds.ts`). A value that only
-  looks like a contract value (an OAuth limit, a secret floor) carries `// contract-copy: <reason>` on its
-  line or the line above; a marker without a reason is still a finding, and there is no baseline file. Typed
-  Go `const` blocks are domain vocabulary and are not read. Tests use the generated constants
-  (`externalapi.ApiTokenScope…`) or the generated zod (`zSiteMembershipRole.options`), not string lists.
+  the `value`s of a TypeScript list of options (a Select's `data`) that restate an enum, a TypeScript
+  `MAX_*`/`MIN_*`/`DEFAULT_*` constant or a request's `query: { pageSize }` equal to a declared length,
+  range or default, a TypeScript interface, object type or `z.object` whose fields are exactly those of a
+  contract schema (two or more; a `z.object` whose every field reads a generated `z…` schema is derived
+  and passes), and a fixture scope (`fixtures/*.yml`, which cannot import Go) the contract does not
+  declare. A shape is taken from the generated type (`Pick`, `Omit`, an indexed access), a bound from the
+  generated zod (`maxPageSize`, `maxLengthOf`, `maxItemsOf` in `src/utils/bounds.ts`), or, in a package
+  that cannot import zod (the tracker), from the constants `cmd/boundgen` writes for it. There is no
+  marker and no baseline file: a list that is the contract's takes its values from the generated
+  constants, and a display order is a rank map keyed by the generated type. Typed Go `const` blocks are
+  domain vocabulary and are not read. Tests use the generated constants
+  (`externalapi.ApiTokenScope…`, `tokenscope.…`) or the generated zod (`zSiteMembershipRole.options`), not
+  string lists.
+- **Rule 5, `foreignrefusal` (analyzer, ADR 0107).** A module refuses in its own words: a reference
+  to another package's refusal sentinel (a package-level `*validation.RefusalError`) outside
+  `errors.Is` is a finding, the kernel's `validation` sentinels included, since an owner calls the
+  kernel's rule function instead. An owner's subpackages (its `<module>unchecked` operations) speak
+  for it, and tests are not read. A refusal a caller needs from the owner is a function of the owner
+  (`users.RefuseSoleOwner`, `users.RequireVerified`); an adapter of another module's flow reports a
+  verdict or a plain signal error the flow words itself (`login.Verdict`, `login.ErrNoChallenge`).
+- **Rule 5, the contract's bounds in Go (`cmd/boundgen`, ADR 0107).** A bound the contract declares on the
+  input of a domain write (a length, a range, an item count, a pattern, a default) is checked by its owner
+  against a constant generated into `internal/kernel/bounds`: a line of `boundgen.Bounds` names the bound,
+  where the contract declares it and its owner, the ent entity whose table holds the field or the package
+  that owns it when no column does. The owner checks every write through the kernel's
+  `validation.Length`, `Range`, `Items` and `Pattern`; there is no Go copy of a bound, so `check:copies`
+  reads no Go constant. `TestEveryBoundIsCheckedByItsOwner` (`tools/analyzers/entrywrite`) refuses a
+  listed bound that no non-test code of its owner uses. A write that gains a bounded field, or a bound
+  the contract gains, adds its line to the list.
 - **Rule 6, `one-way-to-record-audit` (ast-grep).** An explicit Audit entry (one no audited write of the
   scoped client produces) is recorded only by `events.RecordAudit(ctx, pub, entry)` in the transaction of
   the change: a call of `RecordAudit` on any other receiver is a finding. Package `events` calls it
@@ -146,7 +164,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   the composition moves into the domain module that owns its rule, or into a use case when it spans
   several, and the driver makes that one call.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
-  `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
+  `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns
   the module's error, and `internal/api/problem` (the surface's `NewError`) answers a module's sentinel refusal
   by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409,
@@ -156,8 +174,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `validation.UnknownReference` 400 (a reference that names nothing, such as a pending sign-up that
   is gone or a cursor never handed out), `validation.Unlicensed` 402 (a capability the License does
   not include), the message as `detail` and, for a sentinel that names a
-  field (`validation.RefuseField`, `validation.ConflictField`), under its field), a `*validation.Error` with 422 and its field, a
-  `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
+  field (`validation.RefuseField`, `validation.ConflictField`, or a sentinel made `On` a field),
+  under its field), a `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
   `detail`, an `*liveuse.Error` with 409 and `usedBy`, an `*users.DeletionRefusedError` with 422
   and the Workspaces the User solely owns, content `emailrender` cannot render with 422, and
   `workspaces.ErrNotFound` (an unknown Workspace or one the caller is not a member of) with
