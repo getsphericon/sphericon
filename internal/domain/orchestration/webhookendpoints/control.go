@@ -29,7 +29,8 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 				patch.ApplySet(in.URL, u.SetURL)
 				patch.ApplySet(in.EventTypes, u.SetEventTypes)
 				if enabled {
-					clearFailures(u).ClearDisabledAt().ClearDisabledReason().AddHealthGeneration(1)
+					clearFailures(u)
+					u.ClearDisabledAt().ClearDisabledReason().AddHealthGeneration(1)
 				} else if before.DisabledAt == nil {
 					u.Where(webhookendpoint.DisabledAtIsNil()).
 						SetDisabledAt(change.At).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
