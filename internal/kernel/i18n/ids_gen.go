@@ -216,7 +216,6 @@ var (
 	ErrorsNameRequired                          = ID{key: "errors.name_required"}
 	ErrorsNameTooLong                           = ID{key: "errors.name_too_long"}
 	ErrorsNewEmailMustDiffer                    = ID{key: "errors.new_email_must_differ"}
-	ErrorsNewEmailRequired                      = ID{key: "errors.new_email_required"}
 	ErrorsNotFound                              = ID{key: "errors.not_found"}
 	ErrorsNotMeLinkInvalid                      = ID{key: "errors.not_me_link_invalid"}
 	ErrorsOauthClientUnknown                    = ID{key: "errors.oauth_client_unknown"}
@@ -233,7 +232,6 @@ var (
 	ErrorsPasskeyCheckFailed                    = ID{key: "errors.passkey_check_failed"}
 	ErrorsPasskeyLastSignIn                     = ID{key: "errors.passkey_last_sign_in"}
 	ErrorsPasskeyLoginFailed                    = ID{key: "errors.passkey_login_failed"}
-	ErrorsPasskeyNameInvalid                    = ID{key: "errors.passkey_name_invalid"}
 	ErrorsPasskeyNotFound                       = ID{key: "errors.passkey_not_found"}
 	ErrorsPasskeyRegistrationFailed             = ID{key: "errors.passkey_registration_failed"}
 	ErrorsPasskeysUnavailable                   = ID{key: "errors.passkeys_unavailable"}

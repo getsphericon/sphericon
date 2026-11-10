@@ -656,14 +656,12 @@ go run ./cmd/upgradecheck immutable --base "$base" ${SPHERICON_PR_BODY_FILE:+--b
 '''
 
 ["check:pr-body"]
-description = "What a pull request body must say: the AI assistance option is checked and each added `contract-copy:` marker has a `Contract-Copy: <file>: <reason>` line (cmd/prcheck; SPHERICON_PR_BODY and SPHERICON_BASE come from the pull request, SPHERICON_BASE defaults to origin/main)"
+description = "What a pull request body must say: the AI assistance option is checked (cmd/prcheck; SPHERICON_PR_BODY comes from the pull request)"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 : "${SPHERICON_PR_BODY?set SPHERICON_PR_BODY to the pull request body}"
-base="${SPHERICON_BASE:-origin/main}"
 go run ./cmd/prcheck disclosure
-git diff --unified=0 --no-color "$base...HEAD" | go run ./cmd/prcheck markers
 '''
 
 ["check:pr-title"]
@@ -729,7 +727,7 @@ description = "Project-specific syntax rules (sgconfig.yml, ast-grep/): tests, t
 run = ["ast-grep test", "ast-grep scan"]
 
 ["check:copies"]
-description = "Rule 6: no hand-written copy of a TypeSpec enum, limit, object shape or scope in Go, TypeScript or fixtures (cmd/contractcopy reads openapi/*.openapi.json; a value that only looks like a contract value carries `// contract-copy: <reason>`)"
+description = "Rule 6: no hand-written copy of a TypeSpec enum, limit, object shape or scope in Go, TypeScript or fixtures (cmd/contractcopy reads openapi/*.openapi.json; a Go bound is generated instead, cmd/boundgen)"
 run = "go run ./cmd/contractcopy"
 
 ["check:generated"]

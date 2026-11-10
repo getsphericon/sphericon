@@ -43,6 +43,9 @@ func CreateIn(ctx context.Context, tx *ent.Client, name string, newPublicID func
 	if err != nil {
 		return nil, err
 	}
+	if err := workspaces.CheckSendCap(sendCap); err != nil {
+		return nil, err
+	}
 	collectKey, err := credentials.GenerateCollectKey()
 	if err != nil {
 		return nil, err

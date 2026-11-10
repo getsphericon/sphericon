@@ -1,11 +1,11 @@
 id: no-common-refusal-in-handlers
 snapshots:
-  "func invalid(err error) bool {\n\tvar verr *validation.Error\n\treturn errors.As(err, &verr)\n}\n":
+  "func invalid(err error) bool {\n\tvar verr *validation.FieldsError\n\treturn errors.As(err, &verr)\n}\n":
     labels:
-      - source: validation.Error
+      - source: validation.FieldsError
         style: primary
         start: 42
-        end: 58
+        end: 64
   "func notFound() siteapi.ProblemDetails {\n\treturn problem(http.StatusNotFound, \"workspace not found\")\n}\n":
     labels:
       - source: '"workspace not found"'

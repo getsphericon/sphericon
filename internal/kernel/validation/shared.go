@@ -45,7 +45,7 @@ func Name(raw string) (string, error) {
 		return "", ErrNameBlank
 	}
 	if utf8.RuneCountInString(name) > bounds.NameMaxLength {
-		return "", ErrNameTooLong.Args(map[string]any{"Max": bounds.NameMaxLength})
+		return "", ErrNameTooLong.Args(map[string]any{argMax: bounds.NameMaxLength})
 	}
 	return name, nil
 }
@@ -84,7 +84,7 @@ func UserName(raw string) (string, error) {
 		return "", ErrUserNameRequired
 	}
 	if !IsDisplayName(name) {
-		return "", ErrUserNameInvalid.Args(map[string]any{"NameMax": bounds.UserNameMaxLength})
+		return "", ErrUserNameInvalid.Args(map[string]any{argNameMax: bounds.UserNameMaxLength})
 	}
 	return name, nil
 }
@@ -126,7 +126,7 @@ func Password(field, password string) error {
 	case password == "":
 		return ErrPasswordRequired.On(field)
 	case !PasswordLength(password):
-		return ErrPasswordLength.On(field).Args(map[string]any{"Min": PasswordMinLength, "Max": PasswordMaxLength})
+		return ErrPasswordLength.On(field).Args(map[string]any{argMin: PasswordMinLength, argMax: PasswordMaxLength})
 	case !PasswordNotBlank(password):
 		return ErrPasswordBlank.On(field)
 	}

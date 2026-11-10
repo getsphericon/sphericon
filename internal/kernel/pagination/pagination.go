@@ -5,16 +5,18 @@
 // catalogues (Templates, Segments, Tags, ...) list ascending by id.
 package pagination
 
-import "context"
+import (
+	"context"
 
-// DefaultPage and DefaultPageSize are what a module caller without a request gets. The
-// contract (PageQuery) declares the same defaults and the page size maximum, which ogen
-// enforces before a handler runs.
-const DefaultPage = 1
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+)
 
-// DefaultPageSize is the fallback for module callers that have no request.
-// contract-copy: the contract declares the same default
-const DefaultPageSize = 25
+// DefaultPage and DefaultPageSize are what a caller that asks for no page gets: the contract's
+// defaults (PageQuery), generated into package bounds.
+const (
+	DefaultPage     = bounds.PageDefault
+	DefaultPageSize = bounds.PageSizeDefault
+)
 
 type Page[T any] struct {
 	Items      []T `json:"items"`
@@ -24,14 +26,17 @@ type Page[T any] struct {
 	TotalPages int `json:"totalPages"`
 }
 
+// Normalize is the page and the page size a list reads: the contract's defaults for one left out or
+// below the contract's minimum, and a page size above the contract's maximum held to it, so a
+// caller that skips ogen (a job, a use case, the CLI) reads the pages a client could ask for.
 func Normalize(page, pageSize *int32) (normalPage, normalPageSize int) {
 	p := DefaultPage
 	ps := DefaultPageSize
-	if page != nil && *page > 0 {
+	if page != nil && *page >= bounds.PageMin {
 		p = int(*page)
 	}
-	if pageSize != nil && *pageSize > 0 {
-		ps = int(*pageSize)
+	if pageSize != nil && *pageSize >= bounds.PageSizeMin {
+		ps = min(int(*pageSize), bounds.PageSizeMax)
 	}
 	return p, ps
 }

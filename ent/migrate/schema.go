@@ -3267,6 +3267,9 @@ func init() {
 	EventsTable.Annotation = &entsql.Annotation{
 		Table: "events",
 	}
+	EventsTable.Annotation.Checks = map[string]string{
+		"events_email_lower": "email = lower(email)",
+	}
 	EventJournalEntriesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EventJournalEntriesTable.Annotation = &entsql.Annotation{
 		Table: "event_journal_entries",

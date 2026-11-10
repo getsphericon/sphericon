@@ -19,8 +19,8 @@ import (
 // that owns them (ADR 0102); the catalogue of Tags is internal/domain/contacts/tags. The bus opens
 // the transaction a change of a Contact's Tags commits in with the System event that records it
 // (contact.tagged, contact.untagged). A caller that already holds a transaction uses ApplyTagIn,
-// RemoveTagIn and SetTagsIn instead. The refusals are the catalogue's (tags.ErrContactNotFound, and
-// the name rule of tags.EnsureIn), as when the change lived there.
+// RemoveTagIn and SetTagsIn instead. A Contact not in the Workspace is ErrNotFound; the Tag name is
+// the catalogue's to check (tags.EnsureIn).
 
 // ApplyTag gives the Contact the named Tag in a transaction of its own (ApplyTagIn).
 func (m *Module) ApplyTag(ctx context.Context, s *ent.Scoped, contactID int64, name string) (*ent.Tag, error) {
@@ -123,12 +123,12 @@ func SetTagsIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contact
 
 // lockTagged locks the Contact's row to the end of the transaction s is bound to (contactlock), so
 // two changes of its Tags are ordered and each reads the set the other committed: an apply racing
-// another apply of the same Tag records it once. tags.ErrContactNotFound when the Contact is not
+// another apply of the same Tag records it once. ErrNotFound when the Contact is not
 // in the Workspace.
 func lockTagged(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Contact, error) {
 	c, err := contactlock.Lock(ctx, s, contactID)
 	if ent.IsNotFound(err) {
-		return nil, tags.ErrContactNotFound
+		return nil, ErrNotFound
 	}
 	return c, err
 }

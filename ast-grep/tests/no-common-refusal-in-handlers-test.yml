@@ -28,7 +28,7 @@ invalid:
     }
   - |
     func invalid(err error) bool {
-    	var verr *validation.Error
+    	var verr *validation.FieldsError
     	return errors.As(err, &verr)
     }
   - |

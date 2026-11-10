@@ -15,6 +15,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"time"
@@ -77,7 +78,7 @@ func New(cfg Config) *Module {
 		PasskeyVerify: m.verifyPasskey,
 	}
 	if cfg.RequireVerification {
-		lc.Gate = func(u *ent.User) bool { return u.EmailVerifiedAt == nil }
+		lc.Gate = users.RequireVerified
 	}
 	m.login = login.New(lc)
 	return m
@@ -166,8 +167,8 @@ func (m *Module) mintChallenge(ctx context.Context, u *ent.User) (string, error)
 
 // parseChallenge is the login module's Parse: the Pending a still-valid challenge was minted for,
 // its User, the binding it verified under and the method and provider login time it carries.
-// login.ErrChallengeInvalid when it is forged, expired, already used, or its User is gone or no
-// longer has a Second factor; other errors are the store's.
+// login.ErrNoChallenge when it is forged, expired, already used, or its User is gone or no longer
+// has a Second factor; other errors are the store's.
 func (m *Module) parseChallenge(ctx context.Context, challenge string) (login.Pending[*ent.User], error) {
 	var (
 		u       *ent.User
@@ -185,7 +186,7 @@ func (m *Module) parseChallenge(ctx context.Context, challenge string) (login.Pe
 		return login.Pending[*ent.User]{}, loadErr
 	}
 	if err != nil {
-		return login.Pending[*ent.User]{}, login.ErrChallengeInvalid
+		return login.Pending[*ent.User]{}, fmt.Errorf("%w: %w", login.ErrNoChallenge, err)
 	}
 	var providerLoginAt time.Time
 	if sec, perr := strconv.ParseInt(extra[providerLoginClaim], 10, 64); perr == nil {
@@ -202,16 +203,18 @@ func (m *Module) parseChallenge(ctx context.Context, challenge string) (login.Pe
 
 // verifyCode is the login module's Verify: the Second factor's check of a code (a TOTP code, or a
 // Recovery code spent once) under the binding the challenge was minted with.
-func (m *Module) verifyCode(ctx context.Context, p login.Pending[*ent.User], code string) error {
+func (m *Module) verifyCode(ctx context.Context, p login.Pending[*ent.User], code string) (login.Verdict, error) {
 	_, err := m.factors.Verify(ctx, p, code)
 	switch {
 	case errors.Is(err, secondfactors.ErrInvalidCode):
-		return login.ErrInvalidCode
+		return login.CodeWrong, nil
 	case errors.Is(err, secondfactors.ErrNotActive), errors.Is(err, secondfactors.ErrBindingMoved):
 		// The factor is gone, or a racing second step spent the challenge first.
-		return login.ErrChallengeInvalid
+		return login.ChallengeGone, nil
+	case err != nil:
+		return 0, err
 	}
-	return err
+	return login.CodeAccepted, nil
 }
 
 // findPasskey is the login module's PasskeyFind: the User the response's credential belongs to.

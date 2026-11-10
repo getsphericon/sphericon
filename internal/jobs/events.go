@@ -204,7 +204,8 @@ func NewSuppressEventWorker(client *ent.Client) *SuppressEventWorker {
 }
 
 // Work adds the event's destination to the Workspace's Suppression list when the action implies a
-// global do-not-send (hard bounce, complaint). No-op for other actions or a missing email.
+// global do-not-send (hard bounce, complaint). No-op for other actions; a missing email is the
+// Suppression module's refusal, which ends the job (RefusalsEnd).
 // Idempotent: a redelivered or repeated event keeps the original entry rather than erroring or
 // overwriting its reason.
 func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressEventArgs]) error {

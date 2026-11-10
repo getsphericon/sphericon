@@ -84,6 +84,15 @@ func NewLinks(a *Module, tokens *authtoken.Signer) *Links {
 	return &Links{users: a, tokens: tokens}
 }
 
+// LinkUsed is err as the answer to a verification link: a User already Verified
+// (ErrAlreadyVerified) is ErrVerifyLinkUsed, the link's own refusal; any other err is itself.
+func LinkUsed(err error) error {
+	if errors.Is(err, ErrAlreadyVerified) {
+		return ErrVerifyLinkUsed
+	}
+	return err
+}
+
 // checkPassword checks a new password a link sets against the password rule.
 func checkPassword(password string) error {
 	return validation.Fields(validation.Password(validation.FieldPassword, password))

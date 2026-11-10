@@ -1,6 +1,7 @@
 package boundgen
 
 const (
+	collect  = "openapi/collect.openapi.json"
 	site     = "openapi/site.openapi.json"
 	external = "openapi/external.openapi.json"
 	service  = "openapi/service.openapi.json"
@@ -81,6 +82,46 @@ var Bounds = []Bound{
 	{
 		Name: "SignupSurveyOther", Doc: "is the text of a Sign-up survey answer's `other` choice.",
 		Spec: site, Schema: "SiteSignupSurveyInput", Property: "roleOther", Owners: []string{"SignupSurveyResponse"},
+	},
+	{
+		Name: "CollectEvents", Doc: "are the Events one request of the tracker sends: its whole queue at most.",
+		Spec: collect, Schema: "CollectEventsInput", Property: "events", Owners: []string{"packages/analytics/src"},
+	},
+	{
+		Name: "SignupItemKey", Doc: "is the key a Sign-up item is answered under.",
+		Spec: site, Schema: "SignupItemKey", Owners: []string{"SignupItem"},
+	},
+	{
+		Name: "SignupItemTitle", Doc: "is the title of a Sign-up item.",
+		Spec: site, Schema: "SignupItemTitle", Owners: []string{"SignupItem"},
+	},
+	{
+		Name: "LegalDocumentLabel", Doc: "is the label of a published version of a Legal document.",
+		Spec: site, Schema: "LegalDocumentLabel", Owners: []string{"LegalDocumentVersion"},
+	},
+	{
+		Name: "LegalDocumentMarkdown", Doc: "is the text of a Legal document, in Markdown.",
+		Spec: site, Schema: "LegalDocumentMarkdown", Owners: []string{"LegalDocumentDraft"},
+	},
+	{
+		Name: "ConsentWording", Doc: "is the wording a person consented to.",
+		Spec: site, Schema: "ConsentEvidence", Property: "wording", Owners: []string{"Confirmation"},
+	},
+	{
+		Name: "ConsentSource", Doc: "is where a person consented.",
+		Spec: site, Schema: "ConsentEvidence", Property: "source", Owners: []string{"Confirmation"},
+	},
+	{
+		Name: "ConsentBrand", Doc: "is the brand a person consented to hear from.",
+		Spec: site, Schema: "ConsentEvidence", Property: "brand", Owners: []string{"Confirmation"},
+	},
+	{
+		Name: "Page", Doc: "is the 1-based number of a page of a list.",
+		Spec: site, Parameter: "PageQuery.page", Owners: []string{"internal/kernel/pagination"},
+	},
+	{
+		Name: "PageSize", Doc: "is how many items a page of a list holds.",
+		Spec: site, Parameter: "PageQuery.pageSize", Owners: []string{"internal/kernel/pagination"},
 	},
 	{
 		Name: "TelegramButtons", Doc: "are the buttons of a Telegram message.",

@@ -121,10 +121,7 @@ func (u *UseCase) VerifyEmailLink(ctx context.Context, in VerifyEmailLinkInput) 
 		return nil, err
 	}
 	verified, err := u.VerifyEmail(ctx, VerifyEmailInput{UserID: uid, PasswordHash: hash})
-	if errors.Is(err, users.ErrAlreadyVerified) {
-		return nil, users.ErrVerifyLinkUsed
-	}
-	return verified, err
+	return verified, users.LinkUsed(err)
 }
 
 // ResetPasswordLink sets the User's password from a reset link (ADR 0030): the password rule and

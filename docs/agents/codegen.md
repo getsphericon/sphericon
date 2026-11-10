@@ -29,6 +29,7 @@ openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/domain/ide
 openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/domain/identity/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary)
 openapi/service (`ServiceScope` enum) ──cmd/scopegen──▶ ee/domain/identity/servicecredentials/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary, so the Service credentials module never imports gen/service)
 openapi/site (`GrantableScope`, `SendScope`, `SetupScope`, `PersonalScope` enums) ──cmd/scopegen──▶ internal/kernel/tokenscope/user_scopes_gen.go (each type, its constants and its list, so a core package never imports gen/site for them); the files are `scopegen.Tables`
+openapi/{site,external,service,collect} (the value bounds `boundgen.Bounds` lists: lengths, ranges, item counts, patterns, defaults) ──cmd/boundgen──▶ internal/kernel/bounds/bounds_gen.go (a constant per bound and the owner that checks it, ADR 0107) and packages/analytics/src/bounds.gen.ts (the bounds the tracker owns, which cannot import zod)
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 internal/kernel/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/kernel/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)
 config (the `environment` struct: `env`, `envDefault` and `validate` tags, profile defaults, field doc comments)  ──cmd/configdoc──▶ docs/configuration.md (the configuration reference the docs site copies)
@@ -114,7 +115,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 - **Descriptions say what happens, not which code does it.** `$onValidate` also refuses a
   description (a doc comment, `@doc`, `@summary`, `@returns`/`@returnsDoc`, `@errors`/`@errorsDoc`)
   that names the code behind the contract: the words module, package or use case, a Go identifier
-  such as `throttle.NormalizeEmail`, a Go path or file (`internal/…`, `lookup.go`). Such a
+  such as `emailcase.Of`, a Go path or file (`internal/…`, `lookup.go`). Such a
   description goes stale when the code moves; it says what happens to the value instead, in the
   words of `GLOSSARY.md`. Its fixture is `typespec/lib/testdata/descriptions.tsp`.
 

@@ -39,8 +39,7 @@ Project Owner.
   the fix was checked (a test that fails before the fix and passes after it). A typo or a doc line
   needs none either.
 - Fill in the pull request template. The `pr-body` check fails until exactly one option of its
-  "AI assistance" section is checked, and until each `contract-copy:` marker your change adds has a
-  `Contract-Copy: <file>: <reason>` line in the body.
+  "AI assistance" section is checked.
 
 ## AI-assisted contributions
 

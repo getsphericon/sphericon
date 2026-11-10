@@ -42,6 +42,8 @@ var (
 	// ErrNoIntegration: no Integration to issue the link for: the Workspace has no default
 	// Telegram Integration.
 	ErrNoIntegration = validation.RefuseField("integrationId", "bindings: no default Telegram integration", i18n.ErrorsTelegramStartNoIntegration)
+	// ErrIntegrationNotFound: the named Integration is not one of the Workspace's.
+	ErrIntegrationNotFound = validation.NotFound("bindings: integration not found", i18n.ErrorsIntegrationNotFound)
 	// ErrNotTelegram: the named Integration is not a Telegram bot.
 	ErrNotTelegram = validation.RefuseField("integrationId", "bindings: not a Telegram integration", i18n.ErrorsTelegramStartNotTelegram)
 	// ErrBotOff: the named bot holds no webhook (disabled or archived), so a link to it would
@@ -141,7 +143,7 @@ func (m *Module) bot(ctx context.Context, s *ent.Scoped, id *int64) (*ent.Integr
 	case ent.IsNotFound(err) && id == nil:
 		return nil, ErrNoIntegration
 	case ent.IsNotFound(err):
-		return nil, integrations.ErrNotFound
+		return nil, ErrIntegrationNotFound
 	case err != nil:
 		return nil, fmt.Errorf("find integration: %w", err)
 	}

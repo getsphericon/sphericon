@@ -65,9 +65,9 @@ func TestApplyRejectsBlankNameAndUnknownContact(t *testing.T) {
 	require.ErrorIs(t, err, validation.ErrNameBlank)
 
 	_, err = c.ApplyTag(ctx, acme, 999999, "x")
-	require.ErrorIs(t, err, tags.ErrContactNotFound)
+	require.ErrorIs(t, err, contacts.ErrNotFound)
 	_, err = c.ApplyTag(ctx, globex, fixtures.ContactAliceID, "x")
-	require.ErrorIs(t, err, tags.ErrContactNotFound)
+	require.ErrorIs(t, err, contacts.ErrNotFound)
 
 	n, err := env.DB.Tag.Query().Where(tag.Name("x")).Count(ctx)
 	require.NoError(t, err)
@@ -97,8 +97,8 @@ func TestRemoveDetachesAndKeepsTheTag(t *testing.T) {
 	require.NoError(t, c.RemoveTag(ctx, acme, fixtures.ContactAliceID, fixtures.TagVipName))
 	require.NoError(t, c.RemoveTag(ctx, acme, fixtures.ContactAliceID, "never-existed"))
 
-	require.ErrorIs(t, c.RemoveTag(ctx, acme, 999999, fixtures.TagVipName), tags.ErrContactNotFound)
-	require.ErrorIs(t, c.RemoveTag(ctx, globex, fixtures.ContactCarolID, fixtures.TagVipName), tags.ErrContactNotFound)
+	require.ErrorIs(t, c.RemoveTag(ctx, acme, 999999, fixtures.TagVipName), contacts.ErrNotFound)
+	require.ErrorIs(t, c.RemoveTag(ctx, globex, fixtures.ContactCarolID, fixtures.TagVipName), contacts.ErrNotFound)
 }
 
 func TestSetMakesTheNamedTagsTheContactsCompleteSet(t *testing.T) {
@@ -123,7 +123,7 @@ func TestSetMakesTheNamedTagsTheContactsCompleteSet(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, got)
 
-	require.ErrorIs(t, set(999999, []string{"x"}), tags.ErrContactNotFound)
+	require.ErrorIs(t, set(999999, []string{"x"}), contacts.ErrNotFound)
 }
 
 func TestForeignContactIsRefusedOnEveryOperation(t *testing.T) {
@@ -133,10 +133,10 @@ func TestForeignContactIsRefusedOnEveryOperation(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := c.ApplyTag(ctx, acme, fixtures.ContactGlobexID, "vip")
-	require.ErrorIs(t, err, tags.ErrContactNotFound)
+	require.ErrorIs(t, err, contacts.ErrNotFound)
 	_, err = m.ForContact(ctx, acme, fixtures.ContactGlobexID)
 	require.ErrorIs(t, err, tags.ErrContactNotFound)
-	require.ErrorIs(t, c.RemoveTag(ctx, acme, fixtures.ContactGlobexID, fixtures.TagGlobexName), tags.ErrContactNotFound)
+	require.ErrorIs(t, c.RemoveTag(ctx, acme, fixtures.ContactGlobexID, fixtures.TagGlobexName), contacts.ErrNotFound)
 
 	// The foreign contact was left untouched.
 	got, err := m.ForContact(ctx, globex, fixtures.ContactGlobexID)
@@ -153,7 +153,7 @@ func TestApplyToAnotherWorkspacesContactCreatesNoTag(t *testing.T) {
 	otherWsID := env.DB.Scoped(fixtures.GlobexID)
 
 	_, err := c.ApplyTag(ctx, otherWsID, fixtures.ContactAliceID, "sneaky")
-	require.ErrorIs(t, err, tags.ErrContactNotFound)
+	require.ErrorIs(t, err, contacts.ErrNotFound)
 
 	got, err := m.List(ctx, otherWsID)
 	require.NoError(t, err)
@@ -161,5 +161,5 @@ func TestApplyToAnotherWorkspacesContactCreatesNoTag(t *testing.T) {
 		assert.NotEqual(t, "sneaky", tg.Name)
 	}
 	err = c.RemoveTag(ctx, otherWsID, fixtures.ContactAliceID, fixtures.TagVipName)
-	assert.ErrorIs(t, err, tags.ErrContactNotFound)
+	assert.ErrorIs(t, err, contacts.ErrNotFound)
 }

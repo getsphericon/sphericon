@@ -291,11 +291,12 @@ func setsFrom(from, stored *string) bool {
 // ErrIntegrationOtherChannel; content that cannot render is emailrender.ErrInvalidContent, and an
 // email body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent.Broadcast, error) {
-	name, err := validation.NameOpt(f.Name)
+	// A Broadcast always has a name: one left out is refused as blank.
+	name, err := validation.Name(lo.FromPtr(f.Name))
 	if err != nil {
 		return nil, err
 	}
-	f.Name = name
+	f.Name = &name
 	if f.Content == nil {
 		return nil, ErrNoChannel
 	}

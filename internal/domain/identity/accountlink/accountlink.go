@@ -94,8 +94,12 @@ type Subject struct {
 	Role        string
 }
 
-// Token signs a token for the subject at time now; it expires TTL later.
+// Token signs a token for the subject at time now; it expires TTL later. The Link of an
+// installation that configured none is nil, and refuses with ErrNotConfigured.
 func (l *Link) Token(s Subject, now time.Time) (token string, expiresAt time.Time, err error) {
+	if l == nil {
+		return "", time.Time{}, ErrNotConfigured
+	}
 	expiresAt = now.Add(TTL)
 	claims := jwt.MapClaims{
 		"iss":          l.issuer,

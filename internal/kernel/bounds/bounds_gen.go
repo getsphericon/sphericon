@@ -121,6 +121,76 @@ const (
 	SignupSurveyOtherMaxLength = 100
 )
 
+// CollectEvents are the Events one request of the tracker sends: its whole queue at most.
+// From collect CollectEventsInput.events.
+const (
+	CollectEventsMaxItems = 100
+)
+
+// SignupItemKey is the key a Sign-up item is answered under.
+// From site SignupItemKey.
+const (
+	SignupItemKeyMinLength = 1
+	SignupItemKeyMaxLength = 64
+	SignupItemKeyPattern   = `^[a-z0-9]+(-[a-z0-9]+)*$`
+)
+
+// SignupItemTitle is the title of a Sign-up item.
+// From site SignupItemTitle.
+const (
+	SignupItemTitleMinLength = 1
+	SignupItemTitleMaxLength = 200
+)
+
+// LegalDocumentLabel is the label of a published version of a Legal document.
+// From site LegalDocumentLabel.
+const (
+	LegalDocumentLabelMinLength = 1
+	LegalDocumentLabelMaxLength = 64
+)
+
+// LegalDocumentMarkdown is the text of a Legal document, in Markdown.
+// From site LegalDocumentMarkdown.
+const (
+	LegalDocumentMarkdownMaxLength = 100000
+)
+
+// ConsentWording is the wording a person consented to.
+// From site ConsentEvidence.wording.
+const (
+	ConsentWordingMinLength = 1
+	ConsentWordingMaxLength = 2000
+)
+
+// ConsentSource is where a person consented.
+// From site ConsentEvidence.source.
+const (
+	ConsentSourceMinLength = 1
+	ConsentSourceMaxLength = 500
+)
+
+// ConsentBrand is the brand a person consented to hear from.
+// From site ConsentEvidence.brand.
+const (
+	ConsentBrandMinLength = 1
+	ConsentBrandMaxLength = 255
+)
+
+// Page is the 1-based number of a page of a list.
+// From site parameter PageQuery.page.
+const (
+	PageMin     = 1
+	PageDefault = 1
+)
+
+// PageSize is how many items a page of a list holds.
+// From site parameter PageQuery.pageSize.
+const (
+	PageSizeMin     = 1
+	PageSizeMax     = 100
+	PageSizeDefault = 25
+)
+
 // TelegramButtons are the buttons of a Telegram message.
 // From site TelegramBroadcastContentInput.buttons.
 const (
@@ -165,6 +235,26 @@ var Owners = map[string][]string{
 	"BrandKitButtonRadiusMax":            {"BrandKit"},
 	"BrandKitFooterTextMaxLength":        {"BrandKit"},
 	"SignupSurveyOtherMaxLength":         {"SignupSurveyResponse"},
+	"CollectEventsMaxItems":              {"packages/analytics/src"},
+	"SignupItemKeyMinLength":             {"SignupItem"},
+	"SignupItemKeyMaxLength":             {"SignupItem"},
+	"SignupItemKeyPattern":               {"SignupItem"},
+	"SignupItemTitleMinLength":           {"SignupItem"},
+	"SignupItemTitleMaxLength":           {"SignupItem"},
+	"LegalDocumentLabelMinLength":        {"LegalDocumentVersion"},
+	"LegalDocumentLabelMaxLength":        {"LegalDocumentVersion"},
+	"LegalDocumentMarkdownMaxLength":     {"LegalDocumentDraft"},
+	"ConsentWordingMinLength":            {"Confirmation"},
+	"ConsentWordingMaxLength":            {"Confirmation"},
+	"ConsentSourceMinLength":             {"Confirmation"},
+	"ConsentSourceMaxLength":             {"Confirmation"},
+	"ConsentBrandMinLength":              {"Confirmation"},
+	"ConsentBrandMaxLength":              {"Confirmation"},
+	"PageMin":                            {"internal/kernel/pagination"},
+	"PageDefault":                        {"internal/kernel/pagination"},
+	"PageSizeMin":                        {"internal/kernel/pagination"},
+	"PageSizeMax":                        {"internal/kernel/pagination"},
+	"PageSizeDefault":                    {"internal/kernel/pagination"},
 	"TelegramButtonsMaxItems":            {"internal/kernel/telegramrender"},
 	"TelegramUnsubscribeButtonMaxLength": {"internal/kernel/telegramrender"},
 }

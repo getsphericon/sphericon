@@ -50,6 +50,7 @@ func Destination(channel channels.Channel, raw string) (string, error) {
 			return "", ErrDestinationInvalid
 		}
 		return address, nil
+	case channels.Telegram:
 	}
 	dest := strings.TrimSpace(raw)
 	if dest == "" {

@@ -8,6 +8,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
 
+// The placeholders a bound's refusal fills: the field, and the bound it passed.
+const (
+	argField = "Field"
+	argMin   = "Min"
+	argMax   = "Max"
+	// argNameMax is the bound of a User's name, which errors.name_invalid names.
+	argNameMax = "NameMax"
+)
+
 // The refusals of a value outside a bound of the contract (package bounds), each reported against
 // the request field it names and worded with the bound.
 var (
@@ -24,10 +33,10 @@ var (
 func Length(field, value string, lo, hi int) error {
 	n := utf8.RuneCountInString(value)
 	if n < lo {
-		return ErrTooShort.On(field).Args(map[string]any{"Field": field, "Min": lo})
+		return ErrTooShort.On(field).Args(map[string]any{argField: field, argMin: lo})
 	}
 	if n > hi {
-		return ErrTooLong.On(field).Args(map[string]any{"Field": field, "Max": hi})
+		return ErrTooLong.On(field).Args(map[string]any{argField: field, argMax: hi})
 	}
 	return nil
 }
@@ -38,7 +47,7 @@ func MaxLength(field, value string, hi int) error { return Length(field, value, 
 // Range refuses value on field when it is below lo or above hi.
 func Range(field string, value, lo, hi int) error {
 	if value < lo || value > hi {
-		return ErrOutOfRange.On(field).Args(map[string]any{"Field": field, "Min": lo, "Max": hi})
+		return ErrOutOfRange.On(field).Args(map[string]any{argField: field, argMin: lo, argMax: hi})
 	}
 	return nil
 }
@@ -47,10 +56,10 @@ func Range(field string, value, lo, hi int) error {
 // no lower bound.
 func Items(field string, n, lo, hi int) error {
 	if n < lo {
-		return ErrTooFew.On(field).Args(map[string]any{"Field": field, "Min": lo})
+		return ErrTooFew.On(field).Args(map[string]any{argField: field, argMin: lo})
 	}
 	if n > hi {
-		return ErrTooMany.On(field).Args(map[string]any{"Field": field, "Max": hi})
+		return ErrTooMany.On(field).Args(map[string]any{argField: field, argMax: hi})
 	}
 	return nil
 }
@@ -58,14 +67,22 @@ func Items(field string, n, lo, hi int) error {
 // patterns are the compiled patterns of the contract, by their source.
 var patterns sync.Map
 
+// compiled is the contract's pattern compiled once; a pattern the contract declares always compiles.
+func compiled(pattern string) *regexp.Regexp {
+	if re, ok := patterns.Load(pattern); ok {
+		if r, isRe := re.(*regexp.Regexp); isRe {
+			return r
+		}
+	}
+	re := regexp.MustCompile(pattern)
+	patterns.Store(pattern, re)
+	return re
+}
+
 // Pattern refuses value on field when the contract's pattern does not match it.
 func Pattern(field, value, pattern string) error {
-	re, ok := patterns.Load(pattern)
-	if !ok {
-		re, _ = patterns.LoadOrStore(pattern, regexp.MustCompile(pattern))
-	}
-	if !re.(*regexp.Regexp).MatchString(value) {
-		return ErrPatternMismatch.On(field).Args(map[string]any{"Field": field})
+	if !compiled(pattern).MatchString(value) {
+		return ErrPatternMismatch.On(field).Args(map[string]any{argField: field})
 	}
 	return nil
 }

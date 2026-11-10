@@ -3,6 +3,7 @@ import Cookies from 'js-cookie'
 import { v4 as uuid } from 'uuid'
 import { assign, assertEvent, createActor, fromPromise, setup } from 'xstate'
 
+import { CollectEventsMaxItems } from './bounds.gen.ts'
 import { createClient } from './generated/collect/client/index.ts'
 import type { Client } from './generated/collect/client/index.ts'
 import {
@@ -15,8 +16,8 @@ import type { CollectEventInput, CollectIdentifyInput } from './generated/collec
 const VISITOR_COOKIE_NAME = 'om_vid'
 const FLUSH_DELAY_MS = 200
 const QUEUE_KEY = 'om_q'
-// contract-copy: the tracker's offline queue size, client behaviour no API declares
-const MAX_QUEUE = 100
+// The offline queue is sent whole in one request, so it holds at most what one request may carry.
+const QUEUE_LIMIT = CollectEventsMaxItems
 const RETRY_BASE_MS = 1000
 const RETRY_MAX_MS = 60_000
 
@@ -119,7 +120,7 @@ function readQueue(): CollectEventInput[] {
   try {
     const stored: CollectEventInput[] | null = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]')
 
-    return Array.isArray(stored) ? stored.slice(-MAX_QUEUE) : []
+    return Array.isArray(stored) ? stored.slice(-QUEUE_LIMIT) : []
   } catch {
     return []
   }
@@ -185,7 +186,7 @@ const deliveryMachine = setup({
     }),
     appendEvent: assign(({ context, event }) => {
       assertEvent(event, 'track')
-      return { pendingEvents: [...context.pendingEvents, event.event].slice(-MAX_QUEUE) }
+      return { pendingEvents: [...context.pendingEvents, event.event].slice(-QUEUE_LIMIT) }
     }),
     captureBatch: assign(({ context }) => ({ batch: [...context.pendingEvents] })),
     settleBatch: assign(({ context }) => ({

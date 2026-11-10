@@ -1,3 +1,5 @@
 export const colors = ['red', 'green']
-// contract-copy: the editor's own cap
-export const MAX_NAME = 137
+export const options = [
+  { value: 'red', label: 'Red' },
+  { value: 'green', label: 'Green' },
+]

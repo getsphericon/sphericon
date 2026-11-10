@@ -110,8 +110,8 @@ Contacts, above it, is one component (`domain-contacts`, the glob of
 `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
 `unsubscribes`, `channelstop`, `suppressions`, `eligibility`, `visitors`, `orders` and
 `eventrecording` (the Event recording, which has no table: the bus stores the Events), with the Contact
-row lock (`contactlock`) and the hook that keeps stored addresses lower-cased (`emailcase`, the
-Email case, which targets the Contacts as well as identity's Users and Invitations). None of them holds the raw
+row lock (`contactlock`); the Email case of every stored address is the kernel's
+(`internal/kernel/emailcase`), which each owner of an address applies. None of them holds the raw
 client, so the context has no `domain-contacts-raw`. A contacts module imports no module of a
 context above: not `broadcasts`, `automations` or `rules`, not `integrations`, `bindings` or
 `emailtemplates`, and no use case.

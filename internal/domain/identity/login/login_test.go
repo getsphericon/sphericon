@@ -61,27 +61,27 @@ func (f *factor) Parse(ctx context.Context, token string) (login.Pending[*ent.Us
 	id, ok := strings.CutPrefix(token, "challenge-")
 	n, err := strconv.ParseInt(id, 10, 64)
 	if !ok || err != nil {
-		return login.Pending[*ent.User]{}, login.ErrChallengeInvalid
+		return login.Pending[*ent.User]{}, login.ErrNoChallenge
 	}
 	u, err := f.db.User.Get(ctx, n)
 	if err != nil {
-		return login.Pending[*ent.User]{}, login.ErrChallengeInvalid
+		return login.Pending[*ent.User]{}, login.ErrNoChallenge
 	}
 	return login.Pending[*ent.User]{Principal: u, Address: u.Email, Method: "password"}, nil
 }
 
-func (f *factor) Verify(_ context.Context, _ login.Pending[*ent.User], code string) error {
+func (f *factor) Verify(_ context.Context, _ login.Pending[*ent.User], code string) (login.Verdict, error) {
 	f.verifyHit++
 	switch {
 	case f.moved:
-		return login.ErrChallengeInvalid
+		return login.ChallengeGone, nil
 	case code == "123456":
-		return nil
+		return login.CodeAccepted, nil
 	case code == "recovery" && !f.spent:
 		f.spent = true
-		return nil
+		return login.CodeAccepted, nil
 	}
-	return login.ErrInvalidCode
+	return login.CodeWrong, nil
 }
 
 // failingCounter is a throttle whose failure counter is broken.
@@ -244,7 +244,12 @@ func TestASuccessWithoutASecondFactorResetsTheCounter(t *testing.T) {
 
 func TestTheVerificationGatePrecedesTheChallengeAndCountsNothing(t *testing.T) {
 	gate := func(c *login.Config[*ent.User]) {
-		c.Gate = func(u *ent.User) bool { return u.Email == fixtures.SecondFactorSamEmail }
+		c.Gate = func(u *ent.User) error {
+			if u.Email == fixtures.SecondFactorSamEmail {
+				return users.ErrEmailNotVerified
+			}
+			return nil
+		}
 	}
 	r := newRig(t, gate)
 	// Whatever the password, a gated account gets neither a challenge nor a failure.

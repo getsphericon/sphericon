@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
@@ -132,7 +133,12 @@ func TestAPasskeyLoginWorksAgainOnceTheDelayHasPassed(t *testing.T) {
 
 func TestTheVerificationGateRefusesAPasskeyLoginLikeAnyOtherFailure(t *testing.T) {
 	gate := func(c *login.Config[*ent.User]) {
-		c.Gate = func(u *ent.User) bool { return u.Email == fixtures.SecondFactorSamEmail }
+		c.Gate = func(u *ent.User) error {
+			if u.Email == fixtures.SecondFactorSamEmail {
+				return users.ErrEmailNotVerified
+			}
+			return nil
+		}
 	}
 	r, adapter := newPasskeyRig(t, gate)
 

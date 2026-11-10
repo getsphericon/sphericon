@@ -18,7 +18,7 @@ import (
 )
 
 // MaxReplayEntries bounds one atomic replay. A larger selection is refused in full.
-// contract-copy: the internal replay batch cap is independent of API pagination bounds.
+// The internal replay batch cap is independent of API pagination bounds.
 const MaxReplayEntries = 1000
 
 var (

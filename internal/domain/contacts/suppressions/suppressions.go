@@ -7,7 +7,6 @@ package suppressions
 
 import (
 	"context"
-	"net/mail"
 	"regexp"
 	"strings"
 	"time"
@@ -138,9 +137,11 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, des
 	// providers), and a number is stored in E.164, read with the country code it must carry.
 	switch channel {
 	case channels.Email:
-		if addr, err := mail.ParseAddress(emailcase.Of(destination)); err != nil || addr.Address != emailcase.Of(destination) {
+		address, err := validation.Email("destination", destination)
+		if err != nil {
 			return nil, ErrDestinationInvalid
 		}
+		destination = address
 	case channels.SMS:
 		if strings.TrimSpace(destination) == "" {
 			return nil, ErrDestinationEmpty

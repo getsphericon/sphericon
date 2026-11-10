@@ -3,9 +3,9 @@ import { zTelegramBroadcastContentInput } from '../generated/site/zod.gen.ts'
 import { maxItemsOf, maxLengthOf } from './bounds.ts'
 
 // The most characters Telegram takes in a text message, and in the caption of a photo.
-// contract-copy: Telegram's own limits, which the editor counts live; the API refuses a longer text
+// Telegram's own limits, which the editor counts live; the API refuses a longer text
 const TELEGRAM_TEXT_LIMIT = 4096
-// contract-copy: Telegram's own limit, counted live in the editor; the API refuses a longer caption
+// Telegram's own limit, counted live in the editor; the API refuses a longer caption
 const TELEGRAM_CAPTION_LIMIT = 1024
 // The longest label an unsubscribe button takes, and the most link buttons a message carries: the
 // contract's bounds, so the editor stops before the API refuses.

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 )
 
 // The unique constraint of the Event log (ADR 0106): one Event per source id.
@@ -42,7 +43,9 @@ func storeEvent(ctx context.Context, client *ent.Client, env Envelope, ev Domain
 		SetNillableAutomationID(lo.EmptyableToPtr(p.AutomationID)).
 		SetNillableURL(lo.EmptyableToPtr(p.URL)).
 		SetNillableVisitorID(lo.EmptyableToPtr(p.VisitorID)).
-		SetNillableEmail(lo.EmptyableToPtr(p.Email)).
+		// The address is in its Email case, as every stored address is (the CHECK refuses one
+		// that is not), so a lookup by address (an erasure) finds it whatever case it came in.
+		SetNillableEmail(lo.EmptyableToPtr(emailcase.Of(p.Email))).
 		SetNillablePhone(lo.EmptyableToPtr(p.Phone)).
 		// Envelope.SourceID is never empty: the DedupKey, else the envelope's own id.
 		SetSourceID(env.SourceID())

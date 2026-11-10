@@ -6,11 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func opsGroup(entries ...any) condition.Group {
@@ -63,8 +65,8 @@ func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 	// Even a declared key that looks like SQL is data: the catalogue accepts any key
 	// ingest created, and it only ever reaches the query as one quoted literal.
 	payload := fixtures.CustomFieldInitrodeInjectionKey
-	// contract-copy: four representative operators for the injection probe, not the operator list
-	for _, op := range []string{"eq", "neq", "contains", "notNull"} {
+	// Four representative operators for the injection probe.
+	for _, op := range []string{string(siteapi.SiteConditionOperatorEq), string(siteapi.SiteConditionOperatorNeq), string(siteapi.SiteConditionOperatorContains), string(siteapi.SiteConditionOperatorNotNull)} {
 		assert.Empty(t, match(rule("custom:"+payload, op, "a")), op)
 	}
 }

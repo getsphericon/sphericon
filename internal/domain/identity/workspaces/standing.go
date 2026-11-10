@@ -7,6 +7,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // The Workspace's sending standing lives on its row: the suspension, the abuse exemption, the
@@ -51,8 +53,12 @@ func SetAbuseExemptIn(ctx context.Context, tx *ent.Client, id int64, exempt bool
 		Save(ctx)
 }
 
-// SetSendCapIn sets the Send cap of the Workspace id inside tx, or clears it with nil.
+// SetSendCapIn sets the Send cap of the Workspace id inside tx, or clears it with nil. A Send cap
+// outside the contract's bounds is refused (CheckSendCap).
 func SetSendCapIn(ctx context.Context, tx *ent.Client, id int64, sendCap *int) error {
+	if err := CheckSendCap(sendCap); err != nil {
+		return err
+	}
 	upd := tx.Workspace.UpdateOneID(id)
 	if sendCap == nil {
 		upd.ClearSendCap()
@@ -60,6 +66,15 @@ func SetSendCapIn(ctx context.Context, tx *ent.Client, id int64, sendCap *int) e
 		upd.SetSendCap(*sendCap)
 	}
 	return upd.Exec(ctx)
+}
+
+// CheckSendCap refuses a Send cap outside the contract's bounds (bounds.MaxPerDay) on the field
+// `perDay`; nil, no Send cap, passes. Every write of a Workspace's Send cap checks it.
+func CheckSendCap(sendCap *int) error {
+	if sendCap == nil {
+		return nil
+	}
+	return validation.Range("perDay", *sendCap, bounds.MaxPerDayMin, bounds.MaxPerDayMax)
 }
 
 // MarkAbuseFreezeNotified stamps, at `at`, that the Owners of the Workspace id were told of its

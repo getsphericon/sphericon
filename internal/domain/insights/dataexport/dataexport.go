@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -83,7 +84,7 @@ func find(ctx context.Context, s *ent.Scoped, id *int64, email *string) (*ent.Co
 	if id != nil {
 		q = q.Where(contact.ID(*id))
 	} else {
-		q = q.Where(contact.Email(strings.ToLower(strings.TrimSpace(*email))))
+		q = q.Where(contact.Email(emailcase.Of(*email)))
 	}
 	c, err := q.Only(ctx)
 	if ent.IsNotFound(err) {

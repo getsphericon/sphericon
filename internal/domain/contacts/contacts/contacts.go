@@ -207,7 +207,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 // the Contact is not in the Workspace.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Contact, error) {
 	in = in.normalized()
-	if _, err := checked(in.Email.Ptr(), in.Core.City.Ptr(), in.Core.Locale.Ptr(), in.Core.Avatar.Ptr()); err != nil {
+	if _, err := checked(in.Email.Ptr(), in.City.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr()); err != nil {
 		return nil, err
 	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
@@ -289,6 +289,13 @@ type importSummary struct {
 // recordImport records one contact.import Audit entry for a whole import: the actor of
 // s and the row counts, never a Contact or a value. The Contact intake writes its rows through
 // an unaudited scope (events.Unaudited) so only this entry reaches the log.
+// The keys of a Contact import's Audit diff: the counts of its rows, a shape of the Audit log's own.
+const (
+	importDiffCreated = "created"
+	importDiffUpdated = "updated"
+	importDiffFailed  = "failed"
+)
+
 func (m *Module) recordImport(ctx context.Context, s *ent.Scoped, sum importSummary) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
@@ -296,11 +303,10 @@ func (m *Module) recordImport(ctx context.Context, s *ent.Scoped, sum importSumm
 			Actor:       s.Actor(),
 			Action:      events.ActionContactImport,
 			TargetType:  "contact",
-			// contract-copy: audit diff keys, a shape of their own, not the contract's status enum
 			Diff: map[string]any{
-				"created": sum.Created,
-				"updated": sum.Updated,
-				"failed":  sum.Failed,
+				importDiffCreated: sum.Created,
+				importDiffUpdated: sum.Updated,
+				importDiffFailed:  sum.Failed,
 			},
 		})
 	})
@@ -338,7 +344,7 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
 		return Result{}, ErrIdentityRequired
 	}
-	email, err := checked(in.Email, in.Core.City.Ptr(), in.Core.Locale.Ptr(), in.Core.Avatar.Ptr())
+	email, err := checked(in.Email, in.City.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr())
 	if err != nil {
 		return Result{}, err
 	}

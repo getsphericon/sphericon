@@ -48,6 +48,7 @@ import type {
   SiteIntegrationResource,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
+import { zSiteIntegrationChannel, zSiteIntegrationProvider } from '../../generated/site/zod.gen.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -74,8 +75,21 @@ type ProviderKind = SiteIntegrationProvider
 // What the first step offers: SES-compatible services speak the SES API at an endpoint of their own.
 type Tile = SiteIntegrationProvider | 'sesCompatible'
 
-// contract-copy: the same tiles in display order
-const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp', 'inbox', 'telegram', 'twilio']
+// The place of each tile in the first step: keyed by every tile, so a provider the contract adds
+// fails to compile until it has one.
+const TILE_RANK: Record<Tile, number> = {
+  ses: 0,
+  sesCompatible: 1,
+  smtp: 2,
+  inbox: 3,
+  telegram: 4,
+  twilio: 5,
+}
+
+// The tiles in display order: every provider of the contract, and the SES-compatible one.
+const TILES: Tile[] = [...zSiteIntegrationProvider.options, 'sesCompatible' as const].toSorted(
+  (a, b) => TILE_RANK[a] - TILE_RANK[b],
+)
 
 // The provider a tile connects.
 function providerOf(tile: Tile): ProviderKind {
@@ -97,8 +111,13 @@ function channelOf(tile: Tile | null): SiteIntegrationChannel {
   return tile === null ? 'email' : CHANNEL_OF[providerOf(tile)]
 }
 
-// contract-copy: the Channels in the order the list groups them
-const CHANNELS: SiteIntegrationChannel[] = ['email', 'telegram', 'sms']
+// The place of each Channel in the list's groups: keyed by every Channel, as TILE_RANK is.
+const CHANNEL_RANK: Record<SiteIntegrationChannel, number> = { email: 0, telegram: 1, sms: 2 }
+
+// The Channels of the contract in the order the list groups them.
+const CHANNELS = zSiteIntegrationChannel.options.toSorted(
+  (a, b) => CHANNEL_RANK[a] - CHANNEL_RANK[b],
+)
 
 // A provider left unnamed is called after where it sends from.
 function defaultName(values: IntegrationFormValues): string {

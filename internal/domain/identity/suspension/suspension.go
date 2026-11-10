@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -196,16 +195,13 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 // with the old and the new value. It reports whether the value changed: setting the same value or
 // clearing a Workspace with none is a no-op. The Send cap is a lever short of a suspension: a spent
 // one slows sending (a Deferral), it does not stop it. Whether the Instance has Send caps at all is
-// the caller's to check; a Send cap outside the contract's bounds (bounds.MaxPerDay) is refused.
+// the caller's to check; the Workspace's write refuses a Send cap outside the contract's bounds
+// (workspaces.CheckSendCap).
 func SetSendCap(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, sendCap *int) (bool, error) {
 	if err := by.validate(); err != nil {
 		return false, fmt.Errorf("set send cap: %w", err)
 	}
-	if sendCap != nil {
-		if err := validation.Range("perDay", *sendCap, bounds.MaxPerDayMin, bounds.MaxPerDayMax); err != nil {
-			return false, err
-		}
-	}
+
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		w, err := tx.Workspace.Query().Where(workspace.ID(workspaceID)).ForUpdate().Only(ctx)

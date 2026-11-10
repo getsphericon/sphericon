@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -154,19 +155,40 @@ func (m *Module) List(ctx context.Context) ([]Item, error) {
 	return items, nil
 }
 
+// checkedTitle is a Sign-up item's title trimmed, ErrTitleBlank when nothing is left, and refused
+// when it is longer than the contract's bound.
+func checkedTitle(raw string) (string, error) {
+	title := strings.TrimSpace(raw)
+	if title == "" {
+		return "", ErrTitleBlank
+	}
+	return title, validation.Length("title", title, bounds.SignupItemTitleMinLength, bounds.SignupItemTitleMaxLength)
+}
+
+// checkKey refuses a key outside the contract's length and pattern.
+func checkKey(key string) error {
+	if err := validation.Length("key", key, bounds.SignupItemKeyMinLength, bounds.SignupItemKeyMaxLength); err != nil {
+		return err
+	}
+	return validation.Pattern("key", key, bounds.SignupItemKeyPattern)
+}
+
 // Add makes a Sign-up item after the existing ones. ErrKeyTaken when another item has the key,
 // ErrTitleBlank for a blank title, ErrMailingsKind and ErrMailingsTaken for a mailings consent the
 // item cannot hold. A lost race answers as the refusal it lost to.
 func (m *Module) Add(ctx context.Context, in Input) (Item, error) {
-	title := strings.TrimSpace(in.Title)
-	if title == "" {
-		return Item{}, ErrTitleBlank
+	title, err := checkedTitle(in.Title)
+	if err != nil {
+		return Item{}, err
+	}
+	if err := checkKey(in.Key); err != nil {
+		return Item{}, err
 	}
 	if err := mailingsKind(in.Kind, in.MailingsConsent); err != nil {
 		return Item{}, err
 	}
 	var row *ent.SignupItem
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		last, err := tx.SignupItem.Query().Order(ent.Desc(signupitem.FieldPosition)).First(ctx)
 		position := 1
 		switch {
@@ -322,9 +344,9 @@ func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, err
 	}
 	var title *string
 	if u.Title != nil {
-		trimmed := strings.TrimSpace(*u.Title)
-		if trimmed == "" {
-			return Item{}, ErrTitleBlank
+		trimmed, err := checkedTitle(*u.Title)
+		if err != nil {
+			return Item{}, err
 		}
 		title = &trimmed
 	}
@@ -461,6 +483,9 @@ func mailingsKind(kind signupitem.Kind, on bool) error {
 // SaveDraft replaces the draft of the item's Legal document. A visitor sees nothing of it until it
 // is published. ErrNotFound for an unknown or a deleted id.
 func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item, error) {
+	if err := validation.MaxLength("markdown", markdown, bounds.LegalDocumentMarkdownMaxLength); err != nil {
+		return Item{}, err
+	}
 	if _, err := m.inUse(ctx, id); err != nil {
 		return Item{}, err
 	}
@@ -482,6 +507,9 @@ func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item
 // unknown or a deleted id, ErrNoDraft for an item without a draft, ErrLabelTaken for a label the
 // item has.
 func (m *Module) Publish(ctx context.Context, id int64, label string, staffID int64) (Item, error) {
+	if err := validation.Length("label", label, bounds.LegalDocumentLabelMinLength, bounds.LegalDocumentLabelMaxLength); err != nil {
+		return Item{}, err
+	}
 	row, err := m.ent.SignupItem.Query().Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).WithDraft().Only(ctx)
 	if ent.IsNotFound(err) {
 		return Item{}, ErrNotFound

@@ -86,9 +86,6 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 // account_link:open, which Access checks first). Without the installation's
 // configuration it answers 404.
 func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, _ siteapi.SiteWorkspacesAccountLinkParams) (*siteapi.SiteAccountLinkResource, error) {
-	if h.accountLink == nil {
-		return nil, accountlink.ErrNotConfigured
-	}
 	s, m := workspaceScope(ctx), callerMembership(ctx)
 	token, expires, err := h.accountLink.Token(accountlink.Subject{UserID: m.UserID, WorkspaceID: s.WorkspaceID(), Role: string(m.Role)}, h.now())
 	if err != nil {

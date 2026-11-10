@@ -97,6 +97,15 @@ func canonicalRegionalFormat(typed string) (string, error) {
 // verification gate of the password login.
 var ErrEmailNotVerified = validation.Unverified("users: the email is not verified", i18n.ErrorsEmailVerificationRequired)
 
+// RequireVerified is the refusal of a User who may not sign in yet because the address is not
+// proven (ADR 0030): ErrEmailNotVerified, and nil for a Verified User. It is the login's gate.
+func RequireVerified(u *ent.User) error {
+	if u.EmailVerifiedAt == nil {
+		return ErrEmailNotVerified
+	}
+	return nil
+}
+
 // VerifiedIn loads the User id in the caller's transaction, refused with ErrEmailNotVerified while
 // it is Unverified: a Verified User's later Workspace is created on the transaction that loads it.
 func VerifiedIn(ctx context.Context, tx *ent.Client, id int64) (*ent.User, error) {
@@ -485,12 +494,16 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 // (ADR 0051) in the same transaction. It returns the saved User; an address taken meanwhile is
 // ErrEmailTaken.
 func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*ent.User, error) {
+	newEmail, err := validation.AccountEmail(validation.FieldNewEmail, newEmail)
+	if err != nil {
+		return nil, err
+	}
 	var u *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		now := a.now()
 		err := constraints.Write(ctx, tx, func() error {
 			var err error
-			u, err = tx.User.UpdateOneID(id).SetEmail(emailcase.Of(newEmail)).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
+			u, err = tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
 			return err
 		})
 		if err != nil {
