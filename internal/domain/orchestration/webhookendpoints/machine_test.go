@@ -20,10 +20,10 @@ import (
 func applyHealth(t *rapid.T, before *ent.WebhookEndpoint, change webhookendpoints.HealthChange) webhookendpoints.HealthState {
 	t.Helper()
 	var stored webhookendpoints.HealthState
-	machine := webhookendpoints.HealthMachine(before, change, func(_ context.Context, to webhookendpoints.HealthState) (bool, error) {
+	machine := webhookendpoints.HealthMachine(before, change, lifecycle.Storage[webhookendpoints.HealthState]{Write: func(_ context.Context, _, to webhookendpoints.HealthState) (bool, error) {
 		stored = to
 		return true, nil
-	})
+	}})
 	err := machine.FireCtx(t.Context(), change.Trigger)
 	require.NoError(t, err)
 	return stored
@@ -116,9 +116,9 @@ func TestInternalHealthChangesStillRequireTheConditionalWrite(t *testing.T) {
 			Failure: &webhook.DeliveryError{Kind: webhook.KindHTTPStatus, Status: http.StatusServiceUnavailable}, At: now}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			machine := webhookendpoints.HealthMachine(tc.before, tc.change, func(context.Context, webhookendpoints.HealthState) (bool, error) {
+			machine := webhookendpoints.HealthMachine(tc.before, tc.change, lifecycle.Storage[webhookendpoints.HealthState]{Write: func(context.Context, webhookendpoints.HealthState, webhookendpoints.HealthState) (bool, error) {
 				return false, nil
-			})
+			}})
 
 			err := machine.FireCtx(t.Context(), tc.change.Trigger)
 

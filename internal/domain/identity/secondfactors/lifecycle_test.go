@@ -30,10 +30,10 @@ func TestSecondFactorUnconfirmedSecretsCannotVerifyOrRegenerate(t *testing.T) {
 		trigger := rapid.SampledFrom([]secondfactors.Trigger{secondfactors.FactorVerify, secondfactors.FactorRegenerate, secondfactors.FactorDisable}).Draw(t, "active-only operation")
 		before := &ent.SecondFactor{SecretEncrypted: secret}
 		stored := secondfactors.State("")
-		machine := secondfactors.Machine(before, secondfactors.Change{Trigger: trigger, Step: 1}, func(_ context.Context, to secondfactors.State) (bool, error) {
+		machine := secondfactors.Machine(before, secondfactors.Change{Trigger: trigger, Step: 1}, lifecycle.Storage[secondfactors.State]{Write: func(_ context.Context, _, to secondfactors.State) (bool, error) {
 			stored = to
 			return true, nil
-		})
+		}})
 
 		err := machine.FireCtx(t.Context(), trigger)
 
@@ -48,10 +48,10 @@ func TestSecondFactorConfirmationAlwaysRequiresANewerStep(t *testing.T) {
 		step := rapid.Int64Range(0, previous).Draw(t, "replayed or older step")
 		before := &ent.SecondFactor{SecretEncrypted: "sealed pending secret", LastStep: previous}
 		stored := secondfactors.State("")
-		machine := secondfactors.Machine(before, secondfactors.Change{Trigger: secondfactors.FactorConfirm, Step: step}, func(_ context.Context, to secondfactors.State) (bool, error) {
+		machine := secondfactors.Machine(before, secondfactors.Change{Trigger: secondfactors.FactorConfirm, Step: step}, lifecycle.Storage[secondfactors.State]{Write: func(_ context.Context, _, to secondfactors.State) (bool, error) {
 			stored = to
 			return true, nil
-		})
+		}})
 
 		err := machine.FireCtx(t.Context(), secondfactors.FactorConfirm)
 
@@ -74,7 +74,7 @@ func TestSecondFactorInternalTransitionsCannotSkipTheirConditionalWrite(t *testi
 		{"reset passkeys", nil, secondfactors.Change{Trigger: secondfactors.FactorReset}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			machine := secondfactors.Machine(tc.before, tc.change, func(context.Context, secondfactors.State) (bool, error) { return false, nil })
+			machine := secondfactors.Machine(tc.before, tc.change, lifecycle.Storage[secondfactors.State]{Write: func(context.Context, secondfactors.State, secondfactors.State) (bool, error) { return false, nil }})
 
 			err := machine.FireCtx(t.Context(), tc.change.Trigger)
 

@@ -52,12 +52,14 @@ func healthState(e *ent.WebhookEndpoint) HealthState {
 }
 
 // HealthMachine configures one change against a freshly loaded endpoint. Fire change.Trigger
-// once, within the transaction that owns write. Internal transitions explicitly invoke write:
-// stateless does not invoke its external storage mutator for them.
-func HealthMachine(before *ent.WebhookEndpoint, change HealthChange, write func(context.Context, HealthState) (bool, error)) *stateless.StateMachine {
+// once, within the transaction that owns storage. storage.Write is the compare-and-swap of the
+// endpoint's health (ADR 0109); its Read is not called, since the machine reads the state of
+// before. Internal transitions explicitly invoke Write: stateless does not invoke its external
+// storage mutator for them.
+func HealthMachine(before *ent.WebhookEndpoint, change HealthChange, storage lifecycle.Storage[HealthState]) *stateless.StateMachine {
 	current := healthState(before)
 	persist := func(ctx context.Context, to HealthState) (bool, error) {
-		swapped, err := write(ctx, to)
+		swapped, err := storage.Write(ctx, current, to)
 		if err == nil && swapped {
 			current = to
 		}

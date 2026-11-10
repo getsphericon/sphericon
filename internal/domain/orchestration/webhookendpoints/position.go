@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
@@ -23,29 +24,29 @@ func generation(e *ent.WebhookEndpoint) int64 {
 
 // atHealth fences both the manual-reset generation and the position loaded in this transaction.
 // The counter and series start also protect a same-activity move; a state name alone would not.
-func atHealth(u *ent.WebhookEndpointScopedUpdateOne, e *ent.WebhookEndpoint) *ent.WebhookEndpointScopedUpdateOne {
-	u.Where(webhookendpoint.UpdatedAtEQ(e.UpdatedAt))
+func atHealth(e *ent.WebhookEndpoint) []predicate.WebhookEndpoint {
+	at := []predicate.WebhookEndpoint{webhookendpoint.UpdatedAtEQ(e.UpdatedAt)}
 	if e.HealthGeneration == nil {
-		u.Where(webhookendpoint.HealthGenerationIsNil())
+		at = append(at, webhookendpoint.HealthGenerationIsNil())
 	} else {
-		u.Where(webhookendpoint.HealthGenerationEQ(*e.HealthGeneration))
+		at = append(at, webhookendpoint.HealthGenerationEQ(*e.HealthGeneration))
 	}
 	if e.DisabledAt == nil {
-		u.Where(webhookendpoint.DisabledAtIsNil())
+		at = append(at, webhookendpoint.DisabledAtIsNil())
 	} else {
-		u.Where(webhookendpoint.DisabledAtEQ(*e.DisabledAt))
+		at = append(at, webhookendpoint.DisabledAtEQ(*e.DisabledAt))
 	}
 	if e.ConsecutiveFailures == nil {
-		u.Where(webhookendpoint.ConsecutiveFailuresIsNil())
+		at = append(at, webhookendpoint.ConsecutiveFailuresIsNil())
 	} else {
-		u.Where(webhookendpoint.ConsecutiveFailuresEQ(*e.ConsecutiveFailures))
+		at = append(at, webhookendpoint.ConsecutiveFailuresEQ(*e.ConsecutiveFailures))
 	}
 	if e.FailingSince == nil {
-		u.Where(webhookendpoint.FailingSinceIsNil())
+		at = append(at, webhookendpoint.FailingSinceIsNil())
 	} else {
-		u.Where(webhookendpoint.FailingSinceEQ(*e.FailingSince))
+		at = append(at, webhookendpoint.FailingSinceEQ(*e.FailingSince))
 	}
-	return u
+	return at
 }
 
 func clearFailures(u *ent.WebhookEndpointScopedUpdateOne) *ent.WebhookEndpointScopedUpdateOne {
