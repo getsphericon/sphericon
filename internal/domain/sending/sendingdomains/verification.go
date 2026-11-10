@@ -3,7 +3,6 @@ package sendingdomains
 import (
 	"context"
 	"log/slog"
-	"net"
 	"strings"
 	"time"
 
@@ -11,10 +10,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // Verify runs the live DNS check of the domain now, when a person asks for it, and returns the
@@ -166,12 +163,8 @@ func Due(ctx context.Context, client *ent.Client, limit int) ([]*ent.SendingDoma
 }
 
 // recordDomain is the domain a proof record's name belongs to: a DKIM record
-// (<selector>._domainkey.<domain>.), a DMARC record (_dmarc.<domain>.) or a Join domain's
-// (_sphericon-join.<domain>.).
+// (<selector>._domainkey.<domain>.) or a DMARC record (_dmarc.<domain>.).
 func recordDomain(name string) (string, bool) {
-	if joined, ok := strings.CutPrefix(name, joindomains.RecordLabel); ok {
-		return strings.TrimSuffix(joined, "."), true
-	}
 	if domain, ok := strings.CutPrefix(name, dmarcLabel); ok {
 		return strings.TrimSuffix(domain, "."), true
 	}
@@ -184,37 +177,22 @@ const (
 	dmarcLabel = "_dmarc."
 )
 
-// DevTXTLookup is the sending-domain DKIM resolver of the end-to-end suite: instead of
-// querying real DNS (which no test domain publishes), it echoes back each domain's own
-// stored public key, so any sending domain a scenario adds self-verifies and the send
-// gate (ADR 0010) doesn't block the Mailpit loop.
-// It answers a Join domain's proof record the same way: the name
-// _sphericon-join.<domain> resolves to the tokens every Workspace's claim of the domain
-// stores (joindomains.Tokens), so a domain an Owner adds in the members settings verifies without
-// DNS. Because it answers every Workspace's token, two Workspaces claiming one domain both verify,
-// so a hand-over (the loser of a take-over) can never fire here.
-// A Sending domain's DMARC name answers the suggested record, so every such domain is bulk-ready.
-func DevTXTLookup(client *ent.Client) domainname.TXTLookup {
+// DevRecords is the Sending domains' source of the end-to-end suite's resolver (devdns): instead of
+// real DNS (which no test domain publishes), a DKIM record name answers the domain's own stored
+// public key, so any Sending domain a scenario adds self-verifies and the send gate (ADR 0010)
+// doesn't block the Mailpit loop, and a DMARC name answers the suggested record, so every such
+// domain is bulk-ready. It reads across Workspaces, before any scope exists.
+func DevRecords(client *ent.Client) func(ctx context.Context, name string) ([]string, error) {
 	return func(ctx context.Context, name string) ([]string, error) {
 		domain, ok := recordDomain(name)
 		if !ok {
-			return nil, &net.DNSError{IsNotFound: true, Name: name}
-		}
-		if strings.HasPrefix(name, joindomains.RecordLabel) {
-			tokens, err := joindomains.Tokens(ctx, client, domain)
-			if err != nil {
-				return nil, err
-			}
-			if len(tokens) == 0 {
-				return nil, &net.DNSError{IsNotFound: true, Name: name}
-			}
-			return tokens, nil
+			return nil, nil
 		}
 		row, err := client.SendingDomain.Query().
 			Where(sendingdomain.Domain(domain)).
 			First(ctx)
 		if ent.IsNotFound(err) {
-			return nil, &net.DNSError{IsNotFound: true, Name: name}
+			return nil, nil
 		}
 		if err != nil {
 			return nil, err

@@ -183,10 +183,10 @@ by domain runs before any scope exists, and handing a domain over to the Workspa
 scopes one transaction to both Workspaces through `events.Bus.WithinHandOverTx`; the periodic
 re-check of verified domains, a river job in `internal/jobs`, lists the due domains of every Workspace with
 `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
-loses a domain, by that re-check or by a hand-over, are told by the `join_domain.lost` event the loss publishes in its transaction; `Tokens` reads every Workspace's claim of a domain for the end-to-end
-suite's resolver), `internal/domain/sending/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
+loses a domain, by that re-check or by a hand-over, are told by the `join_domain.lost` event the loss publishes in its transaction; `DevRecords` reads every Workspace's claim of a domain for the end-to-end
+suite's resolver, `internal/infra/devdns`), `internal/domain/sending/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
 listed by a river job that then reads each domain by id to learn its Workspace and calls `Module.Recheck`
-in that Workspace's scope; `DevTXTLookup`, the end-to-end suite's resolver; and `SecretSweeps`, the DKIM private keys the re-encryption rewrites; every other
+in that Workspace's scope; `DevRecords`, its records for the end-to-end suite's resolver `internal/infra/devdns`; and `SecretSweeps`, the DKIM private keys the re-encryption rewrites; every other
 function takes a `*ent.Scoped`), `internal/domain/sending/trackingdomains` (the Workspaces' Tracking domains, ADR 0071: the recheck job lists the verified hosts of every
 Workspace with `Module.Due` and loads a row by id in `Module.Recheck` before any scope exists, then writes through that
 Workspace's scope; `Module.HostWorkspace` reads the Instance-wide Tracking host index, ADR 0038, for the host gate of

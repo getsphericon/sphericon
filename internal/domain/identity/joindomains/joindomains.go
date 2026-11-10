@@ -8,7 +8,7 @@
 // Workspace scopes. Everything else goes through the caller's *ent.Scoped. The periodic
 // re-check of verified domains (Due, Recheck) runs on the raw client too: a job lists the
 // due domains of every Workspace and scopes to each one's Workspace only after its row is
-// loaded. Tokens reads every Workspace's claim of a domain for the end-to-end suite's resolver.
+// loaded. DevRecords reads every Workspace's claim of a domain for the end-to-end suite's resolver.
 package joindomains
 
 import (
@@ -19,6 +19,7 @@ import (
 	"log/slog"
 	"net"
 	"slices"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -29,11 +30,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-// RecordLabel is the label the TXT record sits under: _sphericon-join.<domain>.
-const RecordLabel = "_sphericon-join."
+// recordLabel is the label the TXT record sits under: _sphericon-join.<domain>.
+const recordLabel = "_sphericon-join."
 
 var (
 	// ErrAlreadyExists means the Workspace already has this domain.
@@ -88,7 +90,7 @@ func New(client *ent.Client, bus *events.Bus, lookup domainname.TXTLookup, now f
 
 // RecordOf derives the TXT record to publish for a stored domain.
 func RecordOf(d *ent.JoinDomain) Record {
-	return Record{Host: RecordLabel + d.Domain, Value: d.Token}
+	return Record{Host: recordLabel + d.Domain, Value: d.Token}
 }
 
 // Verified reports whether the domain is currently verified.
@@ -132,10 +134,12 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 
 // Verify checks the TXT record live and verifies the domain when it is published. A domain
 // another Workspace has verified is re-checked at the holder first: still published is
-// ErrHeldElsewhere, gone moves the domain to this Workspace in one transaction, the
-// holder's row becoming pending. An unpublished record is ErrRecordNotFound; a resolver
-// failure is returned as is and changes nothing. A domain already verified here is returned
-// as it is. An unknown id is ErrNotFound.
+// ErrHeldElsewhere, gone moves the domain to this Workspace in one transaction, the holder's row
+// becoming pending (only from the verification found gone). An unpublished record is
+// ErrRecordNotFound; a resolver failure is returned as is and changes nothing. A domain already
+// verified here is returned as it is. A check whose write loses to a concurrent change of the claim
+// (another check verified it first) is lifecycle.ErrInvalidTransition and changes nothing. An
+// unknown id is ErrNotFound.
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.JoinDomain, error) {
 	row, err := s.JoinDomain().Get(ctx, id)
 	if err != nil {
@@ -157,6 +161,10 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	if err != nil {
 		return nil, err
 	}
+	if holder != nil && holder.ID == row.ID {
+		// A concurrent check verified this claim since it was read: the check lost the race.
+		return nil, lifecycle.ErrInvalidTransition
+	}
 	if holder != nil {
 		held, err := m.published(ctx, holder)
 		if err != nil {
@@ -168,25 +176,25 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	}
 
 	now := m.now()
-	var verified *ent.JoinDomain
 	// Another Workspace that verified the domain between the lookup and the write is
 	// ErrHeldElsewhere (joindomain_domain).
 	markVerified := func(to *ent.Scoped) error {
 		return constraints.Write(ctx, to, func() error {
-			var uerr error
-			verified, uerr = to.JoinDomain().UpdateOneID(row.ID).Where(joindomain.VerifiedAtIsNil()).SetVerifiedAt(now).SetLastCheckedAt(now).Save(ctx)
-			return uerr
+			return verification(to, row, now).FireCtx(ctx, prove)
 		})
 	}
 	if holder == nil {
 		err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error { return markVerified(ts) })
 	} else {
-		// The holder's row goes first: the verified-only unique index admits one at a time.
+		// The holder's row goes first: the verified-only unique index admits one at a time. Only
+		// the verification whose record was just found gone is cleared.
 		err = m.bus.WithinHandOverTx(ctx, s, holder.WorkspaceID, func(to, from *ent.Scoped, pub events.Publisher) error {
-			err := from.JoinDomain().UpdateOneID(holder.ID).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().Exec(ctx)
+			err := verification(from, holder, now).FireCtx(ctx, lose)
 			switch {
-			case ent.IsNotFound(err):
-				// A re-check already reverted the holder, and told its Owners.
+			case errors.Is(err, lifecycle.ErrInvalidTransition):
+				// The holder's verification read is gone: a re-check or another hand-over cleared it,
+				// and told its Owners. If the holder verified the domain again since, its new
+				// verification stays and this Workspace's write is ErrHeldElsewhere (joindomain_domain).
 			case err != nil:
 				return err
 			default:
@@ -197,14 +205,11 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 			return markVerified(to)
 		})
 	}
-	if ent.IsNotFound(err) {
-		// A concurrent Verify got there first: the stored row is the answer.
-		return s.JoinDomain().Get(ctx, id)
-	}
 	if err != nil {
 		return nil, err
 	}
-	return verified, nil
+	verified, err := s.JoinDomain().Get(ctx, id)
+	return verified, notFound(err)
 }
 
 // Due returns up to limit verified Join domains to re-check, across every Workspace, each with
@@ -221,9 +226,10 @@ func (m *Module) Due(ctx context.Context, limit int) ([]*ent.JoinDomain, error) 
 
 // Recheck re-reads a verified domain's TXT record. A record that is gone (or carries
 // another value) reverts the domain to unverified at once, under the system actor, and
-// publishes events.JoinDomainLost in the same transaction; it reports whether it did. A resolver failure is returned
-// and changes nothing, so the job retries. A domain that is not verified (it changed
-// since the job was queued) is left alone. Memberships are never touched.
+// publishes events.JoinDomainLost in the same transaction; it reports whether it did. Only the
+// verification it read is reverted: one made since (the domain handed over and verified again)
+// stays. A resolver failure is returned and changes nothing, so the job retries. A domain that is
+// not verified (it changed since the job was queued) is left alone. Memberships are never touched.
 func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error) {
 	row, err := m.client.JoinDomain.Get(ctx, id)
 	if err != nil {
@@ -240,22 +246,23 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 	if published {
 		return false, events.Unaudited(s).JoinDomain().UpdateOneID(id).SetLastCheckedAt(m.now()).Exec(ctx)
 	}
-	slog.WarnContext(ctx, "join domain verification lost",
-		"join_domain_id", id, "workspace_id", row.WorkspaceID, "domain", row.Domain)
 	system := m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
 	err = m.bus.WithinScopedTx(ctx, system, func(ts *ent.Scoped, pub events.Publisher) error {
-		if err := ts.JoinDomain().UpdateOneID(id).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().SetLastCheckedAt(m.now()).Exec(ctx); err != nil {
+		if err := verification(ts, row, m.now()).FireCtx(ctx, lose); err != nil {
 			return err
 		}
 		return pub.Publish(ctx, lost(row))
 	})
-	if ent.IsNotFound(err) {
-		// Lost the swap: another re-check or a hand-over already reverted it and told the Owners.
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		// Lost the swap: another re-check or a hand-over already reverted the verification read,
+		// and told the Owners, or the domain was verified again since.
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
+	slog.WarnContext(ctx, "join domain verification lost",
+		"join_domain_id", id, "workspace_id", row.WorkspaceID, "domain", row.Domain)
 	return true, nil
 }
 
@@ -311,17 +318,21 @@ func (m *Module) published(ctx context.Context, d *ent.JoinDomain) (bool, error)
 	return slices.Contains(records, d.Token), nil
 }
 
-// Tokens returns the tokens every Workspace's claim of the domain stores, pending or verified, in
-// no particular order; none when no Workspace claims it. It reads across Workspaces, before any
-// scope exists, for the end-to-end suite's resolver (sendingdomains.DevTXTLookup).
-func Tokens(ctx context.Context, client *ent.Client, domain string) ([]string, error) {
-	rows, err := client.JoinDomain.Query().Where(joindomain.Domain(domain)).All(ctx)
-	if err != nil {
-		return nil, err
+// DevRecords is the Join domains' source of the end-to-end suite's resolver (devdns): a Join
+// domain's record name, _sphericon-join.<domain>., answers the tokens every Workspace's claim of the
+// domain stores, pending or verified, so a domain an Owner adds in the members settings verifies
+// without DNS. Because it answers every Workspace's token, two Workspaces claiming one domain both
+// verify, so a hand-over (the loser of a take-over) can never fire there. It reads across
+// Workspaces, before any scope exists.
+func DevRecords(client *ent.Client) func(ctx context.Context, name string) ([]string, error) {
+	return func(ctx context.Context, name string) ([]string, error) {
+		domain, ok := strings.CutPrefix(name, recordLabel)
+		if !ok {
+			return nil, nil
+		}
+		return client.JoinDomain.Query().
+			Where(joindomain.Domain(strings.TrimSuffix(domain, "."))).
+			Select(joindomain.FieldToken).
+			Strings(ctx)
 	}
-	tokens := make([]string, len(rows))
-	for i, row := range rows {
-		tokens[i] = row.Token
-	}
-	return tokens, nil
 }

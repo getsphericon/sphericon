@@ -6611,7 +6611,7 @@
     "/workspaces/{workspaceId}/join-domains/{id}/verify": {
       "post": {
         "operationId": "SiteJoinDomains_verify",
-        "description": "Check the TXT record now (owner and admin only) and verify the domain when it is published. A\ndomain another Workspace has verified is re-checked at that Workspace first: 409 while\nits record is still published, otherwise the domain moves here. 422 when the record is\nnot found.",
+        "description": "Check the TXT record now (owner and admin only) and verify the domain when it is published. A\ndomain another Workspace has verified is re-checked at that Workspace first: 409 while\nits record is still published, otherwise the domain moves here. 422 when the record is\nnot found, 409 when a concurrent check changed the domain first.",
         "parameters": [
           {
             "name": "workspaceId",

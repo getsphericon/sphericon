@@ -398,7 +398,7 @@ components:
   # The raw-client components follow the closed list "The raw *ent.Client is allowed only in" of
   # docs/architecture/workspace-scoping.md (Workspace scoping), kept in step with it. A package is the unit, so the
   # doc's narrower grants (`capturedmessages` only `Purge`, `automations` only `FenceOn`,
-  # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and
+  # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevRecords` and
   # `SecretSweeps`, `integrations`, `webhookendpoints`, `rules`, `automations` and
   # `staffmembers` only their `SecretSweeps` for the re-encryption, `apitokens` only the token
   # endpoint's exchange of a code or a refresh token) are left to review. The composition roots, `internal/api/auth`

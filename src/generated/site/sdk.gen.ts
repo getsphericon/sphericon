@@ -2870,7 +2870,7 @@ export const siteJoinDomainsRemove = <ThrowOnError extends boolean = false>(opti
  * Check the TXT record now (owner and admin only) and verify the domain when it is published. A
  * domain another Workspace has verified is re-checked at that Workspace first: 409 while
  * its record is still published, otherwise the domain moves here. 422 when the record is
- * not found.
+ * not found, 409 when a concurrent check changed the domain first.
  */
 export const siteJoinDomainsVerify = <ThrowOnError extends boolean = false>(options: Options<SiteJoinDomainsVerifyData, ThrowOnError>): RequestResult<SiteJoinDomainsVerifyResponses, SiteJoinDomainsVerifyErrors, ThrowOnError> => (options.client ?? client).post<SiteJoinDomainsVerifyResponses, SiteJoinDomainsVerifyErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
