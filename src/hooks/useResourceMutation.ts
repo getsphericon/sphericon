@@ -28,7 +28,13 @@ interface ResourceMutationOptions<TData, TError, TVars, TCtx> {
   forbiddenMessage?: string
   // Takes over a failure before the toast: true when it dealt with the error itself (no toast).
   handleError?: (error: TError) => boolean | Promise<boolean>
-  // Extra success work — navigation, form reset — run after invalidation.
+  // Extra success work — navigation, form reset — run after invalidation, once the active queries
+  // among the invalidated ones have refetched.
+  // The order is the hook's contract: a route guard reads the cache (`getQueryData` in guards.ts)
+  // and a route loader keeps what it finds (`staleTime: 'static'` in utils/preload.ts), so a
+  // navigation from here must find the changed data already there. A refetch may also unmount
+  // the component that called `mutate` before this runs: what must outlive it belongs to a hook
+  // of a component that stays mounted (the Recovery codes of the security page).
   onDone?: (data: TData, variables: TVars) => void | Promise<void>
 }
 

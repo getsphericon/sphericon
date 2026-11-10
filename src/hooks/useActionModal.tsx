@@ -6,7 +6,8 @@ import type { ReactNode } from 'react'
 // `open` goes on the button that starts the action and `modal` is placed beside that button's
 // row, never inside it. The content is rendered only while the modal is open, so whatever was
 // typed is gone once it closes; content gets the callback that closes it, for Cancel and for a
-// success.
+// success. A success that unmounts the owner of the modal (a refetch that swaps its state, a page
+// that shows the result in its place) closes it without that callback.
 export function useActionModal(title: string, content: (close: () => void) => ReactNode) {
   const [opened, { open, close }] = useDisclosure(false)
   const modal = (

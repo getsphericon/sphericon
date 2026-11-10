@@ -83,19 +83,15 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
   )
 }
 
-// Enrollment shows the pending secret (QR code and key) and confirms it with a
-// code from the authenticator app and the proof given when it started.
-function Enrollment({
-  enrollment,
-  proof,
-  onConfirmed,
-}: {
-  enrollment: SiteSecondFactorEnrollment
-  proof: Proof
-  onConfirmed: (codes: string[]) => void
-}) {
+// useRecoveryCodes runs the two mutations that issue Recovery codes, Confirm enrollment and
+// Regenerate, and keeps the fresh set in the page's state. The modals that ask for the codes only
+// call `mutate`: a confirmed Second factor refetches the status, which replaces the setup modal
+// with the Enabled state before the codes arrive (useResourceMutation invalidates, then runs
+// onDone), and a modal closed while its mutation is pending must not lose a set the server never
+// returns again.
+function useRecoveryCodes() {
   const { t } = useTranslation()
-  const form = useForm({ initialValues: { code: '' } })
+  const [codes, setCodes] = useState<string[] | null>(null)
   const confirm = useResourceMutation({
     mutation: siteSecondFactorConfirmEnrollmentMutation(),
     // The Workspaces carry the grace deadline of a Two-factor requirement, which
@@ -103,8 +99,37 @@ function Enrollment({
     invalidate: [siteWorkspacesListQueryKey()],
     successMessage: t(($) => $.security.enabledMessage),
     errorTitle: t(($) => $.security.confirmErrorTitle),
-    onDone: (data) => onConfirmed(data.codes),
+    onDone: (data) => setCodes(data.codes),
   })
+  const regenerate = useResourceMutation({
+    mutation: siteSecondFactorRegenerateRecoveryCodesMutation(),
+    errorTitle: t(($) => $.security.regenerateErrorTitle),
+    onDone: (data) => setCodes(data.codes),
+  })
+  return { codes, dismiss: () => setCodes(null), codeMutations: { confirm, regenerate } }
+}
+
+// The page's mutations that issue Recovery codes, handed down to the modals that run them.
+type CodeMutations = ReturnType<typeof useRecoveryCodes>['codeMutations']
+
+// Enrollment shows the pending secret (QR code and key) and confirms it with a
+// code from the authenticator app and the proof given when it started. The page runs the
+// confirmation and shows the Recovery codes it returns.
+function Enrollment({
+  enrollment,
+  proof,
+  confirm,
+}: {
+  enrollment: SiteSecondFactorEnrollment
+  proof: Proof
+  confirm: CodeMutations['confirm']
+}) {
+  const { t } = useTranslation()
+  const form = useForm({ initialValues: { code: '' } })
+  // The page's confirmation may still be pending for an earlier enrollment, which this one's
+  // Start replaced: only a confirmation of this one makes the button wait.
+  const confirming =
+    confirm.isPending && confirm.variables.body.enrollmentId === enrollment.enrollmentId
 
   return (
     <form
@@ -130,7 +155,7 @@ function Enrollment({
         </Group>
         <OneTimeCodeInput label={t(($) => $.security.codeLabel)} {...form.getInputProps('code')} />
         <Group justify="flex-end">
-          <Button type="submit" loading={confirm.isPending}>
+          <Button type="submit" loading={confirming}>
             {t(($) => $.security.confirmButton)}
           </Button>
         </Group>
@@ -144,12 +169,12 @@ function Enrollment({
 // steps require the proof, so a hijacked session cannot enroll.
 function SetUp({
   passwordless,
+  codeMutations,
   onCancel,
-  onCodes,
 }: {
   passwordless: boolean
+  codeMutations: CodeMutations
   onCancel: () => void
-  onCodes: (codes: string[]) => void
 }) {
   const { t } = useTranslation()
   const form = useForm({ initialValues: { currentPassword: '' } })
@@ -165,7 +190,11 @@ function SetUp({
 
   if (started) {
     return (
-      <Enrollment enrollment={started.enrollment} proof={started.proof} onConfirmed={onCodes} />
+      <Enrollment
+        enrollment={started.enrollment}
+        proof={started.proof}
+        confirm={codeMutations.confirm}
+      />
     )
   }
   return (
@@ -193,27 +222,19 @@ function SetUp({
   )
 }
 
-// Disabled is the state without a Second factor: the setup opens in a modal.
+// Disabled is the state without a Second factor: the setup opens in a modal, which the
+// confirmed status replaces with Enabled.
 function Disabled({
   passwordless,
-  onCodes,
+  codeMutations,
 }: {
   passwordless: boolean
-  onCodes: (codes: string[]) => void
+  codeMutations: CodeMutations
 }) {
   const { t } = useTranslation()
   const setUp = useActionModal(
     t(($) => $.security.setUpButton),
-    (close) => (
-      <SetUp
-        passwordless={passwordless}
-        onCancel={close}
-        onCodes={(codes) => {
-          close()
-          onCodes(codes)
-        }}
-      />
-    ),
+    (close) => <SetUp passwordless={passwordless} codeMutations={codeMutations} onCancel={close} />,
   )
   return (
     <Stack>
@@ -228,23 +249,19 @@ function Disabled({
   )
 }
 
-// Regenerate replaces the Recovery codes once the proof is given; the fresh set goes to the page.
+// Regenerate replaces the Recovery codes once the proof is given; the page runs it and shows
+// the fresh set.
 function Regenerate({
   passwordless,
+  regenerate,
   onCancel,
-  onCodes,
 }: {
   passwordless: boolean
+  regenerate: CodeMutations['regenerate']
   onCancel: () => void
-  onCodes: (codes: string[]) => void
 }) {
   const { t } = useTranslation()
   const form = useForm({ initialValues: { currentPassword: '' } })
-  const regenerate = useResourceMutation({
-    mutation: siteSecondFactorRegenerateRecoveryCodesMutation(),
-    errorTitle: t(($) => $.security.regenerateErrorTitle),
-    onDone: (data) => onCodes(data.codes),
-  })
 
   return (
     <form
@@ -317,15 +334,15 @@ function Disable({ passwordless, onClose }: { passwordless: boolean; onClose: ()
 }
 
 // Enabled is the state with a Second factor: regenerate the Recovery codes or disable it, each
-// in a modal.
+// in a modal. The page puts the fresh codes in place of this state, its modals with it.
 function Enabled({
   status,
   passwordless,
-  onCodes,
+  codeMutations,
 }: {
   status: SiteSecondFactorStatus
   passwordless: boolean
-  onCodes: (codes: string[]) => void
+  codeMutations: CodeMutations
 }) {
   const { t } = useTranslation()
   const regenerate = useActionModal(
@@ -333,11 +350,8 @@ function Enabled({
     (close) => (
       <Regenerate
         passwordless={passwordless}
+        regenerate={codeMutations.regenerate}
         onCancel={close}
-        onCodes={(codes) => {
-          close()
-          onCodes(codes)
-        }}
       />
     ),
   )
@@ -369,10 +383,10 @@ function Enabled({
 // proof is too old to count, the way to a fresh one: a Passkey check or a provider login (ADR 0048, ADR 0052): the steps need that proof.
 function SecurityBody({
   status,
-  onCodes,
+  codeMutations,
 }: {
   status: SiteSecondFactorStatus
-  onCodes: (codes: string[]) => void
+  codeMutations: CodeMutations
 }) {
   const { t } = useTranslation()
   const passwordless = !status.passwordSet
@@ -382,9 +396,9 @@ function SecurityBody({
     )
   }
   return status.enabled ? (
-    <Enabled status={status} passwordless={passwordless} onCodes={onCodes} />
+    <Enabled status={status} passwordless={passwordless} codeMutations={codeMutations} />
   ) : (
-    <Disabled passwordless={passwordless} onCodes={onCodes} />
+    <Disabled passwordless={passwordless} codeMutations={codeMutations} />
   )
 }
 
@@ -401,16 +415,16 @@ function StatusBadge() {
 
 // SecurityStatus reads the Second factor's status for the body; the page's boundary shows the
 // load and its failure.
-function SecurityStatus({ onCodes }: { onCodes: (codes: string[]) => void }) {
+function SecurityStatus({ codeMutations }: { codeMutations: CodeMutations }) {
   const status = useSuspenseQuery(siteSecondFactorGetStatusOptions()).data
-  return <SecurityBody status={status} onCodes={onCodes} />
+  return <SecurityBody status={status} codeMutations={codeMutations} />
 }
 
 // SecurityPage is the User's Second factor (ADR 0020): enroll an authenticator
 // app, see the Recovery codes once, regenerate them, or disable the factor.
 export function SecurityPage() {
   const { t } = useTranslation()
-  const [codes, setCodes] = useState<string[] | null>(null)
+  const { codes, dismiss, codeMutations } = useRecoveryCodes()
 
   return (
     <Stack maw={420}>
@@ -427,14 +441,14 @@ export function SecurityPage() {
         </QueryBoundary>
       </Group>
 
-      {codes ? <RecoveryCodes codes={codes} onDone={() => setCodes(null)} /> : null}
+      {codes ? <RecoveryCodes codes={codes} onDone={dismiss} /> : null}
 
       {codes ? null : (
         <QueryBoundary
           fallback={<BlockSkeleton />}
           errorTitle={t(($) => $.security.loadErrorTitle)}
         >
-          <SecurityStatus onCodes={setCodes} />
+          <SecurityStatus codeMutations={codeMutations} />
         </QueryBoundary>
       )}
 

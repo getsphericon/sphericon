@@ -1,5 +1,6 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
+import { userEvent } from 'vitest/browser'
 
 import {
   handleSiteAuthSigninProviders,
@@ -39,18 +40,27 @@ const enrollment: SiteSecondFactorEnrollment = {
 const codes = ['aaaaa-bbbbb', 'ccccc-ddddd'] as const
 
 // Serves the Second factor endpoints with a status the mutations move, and records
-// every mutating call.
+// every mutating call. A held operation answers once its promise settles. Each Start issues the
+// next enrollment id, as the server does: the first is `enrollment`'s.
 function serveSecurity(
   calls: Call[],
   initial: SiteSecondFactorStatus,
-  overrides: Partial<Record<Op, Handler>> = {},
+  {
+    overrides = {},
+    hold = {},
+  }: {
+    overrides?: Partial<Record<Op, Handler>>
+    hold?: Partial<Record<Op, Promise<unknown>>>
+  } = {},
 ) {
   let status = initial
+  let started = 0
   const serve =
     (op: Op, fallback: Handler): Handler =>
     async (req) => {
       const text = await req.clone().text()
       calls.push({ op, body: text ? JSON.parse(text) : null })
+      await hold[op]
       return (overrides[op] ?? fallback)(req)
     }
   worker.use(
@@ -58,7 +68,8 @@ function serveSecurity(
     handleSiteSecondFactorStartEnrollment(async ({ request }) =>
       serve('start', () => {
         status = { ...initial, enabled: false, pending: true, recoveryCodesRemaining: 0 }
-        return HttpResponse.json(enrollment)
+        started += 1
+        return HttpResponse.json({ ...enrollment, enrollmentId: String(started) })
       })(request),
     ),
     handleSiteSecondFactorConfirmEnrollment(async ({ request }) =>
@@ -94,6 +105,16 @@ const on: SiteSecondFactorStatus = {
 }
 
 const renderPage = async () => renderWithRouter(<SecurityPage />, routeMount(securityRoute))
+
+type Screen = Awaited<ReturnType<typeof renderPage>>['screen']
+
+// Starts the setup with the password and types the code from the app, short of Turn on.
+async function enterEnrollment(screen: Screen) {
+  await screen.getByRole('button', { name: 'Set up authenticator app' }).click()
+  await screen.getByLabelText(/^Current password/).fill('pw-123456')
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  await screen.getByLabelText(/^Code from the app/).fill('123456')
+}
 
 test('enrolls an authenticator app and shows the recovery codes once', async () => {
   const calls: Call[] = []
@@ -134,16 +155,78 @@ test('enrolls an authenticator app and shows the recovery codes once', async () 
   await expect.element(screen.getByText('2 recovery codes left')).toBeInTheDocument()
 })
 
+test('shows the recovery codes once the confirmed status has loaded', async () => {
+  serveSecurity([], off)
+  const { screen } = await renderPage()
+  await enterEnrollment(screen)
+
+  // The status refetch the confirmation sets off is held until the test lets it answer.
+  const refetch = Promise.withResolvers<undefined>()
+  let refetched = false
+  worker.use(
+    handleSiteSecondFactorGetStatus(async () => {
+      refetched = true
+      await refetch.promise
+      return HttpResponse.json({ ...on, recoveryCodesRemaining: codes.length })
+    }),
+  )
+  await screen.getByRole('button', { name: 'Turn on' }).click()
+
+  // Confirm has answered and the status is being refetched: no codes yet.
+  await expect.poll(() => refetched).toBe(true)
+  const codesBeforeStatus = screen.getByText('Save your recovery codes').elements()
+  expect(codesBeforeStatus).toHaveLength(0)
+
+  // The refetch answers `enabled: true`, and only then are the codes shown.
+  refetch.resolve(undefined)
+  await expect.element(screen.getByText('Save your recovery codes')).toBeInTheDocument()
+  await expect.element(screen.getByText(codes[0])).toBeInTheDocument()
+  await expect.element(screen.getByText('On', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('shows the recovery codes when the setup is closed while the confirmation is pending', async () => {
+  const confirmed = Promise.withResolvers<undefined>()
+  serveSecurity([], off, { hold: { confirm: confirmed.promise } })
+  const { screen } = await renderPage()
+  await enterEnrollment(screen)
+  await screen.getByRole('button', { name: 'Turn on' }).click()
+
+  await expect.element(screen.getByRole('button', { name: 'Turn on' })).toBeDisabled()
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
+
+  confirmed.resolve(undefined)
+  await expect.element(screen.getByText('Save your recovery codes')).toBeInTheDocument()
+  await expect.element(screen.getByText(codes[0])).toBeInTheDocument()
+})
+
+test('a setup started again while the earlier confirmation is pending can be confirmed', async () => {
+  const stale = Promise.withResolvers<undefined>()
+  serveSecurity([], off, {
+    // The server answers the earlier enrollment once a later Start has replaced it.
+    overrides: { confirm: () => problem(409, { detail: 'the enrollment was replaced' }) },
+    hold: { confirm: stale.promise },
+  })
+  const { screen } = await renderPage()
+  await enterEnrollment(screen)
+  await screen.getByRole('button', { name: 'Turn on' }).click()
+  await expect.element(screen.getByRole('button', { name: 'Turn on' })).toBeDisabled()
+  await userEvent.keyboard('{Escape}')
+
+  await enterEnrollment(screen)
+  await expect.element(screen.getByRole('button', { name: 'Turn on' })).toBeEnabled()
+
+  stale.resolve(undefined)
+})
+
 test('reports a wrong confirmation code and keeps the setup open', async () => {
   serveSecurity([], off, {
-    confirm: () => problem(422, { detail: 'the code is not valid' }),
+    overrides: { confirm: () => problem(422, { detail: 'the code is not valid' }) },
   })
   const { screen } = await renderPage()
 
-  await screen.getByRole('button', { name: 'Set up authenticator app' }).click()
-  await screen.getByLabelText(/^Current password/).fill('pw-123456')
-  await screen.getByRole('button', { name: 'Continue' }).click()
-  await screen.getByLabelText(/^Code from the app/).fill('000000')
+  await enterEnrollment(screen)
   await screen.getByRole('button', { name: 'Turn on' }).click()
 
   await expect
