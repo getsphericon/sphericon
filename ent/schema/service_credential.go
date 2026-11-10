@@ -49,12 +49,15 @@ func (ServiceCredential) Fields() []ent.Field {
 		field.JSON("scopes", []string{}).
 			Default([]string{}),
 		field.Time("expires_at").
+			Annotations(Attribute(reasonExpiry)).
 			Optional().
 			Nillable(),
 		field.Time("revoked_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		field.Time("last_used_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 	}

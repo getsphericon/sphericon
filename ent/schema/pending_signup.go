@@ -57,6 +57,7 @@ func (PendingSignup) Fields() []ent.Field {
 			Immutable(),
 		// When the answers can no longer be submitted.
 		field.Time("expires_at").
+			Annotations(Attribute(reasonExpiry)).
 			Immutable(),
 	}
 }

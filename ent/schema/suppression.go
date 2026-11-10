@@ -65,6 +65,7 @@ func (Suppression) Fields() []ent.Field {
 		// When the Suppression was lifted (ADR 0049): the row stays as the record of why the
 		// destination once refused mail, and no longer blocks sends. Null while it is active.
 		field.Time("lifted_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 	}

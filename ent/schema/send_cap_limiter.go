@@ -36,7 +36,8 @@ func (SendCapLimiter) Fields() []ent.Field {
 		// (send_cap tokens). It may go below zero (a bucket in debt after Transactional sends).
 		field.Float("day_fill"),
 		// The instant the bucket was last topped up.
-		field.Time("refilled_at"),
+		field.Time("refilled_at").
+			Annotations(Attribute(reasonBucket)),
 	}
 }
 

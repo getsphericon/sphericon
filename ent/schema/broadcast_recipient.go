@@ -50,6 +50,7 @@ func (BroadcastRecipient) Fields() []ent.Field {
 		// Broadcast's unsubscribes are a count of these. Its opens and clicks are the
 		// Outbound message's stamps (ADR 0053).
 		field.Time("unsubscribed_at").
+			Annotations(Attribute(reasonEarliest)).
 			Optional().
 			Nillable(),
 	}

@@ -75,6 +75,7 @@ func (Event) Fields() []ent.Field {
 		// When the Event happened (ADR 0044): the source's time, or the publish time when the
 		// source named none. Every report and window reads an Event's time from it.
 		field.Time("occurred_at").
+			Annotations(Attribute(reasonHistory)).
 			Default(time.Now).
 			Immutable().
 			Annotations(entsql.Default("CURRENT_TIMESTAMP")),
@@ -85,11 +86,13 @@ func (Event) Fields() []ent.Field {
 		// An open or click made by software (ADR 0053, GLOSSARY: Machine engagement): in the log,
 		// in no count.
 		field.Bool("machine").
+			Annotations(Attribute(reasonFact)).
 			Default(false).
 			Immutable(),
 		// About a send through a sender that delivers nowhere outside (a Test inbox): captured,
 		// not delivered, so it moves no deliverability rate.
 		field.Bool("captured").
+			Annotations(Attribute(reasonFact)).
 			Default(false).
 			Immutable(),
 		// The Broadcast whose email the Event is about. Like the url, cleared when an Erasure
@@ -110,6 +113,7 @@ func (Event) Fields() []ent.Field {
 		// Loaded as history (a Backfill): recorded, but no Automation enrolls, no Webhook
 		// receives it and no Rule fires on it.
 		field.Bool("backfill").
+			Annotations(Attribute(reasonFact)).
 			Default(false).
 			Immutable(),
 	}

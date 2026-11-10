@@ -41,6 +41,7 @@ func (RecoveryCode) Fields() []ent.Field {
 			Immutable(),
 		// When the code was spent; nil while it is still usable.
 		field.Time("used_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 	}

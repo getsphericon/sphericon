@@ -29,8 +29,8 @@ func (EventJournalEntry) Fields() []ent.Field {
 		field.String("name").NotEmpty().Immutable(),
 		field.Int("version").Positive().Immutable(),
 		field.Int64("workspace_id").Optional().Nillable().Immutable(),
-		field.Time("occurred_at").Immutable(),
-		field.Time("recorded_at").Immutable(),
+		field.Time("occurred_at").Immutable().Annotations(Attribute(reasonHistory)),
+		field.Time("recorded_at").Immutable().Annotations(Attribute(reasonHistory)),
 		field.JSON("inputs", json.RawMessage{}).Optional().Immutable(),
 	}
 }

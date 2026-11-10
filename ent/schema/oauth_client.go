@@ -42,6 +42,7 @@ func (OAuthClient) Fields() []ent.Field {
 		// Set only for a Client ID Metadata Document client (client_id is its URL): the
 		// name and redirect URIs are then a cache of the document, fresh until this time.
 		field.Time("metadata_expires_at").
+			Annotations(Attribute(reasonExpiry)).
 			Optional().
 			Nillable(),
 	}

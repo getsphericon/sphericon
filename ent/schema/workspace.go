@@ -22,7 +22,7 @@ func (Workspace) Annotations() []schema.Annotation {
 }
 
 func (Workspace) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, DiscardMixin{}}
+	return []ent.Mixin{TimeMixin{}, DiscardMixin{Restorable: true}}
 }
 
 func (Workspace) Fields() []ent.Field {
@@ -50,6 +50,7 @@ func (Workspace) Fields() []ent.Field {
 		// enabling it backfills grandfathered confirmations rather than muting the
 		// existing list. Schema-only for now — exposed on the /site API in a later slice.
 		field.Bool("require_confirmed_opt_in").
+			Annotations(Attribute(reasonSetting)).
 			Default(false),
 		// Physical postal address printed in the marketing email footer, as
 		// CAN-SPAM 15 U.S.C. §7704(a)(5) requires of every commercial message.
@@ -85,6 +86,7 @@ func (Workspace) Fields() []ent.Field {
 		// finds every step done, and never cleared: after it the overview shows no checklist, and a
 		// step that regresses (a domain that loses its record) is an item that needs attention.
 		field.Time("setup_completed_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		// The Reporting currency (ADR 0064): the ISO 4217 code every revenue figure is in. NULL until
@@ -108,11 +110,13 @@ func (Workspace) Fields() []ent.Field {
 		// Domain join (ADR 0051): whether Users who prove an address on one of the Workspace's
 		// verified Join domains become its members. Off until an Owner switches it on.
 		field.Bool("domain_join_enabled").
+			Annotations(Attribute(reasonSetting)).
 			Default(false),
 		// Two-factor requirement (ADR 0020): when an Owner or Admin switched it on;
 		// NULL while off. Each member's grace ends accounts.GracePeriod after the
 		// later of this and their Membership's creation.
 		field.Time("second_factor_required_at").
+			Annotations(Attribute(reasonSetting)).
 			Optional().
 			Nillable(),
 		// The Workspace's place in the service feed (ADR 0009): a position that only
@@ -125,9 +129,11 @@ func (Workspace) Fields() []ent.Field {
 		// which the Workspace is frozen, hidden and restorable; erased_at is set when the erasure
 		// job has removed its data and left the row as a tombstone. Both NULL for a live Workspace.
 		field.Time("erased_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		field.Time("suspended_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		// Who set it: the structured actor of ADR 0026. The kind is system (the automated
@@ -150,19 +156,23 @@ func (Workspace) Fields() []ent.Field {
 		// When a Staff member last lifted a suspension (ADR 0026): the abuse detector counts
 		// only Events after it, so a cleared sender is not frozen again for old data.
 		field.Time("cleared_at").
+			Annotations(Attribute(reasonHistory)).
 			Optional().
 			Nillable(),
 		// Set and cleared only by a Staff member: an exempt Workspace is neither warned nor
 		// frozen by the abuse detector (it can still be suspended by hand).
 		field.Bool("abuse_exempt").
+			Annotations(Attribute(reasonSetting)).
 			Default(false),
 		// When the owners were last told of the current warning / of an automatic freeze
 		// (ADR 0026). The warning marker is cleared once the Workspace leaves the
 		// warning tier, which is what makes one email per episode.
 		field.Time("abuse_warning_notified_at").
+			Annotations(Attribute(reasonNotice)).
 			Optional().
 			Nillable(),
 		field.Time("abuse_freeze_notified_at").
+			Annotations(Attribute(reasonNotice)).
 			Optional().
 			Nillable(),
 	}

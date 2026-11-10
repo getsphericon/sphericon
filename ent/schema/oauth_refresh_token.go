@@ -37,8 +37,10 @@ func (OAuthRefreshToken) Fields() []ent.Field {
 			Unique().
 			Immutable().
 			Sensitive(),
-		field.Time("expires_at"),
+		field.Time("expires_at").
+			Annotations(Attribute(reasonExpiry)),
 		field.Time("used_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		field.Int64("client_id"),

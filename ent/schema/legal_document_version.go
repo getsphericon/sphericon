@@ -44,6 +44,7 @@ func (LegalDocumentVersion) Fields() []ent.Field {
 		field.Text("markdown").
 			Immutable(),
 		field.Time("published_at").
+			Annotations(Attribute(reasonHistory)).
 			Immutable(),
 		field.Int64("published_by_id").
 			Immutable(),

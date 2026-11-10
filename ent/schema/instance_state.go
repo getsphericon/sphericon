@@ -40,13 +40,16 @@ func (InstanceState) Fields() []ent.Field {
 		// TelemetryEnabled is the Owner's in-app choice, on until they switch it off
 		// (ADR 0032). The environment can override it (see internal/instancestates).
 		field.Bool("telemetry_enabled").
+			Annotations(Attribute(reasonSetting)).
 			Default(true),
 		// NoticeAcknowledgedAt is when an Owner acknowledged the one-time notice.
 		field.Time("notice_acknowledged_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		// LastReportSentAt is when the last Telemetry report was sent.
 		field.Time("last_report_sent_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// LatestRelease is the newest release the Release check found (a bare version).
@@ -55,6 +58,7 @@ func (InstanceState) Fields() []ent.Field {
 			Nillable(),
 		// LatestReleaseCheckedAt is when the Release check last succeeded.
 		field.Time("latest_release_checked_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// DefaultSendCap is the Send cap every new Workspace starts with (ADR 0067), as a Staff

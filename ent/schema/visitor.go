@@ -41,6 +41,7 @@ func (Visitor) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.Time("last_seen_at").
+			Annotations(Attribute(reasonLatest)).
 			Default(time.Now),
 	}
 }

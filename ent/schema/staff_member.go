@@ -47,6 +47,7 @@ func (StaffMember) Fields() []ent.Field {
 		// When enrolment was confirmed with a valid code. Nil with a secret set is a
 		// pending enrolment, which is not a second step yet.
 		field.Time("totp_confirmed_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		// The last TOTP time step a code was accepted for: a code of that step or an

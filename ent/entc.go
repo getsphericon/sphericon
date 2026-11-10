@@ -134,6 +134,17 @@ func scopedFuncs() template.FuncMap {
 			}
 			return out
 		},
+		// stateForm returns the form schema.State declares for a machine or latch field (ADR 0109),
+		// and "" for an attribute or an unannotated field.
+		"stateForm": func(f *gen.Field) string {
+			ann, _ := f.Annotations["State"].(map[string]any)
+			switch form, _ := ann["Form"].(string); form {
+			case "machine", "latch":
+				return form
+			default:
+				return ""
+			}
+		},
 		"auditSensitive": func(f *gen.Field) bool {
 			_, ok := f.Annotations["Sensitive"]
 			return ok

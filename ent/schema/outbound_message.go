@@ -88,6 +88,7 @@ func (OutboundMessage) Fields() []ent.Field {
 		// sent: accepted by the provider. skipped: final for this destination
 		// (see reason). failed: permanent failure of this one message.
 		field.Enum("status").
+			Annotations(Machine()).
 			Values("pending", "sent", "skipped", "failed").
 			Default("pending"),
 		// Why the message was skipped (an eligibility Reason*) or the failure text.
@@ -97,36 +98,36 @@ func (OutboundMessage) Fields() []ent.Field {
 		// Lease: a pending claim may be taken over by a retry only when its
 		// claimed_at is older than the lease, so an in-flight send is never raced.
 		field.Time("claimed_at").
+			Annotations(Attribute(reasonWithStatus)).
 			Default(time.Now),
 		field.Time("sent_at").
+			Annotations(Attribute(reasonWithStatus)).
 			Optional().
 			Nillable(),
 		// The delivery result (ADR 0053): each kind keeps the earliest Delivery notice that names
 		// this message (ADR 0113), and a stamp is never cleared, so a report of an old send does
 		// not shrink when its analytical Events expire (ADR 0019). An SMS final report sets
 		// delivered_at once, through the latch of undelivered_at below.
-		field.Time("delivered_at").Optional().Nillable().
-			Annotations(State{Form: FormAttribute, Reason: "the earliest observation, ADR 0113"}),
-		field.Time("bounced_at").Optional().Nillable(),
-		field.Time("complained_at").Optional().Nillable(),
+		field.Time("delivered_at").Optional().Nillable().Annotations(Attribute(reasonEarliest)),
+		field.Time("bounced_at").Optional().Nillable().Annotations(Attribute(reasonEarliest)),
+		field.Time("complained_at").Optional().Nillable().Annotations(Attribute(reasonEarliest)),
 		// A report that the message did not reach the person, on a Channel whose provider reports
 		// it (SMS, ADR 0079), with the provider's error code (Twilio's ErrorCode), nil when it gave
 		// none. delivered_at and undelivered_at are the final states of a sent message, one latch
 		// over the pair: the first of them stamps and the other never follows, and the table
 		// refuses a row with both (outbound_messages_final_report_check).
-		field.Time("undelivered_at").Optional().Nillable().
-			Annotations(State{Form: FormLatch}),
+		field.Time("undelivered_at").Optional().Nillable().Annotations(Latch()),
 		field.String("undelivered_code").Optional().Nillable(),
 		// The recipient's first human open and first human click of the message (ADR 0053),
 		// stamped once like the delivery results above, whatever surface sent it. A machine hit
 		// stamps nothing.
-		field.Time("opened_at").Optional().Nillable(),
-		field.Time("clicked_at").Optional().Nillable(),
+		field.Time("opened_at").Optional().Nillable().Annotations(Attribute(reasonEarliest)),
+		field.Time("clicked_at").Optional().Nillable().Annotations(Attribute(reasonEarliest)),
 		// True when the sender the message went through said it delivers nowhere outside (a
 		// Test inbox, ADR 0058): the message was captured, not delivered. Stamped with the
 		// send from the sender's own capability, so it outlives the Integration's state and
 		// every report can say so without joining to the provider.
-		field.Bool("captured").Default(false),
+		field.Bool("captured").Default(false).Annotations(Attribute(reasonFact)),
 		// Surface provenance, foreign keys declared in Edges.
 		field.Int64("broadcast_id").Optional().Nillable(),
 		field.Int64("broadcast_recipient_id").Optional().Nillable(),

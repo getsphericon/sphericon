@@ -84,6 +84,7 @@ func (CapturedMessage) Fields() []ent.Field {
 		// True when the From is not on a verified Sending domain of the Workspace: the message would
 		// not pass the Sending-domain gate at a provider that delivers outside.
 		field.Bool("from_unverified").
+			Annotations(Attribute(reasonFact)).
 			Default(false).
 			Immutable(),
 	}
