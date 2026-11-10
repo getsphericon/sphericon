@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/devdns"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -111,6 +112,44 @@ func TestVerifyLeavesAHolderVerifiedAgainSinceItsRead(t *testing.T) {
 	assert.True(t, after.VerifiedAt.After(*acme.VerifiedAt), "it is the verification made since the read")
 }
 
+// Two checks of one pending claim race: the one that reads the claim before the other verifies it
+// is refused with lifecycle.ErrInvalidTransition (a 409, ADR 0046), not taken for a hold of another
+// Workspace, and the domain stays as the first one verified it.
+func TestVerifyThatReadTheClaimBeforeAConcurrentVerifyIsRefused(t *testing.T) {
+	env, _, zone := setup(t)
+	pending, err := env.DB.JoinDomain.Get(t.Context(), fixtures.JoinDomainPendingID)
+	require.NoError(t, err)
+	record := joindomains.RecordOf(pending)
+	zone.PublishTXT(t, record.Host, record.Value)
+	var m *joindomains.Module
+	lookup := racedLookup(zone, record.Host, 1, func(ctx context.Context) error {
+		_, err := m.Verify(ctx, acting(env, fixtures.AcmeID), pending.ID)
+		return err
+	}, zone.LookupTXT)
+	m = joindomains.New(env.DB, env.Bus, lookup, time.Now)
+
+	_, err = m.Verify(t.Context(), acting(env, fixtures.AcmeID), pending.ID)
+
+	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
+	assert.True(t, joindomains.Verified(reread(t, env, pending)), "the first check's verification stays")
+}
+
+// A check whose write comes after a concurrent one verified the claim is refused with
+// lifecycle.ErrInvalidTransition (a 409, ADR 0046). The hook's stand-in for the concurrent check
+// writes in the refused check's transaction and rolls back with it, so only the refusal is asserted.
+func TestVerifyWhoseWriteLosesToAConcurrentVerifyIsRefused(t *testing.T) {
+	env, m, zone := setup(t)
+	pending, err := env.DB.JoinDomain.Get(t.Context(), fixtures.JoinDomainPendingID)
+	require.NoError(t, err)
+	record := joindomains.RecordOf(pending)
+	zone.PublishTXT(t, record.Host, record.Value)
+	env.Bus.Use(hook.If(verifiedOnceJustBefore(), pendingVerifies))
+
+	_, err = m.Verify(t.Context(), acting(env, fixtures.AcmeID), pending.ID)
+
+	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
+}
+
 // The end-to-end suite's resolver answers a Join domain's proof record from the stored token, so a
 // domain an Owner adds verifies in dev and e2e without DNS.
 func TestDevRecordsAnswersAJoinDomainsRecordFromItsToken(t *testing.T) {
@@ -182,6 +221,14 @@ func reread(t *testing.T, env *testhelper.TestEnv, claim *ent.JoinDomain) *ent.J
 // answers the record gone, as it was when that lookup was asked: a lookup that raced the writes of
 // meanwhile.
 func goneOnLookup(zone *dnstest.Zone, host string, nth int, meanwhile func(context.Context) error) domainname.TXTLookup {
+	return racedLookup(zone, host, nth, meanwhile, func(_ context.Context, name string) ([]string, error) {
+		return nil, &net.DNSError{Err: "no such host", Name: name, IsNotFound: true}
+	})
+}
+
+// racedLookup resolves through zone, but its nth lookup of host runs meanwhile first and then
+// answers through answer.
+func racedLookup(zone *dnstest.Zone, host string, nth int, meanwhile func(context.Context) error, answer domainname.TXTLookup) domainname.TXTLookup {
 	lookups := 0
 	return func(ctx context.Context, name string) ([]string, error) {
 		if name != host+"." {
@@ -194,7 +241,7 @@ func goneOnLookup(zone *dnstest.Zone, host string, nth int, meanwhile func(conte
 		if err := meanwhile(ctx); err != nil {
 			return nil, err
 		}
-		return nil, &net.DNSError{Err: "no such host", Name: name, IsNotFound: true}
+		return answer(ctx, name)
 	}
 }
 
@@ -224,4 +271,33 @@ func revertedAndVerifiedAgain(ctx context.Context, t *testing.T, env *testhelper
 	zone.PublishTXT(t, record.Host, record.Value)
 	_, err := m.Verify(ctx, acting(env, fixtures.AcmeID), acme.ID)
 	return err
+}
+
+// pendingVerifies is a write that verifies Acme's pending claim of eu.acme.com.
+func pendingVerifies(_ context.Context, m ent.Mutation) bool {
+	jm, ok := m.(*ent.JoinDomainMutation)
+	if !ok {
+		return false
+	}
+	id, exists := jm.ID()
+	_, verifies := jm.VerifiedAt()
+	return exists && verifies && id == fixtures.JoinDomainPendingID
+}
+
+// verifiedOnceJustBefore is an ent hook on the claim's verifying write: once, a concurrent check
+// verifies the claim first.
+func verifiedOnceJustBefore() ent.Hook {
+	done := false
+	return func(next ent.Mutator) ent.Mutator {
+		return hook.JoinDomainFunc(func(ctx context.Context, m *ent.JoinDomainMutation) (ent.Value, error) {
+			if done {
+				return next.Mutate(ctx, m)
+			}
+			done = true
+			if err := m.Client().JoinDomain.UpdateOneID(fixtures.JoinDomainPendingID).SetVerifiedAt(time.Now()).Exec(ctx); err != nil {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
 }

@@ -137,8 +137,9 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 // ErrHeldElsewhere, gone moves the domain to this Workspace in one transaction, the holder's row
 // becoming pending (only from the verification found gone). An unpublished record is
 // ErrRecordNotFound; a resolver failure is returned as is and changes nothing. A domain already
-// verified here, or verified by a concurrent Verify, is returned as it is stored. An unknown id is
-// ErrNotFound.
+// verified here is returned as it is. A check whose write loses to a concurrent change of the claim
+// (another check verified it first) is lifecycle.ErrInvalidTransition and changes nothing. An
+// unknown id is ErrNotFound.
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.JoinDomain, error) {
 	row, err := s.JoinDomain().Get(ctx, id)
 	if err != nil {
@@ -159,6 +160,10 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	holder, err := m.Holder(ctx, row.Domain)
 	if err != nil {
 		return nil, err
+	}
+	if holder != nil && holder.ID == row.ID {
+		// A concurrent check verified this claim since it was read: the check lost the race.
+		return nil, lifecycle.ErrInvalidTransition
 	}
 	if holder != nil {
 		held, err := m.published(ctx, holder)
@@ -200,8 +205,7 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 			return markVerified(to)
 		})
 	}
-	// A concurrent Verify that got there first leaves the stored row as the answer.
-	if err != nil && !errors.Is(err, lifecycle.ErrInvalidTransition) {
+	if err != nil {
 		return nil, err
 	}
 	verified, err := s.JoinDomain().Get(ctx, id)
