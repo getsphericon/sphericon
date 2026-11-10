@@ -216,7 +216,7 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 var (
 	// ErrNotDraft: the Broadcast is past draft (scheduled, sending, sent, failed) and
 	// can no longer be edited or re-targeted through the authoring surface.
-	ErrNotDraft = validation.Refuse("broadcasts: broadcast is not a draft", i18n.ErrorsBroadcastNotDraft)
+	ErrNotDraft = validation.Conflict("broadcasts: broadcast is not a draft", i18n.ErrorsBroadcastNotDraft)
 	// ErrSegmentNotFound: the Segment does not exist in this Workspace.
 	ErrSegmentNotFound = validation.Refuse("broadcasts: segment not found", i18n.ErrorsBroadcastSegmentNotFound)
 	// ErrSegmentArchived: a draft leaving draft, or a write that sets the Segment, names an archived

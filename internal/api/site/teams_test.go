@@ -131,12 +131,12 @@ func TestSiteMembershipsLastOwnerGuard(t *testing.T) {
 
 	// the Acme owner membership is the sole owner (fixture).
 	err := c.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
-	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
 	_, err = c.SiteMembershipsUpdate(ctx,
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
-	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 }
 
 func TestSiteMembershipsRoleManagement(t *testing.T) {

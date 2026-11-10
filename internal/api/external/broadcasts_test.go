@@ -55,7 +55,7 @@ func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 	// A scheduled broadcast is no longer editable.
 	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("x")},
 		externalapi.BroadcastsUpdateParams{ID: schedBroadcast})
-	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 
 	listed, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
 	require.NoError(t, err)
@@ -119,7 +119,7 @@ func TestExternalBroadcastSegmentIsASegmentOrEveryone(t *testing.T) {
 
 	_, err = c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
 		externalapi.BroadcastsSetSegmentParams{ID: schedBroadcast})
-	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 }
 
 func TestExternalBroadcastTestSendGoesToOneAddressOnly(t *testing.T) {

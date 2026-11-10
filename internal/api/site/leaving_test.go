@@ -60,7 +60,7 @@ func TestLeavingAsTheOnlyOwnerIsRefusedAndNothingIsRemoved(t *testing.T) {
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	err := john.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
-	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Contains(t, refused.Errors.Value["workspace"][0], "another member an owner")
 
 	assert.Equal(t, []siteapi.WorkspaceId{fixtures.AcmePublicID}, workspaceIDs(t, john))

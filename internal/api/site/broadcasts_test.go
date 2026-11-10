@@ -71,7 +71,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Name: siteapi.NewOptName("nope"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
-	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
 	// A sent broadcast is history: Archive keeps it (it stays addressable).
 	env.DeliverQueuedBroadcasts(t)
