@@ -52,8 +52,10 @@ func TestDKIMMachineMoves(t *testing.T) {
 // A move whose write misses (the domain changed since it was read) is a refused move.
 func TestDKIMMachineLostSwapIsInvalidTransition(t *testing.T) {
 	machine := sendingdomains.DKIMMachine(lifecycle.Storage[sendingdomains.DKIMState]{
-		Read:  func(context.Context) (sendingdomains.DKIMState, error) { return sendingdomains.DKIMVerified, nil },
-		Write: func(context.Context, sendingdomains.DKIMState, sendingdomains.DKIMState) (bool, error) { return false, nil },
+		Read: func(context.Context) (sendingdomains.DKIMState, error) { return sendingdomains.DKIMVerified, nil },
+		Write: func(context.Context, sendingdomains.DKIMState, sendingdomains.DKIMState) (bool, error) {
+			return false, nil
+		},
 	})
 
 	err := machine.FireCtx(t.Context(), sendingdomains.DKIMMissing)

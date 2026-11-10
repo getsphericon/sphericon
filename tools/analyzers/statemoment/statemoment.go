@@ -21,6 +21,7 @@ import (
 	"go/ast"
 	"go/constant"
 	"go/types"
+	"slices"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -205,8 +206,8 @@ func stateForm(pkg *types.Package, entity, field string) string {
 
 // enclosing returns the innermost function literal on the stack that ok accepts, given its parent nodes.
 func enclosing(pass *analysis.Pass, stack []ast.Node, ok func(*analysis.Pass, *ast.FuncLit, []ast.Node) bool) *ast.FuncLit {
-	for i := len(stack) - 1; i >= 0; i-- {
-		if lit, isLit := stack[i].(*ast.FuncLit); isLit && ok(pass, lit, stack[:i]) {
+	for i, node := range slices.Backward(stack) {
+		if lit, isLit := node.(*ast.FuncLit); isLit && ok(pass, lit, stack[:i]) {
 			return lit
 		}
 	}
@@ -291,8 +292,8 @@ func callsPredicate(pass *analysis.Pass, body *ast.BlockStmt, name string) bool 
 }
 
 func enclosingDecl(stack []ast.Node) *ast.FuncDecl {
-	for i := len(stack) - 1; i >= 0; i-- {
-		if decl, ok := stack[i].(*ast.FuncDecl); ok {
+	for _, node := range slices.Backward(stack) {
+		if decl, ok := node.(*ast.FuncDecl); ok {
 			return decl
 		}
 	}

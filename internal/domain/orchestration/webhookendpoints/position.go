@@ -49,8 +49,8 @@ func atHealth(e *ent.WebhookEndpoint) []predicate.WebhookEndpoint {
 	return at
 }
 
-func clearFailures(u *ent.WebhookEndpointScopedUpdateOne) *ent.WebhookEndpointScopedUpdateOne {
-	return u.ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
+func clearFailures(u *ent.WebhookEndpointScopedUpdateOne) {
+	u.ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
 		ClearLastErrorStatus().ClearLastFailureAt()
 }
 

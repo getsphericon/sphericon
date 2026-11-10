@@ -24,6 +24,7 @@ import (
 // it passes Restorable.
 type DiscardMixin struct {
 	mixin.Schema
+
 	// Restorable marks the one discardable entity that comes back within its window, the Workspace.
 	Restorable bool
 }
