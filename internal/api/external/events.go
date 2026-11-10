@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -40,10 +41,11 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 }
 
 func (h *Handlers) EventActionsList(ctx context.Context, params externalapi.EventActionsListParams) (*externalapi.EventActionsListOK, error) {
-	page, err := events.ListDistinctActions(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
+	// The distinct actions are a short catalogue, read whole as the site's list reads them.
+	all, err := events.DistinctActions(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
 	}
-
+	page := pagination.Paginate(all, convert.Ptr(params.Page), convert.Ptr(params.PageSize))
 	return mapper.EventActionsListPage(page), nil
 }

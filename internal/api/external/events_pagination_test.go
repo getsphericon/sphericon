@@ -11,6 +11,26 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// A page of the distinct actions holds the ones at its place in the ascending order.
+func TestExternalEventActionsListPagesTheActionsAscending(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "events:read")
+	ctx := context.Background()
+
+	all, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{PageSize: externalapi.NewOptInt32(100)})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(all.Items), 2)
+
+	second, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{
+		Page: externalapi.NewOptInt32(2), PageSize: externalapi.NewOptInt32(1),
+	})
+	require.NoError(t, err)
+	require.Len(t, second.Items, 1)
+	assert.Equal(t, all.Items[1].Action, second.Items[0].Action)
+	assert.EqualValues(t, len(all.Items), second.TotalItems)
+	assert.EqualValues(t, len(all.Items), second.TotalPages)
+}
+
 // A page past the end is an empty page that still reports the true totals.
 func TestExternalEventActionsListPageBeyondTheTotal(t *testing.T) {
 	env := testhelper.Setup(t)

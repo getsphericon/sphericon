@@ -177,11 +177,6 @@ func (m *Module) DeleteAll(ctx context.Context, s *ent.Scoped) error {
 
 // List returns one page of the Workspace's Captured messages, newest first.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.CapturedMessage], error) {
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.CapturedMessage().Query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.CapturedMessage, error) {
-			return s.CapturedMessage().Query().
-				Order(ent.Desc(capturedmessage.FieldCreatedAt), ent.Desc(capturedmessage.FieldID)).
-				Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, s.CapturedMessage().Query().
+		Order(ent.Desc(capturedmessage.FieldCreatedAt), ent.Desc(capturedmessage.FieldID)))
 }

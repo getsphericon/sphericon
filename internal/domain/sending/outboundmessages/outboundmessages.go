@@ -956,14 +956,9 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 // ListTransactional returns one page of the Workspace's Transactional Outbound messages,
 // most recent first.
 func (m *Module) ListTransactional(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.OutboundMessage], error) {
-	query := func() *ent.OutboundMessageQuery {
-		return s.OutboundMessage().Query().Where(outboundmessage.KindEQ(outboundmessage.KindTransactional))
-	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.OutboundMessage, error) {
-			return query().Order(ent.Desc(outboundmessage.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, s.OutboundMessage().Query().
+		Where(outboundmessage.KindEQ(outboundmessage.KindTransactional)).
+		Order(ent.Desc(outboundmessage.FieldID)))
 }
 
 // recordOptedOut records that the person at target stopped at the provider, which refused the send

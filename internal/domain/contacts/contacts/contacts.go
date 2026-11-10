@@ -579,22 +579,15 @@ type Filter struct {
 
 // List returns one page of the Workspace's Contacts, ascending by id, narrowed by f.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f Filter) (pagination.Page[*ent.Contact], error) {
-	query := func() *ent.ContactQuery {
-		q := s.Contact().Query().WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) })
-		if f.EmailContains != "" {
-			q = q.Where(contact.EmailContainsFold(f.EmailContains))
-		}
-		if f.Tag != "" {
-			q = q.Where(contact.HasTagsWith(tag.Name(f.Tag)))
-		}
-		if f.Country != "" {
-			q = q.Where(contact.Country(f.Country))
-		}
-		return q
+	q := s.Contact().Query().WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) })
+	if f.EmailContains != "" {
+		q = q.Where(contact.EmailContainsFold(f.EmailContains))
 	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Contact, error) {
-			return query().Order(ent.Asc(contact.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	if f.Tag != "" {
+		q = q.Where(contact.HasTagsWith(tag.Name(f.Tag)))
+	}
+	if f.Country != "" {
+		q = q.Where(contact.Country(f.Country))
+	}
+	return pagination.List(ctx, p, q.Order(ent.Asc(contact.FieldID)))
 }

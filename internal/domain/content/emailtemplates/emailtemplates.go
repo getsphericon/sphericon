@@ -111,11 +111,7 @@ type UpdateInput struct {
 
 // List returns a page of the Workspace's Templates, ascending by id (a catalogue).
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.EmailTemplate], error) {
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.EmailTemplate().Query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.EmailTemplate, error) {
-			return s.EmailTemplate().Query().Order(ent.Asc(emailtemplate.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	return pagination.List(ctx, p, s.EmailTemplate().Query().Order(ent.Asc(emailtemplate.FieldID)))
 }
 
 // Get returns one Template of the Workspace.

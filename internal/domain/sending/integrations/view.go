@@ -50,11 +50,7 @@ func (m *Module) All(ctx context.Context, s *ent.Scoped) ([]View, error) {
 
 // List reads one page of the Workspace's kept Integrations as Views, ascending by id.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[View], error) {
-	page, err := pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.Integration().Query().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Integration, error) {
-			return s.Integration().Query().Order(ent.Asc(integration.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
+	page, err := pagination.List(ctx, p, s.Integration().Query().Order(ent.Asc(integration.FieldID)))
 	if err != nil {
 		return pagination.Page[View]{}, err
 	}

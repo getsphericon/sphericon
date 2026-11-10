@@ -44,10 +44,7 @@ func ListLog(ctx context.Context, s *ent.Scoped, f LogFilter, p pagination.Param
 		// property of that name.
 		q = q.Where(event.Or(event.ActionNotIn(append([]string{NameEmailOpened}, ClickActions...)...), HumanOnly()))
 	}
-	return pagination.List(ctx, p, q.Count, func(ctx context.Context, limit, offset int) ([]*ent.Event, error) {
-		return q.Clone().Order(ent.Desc(event.FieldCreatedAt), ent.Desc(event.FieldID)).
-			Limit(limit).Offset(offset).All(ctx)
-	})
+	return pagination.List(ctx, p, q.Order(ent.Desc(event.FieldCreatedAt), ent.Desc(event.FieldID)))
 }
 
 // DistinctActions returns the Workspace's distinct Event actions, sorted.
@@ -56,19 +53,6 @@ func DistinctActions(ctx context.Context, s *ent.Scoped) ([]string, error) {
 		Order(ent.Asc(event.FieldAction)).
 		GroupBy(event.FieldAction).
 		Strings(ctx)
-}
-
-// ListDistinctActions returns one page of the distinct Event actions, ascending.
-func ListDistinctActions(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[string], error) {
-	distinct := func() *ent.EventQuery {
-		return s.Event().Query().Unique(true)
-	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return distinct().Select(event.FieldAction).Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]string, error) {
-			return distinct().Order(ent.Asc(event.FieldAction)).Limit(limit).Offset(offset).
-				Select(event.FieldAction).Strings(ctx)
-		})
 }
 
 // OutboundMessageID is the Outbound message an email Event is about, from the id the send or the

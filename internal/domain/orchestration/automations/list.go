@@ -86,19 +86,12 @@ func (f ListFilter) terms() []automation.OrderOption {
 // List returns one page of the Workspace's Automations that f lets through, in its order: the kept
 // ones, or with Archived the archived ones.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter) (pagination.Page[*ent.Automation], error) {
-	rows := func() *ent.AutomationQuery {
-		q := s.Automation().Query()
-		if f.Archived {
-			q = s.Automation().QueryArchived()
-		}
-		if f.Name != "" {
-			q = q.Where(automation.NameContainsFold(f.Name))
-		}
-		return q.Where(f.State.where()...)
+	q := s.Automation().Query()
+	if f.Archived {
+		q = s.Automation().QueryArchived()
 	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Automation, error) {
-			return withVersions(rows()).Order(f.terms()...).Limit(limit).Offset(offset).All(ctx)
-		})
+	if f.Name != "" {
+		q = q.Where(automation.NameContainsFold(f.Name))
+	}
+	return pagination.List(ctx, p, withVersions(q.Where(f.State.where()...)).Order(f.terms()...))
 }
