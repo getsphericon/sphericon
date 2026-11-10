@@ -75,6 +75,13 @@ or `AGENTS.md`.
    6. A one-way fact is a latch: a conditional write through `lifecycle` records it only while its
       moment is null, and a miss is `ErrInvalidTransition` (ADR 0109). It is never cleared. In
       particular, inviting an address whose Invitation was accepted creates a new Invitation.
+   7. The schema says which (ADR 0109). Every field that ends in `_at`, every `status` or `state`
+      enum and every bool declares its form: a machine, written only by the compare-and-swap of its
+      `lifecycle` table; a latch, written only through the `lifecycle` latch; or an attribute, with
+      the reason no move depends on it (a moment that only records history, a setting its owner
+      edits, the latest observation). A state with another name declares it too. A change to an
+      archived row is an update conditioned on its not being archived, and a miss is the module's
+      "archived" refusal; a lock is taken only where Live use needs it.
 8. **The database holds declarative invariants and no logic.** Constraints, keys, checks and indexes
    yes; functions, triggers and views no. Logic that runs on every write lives in Go. Every reference
    to a row is a foreign key with an explicit `ON DELETE` (`SET NULL` for a fact that outlives its
@@ -141,10 +148,12 @@ or `AGENTS.md`.
 15. **A refusal answers the same on every surface, and is mapped once.** 400: the request could not
     be decoded, or it names a reference that is unknown or expired (a mailed link that does not
     stand: `validation.LinkInvalid`; a pending sign-up, a feed cursor:
-    `validation.UnknownReference`). 422: it was decoded and a module's rule refused it. 409: the
-    subject is in use, or its state refuses the request: a taken key is the subject's state, not a
-    bad input (ADR 0109), and is the refusal its owner declares for the unique constraint (ADR 0106);
-    an undeclared violation stays a 500, with no fallback in `problem`. 401: no credential, or an invalid one (a sign-in that does not hold). 403: a
+    `validation.UnknownReference`). 422 and 409 are told apart by cause (ADR 0109). 422: it was
+    decoded and a module's rule refused the input itself, whatever the subject's state. 409: the
+    subject's current state refuses the request: it is in use, in the wrong state (a Broadcast past
+    draft, the last Owner of a Workspace), its key is taken, or it lost a race. A taken key is the
+    refusal its owner declares for the unique constraint (ADR 0106); an undeclared violation stays a
+    500, with no fallback in `problem`. 401: no credential, or an invalid one (a sign-in that does not hold). 403: a
     valid credential without the scope or Permission, a step the caller did not prove, an address
     not proven yet, or a required acceptance pending (`acceptance_pending`). 428: an input only this
     case needs is missing. 402: a capability the Instance's License does not include. 404: not found, or a Workspace the caller is not a member of. A handler

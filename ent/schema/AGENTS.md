@@ -2,6 +2,10 @@
 
 
 - ORM is **ent**; schemas live in `ent/schema/*.go`, generated code in `ent/`.
+- A new `_at` field, `status` or `state` enum or bool declares its form, `Annotations(Machine())`,
+  `Annotations(Latch())` or `Annotations(Attribute("<why no move depends on it>"))` (`state.go`,
+  ADR 0109, review rule 7); `TestEveryStateFieldDeclaresItsForm` fails without it, and
+  `mise run generate` brings the `statemoment` analyzer's list (`ent/stateform.go`) up to date.
 - Migrations: **ent diffs, goose applies, Squawk lints, CI guards immutability.** `mise run db:generate <desc>`
   (`cmd/db`, ent's diff engine as a library, no CLI and no checksum file) diffs the ent schema against
   `migrations/` in the scratch `<PGDATABASE>_diff` database (`SPHERICON_DIFF_DATABASE_URL`) and writes a goose `.sql` file;
