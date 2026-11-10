@@ -6,7 +6,7 @@
 # --- Stage 1: frontend (SPA + tracker bundle) ---
 FROM node:26.13.0-alpine3.24@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS frontend
 
-RUN npm install -g pnpm@12.10.1
+RUN npm install -g pnpm@12.18.0
 WORKDIR /src
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY packages/analytics/package.json packages/analytics/

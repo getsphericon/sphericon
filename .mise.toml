@@ -118,6 +118,9 @@ PORT = "{{ env.BACKEND_PORT }}"
 # daemons), so ports with no daemon of their own (this one, SMTP) are derived from it.
 SPHERICON_METRICS_ADDR = "127.0.0.1:{{ env.BACKEND_PORT | int - 3300 + 9090 }}"
 CGO_ENABLED = "0"
+# betterleaks loads the config of the repository it scans only when it is named; every scan (the
+# pre-commit hook, check:security) reads it from here.
+BETTERLEAKS_CONFIG = "{{config_root}}/.betterleaks.toml"
 # Dev-only secret so a fresh clone authenticates out of the box.
 SPHERICON_JWT_SECRET = "dev-secret-change-in-production"
 # Dev-only Staff member secret (turns the Staff sign-in on, ADR 0063); never the site's.
