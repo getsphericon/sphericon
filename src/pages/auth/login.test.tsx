@@ -10,6 +10,7 @@ import {
   handleSitePasskeyLoginFinish,
 } from '../../generated/site/msw.gen.ts'
 import { problem } from '../../test/problem.ts'
+import { settled } from '../../test/queryClients.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { LoginPage } from './login.tsx'
@@ -42,7 +43,20 @@ const ASSERTION: AuthenticationResponseJSON = {
   response: { clientDataJSON: 'e30', authenticatorData: 'e30', signature: 'c2ln' },
 }
 
+// The password form, filled and sent.
+async function signInWithPassword(
+  screen: Awaited<ReturnType<typeof renderWithRouter>>['screen'],
+  email = 'sam@example.com',
+  password = 'secret',
+) {
+  await screen.getByLabelText(/^Email/).fill(email)
+  // Required fields render their label as "Password *", hence the anchored regex.
+  await screen.getByLabelText(/^Password/).fill(password)
+  await screen.getByRole('button', { name: 'Sign in' }).click()
+}
+
 beforeEach(() => {
+  vi.resetAllMocks()
   webauthn.supported.mockReturnValue(true)
   webauthn.autofill.mockResolvedValue(false)
 })
@@ -51,10 +65,7 @@ test('navigates home after a successful login', async () => {
   worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))
   const { screen, navigate } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('user@example.com')
-  // Required fields render their label as "Password *", hence the anchored regex.
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen, 'user@example.com')
 
   await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
 })
@@ -63,10 +74,7 @@ test('shows an error notification when login fails', async () => {
   worker.use(handleSiteAuthLogin(() => problem(401, { detail: 'Invalid credentials' })))
   const { screen, navigate } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('user@example.com')
-  // Required fields render their label as "Password *", hence the anchored regex.
-  await screen.getByLabelText(/^Password/).fill('wrong')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen, 'user@example.com', 'wrong')
 
   await expect.element(screen.getByText('Invalid credentials')).toBeInTheDocument()
   expect(navigate).not.toHaveBeenCalled()
@@ -80,9 +88,7 @@ test('tells an unverified user to verify their email', async () => {
   )
   const { screen, navigate } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('user@example.com')
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen, 'user@example.com')
 
   await expect.element(screen.getByText('Verify your email first')).toBeInTheDocument()
   expect(navigate).not.toHaveBeenCalled()
@@ -99,9 +105,7 @@ test('the verify-required refusal offers to send the link again to the typed add
   )
   const { screen } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('user@example.com')
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen, 'user@example.com')
   await screen.getByRole('button', { name: 'Resend verification email' }).click()
 
   await expect
@@ -116,9 +120,7 @@ test('shows how long to wait when login is rate limited', async () => {
   worker.use(handleSiteAuthLogin(() => problem(429, { retryAfter: 90 })))
   const { screen } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('user@example.com')
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen, 'user@example.com')
 
   await expect.element(screen.getByText(/Try again in 2 minutes/)).toBeInTheDocument()
 })
@@ -127,9 +129,7 @@ test('shows the wait in seconds when it is under a minute', async () => {
   worker.use(handleSiteAuthLogin(() => problem(429, { retryAfter: 4 })))
   const { screen } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('user@example.com')
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen, 'user@example.com')
 
   await expect.element(screen.getByText(/Try again in 4 seconds/)).toBeInTheDocument()
 })
@@ -145,9 +145,7 @@ test('asks for the second step only when the login answers with a challenge', as
   )
   const { screen, navigate } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('sam@example.com')
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen)
 
   await screen.getByLabelText(/^Authentication code/).fill('123456')
   expect(navigate).not.toHaveBeenCalled()
@@ -168,9 +166,7 @@ test('the second step takes a recovery code instead of the app code', async () =
   )
   const { screen, navigate } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('sam@example.com')
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen)
   await screen.getByRole('button', { name: 'Use a recovery code' }).click()
   await screen.getByLabelText(/^Recovery code/).fill('abcde-fghij')
   await screen.getByRole('button', { name: 'Verify' }).click()
@@ -183,9 +179,7 @@ test('a session outcome skips the second step', async () => {
   worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))
   const { screen, navigate } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('user@example.com')
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen, 'user@example.com')
 
   await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
   expect(screen.getByLabelText(/^Authentication code/).query()).toBeNull()
@@ -198,15 +192,216 @@ test('shows an error and stays on the second step when the code is wrong', async
   )
   const { screen, navigate } = await renderWithRouter(<LoginPage />)
 
-  await screen.getByLabelText(/^Email/).fill('sam@example.com')
-  await screen.getByLabelText(/^Password/).fill('secret')
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await signInWithPassword(screen)
   await screen.getByLabelText(/^Authentication code/).fill('000000')
   await screen.getByRole('button', { name: 'Verify' }).click()
 
   await expect.element(screen.getByText('the code is not valid')).toBeInTheDocument()
   await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
   expect(navigate).not.toHaveBeenCalled()
+})
+
+test('a code step abandoned by Start over fails late without touching the password view', async () => {
+  const codeAnswer = Promise.withResolvers<Response>()
+  const codeAsked = Promise.withResolvers<Request>()
+  worker.use(
+    handleSiteAuthLogin({ body: { outcome: 'challenge', challenge: 'signed-challenge' } }),
+    handleSiteAuthSecondFactor(async ({ request }) => {
+      codeAsked.resolve(request)
+      return codeAnswer.promise
+    }),
+  )
+  const { screen } = await renderWithRouter(<LoginPage />)
+
+  await signInWithPassword(screen)
+  await screen.getByLabelText(/^Authentication code/).fill('000000')
+  await screen.getByRole('button', { name: 'Verify' }).click()
+  await codeAsked.promise
+  await screen.getByRole('button', { name: 'Start over' }).click()
+  await screen.getByLabelText(/^Password/).fill('typed-again')
+  codeAnswer.resolve(problem(401, { detail: 'the code is not valid' }))
+
+  // The late answer has been handled once no change is running.
+  await settled()
+  expect(screen.getByText('the code is not valid').query()).toBeNull()
+  await expect.element(screen.getByLabelText(/^Email/)).toHaveValue('sam@example.com')
+  await expect.element(screen.getByLabelText(/^Password/)).toHaveValue('typed-again')
+})
+
+// A challenge is signed over its expiry in whole seconds, so a second login within the same second
+// is handed the very same string: the attempt is the code step, not the challenge it carries.
+test('a new code step with the same challenge ignores the code sent to the abandoned one', async () => {
+  const codeAnswer = Promise.withResolvers<Response>()
+  const codeAsked = Promise.withResolvers<Request>()
+  const codesSent: unknown[] = []
+  worker.use(
+    handleSiteAuthLogin({ body: { outcome: 'challenge', challenge: 'signed-challenge' } }),
+    handleSiteAuthSecondFactor(async ({ request }) => {
+      codesSent.push(await request.clone().json())
+      codeAsked.resolve(request)
+      return codeAnswer.promise
+    }),
+  )
+  const { screen } = await renderWithRouter(<LoginPage />)
+
+  await signInWithPassword(screen)
+  await screen.getByLabelText(/^Authentication code/).fill('000000')
+  await screen.getByRole('button', { name: 'Verify' }).click()
+  await codeAsked.promise
+  await screen.getByRole('button', { name: 'Start over' }).click()
+  await signInWithPassword(screen)
+  await screen.getByLabelText(/^Authentication code/).fill('123456')
+
+  await expect.element(screen.getByRole('button', { name: 'Verify' })).toBeEnabled()
+  codeAnswer.resolve(problem(401, { detail: 'the code is not valid' }))
+  await settled()
+  expect(screen.getByText('the code is not valid').query()).toBeNull()
+  // The code typed on the new step is still there to send.
+  await screen.getByRole('button', { name: 'Verify' }).click()
+  await expect
+    .poll(() => codesSent)
+    .toEqual([
+      { challenge: 'signed-challenge', code: '000000' },
+      { challenge: 'signed-challenge', code: '123456' },
+    ])
+})
+
+test('a sign-in whose navigation failed can be tried again', async () => {
+  worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))
+  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  navigate.mockRejectedValueOnce(new Error('navigation failed'))
+
+  await signInWithPassword(screen)
+  await expect.poll(() => navigate).toHaveBeenCalledTimes(1)
+  await settled()
+  await signInWithPassword(screen)
+
+  await expect.poll(() => navigate).toHaveBeenCalledTimes(2)
+})
+
+test('a password login and a Passkey chosen from autofill that both succeed navigate once', async () => {
+  webauthn.autofill.mockResolvedValue(true)
+  const chosen = Promise.withResolvers<AuthenticationResponseJSON>()
+  webauthn.authenticate.mockReturnValue(chosen.promise)
+  worker.use(
+    handleSiteAuthLogin({ body: { outcome: 'session' } }),
+    handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
+    handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
+  )
+  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+
+  await expect.poll(() => webauthn.authenticate).toHaveBeenCalled()
+  await signInWithPassword(screen, 'user@example.com')
+  await expect.poll(() => navigate).toHaveBeenCalled()
+  chosen.resolve(ASSERTION)
+
+  await settled()
+  expect(navigate).toHaveBeenCalledTimes(1)
+})
+
+test('a challenge cancels the Passkey ceremony the browser offers in the email field', async () => {
+  webauthn.autofill.mockResolvedValue(true)
+  // The browser ends a cancelled ceremony with an AbortError.
+  const ceremony = Promise.withResolvers<AuthenticationResponseJSON>()
+  webauthn.authenticate.mockReturnValue(ceremony.promise)
+  webauthn.cancel.mockImplementation(() =>
+    ceremony.reject(new DOMException('cancelled', 'AbortError')),
+  )
+  worker.use(
+    handleSiteAuthLogin({ body: { outcome: 'challenge', challenge: 'signed-challenge' } }),
+    handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
+  )
+  const { screen } = await renderWithRouter(<LoginPage />)
+
+  await expect.poll(() => webauthn.authenticate).toHaveBeenCalled()
+  webauthn.cancel.mockClear()
+  await signInWithPassword(screen)
+
+  await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
+  expect(webauthn.cancel).toHaveBeenCalled()
+})
+
+test('a challenge that lands while the autofill ceremony is still being prepared stops it', async () => {
+  webauthn.autofill.mockResolvedValue(true)
+  const begun = Promise.withResolvers<Response>()
+  const beginAsked = Promise.withResolvers<Request>()
+  worker.use(
+    handleSiteAuthLogin({ body: { outcome: 'challenge', challenge: 'signed-challenge' } }),
+    handleSitePasskeyLoginBegin(async ({ request }) => {
+      beginAsked.resolve(request)
+      return begun.promise
+    }),
+  )
+  const { screen } = await renderWithRouter(<LoginPage />)
+
+  await beginAsked.promise
+  await signInWithPassword(screen)
+  await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
+  begun.resolve(HttpResponse.json({ options: OPTIONS }))
+
+  await settled()
+  expect(webauthn.authenticate).not.toHaveBeenCalled()
+})
+
+test('a password login that fails after a Passkey from autofill signed in says nothing', async () => {
+  webauthn.autofill.mockResolvedValue(true)
+  const chosen = Promise.withResolvers<AuthenticationResponseJSON>()
+  webauthn.authenticate.mockReturnValue(chosen.promise)
+  const refused = Promise.withResolvers<Response>()
+  worker.use(
+    handleSiteAuthLogin(async () => refused.promise),
+    handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
+    handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
+  )
+  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+
+  await expect.poll(() => webauthn.authenticate).toHaveBeenCalled()
+  await signInWithPassword(screen, 'user@example.com')
+  chosen.resolve(ASSERTION)
+  await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
+  refused.resolve(problem(401, { detail: 'Invalid credentials' }))
+
+  await settled()
+  expect(screen.getByText('Invalid credentials').query()).toBeNull()
+  await expect.element(screen.getByLabelText(/^Password/)).toHaveValue('secret')
+})
+
+test('the code step a provider sent the person back to offers no Passkey in autofill', async () => {
+  webauthn.autofill.mockResolvedValue(true)
+  const { screen } = await renderWithRouter(<LoginPage />, {
+    initialPath: '/login?challenge=signed-challenge',
+    path: '/login',
+  })
+
+  await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
+  await settled()
+  expect(webauthn.autofill).not.toHaveBeenCalled()
+})
+
+test('the Passkey button waits while a password login is pending', async () => {
+  const answer = Promise.withResolvers<Response>()
+  worker.use(handleSiteAuthLogin(async () => answer.promise))
+  const { screen } = await renderWithRouter(<LoginPage />)
+
+  await signInWithPassword(screen, 'user@example.com')
+
+  await expect.element(screen.getByRole('button', { name: 'Use a passkey' })).toBeDisabled()
+  answer.resolve(problem(401, { detail: 'Invalid credentials' }))
+  await expect.element(screen.getByRole('button', { name: 'Use a passkey' })).toBeEnabled()
+})
+
+test('a password login waits while the Passkey button is pending', async () => {
+  const ceremony = Promise.withResolvers<AuthenticationResponseJSON>()
+  webauthn.authenticate.mockReturnValue(ceremony.promise)
+  worker.use(handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }))
+  const { screen } = await renderWithRouter(<LoginPage />)
+
+  await screen.getByRole('button', { name: 'Use a passkey' }).click()
+
+  await expect.element(screen.getByRole('button', { name: 'Sign in' })).toBeDisabled()
+  await expect.poll(() => webauthn.authenticate).toHaveBeenCalled()
+  ceremony.reject(new DOMException('dismissed', 'NotAllowedError'))
+  await expect.element(screen.getByRole('button', { name: 'Sign in' })).toBeEnabled()
 })
 
 test('the Passkey button logs in without an email or a password', async () => {
