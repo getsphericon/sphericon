@@ -6,6 +6,7 @@
 package hooks
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -23,10 +24,10 @@ func New(ingest *callbackinterpretation.UseCase) http.Handler {
 		body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, preset.MaxBodyBytes))
 		if err != nil {
 			if tooBig, ok := errors.AsType[*http.MaxBytesError](err); ok {
-				write(w, http.StatusRequestEntityTooLarge, tooBig.Error())
+				write(r.Context(), w, http.StatusRequestEntityTooLarge, tooBig.Error())
 				return
 			}
-			write(w, http.StatusBadRequest, "read body")
+			write(r.Context(), w, http.StatusBadRequest, "read body")
 			return
 		}
 		err = ingest.Receive(r.Context(), callbackinterpretation.Callback{
@@ -38,22 +39,22 @@ func New(ingest *callbackinterpretation.UseCase) http.Handler {
 		case errors.Is(err, callbackinterpretation.ErrNoHook):
 			http.NotFound(w, r)
 		case errors.Is(err, preset.ErrUnauthentic):
-			write(w, http.StatusForbidden, "the request is not authentic")
+			write(r.Context(), w, http.StatusForbidden, "the request is not authentic")
 		case errors.Is(err, preset.ErrUnavailable):
-			write(w, http.StatusBadGateway, "the request could not be verified right now")
+			write(r.Context(), w, http.StatusBadGateway, "the request could not be verified right now")
 		case errors.Is(err, preset.ErrMalformed):
-			write(w, http.StatusBadRequest, "the request is malformed")
+			write(r.Context(), w, http.StatusBadRequest, "the request is malformed")
 		case errors.Is(err, preset.ErrTransformFailed):
-			write(w, http.StatusInternalServerError, "the request could not be read")
+			write(r.Context(), w, http.StatusInternalServerError, "the request could not be read")
 		case errors.Is(err, callbackinterpretation.ErrUnconfirmed):
-			write(w, http.StatusBadGateway, "subscription confirmation failed")
+			write(r.Context(), w, http.StatusBadGateway, "subscription confirmation failed")
 		default:
-			write(w, http.StatusInternalServerError, "processing failed")
+			write(r.Context(), w, http.StatusInternalServerError, "processing failed")
 		}
 	})
 	return mux
 }
 
-func write(w http.ResponseWriter, status int, detail string) {
-	problem.Write(w, status, problem.Body(status, detail))
+func write(ctx context.Context, w http.ResponseWriter, status int, detail string) {
+	problem.Write(ctx, w, status, problem.Body(status, detail))
 }

@@ -94,7 +94,7 @@ func Of(ctx context.Context, err error) (int, *siteapi.ProblemDetails) {
 	if status >= http.StatusInternalServerError {
 		slog.ErrorContext(ctx, "request failed", "method", method, "path", path, "error", err)
 	} else {
-		logging.FromContext(ctx).WarnContext(ctx, "request refused", "method", method, "path", path, "status", status, "detail", err.Error())
+		slog.WarnContext(ctx, "request refused", "method", method, "path", path, "status", status, "detail", err.Error())
 	}
 	return status, body
 }
@@ -180,20 +180,20 @@ func Body(status int, detail string) *siteapi.ProblemDetails {
 // own error goes through its surface's NewError instead, which answers through the same Of.
 func ErrorHandler(ctx context.Context, w http.ResponseWriter, _ *http.Request, err error) {
 	status, body := Of(ctx, err)
-	Write(w, status, body)
+	Write(ctx, w, status, body)
 }
 
 // Write renders body as application/problem+json with status.
-func Write(w http.ResponseWriter, status int, body *siteapi.ProblemDetails) {
+func Write(ctx context.Context, w http.ResponseWriter, status int, body *siteapi.ProblemDetails) {
 	data, err := body.MarshalJSON()
 	if err != nil {
 		// The generated encoders do not fail on these bodies; a failure still answers the status.
-		slog.Warn("encode problem", "error", err)
+		slog.WarnContext(ctx, "encode problem", "error", err)
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(status)
 	if _, err := w.Write(data); err != nil {
-		slog.Warn("write json response", "error", err)
+		slog.WarnContext(ctx, "write json response", "error", err)
 	}
 }
 

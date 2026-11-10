@@ -27,6 +27,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"strings"
 	"time"
@@ -46,7 +47,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -600,7 +600,7 @@ func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req R
 			continue
 		}
 		if first != nil {
-			logging.FromContext(ctx).Warn("outbound: a target did not take the message", "message_id", messageID, "err", err)
+			slog.WarnContext(ctx, "outbound: a target did not take the message", "message_id", messageID, "err", err)
 			continue
 		}
 		if stop, serr := m.stopOf(ctx, s, g, req, err); stop != nil || serr != nil {

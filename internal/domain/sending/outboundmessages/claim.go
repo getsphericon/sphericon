@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/infra/db"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 )
 
 // The unique constraints of the Outbound messages and their tracked links (ADR 0106): no client can
@@ -162,7 +162,7 @@ func (m *Module) release(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMe
 		Where(ownsClaim(msg)...).
 		SetClaimedAt(time.Unix(0, 0)).
 		Save(ctx); err != nil {
-		logging.FromContext(ctx).Warn("outbound: release claim failed", "message_id", msg.ID, "err", err)
+		slog.WarnContext(ctx, "outbound: release claim failed", "message_id", msg.ID, "err", err)
 	}
 }
 
@@ -170,7 +170,7 @@ func (m *Module) release(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMe
 // Best effort: if it fails, the claim's lease runs out and the retry takes over.
 func (m *Module) dropClaim(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage) {
 	if _, err := s.OutboundMessage().Delete().Where(ownsClaim(msg)...).Exec(ctx); err != nil {
-		logging.FromContext(ctx).Warn("outbound: drop claim failed", "message_id", msg.ID, "err", err)
+		slog.WarnContext(ctx, "outbound: drop claim failed", "message_id", msg.ID, "err", err)
 	}
 }
 

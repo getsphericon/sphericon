@@ -24,11 +24,11 @@ func collectEventLimit(limit int64) func(http.Handler) http.Handler {
 			}
 			raw, err := io.ReadAll(r.Body)
 			if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-				writeProblem(w, http.StatusRequestEntityTooLarge, err.Error())
+				writeProblem(r.Context(), w, http.StatusRequestEntityTooLarge, err.Error())
 				return
 			}
 			if err == nil && eventOverLimit(raw, limit) {
-				writeProblem(w, http.StatusRequestEntityTooLarge,
+				writeProblem(r.Context(), w, http.StatusRequestEntityTooLarge,
 					(&http.MaxBytesError{Limit: limit}).Error())
 				return
 			}

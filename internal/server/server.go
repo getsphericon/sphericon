@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"runtime/debug"
@@ -265,8 +266,8 @@ func NewInternal(cfg *config.Config, tlsAsk http.Handler, limiter *ratelimit.Lim
 	return chi.Chain(recoverer, requestID, accessLog, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
-func writeProblem(w http.ResponseWriter, status int, detail string) {
-	problem.Write(w, status, problem.Body(status, detail))
+func writeProblem(ctx context.Context, w http.ResponseWriter, status int, detail string) {
+	problem.Write(ctx, w, status, problem.Body(status, detail))
 }
 
 // --- cross-cutting net/http middleware ---
@@ -274,7 +275,8 @@ func writeProblem(w http.ResponseWriter, status int, detail string) {
 // chi supplies the chain and the timeout. recoverer and requestID stay ours:
 // chi's Recoverer answers a bare 500 (we render RFC 7807 and log through slog),
 // and chi's RequestID generates host-counter ids from a package-level generator
-// that cannot be replaced (we keep ULIDs and tag logging.FromContext).
+// that cannot be replaced (we keep ULIDs, and put the id in the context the logger tags every
+// line from).
 
 // PendingMigrations is what SchemaGuard asks: how many migrations the database has not run.
 type PendingMigrations interface {
@@ -308,23 +310,22 @@ func SchemaGuard(watch PendingMigrations) func(http.Handler) http.Handler {
 				"The database is %d migration(s) behind this build. Run `sphericon migrate` (in development `mise run db:migrate`), then reload.",
 				pending))
 			body.Code = siteapi.NewOptProblemCode(siteapi.ProblemCodeMigrationsPending)
-			problem.Write(w, http.StatusServiceUnavailable, body)
+			problem.Write(r.Context(), w, http.StatusServiceUnavailable, body)
 		})
 	}
 }
 
 func recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := logging.FromContext(r.Context())
-		defer func() {
+		defer func(ctx context.Context) {
 			if rec := recover(); rec != nil {
 				// recoverer is outermost, so requestID has only put the id on the
 				// shared response headers, not in this request's context.
 				if id := w.Header().Get("X-Request-ID"); id != "" {
-					logger = logger.With("request_id", id)
+					ctx = logging.WithRequestID(ctx, id)
 				}
 				stack := string(debug.Stack())
-				logger.Error("panic recovered",
+				slog.ErrorContext(ctx, "panic recovered",
 					"err", rec,
 					"method", r.Method,
 					"path", logging.RedactedPath(r.URL.Path),
@@ -334,9 +335,9 @@ func recoverer(next http.Handler) http.Handler {
 				if dbg := problem.Debug(r, w, fmt.Sprint(rec), stack); dbg != nil {
 					body.Debug = siteapi.NewOptProblemDebug(*dbg)
 				}
-				problem.Write(w, http.StatusInternalServerError, body)
+				problem.Write(ctx, w, http.StatusInternalServerError, body)
 			}
-		}()
+		}(r.Context())
 		next.ServeHTTP(w, r)
 	})
 }
@@ -373,8 +374,8 @@ func requestID(next http.Handler) http.Handler {
 			id = ulid.Make().String()
 		}
 		w.Header().Set("X-Request-ID", id)
-		// Carry the id in context so request-scoped logs (via logging.FromContext)
-		// correlate back to this request.
+		// Carry the id in context so every line logged with it (slog.*Context) correlates
+		// back to this request.
 		next.ServeHTTP(w, r.WithContext(logging.WithRequestID(r.Context(), id)))
 	})
 }

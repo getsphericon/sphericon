@@ -78,8 +78,8 @@ one overriding an earlier: `.env`, `.env.<SPHERICON_ENV>`, `.env.local`, `.env.<
 | `SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET` | — |  | yes | The OAuth client secret that goes with `SPHERICON_SIGNIN_GOOGLE_CLIENT_ID`. |
 | `SPHERICON_SIGNIN_GITHUB_CLIENT_ID` | — |  |  | The OAuth client id of the Instance's GitHub OAuth app: with its secret, enables "Continue with GitHub" (ADR 0048). Set `<SPHERICON_APP_URL>/site/auth/signin/github/callback` as its callback URL. One of the pair without the other stops the start. |
 | `SPHERICON_SIGNIN_GITHUB_CLIENT_SECRET` | — |  | yes | The OAuth client secret that goes with `SPHERICON_SIGNIN_GITHUB_CLIENT_ID`. |
-| `SPHERICON_LOG_LEVEL` | `info` |  |  | The log level: `debug`, `info`, `warn` or `error`; anything else is `info`. |
-| `SPHERICON_LOG_FORMAT` | `json`; `text` in development and test |  |  | The log format: `json`, or `text` for coloured human-readable lines. |
+| `SPHERICON_LOG_LEVEL` | `info` |  |  | The log level: `debug`, `info`, `warn` or `error`, in any case; a value that names no level stops the start. |
+| `SPHERICON_LOG_FORMAT` | `json`; `text` in development and test |  |  | The log format: `json`, or `text` for coloured human-readable lines; any other value stops the start. |
 | `OTEL_SERVICE_NAME` | `sphericon` |  |  | The `service.name` reported on OpenTelemetry traces and metrics. |
 | `SPHERICON_METRICS_ADDR` | — |  |  | The `host:port` of the opt-in Prometheus listener. Empty runs none; the public port never serves `/metrics` (ADR 0025). It must differ from `PORT`. |
 | `SPHERICON_DNS_ADDR` | — |  |  | The `host:port` of a DNS server that verifies Sending domains and Join domains instead of the host's resolver, for a development stack that publishes its own records. Leave it empty in production. |

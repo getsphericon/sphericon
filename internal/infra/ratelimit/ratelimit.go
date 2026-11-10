@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/go-chi/httprate"
@@ -97,7 +96,7 @@ func (p *Policy) Allow(w http.ResponseWriter, r *http.Request, key string) bool 
 	if p.Reject(w, r, key) == nil {
 		return true
 	}
-	WriteProblem(w)
+	WriteProblem(r.Context(), w)
 	return false
 }
 
@@ -160,13 +159,13 @@ func Rejected(ctx context.Context, policy string) {
 	if err == nil {
 		counter.Add(ctx, 1, metric.WithAttributes(attribute.String("policy", policy)))
 	}
-	logging.FromContext(ctx).Warn("rate limit exceeded", "policy", policy, "ip", clientip.FromContext(ctx))
+	slog.WarnContext(ctx, "rate limit exceeded", "policy", policy, "ip", clientip.FromContext(ctx))
 }
 
 // WriteProblem renders the RFC 7807 429 body. Headers already on w (Retry-After,
 // X-RateLimit-*, CORS) are kept; the Retry-After seconds are repeated in the body
 // as retryAfter, so a client that only sees the body can show the wait.
-func WriteProblem(w http.ResponseWriter) {
+func WriteProblem(ctx context.Context, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(http.StatusTooManyRequests)
 	body := map[string]any{
@@ -178,7 +177,7 @@ func WriteProblem(w http.ResponseWriter) {
 		body["retryAfter"] = secs
 	}
 	if err := json.NewEncoder(w).Encode(body); err != nil {
-		slog.Warn("write json response", "error", err)
+		slog.WarnContext(ctx, "write json response", "error", err)
 	}
 }
 

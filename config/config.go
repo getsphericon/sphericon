@@ -5,6 +5,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"net"
 	"net/mail"
@@ -236,10 +237,10 @@ type Config struct {
 	// neither (a half-configured provider stops the start). A provider not in the map is off.
 	Signin map[string]SigninCredentials
 
-	// Logging: level is one of debug|info|warn|error; format is text|json.
+	// Logging: the least level a line is written at; format is text|json.
 	// Dev defaults to a human-readable coloured text handler, prod to JSON.
-	LogLevel  string
-	LogFormat string
+	LogLevel  slog.Level
+	LogFormat LogFormat
 
 	// OtelServiceName is the service.name reported on OTel traces/metrics. The
 	// export destinations come from the declarative config file OTEL_CONFIG_FILE
@@ -495,10 +496,12 @@ type environment struct {
 	// The OAuth client secret that goes with `SPHERICON_SIGNIN_GITHUB_CLIENT_ID`.
 	SigninGitHubClientSecret string `env:"SPHERICON_SIGNIN_GITHUB_CLIENT_SECRET"`
 
-	// The log level: `debug`, `info`, `warn` or `error`; anything else is `info`.
-	LogLevel string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
-	// The log format: `json`, or `text` for coloured human-readable lines.
-	LogFormat string `env:"SPHERICON_LOG_FORMAT"`
+	// The log level: `debug`, `info`, `warn` or `error`, in any case; a value that names no level
+	// stops the start.
+	LogLevel slog.Level `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
+	// The log format: `json`, or `text` for coloured human-readable lines; any other value stops the
+	// start.
+	LogFormat LogFormat `env:"SPHERICON_LOG_FORMAT"`
 	// The `service.name` reported on OpenTelemetry traces and metrics.
 	OtelServiceName string `env:"OTEL_SERVICE_NAME" envDefault:"sphericon"`
 	// The `host:port` of the opt-in Prometheus listener. Empty runs none; the public port never
@@ -624,7 +627,7 @@ func Port(envName string) (string, error) {
 func parseEnvironment(vars map[string]string, envName string) (environment, error) {
 	e := profileDefaults(envName)
 	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
-		return environment{}, fmt.Errorf("read environment: %w", err)
+		return environment{}, fmt.Errorf("read environment: %w", namedByVariable(err))
 	}
 	if err := validateEnvironment(&e); err != nil {
 		return environment{}, err
@@ -892,12 +895,12 @@ func readSecretFiles(vars map[string]string) error {
 // non-production profiles may reach a private SMTP host (a local Mailpit), which production
 // refuses.
 func profileDefaults(envName string) environment {
-	e := environment{RateLimits: DefaultRateLimits, LogFormat: "json"}
+	e := environment{RateLimits: DefaultRateLimits, LogFormat: LogFormatJSON}
 	if isE2E(envName) {
 		e.RateLimits = RateLimits{}
 	}
 	if isDevEnv(envName) {
-		e.LogFormat = "text"
+		e.LogFormat = LogFormatText
 	}
 	e.SMTPAllowPrivateHosts = isDevEnv(envName) || isE2E(envName)
 	return e

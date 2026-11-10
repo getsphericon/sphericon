@@ -29,13 +29,13 @@ func NewErrorHandler(logger *slog.Logger) river.ErrorHandler {
 	return &errorHandler{logger: logger}
 }
 
-func (h *errorHandler) HandleError(_ context.Context, job *rivertype.JobRow, err error) *river.ErrorHandlerResult {
+func (h *errorHandler) HandleError(ctx context.Context, job *rivertype.JobRow, err error) *river.ErrorHandlerResult {
 	// A provider's refusal is the same answer on every retry until a person changes the account,
 	// so the job is cancelled instead of burning its attempts and being discarded. A job that
 	// returns river.JobCancel itself never reaches this handler and is logged only at debug level,
 	// which is why the cancel is decided here, where it is logged as an error.
 	refused := errors.Is(err, messaging.ErrRefused)
-	h.logger.Error("river job errored",
+	h.logger.ErrorContext(ctx, "river job errored",
 		slog.String("kind", job.Kind),
 		slog.String("queue", job.Queue),
 		slog.Int64("job_id", job.ID),
@@ -47,8 +47,8 @@ func (h *errorHandler) HandleError(_ context.Context, job *rivertype.JobRow, err
 	return &river.ErrorHandlerResult{SetCancelled: refused}
 }
 
-func (h *errorHandler) HandlePanic(_ context.Context, job *rivertype.JobRow, panicVal any, trace string) *river.ErrorHandlerResult {
-	h.logger.Error("river job panicked",
+func (h *errorHandler) HandlePanic(ctx context.Context, job *rivertype.JobRow, panicVal any, trace string) *river.ErrorHandlerResult {
+	h.logger.ErrorContext(ctx, "river job panicked",
 		slog.String("kind", job.Kind),
 		slog.String("queue", job.Queue),
 		slog.Int64("job_id", job.ID),

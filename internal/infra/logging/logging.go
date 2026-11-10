@@ -1,11 +1,12 @@
 // Package logging builds the application's structured logger (log/slog) and
-// carries a per-request correlation id through context.
+// carries the request id and the correlation id through context.
 //
 // Wiring model: the process installs one configured logger as slog.Default via
 // Setup, so every subsystem that already logs through slog (river and the HTTP
 // handlers) shares the same level, format,
 // and sink without threading a *slog.Logger through every constructor. Request
-// scoping is done via context (FromContext), not by injecting a logger.
+// scoping is done via context: a line logged with slog's *Context functions is
+// tagged with the ids its context carries (WithRequestID, WithCorrelationID).
 package logging
 
 import (
@@ -14,46 +15,56 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"strings"
+	"time"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/lmittmann/tint"
 	"github.com/riverqueue/river/riverlog"
+	slogctx "github.com/veqryn/slog-context"
 )
 
-// New builds a logger from config: a coloured, human-readable handler for
-// LogFormat "text" (dev), otherwise structured JSON (prod). Level is one of
-// debug|info|warn|error, defaulting to info for anything unrecognised.
-func New(cfg *config.Config) *slog.Logger {
-	level := parseLevel(cfg.LogLevel)
+// New builds a logger from config, writing to w: a coloured, human-readable handler for
+// LogFormat "text" (dev), otherwise structured JSON (prod), from the configured level up. Every
+// line logged with a context is tagged with the request id and the correlation id it carries,
+// and a line logged with a running job's context is also kept on the job.
+func New(cfg *config.Config, w io.Writer) *slog.Logger {
 	var handler slog.Handler
-	if strings.EqualFold(cfg.LogFormat, "text") {
-		handler = tint.NewTextHandler(os.Stderr, &tint.Options{Level: level})
+	if cfg.LogFormat == config.LogFormatText {
+		handler = tint.NewTextHandler(w, &tint.Options{Level: cfg.LogLevel})
 	} else {
-		handler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level})
+		handler = slog.NewJSONHandler(w, &slog.HandlerOptions{Level: cfg.LogLevel})
 	}
-	return slog.New(Correlated(jobLogs{handler}))
+	return slog.New(slogctx.NewHandler(jobLogs{handler}, &slogctx.HandlerOptions{
+		Prependers: []slogctx.AttrExtractor{contextIDs},
+		Appenders:  []slogctx.AttrExtractor{}, // none: the ids are the only attributes a context adds
+	}))
 }
 
-// Correlated wraps h so that every record logged with a context that carries a correlation id
-// (the chain of domain events the work belongs to, WithCorrelationID) is tagged with it.
-func Correlated(h slog.Handler) slog.Handler { return correlated{h} }
-
-type correlated struct{ slog.Handler }
-
-func (h correlated) Handle(ctx context.Context, r slog.Record) error {
-	if id, ok := ctx.Value(correlationKey{}).(string); ok && id != "" {
-		r = r.Clone()
-		r.AddAttrs(slog.String("correlation_id", id))
+// contextIDs are the attributes of the ids ctx carries: the request id and the correlation id.
+func contextIDs(ctx context.Context, _ time.Time, _ slog.Level, _ string) []slog.Attr {
+	var attrs []slog.Attr
+	if id, ok := RequestIDFromContext(ctx); ok && id != "" {
+		attrs = append(attrs, slog.String("request_id", id))
 	}
-	return h.Handler.Handle(ctx, r)
+	if id, ok := correlationIDFromContext(ctx); ok && id != "" {
+		attrs = append(attrs, slog.String("correlation_id", id))
+	}
+	return attrs
 }
 
-func (h correlated) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return correlated{h.Handler.WithAttrs(attrs)}
+type requestIDKey struct{}
+
+// WithRequestID returns a context carrying the id of the HTTP request the work in it serves, so
+// the lines logged with it are tagged with the id.
+func WithRequestID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, requestIDKey{}, id)
 }
 
-func (h correlated) WithGroup(name string) slog.Handler { return correlated{h.Handler.WithGroup(name)} }
+// RequestIDFromContext returns the request id carried by ctx, if any.
+func RequestIDFromContext(ctx context.Context) (string, bool) {
+	id, ok := ctx.Value(requestIDKey{}).(string)
+	return id, ok
+}
 
 type correlationKey struct{}
 
@@ -61,6 +72,11 @@ type correlationKey struct{}
 // of domain events the work in it belongs to.
 func WithCorrelationID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, correlationKey{}, id)
+}
+
+func correlationIDFromContext(ctx context.Context) (string, bool) {
+	id, ok := ctx.Value(correlationKey{}).(string)
+	return id, ok
 }
 
 // JobLogs is the river middleware that keeps the lines a job logs on the job itself (riverlog),
@@ -74,8 +90,9 @@ func JobLogs() *riverlog.Middleware {
 }
 
 // jobLogs copies a record logged with a running job's context (one JobLogs put a logger in) to
-// that job's log, then hands it on. The copy carries the record's own attributes, not those a
-// logger added with With.
+// that job's log, then hands it on. The copy carries every attribute of the line, the context's
+// ids and those a logger added with With included: New puts jobLogs under slogctx, which folds
+// them all into the record.
 type jobLogs struct{ slog.Handler }
 
 func (h jobLogs) Handle(ctx context.Context, r slog.Record) error {
@@ -95,42 +112,5 @@ func (h jobLogs) WithGroup(name string) slog.Handler { return jobLogs{h.Handler.
 // Setup installs the configured logger as the process-wide slog default, so
 // river and every slog.Default() call site emit through it.
 func Setup(cfg *config.Config) {
-	slog.SetDefault(New(cfg))
-}
-
-func parseLevel(s string) slog.Level {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "debug":
-		return slog.LevelDebug
-	case "warn", "warning":
-		return slog.LevelWarn
-	case "error":
-		return slog.LevelError
-	default:
-		return slog.LevelInfo
-	}
-}
-
-type ctxKey struct{}
-
-// WithRequestID returns a context carrying the request correlation id, so logs
-// emitted downstream via FromContext are tagged with it.
-func WithRequestID(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, ctxKey{}, id)
-}
-
-// RequestIDFromContext returns the request id carried by ctx, if any.
-func RequestIDFromContext(ctx context.Context) (string, bool) {
-	id, ok := ctx.Value(ctxKey{}).(string)
-	return id, ok
-}
-
-// FromContext returns the default logger, tagged with the request id when the
-// context carries one. Use this at request-scoped log sites so every line
-// correlates back to the originating HTTP request.
-func FromContext(ctx context.Context) *slog.Logger {
-	if id, ok := RequestIDFromContext(ctx); ok {
-		return slog.Default().With("request_id", id)
-	}
-	return slog.Default()
+	slog.SetDefault(New(cfg, os.Stderr))
 }

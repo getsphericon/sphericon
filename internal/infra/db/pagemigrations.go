@@ -36,6 +36,6 @@ func (m *PageMigrations) Apply(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	slog.Info("migrations applied from the error page", "count", applied)
+	slog.InfoContext(ctx, "migrations applied from the error page", "count", applied)
 	return applied, nil
 }

@@ -17,7 +17,7 @@ import (
 func noNUL(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.ContainsRune(r.URL.Path, 0) || strings.Contains(r.URL.RawQuery, "%00") {
-			writeProblem(w, http.StatusBadRequest, "NUL characters are not allowed")
+			writeProblem(r.Context(), w, http.StatusBadRequest, "NUL characters are not allowed")
 			return
 		}
 		// ContentLength 0 is a request without a body (a GET): there is nothing to read.
@@ -28,7 +28,7 @@ func noNUL(next http.Handler) http.Handler {
 				return
 			}
 			if containsNUL(body) {
-				writeProblem(w, http.StatusBadRequest, "NUL characters are not allowed")
+				writeProblem(r.Context(), w, http.StatusBadRequest, "NUL characters are not allowed")
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewReader(body))

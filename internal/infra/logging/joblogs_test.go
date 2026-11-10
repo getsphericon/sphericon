@@ -2,6 +2,8 @@ package logging_test
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/riverqueue/river"
@@ -21,12 +23,12 @@ type loggedArgs struct{}
 func (loggedArgs) Kind() string { return "logged" }
 
 // A line a job logs through the process's logger, with the job's context, is kept on the job,
-// where the job queue UI shows it.
+// where the job queue UI shows it, with the correlation id of the context.
 func TestAJobKeepsTheLinesItLogged(t *testing.T) {
 	db := testhelper.Setup(t).SQLDB
-	logger := logging.New(&config.Config{LogLevel: "info"})
+	logger := logging.New(&config.Config{LogLevel: slog.LevelInfo}, io.Discard)
 	worker := river.WorkFunc(func(ctx context.Context, _ *river.Job[loggedArgs]) error {
-		logger.InfoContext(ctx, "sent the welcome mail", "to", "ada@example.com")
+		logger.InfoContext(logging.WithCorrelationID(ctx, "01JCHAIN"), "sent the welcome mail", "to", "ada@example.com")
 		return nil
 	})
 	w := rivertest.NewWorker(t, riverdatabasesql.New(db), &river.Config{Middleware: []rivertype.Middleware{logging.JobLogs()}}, worker)
@@ -38,4 +40,5 @@ func TestAJobKeepsTheLinesItLogged(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Contains(t, string(res.Job.Metadata), "sent the welcome mail")
+	assert.Contains(t, string(res.Job.Metadata), "correlation_id=01JCHAIN")
 }

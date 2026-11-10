@@ -2,6 +2,7 @@ package callbackinterpretation
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 
 	"github.com/samber/lo"
@@ -12,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 )
 
@@ -72,17 +72,16 @@ func (t telegram) pressed(ctx context.Context, tx Tx, m preset.InboundMessage) e
 // answer acknowledges a button press, best effort: the press is recorded and Telegram stops
 // waiting for an answer by itself after a while.
 func (t telegram) answer(ctx context.Context, tx Tx, callbackID string) {
-	log := logging.FromContext(ctx)
 	if t.bots == nil {
 		return
 	}
 	bot, err := t.bots.Bot(tx.Integration)
 	if err != nil {
-		log.Warn("ingest: cannot open the bot to answer a button press", "integration_id", tx.Integration.ID, "err", err)
+		slog.WarnContext(ctx, "ingest: cannot open the bot to answer a button press", "integration_id", tx.Integration.ID, "err", err)
 		return
 	}
 	if err := bot.AnswerCallbackQuery(ctx, callbackID); err != nil {
-		log.Warn("ingest: answering a button press failed", "integration_id", tx.Integration.ID, "err", err)
+		slog.WarnContext(ctx, "ingest: answering a button press failed", "integration_id", tx.Integration.ID, "err", err)
 	}
 }
 

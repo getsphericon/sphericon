@@ -37,7 +37,7 @@ func readyzHandler(db *sql.DB) http.Handler {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 		if err := db.PingContext(ctx); err != nil {
-			writeProblem(w, http.StatusServiceUnavailable, "database unreachable")
+			writeProblem(r.Context(), w, http.StatusServiceUnavailable, "database unreachable")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")

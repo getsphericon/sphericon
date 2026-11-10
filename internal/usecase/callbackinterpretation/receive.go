@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -42,7 +42,6 @@ type Callback struct {
 // own failure, and the provider retries. A valid request the Preset does not handle records
 // nothing and is no error.
 func (m *UseCase) Receive(ctx context.Context, in Callback) error {
-	log := logging.FromContext(ctx)
 	row, err := integrations.ByIngestKey(ctx, m.client, in.Key)
 	if errors.Is(err, integrations.ErrNotFound) {
 		return ErrNoHook
@@ -57,39 +56,39 @@ func (m *UseCase) Receive(ctx context.Context, in Callback) error {
 	}
 	p, ok := m.integ.Presets().Get(name)
 	if !ok {
-		log.Error("ingest hook: the Integration's preset is not loaded", "integration_id", row.ID, "preset", name)
+		slog.ErrorContext(ctx, "ingest hook: the Integration's preset is not loaded", "integration_id", row.ID, "preset", name)
 		return fmt.Errorf("the preset %q of integration %d is not loaded", name, row.ID)
 	}
 	params, err := m.integ.Params(row)
 	if err != nil {
-		log.Error("ingest hook: open the Integration's params failed", "integration_id", row.ID, "err", err)
+		slog.ErrorContext(ctx, "ingest hook: open the Integration's params failed", "integration_id", row.ID, "err", err)
 		return fmt.Errorf("open the params of integration %d: %w", row.ID, err)
 	}
 	res, err := p.Handle(ctx, preset.Request{URL: m.requestURL(row, in.Query), Header: in.Header, Body: in.Body}, params, m.now())
 	switch {
 	case errors.Is(err, preset.ErrUnauthentic):
 		// A forged callback (a STOP, a delivery report, a reply) is refused and left on record.
-		log.Warn("ingest hook: refused a request that is not authentic", "integration_id", row.ID, "preset", p.Name())
+		slog.WarnContext(ctx, "ingest hook: refused a request that is not authentic", "integration_id", row.ID, "preset", p.Name())
 		return err
 	case errors.Is(err, preset.ErrUnavailable):
 		// Our side failed (the signing certificate): the provider retries.
-		log.Error("ingest hook: verification unavailable", "integration_id", row.ID, "preset", p.Name(), "err", err)
+		slog.ErrorContext(ctx, "ingest hook: verification unavailable", "integration_id", row.ID, "preset", p.Name(), "err", err)
 		return err
 	case errors.Is(err, preset.ErrMalformed):
 		return err
 	case errors.Is(err, preset.ErrTransformFailed):
 		// The request was verified, so the fault is the Preset's: the provider retries.
-		log.Error("ingest hook: preset transform failed", "integration_id", row.ID, "preset", p.Name(), "err", err)
+		slog.ErrorContext(ctx, "ingest hook: preset transform failed", "integration_id", row.ID, "preset", p.Name(), "err", err)
 		return err
 	case err != nil:
-		log.Error("ingest hook: preset failed", "integration_id", row.ID, "preset", p.Name(), "err", err)
+		slog.ErrorContext(ctx, "ingest hook: preset failed", "integration_id", row.ID, "preset", p.Name(), "err", err)
 		return err
 	}
 
 	// The action is the engine's request to its caller: confirm a subscription at a URL.
 	if res.Action != nil && res.Action.Kind == preset.ActionConfirm {
 		if err := m.integ.ConfirmSubscription(ctx, res.Action.URL); err != nil {
-			log.Error("ingest hook: confirm subscription failed", "integration_id", row.ID, "err", err)
+			slog.ErrorContext(ctx, "ingest hook: confirm subscription failed", "integration_id", row.ID, "err", err)
 			return fmt.Errorf("%w: %w", ErrUnconfirmed, err)
 		}
 	}
@@ -98,7 +97,7 @@ func (m *UseCase) Receive(ctx context.Context, in Callback) error {
 	// docs/architecture/workspace-scoping.md, Workspace scoping).
 	s := events.Ingest(m.client.Scoped(row.WorkspaceID))
 	if err := m.Interpret(ctx, s, InterpretInput{Integration: row, Preset: p.Name(), Result: res}); err != nil {
-		log.Error("ingest hook: interpreting the facts failed", "integration_id", row.ID, "err", err)
+		slog.ErrorContext(ctx, "ingest hook: interpreting the facts failed", "integration_id", row.ID, "err", err)
 		return err
 	}
 	return nil

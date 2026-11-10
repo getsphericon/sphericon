@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/samber/lo"
@@ -22,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
@@ -148,7 +148,7 @@ func (r *Recorder) record(ctx context.Context, messageID int64, hit Hit, eventOf
 	}
 	machine := r.detector.IsMachine(ctx, hit.UserAgent, hit.Address)
 	if err := r.bus.Publish(ctx, eventOf(e, machine, r.now())); err != nil {
-		logging.FromContext(ctx).Error("engagement: recording failed", "message_id", messageID, "err", err)
+		slog.ErrorContext(ctx, "engagement: recording failed", "message_id", messageID, "err", err)
 	}
 	return nil
 }
@@ -183,7 +183,7 @@ func (r *Recorder) engagedOf(ctx context.Context, msg *ent.OutboundMessage) (eng
 // logLookup logs a failed lookup of a hit's message or Contact; a row that is simply gone is no
 // failure, and its caller does not log it.
 func logLookup(ctx context.Context, messageID int64, err error) {
-	logging.FromContext(ctx).Error("engagement: lookup failed", "message_id", messageID, "err", err)
+	slog.ErrorContext(ctx, "engagement: lookup failed", "message_id", messageID, "err", err)
 }
 
 func (e engaged) contactID() int64 {

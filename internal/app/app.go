@@ -268,7 +268,7 @@ func (a *App) start(ctx context.Context) error {
 	}
 	go func() {
 		if err := a.Metrics.Serve(); err != nil {
-			slog.Error("metrics server stopped", "err", err)
+			slog.ErrorContext(ctx, "metrics server stopped", "err", err)
 		}
 	}()
 	// The internal listener is bound before anything else is served for the same
@@ -278,7 +278,7 @@ func (a *App) start(ctx context.Context) error {
 	}
 	go func() {
 		if err := a.Internal.Serve(); err != nil {
-			slog.Error("internal server stopped", "err", err)
+			slog.ErrorContext(ctx, "internal server stopped", "err", err)
 		}
 	}()
 

@@ -29,6 +29,7 @@ package tracking
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -38,7 +39,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
@@ -80,7 +80,7 @@ func New(d Deps) http.Handler {
 		case err != nil && !errors.Is(err, engagement.ErrInvalidToken):
 			// The pixel is answered all the same: an open the Recorder could not check records
 			// nothing, and the image shows nothing of the message.
-			logging.FromContext(r.Context()).Error("tracking: open lookup failed", "err", err)
+			slog.ErrorContext(r.Context(), "tracking: open lookup failed", "err", err)
 		}
 		w.Header().Set("Content-Type", "image/gif")
 		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
@@ -95,7 +95,7 @@ func New(d Deps) http.Handler {
 		case errors.Is(err, engagement.ErrNotFound):
 			http.NotFound(w, r)
 		case err != nil:
-			logging.FromContext(r.Context()).Error("tracking: click lookup failed", "err", err)
+			slog.ErrorContext(r.Context(), "tracking: click lookup failed", "err", err)
 			http.Error(w, "lookup failed", http.StatusInternalServerError)
 		default:
 			http.Redirect(w, r, dest, http.StatusFound)
@@ -108,7 +108,7 @@ func New(d Deps) http.Handler {
 		case errors.Is(err, engagement.ErrNotFound):
 			http.NotFound(w, r)
 		case err != nil:
-			logging.FromContext(r.Context()).Error("tracking: short link lookup failed", "err", err)
+			slog.ErrorContext(r.Context(), "tracking: short link lookup failed", "err", err)
 			http.Error(w, "lookup failed", http.StatusInternalServerError)
 		default:
 			http.Redirect(w, r, dest, http.StatusFound)
@@ -147,7 +147,7 @@ func New(d Deps) http.Handler {
 		// (List-Unsubscribe=One-Click body) and the confirm page's button. No page is
 		// returned; the SPA transitions its UI client-side on 204.
 		if err := d.Unsubscribe.RecordLink(r.Context(), d.Workspaces.LinkScope(target.WorkspaceID), target); err != nil {
-			logging.FromContext(r.Context()).Error("tracking: unsubscribe failed", "workspace_id", target.WorkspaceID, "contact_id", target.ContactID, "source", target.Source, "err", err)
+			slog.ErrorContext(r.Context(), "tracking: unsubscribe failed", "workspace_id", target.WorkspaceID, "contact_id", target.ContactID, "source", target.Source, "err", err)
 			// Not a 204: a mailbox provider must see the failure and retry, and a
 			// person must not be told they are unsubscribed when nothing was recorded.
 			http.Error(w, "unsubscribe failed", http.StatusInternalServerError)
