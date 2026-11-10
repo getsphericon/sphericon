@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // errPublicIDsTaken is a generator of Workspace ids that drew only taken ones, publicIDAttempts in
@@ -38,6 +39,10 @@ const publicIDAttempts = 3
 // the use cases internal/usecase/workspaceview and internal/usecase/signup, which refuse an
 // Unverified User first (ADR 0030, ADR 0043).
 func CreateIn(ctx context.Context, tx *ent.Client, name string, newPublicID func() string, sendCap *int) (*ent.Workspace, error) {
+	name, err := validation.Name(name)
+	if err != nil {
+		return nil, err
+	}
 	collectKey, err := credentials.GenerateCollectKey()
 	if err != nil {
 		return nil, err

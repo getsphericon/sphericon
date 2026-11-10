@@ -130,7 +130,7 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 
 	// Update name + re-supply credentials.
 	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
-		Name:   siteapi.NewOptString("Renamed SMTP"),
+		Name:   siteapi.NewOptName("Renamed SMTP"),
 		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("smtp2.example.com", "new-pass")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
@@ -239,7 +239,7 @@ func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 
 	// An admin manages them.
 	_, err = env.SiteActor(t, fixtures.AdminAliceEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
-		Name: siteapi.NewOptString("Renamed"),
+		Name: siteapi.NewOptName("Renamed"),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 }

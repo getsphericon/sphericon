@@ -17,7 +17,6 @@ import (
 	"math"
 	"net"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -62,8 +61,7 @@ var (
 	// ErrPasskeyNotFound: no Passkey of that id belongs to the User (another User's counts as
 	// none).
 	ErrPasskeyNotFound = validation.NotFound("passkeys: passkey not found", i18n.ErrorsPasskeyNotFound)
-	// ErrPasskeyNameEmpty: the name given to a Passkey is empty once trimmed.
-	ErrPasskeyNameEmpty = validation.RefuseField("name", "passkeys: passkey name is empty", i18n.ErrorsPasskeyNameInvalid)
+
 	// ErrRegistrationFailed: a registration ceremony that cannot finish (CeremonyFailed); the
 	// User starts it again.
 	ErrRegistrationFailed = validation.Refuse("passkeys: passkey registration failed", i18n.ErrorsPasskeyRegistrationFailed)
@@ -182,25 +180,15 @@ func CeremonyFailed(err error) bool {
 	return errors.Is(err, ErrCeremony) || errors.Is(err, ErrChallengeSpent) || errors.Is(err, ErrPasskeyRefused)
 }
 
-// PasskeyName is the name a User gives a Passkey, trimmed; ErrPasskeyNameEmpty when nothing is
-// left. The contract (PasskeyName) already bounds the length.
-func PasskeyName(name string) (string, error) {
-	trimmed := strings.TrimSpace(name)
-	if trimmed == "" {
-		return "", ErrPasskeyNameEmpty
-	}
-	return trimmed, nil
-}
-
 // List returns the User's Passkeys, oldest first.
 func (p *Module) List(ctx context.Context, userID int64) ([]*ent.Passkey, error) {
 	return p.ent.Passkey.Query().Where(passkey.UserID(userID)).Order(passkey.ByID()).All(ctx)
 }
 
-// Rename gives the User's Passkey id a new name, trimmed (PasskeyName); ErrPasskeyNotFound when
-// it is not theirs.
+// Rename gives the User's Passkey id a new name, held to the name rule (validation.Name);
+// ErrPasskeyNotFound when it is not theirs.
 func (p *Module) Rename(ctx context.Context, userID, id int64, name string) (*ent.Passkey, error) {
-	name, err := PasskeyName(name)
+	name, err := validation.Name(name)
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +310,7 @@ type Registration struct {
 // unusable cookie, ErrChallengeSpent when the ceremony already finished, ErrPasskeyRefused when
 // the response is not acceptable (including an authenticator that did not verify the user).
 func (p *Module) FinishRegistration(ctx context.Context, u *ent.User, proof users.IdentityProof, in Registration) (*ent.User, *ent.Passkey, error) {
-	name, err := PasskeyName(in.Name)
+	name, err := validation.Name(in.Name)
 	if err != nil {
 		return nil, nil, err
 	}

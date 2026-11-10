@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -64,8 +63,6 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 var (
 	// ErrCustomFieldNotFound means no such Custom field in this Workspace.
 	ErrCustomFieldNotFound = validation.NotFound("contacts: custom field not found", i18n.ErrorsCustomFieldNotFound)
-	// ErrCustomFieldNameRequired means the new name of a Custom field is blank.
-	ErrCustomFieldNameRequired = validation.RefuseField("name", "contacts: custom field name is required", i18n.ErrorsNameRequired)
 )
 
 // CustomFieldUpdateInput is an edit of a Custom field: its display name and its type. The key never
@@ -87,12 +84,10 @@ func CustomField(ctx context.Context, s *ent.Scoped, id int64) (*ent.CustomField
 	return field, err
 }
 
-// Check refuses an edit whose new name is blank (ErrCustomFieldNameRequired).
+// Check refuses an edit whose new name the name rule refuses (validation.Name).
 func (in CustomFieldUpdateInput) Check() error {
-	if raw, ok := in.Name.Get(); ok && strings.TrimSpace(raw) == "" {
-		return ErrCustomFieldNameRequired
-	}
-	return nil
+	_, err := validation.NamePatch(in.Name)
+	return err
 }
 
 // Retype returns the type the edit changes field to, and false when the edit keeps its type.

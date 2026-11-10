@@ -35,7 +35,7 @@ func TestSiteAutomationsReadLiveAndDraftAndUpdateWritesTheDraft(t *testing.T) {
 	assert.True(t, before.Draft.Null, "a published Automation with no edit has no draft")
 
 	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
-		Name:         siteapi.NewOptString("Hold demo, edited"),
+		Name:         siteapi.NewOptName("Hold demo, edited"),
 		TriggerEvent: siteapi.NewOptString("hold_demo_v2"),
 		Steps:        []siteapi.SiteAutomationStep{{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)}},
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: id})

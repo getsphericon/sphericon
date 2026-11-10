@@ -76,7 +76,7 @@ func TestABlankSMTPPasswordIsRefusedForAMovedDestination(t *testing.T) {
 		"port":     {Host: "smtp.acme.test", Port: 25, Username: "u", From: "a@acme.test"},
 		"username": {Host: "smtp.acme.test", Port: 587, Username: "other", From: "a@acme.test"},
 	} {
-		var verr *validation.Error
+		var verr *validation.RefusalError
 		require.ErrorAs(t, editSMTP(env, id, moved), &verr, name)
 	}
 	assert.Equal(t, "smtp.acme.test", stored[smtp.Config](t, env, id).Host, "the stored secret never follows a moved destination")
@@ -125,7 +125,7 @@ func TestABlankSESSecretIsRefusedForAMovedDestination(t *testing.T) {
 		"endpoint": {Region: "eu-west-1", AccessKeyID: "AKIA1234", Endpoint: "https://attacker.example", From: "a@acme.test"},
 		"cleared":  {Region: "eu-west-1", AccessKeyID: "AKIA1234", From: "a@acme.test"},
 	} {
-		var verr *validation.Error
+		var verr *validation.RefusalError
 		require.ErrorAs(t, editSES(env, id, moved), &verr, name)
 	}
 	assert.Equal(t, postbox, stored[ses.Config](t, env, id).Endpoint, "the stored secret never follows a moved destination")

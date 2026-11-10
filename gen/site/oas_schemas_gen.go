@@ -339,16 +339,16 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/ApplyTagInput
 type ApplyTagInput struct {
 	// The label to apply; created on first use.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 }
 
 // GetName returns the value of Name.
-func (s *ApplyTagInput) GetName() string {
+func (s *ApplyTagInput) GetName() Name {
 	return s.Name
 }
 
 // SetName sets the value of Name.
-func (s *ApplyTagInput) SetName(val string) {
+func (s *ApplyTagInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -2593,7 +2593,7 @@ type CountryCode string
 // Ref: #/components/schemas/CreateBroadcastInput
 type CreateBroadcastInput struct {
 	// Internal broadcast name.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a
 	// broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS
 	// integration is refused with 422.
@@ -2606,7 +2606,7 @@ type CreateBroadcastInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *CreateBroadcastInput) GetName() string {
+func (s *CreateBroadcastInput) GetName() Name {
 	return s.Name
 }
 
@@ -2626,7 +2626,7 @@ func (s *CreateBroadcastInput) GetIntegrationId() OptNilEntityId {
 }
 
 // SetName sets the value of Name.
-func (s *CreateBroadcastInput) SetName(val string) {
+func (s *CreateBroadcastInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -2652,7 +2652,7 @@ func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 // set before the save; a refusal is a 422.
 // Ref: #/components/schemas/CreateIntegrationInput
 type CreateIntegrationInput struct {
-	Name      string  `json:"name"`
+	Name      Name    `json:"name"`
 	Enabled   OptBool `json:"enabled"`
 	IsDefault OptBool `json:"isDefault"`
 	// Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES
@@ -2673,7 +2673,7 @@ type CreateIntegrationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *CreateIntegrationInput) GetName() string {
+func (s *CreateIntegrationInput) GetName() Name {
 	return s.Name
 }
 
@@ -2713,7 +2713,7 @@ func (s *CreateIntegrationInput) GetParams() OptJsonObject {
 }
 
 // SetName sets the value of Name.
-func (s *CreateIntegrationInput) SetName(val string) {
+func (s *CreateIntegrationInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -2785,7 +2785,7 @@ func (s *CreateSendingDomainInput) SetDkimSelector(val OptString) {
 // Ref: #/components/schemas/CreateTemplateInput
 type CreateTemplateInput struct {
 	// Template name.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// Default subject line.
 	Subject OptString `json:"subject"`
 	// HTML body with Liquid merge tags. Write this or `doc`, not both.
@@ -2797,7 +2797,7 @@ type CreateTemplateInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *CreateTemplateInput) GetName() string {
+func (s *CreateTemplateInput) GetName() Name {
 	return s.Name
 }
 
@@ -2817,7 +2817,7 @@ func (s *CreateTemplateInput) GetDoc() OptEditorDocument {
 }
 
 // SetName sets the value of Name.
-func (s *CreateTemplateInput) SetName(val string) {
+func (s *CreateTemplateInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -3806,6 +3806,8 @@ type LocaleTag string
 type MaxPerDay int32
 
 type MaxPerSecond int32
+
+type Name string
 
 // NewNilCurrencyCode returns new NilCurrencyCode with value set to v.
 func NewNilCurrencyCode(v CurrencyCode) NilCurrencyCode {
@@ -5074,6 +5076,52 @@ func (o OptJsonObject) Get() (v JsonObject, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptJsonObject) Or(d JsonObject) JsonObject {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptName returns new OptName with value set to v.
+func NewOptName(v Name) OptName {
+	return OptName{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptName is optional Name.
+type OptName struct {
+	Value Name
+	Set   bool
+}
+
+// IsSet returns true if OptName was set.
+func (o OptName) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptName) Reset() {
+	var v Name
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptName) SetTo(v Name) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptName) Get() (v Name, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptName) Or(d Name) Name {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -8395,8 +8443,6 @@ func (o OptUserName) Or(d UserName) UserName {
 	}
 	return d
 }
-
-type PasskeyName string
 
 // A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"), written
 // `resource:verb` like the API token scopes. A Role is a set of them; the table from Role to
@@ -16171,7 +16217,7 @@ func (s *SiteContactsListOK) SetTotalPages(val int32) {
 // Site request body for creating an automation.
 // Ref: #/components/schemas/SiteCreateAutomationInput
 type SiteCreateAutomationInput struct {
-	Name         string `json:"name"`
+	Name         Name   `json:"name"`
 	TriggerEvent string `json:"triggerEvent"`
 	// Event actions that end an active enrollment early; none of them may be the trigger. Each follows the
 	// trigger's rule: any customer action, and of the email events only opened, clicked and unsubscribed.
@@ -16183,7 +16229,7 @@ type SiteCreateAutomationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteCreateAutomationInput) GetName() string {
+func (s *SiteCreateAutomationInput) GetName() Name {
 	return s.Name
 }
 
@@ -16208,7 +16254,7 @@ func (s *SiteCreateAutomationInput) GetSteps() []SiteAutomationStep {
 }
 
 // SetName sets the value of Name.
-func (s *SiteCreateAutomationInput) SetName(val string) {
+func (s *SiteCreateAutomationInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -16458,14 +16504,14 @@ func (s *SiteCreateInvitationResponse) SetResource(val SiteInvitationResource) {
 // Mint a Personal token of the caller's own.
 // Ref: #/components/schemas/SiteCreatePersonalTokenInput
 type SiteCreatePersonalTokenInput struct {
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// Each one a scope the caller's Role may grant (`grantableScopes`).
 	Scopes    []PersonalScope `json:"scopes"`
 	ExpiresAt OptNilTimestamp `json:"expiresAt"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteCreatePersonalTokenInput) GetName() string {
+func (s *SiteCreatePersonalTokenInput) GetName() Name {
 	return s.Name
 }
 
@@ -16480,7 +16526,7 @@ func (s *SiteCreatePersonalTokenInput) GetExpiresAt() OptNilTimestamp {
 }
 
 // SetName sets the value of Name.
-func (s *SiteCreatePersonalTokenInput) SetName(val string) {
+func (s *SiteCreatePersonalTokenInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -16524,7 +16570,7 @@ func (s *SiteCreatePersonalTokenResponse) SetResource(val SitePersonalTokenResou
 // Site request body for creating a Rule: it is created inactive, with its definition as the draft.
 // Ref: #/components/schemas/SiteCreateRuleInput
 type SiteCreateRuleInput struct {
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
 	TriggerEvents []string              `json:"triggerEvents"`
 	Condition     OptSiteConditionGroup `json:"condition"`
@@ -16533,7 +16579,7 @@ type SiteCreateRuleInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteCreateRuleInput) GetName() string {
+func (s *SiteCreateRuleInput) GetName() Name {
 	return s.Name
 }
 
@@ -16553,7 +16599,7 @@ func (s *SiteCreateRuleInput) GetActions() []SiteRuleAction {
 }
 
 // SetName sets the value of Name.
-func (s *SiteCreateRuleInput) SetName(val string) {
+func (s *SiteCreateRuleInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -16576,13 +16622,13 @@ func (s *SiteCreateRuleInput) SetActions(val []SiteRuleAction) {
 // Ref: #/components/schemas/SiteCreateSegmentInput
 type SiteCreateSegmentInput struct {
 	// Segment name.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
 	Condition SiteConditionGroup `json:"condition"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteCreateSegmentInput) GetName() string {
+func (s *SiteCreateSegmentInput) GetName() Name {
 	return s.Name
 }
 
@@ -16592,7 +16638,7 @@ func (s *SiteCreateSegmentInput) GetCondition() SiteConditionGroup {
 }
 
 // SetName sets the value of Name.
-func (s *SiteCreateSegmentInput) SetName(val string) {
+func (s *SiteCreateSegmentInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -16634,13 +16680,13 @@ func (s *SiteCreateSuppressionInput) SetDestination(val string) {
 // Create a workspace API token.
 // Ref: #/components/schemas/SiteCreateTokenInput
 type SiteCreateTokenInput struct {
-	Name      string          `json:"name"`
+	Name      Name            `json:"name"`
 	Scopes    []ApiTokenScope `json:"scopes"`
 	ExpiresAt OptNilTimestamp `json:"expiresAt"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteCreateTokenInput) GetName() string {
+func (s *SiteCreateTokenInput) GetName() Name {
 	return s.Name
 }
 
@@ -16655,7 +16701,7 @@ func (s *SiteCreateTokenInput) GetExpiresAt() OptNilTimestamp {
 }
 
 // SetName sets the value of Name.
-func (s *SiteCreateTokenInput) SetName(val string) {
+func (s *SiteCreateTokenInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -16700,16 +16746,16 @@ func (s *SiteCreateTokenResponse) SetResource(val SiteApiTokenResource) {
 // Ref: #/components/schemas/SiteCreateWorkspaceInput
 type SiteCreateWorkspaceInput struct {
 	// Display name: free text, not unique.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteCreateWorkspaceInput) GetName() string {
+func (s *SiteCreateWorkspaceInput) GetName() Name {
 	return s.Name
 }
 
 // SetName sets the value of Name.
-func (s *SiteCreateWorkspaceInput) SetName(val string) {
+func (s *SiteCreateWorkspaceInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -19915,7 +19961,7 @@ type SitePasskey struct {
 	// Unique identifier, the key of the rename and remove operations.
 	ID EntityId `json:"id"`
 	// What the User calls it, to tell their Passkeys apart.
-	Name PasskeyName `json:"name"`
+	Name Name `json:"name"`
 	// When the Passkey was registered.
 	CreatedAt Timestamp `json:"createdAt"`
 	// When a login last used it; absent while it has never been used.
@@ -19928,7 +19974,7 @@ func (s *SitePasskey) GetID() EntityId {
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskey) GetName() PasskeyName {
+func (s *SitePasskey) GetName() Name {
 	return s.Name
 }
 
@@ -19948,7 +19994,7 @@ func (s *SitePasskey) SetID(val EntityId) {
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskey) SetName(val PasskeyName) {
+func (s *SitePasskey) SetName(val Name) {
 	s.Name = val
 }
 
@@ -20735,7 +20781,7 @@ type SitePasskeyRegistrationInput struct {
 	// the last few minutes instead (ADR 0048).
 	CurrentPassword OptString `json:"currentPassword"`
 	// What to call the Passkey, to tell it from the User's others.
-	Name PasskeyName `json:"name"`
+	Name Name `json:"name"`
 	// The authenticator's response to the creation options.
 	Credential SitePasskeyRegistrationResponse `json:"credential"`
 }
@@ -20746,7 +20792,7 @@ func (s *SitePasskeyRegistrationInput) GetCurrentPassword() OptString {
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskeyRegistrationInput) GetName() PasskeyName {
+func (s *SitePasskeyRegistrationInput) GetName() Name {
 	return s.Name
 }
 
@@ -20761,7 +20807,7 @@ func (s *SitePasskeyRegistrationInput) SetCurrentPassword(val OptString) {
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskeyRegistrationInput) SetName(val PasskeyName) {
+func (s *SitePasskeyRegistrationInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -20834,16 +20880,16 @@ func (s *SitePasskeyRemoveInput) SetCurrentPassword(val OptString) {
 // Ref: #/components/schemas/SitePasskeyRenameInput
 type SitePasskeyRenameInput struct {
 	// What to call the Passkey, to tell it from the User's others.
-	Name PasskeyName `json:"name"`
+	Name Name `json:"name"`
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskeyRenameInput) GetName() PasskeyName {
+func (s *SitePasskeyRenameInput) GetName() Name {
 	return s.Name
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskeyRenameInput) SetName(val PasskeyName) {
+func (s *SitePasskeyRenameInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -25800,7 +25846,7 @@ func (s *SiteTwilioConfigKind) UnmarshalText(data []byte) error {
 // version's, and publishing makes the draft live.
 // Ref: #/components/schemas/SiteUpdateAutomationInput
 type SiteUpdateAutomationInput struct {
-	Name         OptString `json:"name"`
+	Name         OptName   `json:"name"`
 	TriggerEvent OptString `json:"triggerEvent"`
 	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
 	ExitEvents []string `json:"exitEvents"`
@@ -25810,7 +25856,7 @@ type SiteUpdateAutomationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteUpdateAutomationInput) GetName() OptString {
+func (s *SiteUpdateAutomationInput) GetName() OptName {
 	return s.Name
 }
 
@@ -25835,7 +25881,7 @@ func (s *SiteUpdateAutomationInput) GetSteps() []SiteAutomationStep {
 }
 
 // SetName sets the value of Name.
-func (s *SiteUpdateAutomationInput) SetName(val OptString) {
+func (s *SiteUpdateAutomationInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -26032,13 +26078,13 @@ func (s *SiteUpdateContactInput) SetTags(val []string) {
 // Ref: #/components/schemas/SiteUpdateCustomFieldInput
 type SiteUpdateCustomFieldInput struct {
 	// Display name.
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// Value type. Stored values are not rewritten: the leaves of the new type read them as they are.
 	Type OptSiteCustomFieldType `json:"type"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteUpdateCustomFieldInput) GetName() OptString {
+func (s *SiteUpdateCustomFieldInput) GetName() OptName {
 	return s.Name
 }
 
@@ -26048,7 +26094,7 @@ func (s *SiteUpdateCustomFieldInput) GetType() OptSiteCustomFieldType {
 }
 
 // SetName sets the value of Name.
-func (s *SiteUpdateCustomFieldInput) SetName(val OptString) {
+func (s *SiteUpdateCustomFieldInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -26174,7 +26220,7 @@ func (s *SiteUpdateRevenueSettingsInput) SetAttributionWindowDays(val OptAttribu
 // Actions write the draft, and the ones left out keep the draft's, else the live version's.
 // Ref: #/components/schemas/SiteUpdateRuleInput
 type SiteUpdateRuleInput struct {
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
 	TriggerEvents []string              `json:"triggerEvents"`
 	Condition     OptSiteConditionGroup `json:"condition"`
@@ -26183,7 +26229,7 @@ type SiteUpdateRuleInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteUpdateRuleInput) GetName() OptString {
+func (s *SiteUpdateRuleInput) GetName() OptName {
 	return s.Name
 }
 
@@ -26203,7 +26249,7 @@ func (s *SiteUpdateRuleInput) GetActions() []SiteRuleAction {
 }
 
 // SetName sets the value of Name.
-func (s *SiteUpdateRuleInput) SetName(val OptString) {
+func (s *SiteUpdateRuleInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -26226,13 +26272,13 @@ func (s *SiteUpdateRuleInput) SetActions(val []SiteRuleAction) {
 // Ref: #/components/schemas/SiteUpdateSegmentInput
 type SiteUpdateSegmentInput struct {
 	// Segment name.
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
 	Condition OptSiteConditionGroup `json:"condition"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteUpdateSegmentInput) GetName() OptString {
+func (s *SiteUpdateSegmentInput) GetName() OptName {
 	return s.Name
 }
 
@@ -26242,7 +26288,7 @@ func (s *SiteUpdateSegmentInput) GetCondition() OptSiteConditionGroup {
 }
 
 // SetName sets the value of Name.
-func (s *SiteUpdateSegmentInput) SetName(val OptString) {
+func (s *SiteUpdateSegmentInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -26254,16 +26300,16 @@ func (s *SiteUpdateSegmentInput) SetCondition(val OptSiteConditionGroup) {
 // Rename an API token.
 // Ref: #/components/schemas/SiteUpdateTokenInput
 type SiteUpdateTokenInput struct {
-	Name string `json:"name"`
+	Name Name `json:"name"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteUpdateTokenInput) GetName() string {
+func (s *SiteUpdateTokenInput) GetName() Name {
 	return s.Name
 }
 
 // SetName sets the value of Name.
-func (s *SiteUpdateTokenInput) SetName(val string) {
+func (s *SiteUpdateTokenInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -26272,14 +26318,14 @@ func (s *SiteUpdateTokenInput) SetName(val string) {
 // Ref: #/components/schemas/SiteUpdateWorkspaceInput
 type SiteUpdateWorkspaceInput struct {
 	// New display name.
-	Name string `json:"name"`
+	Name Name `json:"name"`
 	// Physical postal address for the marketing email footer (CAN-SPAM). Omit to leave it unchanged; send
 	// an empty string to clear it.
 	PostalAddress OptString `json:"postalAddress"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteUpdateWorkspaceInput) GetName() string {
+func (s *SiteUpdateWorkspaceInput) GetName() Name {
 	return s.Name
 }
 
@@ -26289,7 +26335,7 @@ func (s *SiteUpdateWorkspaceInput) GetPostalAddress() OptString {
 }
 
 // SetName sets the value of Name.
-func (s *SiteUpdateWorkspaceInput) SetName(val string) {
+func (s *SiteUpdateWorkspaceInput) SetName(val Name) {
 	s.Name = val
 }
 
@@ -28379,7 +28425,7 @@ func (s *TwilioConfigInputKind) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/UpdateBroadcastInput
 type UpdateBroadcastInput struct {
 	// Internal broadcast name.
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps
 	// the content.
 	Content OptBroadcastContentInput `json:"content"`
@@ -28391,7 +28437,7 @@ type UpdateBroadcastInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *UpdateBroadcastInput) GetName() OptString {
+func (s *UpdateBroadcastInput) GetName() OptName {
 	return s.Name
 }
 
@@ -28411,7 +28457,7 @@ func (s *UpdateBroadcastInput) GetIntegrationId() OptNilEntityId {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateBroadcastInput) SetName(val OptString) {
+func (s *UpdateBroadcastInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -28434,9 +28480,9 @@ func (s *UpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 // the stored secret.
 // Ref: #/components/schemas/UpdateIntegrationInput
 type UpdateIntegrationInput struct {
-	Name      OptString `json:"name"`
-	Enabled   OptBool   `json:"enabled"`
-	IsDefault OptBool   `json:"isDefault"`
+	Name      OptName `json:"name"`
+	Enabled   OptBool `json:"enabled"`
+	IsDefault OptBool `json:"isDefault"`
 	// Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES
 	// Integration with an `endpoint` cannot be left without it.
 	MaxPerSecond OptNilMaxPerSecond `json:"maxPerSecond"`
@@ -28456,7 +28502,7 @@ type UpdateIntegrationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *UpdateIntegrationInput) GetName() OptString {
+func (s *UpdateIntegrationInput) GetName() OptName {
 	return s.Name
 }
 
@@ -28501,7 +28547,7 @@ func (s *UpdateIntegrationInput) GetRetireSecrets() OptBool {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateIntegrationInput) SetName(val OptString) {
+func (s *UpdateIntegrationInput) SetName(val OptName) {
 	s.Name = val
 }
 
@@ -28549,7 +28595,7 @@ func (s *UpdateIntegrationInput) SetRetireSecrets(val OptBool) {
 // Ref: #/components/schemas/UpdateTemplateInput
 type UpdateTemplateInput struct {
 	// Template name.
-	Name OptString `json:"name"`
+	Name OptName `json:"name"`
 	// Default subject line.
 	Subject OptString `json:"subject"`
 	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
@@ -28561,7 +28607,7 @@ type UpdateTemplateInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *UpdateTemplateInput) GetName() OptString {
+func (s *UpdateTemplateInput) GetName() OptName {
 	return s.Name
 }
 
@@ -28581,7 +28627,7 @@ func (s *UpdateTemplateInput) GetDoc() OptEditorDocument {
 }
 
 // SetName sets the value of Name.
-func (s *UpdateTemplateInput) SetName(val OptString) {
+func (s *UpdateTemplateInput) SetName(val OptName) {
 	s.Name = val
 }
 

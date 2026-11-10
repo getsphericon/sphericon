@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -61,7 +62,7 @@ func TestApplyRejectsBlankNameAndUnknownContact(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := c.ApplyTag(ctx, acme, fixtures.ContactAliceID, "   ")
-	require.ErrorIs(t, err, tags.ErrInvalidName)
+	require.ErrorIs(t, err, validation.ErrNameBlank)
 
 	_, err = c.ApplyTag(ctx, acme, 999999, "x")
 	require.ErrorIs(t, err, tags.ErrContactNotFound)

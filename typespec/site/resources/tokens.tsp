@@ -38,14 +38,14 @@ model SiteApiTokenResource {
 
 /** Create a workspace API token */
 model SiteCreateTokenInput {
-  name: string;
+  name: Name;
   scopes: ApiTokenScope[];
   expiresAt?: Timestamp | null;
 }
 
 /** Rename an API token */
 model SiteUpdateTokenInput {
-  name: string;
+  name: Name;
 }
 
 /** Token creation result — `token` is the full secret, shown only once */

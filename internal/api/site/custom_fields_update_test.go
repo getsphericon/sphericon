@@ -143,11 +143,11 @@ func TestOnlyOwnersAndAdminsUpdateACustomField(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	field := fieldByKey(t, owner, fixtures.AcmePublicID, "plan")
 
-	_, err := updateField(member, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Alias")})
+	_, err := updateField(member, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptName("Alias")})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
-	renamed, err := updateField(admin, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Alias")})
+	renamed, err := updateField(admin, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptName("Alias")})
 	require.NoError(t, err)
-	final, err := updateField(owner, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Nick")})
+	final, err := updateField(owner, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptName("Nick")})
 	require.NoError(t, err)
 
 	assert.Equal(t, "Alias", renamed.Name)

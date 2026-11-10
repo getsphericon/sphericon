@@ -559,6 +559,10 @@ run = "go run ./cmd/configdoc"
 description = "openapi/{service,external,site} (x-required-scopes, x-required-permissions, x-grant-permissions, the Permission, ApiTokenScope, ServiceScope and user scope enums) -> Go (scopegen.Tables)"
 run = "go run ./cmd/scopegen"
 
+["generate:bounds"]
+description = "openapi/{site,external,service} (the value bounds boundgen.Bounds lists) -> Go (internal/kernel/bounds)"
+run = "go run ./cmd/boundgen"
+
 [generate]
 description = "Full cycle: typespec -> openapi -> backend -> test mocks -> fixture catalog -> backend i18n ids -> configuration reference -> frontend (clients, route tree) -> i18n types -> format"
 run = [
@@ -567,6 +571,7 @@ run = [
   { task = "generate:routes" },
   { task = "generate:backend" },
   { task = "generate:scopes" },
+  { task = "generate:bounds" },
   { task = "generate:mocks" },
   { task = "generate:fixtures" },
   { task = "generate:i18n-ids" },

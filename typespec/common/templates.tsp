@@ -5,7 +5,7 @@ namespace Sphericon;
 /** Request body for creating a template */
 model CreateTemplateInput {
   /** Template name */
-  name: string;
+  name: Name;
 
   /** Default subject line */
   subject?: string;
@@ -21,7 +21,7 @@ model CreateTemplateInput {
 /** Request body for updating a template */
 model UpdateTemplateInput {
   /** Template name */
-  name?: string;
+  name?: Name;
 
   /** Default subject line */
   subject?: string;

@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"maps"
-	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
@@ -62,13 +60,6 @@ type SignUpConfig struct {
 	Lookup func(ctx context.Context, email string) (u *ent.User, ok bool, err error)
 }
 
-// signUpForm is what a Sign-up checks beyond the contract, the name and email already trimmed.
-type signUpForm struct {
-	Name     string `json:"name" validate:"required,display_name"`
-	Email    string `json:"email" validate:"required,account_email"`
-	Password string `json:"password" validate:"required,password_not_blank,password_length"`
-}
-
 // SignUp is a person creating a User for themself with a name, an email and a password (the
 // Sign-up, ADR 0030), open on every Instance (ADR 0063). It checks the form, and then, on an
 // Instance that requires email verification, does the same work for every address so that
@@ -93,21 +84,12 @@ type signUpForm struct {
 //     Workspace.
 func (u *UseCase) SignUp(ctx context.Context, in SignUpInput) (SignUpResult, error) {
 	cfg := u.signUp
-	name := strings.TrimSpace(in.Name)
-	email := strings.TrimSpace(in.Email)
-	// The password is kept as sent: sign-in compares it as typed.
-	fields, err := validation.Fields(signUpForm{Name: name, Email: email, Password: in.Password})
-	if err != nil {
-		return SignUpResult{}, err
-	}
+	form, formErr := users.CheckForm(in.Name, in.Email, in.Password)
 	consents, err := cfg.Consents.Check(ctx, in.SignupItems, consentrecord.SourceSignUpForm)
-	refused, itemsRefused := errors.AsType[*validation.FieldsError](err)
-	if err != nil && !itemsRefused {
+	if err := validation.Fields(formErr, err); err != nil {
 		return SignUpResult{}, err
 	}
-	if fields != nil || itemsRefused {
-		return SignUpResult{}, merged(fields, refused)
-	}
+	name, email := form.Name, form.Email
 	if !cfg.RequireVerification {
 		return u.signUpVerified(ctx, users.NewUser{Name: name, Email: email, SurveyDue: cfg.SurveyDue(), Consents: consents}, in.Password)
 	}
@@ -196,16 +178,6 @@ func (u *UseCase) signUpVerified(ctx context.Context, n users.NewUser, password 
 		return SignUpResult{}, err
 	}
 	return SignUpResult{}, nil
-}
-
-// merged is the one refusal of a form whose fields and Sign-up items' answers both may fail.
-func merged(fields map[string][]string, items *validation.FieldsError) *validation.FieldsError {
-	all := map[string][]string{}
-	maps.Copy(all, fields)
-	if items != nil {
-		maps.Copy(all, items.Fields)
-	}
-	return &validation.FieldsError{Fields: all}
 }
 
 // newBrowser draws the random value that marks one Sign-up browser and returns it with the

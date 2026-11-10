@@ -35,14 +35,15 @@ var (
 	ErrWrongAccount = validation.Denied("users: this invitation is for another account", i18n.ErrorsInvitationOtherAccount)
 )
 
-// credentialsRequired refuses accepting an Invitation for an address with no Verified User
-// without a name and a password: the invitee sets up the account, so both are required.
-func credentialsRequired() *validation.FieldsError {
-	return &validation.FieldsError{Fields: map[string][]string{
-		validation.FieldName:     {i18n.T(i18n.ErrorsNameRequired, nil)},
-		validation.FieldPassword: {i18n.T(i18n.ErrorsPasswordRequired, nil)},
-	}}
-}
+// The refusals of accepting an Invitation for an address with no Verified User without a name and
+// a password: the invitee sets up the account, so both are required.
+var (
+	ErrNameRequired     = validation.RefuseField(validation.FieldName, "users: name is required", i18n.ErrorsNameRequired)
+	ErrPasswordRequired = validation.RefuseField(validation.FieldPassword, "users: password is required", i18n.ErrorsPasswordRequired)
+)
+
+// credentialsRequired refuses the acceptance on both fields.
+func credentialsRequired() error { return validation.Fields(ErrNameRequired, ErrPasswordRequired) }
 
 // InvitationAcceptance is what the person who follows an Invitation link gives.
 type InvitationAcceptance struct {
@@ -53,11 +54,6 @@ type InvitationAcceptance struct {
 	SignupItems []consentrecords.Answer
 	// SessionEmail is the login email of the session the request carried ("" for none).
 	SessionEmail string
-}
-
-// acceptancePasswordForm is the password an acceptance sends, checked against the password rule.
-type acceptancePasswordForm struct {
-	Password string `json:"password" validate:"omitempty,password_not_blank,password_length"`
 }
 
 // AcceptInvitationLink accepts the pending Invitation whose link carries token (AcceptInvitation):
@@ -89,8 +85,10 @@ func (a *Module) AcceptInvitationLink(ctx context.Context, token string, in Invi
 // rule first, whether or not it is asked.
 func (a *Module) AcceptInvitation(ctx context.Context, inv *ent.Invitation, in InvitationAcceptance) error {
 	// A password that is sent must pass its rule, whether or not the transaction asks for one.
-	if err := validation.Form(acceptancePasswordForm{Password: in.Password}); err != nil {
-		return err
+	if in.Password != "" {
+		if err := checkPassword(in.Password); err != nil {
+			return err
+		}
 	}
 	// The answers are checked before the transaction, which says on the row it reads whether
 	// they are asked at all.
@@ -198,8 +196,9 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 	if account.refused != nil {
 		return nil, acceptProof{}, account.refused
 	}
-	if err := CheckName(name); err != nil {
-		return nil, acceptProof{}, err
+	name, nerr := validation.UserName(name)
+	if nerr != nil {
+		return nil, acceptProof{}, nerr
 	}
 	hash, herr := passwords.Hash(account.password)
 	if herr != nil {

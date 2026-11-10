@@ -48,7 +48,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	assert.NotContains(t, testhelper.SiteEmailOf(upd).Body, "Hello")
 
 	// A name-only write leaves the document alone.
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("Renamed")},
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName("Renamed")},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.NotEmpty(t, env.DB.Broadcast.GetX(ctx, int64(res.ID)).Doc)
@@ -86,7 +86,7 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	assert.Equal(t, before, env.DB.Broadcast.Query().CountX(ctx), "nothing is stored")
 
 	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Name:    siteapi.NewOptString("Renamed"),
+		Name:    siteapi.NewOptName("Renamed"),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(map[string]jx.Raw{"type": jx.Raw(`"nope"`)})}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.BroadcastDraftID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)

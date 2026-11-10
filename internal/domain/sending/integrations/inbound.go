@@ -162,13 +162,13 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 	}
 	if name == nil {
 		if len(in.params) > 0 {
-			return inbound{}, &validation.Error{Field: "params", Message: i18n.T(i18n.ErrorsPresetParamsWithoutPreset, nil)}
+			return inbound{}, refuse("params", i18n.ErrorsPresetParamsWithoutPreset, nil)
 		}
 		return inbound{apply: row != nil && changed}, nil
 	}
 	p, ok := m.presets.Get(*name)
 	if !ok {
-		return inbound{}, &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsPresetUnknown, map[string]any{"Name": *name})}
+		return inbound{}, refuse(fieldPreset, i18n.ErrorsPresetUnknown, map[string]any{"Name": *name})
 	}
 
 	var prev map[string]any
@@ -332,15 +332,15 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (Vi
 // its param (params.<name>) so a form shows it there; a failure of the params as a whole is on
 // params.
 func paramsRefusal(err error) error {
-	fields := map[string][]string{}
+	var refusals []error
 	for name, messages := range preset.ParamErrors(err) {
 		field, id := "params", i18n.ErrorsPresetParamsInvalid
 		if name != "" {
 			field, id = "params."+name, i18n.ErrorsPresetParamInvalid
 		}
 		for _, m := range messages {
-			fields[field] = append(fields[field], i18n.T(id, map[string]any{detailKey: m}))
+			refusals = append(refusals, refuse(field, id, map[string]any{detailKey: m}))
 		}
 	}
-	return &validation.FieldsError{Fields: fields}
+	return validation.Fields(refusals...)
 }

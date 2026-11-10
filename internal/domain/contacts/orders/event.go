@@ -15,7 +15,9 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/money"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // The actions of the four order Events, as the spec names them.
@@ -55,20 +57,16 @@ type Parsed struct {
 	RefundID string
 }
 
-// RefusalError is why an order Event was refused, worded for the one who sent it.
-type RefusalError struct{ Reason string }
-
-func (e *RefusalError) Error() string { return e.Reason }
+// ErrInvalidEvent is an order Event whose properties are refused; With says why, worded
+// for the one who sent it.
+var ErrInvalidEvent = validation.Refuse("orders: invalid order event", i18n.ErrorsOrderEventInvalid)
 
 func refuse(format string, args ...any) error {
-	return &RefusalError{Reason: fmt.Sprintf(format, args...)}
+	return ErrInvalidEvent.With(fmt.Sprintf(format, args...))
 }
 
-// IsRefusal reports whether err is a RefusalError.
-func IsRefusal(err error) bool {
-	var r *RefusalError
-	return errors.As(err, &r)
-}
+// IsRefusal reports whether err refuses an order Event's properties (ErrInvalidEvent).
+func IsRefusal(err error) bool { return errors.Is(err, ErrInvalidEvent) }
 
 // Parse checks an order Event's properties and reads them, and only what Sphericon reads: the
 // order_id, the total, the currency and a refund's refund_id. Every other property is kept in the

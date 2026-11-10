@@ -70,14 +70,14 @@ func (m *Module) LinkScope(workspaceID int64) *ent.Scoped {
 // sets (or clears, with "") its postal address, trimmed so whitespace alone clears it. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is
 // the tenant root and has no scoped wrapper, so this is an explicit path.
-// The name is trimmed; an empty one is ErrNameEmpty.
+// The name is held to the name rule (validation.Name).
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, name string, postalAddress *string) (*ent.Workspace, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return nil, ErrNameEmpty
+	name, err := validation.Name(name)
+	if err != nil {
+		return nil, err
 	}
 	var updated *ent.Workspace
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
 		if err != nil {
 			return err
@@ -339,9 +339,6 @@ func ptrEqual(a, b *int) bool {
 	}
 	return *a == *b
 }
-
-// ErrNameEmpty refuses a Workspace name that is empty once trimmed.
-var ErrNameEmpty = validation.RefuseField("name", "workspaces: workspace name is empty", i18n.ErrorsNameEmpty)
 
 // Get is the scoped Workspace's own row.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped) (*ent.Workspace, error) {

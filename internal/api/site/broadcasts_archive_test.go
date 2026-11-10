@@ -124,7 +124,7 @@ func TestSiteAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 	_, err := c.SiteBroadcastsArchive(ctx, archiveParams(fixtures.BroadcastDraftID))
 	require.NoError(t, err)
 
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("Renamed")},
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName("Renamed")},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	testhelper.SiteRefusal(t, err, http.StatusConflict)
 

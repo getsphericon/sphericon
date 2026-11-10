@@ -708,6 +708,11 @@
         "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
         "description": "A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)"
       },
+      "Name": {
+        "type": "string",
+        "maxLength": 100,
+        "description": "What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a\nBroadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding\nspaces are trimmed before the name is stored, and a name that is empty then is refused (422)."
+      },
       "ProblemCode": {
         "type": "string",
         "enum": [

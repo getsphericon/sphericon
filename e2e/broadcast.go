@@ -70,7 +70,7 @@ func (w *Workspace) createBroadcast(b Broadcast) externalapi.EntityId {
 		email.Body = externalapi.NewOptString(b.Body)
 	}
 	in := &externalapi.CreateBroadcastInput{
-		Name:    b.Name,
+		Name:    externalapi.Name(b.Name),
 		Content: externalapi.BroadcastContentInput{OneOf: externalapi.NewEmailBroadcastContentInputBroadcastContentInputSum(email)},
 	}
 	res, err := w.api.BroadcastsCreate(w.t.Context(), in)

@@ -8,25 +8,25 @@ package contactsunchecked
 
 import (
 	"context"
-	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // UpdateCustomFieldIn renames field or changes its type, an audited change (ADR 0022). A type
 // change rewrites no stored value: the leaves of the new type read the values as they are, and are
 // false on one of another shape. It does not ask whether a Segment, a Rule or a Broadcast tests the
 // field with a leaf the new type does not take: internal/usecase/customfieldretyping runs the
-// Removal check first. A blank new name is contacts.ErrCustomFieldNameRequired.
+// Removal check first. A new name is held to the name rule (validation.Name).
 func UpdateCustomFieldIn(ctx context.Context, s *ent.Scoped, field *ent.CustomField, in contacts.CustomFieldUpdateInput) (*ent.CustomField, error) {
-	if err := in.Check(); err != nil {
+	name, err := validation.NamePatch(in.Name)
+	if err != nil {
 		return nil, err
 	}
 	upd := s.CustomField().UpdateOneID(field.ID)
-	if raw, ok := in.Name.Get(); ok {
-		upd.SetName(strings.TrimSpace(raw))
-	}
+	patch.ApplySet(name, upd.SetName)
 	if t, ok := in.Retype(field); ok {
 		upd.SetType(t)
 	}

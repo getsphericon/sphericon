@@ -46,14 +46,13 @@ func TestMintRefusesABlankNameAndUnknownScopes(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := apitokens.Mint(ctx, s, apitokens.Input{Name: "  ", Scopes: []string{"contacts:read"}})
-	blank, ok := errors.AsType[*validation.Error](err)
-	require.True(t, ok, "got %v", err)
-	assert.Equal(t, "name", blank.Field)
+	require.ErrorIs(t, err, validation.ErrNameBlank)
 
 	_, err = apitokens.Mint(ctx, s, apitokens.Input{Name: "x", Scopes: []string{"contacts:read", "root:all"}})
-	unknown, ok := errors.AsType[*validation.Error](err)
+	require.ErrorIs(t, err, apitokens.ErrUnknownScope)
+	unknown, ok := errors.AsType[*validation.RefusalError](err)
 	require.True(t, ok, "got %v", err)
-	assert.Equal(t, "scopes", unknown.Field)
+	assert.Equal(t, "scopes", unknown.Field())
 }
 
 func TestMintWithinNeverGrantsAScopeTheMinterLacks(t *testing.T) {

@@ -38,7 +38,7 @@ func TestReportCredentialIssuedExplainsARefusal(t *testing.T) {
 	unlicensed := commandline.ReportCredentialIssued(&bytes.Buffer{}, nil, servicecredentials.ErrNotLicensed)
 
 	require.ErrorContains(t, scope, "known scopes")
-	require.ErrorContains(t, name, "a name and an expiry in the future")
+	require.ErrorContains(t, name, "an expiry in the future")
 	require.ErrorContains(t, unlicensed, "no staff license")
 }
 

@@ -222,8 +222,7 @@ var (
 	// ErrFromNotVerified: the From email's domain is not a verified Sending domain of this
 	// Workspace (ADR 0010).
 	ErrFromNotVerified = validation.Refuse("broadcasts: from email must be on a verified sending domain", i18n.ErrorsBroadcastFromNotVerified)
-	// ErrBlankName: the Broadcast name is empty or whitespace only.
-	ErrBlankName = validation.Refuse("broadcasts: name must not be empty", i18n.ErrorsNameEmpty)
+
 	// ErrNoChannel: a new Broadcast names no Channel: it has no content to take the shape of.
 	ErrNoChannel = validation.Refuse("broadcasts: a broadcast needs a channel", i18n.ErrorsBroadcastNoChannel)
 	// ErrChannelFixed: an edit carries content of another Channel than the Broadcast's, which is
@@ -266,14 +265,6 @@ type UpdateInput struct {
 	IntegrationID patch.Field[int64]
 }
 
-// checkName refuses a given name that is blank after trimming; an absent name is not checked.
-func checkName(name *string) error {
-	if name != nil && strings.TrimSpace(*name) == "" {
-		return ErrBlankName
-	}
-	return nil
-}
-
 // checkFrom refuses a From email whose domain is not a verified Sending domain of the Workspace,
 // by the same check the send gate uses (ADR 0010); the refusal names the domain. The caller asks
 // only when a write sets or changes the From, so a Broadcast held for a domain that lost
@@ -295,14 +286,16 @@ func setsFrom(from, stored *string) bool {
 }
 
 // Create makes a draft Broadcast on the Channel of its content. Nothing here schedules or sends.
-// A blank name is ErrBlankName, no content ErrNoChannel, an SMS Broadcast in a Workspace with no
+// The name is held to the name rule (validation.Name), no content is ErrNoChannel, an SMS Broadcast in a Workspace with no
 // SMS Integration ErrChannelNoIntegration and an Integration of another Channel
 // ErrIntegrationOtherChannel; content that cannot render is emailrender.ErrInvalidContent, and an
 // email body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent.Broadcast, error) {
-	if err := checkName(f.Name); err != nil {
+	name, err := validation.NameOpt(f.Name)
+	if err != nil {
 		return nil, err
 	}
+	f.Name = name
 	if f.Content == nil {
 		return nil, ErrNoChannel
 	}
@@ -448,13 +441,15 @@ func (o Order) terms() []broadcast.OrderOption {
 }
 
 // Update applies a patch to a draft and returns it. The UPDATE only matches a draft row, so a
-// Broadcast that was claimed for sending in the meantime is never edited. A blank name is
-// ErrBlankName; a Segment or Integration set here is checked as on Create; content of another
+// Broadcast that was claimed for sending in the meantime is never edited. A new name is held to
+// the name rule (validation.Name); a Segment or Integration set here is checked as on Create; content of another
 // Channel than the Broadcast's is ErrChannelFixed, since a Broadcast is never converted (ADR 0080).
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInput) (*ent.Broadcast, error) {
-	if err := checkName(f.Name.Ptr()); err != nil {
+	name, err := validation.NamePatch(f.Name)
+	if err != nil {
 		return nil, err
 	}
+	f.Name = name
 	cur, err := m.Get(ctx, s, id)
 	if err != nil {
 		return nil, err

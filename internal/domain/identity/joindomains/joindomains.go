@@ -38,6 +38,8 @@ const RecordLabel = "_sphericon-join."
 var (
 	// ErrAlreadyExists means the Workspace already has this domain.
 	ErrAlreadyExists = validation.ConflictField("domain", "joindomains: this domain is already added", i18n.ErrorsJoinDomainExists)
+	// ErrInvalid is a domain that is no domain name.
+	ErrInvalid = validation.RefuseField("domain", "joindomains: invalid domain", i18n.ErrorsJoinDomainInvalid)
 	// ErrRecordNotFound means the TXT record is not published (or carries another value).
 	ErrRecordNotFound = validation.Refuse("joindomains: the TXT record was not found", i18n.ErrorsJoinDomainRecordMissing)
 	// ErrHeldElsewhere means another Workspace has the domain verified and still publishes
@@ -98,13 +100,13 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped) ([]*ent.JoinDomain, er
 }
 
 // Add stores a pending claim of the domain with a fresh token. The domain is canonicalized
-// (lower case, IDN as punycode); a malformed one is a *validation.Error, one the Workspace
+// (lower case, IDN as punycode); a malformed one is ErrInvalid, one the Workspace
 // already has is ErrAlreadyExists. Another Workspace's claim, pending or verified, never
 // blocks it.
 func (m *Module) Add(ctx context.Context, s *ent.Scoped, raw string) (*ent.JoinDomain, error) {
 	domain, ok := domainname.Normalize(raw)
 	if !ok {
-		return nil, &validation.Error{Field: "domain", Message: i18n.T(i18n.ErrorsJoinDomainInvalid, nil)}
+		return nil, ErrInvalid
 	}
 	token := "sphericon-join=" + rand.Text()
 

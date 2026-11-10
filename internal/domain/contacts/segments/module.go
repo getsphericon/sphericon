@@ -78,8 +78,13 @@ func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond string) erro
 // the Condition may name a Tag or test a Custom field, and the delete of that Tag and the retype of
 // that field check for it under the same lock.
 func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*ent.Segment, error) {
+	name, err := validation.Name(in.Name)
+	if err != nil {
+		return nil, err
+	}
+	in.Name = name
 	var seg *ent.Segment
-	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
 		if in.Condition != nil {
 			if err := s.Validate(ctx, ts, *in.Condition); err != nil {
 				return err
@@ -108,8 +113,13 @@ func (s *Module) Get(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segmen
 // Workspace's lock as Create. An archived Segment is ErrArchived: it is read-only until it is
 // unarchived (ADR 0100), and Archive takes the same lock, so the check holds for the write.
 func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
+	name, err := validation.NamePatch(in.Name)
+	if err != nil {
+		return nil, err
+	}
+	in.Name = name
 	var seg *ent.Segment
-	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
 		current, err := ts.Segment().Get(ctx, id)
 		if err != nil {
 			return err

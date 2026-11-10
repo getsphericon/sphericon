@@ -24,6 +24,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // The unique constraints of the tables this package writes (ADR 0106).
@@ -34,18 +36,21 @@ var _ = db.Declare(
 var (
 	// ErrNotLicensed is the refusal on an instance without the `staff` license: the Enterprise
 	// sections, the service endpoints and their credentials are off.
-	ErrNotLicensed = errors.New("staff: the staff feature is not licensed")
+	ErrNotLicensed = validation.Unlicensed("staff: the staff feature is not licensed", i18n.ErrorsStaffNotLicensed)
 	// ErrUnauthorized is the service security handler's refusal of a missing or bad credential.
 	ErrUnauthorized = errors.New("staff: unauthorized")
 	// ErrInvalidScope: a scope that no Service credential may carry, or none at all.
-	ErrInvalidScope = errors.New("staff: a service credential needs one or more known scopes")
-	// ErrInvalidCredential: a Service credential without a name, or with an expiry that
-	// is already past.
-	ErrInvalidCredential = errors.New("staff: a service credential needs a name and a future expiry")
+	ErrInvalidScope = validation.RefuseField("scopes", "staff: a service credential needs one or more known scopes",
+		i18n.ErrorsServiceCredentialScope)
+	// ErrInvalidCredential: a Service credential with an expiry that is already past; its name is
+	// held to the name rule (validation.Name).
+	ErrInvalidCredential = validation.Refuse("staff: a service credential needs a future expiry",
+		i18n.ErrorsServiceCredentialInvalid)
 	// ErrCredentialNotFound: no Service credential has this id.
-	ErrCredentialNotFound = errors.New("staff: service credential not found")
+	ErrCredentialNotFound = validation.NotFound("staff: service credential not found", i18n.ErrorsServiceCredentialNotFound)
 	// ErrCredentialInactive: the credential is revoked or expired, so it cannot be rotated.
-	ErrCredentialInactive = errors.New("staff: service credential is revoked or expired")
+	ErrCredentialInactive = validation.Conflict("staff: service credential is revoked or expired",
+		i18n.ErrorsServiceCredentialInactive)
 	// ErrForbidden: the credential is valid but its scopes do not cover the operation.
 	ErrForbidden = forbiddenError{}
 )
@@ -111,8 +116,11 @@ func (m *Module) IssueServiceCredential(ctx context.Context, in IssueInput) (*Is
 	if err := m.licensed(); err != nil {
 		return nil, err
 	}
-	name := strings.TrimSpace(in.Name)
-	if name == "" || (in.ExpiresAt != nil && !in.ExpiresAt.After(m.now())) {
+	name, err := validation.Name(in.Name)
+	if err != nil {
+		return nil, err
+	}
+	if in.ExpiresAt != nil && !in.ExpiresAt.After(m.now()) {
 		return nil, ErrInvalidCredential
 	}
 	scopes, err := normalizeScopes(in.Scopes)

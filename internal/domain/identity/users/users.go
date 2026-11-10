@@ -139,18 +139,32 @@ func (a *Module) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).Exist(ctx)
 }
 
-// ErrNameInvalid means a User's name is one validation.DisplayName refuses: too long, empty to
-// the eye, or holding a character that breaks a line or hides.
-var ErrNameInvalid = errors.New("users: the name is not a valid display name")
+// Form is a person's name, address and password by the rules of a User's: the name trimmed, the
+// address in its Email case, the password as typed.
+type Form struct {
+	Name, Email, Password string
+}
 
-// CheckName checks every way a person names a User. A Sign-in provider's invalid name is
-// dropped instead (providerName).
-func CheckName(name string) error {
-	if !validation.DisplayName(name) {
-		return fmt.Errorf("%w: %w", ErrNameInvalid, validation.Refused(validation.FieldName,
-			i18n.T(i18n.ErrorsNameInvalid, map[string]any{"NameMax": validation.NameMaxLength})))
+// CheckForm checks the name, the address and the password a person gives for a new User by the
+// rules of a User's (validation.UserName, validation.AccountEmail, validation.Password), and
+// returns them normalised, or a *validation.FieldsError naming every refused field. A Sign-up
+// calls it before it hashes the password, so a refused form costs no hash; the writes check the
+// name and the address again.
+func CheckForm(name, email, password string) (Form, error) {
+	name, nameErr := validation.UserName(name)
+	email, emailErr := validation.AccountEmail(validation.FieldEmail, email)
+	err := validation.Fields(nameErr, emailErr, validation.Password(validation.FieldPassword, password))
+	return Form{Name: name, Email: email, Password: password}, err
+}
+
+// checked is n with its name and address checked by the rules of a User's and normalised.
+func (n NewUser) checked() (NewUser, error) {
+	var err error
+	if n.Name, err = validation.UserName(n.Name); err != nil {
+		return n, err
 	}
-	return nil
+	n.Email, err = validation.AccountEmail(validation.FieldEmail, n.Email)
+	return n, err
 }
 
 // CreateUnverified creates the Unverified User of a Sign-up (ADR 0030): its name, email and
@@ -159,11 +173,12 @@ func CheckName(name string) error {
 // address is verified from the Sign-up browser, or replaced on the link. A taken address is
 // ErrEmailTaken. SurveyDue marks the User as owing the Sign-up survey (the Instance asks it).
 func (a *Module) CreateUnverified(ctx context.Context, n NewUser) (*ent.User, error) {
-	if err := CheckName(n.Name); err != nil {
+	n, err := n.checked()
+	if err != nil {
 		return nil, err
 	}
 	var created *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		err := constraints.Write(ctx, tx, func() error {
 			var err error
 			created, err = tx.User.Create().SetName(n.Name).SetEmail(n.Email).SetPasswordHash(n.PasswordHash).
@@ -204,11 +219,13 @@ func (a *Module) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwo
 // CreateUser creates a User whose email is already proven, with a password hash: a
 // User made by the platform itself rather than by a Sign-up. A taken address is ErrEmailTaken.
 func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	if err := CheckName(name); err != nil {
+	n, err := NewUser{Name: name, Email: email}.checked()
+	if err != nil {
 		return nil, err
 	}
+	name, email = n.Name, n.Email
 	var u *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		return constraints.Write(ctx, tx, func() error {
 			var err error
 			u, err = tx.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(a.now()).Save(ctx)
@@ -265,12 +282,16 @@ const FirstWorkspaceName = "Personal"
 
 // CreateVerifiedIn writes, in tx, the User of a Sign-up on an install that does not require
 // email verification (ADR 0030): Verified at once with its password, and the Consent records of
-// its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up survey. The caller has
-// checked the name (CheckName) and creates the first Workspace on the same transaction
-// (internal/usecase/signup). A taken address is ErrEmailTaken.
+// its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up survey. The name and the
+// address are checked by the rules of a User's; the caller creates the first Workspace on the same
+// transaction (internal/usecase/signup). A taken address is ErrEmailTaken.
 func CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser, at time.Time) (*ent.User, error) {
+	n, err := n.checked()
+	if err != nil {
+		return nil, err
+	}
 	var u *ent.User
-	err := constraints.Write(ctx, tx, func() error {
+	err = constraints.Write(ctx, tx, func() error {
 		var err error
 		u, err = tx.User.Create().
 			SetName(n.Name).
@@ -301,9 +322,11 @@ type profileWrite struct {
 // address as proven (a reset link was followed, which was mailed to it).
 func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, proven bool) (*ent.User, error) {
 	if w.Name != nil {
-		if err := CheckName(*w.Name); err != nil {
+		name, err := validation.UserName(*w.Name)
+		if err != nil {
 			return nil, err
 		}
+		w.Name = &name
 	}
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {

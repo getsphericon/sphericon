@@ -20,7 +20,7 @@ func TestSiteBroadcastsRefuseABlankNameWith422(t *testing.T) {
 			env := testhelper.Setup(t)
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-			_, err := c.SiteBroadcastsCreate(context.Background(), &siteapi.CreateBroadcastInput{Name: name, Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})},
+			_, err := c.SiteBroadcastsCreate(context.Background(), &siteapi.CreateBroadcastInput{Name: siteapi.Name(name), Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})},
 				siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 			refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)
@@ -30,7 +30,7 @@ func TestSiteBroadcastsRefuseABlankNameWith422(t *testing.T) {
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 			ctx := context.Background()
 
-			_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString(name)},
+			_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName(siteapi.Name(name))},
 				siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 			refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)

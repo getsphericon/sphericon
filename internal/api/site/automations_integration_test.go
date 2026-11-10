@@ -39,7 +39,7 @@ func TestSiteAutomationStepsNameTheirIntegration(t *testing.T) {
 	require.NoError(t, err)
 	res := created
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID}
-	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")}, params)
+	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptName("Renamed")}, params)
 	require.NoError(t, err)
 	kept := renamed
 	rewritten, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{

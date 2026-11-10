@@ -33,7 +33,7 @@ func TestSiteTemplatesCRUD(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	updRes, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
-		Name: siteapi.NewOptString("Welcome v2"),
+		Name: siteapi.NewOptName("Welcome v2"),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "Welcome v2", updRes.Name)
@@ -65,7 +65,7 @@ func TestSiteTemplatesMapABlankNameTo422(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	_, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Name: siteapi.NewOptString("")},
+	_, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Name: siteapi.NewOptName("")},
 		siteapi.SiteTemplatesUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.TemplateWelcomeID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)

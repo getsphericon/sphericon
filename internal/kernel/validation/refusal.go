@@ -61,6 +61,36 @@ type RefusalError struct {
 	field string
 	text  string
 	key   i18n.ID
+	// args fill the message's placeholders; parent is the refusal this one was derived from by
+	// Args or On, which errors.Is still matches.
+	args   map[string]any
+	parent *RefusalError
+}
+
+// Args is the refusal with its message's placeholders filled by args ("at most {{.Max}}"):
+// errors.Is still matches r.
+func (r *RefusalError) Args(args map[string]any) *RefusalError {
+	derived := *r
+	derived.args, derived.parent = args, r
+	return &derived
+}
+
+// On is the refusal reported against the request field named field (its json name), for a rule
+// several fields share (an address under `email` or `newEmail`): errors.Is still matches r.
+func (r *RefusalError) On(field string) *RefusalError {
+	derived := *r
+	derived.field, derived.parent = field, r
+	return &derived
+}
+
+// Is reports whether target is a refusal r was derived from by Args or On.
+func (r *RefusalError) Is(target error) bool {
+	for p := r.parent; p != nil; p = p.parent {
+		if p == target {
+			return true
+		}
+	}
+	return false
 }
 
 // Refuse makes the sentinel for a refused input (KindRefused): text is its Error() and key the
@@ -159,7 +189,7 @@ func (r *RefusalError) Kind() Kind { return r.kind }
 func (r *RefusalError) Field() string { return r.field }
 
 // Message is the refusal's text in the instance locale.
-func (r *RefusalError) Message() string { return i18n.T(r.key, nil) }
+func (r *RefusalError) Message() string { return i18n.T(r.key, r.args) }
 
 // With is the refusal for one input: the sentinel's message followed by detail, which says what
 // is wrong with it. errors.Is still matches the sentinel, and errors.As finds it for its kind.
@@ -180,15 +210,12 @@ type messaged interface {
 }
 
 // Shown is the text a user is shown for err when it is a refusal of a domain module (a
-// RefusalError, an Error or a FieldsError in its chain), and false for any other error, whose text
-// is not written for a user. A result that reports several items at once (a batch) words each
-// failed item with it.
+// RefusalError or a FieldsError in its chain), and false for any other error, whose text is not
+// written for a user. A result that reports several items at once (a batch) words each failed item
+// with it.
 func Shown(err error) (string, bool) {
 	if form, ok := errors.AsType[*FieldsError](err); ok {
 		return form.Detail(), true
-	}
-	if invalid, ok := errors.AsType[*Error](err); ok {
-		return invalid.Message, true
 	}
 	if _, ok := errors.AsType[*RefusalError](err); ok {
 		return Message(err), true

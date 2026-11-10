@@ -57,7 +57,7 @@ func TestExternalSegmentsWrite(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Pros", seg.Name)
 
-	upd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptString("Pros 2")},
+	upd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptName("Pros 2")},
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "Pros 2", upd.Name)
@@ -210,7 +210,7 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 	}
 	_, err = c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptString("pwned")},
+	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptName("pwned")},
 		externalapi.SegmentsUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	_, err = c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: id})

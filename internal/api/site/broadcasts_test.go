@@ -41,7 +41,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 
 	// Update renames a draft.
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Name: siteapi.NewOptString("Spring sale (v2)"),
+		Name: siteapi.NewOptName("Spring sale (v2)"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	updRes := updated
@@ -69,7 +69,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 
 	// Editing a non-draft broadcast is rejected with 422.
 	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
-		Name: siteapi.NewOptString("nope"),
+		Name: siteapi.NewOptName("nope"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 

@@ -41,11 +41,11 @@ const minSecretLength = 32
 var (
 	// ErrSignInOff: the Instance has no Staff member secret (SPHERICON_STAFF_JWT_SECRET), so no
 	// Staff member can sign in and none is created.
-	ErrSignInOff = errors.New("staff: sign-in is off without SPHERICON_STAFF_JWT_SECRET")
+	ErrSignInOff = validation.Conflict("staff: sign-in is off without SPHERICON_STAFF_JWT_SECRET", i18n.ErrorsStaffSignInOff)
 	// ErrDuplicate: a Staff member with this email exists.
 	ErrDuplicate = validation.ConflictField("email", "staff: email already in use", i18n.ErrorsEmailExists)
 	// ErrNotFound: no Staff member has this email.
-	ErrNotFound = errors.New("staff: not found")
+	ErrNotFound = validation.NotFound("staff: not found", i18n.ErrorsStaffNotFound)
 )
 
 // constraints are the unique constraints of the Staff members (ADR 0106): an email names one.
@@ -137,9 +137,8 @@ func (m *Module) Create(ctx context.Context, email string) (password string, err
 	if m.sessions == nil {
 		return "", ErrSignInOff
 	}
-	email = throttle.NormalizeEmail(email)
-	if email == "" {
-		return "", errors.New("staff: email is required")
+	if email, err = validation.AccountEmail(validation.FieldEmail, email); err != nil {
+		return "", err
 	}
 	password = rand.Text()
 	hash, err := m.passwords.Hash(password)

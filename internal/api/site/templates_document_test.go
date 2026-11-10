@@ -109,7 +109,7 @@ func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 
 	notADoc := map[string]jx.Raw{"type": jx.Raw(`"nope"`)}
 	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
-		Name: siteapi.NewOptString("Renamed"), Doc: siteapi.NewOptEditorDocument(notADoc),
+		Name: siteapi.NewOptName("Renamed"), Doc: siteapi.NewOptEditorDocument(notADoc),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.TemplateWelcomeID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	after := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)

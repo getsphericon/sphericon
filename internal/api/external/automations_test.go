@@ -86,7 +86,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	updated, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
-		Name:  externalapi.NewOptString("Tag newcomers 2"),
+		Name:  externalapi.NewOptName("Tag newcomers 2"),
 		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeRemoveTag, Tag: externalapi.NewOptString("vip")}},
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
 	require.NoError(t, err)

@@ -30,7 +30,6 @@ package workspaceoversight
 import (
 	"time"
 
-	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
 	"github.com/getsphericon/sphericon/ee/licensekey"
@@ -40,11 +39,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // ErrNotLicensed is the refusal on an instance without the `staff` license: the Enterprise
-// sections are off. It is the Service credentials' refusal, so one sentinel answers for both.
-var ErrNotLicensed = servicecredentials.ErrNotLicensed
+// sections are off.
+var ErrNotLicensed = validation.Unlicensed("workspaceoversight: the staff feature is not licensed", i18n.ErrorsStaffNotLicensed)
 
 // Config is what the Enterprise sections need from the instance.
 type Config struct {

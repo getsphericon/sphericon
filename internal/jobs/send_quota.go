@@ -4,13 +4,10 @@ import (
 	"context"
 	stdsql "database/sql"
 
-	"entgo.io/ent/dialect/sql"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
 // quotaRefreshBatchSize bounds how many Integrations one hourly tick refreshes, like
@@ -37,7 +34,7 @@ func NewRefreshSendQuotasWorker(client *ent.Client) *RefreshSendQuotasWorker {
 // Work fans the hourly tick out into one RefreshIntegrationQuota job per Integration,
 // so each lookup has its own isolation and retry (the Sending-domain recheck pattern).
 func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[RefreshSendQuotasArgs]) error {
-	due, err := IntegrationsDueForQuotaRefresh(ctx, w.ent, quotaRefreshBatchSize)
+	due, err := integrations.DueForQuotaRefresh(ctx, w.ent, quotaRefreshBatchSize)
 	if err != nil {
 		return err
 	}
@@ -49,19 +46,6 @@ func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[Refresh
 		}
 	}
 	return nil
-}
-
-// IntegrationsDueForQuotaRefresh returns up to limit SES Integrations, each with only its id and
-// its Workspace (the lookup job names both), least-recently-checked first with NULLS FIRST, so a never-checked Integration is
-// reached before already-checked ones. Only SES reports a quota; SMTP has none. A deleted
-// Integration is not kept working (ADR 0099): nobody sends with its credential.
-func IntegrationsDueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]*ent.Integration, error) {
-	return client.Integration.Query().
-		Where(integration.ProviderEQ(providers.SES), integration.DiscardedAtIsNil()).
-		Order(integration.ByProviderQuotaCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
-		Limit(limit).
-		Select(integration.FieldID, integration.FieldWorkspaceID).
-		All(ctx)
 }
 
 type RefreshIntegrationQuotaWorker struct {

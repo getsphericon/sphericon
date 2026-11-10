@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -24,8 +23,7 @@ import (
 var (
 	// ErrNotFound: no such Template in this Workspace.
 	ErrNotFound = validation.NotFound("templates: template not found", i18n.ErrorsTemplateNotFound)
-	// ErrBlankName: the Template name is blank.
-	ErrBlankName = validation.Refuse("templates: name must not be empty", i18n.ErrorsNameEmpty)
+
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
 	ErrBodyAndDoc = validation.Refuse("templates: write a body or a doc, not both", i18n.ErrorsBodyAndDoc)
@@ -123,12 +121,15 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.EmailTe
 	return tpl, err
 }
 
-// Create stores a Template and returns it. A blank name is ErrBlankName; a subject, body or
-// document that cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
+// Create stores a Template and returns it. The name is held to the name rule (validation.Name); a
+// subject, body or document that cannot render is emailrender.ErrInvalidContent; the body is
+// stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.EmailTemplate, error) {
-	if err := checkName(&in.Name); err != nil {
+	name, err := validation.Name(in.Name)
+	if err != nil {
 		return nil, err
 	}
+	in.Name = name
 	c, err := emailrender.ResolveContent(ctx, m.renderer, in.Subject, in.Body, in.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
@@ -140,7 +141,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // renders before it opens a transaction so that no database connection is held through the render
 // (the Brand kit's starters). It is not linted: the caller wrote the document.
 func (m *Module) CreatePrepared(ctx context.Context, s *ent.Scoped, name, subject string, doc json.RawMessage, authored emailrender.Authored) (*ent.EmailTemplate, error) {
-	if err := checkName(&name); err != nil {
+	name, err := validation.Name(name)
+	if err != nil {
 		return nil, err
 	}
 	return create(ctx, s, name, &subject, emailrender.Content{Body: &authored.Body, Authored: &authored}, doc)
@@ -155,14 +157,17 @@ func create(ctx context.Context, s *ent.Scoped, name string, subject *string, c 
 		q.SetDoc(doc).SetEditorVersion(c.Authored.EditorVersion)
 	}
 	tpl, err := q.Save(ctx)
-	return tpl, mapWriteError(err)
+	return tpl, err
 }
 
-// Update applies the given fields and returns the Template. A blank name is ErrBlankName.
+// Update applies the given fields and returns the Template. A new name is held to the name rule
+// (validation.Name).
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
-	if err := checkName(in.Name.Ptr()); err != nil {
+	name, err := validation.NamePatch(in.Name)
+	if err != nil {
 		return nil, err
 	}
+	in.Name = name
 	doc, _ := in.Doc.Get()
 	c, err := emailrender.ResolveContent(ctx, m.renderer, in.Subject.Ptr(), in.Body.Ptr(), doc, ErrBodyAndDoc)
 	if err != nil {
@@ -182,7 +187,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
-	return tpl, mapWriteError(err)
+	return tpl, err
 }
 
 // Delete removes a Template.
@@ -190,24 +195,6 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	err := s.EmailTemplate().DeleteOneID(id).Exec(ctx)
 	if ent.IsNotFound(err) {
 		return ErrNotFound
-	}
-	return err
-}
-
-// checkName refuses a given name that is blank after trimming; an absent name is not checked.
-func checkName(name *string) error {
-	if name != nil && strings.TrimSpace(*name) == "" {
-		return ErrBlankName
-	}
-	return nil
-}
-
-// mapWriteError relabels only a validation failure of the name field; any other
-// validation error passes through unchanged.
-func mapWriteError(err error) error {
-	var ve *ent.ValidationError
-	if errors.As(err, &ve) && ve.Name == emailtemplate.FieldName {
-		return ErrBlankName
 	}
 	return err
 }

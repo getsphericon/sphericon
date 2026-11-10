@@ -21,7 +21,6 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -67,14 +66,12 @@ func (m *Module) Bootstrap(ctx context.Context, presented string, in Input) (Min
 	return Mint(ctx, events.Ingest(m.ent.Scoped(id)), in)
 }
 
-// nameEmpty refuses a token name that is blank after trimming.
-func nameEmpty() *validation.Error {
-	return &validation.Error{Field: "name", Message: i18n.T(i18n.ErrorsNameEmpty, nil)}
-}
+// ErrUnknownScope is a scope that is not in the vocabulary (Scopes).
+var ErrUnknownScope = validation.RefuseField("scopes", "apitokens: unknown scope", i18n.ErrorsTokenScopeUnknown)
 
-// unknownScope refuses a scope that is not in the vocabulary (Scopes).
-func unknownScope(scope string) *validation.Error {
-	return &validation.Error{Field: "scopes", Message: i18n.T(i18n.ErrorsTokenScopeUnknown, map[string]any{"Scope": scope})}
+// unknownScope refuses the scope named scope.
+func unknownScope(scope string) error {
+	return ErrUnknownScope.Args(map[string]any{"Scope": scope})
 }
 
 // Input is what a caller chooses when minting.
@@ -102,12 +99,11 @@ func Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
 	return mint(ctx, s, name, scopes, in.ExpiresAt, nil)
 }
 
-// checked is the trimmed name and the sorted, distinct scopes of in, or the refusal of a blank
-// name or a scope outside the vocabulary.
+// checked is the name of in by the name rule (validation.Name) and its sorted, distinct scopes,
+// or the refusal of the name or of a scope outside the vocabulary.
 func checked(in Input) (name string, scopes []string, err error) {
-	name = strings.TrimSpace(in.Name)
-	if name == "" {
-		return "", nil, nameEmpty()
+	if name, err = validation.Name(in.Name); err != nil {
+		return "", nil, err
 	}
 	scopes = slices.Compact(slices.Sorted(slices.Values(in.Scopes)))
 	for _, sc := range scopes {
@@ -196,11 +192,11 @@ func Revoke(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 
 // Rename changes the name of an active API token and returns the updated row. A token that is
 // unknown, belongs to another Workspace, is a User's (a Connection or a Personal token) or is
-// revoked is ErrNotFound; a blank name is a *validation.Error on `name`.
+// revoked is ErrNotFound; a name the name rule refuses is its refusal (validation.Name).
 func Rename(ctx context.Context, s *ent.Scoped, id int64, name string) (*ent.ApiToken, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return nil, nameEmpty()
+	name, err := validation.Name(name)
+	if err != nil {
+		return nil, err
 	}
 	n, err := s.ApiToken().Update().
 		Where(apitoken.ID(id), isWorkspaceToken(), apitoken.RevokedAtIsNil()).

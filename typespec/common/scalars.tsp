@@ -4,6 +4,12 @@ namespace Sphericon;
 @maxLength(320)
 scalar EmailAddress extends string;
 
+/** What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
+ * Broadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding
+ * spaces are trimmed before the name is stored, and a name that is empty then is refused (422). */
+@maxLength(100)
+scalar Name extends string;
+
 @format("date-time")
 scalar Timestamp extends string;
 

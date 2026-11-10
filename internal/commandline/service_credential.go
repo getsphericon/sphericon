@@ -92,7 +92,7 @@ func explainCredential(err error, id int64) error {
 	case errors.Is(err, servicecredentials.ErrInvalidScope):
 		return errors.New("a service credential needs one or more known scopes (usage:read, workspaces:read, users:read, domains:read, holds:write)")
 	case errors.Is(err, servicecredentials.ErrInvalidCredential):
-		return errors.New("a service credential needs a name and an expiry in the future")
+		return errors.New("a service credential needs an expiry in the future")
 	case errors.Is(err, servicecredentials.ErrCredentialNotFound):
 		return fmt.Errorf("no service credential %d; nothing changed", id)
 	case errors.Is(err, servicecredentials.ErrCredentialInactive):

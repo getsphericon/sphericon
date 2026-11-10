@@ -61,7 +61,7 @@ export type ApplyTagInput = {
   /**
    * The label to apply; created on first use
    */
-  name: string;
+  name: Name;
 };
 
 /**
@@ -689,7 +689,7 @@ export type CreateBroadcastInput = {
   /**
    * Internal broadcast name
    */
-  name: string;
+  name: Name;
   /**
    * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422.
    */
@@ -767,7 +767,7 @@ export type CreateContactInput = {
  * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422
  */
 export type CreateIntegrationInput = {
-  name: string;
+  name: Name;
   enabled?: boolean;
   isDefault?: boolean;
   /**
@@ -810,7 +810,7 @@ export type CreateTemplateInput = {
   /**
    * Template name
    */
-  name: string;
+  name: Name;
   /**
    * Default subject line
    */
@@ -1106,6 +1106,13 @@ export type MaxPerDay = number;
 export type MaxPerSecond = number;
 
 /**
+ * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
+ * Broadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding
+ * spaces are trimmed before the name is stored, and a name that is empty then is refused (422).
+ */
+export type Name = string;
+
+/**
  * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
  */
 export const OptOutVia = {
@@ -1121,12 +1128,6 @@ export const OptOutVia = {
  * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
  */
 export type OptOutVia = typeof OptOutVia[keyof typeof OptOutVia];
-
-/**
- * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
- * spaces are trimmed before the name is stored, so a name of spaces only is refused too.
- */
-export type PasskeyName = string;
 
 /**
  * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
@@ -3593,7 +3594,7 @@ export type SiteContactResource = {
  * Site request body for creating an automation
  */
 export type SiteCreateAutomationInput = {
-  name: string;
+  name: Name;
   triggerEvent: string;
   /**
    * Event actions that end an active enrollment early; none of them may be the trigger. Each
@@ -3695,7 +3696,7 @@ export type SiteCreateInvitationResponse = {
  * Mint a Personal token of the caller's own
  */
 export type SiteCreatePersonalTokenInput = {
-  name: string;
+  name: Name;
   /**
    * Each one a scope the caller's Role may grant (`grantableScopes`)
    */
@@ -3715,7 +3716,7 @@ export type SiteCreatePersonalTokenResponse = {
  * Site request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export type SiteCreateRuleInput = {
-  name: string;
+  name: Name;
   /**
    * The Event actions that make the Rule fire; at least one
    */
@@ -3734,7 +3735,7 @@ export type SiteCreateSegmentInput = {
   /**
    * Segment name
    */
-  name: string;
+  name: Name;
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
@@ -3759,7 +3760,7 @@ export type SiteCreateSuppressionInput = {
  * Create a workspace API token
  */
 export type SiteCreateTokenInput = {
-  name: string;
+  name: Name;
   scopes: Array<ApiTokenScope>;
   expiresAt?: Timestamp | null;
 };
@@ -3779,7 +3780,7 @@ export type SiteCreateWorkspaceInput = {
   /**
    * Display name: free text, not unique
    */
-  name: string;
+  name: Name;
 };
 
 /**
@@ -4815,7 +4816,7 @@ export type SitePasskey = {
   /**
    * What the User calls it, to tell their Passkeys apart
    */
-  name: PasskeyName;
+  name: Name;
   /**
    * When the Passkey was registered
    */
@@ -4969,7 +4970,7 @@ export type SitePasskeyRegistrationInput = {
   /**
    * What to call the Passkey, to tell it from the User's others
    */
-  name: PasskeyName;
+  name: Name;
   /**
    * The authenticator's response to the creation options
    */
@@ -5013,7 +5014,7 @@ export type SitePasskeyRenameInput = {
   /**
    * What to call the Passkey, to tell it from the User's others
    */
-  name: PasskeyName;
+  name: Name;
 };
 
 /**
@@ -6526,7 +6527,7 @@ export type SiteTwilioConfig = {
  * version's, and publishing makes the draft live.
  */
 export type SiteUpdateAutomationInput = {
-  name?: string;
+  name?: Name;
   triggerEvent?: string;
   /**
    * Event actions that end an active enrollment early; replaces the list, omitted keeps it
@@ -6611,7 +6612,7 @@ export type SiteUpdateCustomFieldInput = {
   /**
    * Display name
    */
-  name?: string;
+  name?: Name;
   /**
    * Value type. Stored values are not rewritten: the leaves of the new type read them as they are
    */
@@ -6672,7 +6673,7 @@ export type SiteUpdateRevenueSettingsInput = {
  * Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
 export type SiteUpdateRuleInput = {
-  name?: string;
+  name?: Name;
   /**
    * The Event actions that make the Rule fire; at least one
    */
@@ -6691,7 +6692,7 @@ export type SiteUpdateSegmentInput = {
   /**
    * Segment name
    */
-  name?: string;
+  name?: Name;
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
@@ -6702,7 +6703,7 @@ export type SiteUpdateSegmentInput = {
  * Rename an API token
  */
 export type SiteUpdateTokenInput = {
-  name: string;
+  name: Name;
 };
 
 /**
@@ -6712,7 +6713,7 @@ export type SiteUpdateWorkspaceInput = {
   /**
    * New display name
    */
-  name: string;
+  name: Name;
   /**
    * Physical postal address for the marketing email footer (CAN-SPAM). Omit to
    * leave it unchanged; send an empty string to clear it.
@@ -7401,7 +7402,7 @@ export type UpdateBroadcastInput = {
   /**
    * Internal broadcast name
    */
-  name?: string;
+  name?: Name;
   /**
    * What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps the content.
    */
@@ -7479,7 +7480,7 @@ export type UpdateContactInput = {
  * Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.
  */
 export type UpdateIntegrationInput = {
-  name?: string;
+  name?: Name;
   enabled?: boolean;
   isDefault?: boolean;
   /**
@@ -7512,7 +7513,7 @@ export type UpdateTemplateInput = {
   /**
    * Template name
    */
-  name?: string;
+  name?: Name;
   /**
    * Default subject line
    */

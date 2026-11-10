@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/doctor"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -35,6 +36,11 @@ func main() {
 		}
 		if errors.Is(err, doctor.ErrChecksFailed) {
 			// `doctor` already printed what failed.
+			os.Exit(1)
+		}
+		if shown, ok := validation.Shown(err); ok {
+			// A module refused the input: its words are written for the person who typed it.
+			_, _ = fmt.Fprintln(os.Stderr, shown)
 			os.Exit(1)
 		}
 		fatal("sphericon", err)

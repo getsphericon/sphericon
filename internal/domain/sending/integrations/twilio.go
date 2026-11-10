@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // A Twilio Integration is a Workspace's own Twilio account on the sms Channel (spec #1032,
@@ -61,21 +60,21 @@ func twilioStored(c *TwilioConfig) twilio.Config {
 func validTwilio(c twilio.Config) error {
 	err := twilio.Validate(c)
 	if fe, ok := errors.AsType[*twilio.FieldError](err); ok {
-		return &validation.Error{Field: fieldConfig + "." + fe.Field, Message: twilioFieldMessage(fe)}
+		return refuse(fieldConfig+"."+fe.Field, twilioFieldMessage(fe), nil)
 	}
 	return err
 }
 
-func twilioFieldMessage(fe *twilio.FieldError) string {
+func twilioFieldMessage(fe *twilio.FieldError) i18n.ID {
 	switch {
 	case errors.Is(fe, twilio.ErrAccountSID):
-		return i18n.T(i18n.ErrorsIntegrationTwilioAccountSid, nil)
+		return i18n.ErrorsIntegrationTwilioAccountSid
 	case errors.Is(fe, twilio.ErrAPIKeySID):
-		return i18n.T(i18n.ErrorsIntegrationTwilioApiKeySid, nil)
+		return i18n.ErrorsIntegrationTwilioApiKeySid
 	case errors.Is(fe, twilio.ErrSecret):
-		return i18n.T(i18n.ErrorsIntegrationTwilioSecret, nil)
+		return i18n.ErrorsIntegrationTwilioSecret
 	}
-	return i18n.T(i18n.ErrorsIntegrationTwilioFrom, nil)
+	return i18n.ErrorsIntegrationTwilioFrom
 }
 
 // twilioConfigOf opens a Twilio Integration's stored config.
@@ -121,14 +120,14 @@ func (m *Module) connectTwilio(ctx context.Context, c twilio.Config, key string)
 func twilioRefusal(err error, from string) error {
 	switch {
 	case errors.Is(err, messaging.ErrSMSUnauthorized):
-		return &validation.Error{Field: fieldConfig + ".secret", Message: i18n.T(i18n.ErrorsIntegrationTwilioRefused, nil)}
+		return refuse(fieldConfig+".secret", i18n.ErrorsIntegrationTwilioRefused, nil)
 	case errors.Is(err, messaging.ErrSMSSenderNotFound):
-		return &validation.Error{Field: fieldConfig + ".from", Message: i18n.T(i18n.ErrorsIntegrationTwilioSenderNotFound, map[string]any{"From": from})}
+		return refuse(fieldConfig+".from", i18n.ErrorsIntegrationTwilioSenderNotFound, map[string]any{"From": from})
 	}
 	if e, ok := errors.AsType[*messaging.SMSError](err); ok {
-		return &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationTwilioError, map[string]any{detailKey: e.Message})}
+		return refuse(fieldConfig, i18n.ErrorsIntegrationTwilioError, map[string]any{detailKey: e.Message})
 	}
-	return &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationTwilioUnreachable, map[string]any{detailKey: err.Error()})}
+	return refuse(fieldConfig, i18n.ErrorsIntegrationTwilioUnreachable, map[string]any{detailKey: err.Error()})
 }
 
 // editTwilio validates an Update of a Twilio Integration and, when it changes the credentials or the
@@ -137,14 +136,14 @@ func twilioRefusal(err error, from string) error {
 // edit leaves it.
 func (m *Module) editTwilio(ctx context.Context, row *ent.Integration, in UpdateInput) (*string, error) {
 	if name := in.Preset.Over(row.Preset); in.Preset.Changes() && (name == nil || *name != TwilioPreset) {
-		return nil, &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTwilioPresetFixed, nil)}
+		return nil, refuse(fieldPreset, i18n.ErrorsIntegrationTwilioPresetFixed, nil)
 	}
 	cfg, ok := in.Config.Get()
 	if !ok {
 		return nil, nil
 	}
 	if cfg.Twilio == nil {
-		return nil, &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationKindMismatch, nil)}
+		return nil, refuse(fieldConfig, i18n.ErrorsIntegrationKindMismatch, nil)
 	}
 	stored, err := m.twilioConfigOf(row)
 	if err != nil {
@@ -153,7 +152,7 @@ func (m *Module) editTwilio(ctx context.Context, row *ent.Integration, in Update
 	next := twilioStored(cfg.Twilio)
 	if next.Secret == "" {
 		if next.AccountSID != stored.AccountSID || next.APIKeySID != stored.APIKeySID {
-			return nil, &validation.Error{Field: fieldConfig + ".secret", Message: i18n.T(i18n.ErrorsIntegrationTwilioSecretRequired, nil)}
+			return nil, refuse(fieldConfig+".secret", i18n.ErrorsIntegrationTwilioSecretRequired, nil)
 		}
 		next.Secret = stored.Secret
 	}

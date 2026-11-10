@@ -185,7 +185,7 @@ model AutomationResource {
 
 /** Request body for creating an automation (always created inactive) */
 model CreateAutomationInput {
-  name: string;
+  name: Name;
   triggerEvent: string;
 
   /** Event actions that end an active enrollment early; none of them may be the trigger. Each
@@ -204,7 +204,7 @@ model CreateAutomationInput {
  * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and only publishing makes the draft live. */
 model UpdateAutomationInput {
-  name?: string;
+  name?: Name;
   triggerEvent?: string;
 
   /** Event actions that end an active enrollment early; replaces the list, omitted keeps it */

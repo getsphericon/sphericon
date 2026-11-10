@@ -45,7 +45,7 @@ func TestExternalAutomationsArchiveAndUnarchive(t *testing.T) {
 	assert.NotContains(t, listedAutomationIDs(t, c, false), id)
 	assert.Contains(t, listedAutomationIDs(t, c, true), id)
 
-	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("Renamed")}, externalapi.AutomationsUpdateParams{ID: id})
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptName("Renamed")}, externalapi.AutomationsUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusConflict, "an archived automation is read-only")
 
 	restored, err := c.AutomationsUnarchive(ctx, externalapi.AutomationsUnarchiveParams{ID: id})

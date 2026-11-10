@@ -19,8 +19,8 @@ import (
 // that owns them (ADR 0102); the catalogue of Tags is internal/domain/contacts/tags. The bus opens
 // the transaction a change of a Contact's Tags commits in with the System event that records it
 // (contact.tagged, contact.untagged). A caller that already holds a transaction uses ApplyTagIn,
-// RemoveTagIn and SetTagsIn instead. The refusals are the catalogue's (tags.ErrContactNotFound,
-// tags.ErrInvalidName), as when the change lived there.
+// RemoveTagIn and SetTagsIn instead. The refusals are the catalogue's (tags.ErrContactNotFound, and
+// the name rule of tags.EnsureIn), as when the change lived there.
 
 // ApplyTag gives the Contact the named Tag in a transaction of its own (ApplyTagIn).
 func (m *Module) ApplyTag(ctx context.Context, s *ent.Scoped, contactID int64, name string) (*ent.Tag, error) {
@@ -43,12 +43,8 @@ func (m *Module) RemoveTag(ctx context.Context, s *ent.Scoped, contactID int64, 
 // ApplyTagIn gives the Contact the named Tag, creating the Tag on first use (tags.EnsureIn), and
 // publishes contact.tagged, inside the transaction s and pub are bound to. It is idempotent:
 // applying a Tag the Contact already has changes and records nothing. The Contact is checked before
-// anything is written, so a failed apply creates no Tag.
+// anything is written, so a failed apply creates no Tag; the name is the catalogue's to check.
 func ApplyTagIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, name string) (*ent.Tag, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return nil, tags.ErrInvalidName
-	}
 	c, err := lockTagged(ctx, s, contactID)
 	if err != nil {
 		return nil, err

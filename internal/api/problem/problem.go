@@ -136,7 +136,6 @@ func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.Problem
 	code := http.StatusInternalServerError
 	var oe ogenerrors.Error
 	var tooBig *http.MaxBytesError
-	var invalid *ent.ValidationError
 	switch {
 	case errors.As(err, &tooBig):
 		code = http.StatusRequestEntityTooLarge
@@ -148,11 +147,9 @@ func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.Problem
 	case errors.Is(err, ent.ErrNotInWorkspace):
 		// A reference id from another Workspace (the scoped client's ErrNotInWorkspace, ADR 0017).
 		code = http.StatusUnprocessableEntity
-	case errors.As(err, &invalid):
-		// A value the schema's validators refuse (an empty name, a too long label) is the
-		// client's to fix, never a server fault.
-		code = http.StatusUnprocessableEntity
 	}
+	// A value ent's validators refuse is not here: they are a backstop behind the module's own
+	// checks (ADR 0107), so one that fires is a missed check, a fault like a CHECK constraint.
 	p := &siteapi.ProblemDetails{
 		Status: siteapi.NewOptInt32(narrow.Int32(code)),
 		Title:  siteapi.NewOptString(http.StatusText(code)),

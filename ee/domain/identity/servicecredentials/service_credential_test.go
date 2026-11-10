@@ -17,6 +17,7 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -89,7 +90,7 @@ func TestIssuingRefusesABadInput(t *testing.T) {
 		in   servicecredentials.IssueInput
 		want error
 	}{
-		"no name":       {servicecredentials.IssueInput{Name: " ", Scopes: []servicecredentials.Scope{servicecredentials.ScopeUsageRead}}, servicecredentials.ErrInvalidCredential},
+		"no name":       {servicecredentials.IssueInput{Name: " ", Scopes: []servicecredentials.Scope{servicecredentials.ScopeUsageRead}}, validation.ErrNameBlank},
 		"no scopes":     {servicecredentials.IssueInput{Name: "s"}, servicecredentials.ErrInvalidScope},
 		"unknown scope": {servicecredentials.IssueInput{Name: "s", Scopes: []servicecredentials.Scope{"contacts:read"}}, servicecredentials.ErrInvalidScope},
 		"past expiry":   {servicecredentials.IssueInput{Name: "s", Scopes: []servicecredentials.Scope{servicecredentials.ScopeUsageRead}, ExpiresAt: &past}, servicecredentials.ErrInvalidCredential},

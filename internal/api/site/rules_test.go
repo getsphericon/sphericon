@@ -62,7 +62,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	assert.True(t, actRes.Draft.Null)
 
 	upd, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{
-		Name:          siteapi.NewOptString("Tag the clickers"),
+		Name:          siteapi.NewOptName("Tag the clickers"),
 		TriggerEvents: []string{"email.clicked"},
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)

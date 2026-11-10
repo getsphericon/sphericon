@@ -153,7 +153,7 @@ union BroadcastContent {
 /** Request body for creating a broadcast */
 model CreateBroadcastInput {
   /** Internal broadcast name */
-  name: string;
+  name: Name;
 
   /** What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422. */
   content: BroadcastContentInput;
@@ -168,7 +168,7 @@ model CreateBroadcastInput {
 /** Request body for updating a draft broadcast: an omitted field keeps its value, null clears it */
 model UpdateBroadcastInput {
   /** Internal broadcast name */
-  name?: string;
+  name?: Name;
 
   /** What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps the content. */
   content?: BroadcastContentInput;

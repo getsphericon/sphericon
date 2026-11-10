@@ -28,7 +28,7 @@ import (
 func mintPersonal(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId, name string, scopes ...siteapi.PersonalScope) (*siteapi.SiteCreatePersonalTokenResponse, error) {
 	t.Helper()
 	return env.SiteActor(t, email).SitePersonalTokensCreate(t.Context(),
-		&siteapi.SiteCreatePersonalTokenInput{Name: name, Scopes: scopes},
+		&siteapi.SiteCreatePersonalTokenInput{Name: siteapi.Name(name), Scopes: scopes},
 		siteapi.SitePersonalTokensCreateParams{WorkspaceId: workspaceID})
 }
 

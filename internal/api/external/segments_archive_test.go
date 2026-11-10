@@ -69,7 +69,7 @@ func TestExternalArchivedSegmentIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "segments:write")
 
-	_, err := c.SegmentsUpdate(context.Background(), &externalapi.UpdateSegmentInput{Name: externalapi.NewOptString("Renamed")},
+	_, err := c.SegmentsUpdate(context.Background(), &externalapi.UpdateSegmentInput{Name: externalapi.NewOptName("Renamed")},
 		externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentArchivedID)})
 
 	testhelper.ExternalRefusal(t, err, http.StatusConflict)

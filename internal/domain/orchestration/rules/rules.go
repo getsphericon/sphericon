@@ -239,6 +239,11 @@ func normalCondition(cond *string) *string {
 
 // Create validates and stores an inactive Rule whose definition is its draft, version 1.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.Rule, error) {
+	name, err := validation.Name(in.Name)
+	if err != nil {
+		return nil, err
+	}
+	in.Name = name
 	owner := func(ctx context.Context, ts *ent.Scoped) (int64, error) {
 		r, err := ts.Rule().Create().SetName(in.Name).Save(ctx)
 		if err != nil {
@@ -255,6 +260,11 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // rewritten in place; a Rule with none gets one, the version above the newest. A definition equal
 // to the one it starts from stores nothing. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Rule, error) {
+	name, err := validation.NameOpt(in.Name)
+	if err != nil {
+		return nil, err
+	}
+	in.Name = name
 	rename := func(r *ent.Rule) func(context.Context, *ent.Scoped) error {
 		if in.Name == nil || *in.Name == r.Name {
 			return nil

@@ -48,13 +48,6 @@ export const zApiTokenScope = z.enum([
 ]);
 
 /**
- * Request body for applying a tag to a contact
- */
-export const zApplyTagInput = z.object({
-  name: z.string()
-});
-
-/**
  * A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)
  */
 export const zAttributionWindowDays = z.int().gte(1).lte(90);
@@ -223,16 +216,6 @@ export const zCurrencyCode = z.string().regex(/^[A-Z]{3}$/);
  */
 export const zEditorDocument = z.record(z.string(), z.unknown());
 
-/**
- * Request body for creating a template
- */
-export const zCreateTemplateInput = z.object({
-  name: z.string(),
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument)
-});
-
 export const zEmailAddress = z.email().max(320);
 
 /**
@@ -391,6 +374,30 @@ export const zMaxPerDay = z.int().gte(1).lte(100000000);
 export const zMaxPerSecond = z.int().gte(1).lte(10000);
 
 /**
+ * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
+ * Broadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding
+ * spaces are trimmed before the name is stored, and a name that is empty then is refused (422).
+ */
+export const zName = z.string().max(100);
+
+/**
+ * Request body for applying a tag to a contact
+ */
+export const zApplyTagInput = z.object({
+  name: zName
+});
+
+/**
+ * Request body for creating a template
+ */
+export const zCreateTemplateInput = z.object({
+  name: zName,
+  subject: z.exactOptional(z.string()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(zEditorDocument)
+});
+
+/**
  * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
  */
 export const zOptOutVia = z.enum([
@@ -401,12 +408,6 @@ export const zOptOutVia = z.enum([
   'refused_send',
   'manual'
 ]);
-
-/**
- * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
- * spaces are trimmed before the name is stored, so a name of spaces only is refused too.
- */
-export const zPasskeyName = z.string().min(1).max(100);
 
 /**
  * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
@@ -1101,7 +1102,7 @@ export const zSiteContactHoldings = z.object({
  * Create a Workspace (ADR 0043)
  */
 export const zSiteCreateWorkspaceInput = z.object({
-  name: z.string()
+  name: zName
 });
 
 /**
@@ -1594,7 +1595,7 @@ export const zSitePasskeyRegistrationResponse = z.record(z.string(), z.unknown()
  */
 export const zSitePasskeyRegistrationInput = z.object({
   currentPassword: z.exactOptional(z.string()),
-  name: zPasskeyName,
+  name: zName,
   credential: zSitePasskeyRegistrationResponse
 });
 
@@ -1617,7 +1618,7 @@ export const zSitePasskeyRemoveInput = z.object({
  * The new name of a Passkey
  */
 export const zSitePasskeyRenameInput = z.object({
-  name: zPasskeyName
+  name: zName
 });
 
 /**
@@ -2291,7 +2292,7 @@ export const zSiteTransactionalEmailStatus = z.enum([
  * Request body for updating a custom field: its key never changes
  */
 export const zSiteUpdateCustomFieldInput = z.object({
-  name: z.exactOptional(z.string().min(1)),
+  name: z.exactOptional(zName),
   type: z.exactOptional(zSiteCustomFieldType)
 });
 
@@ -2314,14 +2315,14 @@ export const zSiteUpdateRevenueSettingsInput = z.object({
  * Rename an API token
  */
 export const zSiteUpdateTokenInput = z.object({
-  name: z.string()
+  name: zName
 });
 
 /**
  * Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change.
  */
 export const zSiteUpdateWorkspaceInput = z.object({
-  name: z.string(),
+  name: zName,
   postalAddress: z.exactOptional(z.string())
 });
 
@@ -2487,7 +2488,7 @@ export const zSiteAutomationVersion = z.object({
  * Site request body for creating an automation
  */
 export const zSiteCreateAutomationInput = z.object({
-  name: z.string(),
+  name: zName,
   triggerEvent: z.string(),
   exitEvents: z.exactOptional(z.array(z.string())),
   goalEvent: z.exactOptional(z.string().nullable()),
@@ -2500,7 +2501,7 @@ export const zSiteCreateAutomationInput = z.object({
  * version's, and publishing makes the draft live.
  */
 export const zSiteUpdateAutomationInput = z.object({
-  name: z.exactOptional(z.string()),
+  name: z.exactOptional(zName),
   triggerEvent: z.exactOptional(z.string()),
   exitEvents: z.exactOptional(z.array(z.string())),
   goalEvent: z.exactOptional(z.string().nullable()),
@@ -2555,7 +2556,7 @@ export const zBroadcastContentInput = z.discriminatedUnion('channel', [
  * Request body for creating a broadcast
  */
 export const zCreateBroadcastInput = z.object({
-  name: z.string(),
+  name: zName,
   content: zBroadcastContentInput,
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
@@ -3109,7 +3110,7 @@ export const zSiteContactResource = z.object({
  * Mint a Personal token of the caller's own
  */
 export const zSiteCreatePersonalTokenInput = z.object({
-  name: z.string(),
+  name: zName,
   scopes: z.array(zPersonalScope),
   expiresAt: z.exactOptional(zTimestamp.nullable())
 });
@@ -3118,7 +3119,7 @@ export const zSiteCreatePersonalTokenInput = z.object({
  * Create a workspace API token
  */
 export const zSiteCreateTokenInput = z.object({
-  name: z.string(),
+  name: zName,
   scopes: z.array(zApiTokenScope),
   expiresAt: z.exactOptional(zTimestamp.nullable())
 });
@@ -3315,7 +3316,7 @@ export const zSiteOptionalConsentList = z.object({
  */
 export const zSitePasskey = z.object({
   id: zEntityId,
-  name: zPasskeyName,
+  name: zName,
   createdAt: zTimestamp,
   lastUsedAt: z.exactOptional(zTimestamp)
 });
@@ -3588,7 +3589,7 @@ export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
  * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422
  */
 export const zCreateIntegrationInput = z.object({
-  name: z.string(),
+  name: zName,
   enabled: z.exactOptional(z.boolean()),
   isDefault: z.exactOptional(z.boolean()),
   maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
@@ -3602,7 +3603,7 @@ export const zCreateIntegrationInput = z.object({
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
  */
 export const zUpdateBroadcastInput = z.object({
-  name: z.exactOptional(z.string()),
+  name: z.exactOptional(zName),
   content: z.exactOptional(zBroadcastContentInput),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
@@ -3630,7 +3631,7 @@ export const zUpdateContactInput = z.object({
  * Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.
  */
 export const zUpdateIntegrationInput = z.object({
-  name: z.exactOptional(z.string()),
+  name: z.exactOptional(zName),
   enabled: z.exactOptional(z.boolean()),
   isDefault: z.exactOptional(z.boolean()),
   maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
@@ -3645,7 +3646,7 @@ export const zUpdateIntegrationInput = z.object({
  * Request body for updating a template
  */
 export const zUpdateTemplateInput = z.object({
-  name: z.exactOptional(z.string()),
+  name: z.exactOptional(zName),
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
   doc: z.exactOptional(zEditorDocument)
@@ -3848,7 +3849,7 @@ export const zSiteConditionNode = z.discriminatedUnion('kind', [
  * Site request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export const zSiteCreateRuleInput = z.object({
-  name: z.string(),
+  name: zName,
   triggerEvents: z.array(z.string()).min(1),
   condition: z.exactOptional(zSiteConditionGroup),
   actions: z.exactOptional(z.array(zSiteRuleAction))
@@ -3858,7 +3859,7 @@ export const zSiteCreateRuleInput = z.object({
  * Site request body for creating a segment
  */
 export const zSiteCreateSegmentInput = z.object({
-  name: z.string(),
+  name: zName,
   condition: zSiteConditionGroup
 });
 
@@ -3912,7 +3913,7 @@ export const zSiteSegmentResource = z.object({
  * Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
 export const zSiteUpdateRuleInput = z.object({
-  name: z.exactOptional(z.string()),
+  name: z.exactOptional(zName),
   triggerEvents: z.exactOptional(z.array(z.string()).min(1)),
   condition: z.exactOptional(zSiteConditionGroup),
   actions: z.exactOptional(z.array(zSiteRuleAction))
@@ -3922,7 +3923,7 @@ export const zSiteUpdateRuleInput = z.object({
  * Site request body for updating a segment
  */
 export const zSiteUpdateSegmentInput = z.object({
-  name: z.exactOptional(z.string()),
+  name: z.exactOptional(zName),
   condition: z.exactOptional(zSiteConditionGroup)
 });
 

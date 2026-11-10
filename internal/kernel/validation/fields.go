@@ -1,18 +1,17 @@
 package validation
 
 import (
+	"errors"
 	"maps"
 	"slices"
 	"strings"
-
-	"github.com/go-playground/validator/v10"
 
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
 
 // FieldsError is a form a domain module refused: the failures by the json name of the field,
-// each worded for a person in the instance locale. A handler returns it as it is: the server's
-// error handler answers it with a 422 that carries every field (review rule 15).
+// each worded for a person in the instance locale; Fields makes it. A handler returns it as it is:
+// the server's error handler answers it with a 422 that carries every field (review rule 15).
 type FieldsError struct {
 	Fields map[string][]string
 }
@@ -44,54 +43,32 @@ func (e *FieldsError) Detail() string {
 	return i18n.T(i18n.ErrorsCheckFields, map[string]any{"Fields": joinWords(names)})
 }
 
-// Refused is the FieldsError of one field with one message.
-func Refused(field, message string) *FieldsError {
-	return &FieldsError{Fields: map[string][]string{field: {message}}}
-}
-
-// Fields checks form against its validate tags and words each failure for a person: the field
-// errors by json name, or nil when form is valid. An error means form cannot be validated at all.
-func Fields(form any) (map[string][]string, error) {
-	return Check(form, fieldMessage)
-}
-
-// Form is Fields for a domain module: a *FieldsError naming every failure, nil when form is valid.
-func Form(form any) error {
-	fields, err := Fields(form)
-	if err != nil {
-		return err
+// Fields gathers the refusals of a form's fields into one *FieldsError naming every refused field,
+// or nil when none is refused. An argument is nil (the field passed), a refusal of one field
+// (KindRefused, with a Field) or a *FieldsError; any other error is returned as it is, so a check
+// that could not run is never mistaken for a refused form.
+func Fields(refusals ...error) error {
+	fields := map[string][]string{}
+	for _, err := range refusals {
+		if err == nil {
+			continue
+		}
+		if form, ok := errors.AsType[*FieldsError](err); ok {
+			for name, messages := range form.Fields {
+				fields[name] = append(fields[name], messages...)
+			}
+			continue
+		}
+		refused, ok := errors.AsType[*RefusalError](err)
+		if !ok || refused.Kind() != KindRefused || refused.Field() == "" {
+			return err
+		}
+		fields[refused.Field()] = append(fields[refused.Field()], Message(err))
 	}
-	if fields != nil {
-		return &FieldsError{Fields: fields}
+	if len(fields) == 0 {
+		return nil
 	}
-	return nil
-}
-
-// requiredMessages words an empty required field, by its json name.
-var requiredMessages = map[string]i18n.ID{
-	FieldName:     i18n.ErrorsNameRequired,
-	FieldEmail:    i18n.ErrorsEmailRequired,
-	FieldPassword: i18n.ErrorsPasswordRequired,
-	FieldNewEmail: i18n.ErrorsNewEmailRequired,
-}
-
-// ruleMessages words a failed rule of this package, whatever the field.
-var ruleMessages = map[string]i18n.ID{
-	"account_email":      i18n.ErrorsEmailInvalid,
-	"display_name":       i18n.ErrorsNameInvalid,
-	"password_length":    i18n.ErrorsPasswordLength,
-	"password_not_blank": i18n.ErrorsPasswordBlank,
-}
-
-// ruleLimits fills the bounds into errors.password_length and errors.name_invalid; the other
-// messages ignore them.
-var ruleLimits = map[string]any{"Min": PasswordMinLength, "Max": PasswordMaxLength, "NameMax": NameMaxLength}
-
-func fieldMessage(f validator.FieldError) string {
-	if f.Tag() == "required" {
-		return i18n.T(requiredMessages[f.Field()], nil)
-	}
-	return i18n.T(ruleMessages[f.Tag()], ruleLimits)
+	return &FieldsError{Fields: fields}
 }
 
 // The json names of the form fields a refusal is reported against and a person is shown by

@@ -47,13 +47,13 @@ func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 	_, err = c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: b.ID})
 	require.NoError(t, err)
 
-	updated, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("Spring sale v2")},
+	updated, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("Spring sale v2")},
 		externalapi.BroadcastsUpdateParams{ID: b.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "Spring sale v2", updated.Name)
 
 	// A scheduled broadcast is no longer editable.
-	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("x")},
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("x")},
 		externalapi.BroadcastsUpdateParams{ID: schedBroadcast})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
@@ -259,7 +259,7 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 
 	_, err = c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: foreignID})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("hijack")}, externalapi.BroadcastsUpdateParams{ID: foreignID})
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("hijack")}, externalapi.BroadcastsUpdateParams{ID: foreignID})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	_, err = c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: foreignID})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)

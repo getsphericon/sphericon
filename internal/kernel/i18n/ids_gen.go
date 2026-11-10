@@ -90,7 +90,9 @@ var (
 	ErrorsAutomationArchived                    = ID{key: "errors.automation_archived"}
 	ErrorsAutomationExitEventInvalid            = ID{key: "errors.automation_exit_event_invalid"}
 	ErrorsAutomationGoalEventInvalid            = ID{key: "errors.automation_goal_event_invalid"}
+	ErrorsAutomationInactive                    = ID{key: "errors.automation_inactive"}
 	ErrorsAutomationIntegrationNotFound         = ID{key: "errors.automation_integration_not_found"}
+	ErrorsAutomationNoVersion                   = ID{key: "errors.automation_no_version"}
 	ErrorsAutomationNotFound                    = ID{key: "errors.automation_not_found"}
 	ErrorsAutomationNothingToPublish            = ID{key: "errors.automation_nothing_to_publish"}
 	ErrorsAutomationNothingToRevert             = ID{key: "errors.automation_nothing_to_revert"}
@@ -160,7 +162,9 @@ var (
 	ErrorsHoldActionUrlInvalid                  = ID{key: "errors.hold_action_url_invalid"}
 	ErrorsHoldExpiryInPast                      = ID{key: "errors.hold_expiry_in_past"}
 	ErrorsHoldTooLong                           = ID{key: "errors.hold_too_long"}
+	ErrorsIdentityInUse                         = ID{key: "errors.identity_in_use"}
 	ErrorsIdentityProofRequired                 = ID{key: "errors.identity_proof_required"}
+	ErrorsIntegrationConfigInvalid              = ID{key: "errors.integration_config_invalid"}
 	ErrorsIntegrationDefaultConflict            = ID{key: "errors.integration_default_conflict"}
 	ErrorsIntegrationInvalid                    = ID{key: "errors.integration_invalid"}
 	ErrorsIntegrationKindMismatch               = ID{key: "errors.integration_kind_mismatch"}
@@ -210,6 +214,7 @@ var (
 	ErrorsNameEmpty                             = ID{key: "errors.name_empty"}
 	ErrorsNameInvalid                           = ID{key: "errors.name_invalid"}
 	ErrorsNameRequired                          = ID{key: "errors.name_required"}
+	ErrorsNameTooLong                           = ID{key: "errors.name_too_long"}
 	ErrorsNewEmailMustDiffer                    = ID{key: "errors.new_email_must_differ"}
 	ErrorsNewEmailRequired                      = ID{key: "errors.new_email_required"}
 	ErrorsNotFound                              = ID{key: "errors.not_found"}
@@ -221,6 +226,8 @@ var (
 	ErrorsOptionalConsentNotFound               = ID{key: "errors.optional_consent_not_found"}
 	ErrorsOptionalConsentNotOptional            = ID{key: "errors.optional_consent_not_optional"}
 	ErrorsOptionalConsentStale                  = ID{key: "errors.optional_consent_stale"}
+	ErrorsOrderEventInvalid                     = ID{key: "errors.order_event_invalid"}
+	ErrorsOutOfRange                            = ID{key: "errors.out_of_range"}
 	ErrorsPasskeyCheckFailed                    = ID{key: "errors.passkey_check_failed"}
 	ErrorsPasskeyLastSignIn                     = ID{key: "errors.passkey_last_sign_in"}
 	ErrorsPasskeyLoginFailed                    = ID{key: "errors.passkey_login_failed"}
@@ -231,6 +238,7 @@ var (
 	ErrorsPasswordBlank                         = ID{key: "errors.password_blank"}
 	ErrorsPasswordLength                        = ID{key: "errors.password_length"}
 	ErrorsPasswordRequired                      = ID{key: "errors.password_required"}
+	ErrorsPatternMismatch                       = ID{key: "errors.pattern_mismatch"}
 	ErrorsPermissionAccountLinkOpen             = ID{key: "errors.permission.account_link_open"}
 	ErrorsPermissionAuditConfigure              = ID{key: "errors.permission.audit_configure"}
 	ErrorsPermissionAuditRead                   = ID{key: "errors.permission.audit_read"}
@@ -294,6 +302,10 @@ var (
 	ErrorsSendingSourceInvalid                  = ID{key: "errors.sending_source_invalid"}
 	ErrorsSendingSourceSms                      = ID{key: "errors.sending_source_sms"}
 	ErrorsSendingSourceTelegram                 = ID{key: "errors.sending_source_telegram"}
+	ErrorsServiceCredentialInactive             = ID{key: "errors.service_credential_inactive"}
+	ErrorsServiceCredentialInvalid              = ID{key: "errors.service_credential_invalid"}
+	ErrorsServiceCredentialNotFound             = ID{key: "errors.service_credential_not_found"}
+	ErrorsServiceCredentialScope                = ID{key: "errors.service_credential_scope"}
 	ErrorsSigninPendingGone                     = ID{key: "errors.signin_pending_gone"}
 	ErrorsSigninProviderUnknown                 = ID{key: "errors.signin_provider_unknown"}
 	ErrorsSignupItemDeleteMailings              = ID{key: "errors.signup_item_delete_mailings"}
@@ -309,8 +321,12 @@ var (
 	ErrorsSignupSurveyOtherBlank                = ID{key: "errors.signup_survey_other_blank"}
 	ErrorsSignupSurveyOtherText                 = ID{key: "errors.signup_survey_other_text"}
 	ErrorsSignupSurveyResponseNotFound          = ID{key: "errors.signup_survey_response_not_found"}
+	ErrorsStaffNotFound                         = ID{key: "errors.staff_not_found"}
+	ErrorsStaffNotLicensed                      = ID{key: "errors.staff_not_licensed"}
+	ErrorsStaffSignInOff                        = ID{key: "errors.staff_sign_in_off"}
 	ErrorsSubjectIdExists                       = ID{key: "errors.subject_id_exists"}
 	ErrorsSuppressionNotFound                   = ID{key: "errors.suppression_not_found"}
+	ErrorsSuspensionActorInvalid                = ID{key: "errors.suspension_actor_invalid"}
 	ErrorsSuspensionReasonRequired              = ID{key: "errors.suspension_reason_required"}
 	ErrorsTagNotFound                           = ID{key: "errors.tag_not_found"}
 	ErrorsTelegramStartBotOff                   = ID{key: "errors.telegram_start_bot_off"}
@@ -324,6 +340,10 @@ var (
 	ErrorsTokenNotFound                         = ID{key: "errors.token_not_found"}
 	ErrorsTokenScopeEscalation                  = ID{key: "errors.token_scope_escalation"}
 	ErrorsTokenScopeUnknown                     = ID{key: "errors.token_scope_unknown"}
+	ErrorsTooFew                                = ID{key: "errors.too_few"}
+	ErrorsTooLong                               = ID{key: "errors.too_long"}
+	ErrorsTooMany                               = ID{key: "errors.too_many"}
+	ErrorsTooShort                              = ID{key: "errors.too_short"}
 	ErrorsTrackingDomainInvalid                 = ID{key: "errors.tracking_domain_invalid"}
 	ErrorsTrackingDomainNotFound                = ID{key: "errors.tracking_domain_not_found"}
 	ErrorsTrackingDomainOwnHost                 = ID{key: "errors.tracking_domain_own_host"}

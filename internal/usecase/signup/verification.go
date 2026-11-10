@@ -4,14 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
-	"net/mail"
-	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // provenNow and noJoin say whether a step that makes a User Verified also proved the address
@@ -176,9 +172,6 @@ func (u *UseCase) SignUpVerified(ctx context.Context, n users.NewUser) (*ent.Use
 // createVerified is SignUpVerified; welcome says whether the User completed a Sign-up (signedUp,
 // which publishes events.UserSignedUp) or was made by the operator (madeByOperator).
 func (u *UseCase) createVerified(ctx context.Context, n users.NewUser, welcome bool) (*ent.User, error) {
-	if err := users.CheckName(n.Name); err != nil {
-		return nil, err
-	}
 	created, _, err := u.verified(ctx, noJoin, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
 		usr, err := users.CreateVerifiedIn(ctx, tx, n, u.now())
 		if err != nil || !welcome {
@@ -194,19 +187,12 @@ func signUpCompleted(usr *ent.User) *events.UserSignedUp {
 	return &events.UserSignedUp{UserID: usr.ID, Email: usr.Email, Name: usr.Name}
 }
 
-// ErrOwnerEmailInvalid refuses an Owner made from a shell whose address does not parse.
-var ErrOwnerEmailInvalid = validation.RefuseField(validation.FieldEmail, "signup: the owner's address is not an email address", i18n.ErrorsEmailInvalid)
-
 // CreateOwner is the Instance operator's way to make an Owner from a shell (ADR 0042): a
 // Verified User with a generated password and its first Workspace, named
-// users.FirstWorkspaceName, exactly as SignUpVerified makes them. The password is returned once;
-// an address that does not parse is refused, and a taken one is users.ErrEmailTaken. The name is
-// kept trimmed, and one empty to the eye is users.ErrNameInvalid.
+// users.FirstWorkspaceName, exactly as SignUpVerified makes them. The password is returned once.
+// The name and the address are checked by the rules of a User's (users.CreateVerifiedIn), and a
+// taken address is users.ErrEmailTaken.
 func (u *UseCase) CreateOwner(ctx context.Context, email, name string) (string, error) {
-	if _, err := mail.ParseAddress(email); err != nil {
-		return "", ErrOwnerEmailInvalid.With(email)
-	}
-	name = strings.TrimSpace(name)
 	password := rand.Text()
 	hash, err := u.passwords.Hash(password)
 	if err != nil {

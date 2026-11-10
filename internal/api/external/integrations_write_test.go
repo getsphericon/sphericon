@@ -33,7 +33,7 @@ func smtpInput(host string) externalapi.IntegrationConfigInput {
 func createSMTP(t *testing.T, c *externalapi.Client, name string, isDefault bool) *externalapi.IntegrationResource {
 	t.Helper()
 	created, err := c.IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
-		Name: name, IsDefault: externalapi.NewOptBool(isDefault), Config: smtpInput("smtp.example.com"),
+		Name: externalapi.Name(name), IsDefault: externalapi.NewOptBool(isDefault), Config: smtpInput("smtp.example.com"),
 	})
 	require.NoError(t, err)
 	return created
@@ -48,7 +48,7 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 	_, err := reader.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "x", Config: smtpInput("smtp.example.com")})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	_, err = reader.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("x")}, externalapi.IntegrationsUpdateParams{ID: id})
+	_, err = reader.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptName("x")}, externalapi.IntegrationsUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	err = reader.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
@@ -131,7 +131,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	require.NoError(t, err)
 
 	res, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
-		Name: externalapi.NewOptString("Renamed"), Enabled: externalapi.NewOptBool(false),
+		Name: externalapi.NewOptName("Renamed"), Enabled: externalapi.NewOptBool(false),
 		MaxPerSecond: externalapi.NewOptNilMaxPerSecond(externalapi.MaxPerSecond(5)),
 	}, externalapi.IntegrationsUpdateParams{ID: id})
 	require.NoError(t, err)
@@ -189,7 +189,7 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	_, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: globex})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("hijacked")}, externalapi.IntegrationsUpdateParams{ID: globex})
+	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptName("hijacked")}, externalapi.IntegrationsUpdateParams{ID: globex})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: globex})
@@ -209,7 +209,7 @@ func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
 	ses := func(topic string) *externalapi.CreateIntegrationInput {
 		return &externalapi.CreateIntegrationInput{
-			Name: "SES " + topic,
+			Name: externalapi.Name("SES " + topic),
 			Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
 				Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
 			})},

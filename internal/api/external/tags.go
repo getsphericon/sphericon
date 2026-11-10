@@ -33,7 +33,7 @@ func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput
 	id := int64(params.ContactId)
 
 	scoped := auth.TokenScoped(ctx)
-	t, err := h.contacts.ApplyTag(ctx, scoped, id, req.Name)
+	t, err := h.contacts.ApplyTag(ctx, scoped, id, string(req.Name))
 	if err != nil {
 		return nil, err
 	}

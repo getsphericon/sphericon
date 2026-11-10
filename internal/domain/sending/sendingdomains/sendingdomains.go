@@ -3,7 +3,7 @@
 // verified moments a check stores. /site and /api are thin adapters over it.
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
-// the row or a domain refusal: validation.Error (a 422), ErrAlreadyExists (a
+// the row or a domain refusal: ErrInvalidDomain (a 422), ErrAlreadyExists (a
 // 409), or ErrNotFound for an unknown id. The DKIM private key never leaves the module:
 // callers see the public record only, through Records.
 //
@@ -45,6 +45,10 @@ var (
 	ErrAlreadyExists = validation.ConflictField("domain", "sendingdomains: this domain is already added", i18n.ErrorsSendingDomainExists)
 	// ErrNotFound means no Sending domain of that id is in the Workspace.
 	ErrNotFound = validation.NotFound("sendingdomains: sending domain not found", i18n.ErrorsSendingDomainNotFound)
+	// ErrInvalidDomain is a domain that is no domain name.
+	ErrInvalidDomain = validation.RefuseField("domain", "sendingdomains: invalid domain", i18n.ErrorsSendingDomainInvalid)
+	// ErrInvalidSelector is a DKIM selector that is no DNS label sequence.
+	ErrInvalidSelector = validation.RefuseField("dkimSelector", "sendingdomains: invalid DKIM selector", i18n.ErrorsDkimSelectorInvalid)
 )
 
 // The unique constraint of the Sending domains (ADR 0106): a domain is added once per Workspace.
@@ -95,7 +99,7 @@ type UpdateInput struct {
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.SendingDomain, error) {
 	domain, ok := domainname.Normalize(in.Domain)
 	if !ok {
-		return nil, &validation.Error{Field: "domain", Message: i18n.T(i18n.ErrorsSendingDomainInvalid, nil)}
+		return nil, ErrInvalidDomain
 	}
 	selector := DefaultSelector
 	if strings.TrimSpace(in.Selector) != "" {
@@ -205,7 +209,7 @@ func (m *Module) Records(d *ent.SendingDomain) DNSRecords {
 func validSelector(raw string) (string, error) {
 	sel := strings.ToLower(strings.TrimSpace(raw))
 	if !selectorPattern.MatchString(sel) {
-		return "", &validation.Error{Field: "dkimSelector", Message: i18n.T(i18n.ErrorsDkimSelectorInvalid, nil)}
+		return "", ErrInvalidSelector
 	}
 	return sel, nil
 }

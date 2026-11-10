@@ -71,7 +71,7 @@ func (c *InputsImpl) AnalyticsWindow(source site.SiteAnalyticsRange) analyticsre
 func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) automations.CreateInput {
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
-		automationsCreateInput.Name = (*source).Name
+		automationsCreateInput.Name = nameIn((*source).Name)
 		automationsCreateInput.TriggerEvent = (*source).TriggerEvent
 		if (*source).ExitEvents != nil {
 			automationsCreateInput.ExitEvents = make([]string, len((*source).ExitEvents))
@@ -182,7 +182,7 @@ func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automat
 func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
 	if source != nil {
-		automationsUpdateInput.Name = stringPtrIn((*source).Name)
+		automationsUpdateInput.Name = namePtrIn((*source).Name)
 		automationsUpdateInput.TriggerEvent = stringPtrIn((*source).TriggerEvent)
 		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
 		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
@@ -243,7 +243,7 @@ func (c *InputsImpl) BroadcastChannel(source site.BroadcastChannel) channels.Cha
 func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadcasts.CreateInput, error) {
 	var broadcastsCreateInput broadcasts.CreateInput
 	if source != nil {
-		pString := (*source).Name
+		pString := nameIn((*source).Name)
 		broadcastsCreateInput.Name = &pString
 		broadcastsContentInput, err := broadcastContentIn(c, (*source).Content)
 		if err != nil {
@@ -286,7 +286,7 @@ func (c *InputsImpl) BroadcastStatuses(source []site.SiteBroadcastStatus) []broa
 func (c *InputsImpl) BroadcastUpdate(source *site.UpdateBroadcastInput) (broadcasts.UpdateInput, error) {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
-		broadcastsUpdateInput.Name = stringPatch((*source).Name)
+		broadcastsUpdateInput.Name = namePatch((*source).Name)
 		broadcastsContentPatch, err := broadcastContentPatch(c, (*source).Content)
 		if err != nil {
 			return broadcastsUpdateInput, err
@@ -371,7 +371,7 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 func (c *InputsImpl) CustomFieldUpdate(source *site.SiteUpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
 	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
 	if source != nil {
-		contactsCustomFieldUpdateInput.Name = stringPatch((*source).Name)
+		contactsCustomFieldUpdateInput.Name = namePatch((*source).Name)
 		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
 	}
 	return contactsCustomFieldUpdateInput
@@ -397,7 +397,7 @@ func (c *InputsImpl) EmailBroadcastContentPatch(source site.EmailBroadcastConten
 func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
 	if source != nil {
-		integrationsCreateInput.Name = (*source).Name
+		integrationsCreateInput.Name = nameIn((*source).Name)
 		integrationsCreateInput.Enabled = boolPtrIn((*source).Enabled)
 		integrationsCreateInput.IsDefault = boolIn((*source).IsDefault)
 		integrationsCreateInput.MaxPerSecond = maxPerSecondPtrIn((*source).MaxPerSecond)
@@ -415,7 +415,7 @@ func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (int
 func (c *InputsImpl) IntegrationUpdate(source *site.UpdateIntegrationInput) (integrations.UpdateInput, error) {
 	var integrationsUpdateInput integrations.UpdateInput
 	if source != nil {
-		integrationsUpdateInput.Name = stringPatch((*source).Name)
+		integrationsUpdateInput.Name = namePatch((*source).Name)
 		integrationsUpdateInput.Enabled = boolPatch((*source).Enabled)
 		integrationsUpdateInput.IsDefault = boolPatch((*source).IsDefault)
 		integrationsUpdateInput.MaxPerSecond = maxPerSecondPatch((*source).MaxPerSecond)
@@ -539,7 +539,7 @@ func (c *InputsImpl) PersonalScope(source site.PersonalScope) tokenscope.Persona
 func (c *InputsImpl) PersonalTokenCreate(source *site.SiteCreatePersonalTokenInput) apitokens.PersonalInput {
 	var apitokensPersonalInput apitokens.PersonalInput
 	if source != nil {
-		apitokensPersonalInput.Name = (*source).Name
+		apitokensPersonalInput.Name = nameIn((*source).Name)
 		if (*source).Scopes != nil {
 			apitokensPersonalInput.Scopes = make([]tokenscope.PersonalScope, len((*source).Scopes))
 			for i := 0; i < len((*source).Scopes); i++ {
@@ -589,7 +589,7 @@ func (c *InputsImpl) RuleActions(source []site.SiteRuleAction) []rules.Action {
 func (c *InputsImpl) RuleCreate(source *site.SiteCreateRuleInput) (rules.CreateInput, error) {
 	var rulesCreateInput rules.CreateInput
 	if source != nil {
-		rulesCreateInput.Name = (*source).Name
+		rulesCreateInput.Name = nameIn((*source).Name)
 		if (*source).TriggerEvents != nil {
 			rulesCreateInput.TriggerEvents = make([]string, len((*source).TriggerEvents))
 			for i := 0; i < len((*source).TriggerEvents); i++ {
@@ -608,7 +608,7 @@ func (c *InputsImpl) RuleCreate(source *site.SiteCreateRuleInput) (rules.CreateI
 func (c *InputsImpl) RuleUpdate(source *site.SiteUpdateRuleInput) (rules.UpdateInput, error) {
 	var rulesUpdateInput rules.UpdateInput
 	if source != nil {
-		rulesUpdateInput.Name = stringPtrIn((*source).Name)
+		rulesUpdateInput.Name = namePtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
 		pString, err := conditionIn((*source).Condition)
 		if err != nil {
@@ -630,7 +630,7 @@ func (c *InputsImpl) SecondFactorConfirm(source *site.SiteSecondFactorConfirmInp
 func (c *InputsImpl) SegmentCreate(source *site.SiteCreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput
 	if source != nil {
-		segmentsCreateInput.Name = (*source).Name
+		segmentsCreateInput.Name = nameIn((*source).Name)
 		pString, err := createSegmentCondition((*source).Condition)
 		if err != nil {
 			return segmentsCreateInput, err
@@ -655,7 +655,7 @@ func (c *InputsImpl) SegmentPreview(source *site.SitePreviewSegmentInput) (segme
 func (c *InputsImpl) SegmentUpdate(source *site.SiteUpdateSegmentInput) (segments.UpdateInput, error) {
 	var segmentsUpdateInput segments.UpdateInput
 	if source != nil {
-		segmentsUpdateInput.Name = stringPatch((*source).Name)
+		segmentsUpdateInput.Name = namePatch((*source).Name)
 		patchField, err := segmentConditionPatch((*source).Condition)
 		if err != nil {
 			return segmentsUpdateInput, err
@@ -854,7 +854,7 @@ func (c *InputsImpl) TelegramButton(source site.TelegramButton) telegramrender.B
 func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) emailtemplates.CreateInput {
 	var emailtemplatesCreateInput emailtemplates.CreateInput
 	if source != nil {
-		emailtemplatesCreateInput.Name = (*source).Name
+		emailtemplatesCreateInput.Name = nameIn((*source).Name)
 		emailtemplatesCreateInput.Subject = stringPtrIn((*source).Subject)
 		emailtemplatesCreateInput.Body = stringPtrIn((*source).Body)
 		emailtemplatesCreateInput.Doc = documentIn((*source).Doc)
@@ -864,7 +864,7 @@ func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) emailtempl
 func (c *InputsImpl) TemplateUpdate(source *site.UpdateTemplateInput) emailtemplates.UpdateInput {
 	var emailtemplatesUpdateInput emailtemplates.UpdateInput
 	if source != nil {
-		emailtemplatesUpdateInput.Name = stringPatch((*source).Name)
+		emailtemplatesUpdateInput.Name = namePatch((*source).Name)
 		emailtemplatesUpdateInput.Subject = stringPatch((*source).Subject)
 		emailtemplatesUpdateInput.Body = stringPatch((*source).Body)
 		emailtemplatesUpdateInput.Doc = documentPatch((*source).Doc)
@@ -882,7 +882,7 @@ func (c *InputsImpl) TestAddress(source *site.TestSendBroadcastInput) outboundme
 func (c *InputsImpl) TokenCreate(source *site.SiteCreateTokenInput) apitokens.Input {
 	var apitokensInput apitokens.Input
 	if source != nil {
-		apitokensInput.Name = (*source).Name
+		apitokensInput.Name = nameIn((*source).Name)
 		if (*source).Scopes != nil {
 			apitokensInput.Scopes = make([]string, len((*source).Scopes))
 			for i := 0; i < len((*source).Scopes); i++ {
@@ -929,7 +929,7 @@ func (c *InputsImpl) WorkspaceCreate(source *site.SiteCreateWorkspaceInput) work
 	var workspaceviewCreateInput workspaceview.CreateInput
 	if source != nil {
 		// workspaceviewCreateInput.UserID: ignore
-		workspaceviewCreateInput.Name = (*source).Name
+		workspaceviewCreateInput.Name = nameIn((*source).Name)
 		// workspaceviewCreateInput.StrongSession: ignore
 	}
 	return workspaceviewCreateInput
@@ -945,7 +945,7 @@ func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) w
 func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) workspaceview.UpdateInput {
 	var workspaceviewUpdateInput workspaceview.UpdateInput
 	if source != nil {
-		workspaceviewUpdateInput.Name = (*source).Name
+		workspaceviewUpdateInput.Name = nameIn((*source).Name)
 		workspaceviewUpdateInput.PostalAddress = stringPtrIn((*source).PostalAddress)
 	}
 	return workspaceviewUpdateInput

@@ -131,12 +131,12 @@ func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
 	params := siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	for _, trigger := range []string{"email.delivered", "email.delayed", "email.dropped", "email.bounced", "email.complained", "email.sent"} {
-		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "From " + trigger, TriggerEvent: trigger}, params)
+		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, trigger)
 	}
 
 	for _, trigger := range []string{"email.opened", "email.clicked", "email.unsubscribed"} {
-		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "From " + trigger, TriggerEvent: trigger}, params)
+		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
 		require.NoError(t, err, trigger)
 	}
 

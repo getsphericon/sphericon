@@ -21,7 +21,7 @@ func workspaceCommand(d deps) *cli.Command {
 			ArgsUsage: "<id> <reason...>",
 			Arguments: []cli.Argument{
 				&cli.StringArg{Name: "id", Required: true},
-				&cli.StringArgs{Name: "reason", Min: 1, Max: -1},
+				&cli.StringArgs{Name: "reason", Max: -1},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				id := cmd.StringArg("id")

@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -104,23 +103,22 @@ func (a *Module) ProveIdentity(ctx context.Context, u *ent.User, proof IdentityP
 	return ErrIdentityProofRequired
 }
 
+// ErrCurrentPasswordRequired refuses a new password sent without the current one.
+var ErrCurrentPasswordRequired = validation.RefuseField("currentPassword", "users: the current password is required",
+	i18n.ErrorsCurrentPasswordRequired)
+
 // ErrNewEmailSame refuses an email change to the address the User already has.
 var ErrNewEmailSame = validation.RefuseField("newEmail", "users: the new email is the current one", i18n.ErrorsNewEmailMustDiffer)
 
-// newEmailForm is the address an email change asks for, checked against the address rule.
-type newEmailForm struct {
-	NewEmail string `json:"newEmail" validate:"required,account_email"`
-}
-
-// NewEmailFor is the address the User u asks to change their login email to, typed as it was:
-// trimmed, refused as a *validation.FieldsError when it is no address, and ErrNewEmailSame when
-// it is the User's own.
+// NewEmailFor is the address the User u asks to change their login email to, typed as it was: in
+// its Email case, refused as a *validation.FieldsError when it is no address
+// (validation.AccountEmail), and ErrNewEmailSame when it is the User's own.
 func NewEmailFor(u *ent.User, typed string) (string, error) {
-	email := strings.TrimSpace(typed)
-	if err := validation.Form(newEmailForm{NewEmail: email}); err != nil {
-		return "", err
+	email, err := validation.AccountEmail(validation.FieldNewEmail, typed)
+	if err != nil {
+		return "", validation.Fields(err)
 	}
-	if strings.EqualFold(email, u.Email) {
+	if email == u.Email {
 		return "", ErrNewEmailSame
 	}
 	return email, nil
@@ -135,11 +133,6 @@ type ProfileChanged struct {
 	// PasswordChanged reports that the change ended every session of the User (ADR 0020): the
 	// acting session continues only under a fresh one, stamped with the new epoch.
 	PasswordChanged bool
-}
-
-// newPasswordForm is the new password of a profile change, checked against the password rule.
-type newPasswordForm struct {
-	NewPassword string `json:"newPassword" validate:"password_not_blank,password_length"`
 }
 
 // ChangeProfile changes the name, the time zone, the Regional format and/or the password of the User
@@ -169,14 +162,11 @@ func (a *Module) changeProfile(ctx context.Context, u *ent.User, c ProfileChange
 		ClearRegionalFormat: c.ClearRegionalFormat && c.RegionalFormat == nil,
 	}
 	if c.Name != nil {
-		trimmed := strings.TrimSpace(*c.Name)
-		if trimmed == "" {
-			return ProfileChanged{}, validation.Refused("name", i18n.T(i18n.ErrorsNameEmpty, nil))
+		name, err := validation.UserName(*c.Name)
+		if err != nil {
+			return ProfileChanged{}, validation.Fields(err)
 		}
-		if err := CheckName(trimmed); err != nil {
-			return ProfileChanged{}, err
-		}
-		w.Name = &trimmed
+		w.Name = &name
 	}
 	if c.Timezone != nil {
 		if err := workspaces.CheckZone(*c.Timezone); err != nil {
@@ -191,11 +181,11 @@ func (a *Module) changeProfile(ctx context.Context, u *ent.User, c ProfileChange
 		w.RegionalFormat = &tag
 	}
 	if c.NewPassword != "" {
-		if err := validation.Form(newPasswordForm{NewPassword: c.NewPassword}); err != nil {
+		if err := validation.Fields(validation.Password(validation.FieldNewPassword, c.NewPassword)); err != nil {
 			return ProfileChanged{}, err
 		}
 		if c.CurrentPassword == "" {
-			return ProfileChanged{}, validation.Refused("currentPassword", i18n.T(i18n.ErrorsCurrentPasswordRequired, nil))
+			return ProfileChanged{}, validation.Fields(ErrCurrentPasswordRequired)
 		}
 		if err := a.provePassword(ctx, u, c.CurrentPassword); err != nil {
 			return ProfileChanged{}, err

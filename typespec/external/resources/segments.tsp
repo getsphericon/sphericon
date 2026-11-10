@@ -192,7 +192,7 @@ model SegmentResource {
 /** Request body for creating a segment */
 model CreateSegmentInput {
   /** Segment name */
-  name: string;
+  name: Name;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
   condition: ConditionGroup;
@@ -201,7 +201,7 @@ model CreateSegmentInput {
 /** Request body for updating a segment */
 model UpdateSegmentInput {
   /** Segment name */
-  name?: string;
+  name?: Name;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
   condition?: ConditionGroup;

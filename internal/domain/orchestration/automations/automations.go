@@ -72,10 +72,10 @@ var (
 
 	// ErrNoVersion: the Automation has no live version: it was never published, so nobody can
 	// be enrolled in it.
-	ErrNoVersion = errors.New("automations: automation has no live version")
+	ErrNoVersion = validation.Conflict("automations: automation has no live version", i18n.ErrorsAutomationNoVersion)
 	// ErrInactive: the Automation a Rule enrolls into is inactive or archived by the time the
 	// Enrollment is made, so it enrolls nobody (StepExecution.EnrollOnRule).
-	ErrInactive = errors.New("automations: automation is not active")
+	ErrInactive = validation.Conflict("automations: automation is not active", i18n.ErrorsAutomationInactive)
 
 	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")
 )
@@ -420,6 +420,11 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automat
 // Create stores a new inactive Automation whose first version is its draft: nothing is live until
 // it is published (ADR 0065).
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.Automation, error) {
+	name, err := validation.Name(in.Name)
+	if err != nil {
+		return nil, err
+	}
+	in.Name = name
 	steps, err := m.build(ctx, in.Steps)
 	if err != nil {
 		return nil, err
@@ -446,6 +451,11 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // three together (validateEvents), so a new Trigger equal to a stored exit or goal event is refused
 // too. The status is untouched. An archived Automation is read-only: ErrArchived.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
+	name, err := validation.NameOpt(in.Name)
+	if err != nil {
+		return nil, err
+	}
+	in.Name = name
 	e := edit{trigger: in.TriggerEvent, exits: in.ExitEvents, goal: in.GoalEvent}
 	if in.Steps != nil {
 		built, err := m.build(ctx, *in.Steps)

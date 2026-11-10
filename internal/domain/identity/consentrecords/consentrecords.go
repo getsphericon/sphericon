@@ -78,12 +78,12 @@ func Decide(inEffect []signupitems.Document, answers []Answer) ([]Entry, error) 
 		d, known := byKey[a.Key]
 		_, twice := given[a.Key]
 		if !known || twice || d.Label != a.Version {
-			return nil, validation.Refused(Field, i18n.T(i18n.ErrorsSignupItemsStale, nil))
+			return nil, validation.Fields(ErrItemsStale)
 		}
 		given[a.Key] = a
 	}
 
-	fields := map[string][]string{}
+	var refusals []error
 	var entries []Entry
 	for _, d := range inEffect {
 		a, answered := given[d.Key]
@@ -91,16 +91,26 @@ func Decide(inEffect []signupitems.Document, answers []Answer) ([]Entry, error) 
 		case d.Kind == signupitem.KindNotice:
 			entries = append(entries, Entry{VersionID: d.VersionID, Decision: consentrecord.DecisionShown})
 		case d.Kind == signupitem.KindRequiredAcceptance && !a.Accepted:
-			fields[ItemField(d.Key)] = []string{i18n.T(i18n.ErrorsSignupItemRequired, map[string]any{"Title": d.Title})}
+			refusals = append(refusals, ErrItemRequired.On(ItemField(d.Key)).Args(map[string]any{"Title": d.Title}))
 		case answered:
 			entries = append(entries, Entry{VersionID: d.VersionID, Decision: decision(a.Accepted)})
 		}
 	}
-	if len(fields) > 0 {
-		return nil, &validation.FieldsError{Fields: fields}
+	if err := validation.Fields(refusals...); err != nil {
+		return nil, err
 	}
 	return entries, nil
 }
+
+// The refusals of a Sign-up form's answers.
+var (
+	// ErrItemsStale is an answer that names an item not in effect, a version not its current one or
+	// an item twice.
+	ErrItemsStale = validation.RefuseField(Field, "consentrecords: the answers do not fit the Sign-up items in effect",
+		i18n.ErrorsSignupItemsStale)
+	// ErrItemRequired is a required acceptance not answered ticked, on the item's own field.
+	ErrItemRequired = validation.Refuse("consentrecords: a required acceptance is not given", i18n.ErrorsSignupItemRequired)
+)
 
 func decision(accepted bool) consentrecord.Decision {
 	if accepted {

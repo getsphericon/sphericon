@@ -3,13 +3,11 @@ package jobs
 import (
 	"context"
 	"database/sql"
-	"slices"
 	"time"
 
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
@@ -35,7 +33,6 @@ type DeliverWebhookWorker struct {
 	river.WorkerDefaults[DeliverWebhookArgs]
 
 	ent    *ent.Client
-	cipher *secrets.Cipher
 	client webhook.Doer
 	now    func() time.Time
 	// mod keeps the endpoint's failure state and disables it, which tells the owners.
@@ -47,7 +44,6 @@ type DeliverWebhookWorker struct {
 func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, bus *events.Bus) *DeliverWebhookWorker {
 	return &DeliverWebhookWorker{
 		ent:    client,
-		cipher: cipher,
 		client: doer,
 		now:    now,
 		mod:    webhookendpoints.New(bus, cipher, nil, nil, now),
@@ -66,15 +62,11 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if err != nil {
 		return err
 	}
-	if e.DisabledAt != nil {
-		return nil // disabled since enqueue
+	delivery, ok, err := w.mod.DeliveryTo(e)
+	if err != nil || !ok {
+		return err // !ok: disabled since enqueue
 	}
-
-	secret, err := w.cipher.Decrypt(e.SecretEncrypted)
-	if err != nil {
-		return err
-	}
-	sendErr := webhook.Send(ctx, w.client, e.URL, string(secret), job.Args.EventName, job.Args.DeliveryID, job.Args.Body, w.now())
+	sendErr := webhook.Send(ctx, w.client, delivery.URL, delivery.Secret, job.Args.EventName, job.Args.DeliveryID, job.Args.Body, w.now())
 	if err := w.mod.RecordDelivery(ctx, w.ent.Scoped(e.WorkspaceID), e, sendErr, w.now()); err != nil {
 		return err
 	}
@@ -111,21 +103,16 @@ func NewWebhookDispatcher() events.WebhookDispatcher {
 
 type webhookDispatcher struct{}
 
-// Dispatch fans a domain event out to every enabled endpoint in the workspace
-// whose filter matches, enqueuing one delivery job each. The scope comes from the caller
+// Dispatch fans a domain event out to every endpoint of the workspace that receives it
+// (webhookendpoints.Subscribed), enqueuing one delivery job each. The scope comes from the caller
 // (the webhooks consumer, which scopes to the event's Workspace).
 func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error {
-	endpoints, err := s.WebhookEndpoint().Query().
-		Where(webhookendpoint.DisabledAtIsNil()).
-		All(ctx)
+	endpoints, err := webhookendpoints.Subscribed(ctx, s, eventName)
 	if err != nil {
 		return err
 	}
 	queue := river.ClientFromContext[*sql.Tx](ctx)
 	for _, e := range endpoints {
-		if !matchesEvent(e.EventTypes, eventName) {
-			continue
-		}
 		if _, err := queue.Insert(ctx, DeliverWebhookArgs{
 			WorkspaceID: e.WorkspaceID,
 			EndpointID:  e.ID,
@@ -137,14 +124,4 @@ func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventNam
 		}
 	}
 	return nil
-}
-
-// matchesEvent reports whether an endpoint with the given filter receives the
-// event. An empty filter means "all customer-facing events", the Events: one that is not
-// Projected (an Audit entry, ADR 0022) must be named explicitly.
-func matchesEvent(filter []string, name string) bool {
-	if len(filter) == 0 {
-		return !events.IsUnprojected(name)
-	}
-	return slices.Contains(filter, name)
 }

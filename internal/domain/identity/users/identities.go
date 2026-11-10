@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"errors"
 	"slices"
 	"strings"
 	"time"
@@ -115,7 +114,7 @@ func factsOf(known, holder *ent.User, in ProviderLogin) SigninFacts {
 // may not have. A third party's name never refuses a sign-in.
 func providerName(in ProviderLogin) string {
 	name := strings.TrimSpace(in.Name)
-	if CheckName(name) != nil {
+	if _, err := validation.UserName(name); err != nil {
 		return ""
 	}
 	return name
@@ -154,7 +153,7 @@ func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin,
 
 var (
 	// ErrIdentityInUse is a provider account that is already linked to another User.
-	ErrIdentityInUse = errors.New("users: the provider account is linked to another user")
+	ErrIdentityInUse = validation.Conflict("users: the provider account is linked to another user", i18n.ErrorsIdentityInUse)
 	// ErrIdentityNotFound is an identity that is not the User's.
 	ErrIdentityNotFound = validation.NotFound("users: no such linked identity", i18n.ErrorsLinkedIdentityNotFound)
 	// ErrLastSignIn is an unlink that would leave the User with no way to sign in.

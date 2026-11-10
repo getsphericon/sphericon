@@ -69,7 +69,7 @@ func TestExternalCustomFieldsUpdateNeedsTheWriteScope(t *testing.T) {
 	require.NoError(t, err)
 	plan, found := lo.Find(list.Items, func(f externalapi.CustomFieldResource) bool { return f.Key == "plan" })
 	require.True(t, found)
-	rename := &externalapi.UpdateCustomFieldInput{Name: externalapi.NewOptString("Subscription plan")}
+	rename := &externalapi.UpdateCustomFieldInput{Name: externalapi.NewOptName("Subscription plan")}
 	params := externalapi.CustomFieldsUpdateParams{ID: plan.ID}
 
 	_, err = env.ExternalScoped(t, "custom_fields:read").CustomFieldsUpdate(ctx, rename, params)

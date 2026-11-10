@@ -10364,7 +10364,11 @@
         "required": ["name"],
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "The label to apply; created on first use"
           }
         },
@@ -11258,7 +11262,11 @@
         "required": ["name", "content"],
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "Internal broadcast name"
           },
           "content": {
@@ -11395,7 +11403,7 @@
         "required": ["name", "config"],
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           },
           "enabled": {
             "type": "boolean"
@@ -11462,7 +11470,11 @@
         "required": ["name"],
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "Template name"
           },
           "subject": {
@@ -11885,16 +11897,15 @@
         "maximum": 10000,
         "description": "A per-second Provider limit the caller may set"
       },
+      "Name": {
+        "type": "string",
+        "maxLength": 100,
+        "description": "What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a\nBroadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding\nspaces are trimmed before the name is stored, and a name that is empty then is refused (422)."
+      },
       "OptOutVia": {
         "type": "string",
         "enum": ["keyword", "button", "block", "link", "refused_send", "manual"],
         "description": "How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)"
-      },
-      "PasskeyName": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 100,
-        "description": "What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding\nspaces are trimmed before the name is stored, so a name of spaces only is refused too."
       },
       "Permission": {
         "type": "string",
@@ -15085,7 +15096,7 @@
         "required": ["name", "triggerEvent"],
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           },
           "triggerEvent": {
             "type": "string"
@@ -15247,7 +15258,7 @@
         "required": ["name", "scopes"],
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           },
           "scopes": {
             "type": "array",
@@ -15286,7 +15297,7 @@
         "required": ["name", "triggerEvents"],
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           },
           "triggerEvents": {
             "type": "array",
@@ -15314,7 +15325,11 @@
         "required": ["name", "condition"],
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "Segment name"
           },
           "condition": {
@@ -15352,7 +15367,7 @@
         "required": ["name", "scopes"],
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           },
           "scopes": {
             "type": "array",
@@ -15390,7 +15405,11 @@
         "required": ["name"],
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "Display name: free text, not unique"
           }
         },
@@ -16769,7 +16788,7 @@
           "name": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/PasskeyName"
+                "$ref": "#/components/schemas/Name"
               }
             ],
             "description": "What the User calls it, to tell their Passkeys apart"
@@ -16995,7 +17014,7 @@
           "name": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/PasskeyName"
+                "$ref": "#/components/schemas/Name"
               }
             ],
             "description": "What to call the Passkey, to tell it from the User's others"
@@ -17047,7 +17066,7 @@
           "name": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/PasskeyName"
+                "$ref": "#/components/schemas/Name"
               }
             ],
             "description": "What to call the Passkey, to tell it from the User's others"
@@ -19002,7 +19021,7 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           },
           "triggerEvent": {
             "type": "string"
@@ -19137,8 +19156,11 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "minLength": 1,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "Display name"
           },
           "type": {
@@ -19230,7 +19252,7 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           },
           "triggerEvents": {
             "type": "array",
@@ -19257,7 +19279,11 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "Segment name"
           },
           "condition": {
@@ -19276,7 +19302,7 @@
         "required": ["name"],
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           }
         },
         "description": "Rename an API token"
@@ -19286,7 +19312,11 @@
         "required": ["name"],
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "New display name"
           },
           "postalAddress": {
@@ -20158,7 +20188,11 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "Internal broadcast name"
           },
           "content": {
@@ -20294,7 +20328,7 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/Name"
           },
           "enabled": {
             "type": "boolean"
@@ -20349,7 +20383,11 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
             "description": "Template name"
           },
           "subject": {

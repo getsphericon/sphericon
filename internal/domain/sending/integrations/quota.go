@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -16,6 +18,20 @@ import (
 // quotaTimeout bounds one provider quota lookup, so a hung endpoint cannot stall a
 // save or a job.
 const quotaTimeout = 15 * time.Second
+
+// DueForQuotaRefresh returns up to limit Integrations whose provider quota is due a read, each
+// with only its id and its Workspace (the lookup job names both), least-recently-checked first
+// with NULLS FIRST, so a never-checked Integration is reached before already-checked ones. Only
+// SES reports a quota; SMTP has none. A deleted Integration is not kept working (ADR 0099): nobody
+// sends with its credential. The read crosses Workspaces, so it takes the job's raw client.
+func DueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]*ent.Integration, error) {
+	return client.Integration.Query().
+		Where(integration.ProviderEQ(providers.SES), integration.DiscardedAtIsNil()).
+		Order(integration.ByProviderQuotaCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
+		Limit(limit).
+		Select(integration.FieldID, integration.FieldWorkspaceID).
+		All(ctx)
+}
 
 // RefreshQuota asks the Integration's provider for its send quota and the account's
 // standing and stores the answer on the Integration's row (ADR 0067): providerlimit.EffectiveOf

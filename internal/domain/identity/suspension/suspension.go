@@ -6,7 +6,6 @@ package suspension
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -47,10 +47,14 @@ func (a Actor) validate() error {
 		return fmt.Errorf("an actor is required: %w", err)
 	}
 	if (a.Kind == workspace.SuspendedByKindStaff) != (a.ID != "") {
-		return errors.New("only a StaffMember actor has an id, and it must have one")
+		return ErrActorInvalid
 	}
 	return nil
 }
+
+// ErrActorInvalid is an actor that is a Staff member without an id, or another kind with one.
+var ErrActorInvalid = validation.Refuse("suspension: only a Staff member actor has an id, and it must have one",
+	i18n.ErrorsSuspensionActorInvalid)
 
 // auditActor is the actor of the Audit entry. System is the system actor; the CLI is
 // platform staff acting from the server, recorded as a Staff member named "cli". Customers
@@ -192,10 +196,15 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 // with the old and the new value. It reports whether the value changed: setting the same value or
 // clearing a Workspace with none is a no-op. The Send cap is a lever short of a suspension: a spent
 // one slows sending (a Deferral), it does not stop it. Whether the Instance has Send caps at all is
-// the caller's to check; the bounds are the contract's.
+// the caller's to check; a Send cap outside the contract's bounds (bounds.MaxPerDay) is refused.
 func SetSendCap(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, sendCap *int) (bool, error) {
 	if err := by.validate(); err != nil {
 		return false, fmt.Errorf("set send cap: %w", err)
+	}
+	if sendCap != nil {
+		if err := validation.Range("perDay", *sendCap, bounds.MaxPerDayMin, bounds.MaxPerDayMax); err != nil {
+			return false, err
+		}
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {

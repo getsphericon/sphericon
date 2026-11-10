@@ -15,7 +15,7 @@ import {
   sitePasskeysFinishRegistration,
 } from '../generated/site/sdk.gen.ts'
 import type { SitePasskey } from '../generated/site/types.gen.ts'
-import { zPasskeyName } from '../generated/site/zod.gen.ts'
+import { zName } from '../generated/site/zod.gen.ts'
 import { useActionModal } from '../hooks/useActionModal.tsx'
 import { useFormat } from '../hooks/useFormat.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
@@ -61,7 +61,7 @@ function AddPasskeyForm({ passwordless, onClose }: { passwordless: boolean; onCl
           label={t(($) => $.security.passkeys.nameLabel)}
           required
           data-autofocus
-          maxLength={zPasskeyName.maxLength ?? undefined}
+          maxLength={zName.maxLength ?? undefined}
           {...form.getInputProps('name')}
         />
         {passwordless ? null : (
@@ -175,7 +175,7 @@ function RenamePasskeyForm({ passkey, onClose }: { passkey: SitePasskey; onClose
           label={t(($) => $.security.passkeys.renameLabel)}
           required
           data-autofocus
-          maxLength={zPasskeyName.maxLength ?? undefined}
+          maxLength={zName.maxLength ?? undefined}
           {...form.getInputProps('name')}
         />
         <Group justify="flex-end">

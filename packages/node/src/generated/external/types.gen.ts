@@ -76,7 +76,7 @@ export type ApplyTagInput = {
   /**
    * The label to apply; created on first use
    */
-  name: string;
+  name: Name;
 };
 
 /**
@@ -1999,7 +1999,7 @@ export type ContactResource = {
 export type CountryCode = string;
 
 export type CreateApiTokenInput = {
-  name: string;
+  name: Name;
   scopes: Array<ApiTokenScope>;
   expiresAt?: Timestamp | null;
 };
@@ -2013,7 +2013,7 @@ export type CreateApiTokenResponse = {
  * Request body for creating an automation (always created inactive)
  */
 export type CreateAutomationInput = {
-  name: string;
+  name: Name;
   triggerEvent: string;
   /**
    * Event actions that end an active enrollment early; none of them may be the trigger. Each
@@ -2036,7 +2036,7 @@ export type CreateBroadcastInput = {
   /**
    * Internal broadcast name
    */
-  name: string;
+  name: Name;
   /**
    * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422.
    */
@@ -2140,7 +2140,7 @@ export type CreateContactInput = {
  * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422
  */
 export type CreateIntegrationInput = {
-  name: string;
+  name: Name;
   enabled?: boolean;
   isDefault?: boolean;
   /**
@@ -2166,7 +2166,7 @@ export type CreateIntegrationInput = {
  * Request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export type CreateRuleInput = {
-  name: string;
+  name: Name;
   /**
    * The Event actions that make the Rule fire; at least one
    */
@@ -2185,7 +2185,7 @@ export type CreateSegmentInput = {
   /**
    * Segment name
    */
-  name: string;
+  name: Name;
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
@@ -2227,7 +2227,7 @@ export type CreateTemplateInput = {
   /**
    * Template name
    */
-  name: string;
+  name: Name;
   /**
    * Default subject line
    */
@@ -3428,6 +3428,13 @@ export type MessageRevenue = {
    */
   amount: number;
 };
+
+/**
+ * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
+ * Broadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding
+ * spaces are trimmed before the name is stored, and a name that is empty then is refused (422).
+ */
+export type Name = string;
 
 /**
  * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
@@ -4909,7 +4916,7 @@ export type UnsubscribeResource = {
  * version's, and only publishing makes the draft live.
  */
 export type UpdateAutomationInput = {
-  name?: string;
+  name?: Name;
   triggerEvent?: string;
   /**
    * Event actions that end an active enrollment early; replaces the list, omitted keeps it
@@ -4929,7 +4936,7 @@ export type UpdateBroadcastInput = {
   /**
    * Internal broadcast name
    */
-  name?: string;
+  name?: Name;
   /**
    * What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps the content.
    */
@@ -5010,7 +5017,7 @@ export type UpdateCustomFieldInput = {
   /**
    * Display name
    */
-  name?: string;
+  name?: Name;
   /**
    * Value type. Stored values are not rewritten: the leaves of the new type read them as they are
    */
@@ -5021,7 +5028,7 @@ export type UpdateCustomFieldInput = {
  * Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.
  */
 export type UpdateIntegrationInput = {
-  name?: string;
+  name?: Name;
   enabled?: boolean;
   isDefault?: boolean;
   /**
@@ -5051,7 +5058,7 @@ export type UpdateIntegrationInput = {
  * Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
 export type UpdateRuleInput = {
-  name?: string;
+  name?: Name;
   /**
    * The Event actions that make the Rule fire; at least one
    */
@@ -5070,7 +5077,7 @@ export type UpdateSegmentInput = {
   /**
    * Segment name
    */
-  name?: string;
+  name?: Name;
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
@@ -5096,7 +5103,7 @@ export type UpdateTemplateInput = {
   /**
    * Template name
    */
-  name?: string;
+  name?: Name;
   /**
    * Default subject line
    */

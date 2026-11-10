@@ -207,7 +207,7 @@ func TestSiteIntegrationsSesCompatibleKeepsTheProviderLimit(t *testing.T) {
 	assert.Equal(t, []string{"maxPerDay"}, refusedFields(t, err))
 
 	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
-		Name: siteapi.NewOptString("Postbox (prod)"),
+		Name: siteapi.NewOptName("Postbox (prod)"),
 	}, params)
 	require.NoError(t, err, "the stored values still apply")
 }

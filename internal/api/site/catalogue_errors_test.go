@@ -56,7 +56,7 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		rename := &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")}
+		rename := &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptName("Renamed")}
 		_, err := c.SiteAutomationsUpdate(ctx, rename, siteapi.SiteAutomationsUpdateParams{WorkspaceId: foreign, ID: known})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteAutomationsUpdate(ctx, rename, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: missing})
@@ -68,7 +68,7 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 
 		// Valid step edit round-trips.
 		r5, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
-			Name: siteapi.NewOptString("Renamed"),
+			Name: siteapi.NewOptName("Renamed"),
 			Steps: []siteapi.SiteAutomationStep{
 				{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)},
 			},
@@ -124,7 +124,7 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	got := g4
 	assert.Equal(t, fixtures.SegmentProPlanName, got.Name)
 
-	rename := &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptString("Renamed")}
+	rename := &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptName("Renamed")}
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: foreign, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: missing})
@@ -178,7 +178,7 @@ func TestSiteTemplatesErrorBranches(t *testing.T) {
 	got := g4
 	assert.Equal(t, fixtures.TemplateWelcomeName, got.Name)
 
-	rename := &siteapi.UpdateTemplateInput{Name: siteapi.NewOptString("Renamed")}
+	rename := &siteapi.UpdateTemplateInput{Name: siteapi.NewOptName("Renamed")}
 	_, err = c.SiteTemplatesUpdate(ctx, rename, siteapi.SiteTemplatesUpdateParams{WorkspaceId: foreign, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = c.SiteTemplatesUpdate(ctx, rename, siteapi.SiteTemplatesUpdateParams{WorkspaceId: acme, ID: missing})
