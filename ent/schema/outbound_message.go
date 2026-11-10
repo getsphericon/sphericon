@@ -101,20 +101,18 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Time("sent_at").
 			Optional().
 			Nillable(),
-		// The delivery result (ADR 0053): the first Delivery notice of each kind that
-		// names this message stamps it once, and a stamp is never cleared, so a report of
-		// an old send does not shrink when its analytical Events expire (ADR 0019).
-		// delivered_at is no latch: email keeps its earliest observation and may move it earlier
-		// (ADR 0113). An SMS final report sets it once, and the table holds it apart from
-		// undelivered_at.
+		// The delivery result (ADR 0053): each kind keeps the earliest Delivery notice that names
+		// this message (ADR 0113), and a stamp is never cleared, so a report of an old send does
+		// not shrink when its analytical Events expire (ADR 0019). An SMS final report sets
+		// delivered_at once, through the latch of undelivered_at below.
 		field.Time("delivered_at").Optional().Nillable().
 			Annotations(State{Form: FormAttribute, Reason: "the earliest observation, ADR 0113"}),
 		field.Time("bounced_at").Optional().Nillable(),
 		field.Time("complained_at").Optional().Nillable(),
 		// A report that the message did not reach the person, on a Channel whose provider reports
 		// it (SMS, ADR 0079), with the provider's error code (Twilio's ErrorCode), nil when it gave
-		// none. delivered_at and undelivered_at are the final states of a sent message: it moves
-		// only forward, so the first of them stamps and the other never follows, and the table
+		// none. delivered_at and undelivered_at are the final states of a sent message, one latch
+		// over the pair: the first of them stamps and the other never follows, and the table
 		// refuses a row with both (outbound_messages_final_report_check).
 		field.Time("undelivered_at").Optional().Nillable().
 			Annotations(State{Form: FormLatch}),
