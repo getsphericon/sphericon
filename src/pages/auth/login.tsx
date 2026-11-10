@@ -19,7 +19,7 @@ import {
 import { IconFingerprint } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
@@ -42,15 +42,23 @@ import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as signUpRoute } from '../../routes/sign-up.tsx'
 import { isEmailVerificationRequiredError } from '../../utils/apiErrors.ts'
 
+// Where a Passkey login started: the person pressed the button, or the page offered the Passkeys
+// in the email field's autofill list (the conditional UI) until `signal` says the offer is over.
+type PasskeyAttempt = { from: 'button' } | { from: 'autofill'; signal: AbortSignal }
+
 // The browser's side of a Passkey login (ADR 0052): the server's request options go to the
 // authenticator, which offers the Passkeys it holds for this host, and its answer goes back. No
-// email is typed: the server finds the User by the credential. With `useBrowserAutofill` the
-// browser offers them in the email field's autofill list and waits for the person to choose.
-async function loginWithPasskey(useBrowserAutofill: boolean) {
+// email is typed: the server finds the User by the credential. From autofill the browser offers
+// them in the email field and waits for the person to choose; an offer withdrawn while its options
+// were on their way never reaches the browser, as there is no ceremony yet for the page to cancel.
+async function loginWithPasskey(attempt: PasskeyAttempt) {
   const begun = await sitePasskeyLoginBegin({ throwOnError: true })
+  if (attempt.from === 'autofill') {
+    attempt.signal.throwIfAborted()
+  }
   const credential = await startAuthentication({
     optionsJSON: begun.data.options,
-    useBrowserAutofill,
+    useBrowserAutofill: attempt.from === 'autofill',
   })
   const finished = await sitePasskeyLoginFinish({
     body: { credential: { ...credential } },
@@ -114,12 +122,30 @@ export function LoginPage() {
       ),
     })
 
-  const signedIn = async () =>
-    redirect ? router.history.push(redirect) : navigate({ to: indexRoute.to })
+  // A session is real however it started, so a late success of a superseded attempt still signs
+  // in; when two attempts both succeed (a password and a Passkey chosen from autofill), only the
+  // first one leaves the page. Once it is leaving, what any other attempt answers is dropped.
+  const leaving = useRef(false)
+  const signedIn = async () => {
+    if (leaving.current) {
+      return
+    }
+    leaving.current = true
+    try {
+      await (redirect ? router.history.push(redirect) : navigate({ to: indexRoute.to }))
+    } catch (error) {
+      // The page did not leave: the next sign-in may try again.
+      leaving.current = false
+      throw error
+    }
+  }
 
   const loginMutation = useMutation({
     ...siteAuthLoginMutation(),
     onSuccess: async (result: SiteLoginResult) => {
+      if (leaving.current) {
+        return
+      }
       if (result.outcome === 'challenge' && result.challenge) {
         setChallenge(result.challenge)
         return
@@ -127,6 +153,9 @@ export function LoginPage() {
       return signedIn()
     },
     onError: (error, variables) => {
+      if (leaving.current) {
+        return
+      }
       // Drop the rejected password so the user retypes a fresh one.
       form.setFieldValue('password', '')
       if (isEmailVerificationRequiredError(error)) {
@@ -138,44 +167,64 @@ export function LoginPage() {
     },
   })
 
+  // The code step is one attempt: Start over abandons it (reset), and what its code earns comes
+  // back only to the step it was typed on, through the callbacks of that mutate call, which TanStack
+  // drops once the mutation is reset. Its challenge cannot tell the steps apart: a login within the
+  // same second is handed the same string. A late success still signs in (the session is real).
   const secondStepMutation = useMutation({
     ...siteAuthSecondFactorMutation(),
     onSuccess: signedIn,
-    onError: (error) => {
-      codeForm.setFieldValue('code', '')
-      showError(error)
-    },
   })
+  const submitCode = (code: string, stepChallenge: string) =>
+    secondStepMutation.mutate(
+      { body: { challenge: stepChallenge, code } },
+      {
+        onError: (error) => {
+          codeForm.setFieldValue('code', '')
+          showError(error)
+        },
+      },
+    )
 
   // The Passkey button, and the conditional UI that runs without a click: the browser offers the
   // person's Passkeys in the email field and the login finishes when one is chosen. Only the button
-  // reports a failure; the conditional ceremony is silent, and ends when the person leaves the page.
+  // reports a failure; the conditional ceremony is silent. It belongs to the password view: it ends
+  // when the page asks for the code or the person leaves, and starts again after Start over.
   const passkeyMutation = useMutation({
     mutationFn: loginWithPasskey,
     onSuccess: signedIn,
-    onError: (error, useBrowserAutofill) => {
-      if (!useBrowserAutofill && !isDeclined(error)) {
+    onError: (error, attempt) => {
+      if (attempt.from === 'button' && !isDeclined(error)) {
         showError(error)
       }
     },
   })
   const { mutate: passkeyLogin } = passkeyMutation
+  const onCodeStep = challenge !== null
   useEffect(() => {
-    let active = true
-    const offer = async () => {
+    const offer = new AbortController()
+    const start = async () => {
       const supported = await browserSupportsWebAuthnAutofill()
-      if (supported && active) {
-        passkeyLogin(true)
+      if (supported && !offer.signal.aborted) {
+        passkeyLogin({ from: 'autofill', signal: offer.signal })
       }
     }
-    void offer()
+    if (!onCodeStep) {
+      void start()
+    }
     return () => {
-      active = false
+      offer.abort()
       WebAuthnAbortService.cancelCeremony()
     }
-  }, [passkeyLogin])
+  }, [passkeyLogin, onCodeStep])
+
+  // One method at a time: a password login and the Passkey button wait for each other. The
+  // conditional ceremony is pending for as long as the password view is open, so it blocks nothing.
+  const passkeyButtonPending =
+    passkeyMutation.isPending && passkeyMutation.variables.from === 'button'
 
   const startOver = () => {
+    secondStepMutation.reset()
     setChallenge(null)
     codeForm.reset()
     form.setFieldValue('password', '')
@@ -189,11 +238,7 @@ export function LoginPage() {
           {t(($) => $.login.secondStepDescription)}
         </Text>
 
-        <form
-          onSubmit={codeForm.onSubmit((values) =>
-            secondStepMutation.mutate({ body: { challenge, code: values.code.trim() } }),
-          )}
-        >
+        <form onSubmit={codeForm.onSubmit((values) => submitCode(values.code.trim(), challenge))}>
           <Stack>
             <OneTimeCodeInput
               label={t(($) => $.login.codeLabel)}
@@ -275,7 +320,7 @@ export function LoginPage() {
                 {t(($) => $.login.forgotPasswordLink)}
               </AnchorLink>
             </Stack>
-            <Button type="submit" loading={loginMutation.isPending}>
+            <Button type="submit" loading={loginMutation.isPending} disabled={passkeyButtonPending}>
               {t(($) => $.login.submitButton)}
             </Button>
           </Group>
@@ -288,8 +333,9 @@ export function LoginPage() {
         <Button
           variant="default"
           leftSection={<IconFingerprint size={18} />}
-          loading={passkeyMutation.isPending && !passkeyMutation.variables}
-          onClick={() => passkeyLogin(false)}
+          loading={passkeyButtonPending}
+          disabled={loginMutation.isPending}
+          onClick={() => passkeyLogin({ from: 'button' })}
         >
           {t(($) => $.login.passkeyButton)}
         </Button>
