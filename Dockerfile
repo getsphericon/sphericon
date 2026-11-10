@@ -4,7 +4,7 @@
 # which just wraps the prebuilt binary.
 
 # --- Stage 1: frontend (SPA + tracker bundle) ---
-FROM node:26.12.1-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS frontend
+FROM node:26.13.0-alpine3.24@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS frontend
 
 RUN npm install -g pnpm@12.10.1
 WORKDIR /src
@@ -17,7 +17,7 @@ COPY . .
 RUN pnpm build:tracker && pnpm build
 
 # --- Stage 2: Go binary with embedded assets ---
-FROM golang:1.27.3-alpine3.24@sha256:d530cf60723abf1ffae0cd16bb546b379ec0550d2f3815e5b16ed69dbc00fba4 AS gobuild
+FROM golang:1.27.3-alpine3.24@sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18 AS gobuild
 
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -35,7 +35,7 @@ RUN cp CHANGELOG.md internal/domain/instance/upgradenote/CHANGELOG.md \
     -o /sphericon ./cmd/server
 
 # --- Stage 3: the runtime files scratch lacks ---
-FROM alpine:3.24@sha256:71e9b7bae160ba167fa17414401b94cbcdaf3c32feeab9298bd794a2a0614c35 AS rootfs
+FROM alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf AS rootfs
 RUN apk add --no-cache ca-certificates tzdata \
     && mkdir -p /rootfs/etc/ssl/certs /rootfs/usr/share \
     && cp /etc/ssl/certs/ca-certificates.crt /rootfs/etc/ssl/certs/ \

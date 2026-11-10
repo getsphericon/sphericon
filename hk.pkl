@@ -1,5 +1,5 @@
-amends "package://github.com/jdx/hk/releases/download/v2.10.0/hk@2.10.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v2.10.0/hk@2.10.0#/Builtins.pkl"
+amends "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Builtins.pkl"
 
 // Local git hooks. A hook runs only what is fast on the staged files. Whole-project checks (tsc,
 // golangci-lint, knip, go.mod tidiness, go test) are not run by a hook: they are heavy and several

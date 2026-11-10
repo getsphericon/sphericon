@@ -3,7 +3,7 @@
 # under $TARGETPLATFORM, so here we only wrap the prebuilt binary. For building
 # straight from source, use the top-level Dockerfile instead.
 # The runtime files scratch lacks.
-FROM alpine:3.24@sha256:71e9b7bae160ba167fa17414401b94cbcdaf3c32feeab9298bd794a2a0614c35 AS rootfs
+FROM alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf AS rootfs
 RUN apk add --no-cache ca-certificates tzdata \
     && mkdir -p /rootfs/etc/ssl/certs /rootfs/usr/share \
     && cp /etc/ssl/certs/ca-certificates.crt /rootfs/etc/ssl/certs/ \
