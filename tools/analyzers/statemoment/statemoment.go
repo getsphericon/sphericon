@@ -10,7 +10,10 @@
 // The form of a field is read from the constants ent/entc.go generates into the ent package
 // (`ent.StateForm<Entity><Field>`), so a new state column is covered by its annotation, not by a list
 // kept here. The check covers update and upsert builders, not creation: a row created in its first
-// state makes no move.
+// state makes no move. Test code is not read, as by entrywrite: test files, the test harness
+// (internal/testhelper, which builds a fixture's state directly) and the end-to-end suite (e2e/). The
+// generated ent package is not read either: its Archive, Unarchive and Discard and a Versioned
+// definition's CompareAndSwap are compare-and-swaps written by the templates.
 package statemoment
 
 import (
@@ -69,6 +72,9 @@ func run(pass *analysis.Pass) (any, error) {
 	if !ok {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
 	}
+	if unread(pass.Pkg.Path()) {
+		return nil, nil
+	}
 	fenced := map[*ast.FuncDecl]map[types.Object]bool{}
 	insp.WithStack([]ast.Node{(*ast.SelectorExpr)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
@@ -91,6 +97,23 @@ func run(pass *analysis.Pass) (any, error) {
 		return true
 	})
 	return nil, nil
+}
+
+// unreadRoots are the packages, under the module, whose writes are not checked.
+var unreadRoots = []string{"ent", "internal/testhelper", "e2e"}
+
+func unread(path string) bool {
+	const module = "github.com/getsphericon/sphericon/"
+	rel, ok := strings.CutPrefix(path, module)
+	if !ok {
+		return false
+	}
+	for _, root := range unreadRoots {
+		if rel == root || strings.HasPrefix(rel, root+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 func checkLatch(pass *analysis.Pass, sel *ast.SelectorExpr, w write, stack []ast.Node) {

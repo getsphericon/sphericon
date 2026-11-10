@@ -11,5 +11,6 @@ import (
 func TestStatemoment(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), statemoment.Analyzer,
 		"github.com/getsphericon/sphericon/internal/bad",
-		"github.com/getsphericon/sphericon/internal/clean")
+		"github.com/getsphericon/sphericon/internal/clean",
+		"github.com/getsphericon/sphericon/internal/testhelper")
 }

@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -250,25 +251,46 @@ func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash strin
 // racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
 // nothing.
 func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string, at time.Time) (*ent.User, error) {
-	upd := tx.User.Update().
-		Where(user.ID(id), user.EmailVerifiedAtIsNil()).
-		SetEmailVerifiedAt(at).
-		SetEmailProvenAt(at).
-		AddSessionEpoch(1)
-	if passwordHash != nil {
-		upd = upd.SetPasswordHash(*passwordHash)
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		upd := tx.User.Update().
+			Where(user.ID(id), user.EmailVerifiedAtIsNil()).
+			SetEmailVerifiedAt(at).
+			AddSessionEpoch(1)
+		if passwordHash != nil {
+			upd = upd.SetPasswordHash(*passwordHash)
+		}
+		if name != "" {
+			upd = upd.SetName(name)
+		}
+		n, err := upd.Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil, ErrAlreadyVerified
 	}
-	if name != "" {
-		upd = upd.SetName(name)
-	}
-	n, err := upd.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if n == 0 {
-		return nil, ErrAlreadyVerified
+	// The verify link proves the address too.
+	if _, err := proveEmailIn(ctx, tx, id, at); err != nil {
+		return nil, err
 	}
 	return tx.User.Get(ctx, id)
+}
+
+// proveEmailIn records, on the transaction tx, that the User's address is proven theirs (ADR 0048)
+// at `at`, once: email_proven_at is a latch (ADR 0109), so an address proven before keeps its first
+// moment. It reports whether this call stamped it, which is what makes the proof a domain-join step
+// (ADR 0051).
+func proveEmailIn(ctx context.Context, tx *ent.Client, id int64, at time.Time) (bool, error) {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := tx.User.Update().Where(user.ID(id), user.EmailProvenAtIsNil()).SetEmailProvenAt(at).Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // ErrAlreadyVerified means the User's email was already verified: a link that
@@ -343,11 +365,10 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 		// so the write is guarded and its rows-changed count says whether it stamped (ADR 0051).
 		stamped := false
 		if proven {
-			n, err := tx.User.Update().Where(user.ID(id), user.EmailProvenAtIsNil()).SetEmailProvenAt(a.now()).Save(ctx)
-			if err != nil {
+			var err error
+			if stamped, err = proveEmailIn(ctx, tx, id, a.now()); err != nil {
 				return err
 			}
-			stamped = n > 0
 		}
 		upd := tx.User.UpdateOneID(id).SetNillableName(w.Name).SetNillableTimezone(w.Timezone).SetNillableRegionalFormat(w.RegionalFormat)
 		if w.ClearTimezone {
@@ -502,11 +523,24 @@ func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*e
 	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		now := a.now()
 		err := constraints.Write(ctx, tx, func() error {
-			var err error
-			u, err = tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
-			return err
+			return tx.User.UpdateOneID(id).SetEmail(newEmail).AddSessionEpoch(1).Exec(ctx)
 		})
 		if err != nil {
+			return err
+		}
+		// The confirmed change proves the new address. Both moments are latches (ADR 0109): a User
+		// verified and proven before keeps the first moments, and the address stays verified and proven.
+		err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+			n, err := tx.User.Update().Where(user.ID(id), user.EmailVerifiedAtIsNil()).SetEmailVerifiedAt(now).Save(ctx)
+			return n > 0, err
+		})
+		if err != nil && !errors.Is(err, lifecycle.ErrInvalidTransition) {
+			return err
+		}
+		if _, err := proveEmailIn(ctx, tx, id, now); err != nil {
+			return err
+		}
+		if u, err = tx.User.Get(ctx, id); err != nil {
 			return err
 		}
 		_, err = ApplyDomainJoinIn(ctx, tx, pub, u)

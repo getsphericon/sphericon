@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
+	"errors"
 	"maps"
 	"net"
 	"net/url"
@@ -37,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -341,15 +343,18 @@ func ClaimCodeIn(ctx context.Context, tx *ent.Client, c CodeClaim, now time.Time
 	}
 
 	// Single use: only the request that flips used_at wins.
-	claimed, err := tx.OAuthCode.Update().
-		Where(oauthcode.ID(grant.ID), oauthcode.UsedAtIsNil(), oauthcode.ExpiresAtGT(now)).
-		SetUsedAt(now).
-		Save(ctx)
+	err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		claimed, err := tx.OAuthCode.Update().
+			Where(oauthcode.ID(grant.ID), oauthcode.UsedAtIsNil(), oauthcode.ExpiresAtGT(now)).
+			SetUsedAt(now).
+			Save(ctx)
+		return claimed > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil, errUnknownCode
+	}
 	if err != nil {
 		return nil, err
-	}
-	if claimed == 0 {
-		return nil, errUnknownCode
 	}
 	return grant, nil
 }

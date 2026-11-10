@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -182,10 +183,25 @@ func materialize(ctx context.Context, s *ent.Scoped, p Period, metric Metric, me
 			UpdateNewValues().
 			Exec(ctx)
 	}
-	return s.Usage().UpdateOneID(prior.ID).
-		Where(entusage.FinalizedAtIsNil()).
-		SetValue(value).SetNillableFinalizedAt(closed).SetComputedAt(now).
-		Exec(ctx)
+	if closed == nil {
+		return s.Usage().UpdateOneID(prior.ID).
+			Where(entusage.FinalizedAtIsNil()).
+			SetValue(value).SetComputedAt(now).
+			Exec(ctx)
+	}
+	// The snapshot is a latch (ADR 0109): once final, a Usage is never rewritten.
+	err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := s.Usage().Update().
+			Where(entusage.ID(prior.ID), entusage.FinalizedAtIsNil()).
+			SetValue(value).SetFinalizedAt(*closed).SetComputedAt(now).
+			Save(ctx)
+		return n > 0, err
+	})
+	// Another refresh stored the snapshot first.
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil
+	}
+	return err
 }
 
 // Figure is one metric's value over a period.

@@ -7,6 +7,7 @@ package suppressions
 
 import (
 	"context"
+	"errors"
 	"regexp"
 	"strings"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -194,9 +196,16 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 		lifted = entsuppression.Or(lifted, entsuppression.And(
 			entsuppression.ChannelEQ(channels.SMS), entsuppression.DestinationEQ(phone.Hash(row.Destination))))
 	}
-	_, err = s.Suppression().Update().
-		Where(lifted, entsuppression.LiftedAtIsNil()).
-		SetLiftedAt(at).
-		Save(ctx)
+	err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := s.Suppression().Update().
+			Where(lifted, entsuppression.LiftedAtIsNil()).
+			SetLiftedAt(at).
+			Save(ctx)
+		return n > 0, err
+	})
+	// Lifted meanwhile: the active Suppression is gone, as for one lifted before the read.
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return ErrNotFound
+	}
 	return err
 }

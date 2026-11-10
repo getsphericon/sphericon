@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -290,11 +291,14 @@ func (m *Module) AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, code
 // Workspace already stamped keeps its first moment. It returns the moment the Workspace holds.
 // Nothing a member chose changes, so no Audit entry is written.
 func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error) {
-	err := m.client.Workspace.Update().
-		Where(workspace.ID(s.WorkspaceID()), workspace.SetupCompletedAtIsNil()).
-		SetSetupCompletedAt(now).
-		Exec(ctx)
-	if err != nil {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := m.client.Workspace.Update().
+			Where(workspace.ID(s.WorkspaceID()), workspace.SetupCompletedAtIsNil()).
+			SetSetupCompletedAt(now).
+			Save(ctx)
+		return n > 0, err
+	})
+	if err != nil && !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return time.Time{}, err
 	}
 	ws, err := m.client.Workspace.Get(ctx, s.WorkspaceID())

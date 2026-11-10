@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -142,15 +143,18 @@ func (m *Module) Refresh(ctx context.Context, in RefreshInput) (*Issued, error) 
 	err = m.inTx(ctx, func(tx *ent.Client) error {
 		now := m.now()
 		// Single use: only the request that flips used_at wins.
-		claimed, err := tx.OAuthRefreshToken.Update().
-			Where(oauthrefreshtoken.ID(row.ID), oauthrefreshtoken.UsedAtIsNil(), oauthrefreshtoken.ExpiresAtGT(now)).
-			SetUsedAt(now).
-			Save(ctx)
+		err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+			claimed, err := tx.OAuthRefreshToken.Update().
+				Where(oauthrefreshtoken.ID(row.ID), oauthrefreshtoken.UsedAtIsNil(), oauthrefreshtoken.ExpiresAtGT(now)).
+				SetUsedAt(now).
+				Save(ctx)
+			return claimed > 0, err
+		})
+		if errors.Is(err, lifecycle.ErrInvalidTransition) {
+			return errRefreshReuse
+		}
 		if err != nil {
 			return err
-		}
-		if claimed == 0 {
-			return errRefreshReuse
 		}
 		// The Connection's Workspace: the refresh token is the secret that names its grant.
 		value, rotated, err := rotateConnection(ctx, tx.Scoped(token.WorkspaceID), token, scopes, now.Add(AccessTokenTTL))
@@ -243,11 +247,15 @@ func newRefreshToken(ctx context.Context, tx *ent.Client, clientRowID, apiTokenI
 // revokeGrant revokes the grant's Connection unless it is revoked already (a rotated refresh token
 // was replayed, so the connector's credentials may be stolen, ADR 0016) and answers invalid_grant.
 func (m *Module) revokeGrant(ctx context.Context, token *ent.ApiToken) error {
-	_, err := m.ent.Scoped(token.WorkspaceID).ApiToken().Update().
-		Where(apitoken.ID(token.ID), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(m.now()).
-		Save(ctx)
-	if err != nil {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := m.ent.Scoped(token.WorkspaceID).ApiToken().Update().
+			Where(apitoken.ID(token.ID), apitoken.RevokedAtIsNil()).
+			SetRevokedAt(m.now()).
+			Save(ctx)
+		return n > 0, err
+	})
+	// A grant revoked meanwhile is what this wanted.
+	if err != nil && !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return err
 	}
 	return oauthclients.InvalidGrant("refresh token was already used; the grant is revoked")

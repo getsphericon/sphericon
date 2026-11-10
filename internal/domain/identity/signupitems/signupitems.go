@@ -13,6 +13,7 @@ package signupitems
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -395,11 +397,14 @@ func (m *Module) Delete(ctx context.Context, id int64) error {
 	}
 	// Only an item in use moves: a second delete leaves the first moment, and an item marked as the
 	// mailings consent in between is not deleted.
-	moved, err := m.ent.SignupItem.Update().
-		Where(signupitem.ID(id), signupitem.DiscardedAtIsNil(), signupitem.MailingsConsent(false)).
-		SetDiscardedAt(m.now()).
-		Save(ctx)
-	if err != nil || moved > 0 {
+	err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		moved, err := m.ent.SignupItem.Update().
+			Where(signupitem.ID(id), signupitem.DiscardedAtIsNil(), signupitem.MailingsConsent(false)).
+			SetDiscardedAt(m.now()).
+			Save(ctx)
+		return moved > 0, err
+	})
+	if !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return err
 	}
 	marked, err := m.ent.SignupItem.Query().Where(signupitem.ID(id), signupitem.MailingsConsent(true)).Exist(ctx)

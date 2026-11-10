@@ -243,8 +243,7 @@ func proveByOwnSession(ctx context.Context, tx *ent.Client, u *ent.User, invited
 	if !strings.EqualFold(sessionEmail, invitedEmail) {
 		return false, ErrWrongAccount
 	}
-	n, err := tx.User.Update().Where(user.ID(u.ID), user.EmailProvenAtIsNil()).SetEmailProvenAt(at).Save(ctx)
-	return n > 0, err
+	return proveEmailIn(ctx, tx, u.ID, at)
 }
 
 // ensureMembership returns the User's Membership in the scoped Workspace, creating it with role

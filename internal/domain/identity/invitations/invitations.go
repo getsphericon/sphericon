@@ -108,7 +108,10 @@ func PendingAt(now time.Time) predicate.Invitation {
 // the acceptance that made its Membership, at `at`.
 func MarkAcceptedIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
 	return lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
-		n, err := ts.Invitation().Update().Where(invitation.ID(id), PendingAt(at)).SetAcceptedAt(at).Save(ctx)
+		n, err := ts.Invitation().Update().
+			Where(invitation.ID(id), invitation.AcceptedAtIsNil(), PendingAt(at)).
+			SetAcceptedAt(at).
+			Save(ctx)
 		return n == 1, err
 	})
 }

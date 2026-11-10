@@ -113,22 +113,24 @@ func FindOrigin(ctx context.Context, s *ent.Scoped, id int64) (Ref, error) {
 // matches only while both are null, and the table refuses a row with both
 // (outbound_messages_final_report_check).
 func StampFinal(ctx context.Context, s *ent.Scoped, id int64, result DeliveryResult, code string, at time.Time) error {
-	u := s.OutboundMessage().Update().
-		Where(
-			outboundmessage.ID(id), outboundmessage.StatusEQ(outboundmessage.StatusSent),
-			outboundmessage.DeliveredAtIsNil(), outboundmessage.UndeliveredAtIsNil(),
-		)
 	switch result {
-	case ResultDelivered:
-		u.SetDeliveredAt(at)
-	case ResultUndelivered:
-		u.SetUndeliveredAt(at).SetNillableUndeliveredCode(lo.EmptyableToPtr(code))
+	case ResultDelivered, ResultUndelivered:
 	case ResultBounced, ResultComplained:
 		return fmt.Errorf("%s is no final delivery state", result)
 	default:
 		return fmt.Errorf("unknown delivery result %q", result)
 	}
 	if err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		u := s.OutboundMessage().Update().
+			Where(
+				outboundmessage.ID(id), outboundmessage.StatusEQ(outboundmessage.StatusSent),
+				outboundmessage.DeliveredAtIsNil(), outboundmessage.UndeliveredAtIsNil(),
+			)
+		if result == ResultDelivered {
+			u.SetDeliveredAt(at)
+		} else {
+			u.SetUndeliveredAt(at).SetNillableUndeliveredCode(lo.EmptyableToPtr(code))
+		}
 		n, err := u.Save(ctx)
 		return n == 1, err
 	}); err != nil {

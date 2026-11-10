@@ -10,6 +10,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -30,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -242,15 +244,18 @@ func Redeem(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 	}
 	// Single use is one conditional write: a redelivery or a second chat racing for the token
 	// finds it used and records nothing.
-	used, err := s.StartToken().Update().
-		Where(starttoken.ID(tok.ID), starttoken.UsedAtIsNil()).
-		SetUsedAt(now).
-		Save(ctx)
+	err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		used, err := s.StartToken().Update().
+			Where(starttoken.ID(tok.ID), starttoken.UsedAtIsNil()).
+			SetUsedAt(now).
+			Save(ctx)
+		return used > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("use start token: %w", err)
-	}
-	if used == 0 {
-		return nil
 	}
 	if tok.ContactID != nil {
 		// The owner's row is locked first, as every write about a Contact does (contactlock), so

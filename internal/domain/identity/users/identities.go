@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -265,15 +267,20 @@ func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLo
 		// the User returned here, so it holds the new epoch.
 		// The provider's proof stamps the address only from empty, and the rows-changed count
 		// says whether it did: that, and only that, is a domain-join step (ADR 0051).
-		stamped, err := tx.User.Update().Where(user.ID(holderID), user.EmailProvenAtIsNil()).
-			SetEmailProvenAt(a.now()).ClearPasswordHash().Save(ctx)
+		// A password set before the address was proven is not the owner's for sure, so the first
+		// proof drops it.
+		stamped, err := proveEmailIn(ctx, tx, holderID, a.now())
 		if err != nil {
 			return err
 		}
-		if linked, err = tx.User.UpdateOneID(holderID).AddSessionEpoch(1).Save(ctx); err != nil {
+		upd := tx.User.UpdateOneID(holderID).AddSessionEpoch(1)
+		if stamped {
+			upd.ClearPasswordHash()
+		}
+		if linked, err = upd.Save(ctx); err != nil {
 			return err
 		}
-		if stamped > 0 {
+		if stamped {
 			if _, err := ApplyDomainJoinIn(ctx, tx, pub, linked); err != nil {
 				return err
 			}
@@ -302,21 +309,26 @@ func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLo
 // The caller gives it its first Workspace on the same transaction, as a verify link would
 // (internal/usecase/signup). ErrAlreadyVerified when the User is no longer Unverified.
 func TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin, now time.Time) (*ent.User, error) {
-	upd := tx.User.Update().
-		Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).
-		SetEmailVerifiedAt(now).
-		SetEmailProvenAt(now).
-		ClearPasswordHash().
-		AddSessionEpoch(1)
-	if name := providerName(in); name != "" {
-		upd = upd.SetName(name)
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		upd := tx.User.Update().
+			Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).
+			SetEmailVerifiedAt(now).
+			ClearPasswordHash().
+			AddSessionEpoch(1)
+		if name := providerName(in); name != "" {
+			upd = upd.SetName(name)
+		}
+		n, err := upd.Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil, ErrAlreadyVerified
 	}
-	n, err := upd.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if n == 0 {
-		return nil, ErrAlreadyVerified
+	if _, err := proveEmailIn(ctx, tx, holderID, now); err != nil {
+		return nil, err
 	}
 	if err := constraints.Write(ctx, tx, func() error {
 		return tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx)
