@@ -186,11 +186,18 @@ func TestScopedUpsert(t *testing.T) {
 	})
 
 	t.Run("update new values on the unique key", func(t *testing.T) {
-		// test writes: the scoped wrapper is the subject
-		id, err := acmeScope.Contact().Create().SetEmail(fixtures.ContactAliceEmail).SetFirstName("Alicia").
-			OnConflictColumns(contact.FieldEmail, contact.FieldWorkspaceID).
-			Update(func(u *ent.ContactScopedUpsert) { u.UpdateFirstName() }).
-			ID(ctx)
+		// A Contact with an email moves the Usage peak, so the upsert runs in a bus transaction, as
+		// the contacts module's does.
+		var id int64
+		err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+			var err error
+			// test writes: the scoped wrapper is the subject
+			id, err = tx.Scoped(acme).Contact().Create().SetEmail(fixtures.ContactAliceEmail).SetFirstName("Alicia").
+				OnConflictColumns(contact.FieldEmail, contact.FieldWorkspaceID).
+				Update(func(u *ent.ContactScopedUpsert) { u.UpdateFirstName() }).
+				ID(ctx)
+			return err
+		})
 		require.NoError(t, err)
 		assert.Equal(t, int64(fixtures.ContactAliceID), id)
 		got, err := acmeScope.Contact().Get(ctx, id)

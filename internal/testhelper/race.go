@@ -11,6 +11,7 @@ import (
 	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -77,9 +78,20 @@ func NewWorkspaceRace(t *testing.T, workspaceID int64) *WorkspaceRace {
 	t.Helper()
 	db := RealDB(t)
 	db.SetMaxOpenConns(8)
-	bus := events.New(db, entclient.NewTx, time.Now)
+	clients := Clients(t)
+	bus := events.New(db, clients.NewTx, time.Now)
 	bus.UseJobs(AcceptingQueue{})
-	return &WorkspaceRace{DB: db, Bus: bus, Scope: entclient.New(db).Scoped(workspaceID)}
+	return &WorkspaceRace{DB: db, Bus: bus, Scope: clients.New(db).Scoped(workspaceID)}
+}
+
+// Clients builds the ent clients of a test's own database (RealDB) with the hooks Setup's carry:
+// the core's and the Enterprise Edition's under the harness's License (every feature), through
+// the builder the application uses (internal/app/entclient).
+func Clients(t *testing.T) entclient.Clients {
+	t.Helper()
+	lic, err := testLicense()
+	require.NoError(t, err, "mint test license")
+	return entclient.WithEdition(ee.Hooks(lic, time.Now))
 }
 
 // Queue runs the writers queued behind the Workspace's lock, which the race holds until all of

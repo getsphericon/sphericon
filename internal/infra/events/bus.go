@@ -34,7 +34,7 @@ type Bus struct {
 	stored []func(context.Context, DomainEvent)
 
 	// newTxClient builds the ent client bound to a transaction, with the hooks every such client
-	// carries (the wiring's internal/app/entclient.NewTx).
+	// carries (the wiring's internal/app/entclient, Clients.NewTx).
 	newTxClient func(dialect.Driver) *ent.Client
 	// now is the Instance clock an envelope is stamped by.
 	now func() time.Time
@@ -49,9 +49,10 @@ func New(pool *sql.DB, newTxClient func(dialect.Driver) *ent.Client, now func() 
 }
 
 // Use registers ent hooks on the transaction client of every later WithinTx, the way
-// Client.Use does for a long-lived client. Register at composition time, before the
-// bus is shared with concurrent callers; tests use it to inject faults into a
-// transaction the bus opens itself.
+// Client.Use does for a long-lived client: for a test that injects a fault into a transaction
+// the bus opens itself. The application's hooks are not registered here: the client newTxClient
+// builds carries them (internal/app/entclient). Register before the bus is shared with
+// concurrent callers.
 func (b *Bus) Use(hooks ...ent.Hook) {
 	b.hooks = append(b.hooks, hooks...)
 }

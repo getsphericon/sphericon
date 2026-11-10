@@ -24,7 +24,7 @@ func TestTheSegmentArchiveMigrationKeepsTheStampAndRenamesTheAuditActions(t *tes
 
 	_, err := db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	archived, err := client.Segment.Query().Where(segment.Name("Archived audience")).Only(t.Context())
 	require.NoError(t, err)
 	kept, err := client.Segment.Query().Where(segment.Name("Kept audience")).Only(t.Context())

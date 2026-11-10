@@ -19,7 +19,6 @@ import (
 	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -172,7 +171,7 @@ var recorder = events.Consumer{
 // publish stores its Event row and inserts the jobs of core's and the Edition's consumers there.
 func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
 	t.Helper()
-	bus := events.New(sqlDB, entclient.NewTx, time.Now)
+	bus := events.New(sqlDB, Clients(t).NewTx, time.Now)
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	bus.UseJobs(inserter)

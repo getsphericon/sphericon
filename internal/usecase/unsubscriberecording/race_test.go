@@ -41,7 +41,7 @@ func TestAClickThatLosesTheRaceToTheOptOutRecordsNothingMore(t *testing.T) {
 		}})
 
 	require.NoError(t, errs["second click"])
-	client := entclient.New(race.DB)
+	client := entclient.Core.New(race.DB)
 	rows, err := client.Unsubscribe.Query().Where(
 		unsubscribe.WorkspaceID(fixtures.AcmeID), unsubscribe.DestinationEQ(dest),
 		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),

@@ -87,7 +87,7 @@ func newRig(t *testing.T, budget int, opts ...option) rig {
 func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
-	return build(t, sqlDB, entclient.New(sqlDB), testhelper.BusOn(t, sqlDB), 5, func(acc *users.Module, cfg *signup.SignUpConfig) {
+	return build(t, sqlDB, entclient.Core.New(sqlDB), testhelper.BusOn(t, sqlDB), 5, func(acc *users.Module, cfg *signup.SignUpConfig) {
 		looked := false
 		cfg.Lookup = func(ctx context.Context, email string) (*ent.User, bool, error) {
 			if !looked {

@@ -94,8 +94,8 @@ func TestDeleteRefusesAWrongCode(t *testing.T) {
 func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := entclient.New(sqlDB)
-	bus := events.New(sqlDB, entclient.NewTx, time.Now)
+	client := entclient.Core.New(sqlDB)
+	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
 	bus.UseJobs(testhelper.AcceptingQueue{})
 	usersModule := users.New(client, bus, testhelper.Passwords(), testhelper.ConsentRecords(client, bus), time.Now)
 	factors := secondfactors.New(client, bus, testhelper.Cipher(t), nil, time.Now)

@@ -148,13 +148,14 @@ type TestEnv struct {
 	// CheckRelease; the preview of its Telemetry report is TelemetryReport.
 	Instance *instancestates.Module
 	// DB is the plain client the modules under test get, transaction-bound and rolled back when
-	// the test finishes. Like production's (entclient.New) it refuses a change the Workspace
-	// feed, the User feed or the Tracking host log would record outside a bus transaction, so a
-	// module that forgets the transaction fails its tests.
+	// the test finishes. Like production's (internal/app/entclient) it refuses a change the Workspace
+	// feed, the User feed, the Tracking host log or, with the `staff` license, the Usage peak would
+	// record outside a bus transaction, so a module that forgets the transaction fails its tests.
 	DB *ent.Client
 	// FeedDB is a client on the same transaction that records those changes as a bus transaction
-	// does: for a test that moves a fixture row the feeds watch (a Workspace marked deleted, a
-	// User's address changed) as its setup, never for the operation under test.
+	// does: for a test that moves a fixture row the hooks watch (a Workspace marked deleted, a
+	// User's address changed, a Contact's email cleared) as its setup, never for the operation
+	// under test.
 	FeedDB *ent.Client
 	SQLDB  *sql.DB     // the same txdb connection the ent client and bus ride
 	Bus    *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
@@ -517,10 +518,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// QueuedEnvelopes sees it whether or not a consumer of the application wants it.
 	do.MustInvoke[*events.Bus](injector).UseConsumers(recorder)
 
-	// The client of a test's own writes of rows the feeds watch, on the same transaction, with
-	// the Edition's hooks like every other client.
-	feedClient := entclient.NewOnTx(txDB)
-	feedClient.Use(ee.Hooks(lic, st.now)...)
+	// The client of a test's own writes of rows the hooks watch, on the same transaction, built
+	// through the application's own builder, so it carries the hooks every other client does.
+	feedClient := do.MustInvoke[entclient.Clients](injector).NewOnTx(txDB)
 
 	// The workers PerformEnqueuedJobs works the queued jobs with, against the capturing senders,
 	// so a test asserts the real effect.

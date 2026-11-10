@@ -58,7 +58,7 @@ func TestCappingOneWorkspaceLeavesAnotherUntouched(t *testing.T) {
 func TestConcurrentCapturesNeverLeaveMoreThanTheCap(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	s := client.Scoped(fixtures.GlobexID)
 	const kept = 5
 	c := capturedmessages.New(kept).Capturer(s, fixtures.IntegrationGlobexInboxID)

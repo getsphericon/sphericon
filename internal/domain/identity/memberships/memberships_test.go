@@ -203,8 +203,8 @@ func TestLeaveAuditsTheUserAsActor(t *testing.T) {
 func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := entclient.New(sqlDB)
-	bus := events.New(sqlDB, entclient.NewTx, time.Now)
+	client := entclient.Core.New(sqlDB)
+	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
 	ms := memberships.New(client, bus)
 	s := client.Scoped(fixtures.InitechID)
 

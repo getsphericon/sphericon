@@ -25,7 +25,7 @@ import (
 func TestJournalKeepsUnconsumedFactsAndInstanceFactsWithoutTheirPersonalPayload(t *testing.T) {
 	env := testhelper.Setup(t)
 	at := time.Date(2026, 11, 8, 1, 0, 0, 0, time.UTC)
-	bus := events.New(env.SQLDB, entclient.NewTx, func() time.Time { return at })
+	bus := events.New(env.SQLDB, entclient.Core.NewTx, func() time.Time { return at })
 	ctx := logging.WithRequestID(t.Context(), "request-with-private-data@example.com")
 	for _, fact := range []events.DomainEvent{
 		&events.InvitationCreated{WorkspaceID: fixtures.AcmeID, Email: "invitee@example.com", Token: "secret-invitation-token"},
@@ -136,7 +136,7 @@ func TestJournalErasureIsBatchedAndConfinedToItsWorkspace(t *testing.T) {
 func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testing.T) {
 	database := testhelper.RealDB(t)
 	database.SetMaxOpenConns(4)
-	client := entclient.New(database)
+	client := entclient.Core.New(database)
 	bus := testhelper.BusOn(t, database)
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()

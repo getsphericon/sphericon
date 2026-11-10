@@ -34,7 +34,7 @@ func TestLoadInsideASynctestBubbleDatesTheFixturesByTheRealClock(t *testing.T) {
 
 		require.NoError(t, fixtures.Load(t.Context(), sqlDB, cipher, filepath.Join("..", "..", "fixtures")))
 
-		row, err := entclient.New(sqlDB).AuthAttempt.Get(t.Context(), fixtures.FreshLoginAttemptID)
+		row, err := entclient.Core.New(sqlDB).AuthAttempt.Get(t.Context(), fixtures.FreshLoginAttemptID)
 		require.NoError(t, err)
 		require.WithinDuration(t, before, row.LastAttemptAt, time.Minute, "the fixture is dated 'now', by the real clock")
 	})

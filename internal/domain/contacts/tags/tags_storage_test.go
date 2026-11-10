@@ -23,7 +23,7 @@ func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	return entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx, time.Now)
+	return entclient.Core.New(sqlDB), events.New(sqlDB, entclient.Core.NewTx, time.Now)
 }
 
 // A storage failure surfaces as the underlying error: it is never mistaken for a

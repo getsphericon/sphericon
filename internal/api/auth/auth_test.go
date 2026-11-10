@@ -30,7 +30,7 @@ func closedClient(t *testing.T) *ent.Client {
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	return entclient.New(sqlDB)
+	return entclient.Core.New(sqlDB)
 }
 
 func TestHasScopeAndWorkspaceIDOfTheTokenContext(t *testing.T) {

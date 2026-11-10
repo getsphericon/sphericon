@@ -67,6 +67,22 @@ forbid_symbol:
   - name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges.Guard
     allow: *client-builders
     because: *ent-hooks-because
+  # The Enterprise Edition's pair, which ee.Hooks hands the wiring for internal/app/entclient.
+  - name: github.com/getsphericon/sphericon/ee/domain/insights/usages.Hook
+    allow: &edition-hooks [ee-edition]
+    because: &edition-hooks-because the Edition hands its ent hooks to the wiring (ee.Hooks), which builds every ent client with them (internal/app/entclient, ADR 0107); no other package installs one
+  - name: github.com/getsphericon/sphericon/ee/domain/insights/usages.Guard
+    allow: *edition-hooks
+    because: *edition-hooks-because
+  # Every ent client is built by internal/app/entclient, with every hook and guard (ADR 0107).
+  - name: github.com/getsphericon/sphericon/ent.NewClient
+    allow: [ent, wiring, infra-raw]
+    because: every ent client is built by internal/app/entclient with every hook and its guard (ADR 0107), so no client writes without them; the one other is the schema guard's read-only client of internal/infra/db, built before the application's exists
+  - name: github.com/getsphericon/sphericon/internal/app/entclient.Core
+    allow: *client-builders
+    because: the clients without the Enterprise Edition's hooks are for tests of the core and the wiring's read-only tools (the doctor); the application's clients come from its one entclient.Clients, which carries the Edition's hooks (ADR 0107)
+  - name: github.com/getsphericon/sphericon/internal/infra/events.Bus.Use
+    because: the application's ent hooks are installed by internal/app/entclient on the client the bus builds for each transaction (ADR 0107); Bus.Use is only a test's seam to inject a fault
   - name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.Boundaries
     allow: *client-builders
     because: &upgrade-because the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no other package knows an upgrade type

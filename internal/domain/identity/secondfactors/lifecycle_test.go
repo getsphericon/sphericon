@@ -94,10 +94,10 @@ func newFactorRace(t *testing.T) factorRace {
 	t.Helper()
 	pool := testhelper.RealDB(t)
 	pool.SetMaxOpenConns(4)
-	client := entclient.New(pool)
+	client := entclient.Core.New(pool)
 	now := time.Now()
 	clock := func() time.Time { return now }
-	bus := events.New(pool, entclient.NewTx, clock)
+	bus := events.New(pool, entclient.Core.NewTx, clock)
 	bus.UseJobs(testhelper.AcceptingQueue{})
 	return factorRace{client: client, bus: bus, now: now,
 		factors: secondfactors.New(client, bus, testhelper.Cipher(t), testhelper.ProvenUsers{}, clock)}

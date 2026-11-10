@@ -47,7 +47,7 @@ func contactsEnv(t *testing.T, now time.Time) (*testhelper.TestEnv, *clock, int6
 func addContact(t *testing.T, env *testhelper.TestEnv, email string) int64 {
 	t.Helper()
 	// test writes: the contacts-peak hook fires on this Contact write
-	c := env.DB.Scoped(fixtures.AcmeID).Contact().Create()
+	c := env.FeedDB.Scoped(fixtures.AcmeID).Contact().Create()
 	if email != "" {
 		c.SetEmail(email)
 	} else {
@@ -60,7 +60,7 @@ func addContact(t *testing.T, env *testhelper.TestEnv, email string) int64 {
 
 func deleteContact(t *testing.T, env *testhelper.TestEnv, id int64) {
 	t.Helper()
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Contact().DeleteOneID(id).Exec(t.Context()))
+	require.NoError(t, env.FeedDB.Scoped(fixtures.AcmeID).Contact().DeleteOneID(id).Exec(t.Context()))
 }
 
 func refreshAt(t *testing.T, env *testhelper.TestEnv, now time.Time) {
@@ -113,7 +113,7 @@ func TestContactsPeakGrowsWhenAnAnonymousContactGetsAnEmail(t *testing.T) {
 	now := at(2027, time.February, 10, 12)
 	env, _, base := contactsEnv(t, now)
 	id := addContact(t, env, "")
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Contact().UpdateOneID(id).
+	require.NoError(t, env.FeedDB.Scoped(fixtures.AcmeID).Contact().UpdateOneID(id).
 		SetEmail("identified-later@example.com").Exec(t.Context()))
 	deleteContact(t, env, id)
 
@@ -137,6 +137,35 @@ func TestContactsPeakIsFrozenAtTheCloseAndTheNextPeriodStartsFromWhatRemains(t *
 	assert.Equal(t, base+1, january.Value)
 	assert.True(t, january.Final)
 	assert.Equal(t, base+2, figureOf(t, env, feb, usages.Contacts).Value, "February starts from the Contacts left in January")
+}
+
+// The peak moves in the transaction of the Contact change, so a client outside a transaction
+// refuses a change that could move it rather than leave the peak behind.
+func TestAPlainClientRefusesAContactChangeThatCanMoveThePeak(t *testing.T) {
+	env, _, _ := contactsEnv(t, at(2027, time.February, 10, 12))
+	acme := env.DB.Scoped(fixtures.AcmeID)
+
+	// test writes: the guard refuses this Contact write before it reaches the table
+	require.ErrorIs(t, acme.Contact().Create().SetEmail("plain@example.com").Exec(t.Context()), usages.ErrNeedsTransaction)
+	require.ErrorIs(t, acme.Contact().UpdateOneID(fixtures.ContactAliceID).SetEmail("alice-new@example.com").Exec(t.Context()), usages.ErrNeedsTransaction)
+	require.ErrorIs(t, acme.Contact().UpdateOneID(fixtures.ContactAliceID).ClearEmail().Exec(t.Context()), usages.ErrNeedsTransaction)
+	require.ErrorIs(t, acme.Contact().DeleteOneID(fixtures.ContactBobID).Exec(t.Context()), usages.ErrNeedsTransaction)
+}
+
+func TestAPlainClientLetsAContactChangeThatCannotMoveThePeakThrough(t *testing.T) {
+	env, _, _ := contactsEnv(t, at(2027, time.February, 10, 12))
+	acme := env.DB.Scoped(fixtures.AcmeID)
+
+	// test writes: an anonymous Contact and a name change, which the guard lets through
+	require.NoError(t, acme.Contact().Create().SetSubjectID("anonymous-"+t.Name()).Exec(t.Context()))
+	require.NoError(t, acme.Contact().UpdateOneID(fixtures.ContactAliceID).SetFirstName("Alicia").Exec(t.Context()))
+}
+
+func TestAPlainClientRefusesNoContactChangeWithoutTheStaffLicense(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithoutLicense())
+
+	// test writes: without the license there is no peak, so the guard lets the write through
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Contact().Create().SetEmail("unlicensed@example.com").Exec(t.Context()))
 }
 
 func TestContactsIsNotMaintainedWithoutTheStaffLicense(t *testing.T) {
@@ -173,7 +202,7 @@ func TestContactsPeakIsNotKeptForAWorkspaceInItsDeletionWindow(t *testing.T) {
 	require.NoError(t, err)
 
 	// test writes: the contacts-peak hook fires on this Contact write
-	require.NoError(t, s.Contact().Create().SetEmail("late@bluth.test").Exec(t.Context()))
+	require.NoError(t, env.FeedDB.Scoped(fixtures.BluthID).Contact().Create().SetEmail("late@bluth.test").Exec(t.Context()))
 
 	after, err := s.Usage().Query().Count(t.Context())
 	require.NoError(t, err)

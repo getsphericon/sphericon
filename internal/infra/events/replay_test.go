@@ -126,7 +126,7 @@ func TestReplayRefusesUnsupportedConsumersVersionsAndOversizedRangesWithoutParti
 
 	// The same consumer after an unsupported input-schema change must refuse the retained
 	// history, rather than silently decoding it under the new schema. Dry runs validate too.
-	bus := events.New(env.SQLDB, entclient.NewTx, func() time.Time { return at })
+	bus := events.New(env.SQLDB, entclient.Core.NewTx, func() time.Time { return at })
 	consumers := jobs.EventConsumers()
 	consumers[0].Replay = events.RetainForReplay[jobs.MessageObservationArgs](2)
 	bus.UseConsumers(consumers...)

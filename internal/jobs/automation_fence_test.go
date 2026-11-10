@@ -90,7 +90,7 @@ func newRealEnv(t *testing.T) *realEnv {
 	sqlDB, err := sql.Open("pgx", url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	return &realEnv{client: client, scoped: client.Scoped(fixtures.AcmeID), fence: automations.FenceOn(client), url: url}
 }
 
@@ -107,7 +107,7 @@ func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) ev
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	bus := events.New(sqlDB, entclient.NewTx, time.Now)
+	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
 	queue, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	bus.UseJobs(wrap(queue))

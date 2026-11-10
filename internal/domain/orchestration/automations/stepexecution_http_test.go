@@ -291,7 +291,7 @@ func TestHTTPExecutionIgnoresErasedWork(t *testing.T) {
 	env := testhelper.Setup(t)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	err := s.Contact().DeleteOneID(fixtures.ContactAliceID).Exec(t.Context())
+	err := env.FeedDB.Scoped(fixtures.AcmeID).Contact().DeleteOneID(fixtures.ContactAliceID).Exec(t.Context())
 	require.NoError(t, err)
 
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})

@@ -185,7 +185,7 @@ func TestResetBudgetNeverRefusesWhenDisabled(t *testing.T) {
 // which serializes statements, so this one runs on a database of its own, with a
 // pool of real connections.
 func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
-	client := entclient.New(testhelper.RealDB(t))
+	client := entclient.Core.New(testhelper.RealDB(t))
 	const email = "race@attempts.test"
 
 	a := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(3)))

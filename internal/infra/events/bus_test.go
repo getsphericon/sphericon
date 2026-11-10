@@ -162,7 +162,7 @@ func TestDeletingAContactKeepsItsEvents(t *testing.T) {
 	ev, err := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactAliceID)).First(ctx)
 	require.NoError(t, err, "the fixtures hold Events of Alice")
 
-	require.NoError(t, env.DB.Contact.DeleteOneID(fixtures.ContactAliceID).Exec(ctx))
+	require.NoError(t, env.FeedDB.Contact.DeleteOneID(fixtures.ContactAliceID).Exec(ctx))
 
 	kept, err := env.DB.Event.Get(ctx, ev.ID)
 	require.NoError(t, err)

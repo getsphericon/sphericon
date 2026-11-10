@@ -309,13 +309,17 @@ var storagePackage = do.Package(
 		db.ConfigurePool(database, cfg.DBPool)
 		return Database{DB: database}, nil
 	}),
-	// The long-lived client carries the Edition's ent hooks from the start, like the event bus's
-	// transaction client, so no path writes on a client without them. Closing it would close the
-	// pool under Database, which shuts down after it, so it needs no Shutdown of its own.
+	// The one builder of the Instance's ent clients, with the core's hooks and the Edition's
+	// (ADR 0107): the long-lived client, the event bus's transaction client and the test
+	// harness's clients are all built through it. It needs only the License and the clock, so
+	// the bus, which the Edition is built over, can take it.
+	do.Lazy(func(i do.Injector) (entclient.Clients, error) {
+		return entclient.WithEdition(ee.Hooks(do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i))), nil
+	}),
+	// Closing the long-lived client would close the pool under Database, which shuts down after
+	// it, so it needs no Shutdown of its own.
 	do.Lazy(func(i do.Injector) (*ent.Client, error) {
-		client := entclient.New(do.MustInvoke[Database](i).DB)
-		client.Use(ee.Hooks(do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i))...)
-		return client, nil
+		return do.MustInvoke[entclient.Clients](i).New(do.MustInvoke[Database](i).DB), nil
 	}),
 	// The development schema guard's view of the migrations the database has not run (ADR 0033):
 	// one per process, so a migration run from the error page clears what SchemaGuard cached.
@@ -467,10 +471,7 @@ var editionPackage = do.Package(
 	// The domain-event bus over the main pool: a publish stores the Event and queues its jobs.
 	do.Lazy(func(i do.Injector) (*events.Bus, error) {
 		database := do.MustInvoke[Database](i)
-		bus := events.New(database.DB, entclient.NewTx, do.MustInvoke[Clock](i))
-		// The Edition's ent hooks on every transaction the bus opens; the Edition itself
-		// is built after the bus, which its Audit log records through.
-		bus.Use(ee.Hooks(do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i))...)
+		bus := events.New(database.DB, do.MustInvoke[entclient.Clients](i).NewTx, do.MustInvoke[Clock](i))
 		bus.UseJobs(do.MustInvoke[*river.Client[*sql.Tx]](i))
 		bus.UseSubscribers(channelstop.Subscribers()...)
 		bus.UseSubscribers(suppressions.Subscribers()...)
