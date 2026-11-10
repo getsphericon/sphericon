@@ -16,8 +16,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/schema"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -60,7 +60,7 @@ func (c capturer) Capture(ctx context.Context, captured messaging.Captured) erro
 	create := c.s.CapturedMessage().Create().
 		SetIntegrationID(c.integrationID).
 		SetSurface(surface).
-		SetRecipient(suppressions.NormalizeDestination(msg.To)).
+		SetRecipient(emailcase.Of(msg.To)).
 		SetFromEmail(msg.From).
 		SetSubject(msg.Subject).
 		SetHTML(msg.HTML).

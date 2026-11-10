@@ -3141,7 +3141,8 @@ func init() {
 		Table: "auth_attempts",
 	}
 	AuthAttemptsTable.Annotation.Checks = map[string]string{
-		"auth_attempts_kind_check": "kind IN ('login', 'staff_login', 'password_reset', 'sign_up', 'email_change', 'test_send_user', 'test_send_workspace')",
+		"auth_attempts_email_lower": "email = lower(email)",
+		"auth_attempts_kind_check":  "kind IN ('login', 'staff_login', 'password_reset', 'sign_up', 'email_change', 'test_send_user', 'test_send_workspace')",
 	}
 	AutomationsTable.ForeignKeys[0].RefTable = AutomationVersionsTable
 	AutomationsTable.ForeignKeys[1].RefTable = AutomationVersionsTable
@@ -3211,7 +3212,8 @@ func init() {
 		Table: "captured_messages",
 	}
 	CapturedMessagesTable.Annotation.Checks = map[string]string{
-		"captured_messages_surface_check": "surface IN ('broadcast', 'automation', 'transactional', 'test')",
+		"captured_messages_recipient_lower": "recipient = lower(recipient)",
+		"captured_messages_surface_check":   "surface IN ('broadcast', 'automation', 'transactional', 'test')",
 	}
 	ConfirmationsTable.ForeignKeys[0].RefTable = ContactsTable
 	ConfirmationsTable.ForeignKeys[1].RefTable = WorkspacesTable
@@ -3219,8 +3221,9 @@ func init() {
 		Table: "confirmations",
 	}
 	ConfirmationsTable.Annotation.Checks = map[string]string{
-		"confirmations_channel_check":    "channel IN ('email', 'telegram', 'sms')",
-		"confirmations_provenance_check": "provenance IN ('double_opt_in', 'grandfathered', 'imported', 'keyword')",
+		"confirmations_channel_check":     "channel IN ('email', 'telegram', 'sms')",
+		"confirmations_destination_lower": "destination = lower(destination)",
+		"confirmations_provenance_check":  "provenance IN ('double_opt_in', 'grandfathered', 'imported', 'keyword')",
 	}
 	ConsentRecordsTable.ForeignKeys[0].RefTable = LegalDocumentVersionsTable
 	ConsentRecordsTable.ForeignKeys[1].RefTable = UsersTable
@@ -3370,9 +3373,10 @@ func init() {
 		Table: "outbound_messages",
 	}
 	OutboundMessagesTable.Annotation.Checks = map[string]string{
-		"outbound_messages_channel_check": "channel IN ('email', 'telegram', 'sms')",
-		"outbound_messages_kind_check":    "kind IN ('broadcast', 'automation', 'transactional')",
-		"outbound_messages_status_check":  "status IN ('pending', 'sent', 'skipped', 'failed')",
+		"outbound_messages_channel_check":     "channel IN ('email', 'telegram', 'sms')",
+		"outbound_messages_destination_lower": "destination = lower(destination)",
+		"outbound_messages_kind_check":        "kind IN ('broadcast', 'automation', 'transactional')",
+		"outbound_messages_status_check":      "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}
 	PasskeysTable.ForeignKeys[0].RefTable = UsersTable
 	PasskeysTable.Annotation = &entsql.Annotation{
@@ -3384,6 +3388,9 @@ func init() {
 	PendingSignupsTable.ForeignKeys[0].RefTable = InvitationsTable
 	PendingSignupsTable.Annotation = &entsql.Annotation{
 		Table: "pending_signups",
+	}
+	PendingSignupsTable.Annotation.Checks = map[string]string{
+		"pending_signups_email_lower": "email = lower(email)",
 	}
 	PrivateRelayRangesTable.Annotation = &entsql.Annotation{
 		Table: "private_relay_ranges",
@@ -3468,6 +3475,9 @@ func init() {
 	StaffMembersTable.Annotation = &entsql.Annotation{
 		Table: "staff_members",
 	}
+	StaffMembersTable.Annotation.Checks = map[string]string{
+		"staff_members_email_lower": "email = lower(email)",
+	}
 	StartTokensTable.ForeignKeys[0].RefTable = ContactsTable
 	StartTokensTable.ForeignKeys[1].RefTable = IntegrationsTable
 	StartTokensTable.ForeignKeys[2].RefTable = VisitorsTable
@@ -3484,8 +3494,9 @@ func init() {
 		Table: "suppressions",
 	}
 	SuppressionsTable.Annotation.Checks = map[string]string{
-		"suppressions_channel_check": "channel IN ('email', 'telegram', 'sms')",
-		"suppressions_reason_check":  "reason IN ('bounce', 'complaint', 'manual')",
+		"suppressions_channel_check":     "channel IN ('email', 'telegram', 'sms')",
+		"suppressions_destination_lower": "destination = lower(destination)",
+		"suppressions_reason_check":      "reason IN ('bounce', 'complaint', 'manual')",
 	}
 	TagsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	TagsTable.Annotation = &entsql.Annotation{
@@ -3518,8 +3529,9 @@ func init() {
 		Table: "unsubscribes",
 	}
 	UnsubscribesTable.Annotation.Checks = map[string]string{
-		"unsubscribes_channel_check": "channel IN ('email', 'telegram', 'sms')",
-		"unsubscribes_via_check":     "via IN ('keyword', 'button', 'block', 'link', 'refused_send', 'manual')",
+		"unsubscribes_channel_check":     "channel IN ('email', 'telegram', 'sms')",
+		"unsubscribes_destination_lower": "destination = lower(destination)",
+		"unsubscribes_via_check":         "via IN ('keyword', 'button', 'block', 'link', 'refused_send', 'manual')",
 	}
 	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UsagesTable.Annotation = &entsql.Annotation{

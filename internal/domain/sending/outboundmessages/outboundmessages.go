@@ -40,7 +40,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -51,6 +50,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -388,7 +388,7 @@ func (r Request) validate() error {
 		return errors.New("outbound: idempotency key required")
 	case r.Content == nil:
 		return errors.New("outbound: content required")
-	case suppressions.NormalizeDestination(r.Destination) == "" && r.Contact == nil:
+	case emailcase.Of(r.Destination) == "" && r.Contact == nil:
 		return errors.New("outbound: destination required")
 	}
 	return nil
@@ -409,7 +409,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if err != nil {
 		return Result{}, err
 	}
-	dest := suppressions.NormalizeDestination(req.Destination)
+	dest := emailcase.Of(req.Destination)
 
 	// A recorded send replays its Outcome — even while the Workspace is frozen: the
 	// message already left (or was already decided), nothing new is being sent.

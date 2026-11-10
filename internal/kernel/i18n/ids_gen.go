@@ -221,6 +221,8 @@ var (
 	ErrorsNotMeLinkInvalid                      = ID{key: "errors.not_me_link_invalid"}
 	ErrorsOauthClientUnknown                    = ID{key: "errors.oauth_client_unknown"}
 	ErrorsOauthGrantInvalid                     = ID{key: "errors.oauth_grant_invalid"}
+	ErrorsOauthRedirectUriInvalid               = ID{key: "errors.oauth_redirect_uri_invalid"}
+	ErrorsOauthRedirectUrisCount                = ID{key: "errors.oauth_redirect_uris_count"}
 	ErrorsOauthRequestInvalid                   = ID{key: "errors.oauth_request_invalid"}
 	ErrorsOauthScopeExceedsGrant                = ID{key: "errors.oauth_scope_exceeds_grant"}
 	ErrorsOptionalConsentNotFound               = ID{key: "errors.optional_consent_not_found"}

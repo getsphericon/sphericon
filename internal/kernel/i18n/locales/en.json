@@ -232,6 +232,8 @@
   "errors.integration_kind_mismatch": "kind must match the integration provider",
   "errors.integration_provider_limit_required": "an SES-compatible service needs its Provider limit: enter what your provider account allows",
   "errors.integration_config_invalid": "{{.Detail}}",
+  "errors.oauth_redirect_uris_count": "provide between 1 and {{.Max}} redirect_uris",
+  "errors.oauth_redirect_uri_invalid": "redirect_uris must be https URLs (or http on a loopback host) without a fragment",
   "errors.order_event_invalid": "the order event is refused",
   "errors.suspension_actor_invalid": "the actor must be a Staff member with an id, or the system or the command line without one",
   "errors.service_credential_scope": "a service credential needs one or more known scopes",

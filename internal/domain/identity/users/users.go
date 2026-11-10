@@ -32,8 +32,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -124,7 +124,7 @@ func (a *Module) UserByEmail(ctx context.Context, email string) (*ent.User, erro
 // UserByEmailIn is UserByEmail in the caller's transaction: a Staff member addresses a User by
 // email at the command line (the Second factor reset).
 func UserByEmailIn(ctx context.Context, tx *ent.Client, email string) (*ent.User, error) {
-	return tx.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).Only(ctx)
+	return tx.User.Query().Where(user.Email(emailcase.Of(email))).Only(ctx)
 }
 
 // UserByLoginAddress loads a User by a normalized login address, ignoring case (an ent
@@ -136,7 +136,7 @@ func (a *Module) UserByLoginAddress(ctx context.Context, address string) (*ent.U
 
 // EmailTaken reports whether an account already uses the login email, whatever its case.
 func (a *Module) EmailTaken(ctx context.Context, email string) (bool, error) {
-	return a.ent.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).Exist(ctx)
+	return a.ent.User.Query().Where(user.Email(emailcase.Of(email))).Exist(ctx)
 }
 
 // Form is a person's name, address and password by the rules of a User's: the name trimmed, the
@@ -490,7 +490,7 @@ func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*e
 		now := a.now()
 		err := constraints.Write(ctx, tx, func() error {
 			var err error
-			u, err = tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
+			u, err = tx.User.UpdateOneID(id).SetEmail(emailcase.Of(newEmail)).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
 			return err
 		})
 		if err != nil {

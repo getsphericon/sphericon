@@ -30,7 +30,7 @@ type OutboundMessage struct {
 
 func (OutboundMessage) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("outbound_messages", OutboundMessage{}.Fields()),
+		WithLowerCheck(TableWithEnumChecks("outbound_messages", OutboundMessage{}.Fields()), "destination"),
 	}
 }
 

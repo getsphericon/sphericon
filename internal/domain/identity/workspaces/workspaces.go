@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -115,9 +116,14 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 
 // SetAuditRetention sets (or, with nil, clears) the number of days the Audit log is
 // kept (the EE advanced-retention window, ADR 0014) and records the change as a
-// `workspace.update` Audit entry in the same transaction. The caller has checked the
-// license and the role.
+// `workspace.update` Audit entry in the same transaction. A number of days outside the contract's
+// bounds (bounds.RetentionDays) is refused. The caller has checked the license and the role.
 func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor events.Actor, days *int) error {
+	if days != nil {
+		if err := validation.Range("retentionDays", *days, bounds.RetentionDaysMin, bounds.RetentionDaysMax); err != nil {
+			return err
+		}
+	}
 	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
 		if err != nil {
@@ -201,9 +207,15 @@ func CheckZone(name string) error {
 
 // SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
 // as it is) and records each real change in one `workspace.update` Audit entry in the same
-// transaction (ADR 0064). A code outside ISO 4217 is refused with ErrUnknownCurrency; the bounds of
-// the window are the contract's. The caller has checked the role.
+// transaction (ADR 0064). A code outside ISO 4217 is refused with ErrUnknownCurrency, and a window
+// outside the contract's bounds (bounds.AttributionWindowDays) too. The caller has checked the role.
 func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor events.Actor, code *string, windowDays *int) (*ent.Workspace, error) {
+	if windowDays != nil {
+		if err := validation.Range("attributionWindowDays", *windowDays,
+			bounds.AttributionWindowDaysMin, bounds.AttributionWindowDaysMax); err != nil {
+			return nil, err
+		}
+	}
 	if code != nil {
 		unit, err := currency.ParseISO(*code)
 		if err != nil {

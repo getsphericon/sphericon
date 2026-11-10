@@ -9,16 +9,8 @@ import (
 
 	"golang.org/x/text/language"
 
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
-)
-
-// The longest a text core attribute, a locale tag and an avatar URL may be. Identify's traits are an
-// untyped object in the collect contract, so a core attribute read from one is held here to the
-// limits the contacts contract declares for the same attribute.
-const (
-	maxTextLength   = 255  // contract-copy: an Identify trait is untyped; the contacts contract's city limit
-	maxLocaleLength = 35   // contract-copy: an Identify trait is untyped; the contract's LocaleTag limit
-	maxAvatarLength = 2048 // contract-copy: an Identify trait is untyped; the contract's ImageUrl limit
 )
 
 var countryCodePattern = regexp.MustCompile(`^[A-Z]{2}$`)
@@ -115,7 +107,9 @@ func canonicalLocale(s string) string {
 
 func text(s string) (string, bool) {
 	s = strings.TrimSpace(s)
-	return s, s != "" && utf8.RuneCountInString(s) <= maxTextLength
+	// Identify's traits are an untyped object in the collect contract, so a core attribute read
+	// from one is held to the bound the contacts contract declares for a text attribute.
+	return s, s != "" && utf8.RuneCountInString(s) <= bounds.ContactCityMaxLength
 }
 
 func timeZoneName(s string) (string, bool) {
@@ -134,7 +128,7 @@ func countryCode(s string) (string, bool) {
 
 func localeTag(s string) (string, bool) {
 	s = strings.TrimSpace(s)
-	if s == "" || len(s) > maxLocaleLength {
+	if s == "" || len(s) > bounds.LocaleTagMaxLength {
 		return "", false
 	}
 	tag, err := language.Parse(s)
@@ -146,7 +140,7 @@ func localeTag(s string) (string, bool) {
 
 func avatarURL(s string) (string, bool) {
 	s = strings.TrimSpace(s)
-	if len(s) > maxAvatarLength || strings.ContainsAny(s, " \t\r\n") {
+	if len(s) > bounds.ImageURLMaxLength || strings.ContainsAny(s, " \t\r\n") {
 		return "", false
 	}
 	u, err := url.Parse(s)

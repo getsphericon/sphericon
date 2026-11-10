@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -125,7 +126,7 @@ func providerName(in ProviderLogin) string {
 // password. Its email is proven now; the caller creates its first Workspace and records
 // `user.email_verify` on the same transaction (internal/usecase/signup).
 func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin, now time.Time) (*ent.User, error) {
-	email := strings.TrimSpace(in.Email)
+	email := emailcase.Of(in.Email)
 	name := providerName(in)
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")

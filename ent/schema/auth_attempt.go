@@ -21,7 +21,7 @@ type AuthAttempt struct {
 
 func (AuthAttempt) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("auth_attempts", AuthAttempt{}.Fields()),
+		WithLowerCheck(TableWithEnumChecks("auth_attempts", AuthAttempt{}.Fields()), "email"),
 	}
 }
 

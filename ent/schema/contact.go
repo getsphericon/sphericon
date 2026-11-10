@@ -16,7 +16,7 @@ type Contact struct {
 
 func (Contact) Annotations() []schema.Annotation {
 	table := TableWithEnumChecks("contacts", Contact{}.Fields())
-	name, expr := LowerEmailCheck("contacts")
+	name, expr := LowerCheck("contacts", "email")
 	table.Checks[name] = expr
 	return []schema.Annotation{
 		table,

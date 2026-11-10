@@ -33,8 +33,8 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -205,7 +205,7 @@ func (m *Module[P]) throttle(ctx context.Context, address string) error {
 // error: the running delay (*ratelimit.WaitError), users.ErrEmailNotVerified for a gated
 // account, ErrInvalidCredentials otherwise.
 func (m *Module[P]) Password(ctx context.Context, address, password string) (Result[P], error) {
-	address = throttle.NormalizeEmail(address)
+	address = emailcase.Of(address)
 
 	if err := m.throttle(ctx, address); err != nil {
 		return Result[P]{}, err
@@ -250,7 +250,7 @@ func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (S
 	if err != nil {
 		return SecondResult[P]{}, err
 	}
-	address := throttle.NormalizeEmail(p.Address)
+	address := emailcase.Of(p.Address)
 
 	if err := m.throttle(ctx, address); err != nil {
 		return SecondResult[P]{}, err
@@ -291,7 +291,7 @@ func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyRes
 	if err != nil {
 		return PasskeyResult[P]{}, err
 	}
-	address := throttle.NormalizeEmail(p.Address)
+	address := emailcase.Of(p.Address)
 
 	if err := m.throttle(ctx, address); err != nil {
 		return PasskeyResult[P]{}, err

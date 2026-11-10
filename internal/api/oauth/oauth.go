@@ -115,16 +115,6 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		registrationError(w, "invalid_client_metadata", "body must be a JSON object")
 		return
 	}
-	if len(meta.RedirectURIs) == 0 || len(meta.RedirectURIs) > oauthclients.MaxRedirectURIs {
-		registrationError(w, "invalid_redirect_uri", "provide between 1 and 10 redirect_uris")
-		return
-	}
-	for _, u := range meta.RedirectURIs {
-		if !oauthclients.ValidRedirectURI(u) {
-			registrationError(w, "invalid_redirect_uri", "redirect_uris must be https URLs (or http on a loopback host) without a fragment")
-			return
-		}
-	}
 	if m := meta.TokenEndpointAuthMethod; m != "" && m != "none" {
 		registrationError(w, "invalid_client_metadata", "only token_endpoint_auth_method none is supported (public clients with PKCE)")
 		return
@@ -135,6 +125,11 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	row, err := s.clients.Register(r.Context(), meta.ClientName, meta.RedirectURIs)
+	if errors.Is(err, oauthclients.ErrRedirectURIsCount) || errors.Is(err, oauthclients.ErrRedirectURIInvalid) {
+		// RFC 7591 names the error of a refused redirect URI; the module's message says why.
+		registrationError(w, "invalid_redirect_uri", validation.Message(err))
+		return
+	}
 	if err != nil {
 		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
 		return

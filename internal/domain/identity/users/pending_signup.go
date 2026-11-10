@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -41,7 +42,7 @@ func (a *Module) HoldPending(ctx context.Context, in ProviderLogin) (*ent.Pendin
 		create := tx.PendingSignup.Create().
 			SetProvider(in.Provider).
 			SetSubject(in.Subject).
-			SetEmail(strings.TrimSpace(in.Email)).
+			SetEmail(emailcase.Of(in.Email)).
 			SetName(strings.TrimSpace(in.Name)).
 			SetExpiresAt(in.Now.Add(PendingSignupTTL)).
 			SetCreatedAt(in.Now)

@@ -3,14 +3,12 @@ package unsubscriberecording
 import (
 	"cmp"
 	"context"
-	"net/mail"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -60,12 +58,9 @@ func (u *UseCase) OptOut(ctx context.Context, s *ent.Scoped, in OptOutInput) (*e
 // atomically and idempotently. When the destination is a Contact of the Workspace
 // the event is attributed to it. The source is validated first.
 func (u *UseCase) Unsubscribe(ctx context.Context, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
-	dest := suppressions.NormalizeDestination(destination)
-	if dest == "" {
-		return nil, unsubscribes.ErrDestinationEmpty
-	}
-	if addr, err := mail.ParseAddress(dest); err != nil || addr.Address != dest {
-		return nil, unsubscribes.ErrDestinationInvalid
+	dest, err := unsubscribes.Destination(channels.Email, destination)
+	if err != nil {
+		return nil, err
 	}
 	if err := validateSource(ctx, s, source); err != nil {
 		return nil, err

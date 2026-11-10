@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -166,7 +167,7 @@ func (m *Module) EndSessions(ctx context.Context, id int64) error {
 // re-enrol at next login. ErrNotFound for an unknown email.
 func (m *Module) ResetTOTP(ctx context.Context, email string) error {
 	n, err := m.ent.StaffMember.Update().
-		Where(entstaffmember.Email(throttle.NormalizeEmail(email))).
+		Where(entstaffmember.Email(emailcase.Of(email))).
 		SetTotpSecretEncrypted("").
 		ClearTotpConfirmedAt().
 		SetTotpLastStep(0).

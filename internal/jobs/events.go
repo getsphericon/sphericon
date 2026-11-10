@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -223,10 +222,8 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 	// The Workspace comes from the event envelope: a consumer has no membership or
 	// api token, so this is a scope source outside the site/external/job list.
 	s := w.ent.Scoped(env.WorkspaceID)
+	// A refused destination ends the job (RefusalsEnd); any other error retries it.
 	err = suppressions.Add(ctx, s, suppressions.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
-	if errors.Is(err, suppressions.ErrDestinationEmpty) {
-		return nil
-	}
 	if err != nil {
 		return fmt.Errorf("suppress %q: %w", p.Email, err)
 	}

@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -28,8 +29,37 @@ var (
 	// ErrDestinationEmpty: the destination is blank after normalization.
 	ErrDestinationEmpty = validation.RefuseField("destination", "consent: destination must not be empty", i18n.ErrorsDestinationEmpty)
 	// ErrDestinationInvalid: the destination is not what the Channel's Destinations are.
-	ErrDestinationInvalid = suppressions.ErrDestinationInvalid
+	ErrDestinationInvalid = validation.RefuseField("destination", "consent: destination is not valid for the channel",
+		i18n.ErrorsDestinationInvalid)
 )
+
+// Destination is raw as the opt-outs of channel store it, or its refusal: an address in its Email
+// case that is one bare address (validation.Email), a phone number in E.164 (SMSNumber), or a
+// Telegram user id; blank is ErrDestinationEmpty, anything else ErrDestinationInvalid. Add applies
+// it to every opt-out, and a caller that reads the opt-out back by its Destination uses it too.
+func Destination(channel channels.Channel, raw string) (string, error) {
+	switch channel {
+	case channels.SMS:
+		return SMSNumber(raw)
+	case channels.Email:
+		if emailcase.Of(raw) == "" {
+			return "", ErrDestinationEmpty
+		}
+		address, err := validation.Email("destination", raw)
+		if err != nil {
+			return "", ErrDestinationInvalid
+		}
+		return address, nil
+	}
+	dest := strings.TrimSpace(raw)
+	if dest == "" {
+		return "", ErrDestinationEmpty
+	}
+	if !suppressions.ValidDestination(string(channel), dest) {
+		return "", ErrDestinationInvalid
+	}
+	return dest, nil
+}
 
 // SMSNumber is a destination on sms: the phone number in E.164, which must carry its country code
 // (a Confirmation or an opt-out has no Contact country to read a local number with).
@@ -67,8 +97,13 @@ var _ = db.Declare(
 // none: a repeated opt-out (a second click, a concurrent request) changes nothing. The id names
 // this opt-out until it is lifted, so a fact keyed by it is new for every new opt-out. A Contact
 // gone by now (erased between a send and the click) leaves the opt-out unlinked: it is keyed by
-// its Destination.
+// its Destination, which is held to the Channel's rule (Destination).
 func Add(ctx context.Context, s *ent.Scoped, o OptOut) (int64, error) {
+	dest, err := Destination(o.Channel, o.Destination)
+	if err != nil {
+		return 0, err
+	}
+	o.Destination = dest
 	create := s.Unsubscribe().Create().
 		SetChannel(o.Channel).
 		SetDestination(o.Destination).

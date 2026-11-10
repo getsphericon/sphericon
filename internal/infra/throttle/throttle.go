@@ -13,7 +13,6 @@ import (
 	stdsql "database/sql"
 	"errors"
 	"strconv"
-	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -23,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 )
 
 // Kind is the action an attempt counter belongs to. Each kind has its own counter
@@ -123,10 +123,6 @@ func NewAttempts(client *ent.Client, now func() time.Time, opts ...AttemptsOptio
 	return a
 }
 
-// NormalizeEmail is the counter key, trimmed and lower-cased: the one normalization of an
-// address a person signs in, signs up or is invited with, so the count follows the account.
-func NormalizeEmail(email string) string { return strings.ToLower(strings.TrimSpace(email)) }
-
 func (a *Attempts) rule(kind Kind) (Rule, bool) {
 	r, ok := a.rules[kind]
 	return r, ok && r.Threshold > 0
@@ -153,7 +149,7 @@ func (a *Attempts) RecordFailure(ctx context.Context, kind Kind, email string) e
 	if !ok {
 		return nil
 	}
-	email = NormalizeEmail(email)
+	email = emailcase.Of(email)
 	now := a.now()
 	n, err := a.ent.AuthAttempt.Update().
 		Where(authattempt.Email(email), authattempt.KindEQ(kind), authattempt.LastAttemptAtGTE(now.Add(-rule.Window))).
@@ -181,7 +177,7 @@ func (a *Attempts) RecordSuccess(ctx context.Context, kind Kind, email string) e
 		return nil
 	}
 	_, err := a.ent.AuthAttempt.Delete().
-		Where(authattempt.Email(NormalizeEmail(email)), authattempt.KindEQ(kind)).
+		Where(authattempt.Email(emailcase.Of(email)), authattempt.KindEQ(kind)).
 		Exec(ctx)
 	return err
 }
@@ -194,7 +190,7 @@ func (a *Attempts) Delay(ctx context.Context, kind Kind, email string) (time.Dur
 		return 0, nil
 	}
 	row, err := a.ent.AuthAttempt.Query().
-		Where(authattempt.Email(NormalizeEmail(email)), authattempt.KindEQ(kind)).
+		Where(authattempt.Email(emailcase.Of(email)), authattempt.KindEQ(kind)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return 0, nil
@@ -220,7 +216,7 @@ func (a *Attempts) Delay(ctx context.Context, kind Kind, email string) (time.Dur
 // Take grants one slot of a budget Kind (password reset: at most Threshold slots per
 // Window) to an address and reports whether it was granted. See take.
 func (a *Attempts) Take(ctx context.Context, kind Kind, email string) (bool, error) {
-	refusal, err := a.take(ctx, kind, NormalizeEmail(email))
+	refusal, err := a.take(ctx, kind, emailcase.Of(email))
 	return refusal == ratelimit.Refusal{}, err
 }
 

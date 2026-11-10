@@ -27,7 +27,7 @@ type Suppression struct {
 
 func (Suppression) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("suppressions", Suppression{}.Fields()),
+		WithLowerCheck(TableWithEnumChecks("suppressions", Suppression{}.Fields()), "destination"),
 	}
 }
 

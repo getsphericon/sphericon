@@ -5,10 +5,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 )
 
@@ -21,7 +21,7 @@ import (
 // which the entry point builds from it; the writes go through it as the ingest actor (never
 // audited), since no membership or API token stands behind them.
 func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, target linktarget.Confirmation, ip string) error {
-	dest := suppressions.NormalizeDestination(target.Destination)
+	dest := emailcase.Of(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 {
 		return nil
 	}

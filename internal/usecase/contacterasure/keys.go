@@ -3,7 +3,8 @@ package contacterasure
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"strings"
+
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 )
 
 // hash is how Erasure names an address or a phone number to a consumer of the Erasures
@@ -23,5 +24,5 @@ func firstDestination(t *Target) string {
 	if len(t.Destinations) == 0 {
 		return ""
 	}
-	return strings.ToLower(t.Destinations[0])
+	return emailcase.Of(t.Destinations[0])
 }

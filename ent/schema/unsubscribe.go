@@ -30,7 +30,7 @@ type Unsubscribe struct {
 
 func (Unsubscribe) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("unsubscribes", Unsubscribe{}.Fields()),
+		WithLowerCheck(TableWithEnumChecks("unsubscribes", Unsubscribe{}.Fields()), "destination"),
 	}
 }
 

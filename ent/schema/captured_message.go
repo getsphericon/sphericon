@@ -28,7 +28,7 @@ type CapturedMessage struct {
 
 func (CapturedMessage) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("captured_messages", CapturedMessage{}.Fields()),
+		WithLowerCheck(TableWithEnumChecks("captured_messages", CapturedMessage{}.Fields()), "recipient"),
 	}
 }
 
