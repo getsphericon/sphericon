@@ -15,7 +15,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
@@ -30,7 +29,7 @@ import (
 // and a line logged with a running job's context is also kept on the job.
 func New(cfg *config.Config, w io.Writer) *slog.Logger {
 	var handler slog.Handler
-	if strings.EqualFold(cfg.LogFormat, "text") {
+	if cfg.LogFormat == config.LogFormatText {
 		handler = tint.NewTextHandler(w, &tint.Options{Level: cfg.LogLevel})
 	} else {
 		handler = slog.NewJSONHandler(w, &slog.HandlerOptions{Level: cfg.LogLevel})

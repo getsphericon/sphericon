@@ -28,7 +28,7 @@ func TestSetupInstallsDefaultLogger(t *testing.T) {
 
 // The logger emits the configured level and nothing below it, in either format.
 func TestNewLogsFromTheConfiguredLevel(t *testing.T) {
-	for _, format := range []string{"json", "text"} {
+	for _, format := range []config.LogFormat{config.LogFormatJSON, config.LogFormatText} {
 		for _, level := range []slog.Level{slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError} {
 			logger := logging.New(&config.Config{LogFormat: format, LogLevel: level}, io.Discard)
 

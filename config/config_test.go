@@ -327,6 +327,18 @@ func TestConfigLoadRejectsAnUnknownLogLevel(t *testing.T) {
 	}
 }
 
+// A log format other than json or text stops the start instead of meaning json.
+func TestConfigLoadRejectsAnUnknownLogFormat(t *testing.T) {
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
+	for _, value := range []string{"txt", "logfmt"} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv("SPHERICON_LOG_FORMAT", value)
+			_, err := config.Load("test")
+			require.ErrorContains(t, err, "SPHERICON_LOG_FORMAT: ")
+		})
+	}
+}
+
 func TestConfigLoadSystemEmailFromAcceptsADisplayName(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
@@ -761,7 +773,7 @@ func TestConfigLoadRefusesAValueThatBreaksItsRule(t *testing.T) {
 func TestConfigLoadProfileDefaults(t *testing.T) {
 	for profile, want := range map[string]struct {
 		limits       config.RateLimits
-		logFormat    string
+		logFormat    config.LogFormat
 		privateHosts bool
 	}{
 		"":            {config.DefaultRateLimits, "text", true},
@@ -791,6 +803,6 @@ func TestConfigLoadAVariableReplacesItsProfileDefault(t *testing.T) {
 	cfg, err := config.Load("e2e")
 	require.NoError(t, err)
 	assert.Equal(t, config.RateLimits{LoginIP: 7}, cfg.RateLimits)
-	assert.Equal(t, "json", cfg.LogFormat)
+	assert.Equal(t, config.LogFormatJSON, cfg.LogFormat)
 	assert.False(t, cfg.SMTPAllowPrivateHosts)
 }
