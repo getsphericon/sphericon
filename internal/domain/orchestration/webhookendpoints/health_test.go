@@ -137,9 +137,9 @@ func pauseFirstHealthWrites(ready chan<- struct{}, resume <-chan struct{}) ent.H
 func TestConcurrentCurrentGenerationResultsAreBothCounted(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(4)
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	scope := client.Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB, entclient.NewTx, time.Now)
+	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
 	mod := webhookendpoints.New(bus, testhelper.Cipher(t), nil, nil, time.Now)
 	inFlight, err := scope.WebhookEndpoint().Get(t.Context(), fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)

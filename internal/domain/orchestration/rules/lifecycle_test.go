@@ -84,8 +84,8 @@ func TestADeletedRuleTakesNoMove(t *testing.T) {
 func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := entclient.New(sqlDB)
-	m := rules.New(nil, events.New(sqlDB, entclient.NewTx, time.Now), nil, time.Now)
+	client := entclient.Core.New(sqlDB)
+	m := rules.New(nil, events.New(sqlDB, entclient.Core.NewTx, time.Now), nil, time.Now)
 	s := client.Scoped(fixtures.AcmeID)
 	_, err := m.Deactivate(t.Context(), s, fixtures.RuleTagClickedID)
 	require.NoError(t, err)

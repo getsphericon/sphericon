@@ -2,6 +2,7 @@ package usages
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -55,10 +56,14 @@ func measureContacts(ctx context.Context, s *ent.Scoped, p Period, open bool, pr
 	return n, nil
 }
 
+// ErrNeedsTransaction is what Guard returns for a Contact change that can move the contacts peak,
+// made on a client that is not bound to a transaction.
+var ErrNeedsTransaction = errors.New("contact change outside a transaction")
+
 // Hook is the ent hook that keeps the contacts peak as Contacts change, because a peak
-// cannot be rebuilt afterwards. It is installed on every client (the long-lived one and
-// the event bus's transaction client) by the Edition. Without the `staff` license it
-// is not installed at all: the returned hook hands every mutation straight on.
+// cannot be rebuilt afterwards. internal/app/entclient installs it on every client bound to a
+// transaction (the event bus's), and Guard on every other one. Without the `staff` license
+// the returned hook hands every mutation straight on.
 //
 // A mutation that can only raise the count (a create or an email set) raises the open
 // period's peak to the count afterwards; one that lowers it (a delete, an email
@@ -71,7 +76,7 @@ func Hook(lic *licensekey.License, now func() time.Time) entgo.Hook {
 		}
 		return entgo.MutateFunc(func(ctx context.Context, m entgo.Mutation) (entgo.Value, error) {
 			mu, ok := m.(*ent.ContactMutation)
-			if !ok {
+			if !ok || !movesPeak(mu) {
 				return next.Mutate(ctx, m)
 			}
 			before, after, err := affected(ctx, mu)
@@ -88,6 +93,41 @@ func Hook(lic *licensekey.License, now func() time.Time) entgo.Hook {
 			return v, raise(ctx, mu.Client(), now(), after...)
 		})
 	}
+}
+
+// Guard is the ent hook for a client that is not bound to a transaction: it refuses every
+// Contact change Hook would record, where the peak would move in a statement of its own that a
+// crash loses, or not at all. Such a change goes through the event bus's transaction
+// (events.Bus.WithinTx). Without the `staff` license there is no peak, and it refuses nothing.
+func Guard(lic *licensekey.License) entgo.Hook {
+	return func(next entgo.Mutator) entgo.Mutator {
+		if !lic.Has(licensekey.FeatureStaff) {
+			return next
+		}
+		return entgo.MutateFunc(func(ctx context.Context, m entgo.Mutation) (entgo.Value, error) {
+			if mu, ok := m.(*ent.ContactMutation); ok && movesPeak(mu) {
+				return nil, ErrNeedsTransaction
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+}
+
+// movesPeak reports whether mu can change the number of identified Contacts, before looking at
+// any row: a create with an email, a change of the email, and any delete. Hook narrows it to the
+// Workspaces whose count actually changes.
+func movesPeak(mu *ent.ContactMutation) bool {
+	switch {
+	case mu.Op().Is(entgo.OpCreate):
+		email, ok := mu.Email()
+		return ok && email != ""
+	case mu.Op().Is(entgo.OpDelete | entgo.OpDeleteOne):
+		return true
+	case mu.Op().Is(entgo.OpUpdate | entgo.OpUpdateOne):
+		_, sets := mu.Email()
+		return sets || mu.EmailCleared()
+	}
+	return false
 }
 
 // affected is the Workspaces whose peak the mutation must record before it runs

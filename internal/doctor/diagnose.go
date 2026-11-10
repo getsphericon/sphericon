@@ -75,7 +75,7 @@ func Diagnose(ctx context.Context, env string, s Seams, w io.Writer, asJSON bool
 			in.DBErr = err
 		} else {
 			defer cleanup.Close(db, "database")
-			in.DB, in.Ent = db, entclient.New(db)
+			in.DB, in.Ent = db, entclient.Core.New(db)
 		}
 	}
 

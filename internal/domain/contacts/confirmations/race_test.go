@@ -47,7 +47,7 @@ func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) 
 	require.NoError(t, errs["second request"])
 	require.NotNil(t, second)
 	assert.Equal(t, first.ID, second.ID, "the second request answers with the Confirmation that stands")
-	logged, err := entclient.New(race.DB).Event.Query().Where(
+	logged, err := entclient.Core.New(race.DB).Event.Query().Where(
 		event.WorkspaceID(fixtures.AcmeID), event.Action(events.NameSmsConfirmed), event.Phone(number),
 	).Count(ctx)
 	require.NoError(t, err)

@@ -21,7 +21,7 @@ import (
 func TestPublishingOneClientEventIdConcurrentlyStoresAndPublishesItOnce(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	bus := testhelper.BusOn(t, sqlDB)
 	const action = "race_client_event"
 

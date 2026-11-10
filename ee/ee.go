@@ -74,7 +74,7 @@ type Deps struct {
 	// Client is the raw ent client of the cross-Workspace reads and writes.
 	Client *ent.Client
 	// Bus is the domain-event bus every write of the Edition goes through. It is built
-	// before the Edition and takes the Edition's ent hooks from Hooks.
+	// before the Edition, over clients that carry the Edition's ent hooks (Hooks).
 	Bus *events.Bus
 	// License is the runtime license key; nil is the plain core.
 	License *licensekey.License
@@ -116,18 +116,13 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 	return e, nil
 }
 
-// Hooks are the ent hooks the Edition needs on every client, the long-lived one and the
-// event bus's transaction client alike: the one that keeps the contacts peak of Usage as
-// Contacts change (ADR 0009). Empty without the `staff` license.
-func (e *Edition) Hooks() []entgo.Hook { return Hooks(e.lic, e.now) }
-
-// Hooks are the Edition's ent hooks for a license and a clock, for a client built before
-// the Edition (the event bus's transaction client). Empty without the `staff` license.
-func Hooks(lic *licensekey.License, now func() time.Time) []entgo.Hook {
-	if !lic.Has(licensekey.FeatureStaff) {
-		return nil
-	}
-	return []entgo.Hook{usages.Hook(lic, now)}
+// Hooks are the Edition's ent hooks for a license and a clock, which internal/app/entclient
+// installs with the core's (entclient.WithEdition): hooks on a client bound to a transaction,
+// and guards, which refuse the change a hook would record, on any other. The one pair keeps the
+// contacts peak of Usage as Contacts change (ADR 0009). Each hook is a no-op without the
+// `staff` license.
+func Hooks(lic *licensekey.License, now func() time.Time) (hooks, guards []entgo.Hook) {
+	return []entgo.Hook{usages.Hook(lic, now)}, []entgo.Hook{usages.Guard(lic)}
 }
 
 // StaffSections is the Enterprise part of the /staff API (ADR 0026, ADR 0063) for the

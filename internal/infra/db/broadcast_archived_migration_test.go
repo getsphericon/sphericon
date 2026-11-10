@@ -24,7 +24,7 @@ func TestTheBroadcastArchiveMigrationKeepsTheStampAndRenamesTheAuditActions(t *t
 
 	_, err := db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	archived, err := client.Broadcast.Query().Where(broadcast.Name("Archived newsletter")).Only(t.Context())
 	require.NoError(t, err)
 	kept, err := client.Broadcast.Query().Where(broadcast.Name("Kept draft")).Only(t.Context())

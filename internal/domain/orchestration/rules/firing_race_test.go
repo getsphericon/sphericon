@@ -24,9 +24,9 @@ func TestARuleDeletedAfterEvaluateReadItRecordsNoFiring(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	s := client.Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB, entclient.NewTx, time.Now)
+	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
 	bus.UseJobs(testhelper.AcceptingQueue{})
 	m := rules.New(nil, bus, nil, time.Now)
 

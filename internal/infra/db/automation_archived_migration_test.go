@@ -24,7 +24,7 @@ func TestTheAutomationArchiveMigrationKeepsTheStampAndRenamesTheAuditActions(t *
 
 	_, err := db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	archived, err := client.Automation.Query().Where(automation.Name("Archived nudge")).Only(t.Context())
 	require.NoError(t, err)
 	kept, err := client.Automation.Query().Where(automation.Name("Kept welcome")).Only(t.Context())

@@ -286,7 +286,7 @@ func TestAStepOfAnEnrollmentErasedWithItsContactEndsQuietly(t *testing.T) {
 	ctx := t.Context()
 	runID := int64(fixtures.AutomationRunJobsSingleEmailLiamID)
 	queueStep(t, env, runID)
-	env.DB.Contact.DeleteOneID(fixtures.ContactLiamID).ExecX(ctx)
+	env.FeedDB.Contact.DeleteOneID(fixtures.ContactLiamID).ExecX(ctx)
 	fs := &fakeSender{}
 
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))

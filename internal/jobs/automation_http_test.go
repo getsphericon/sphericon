@@ -338,7 +338,7 @@ func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 func TestHTTPStepOfAnErasedContactSendsNothing(t *testing.T) {
 	h := newHTTPStepHarness(t)
 	runID := int64(fixtures.AutomationRunQuahogHookID)
-	h.DB.Contact.DeleteOneID(fixtures.ContactQuahogQuinnID).ExecX(context.Background())
+	h.FeedDB.Contact.DeleteOneID(fixtures.ContactQuahogQuinnID).ExecX(context.Background())
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 	assert.Empty(t, h.rcv.received())

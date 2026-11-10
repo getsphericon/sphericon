@@ -98,7 +98,7 @@ func TestPlainClientRefusesAChangeToAVerifiedHost(t *testing.T) {
 	pool, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	client := entclient.New(pool)
+	client := entclient.Core.New(pool)
 
 	err = client.TrackingDomain.UpdateOneID(fixtures.TrackingDomainServingID).
 		SetState(trackingdomain.StatePending).Exec(t.Context())

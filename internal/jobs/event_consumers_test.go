@@ -180,7 +180,7 @@ func TestOrderJobsWorkedConcurrentlyLeaveTheOrderAsWorkedInTurn(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := entclient.New(sqlDB)
+	client := entclient.Core.New(sqlDB)
 	// test writes: the Workspace's Reporting currency, so no Order Completed adopts one.
 	client.Workspace.UpdateOneID(fixtures.AcmeID).SetReportingCurrency("USD").ExecX(ctx)
 	bus := testhelper.BusOn(t, sqlDB)

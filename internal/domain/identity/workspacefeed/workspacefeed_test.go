@@ -24,7 +24,7 @@ func TestPlainClientRefusesAChangeToTheFeed(t *testing.T) {
 	pool, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	client := entclient.New(pool)
+	client := entclient.Core.New(pool)
 
 	// test writes: the hook fires on this write
 	_, err = client.Workspace.Create().SetName("Plain").SetPublicID(workspaceid.New()).Save(t.Context())

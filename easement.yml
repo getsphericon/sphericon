@@ -67,6 +67,13 @@ forbid_symbol:
   - name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges.Guard
     allow: *client-builders
     because: *ent-hooks-because
+  # The Enterprise Edition's pair, which ee.Hooks hands the wiring for internal/app/entclient.
+  - name: github.com/getsphericon/sphericon/ee/domain/insights/usages.Hook
+    allow: &edition-hooks [ee-edition]
+    because: &edition-hooks-because the Edition hands its ent hooks to the wiring (ee.Hooks), which builds every ent client with them (internal/app/entclient, ADR 0107); no other package installs one
+  - name: github.com/getsphericon/sphericon/ee/domain/insights/usages.Guard
+    allow: *edition-hooks
+    because: *edition-hooks-because
   - name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.Boundaries
     allow: *client-builders
     because: &upgrade-because the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no other package knows an upgrade type

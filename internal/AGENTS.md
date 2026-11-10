@@ -67,14 +67,17 @@ account through the API, for a test of connecting or one that needs another acco
 The `testwrites` analyzer reads the harness as it reads tests: a helper that creates a row names
 why no fixture can hold it, with the same `// test writes:` comment.
 
-**`env.DB` refuses a feed change outside a transaction, as production's plain client does.** It
-carries the Guards of `internal/domain/identity/workspacefeed`, `internal/domain/identity/usertombstones` and `internal/domain/sending/trackinghostchanges`
-(`entclient.New`), and only the bus's transaction client runs their Hooks, so a module that
-writes a Workspace's deletion, an owner change, a User, a Consent record, the mailings mark or a
-Tracking host outside `events.Bus.WithinTx` fails its tests. A test's own write of such a row (setup
-that marks a Workspace deleted or changes a User's address, or the write a test of a feed's Hook
-makes) goes through `env.FeedDB`, the client on the same transaction that runs the Hooks. A module
-under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
+**`env.DB` refuses a change a hook records outside a transaction, as production's plain client
+does.** It carries the Guards of `internal/domain/identity/workspacefeed`,
+`internal/domain/identity/usertombstones`, `internal/domain/sending/trackinghostchanges` and, with
+the `staff` license, `ee/domain/insights/usages` (`internal/app/entclient` builds every client, the
+harness's through the application's own `entclient.Clients`), and only the bus's transaction client
+runs their Hooks, so a module that writes a Workspace's deletion, an owner change, a User, a Consent
+record, the mailings mark, a Tracking host, or a Contact's creation with an email, its email or its
+removal outside `events.Bus.WithinTx` fails its tests. A test's own write of such a row (setup that
+marks a Workspace deleted, changes a User's address or deletes a Contact, or the write a test of a
+Hook makes) goes through `env.FeedDB`, the client on the same transaction that runs the Hooks. A
+module under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
 
 ## Domain contexts
 
