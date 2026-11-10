@@ -19,13 +19,13 @@ import (
 // internal/usecase/noticedelivery). These functions
 // are their writes; each runs on the client or transaction it is given.
 
-// Standing is the suspension state of a Workspace (ADR 0026), kept as suspended_at: a machine
+// standing is the suspension state of a Workspace (ADR 0026), kept as suspended_at: a machine
 // (ADR 0109) whose two moves are Suspend and Unsuspend.
-type Standing string
+type standing string
 
 const (
-	StandingActive    Standing = "active"
-	StandingSuspended Standing = "suspended"
+	standingActive    standing = "active"
+	standingSuspended standing = "suspended"
 )
 
 type standingTrigger string
@@ -47,25 +47,25 @@ type suspension struct {
 // reason standing, and so does one that a concurrent move changed first or that does not exist.
 func moveStanding(ctx context.Context, tx *ent.Client, id int64, trigger standingTrigger, by suspension, at time.Time) (bool, error) {
 	moved := false
-	machine := lifecycle.New(lifecycle.Storage[Standing]{
-		Read: func(ctx context.Context) (Standing, error) {
+	machine := lifecycle.New(lifecycle.Storage[standing]{
+		Read: func(ctx context.Context) (standing, error) {
 			row, err := tx.Workspace.Query().Where(workspace.ID(id)).Select(workspace.FieldSuspendedAt).Only(ctx)
 			if err != nil {
 				return "", err
 			}
 			if row.SuspendedAt != nil {
-				return StandingSuspended, nil
+				return standingSuspended, nil
 			}
-			return StandingActive, nil
+			return standingActive, nil
 		},
-		Write: func(ctx context.Context, from, to Standing) (bool, error) {
+		Write: func(ctx context.Context, from, to standing) (bool, error) {
 			upd := tx.Workspace.Update().Where(workspace.ID(id))
-			if from == StandingSuspended {
+			if from == standingSuspended {
 				upd.Where(workspace.SuspendedAtNotNil())
 			} else {
 				upd.Where(workspace.SuspendedAtIsNil())
 			}
-			if to == StandingSuspended {
+			if to == standingSuspended {
 				upd.SetSuspendedAt(at).SetSuspendedByKind(by.kind).SetNillableSuspendedByID(by.byID).
 					SetSuspensionReason(by.reason)
 			} else {
@@ -77,8 +77,8 @@ func moveStanding(ctx context.Context, tx *ent.Client, id int64, trigger standin
 			return moved, err
 		},
 	})
-	machine.Configure(StandingActive).Permit(triggerSuspend, StandingSuspended).Ignore(triggerUnsuspend)
-	machine.Configure(StandingSuspended).Permit(triggerUnsuspend, StandingActive).Ignore(triggerSuspend)
+	machine.Configure(standingActive).Permit(triggerSuspend, standingSuspended).Ignore(triggerUnsuspend)
+	machine.Configure(standingSuspended).Permit(triggerUnsuspend, standingActive).Ignore(triggerSuspend)
 	err := machine.FireCtx(ctx, trigger)
 	if ent.IsNotFound(err) || errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return false, nil

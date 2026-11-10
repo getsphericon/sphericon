@@ -80,7 +80,7 @@ func (SendingDomain) Fields() []ent.Field {
 		// organizational domain (nil = the last lookup found none, or none has answered). It is the
 		// bulk-ready signal of ADR 0012 and never gates sending.
 		field.Time("dmarc_found_at").
-			Annotations(Attribute(reasonLatest)).
+			Annotations(Attribute(reasonFoundRun)).
 			Optional().
 			Nillable(),
 	}

@@ -2030,7 +2030,7 @@ func (UnimplementedHandler) SiteWorkspacesGetRevenueSettings(ctx context.Context
 // SiteWorkspacesLeave implements SiteWorkspaces_leave operation.
 //
 // Leave a Workspace (any Role): the caller's own Membership is removed at once, with no Owner involved
-// (Leaving, ADR 0050). 422 when the caller is the only Owner: another Member must become Owner, or the
+// (Leaving, ADR 0050). 409 when the caller is the only Owner: another Member must become Owner, or the
 // Workspace be deleted, first. Recorded as an Audit entry with the caller as actor.
 //
 // POST /workspaces/{workspaceId}/leave

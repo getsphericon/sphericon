@@ -185,8 +185,8 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 			}
 		}
 		if err := fire(ctx, ts, id, t, unarchived); err != nil {
-			if archived := m.notArchived(ctx, ts, id); archived != nil {
-				return archived
+			if refusal := m.notArchived(ctx, ts, id); refusal != nil {
+				return refusal
 			}
 			return notSendable(err)
 		}

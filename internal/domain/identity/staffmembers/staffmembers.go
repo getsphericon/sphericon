@@ -165,7 +165,8 @@ func (m *Module) EndSessions(ctx context.Context, id int64) error {
 // ResetTOTP is the only way a lost TOTP is reset (`sphericon staff reset-totp`, no
 // web flow exists): it clears the secret and its confirmation, bumps the session epoch
 // (which ends every session and kills any live challenge) and leaves the Staff member to
-// re-enrol at next login. ErrNotFound for an unknown email.
+// re-enrol at next login. ErrNotFound for an unknown email; lifecycle.ErrInvalidTransition when a
+// login confirmed or a reset changed the enrolment between the read and the write.
 func (m *Module) ResetTOTP(ctx context.Context, email string) error {
 	op, err := m.ent.StaffMember.Query().Where(entstaffmember.Email(emailcase.Of(email))).Only(ctx)
 	if ent.IsNotFound(err) {

@@ -53,4 +53,5 @@ const (
 	reasonFact       = "a fact of the row, fixed when it is written"
 	reasonBucket     = "the token bucket's refill clock, moved by every take"
 	reasonNotice     = "when the last notice went out, so the next one is not sent twice"
+	reasonFoundRun   = "an observation: the first check of a run that found it, cleared by the check that finds otherwise; it gates no move"
 )

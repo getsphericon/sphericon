@@ -19,7 +19,6 @@ package sendingdomains
 
 import (
 	"context"
-	"errors"
 	"regexp"
 	"strings"
 	"time"
@@ -141,53 +140,48 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 
 // Update edits a Sending domain. Changing the selector moves the DKIM record, so the
 // domain becomes unverified until the new record is published and checked. An unknown id, or a
-// deleted domain's, is ErrNotFound, whatever the edit.
+// deleted domain's, is ErrNotFound, whatever the edit. The edit is a compare-and-swap on the domain
+// as read: one that a check moved meanwhile is lifecycle.ErrInvalidTransition (a lost race, 409),
+// never a selector change under a verification nobody checked.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.SendingDomain, error) {
 	var row *ent.SendingDomain
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		for {
-			// A Delete that landed meanwhile leaves no row to edit.
-			cur, err := Editable(ctx, ts, id)
-			if err != nil {
-				return err
-			}
-			row = cur
-			given, changes := in.Selector.Get()
-			if !changes {
-				return nil
-			}
-			selector, err := validSelector(given)
-			if err != nil {
-				return err
-			}
-			if selector == cur.DkimSelector {
-				return nil
-			}
-			setSelector := func(u *ent.SendingDomainScopedUpdate) { u.SetDkimSelector(selector) }
-			if dkimstate.Is(cur) {
-				// The published record is under the old selector: the verification is lost
-				// (DKIMSelectorMoved). The Owner made the edit, so no Owner is told.
-				_, err = moveDKIM(ctx, ts, cur, DKIMSelectorMoved, m.now(), setSelector)
-			} else {
-				// A plain edit, while the domain is still the one read: a check that verified it
-				// meanwhile under the old selector is judged again below.
-				upd := ts.SendingDomain().Update().Where(asJudged(cur)...)
-				setSelector(upd)
-				var n int
-				if n, err = upd.Save(ctx); err == nil && n == 0 {
-					err = lifecycle.ErrInvalidTransition
-				}
-			}
-			if errors.Is(err, lifecycle.ErrInvalidTransition) {
-				// A check moved the domain meanwhile: read it again and edit what it is now.
-				continue
-			}
-			if err != nil {
-				return err
-			}
-			row, err = ts.SendingDomain().Get(ctx, id)
+		cur, err := Editable(ctx, ts, id)
+		if err != nil {
 			return err
 		}
+		row = cur
+		given, changes := in.Selector.Get()
+		if !changes {
+			return nil
+		}
+		selector, err := validSelector(given)
+		if err != nil {
+			return err
+		}
+		if selector == cur.DkimSelector {
+			return nil
+		}
+		setSelector := func(u *ent.SendingDomainScopedUpdate) { u.SetDkimSelector(selector) }
+		if dkimstate.Is(cur) {
+			// The published record is under the old selector: the verification is lost
+			// (DKIMSelectorMoved). The Owner made the edit, so no Owner is told.
+			if _, err := moveDKIM(ctx, ts, cur, DKIMSelectorMoved, m.now(), setSelector); err != nil {
+				return err
+			}
+		} else {
+			upd := ts.SendingDomain().Update().Where(asJudged(cur)...)
+			setSelector(upd)
+			n, err := upd.Save(ctx)
+			if err != nil {
+				return err
+			}
+			if n == 0 {
+				return lifecycle.ErrInvalidTransition
+			}
+		}
+		row, err = ts.SendingDomain().Get(ctx, id)
+		return err
 	})
 	if err != nil {
 		return nil, err

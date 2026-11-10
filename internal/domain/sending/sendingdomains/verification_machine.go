@@ -95,8 +95,8 @@ func asJudged(dom *ent.SendingDomain) []predicate.SendingDomain {
 	return at
 }
 
-// moveDKIM fires trigger on the verification of dom as it was read, writing through s at now; also
-// adds what the move writes besides the moments (the check time, the new selector). It reports
+// moveDKIM fires trigger on the verification of dom as it was read. A move writes through s: the
+// moments at now, and whatever also sets beside them (the check time, the new selector). It reports
 // whether the state moved; a lost swap is lifecycle.ErrInvalidTransition.
 func moveDKIM(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain, trigger DKIMTrigger, now time.Time, also func(*ent.SendingDomainScopedUpdate)) (bool, error) {
 	moved := false

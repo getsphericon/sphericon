@@ -14,9 +14,9 @@ import (
 )
 
 // The Owner invariant of a Role (GLOSSARY "Role"): a Workspace always keeps at least one owner,
-// refused with ErrDemoteLastOwner or ErrRemoveLastOwner (422). Granting the owner Role and
-// changing or removing an owner's Membership need the Permission owners:manage (ADR 0061),
-// refused as Require refuses it (403).
+// refused with ErrDemoteLastOwner or ErrRemoveLastOwner (409: the Workspace's state refuses it).
+// Granting the owner Role and changing or removing an owner's Membership need the Permission
+// owners:manage (ADR 0061), refused as Require refuses it (403).
 var (
 	// ErrDemoteLastOwner refuses giving the last owner another Role, on the role field.
 	ErrDemoteLastOwner = validation.ConflictField("role", "memberships: cannot demote the last owner", i18n.ErrorsKeepOneOwner)
