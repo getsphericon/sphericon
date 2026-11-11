@@ -24,6 +24,8 @@ var hidingStyles = []string{
 	"color red;display:none",
 	"bogus;max-height:0;overflow:hidden",
 	"display:none !important;display:block",
+	"color:red);display:none",
+	"color:red];max-height:0;overflow:hidden",
 }
 
 func TestFinalHTMLToTextDropsHiddenElements(t *testing.T) {
