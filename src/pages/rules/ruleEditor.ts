@@ -25,8 +25,8 @@ export const editedRule = (rule: SiteRuleResource) => ({
 // Publish and Revert of the draft (ADR 0065), serialized with Save by the editor session.
 export const ruleOperations = {
   PUBLISH: {
-    request: async ({ subject: { path }, signal }) => {
-      const { data } = await siteRulesPublish({ path, signal, throwOnError: true })
+    request: async ({ subject: { path } }) => {
+      const { data } = await siteRulesPublish({ path, throwOnError: true })
       return data
     },
     available: draftGuards.publishable,
@@ -36,8 +36,8 @@ export const ruleOperations = {
     }),
   },
   REVERT: {
-    request: async ({ subject: { path }, signal }) => {
-      const { data } = await siteRulesRevert({ path, signal, throwOnError: true })
+    request: async ({ subject: { path } }) => {
+      const { data } = await siteRulesRevert({ path, throwOnError: true })
       return data
     },
     available: draftGuards.revertible,

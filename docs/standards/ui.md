@@ -222,8 +222,10 @@ the form's values. A create page or modal has no session.
   another person are not merged.
 - **The acknowledgement is the write's success.** The cache write and the toast follow it; the
   invalidation of related lists starts after it and is not part of the operation, so a failed
-  refetch never reads as a failed Save. An outcome that arrives after the editor closed does
-  nothing.
+  refetch never reads as a failed Save.
+- **A write outlives its editor.** Leaving does not cancel a pending Save or operation: its
+  request is never aborted, and its acknowledgement still writes the cache and refreshes the
+  related lists. Nothing else happens once the editor closed: no toast, no change of content.
 
 ## Writing
 

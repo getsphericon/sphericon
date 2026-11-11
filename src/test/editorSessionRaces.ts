@@ -91,7 +91,9 @@ export function editorSessionRaces<TEvent extends { type: string }>(
     expect(rig.page.toasts).toEqual(['accepted SAVE'])
   })
 
-  test('a Save answered after the session stopped changes nothing on the page', async () => {
+  // The write outlives the editor that started it: leaving does not cancel it, and its answer
+  // still reaches the cache. Nothing else on the page changes once the editor closed.
+  test('a Save answered after the session stopped reaches the cache and nothing else', async () => {
     const rig = start({ refuse: false })
     const before = rig.current()
     rig.save()
@@ -104,6 +106,6 @@ export function editorSessionRaces<TEvent extends { type: string }>(
     const current = rig.current()
     expect(stored).not.toEqual(rig.initial)
     expect(current).toBe(before)
-    expect(rig.page).toEqual({ cached: null, toasts: [], refreshedOver: null })
+    expect(rig.page).toEqual({ cached: stored, toasts: [], refreshedOver: stored })
   })
 }

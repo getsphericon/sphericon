@@ -113,19 +113,10 @@ export const automationAdapter = {
   }),
   fingerprint: ({ name, graph }: AutomationContent) => automationSnapshot(name, graph),
   submit: ({ name, graph }: AutomationContent) => automationSubmission(name, graph),
-  save: async ({
-    subject,
-    submission,
-    signal,
-  }: {
-    subject: AutomationSubject
-    submission: Submission
-    signal: AbortSignal
-  }) => {
+  save: async ({ subject, submission }: { subject: AutomationSubject; submission: Submission }) => {
     const { data } = await siteAutomationsUpdate({
       path: subject.path,
       body: submission.body,
-      signal,
       throwOnError: true,
     })
     return data
@@ -148,10 +139,9 @@ export const automationAdapter = {
   }),
   operations: {
     PUBLISH: {
-      request: async ({ subject, signal }: { subject: AutomationSubject; signal: AbortSignal }) => {
+      request: async ({ subject }: { subject: AutomationSubject }) => {
         const { data } = await siteAutomationsPublish({
           path: subject.path,
-          signal,
           throwOnError: true,
         })
         return data
@@ -159,10 +149,9 @@ export const automationAdapter = {
       available: draftGuards.publishable,
     },
     REVERT: {
-      request: async ({ subject, signal }: { subject: AutomationSubject; signal: AbortSignal }) => {
+      request: async ({ subject }: { subject: AutomationSubject }) => {
         const { data } = await siteAutomationsRevert({
           path: subject.path,
-          signal,
           throwOnError: true,
         })
         return data

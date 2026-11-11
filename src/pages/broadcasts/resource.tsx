@@ -141,8 +141,8 @@ const broadcastResource = defineResource({
   // Delivery of the saved draft, serialized with Save by the editor session.
   operations: {
     SEND: {
-      request: async ({ subject: { path }, signal }) => {
-        const { data } = await siteBroadcastsSend({ path, signal, throwOnError: true })
+      request: async ({ subject: { path } }) => {
+        const { data } = await siteBroadcastsSend({ path, throwOnError: true })
         return data
       },
       available: deliverable,
@@ -152,7 +152,7 @@ const broadcastResource = defineResource({
       }),
     },
     SCHEDULE: {
-      request: async ({ subject: { path }, input, signal }) => {
+      request: async ({ subject: { path }, input }) => {
         const { scheduledAt } = input
         if (scheduledAt === undefined) {
           throw new Error('Schedule was started without a time')
@@ -160,7 +160,6 @@ const broadcastResource = defineResource({
         const { data } = await siteBroadcastsSchedule({
           path,
           body: { scheduledAt },
-          signal,
           throwOnError: true,
         })
         return data

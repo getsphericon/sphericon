@@ -24,7 +24,6 @@ export type ResourceOperation<TResource, TValues> = EditorOperation<
 export type ResourceUpdate<TPayload, TResource> = (options: {
   path: ResourcePath
   body: TPayload
-  signal: AbortSignal
   throwOnError: true
 }) => Promise<{ data: TResource }>
 
@@ -83,11 +82,10 @@ export function resourceEditorAdapter<
       const parsed = schema.update.safeParse(current)
       return parsed.success ? { body: parsed.data, fingerprint: valuesFingerprint(current) } : null
     },
-    save: async ({ subject, submission, signal }) => {
+    save: async ({ subject, submission }) => {
       const { data } = await update({
         path: subject.path,
         body: submission.body,
-        signal,
         throwOnError: true,
       })
       return data

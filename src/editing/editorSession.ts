@@ -22,12 +22,9 @@ export interface EditorReceipt<TResource> {
 // What an operation's event may carry besides its name, such as the time Schedule sends at.
 export type EditorOperationInput = Readonly<Record<string, string>>
 
+// A write is never aborted: it outlives the editor that started it (docs/standards/ui.md).
 export interface EditorOperation<TSubject, TResource, TContent> {
-  request: (call: {
-    subject: TSubject
-    input: EditorOperationInput
-    signal: AbortSignal
-  }) => Promise<TResource>
+  request: (call: { subject: TSubject; input: EditorOperationInput }) => Promise<TResource>
   // Whether the operation may start. `dirty` is false only when the event carried the current
   // fingerprint and it equals the acknowledged one.
   available: (state: { resource: TResource; dirty: boolean }) => boolean
@@ -51,11 +48,7 @@ export interface EditorAdapter<
   fingerprint: (content: TContent) => string
   // The submission Save sends, captured before any asynchronous work; null refuses invalid content.
   submit: (content: TContent) => TSubmission | null
-  save: (call: {
-    subject: TSubject
-    submission: TSubmission
-    signal: AbortSignal
-  }) => Promise<TResource>
+  save: (call: { subject: TSubject; submission: TSubmission }) => Promise<TResource>
   acknowledge: (submission: TSubmission, resource: TResource) => TReceipt
   // Folds an acknowledgement into the current content, which may have moved on since the
   // submission. `replaces` is set when stateful field editors must re-read the result: the content
@@ -73,7 +66,9 @@ export interface EditorHandle<TContent> {
 }
 
 // What the page does on an operation's outcome, run once the write is acknowledged or refused.
-// Invalidation starts after the acknowledgement and is never part of the pending operation.
+// Invalidation starts after the acknowledgement and is never part of the pending operation. The
+// cache's two, `store` and `invalidate`, belong to the write and run even after the editor closed;
+// the others only while it is open.
 export interface EditorEffects<TResource, TOperation extends string> {
   store: (resource: TResource) => void
   accepted: (operation: TOperation | 'SAVE') => void
@@ -164,31 +159,40 @@ export function defineEditorSession<
   return setup({
     types,
     actors: {
+      // A write updates the cache itself, so its acknowledgement reaches the cache even when the
+      // session has stopped and its outcome is ignored.
       save: fromPromise(
         async ({
-          input,
-          signal,
+          input: { subject, submission, effects },
         }: {
-          input: { subject: TSubject; submission: TSubmission }
-          signal: AbortSignal
+          input: {
+            subject: TSubject
+            submission: TSubmission
+            effects: EditorEffects<TResource, TOperation> | undefined
+          }
         }) => {
-          const resource = await adapter.save({ ...input, signal })
-          return adapter.acknowledge(input.submission, resource)
+          const resource = await adapter.save({ subject, submission })
+          effects?.store(resource)
+          effects?.invalidate()
+          return adapter.acknowledge(submission, resource)
         },
       ),
       operation: fromPromise(
         async ({
-          input,
-          signal,
+          input: { subject, operation, input, effects },
         }: {
-          input: { subject: TSubject; operation: TOperation; input: EditorOperationInput }
-          signal: AbortSignal
-        }) =>
-          adapter.operations[input.operation].request({
-            subject: input.subject,
-            input: input.input,
-            signal,
-          }),
+          input: {
+            subject: TSubject
+            operation: TOperation
+            input: EditorOperationInput
+            effects: EditorEffects<TResource, TOperation> | undefined
+          }
+        }) => {
+          const resource = await adapter.operations[operation].request({ subject, input })
+          effects?.store(resource)
+          effects?.invalidate()
+          return resource
+        },
       ),
     },
     guards: {
@@ -263,7 +267,11 @@ export function defineEditorSession<
             if (!('submission' in event)) {
               throw new Error(`Save started by ${event.type}`)
             }
-            return { subject: context.subject, submission: event.submission }
+            return {
+              subject: context.subject,
+              submission: event.submission,
+              effects: context.effects,
+            }
           },
           onDone: {
             target: 'idle',
@@ -285,11 +293,9 @@ export function defineEditorSession<
               if (folded && folded.content !== current) {
                 enqueue(() => editor?.write(folded.content))
               }
-              enqueue(() => effects?.store(receipt.resource))
               enqueue(() => effects?.accepted('SAVE'))
               const { fingerprint: _fingerprint, ...details } = receipt
               enqueue.emit({ type: 'accepted', operation: 'SAVE', ...details })
-              enqueue(() => effects?.invalidate())
             }),
           },
           onError: { target: 'idle', actions: 'fail' },
@@ -308,6 +314,7 @@ export function defineEditorSession<
               subject: context.subject,
               operation: context.operation,
               input: context.input,
+              effects: context.effects,
             }
           },
           onDone: {
@@ -332,10 +339,8 @@ export function defineEditorSession<
               if (value !== undefined) {
                 enqueue(() => editor?.write(value))
               }
-              enqueue(() => effects?.store(resource))
               enqueue(() => effects?.accepted(operation))
               enqueue.emit({ type: 'accepted', operation, resource } as Notice)
-              enqueue(() => effects?.invalidate())
             }),
           },
           onError: { target: 'idle', actions: 'fail' },
