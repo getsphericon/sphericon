@@ -1,0 +1,4 @@
+# No User tombstones. The file exists so a load empties the table: it replaces the Users and moves
+# their sequence back to 100000, and a tombstone kept from before would hold the id of the next
+# User created, whose deletion then fails on user_tombstones_user_id_key.
+[]
