@@ -3,6 +3,7 @@ package phone_test
 import (
 	"testing"
 
+	"github.com/nyaruka/phonenumbers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -66,4 +67,34 @@ func TestNormalizeOfANormalizedNumberIsItself(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, raw, got)
 	}
+}
+
+// Every number Normalize returns is in E164Pattern, the form the database checks: the example number
+// of every region the library knows, read as given and read nationally with its region.
+func TestNormalizeReturnsTheE164Pattern(t *testing.T) {
+	got := normalizedExamples()
+	require.NotEmpty(t, got)
+	for raw, number := range got {
+		assert.Regexp(t, phone.E164Pattern, number, raw)
+	}
+}
+
+// normalizedExamples is what Normalize returns for the example mobile and fixed-line number of every
+// region, written internationally and nationally, keyed by the region and the text read.
+func normalizedExamples() map[string]string {
+	out := map[string]string{}
+	for region := range phonenumbers.GetSupportedRegions() {
+		for _, kind := range []phonenumbers.PhoneNumberType{phonenumbers.MOBILE, phonenumbers.FIXED_LINE} {
+			n := phonenumbers.GetExampleNumberForType(region, kind)
+			if n == nil {
+				continue
+			}
+			for _, raw := range []string{phonenumbers.Format(n, phonenumbers.INTERNATIONAL), phonenumbers.Format(n, phonenumbers.NATIONAL)} {
+				if number, err := phone.Normalize(raw, region); err == nil {
+					out[region+" "+raw] = number
+				}
+			}
+		}
+	}
+	return out
 }

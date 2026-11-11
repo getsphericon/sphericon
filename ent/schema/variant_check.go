@@ -44,10 +44,3 @@ func variantCheck(column string, variants []variant) string {
 	}
 	return strings.Join(arms, " OR ")
 }
-
-// CurrencyCheck is the CHECK that keeps a currency column an ISO 4217 code in capitals, named
-// <table>_<column>_format. The owner checks the code against the registry
-// (internal/kernel/money); this refuses a write that skipped it. A NULL passes.
-func CurrencyCheck(table, column string) (name, expr string) {
-	return table + "_" + column + "_format", column + " ~ '^[A-Z]{3}$'"
-}

@@ -6,6 +6,8 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // JoinDomain is a Workspace-scoped, DNS-verified domain whose Users may join the
@@ -19,7 +21,7 @@ type JoinDomain struct {
 
 func (JoinDomain) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("join_domains", JoinDomain{}.Fields()),
+		WithFormatCheck(TableWithEnumChecks("join_domains", JoinDomain{}.Fields()), "domain", domainname.Pattern),
 		Audited{Action: "join_domain", NameField: "domain"},
 	}
 }

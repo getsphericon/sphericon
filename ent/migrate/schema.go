@@ -3242,8 +3242,10 @@ func init() {
 		Table: "contacts",
 	}
 	ContactsTable.Annotation.Checks = map[string]string{
-		"contacts_email_lower":  "email = lower(email)",
-		"contacts_source_check": "source IN ('manual', 'api', 'tracker')",
+		"contacts_country_format": "country ~ '^[A-Z]{2}$'",
+		"contacts_email_lower":    "email = lower(email)",
+		"contacts_phone_format":   "phone ~ '^\\+[1-9]\\d{1,14}$'",
+		"contacts_source_check":   "source IN ('manual', 'api', 'tracker')",
 	}
 	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable
 	ContactTagsTable.ForeignKeys[1].RefTable = TagsTable
@@ -3320,6 +3322,9 @@ func init() {
 	JoinDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	JoinDomainsTable.Annotation = &entsql.Annotation{
 		Table: "join_domains",
+	}
+	JoinDomainsTable.Annotation.Checks = map[string]string{
+		"join_domains_domain_format": "domain ~ '^[a-z0-9-]+(\\.[a-z0-9-]+)+$'",
 	}
 	LegalDocumentDraftsTable.ForeignKeys[0].RefTable = SignupItemsTable
 	LegalDocumentDraftsTable.Annotation = &entsql.Annotation{
@@ -3463,6 +3468,7 @@ func init() {
 		Table: "sending_domains",
 	}
 	SendingDomainsTable.Annotation.Checks = map[string]string{
+		"sending_domains_domain_format":           "domain ~ '^[a-z0-9-]+(\\.[a-z0-9-]+)+$'",
 		"sending_domains_verification_lost_check": "verification_lost_at IS NULL OR verified_at IS NOT NULL",
 	}
 	ServiceCredentialsTable.Annotation = &entsql.Annotation{
@@ -3525,6 +3531,7 @@ func init() {
 		Table: "tracking_domains",
 	}
 	TrackingDomainsTable.Annotation.Checks = map[string]string{
+		"tracking_domains_host_format":   "host ~ '^[a-z0-9-]+(\\.[a-z0-9-]+)+$'",
 		"tracking_domains_reason_check":  "reason IN ('host_taken')",
 		"tracking_domains_retired_check": "role <> 'retired' OR state IN ('dns_verified', 'serving')",
 		"tracking_domains_role_check":    "role IN ('current', 'replacement', 'retired')",

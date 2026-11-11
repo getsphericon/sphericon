@@ -6,6 +6,8 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // SendingDomain is a workspace-scoped, sphericon-authenticated sending identity
@@ -105,5 +107,5 @@ func (SendingDomain) Indexes() []ent.Index {
 func sendingDomainTable() entsql.Annotation {
 	a := TableWithEnumChecks("sending_domains", SendingDomain{}.Fields())
 	a.Checks["sending_domains_verification_lost_check"] = "verification_lost_at IS NULL OR verified_at IS NOT NULL"
-	return a
+	return WithFormatCheck(a, "domain", domainname.Pattern)
 }

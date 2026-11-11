@@ -16,6 +16,12 @@ import (
 // inject a stub.
 type TXTLookup func(ctx context.Context, name string) ([]string, error)
 
+// Pattern is the form Normalize returns: lower-case ASCII labels of letters, digits and hyphens (a
+// punycode label included), at least two of them, joined by single dots and with no dot at the end.
+// The database checks a stored Sending, Tracking or Join domain against it (ent/schema), so a write
+// that skipped Normalize fails.
+const Pattern = `^[a-z0-9-]+(\.[a-z0-9-]+)+$`
+
 // Normalize validates raw as a registrable domain name (IDNA registration rules:
 // label syntax, length limits, punycode) with at least one dot and not an IP address, and
 // returns its lower-case ASCII (punycode) form, the form DNS records and stored domains

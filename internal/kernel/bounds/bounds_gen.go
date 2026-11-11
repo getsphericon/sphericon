@@ -89,6 +89,12 @@ const (
 	LocaleTagPattern   = `^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$`
 )
 
+// CountryCode is an ISO 3166-1 alpha-2 country code, a Contact's country.
+// From site CountryCode.
+const (
+	CountryCodePattern = `^[A-Z]{2}$`
+)
+
 // ImageURL is the https URL of an image, a Contact's avatar.
 // From site ImageUrl.
 const (
@@ -228,6 +234,7 @@ var Owners = map[string][]string{
 	"ContactCityMaxLength":               {"Contact"},
 	"LocaleTagMaxLength":                 {"Contact"},
 	"LocaleTagPattern":                   {"Contact"},
+	"CountryCodePattern":                 {"Contact"},
 	"ImageURLMaxLength":                  {"Contact"},
 	"ImageURLPattern":                    {"Contact"},
 	"BrandKitLogoURLMaxLength":           {"BrandKit"},
