@@ -57,7 +57,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	assert.Equal(t, "John", e.Actor.Name.Value)
 	assert.Equal(t, "invitation", e.Target.Type)
 	assert.Equal(t, strconv.FormatInt(int64(created.Resource.ID), 10), e.Target.ID.Value)
-	assert.Equal(t, "newbie@acme.test", e.Target.Name.Value)
+	assert.False(t, e.Target.Name.Set, "an Invitation is named by nothing: its only name is the address (ADR 0050)")
 	diff, err := json.Marshal(e.Diff.Value)
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"role":{"to":"admin"}}`, string(diff))
@@ -68,7 +68,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 
 	revoked := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationRevoke)
 	require.Len(t, revoked, 1)
-	assert.Equal(t, "newbie@acme.test", revoked[0].Target.Name.Value)
+	assert.False(t, revoked[0].Target.Name.Set)
 	assert.Equal(t, strconv.FormatInt(int64(created.Resource.ID), 10), revoked[0].Target.ID.Value)
 }
 
@@ -83,7 +83,7 @@ func TestAuditInvitationAcceptIsAttributedToTheNewMember(t *testing.T) {
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, "Ivy", got[0].Actor.Name.Value)
-	assert.Equal(t, "invited@acme.test", got[0].Target.Name.Value)
+	assert.Equal(t, "Ivy", got[0].Target.Name.Value, "named by the name the new member gave, not the address")
 	assert.Empty(t, entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionInvitationAccept), "only the inviting Workspace")
 }
 

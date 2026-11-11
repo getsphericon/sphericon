@@ -482,6 +482,42 @@ func (u *AuditEntryUpsert) UpdateWorkspaceID() *AuditEntryUpsert {
 	return u
 }
 
+// SetIP sets the "ip" field.
+func (u *AuditEntryUpsert) SetIP(v string) *AuditEntryUpsert {
+	u.Set(auditentry.FieldIP, v)
+	return u
+}
+
+// UpdateIP sets the "ip" field to the value that was provided on create.
+func (u *AuditEntryUpsert) UpdateIP() *AuditEntryUpsert {
+	u.SetExcluded(auditentry.FieldIP)
+	return u
+}
+
+// ClearIP clears the value of the "ip" field.
+func (u *AuditEntryUpsert) ClearIP() *AuditEntryUpsert {
+	u.SetNull(auditentry.FieldIP)
+	return u
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (u *AuditEntryUpsert) SetUserAgent(v string) *AuditEntryUpsert {
+	u.Set(auditentry.FieldUserAgent, v)
+	return u
+}
+
+// UpdateUserAgent sets the "user_agent" field to the value that was provided on create.
+func (u *AuditEntryUpsert) UpdateUserAgent() *AuditEntryUpsert {
+	u.SetExcluded(auditentry.FieldUserAgent)
+	return u
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (u *AuditEntryUpsert) ClearUserAgent() *AuditEntryUpsert {
+	u.SetNull(auditentry.FieldUserAgent)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -534,12 +570,6 @@ func (u *AuditEntryUpsertOne) UpdateNewValues() *AuditEntryUpsertOne {
 		}
 		if _, exists := u.create.mutation.RequestID(); exists {
 			s.SetIgnore(auditentry.FieldRequestID)
-		}
-		if _, exists := u.create.mutation.IP(); exists {
-			s.SetIgnore(auditentry.FieldIP)
-		}
-		if _, exists := u.create.mutation.UserAgent(); exists {
-			s.SetIgnore(auditentry.FieldUserAgent)
 		}
 	}))
 	return u
@@ -597,6 +627,48 @@ func (u *AuditEntryUpsertOne) SetWorkspaceID(v int64) *AuditEntryUpsertOne {
 func (u *AuditEntryUpsertOne) UpdateWorkspaceID() *AuditEntryUpsertOne {
 	return u.Update(func(s *AuditEntryUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetIP sets the "ip" field.
+func (u *AuditEntryUpsertOne) SetIP(v string) *AuditEntryUpsertOne {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.SetIP(v)
+	})
+}
+
+// UpdateIP sets the "ip" field to the value that was provided on create.
+func (u *AuditEntryUpsertOne) UpdateIP() *AuditEntryUpsertOne {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.UpdateIP()
+	})
+}
+
+// ClearIP clears the value of the "ip" field.
+func (u *AuditEntryUpsertOne) ClearIP() *AuditEntryUpsertOne {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.ClearIP()
+	})
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (u *AuditEntryUpsertOne) SetUserAgent(v string) *AuditEntryUpsertOne {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.SetUserAgent(v)
+	})
+}
+
+// UpdateUserAgent sets the "user_agent" field to the value that was provided on create.
+func (u *AuditEntryUpsertOne) UpdateUserAgent() *AuditEntryUpsertOne {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.UpdateUserAgent()
+	})
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (u *AuditEntryUpsertOne) ClearUserAgent() *AuditEntryUpsertOne {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.ClearUserAgent()
 	})
 }
 
@@ -818,12 +890,6 @@ func (u *AuditEntryUpsertBulk) UpdateNewValues() *AuditEntryUpsertBulk {
 			if _, exists := b.mutation.RequestID(); exists {
 				s.SetIgnore(auditentry.FieldRequestID)
 			}
-			if _, exists := b.mutation.IP(); exists {
-				s.SetIgnore(auditentry.FieldIP)
-			}
-			if _, exists := b.mutation.UserAgent(); exists {
-				s.SetIgnore(auditentry.FieldUserAgent)
-			}
 		}
 	}))
 	return u
@@ -881,6 +947,48 @@ func (u *AuditEntryUpsertBulk) SetWorkspaceID(v int64) *AuditEntryUpsertBulk {
 func (u *AuditEntryUpsertBulk) UpdateWorkspaceID() *AuditEntryUpsertBulk {
 	return u.Update(func(s *AuditEntryUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetIP sets the "ip" field.
+func (u *AuditEntryUpsertBulk) SetIP(v string) *AuditEntryUpsertBulk {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.SetIP(v)
+	})
+}
+
+// UpdateIP sets the "ip" field to the value that was provided on create.
+func (u *AuditEntryUpsertBulk) UpdateIP() *AuditEntryUpsertBulk {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.UpdateIP()
+	})
+}
+
+// ClearIP clears the value of the "ip" field.
+func (u *AuditEntryUpsertBulk) ClearIP() *AuditEntryUpsertBulk {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.ClearIP()
+	})
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (u *AuditEntryUpsertBulk) SetUserAgent(v string) *AuditEntryUpsertBulk {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.SetUserAgent(v)
+	})
+}
+
+// UpdateUserAgent sets the "user_agent" field to the value that was provided on create.
+func (u *AuditEntryUpsertBulk) UpdateUserAgent() *AuditEntryUpsertBulk {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.UpdateUserAgent()
+	})
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (u *AuditEntryUpsertBulk) ClearUserAgent() *AuditEntryUpsertBulk {
+	return u.Update(func(s *AuditEntryUpsert) {
+		s.ClearUserAgent()
 	})
 }
 

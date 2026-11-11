@@ -478,12 +478,14 @@ type Converter interface {
 	MembershipsToResources(source []*ent.Membership) []siteapi.SiteMembershipResource
 
 	// goverter:map . InvitedByEmail | inviterEmail
+	// goverter:map Email | pendingEmail
 	InvitationToResource(source *ent.Invitation) siteapi.SiteInvitationResource
 	// goverter:useEmptyOnNil:slice
 	InvitationsToResources(source []*ent.Invitation) []siteapi.SiteInvitationResource
 	// What the public accept page shows of a pending invite: the Workspace it joins is the
 	// loaded edge.
 	// goverter:map Edges.Workspace.Name WorkspaceName
+	// goverter:map Email | pendingEmail
 	InvitationToLookupResult(source *ent.Invitation) *siteapi.SiteInvitationLookupResult
 
 	// The live version and the draft are the edges the rules module loads (ADR 0065).
@@ -1083,6 +1085,12 @@ func eraseAt(discardedAt *time.Time) siteapi.Timestamp {
 		return siteapi.Timestamp{}
 	}
 	return siteapi.Timestamp(workspaces.EraseDate(*discardedAt))
+}
+
+// pendingEmail is a pending Invitation's address; the API lists and looks up pending ones alone,
+// and only an accepted one has none.
+func pendingEmail(email *string) siteapi.EmailAddress {
+	return siteapi.EmailAddress(lo.FromPtr(email))
 }
 
 // inviterEmail is the inviting User's address when the inviter edge is loaded.

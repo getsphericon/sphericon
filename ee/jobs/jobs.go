@@ -93,7 +93,9 @@ func (w *ErasureEventWorker) Work(ctx context.Context, job *river.Job[ErasureEve
 	return erasures.Record(ctx, w.client, w.lic, job.Args.Envelope)
 }
 
-// RetentionPruneArgs is the advanced-retention prune (ADR 0014), every auditlogretention.Interval.
+// RetentionPruneArgs is the advanced-retention prune (ADR 0014) and the clearing of the Audit
+// entries' client details past auditlogretention.ClientWindow (ADR 0050), every
+// auditlogretention.Interval.
 type RetentionPruneArgs struct{}
 
 func (RetentionPruneArgs) Kind() string { return "ee_retention_prune" }
@@ -105,8 +107,7 @@ type retentionPruneWorker struct {
 }
 
 func (w *retentionPruneWorker) Work(ctx context.Context, _ *river.Job[RetentionPruneArgs]) error {
-	_, err := w.retention.Prune(ctx)
-	return err
+	return w.retention.Sweep(ctx)
 }
 
 // UsageRefreshArgs closes the elapsed Usage periods and refreshes the open one (ADR 0009), every

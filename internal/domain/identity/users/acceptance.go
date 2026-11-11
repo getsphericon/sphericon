@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -154,7 +155,7 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 		Action:      events.ActionInvitationAccept,
 		TargetType:  invitation.Label,
 		TargetID:    strconv.FormatInt(inv.ID, 10),
-		TargetName:  inv.Email,
+		TargetName:  u.Name,
 		Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
 	})
 }
@@ -181,12 +182,17 @@ type acceptProof struct {
 // any other address by the account the link's holder sets up (ADR 0030), with the Consent
 // records of its answers (ADR 0062).
 func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, account newAccount, sessionEmail string, at time.Time) (*ent.User, acceptProof, error) {
-	u, err := tx.User.Query().Where(user.EmailEqualFold(inv.Email)).Only(ctx)
+	// Only a pending Invitation has an address: an accepted one is past accepting.
+	if inv.Email == nil {
+		return nil, acceptProof{}, lifecycle.ErrInvalidTransition
+	}
+	email := *inv.Email
+	u, err := tx.User.Query().Where(user.EmailEqualFold(email)).Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, acceptProof{}, err
 	}
 	if err == nil && u.EmailVerifiedAt != nil {
-		now, err := proveByOwnSession(ctx, tx, u, inv.Email, sessionEmail, at)
+		now, err := proveByOwnSession(ctx, tx, u, email, sessionEmail, at)
 		return u, acceptProof{now: now}, err
 	}
 	name := strings.TrimSpace(account.name)
@@ -209,7 +215,7 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 			var cerr error
 			u, cerr = tx.User.Create().
 				SetName(name).
-				SetEmail(inv.Email).
+				SetEmail(email).
 				SetPasswordHash(hash).
 				SetEmailVerifiedAt(at).
 				SetEmailProvenAt(at).
@@ -279,7 +285,7 @@ func raiseToAdmin(ctx context.Context, ts *ent.Scoped, pub events.Publisher, inv
 		Action:      events.ActionMembershipUpdate,
 		TargetType:  membership.Label,
 		TargetID:    strconv.FormatInt(existing.ID, 10),
-		TargetName:  u.Email,
+		TargetName:  u.Name,
 		Diff:        map[string]any{membership.FieldRole: events.Change(string(existing.Role), string(membership.RoleAdmin))},
 	})
 }

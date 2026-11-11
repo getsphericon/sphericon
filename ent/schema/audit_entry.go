@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -12,7 +13,8 @@ import (
 // only the ee/audit reader reads it. ent keeps one schema package per graph, so the
 // table is declared here next to the others and migrated by the same flow; the
 // license gate lives in ee/, not in the schema. No code path updates or deletes a row
-// (the ee/retention prune job, ADR 0014, is the only remover).
+// but ee/usecase/auditlogretention: its prune (ADR 0014) is the only remover, and it clears an
+// entry's ip and user_agent once they are older than the client window.
 type AuditEntry struct {
 	ent.Schema
 }
@@ -87,14 +89,15 @@ func (AuditEntry) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Immutable(),
+		// The client's address and user agent are kept for the client window
+		// (auditlogretention.ClientWindow) and then cleared, the one change an entry takes
+		// (ADR 0050): they identify a person, and the entry answers who changed what without them.
 		field.String("ip").
 			Optional().
-			Nillable().
-			Immutable(),
+			Nillable(),
 		field.String("user_agent").
 			Optional().
-			Nillable().
-			Immutable(),
+			Nillable(),
 	}
 }
 
@@ -104,5 +107,10 @@ func (AuditEntry) Indexes() []ent.Index {
 		index.Fields("workspace_id", "id"),
 		// Backs the Audit Export stream (ADR 0045): the keyset page over (updated_at, id).
 		index.Fields("workspace_id", "updated_at", "id"),
+		// Backs the clearing of the client details past the client window: only the entries that
+		// still hold them.
+		index.Fields("workspace_id", "occurred_at").
+			StorageKey("audit_entries_workspace_id_occurred_at_client").
+			Annotations(entsql.IndexWhere("ip IS NOT NULL OR user_agent IS NOT NULL")),
 	}
 }

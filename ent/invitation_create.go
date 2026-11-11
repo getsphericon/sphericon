@@ -65,6 +65,14 @@ func (_c *InvitationCreate) SetEmail(v string) *InvitationCreate {
 	return _c
 }
 
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_c *InvitationCreate) SetNillableEmail(v *string) *InvitationCreate {
+	if v != nil {
+		_c.SetEmail(*v)
+	}
+	return _c
+}
+
 // SetRole sets the "role" field.
 func (_c *InvitationCreate) SetRole(v invitation.Role) *InvitationCreate {
 	_c.mutation.SetRole(v)
@@ -212,9 +220,6 @@ func (_c *InvitationCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "Invitation.workspace_id"`)}
 	}
-	if _, ok := _c.mutation.Email(); !ok {
-		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "Invitation.email"`)}
-	}
 	if v, ok := _c.mutation.Email(); ok {
 		if err := invitation.EmailValidator(v); err != nil {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "Invitation.email": %w`, err)}
@@ -285,7 +290,7 @@ func (_c *InvitationCreate) createSpec() (*Invitation, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.Email(); ok {
 		_spec.SetField(invitation.FieldEmail, field.TypeString, value)
-		_node.Email = value
+		_node.Email = &value
 	}
 	if value, ok := _c.mutation.Role(); ok {
 		_spec.SetField(invitation.FieldRole, field.TypeEnum, value)
@@ -438,6 +443,12 @@ func (u *InvitationUpsert) SetEmail(v string) *InvitationUpsert {
 // UpdateEmail sets the "email" field to the value that was provided on create.
 func (u *InvitationUpsert) UpdateEmail() *InvitationUpsert {
 	u.SetExcluded(invitation.FieldEmail)
+	return u
+}
+
+// ClearEmail clears the value of the "email" field.
+func (u *InvitationUpsert) ClearEmail() *InvitationUpsert {
+	u.SetNull(invitation.FieldEmail)
 	return u
 }
 
@@ -603,6 +614,13 @@ func (u *InvitationUpsertOne) SetEmail(v string) *InvitationUpsertOne {
 func (u *InvitationUpsertOne) UpdateEmail() *InvitationUpsertOne {
 	return u.Update(func(s *InvitationUpsert) {
 		s.UpdateEmail()
+	})
+}
+
+// ClearEmail clears the value of the "email" field.
+func (u *InvitationUpsertOne) ClearEmail() *InvitationUpsertOne {
+	return u.Update(func(s *InvitationUpsert) {
+		s.ClearEmail()
 	})
 }
 
@@ -946,6 +964,13 @@ func (u *InvitationUpsertBulk) SetEmail(v string) *InvitationUpsertBulk {
 func (u *InvitationUpsertBulk) UpdateEmail() *InvitationUpsertBulk {
 	return u.Update(func(s *InvitationUpsert) {
 		s.UpdateEmail()
+	})
+}
+
+// ClearEmail clears the value of the "email" field.
+func (u *InvitationUpsertBulk) ClearEmail() *InvitationUpsertBulk {
+	return u.Update(func(s *InvitationUpsert) {
+		s.ClearEmail()
 	})
 }
 

@@ -10,7 +10,8 @@ import (
 )
 
 // Invitation is a pending offer of Membership to an email address. It carries its
-// own token + expiry (before any User exists), and becomes a Membership on accept.
+// own token + expiry (before any User exists), and becomes a Membership on accept, which
+// keeps the row as the latch and clears its address.
 // owner is never invitable — only owner/admin manage members, and ownership is
 // transferred, not invited.
 type Invitation struct {
@@ -21,6 +22,8 @@ func (Invitation) Annotations() []schema.Annotation {
 	table := TableWithEnumChecks("invitations", Invitation{}.Fields())
 	name, expr := LowerCheck("invitations", "email")
 	table.Checks[name] = expr
+	// A pending Invitation has its address and an accepted one has none.
+	table.Checks["invitations_email_check"] = "(accepted_at IS NULL) = (email IS NOT NULL)"
 	return []schema.Annotation{table}
 }
 
@@ -33,8 +36,13 @@ func (Invitation) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
+		// The address the offer goes to, only while it is pending: acceptance clears it with the
+		// latch, since the Membership and the Audit entry are what remain of the offer, and an
+		// address kept there would outlive a User who deletes themself (ADR 0050).
 		field.String("email").
-			NotEmpty(),
+			NotEmpty().
+			Optional().
+			Nillable(),
 		field.Enum("role").
 			Values("admin", "member"),
 		// SHA-256 of the raw invite token; the raw token is only ever in the link

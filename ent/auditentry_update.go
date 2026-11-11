@@ -50,6 +50,46 @@ func (_u *AuditEntryUpdate) SetNillableWorkspaceID(v *int64) *AuditEntryUpdate {
 	return _u
 }
 
+// SetIP sets the "ip" field.
+func (_u *AuditEntryUpdate) SetIP(v string) *AuditEntryUpdate {
+	_u.mutation.SetIP(v)
+	return _u
+}
+
+// SetNillableIP sets the "ip" field if the given value is not nil.
+func (_u *AuditEntryUpdate) SetNillableIP(v *string) *AuditEntryUpdate {
+	if v != nil {
+		_u.SetIP(*v)
+	}
+	return _u
+}
+
+// ClearIP clears the value of the "ip" field.
+func (_u *AuditEntryUpdate) ClearIP() *AuditEntryUpdate {
+	_u.mutation.ClearIP()
+	return _u
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (_u *AuditEntryUpdate) SetUserAgent(v string) *AuditEntryUpdate {
+	_u.mutation.SetUserAgent(v)
+	return _u
+}
+
+// SetNillableUserAgent sets the "user_agent" field if the given value is not nil.
+func (_u *AuditEntryUpdate) SetNillableUserAgent(v *string) *AuditEntryUpdate {
+	if v != nil {
+		_u.SetUserAgent(*v)
+	}
+	return _u
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (_u *AuditEntryUpdate) ClearUserAgent() *AuditEntryUpdate {
+	_u.mutation.ClearUserAgent()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AuditEntryUpdate) SetWorkspace(v *Workspace) *AuditEntryUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -149,8 +189,14 @@ func (_u *AuditEntryUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if _u.mutation.RequestIDCleared() {
 		_spec.ClearField(auditentry.FieldRequestID, field.TypeString)
 	}
+	if value, ok := _u.mutation.IP(); ok {
+		_spec.SetField(auditentry.FieldIP, field.TypeString, value)
+	}
 	if _u.mutation.IPCleared() {
 		_spec.ClearField(auditentry.FieldIP, field.TypeString)
+	}
+	if value, ok := _u.mutation.UserAgent(); ok {
+		_spec.SetField(auditentry.FieldUserAgent, field.TypeString, value)
 	}
 	if _u.mutation.UserAgentCleared() {
 		_spec.ClearField(auditentry.FieldUserAgent, field.TypeString)
@@ -223,6 +269,46 @@ func (_u *AuditEntryUpdateOne) SetNillableWorkspaceID(v *int64) *AuditEntryUpdat
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetIP sets the "ip" field.
+func (_u *AuditEntryUpdateOne) SetIP(v string) *AuditEntryUpdateOne {
+	_u.mutation.SetIP(v)
+	return _u
+}
+
+// SetNillableIP sets the "ip" field if the given value is not nil.
+func (_u *AuditEntryUpdateOne) SetNillableIP(v *string) *AuditEntryUpdateOne {
+	if v != nil {
+		_u.SetIP(*v)
+	}
+	return _u
+}
+
+// ClearIP clears the value of the "ip" field.
+func (_u *AuditEntryUpdateOne) ClearIP() *AuditEntryUpdateOne {
+	_u.mutation.ClearIP()
+	return _u
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (_u *AuditEntryUpdateOne) SetUserAgent(v string) *AuditEntryUpdateOne {
+	_u.mutation.SetUserAgent(v)
+	return _u
+}
+
+// SetNillableUserAgent sets the "user_agent" field if the given value is not nil.
+func (_u *AuditEntryUpdateOne) SetNillableUserAgent(v *string) *AuditEntryUpdateOne {
+	if v != nil {
+		_u.SetUserAgent(*v)
+	}
+	return _u
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (_u *AuditEntryUpdateOne) ClearUserAgent() *AuditEntryUpdateOne {
+	_u.mutation.ClearUserAgent()
 	return _u
 }
 
@@ -355,8 +441,14 @@ func (_u *AuditEntryUpdateOne) sqlSave(ctx context.Context) (_node *AuditEntry, 
 	if _u.mutation.RequestIDCleared() {
 		_spec.ClearField(auditentry.FieldRequestID, field.TypeString)
 	}
+	if value, ok := _u.mutation.IP(); ok {
+		_spec.SetField(auditentry.FieldIP, field.TypeString, value)
+	}
 	if _u.mutation.IPCleared() {
 		_spec.ClearField(auditentry.FieldIP, field.TypeString)
+	}
+	if value, ok := _u.mutation.UserAgent(); ok {
+		_spec.SetField(auditentry.FieldUserAgent, field.TypeString, value)
 	}
 	if _u.mutation.UserAgentCleared() {
 		_spec.ClearField(auditentry.FieldUserAgent, field.TypeString)

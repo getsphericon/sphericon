@@ -26,7 +26,7 @@ type Invitation struct {
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// Email holds the value of the "email" field.
-	Email string `json:"email,omitempty"`
+	Email *string `json:"email,omitempty"`
 	// Role holds the value of the "role" field.
 	Role invitation.Role `json:"role,omitempty"`
 	// TokenHash holds the value of the "token_hash" field.
@@ -141,7 +141,8 @@ func (_m *Invitation) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field email", values[i])
 			} else if value.Valid {
-				_m.Email = value.String
+				_m.Email = new(string)
+				*_m.Email = value.String
 			}
 		case invitation.FieldRole:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -235,8 +236,10 @@ func (_m *Invitation) String() string {
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")
-	builder.WriteString("email=")
-	builder.WriteString(_m.Email)
+	if v := _m.Email; v != nil {
+		builder.WriteString("email=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("role=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Role))

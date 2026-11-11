@@ -112,6 +112,14 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{AuditEntriesColumns[16], AuditEntriesColumns[2], AuditEntriesColumns[0]},
 			},
+			{
+				Name:    "audit_entries_workspace_id_occurred_at_client",
+				Unique:  false,
+				Columns: []*schema.Column{AuditEntriesColumns[16], AuditEntriesColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "ip IS NOT NULL OR user_agent IS NOT NULL",
+				},
+			},
 		},
 	}
 	// AuthAttemptsColumns holds the columns for the "auth_attempts" table.
@@ -1212,7 +1220,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "email", Type: field.TypeString},
+		{Name: "email", Type: field.TypeString, Nullable: true},
 		{Name: "role", Type: field.TypeEnum, Enums: []string{"admin", "member"}},
 		{Name: "token_hash", Type: field.TypeString},
 		{Name: "expires_at", Type: field.TypeTime},
@@ -3261,6 +3269,7 @@ func init() {
 		Table: "invitations",
 	}
 	InvitationsTable.Annotation.Checks = map[string]string{
+		"invitations_email_check": "(accepted_at IS NULL) = (email IS NOT NULL)",
 		"invitations_email_lower": "email = lower(email)",
 		"invitations_role_check":  "role IN ('admin', 'member')",
 	}

@@ -116,6 +116,16 @@ func PruneBefore(ctx context.Context, s *ent.Scoped, cutoff time.Time) (int, err
 	return s.AuditEntry().Delete().Where(auditentry.OccurredAtLT(cutoff)).Exec(ctx)
 }
 
+// ForgetClientsBefore clears the client's address and user agent of the scoped Workspace's Audit
+// entries that occurred before cutoff and returns how many it changed: the one change an entry
+// takes (ADR 0050), made by ee/usecase/auditlogretention.
+func ForgetClientsBefore(ctx context.Context, s *ent.Scoped, cutoff time.Time) (int, error) {
+	return s.AuditEntry().Update().
+		Where(auditentry.OccurredAtLT(cutoff), auditentry.Or(auditentry.IPNotNil(), auditentry.UserAgentNotNil())).
+		ClearIP().ClearUserAgent().
+		Save(ctx)
+}
+
 // Log is the read side of the Audit log, and the export, which records itself through the bus.
 // Its zero value is unlicensed.
 type Log struct {

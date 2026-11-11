@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/samber/lo"
+
 	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -105,12 +107,14 @@ func PendingAt(now time.Time) predicate.Invitation {
 }
 
 // MarkAcceptedIn marks the Invitation id of the scoped Workspace accepted, on the transaction of
-// the acceptance that made its Membership, at `at`.
+// the acceptance that made its Membership, at `at`, and clears its address: an accepted Invitation
+// is only the latch, and the address would outlive a User who deletes themself (ADR 0050).
 func MarkAcceptedIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
 	return lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		n, err := ts.Invitation().Update().
 			Where(invitation.ID(id), invitation.AcceptedAtIsNil(), PendingAt(at)).
 			SetAcceptedAt(at).
+			ClearEmail().
 			Save(ctx)
 		return n == 1, err
 	})
@@ -181,13 +185,12 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 			Action:      events.ActionInvitationCreate,
 			TargetType:  invitation.Label,
 			TargetID:    strconv.FormatInt(inv.ID, 10),
-			TargetName:  inv.Email,
 			Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
 		}); err != nil {
 			return err
 		}
 		return pub.Publish(ctx, &events.InvitationCreated{
-			WorkspaceID: s.WorkspaceID(), InvitationID: inv.ID, Email: inv.Email, Token: token, InvitedBy: in.InvitedBy,
+			WorkspaceID: s.WorkspaceID(), InvitationID: inv.ID, Email: lo.FromPtr(inv.Email), Token: token, InvitedBy: in.InvitedBy,
 		})
 	})
 	if err != nil {
@@ -200,7 +203,7 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 // ErrInvitationNotFound when the Invitation is not in the scoped Workspace.
 func (m *Module) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor events.Actor, id int64) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		inv, err := ts.Invitation().Query().Where(invitation.ID(id), invitation.AcceptedAtIsNil()).Only(ctx)
+		_, err := ts.Invitation().Query().Where(invitation.ID(id), invitation.AcceptedAtIsNil()).Only(ctx)
 		if ent.IsNotFound(err) {
 			return ErrInvitationNotFound
 		}
@@ -219,7 +222,6 @@ func (m *Module) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor even
 			Action:      events.ActionInvitationRevoke,
 			TargetType:  invitation.Label,
 			TargetID:    strconv.FormatInt(id, 10),
-			TargetName:  inv.Email,
 		})
 	})
 }

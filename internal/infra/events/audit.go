@@ -169,16 +169,19 @@ func ChangeOf[T comparable](from, to *T) (entry map[string]any, changed bool) {
 // administrative change, not a data-plane fact, so it has no Event row, the automations skip it
 // and a Webhook endpoint receives it only when it names `audit.entry`.
 type AuditEntry struct {
-	WorkspaceID int64          `json:"workspaceId"`
-	Actor       Actor          `json:"actor"`
-	Action      string         `json:"action"` // <entity>.<verb>
-	TargetType  string         `json:"targetType"`
-	TargetID    string         `json:"targetId,omitempty"`
-	TargetName  string         `json:"targetName,omitempty"`
-	Diff        map[string]any `json:"diff,omitempty"`
-	RequestID   string         `json:"requestId,omitempty"`
-	IP          string         `json:"ip,omitempty"`
-	UserAgent   string         `json:"userAgent,omitempty"`
+	WorkspaceID int64  `json:"workspaceId"`
+	Actor       Actor  `json:"actor"`
+	Action      string `json:"action"` // <entity>.<verb>
+	TargetType  string `json:"targetType"`
+	TargetID    string `json:"targetId,omitempty"`
+	// TargetName is the target's display name when the entry is written. A person is named by the
+	// name they gave, never by an address (ADR 0050): an Invitation, whose only name is its address,
+	// has none, and a User or Membership has the User's name.
+	TargetName string         `json:"targetName,omitempty"`
+	Diff       map[string]any `json:"diff,omitempty"`
+	RequestID  string         `json:"requestId,omitempty"`
+	IP         string         `json:"ip,omitempty"`
+	UserAgent  string         `json:"userAgent,omitempty"`
 }
 
 // WorkspaceAudit is the Audit entry of an action on a Workspace itself: the Workspace is
