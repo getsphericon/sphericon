@@ -24,7 +24,7 @@ func (EmailTemplate) Annotations() []schema.Annotation {
 }
 
 func (EmailTemplate) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "email_templates"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "email_templates"}, RevisionMixin{}}
 }
 
 func (EmailTemplate) Fields() []ent.Field {

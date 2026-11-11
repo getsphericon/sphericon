@@ -49,6 +49,10 @@ const (
 	// KindUnlicensed is a capability of the Enterprise Edition that the Instance's License does not
 	// include (ADR 0014): the Audit log without the `audit` feature.
 	KindUnlicensed
+	// KindRevisionChanged is an edit made on a revision of the subject that is no longer the
+	// stored one (ADR 0119): someone wrote it since the client read it, and the client reads it
+	// again.
+	KindRevisionChanged
 )
 
 // RefusalError is a sentinel domain error that carries its kind and the text to show a user.
@@ -120,6 +124,12 @@ func NotFound(text string, key i18n.ID) *RefusalError {
 // (KindConflict).
 func Conflict(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindConflict, text: text, key: key}
+}
+
+// RevisionChanged is a refusal of kind KindRevisionChanged: the edit names a revision the subject
+// has moved past (ADR 0119).
+func RevisionChanged(text string, key i18n.ID) *RefusalError {
+	return &RefusalError{kind: KindRevisionChanged, text: text, key: key}
 }
 
 // Forbidden makes the sentinel for a caller whose Role lacks the Permission the request needs

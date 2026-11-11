@@ -88,6 +88,7 @@ import (
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
+// goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
 // goverter:extend optNilContactSource
@@ -1292,4 +1293,9 @@ func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }
 
 func nilFloat64(v *float64) siteapi.NilFloat64 {
 	return convert.Nil[siteapi.NilFloat64](v)
+}
+
+// revision is a row's revision (ADR 0119) as the contract carries it.
+func revision(v int64) siteapi.Revision {
+	return siteapi.Revision(v)
 }

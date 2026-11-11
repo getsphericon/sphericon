@@ -218,6 +218,8 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "acceptance_pending":
 		return nil
+	case "revision_changed":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

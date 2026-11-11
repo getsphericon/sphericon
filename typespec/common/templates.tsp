@@ -20,6 +20,9 @@ model CreateTemplateInput {
 
 /** Request body for updating a template */
 model UpdateTemplateInput {
+  /** The template's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** Template name */
   name?: Name;
 

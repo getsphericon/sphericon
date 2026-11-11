@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -89,13 +90,49 @@ func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
 	ctx := context.Background()
 
-	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Subject: patch.Set("Changed")})
+	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Revision: 1, Subject: patch.Set("Changed")})
 	require.NoError(t, err)
 	assert.Equal(t, "Changed", got.Subject)
 	assert.Equal(t, fixtures.TemplateWelcomeName, got.Name)
 
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID, emailtemplates.UpdateInput{Subject: patch.Set("x")})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID, emailtemplates.UpdateInput{Revision: 1, Subject: patch.Set("x")})
 	assert.ErrorIs(t, err, emailtemplates.ErrNotFound)
+}
+
+// Two edits made on one revision: the first is written and moves the revision by one, the second
+// is refused with ErrRevisionChanged and the row stays as the first left it (ADR 0119).
+func TestAnUpdateOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	read := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
+
+	first, err := m.Update(ctx, s, read.ID, emailtemplates.UpdateInput{Revision: read.Revision, Subject: patch.Set("First")})
+	require.NoError(t, err)
+	_, err = m.Update(ctx, s, read.ID, emailtemplates.UpdateInput{Revision: read.Revision, Subject: patch.Set("Second")})
+
+	require.ErrorIs(t, err, emailtemplates.ErrRevisionChanged)
+	assert.Equal(t, read.Revision+1, first.Revision)
+	stored := env.DB.EmailTemplate.GetX(ctx, read.ID)
+	assert.Equal(t, "First", stored.Subject)
+	assert.Equal(t, first.Revision, stored.Revision)
+}
+
+// Every write of the row moves its revision, one made outside Module.Update too: the hook adds the
+// increment to every update of the type.
+func TestEveryWriteMovesTheRevision(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	before := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
+
+	// test writes: a write outside the module, which the hook moves the revision of, is the subject
+	env.DB.EmailTemplate.UpdateOneID(before.ID).SetSubject("Elsewhere").ExecX(ctx)
+	// test writes: a bulk update moves it as well
+	_, err := env.DB.Scoped(fixtures.AcmeID).EmailTemplate().Update().Where(emailtemplate.ID(before.ID)).SetSubject("Again").Save(ctx)
+	require.NoError(t, err)
+
+	assert.Equal(t, before.Revision+2, env.DB.EmailTemplate.GetX(ctx, before.ID).Revision)
 }
 
 // A sent message outlives its deleted Template: it stays, and no longer names the Template.
@@ -169,10 +206,10 @@ func TestASaveOutsideTheViewsIsNotLinted(t *testing.T) {
 
 	tpl, err := m.Create(ctx, s, emailtemplates.CreateInput{Name: "Plain", Body: new(warnedBody)})
 	require.NoError(t, err)
-	_, err = m.Update(ctx, s, tpl.ID, emailtemplates.UpdateInput{Subject: patch.Set("Hello")})
+	updated, err := m.Update(ctx, s, tpl.ID, emailtemplates.UpdateInput{Revision: tpl.Revision, Subject: patch.Set("Hello")})
 	require.NoError(t, err)
 
-	_, err = emailtemplates.NewViews(m).Update(ctx, s, tpl.ID, emailtemplates.UpdateInput{Subject: patch.Set("Hi")})
+	_, err = emailtemplates.NewViews(m).Update(ctx, s, tpl.ID, emailtemplates.UpdateInput{Revision: updated.Revision, Subject: patch.Set("Hi")})
 	require.ErrorContains(t, err, "brand kit read")
 }
 
@@ -209,7 +246,7 @@ func TestUpdateOfTheSubjectAloneLintsTheStoredBody(t *testing.T) {
 	created, err := v.Create(ctx, s, emailtemplates.CreateInput{Name: "Warned", Body: new(`<img src="https://cdn.example.com/a.png">`)})
 	require.NoError(t, err)
 
-	saved, err := v.Update(ctx, s, created.Template.ID, emailtemplates.UpdateInput{Subject: patch.Set("Hello")})
+	saved, err := v.Update(ctx, s, created.Template.ID, emailtemplates.UpdateInput{Revision: created.Template.Revision, Subject: patch.Set("Hello")})
 	require.NoError(t, err)
 	assert.Equal(t, []emailrender.Code{emailrender.CodeMissingAlt}, codes(saved.Warnings))
 }

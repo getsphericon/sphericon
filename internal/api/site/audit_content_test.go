@@ -29,7 +29,7 @@ func TestSiteContentChangesAreAudited(t *testing.T) {
 	require.NoError(t, err)
 	tmplID := created.ID
 
-	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Subject: siteapi.NewOptString("Hello")},
+	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Revision: created.Revision, Subject: siteapi.NewOptString("Hello")},
 		siteapi.SiteTemplatesUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})
 	require.NoError(t, err)
 	err = c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})

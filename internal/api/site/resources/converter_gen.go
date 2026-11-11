@@ -1086,6 +1086,7 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.
 		siteapiSiteEmailTemplateResource.Doc = editorDocument((*source).Doc)
 		siteapiSiteEmailTemplateResource.EditorVersion = optNilString((*source).EditorVersion)
 		// siteapiSiteEmailTemplateResource.Warnings: ignore
+		siteapiSiteEmailTemplateResource.Revision = revision((*source).Revision)
 		siteapiSiteEmailTemplateResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteEmailTemplateResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

@@ -1226,7 +1226,8 @@ export const ProblemCode = {
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
   PERMISSION_REQUIRED: 'permission_required',
   MIGRATIONS_PENDING: 'migrations_pending',
-  ACCEPTANCE_PENDING: 'acceptance_pending'
+  ACCEPTANCE_PENDING: 'acceptance_pending',
+  REVISION_CHANGED: 'revision_changed'
 } as const;
 
 /**
@@ -1335,6 +1336,13 @@ export type RegionalFormat = string;
  * A number of days an Audit log is kept: 1 to 3650
  */
 export type RetentionDays = number;
+
+/**
+ * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The resource carries the one of the state it shows, and an update names the one it was made on:
+ * a stale one is a 409 with code `revision_changed`, and nothing is written.
+ */
+export type Revision = number;
 
 /**
  * Request body for scheduling a broadcast
@@ -4022,6 +4030,10 @@ export type SiteEmailTemplateResource = {
    * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
    */
   warnings?: Array<LintFinding>;
+  /**
+   * The revision of the state this answer shows (ADR 0119): an update names it
+   */
+  revision: Revision;
   /**
    * Creation timestamp
    */
@@ -7515,6 +7527,10 @@ export type UpdateIntegrationInput = {
  * Request body for updating a template
  */
 export type UpdateTemplateInput = {
+  /**
+   * The template's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * Template name
    */

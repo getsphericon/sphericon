@@ -218,8 +218,15 @@ the form's values. A create page or modal has no session.
 - **Leaving during Save** asks only when the current content differs from both the acknowledged and
   the submitted content: what the pending Save carries is not lost.
 - **A query refresh updates metadata only**: a refetched resource changes the draft and status
-  badges and what the operations allow, never the content. Changes made in another tab or by
-  another person are not merged.
+  badges and what the operations allow, never the content.
+- **A write names the revision it was made on** (ADR 0119). The session keeps a base revision: the
+  one of the content it loaded, moved only when an acknowledgement is folded in or the session
+  replaces the content, never by a refresh. Every write sends it. When a write is refused with
+  `revision_changed`, or a refresh brings a newer revision than the base, the editor keeps its
+  content as it is, still unsaved, and says the resource changed since it was opened
+  (`src/editing/ChangedNotice.tsx`). It offers **Load the saved version**, which replaces the
+  content and asks first over unsaved edits in the leave dialog's words, and **Save mine over it**,
+  which sends the same content on the newer revision. Nothing is merged.
 - **The acknowledgement is the write's success.** The cache write and the toast follow it; the
   invalidation of related lists starts after it and is not part of the operation, so a failed
   refetch never reads as a failed Save.

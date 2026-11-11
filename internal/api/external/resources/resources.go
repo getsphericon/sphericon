@@ -91,6 +91,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
+// goverter:extend revision
 // goverter:extend optNilString
 // goverter:extend optNilSendCap
 // goverter:extend optNilContactSource
@@ -901,4 +902,9 @@ func customFieldRuleOperators(t customfield.Type) []externalapi.ConditionOperato
 // optNilSendCap is null exactly when no Send cap applies.
 func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) externalapi.OptNilSendCap {
 	return convert.NilVia[externalapi.OptNilSendCap](v, c.SendCapToResource)
+}
+
+// revision is a row's revision (ADR 0119) as the contract carries it.
+func revision(v int64) externalapi.Revision {
+	return externalapi.Revision(v)
 }

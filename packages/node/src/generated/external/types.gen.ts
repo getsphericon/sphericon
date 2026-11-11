@@ -3556,7 +3556,8 @@ export const ProblemCode = {
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
   PERMISSION_REQUIRED: 'permission_required',
   MIGRATIONS_PENDING: 'migrations_pending',
-  ACCEPTANCE_PENDING: 'acceptance_pending'
+  ACCEPTANCE_PENDING: 'acceptance_pending',
+  REVISION_CHANGED: 'revision_changed'
 } as const;
 
 /**
@@ -3777,6 +3778,13 @@ export type RecordEventsInput = {
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
 export type RegionalFormat = string;
+
+/**
+ * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The resource carries the one of the state it shows, and an update names the one it was made on:
+ * a stale one is a 409 with code `revision_changed`, and nothing is written.
+ */
+export type Revision = number;
 
 /**
  * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
@@ -4693,6 +4701,10 @@ export type TemplateResource = {
    */
   editorVersion?: string | null;
   /**
+   * The revision of the state this answer shows (ADR 0119): an update names it
+   */
+  revision: Revision;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -5117,6 +5129,10 @@ export type UpdateSendingDomainInput = {
  * Request body for updating a template
  */
 export type UpdateTemplateInput = {
+  /**
+   * The template's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * Template name
    */

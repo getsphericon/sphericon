@@ -112,7 +112,7 @@ func idGuardCases() []guardCase {
 			return err
 		}},
 		{"TemplatesUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{}, externalapi.TemplatesUpdateParams{ID: id})
+			_, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Revision: 1}, externalapi.TemplatesUpdateParams{ID: id})
 			return err
 		}},
 		{"TemplatesDelete", func(c *externalapi.Client, id externalapi.EntityId) error {

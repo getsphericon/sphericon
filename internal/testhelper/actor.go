@@ -1,7 +1,11 @@
 package testhelper
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -143,6 +147,42 @@ func (c rewriteClient) Do(r *http.Request) (*http.Response, error) {
 	r.URL.Path = strings.ReplaceAll(r.URL.Path, c.from, c.to)
 	r.URL.RawPath = ""
 	r.URL.RawQuery = strings.ReplaceAll(r.URL.RawQuery, c.from, c.to)
+	return c.inner.Do(r)
+}
+
+// DropField wraps a transport so the JSON object body of every request loses its top-level field
+// name. A typed client cannot leave out a required field, so a test sets it and drops it on the
+// wire.
+func DropField(name string) func(inner ht.Client) ht.Client {
+	return func(inner ht.Client) ht.Client {
+		return dropClient{inner: inner, name: name}
+	}
+}
+
+type dropClient struct {
+	inner ht.Client
+	name  string
+}
+
+func (c dropClient) Do(r *http.Request) (*http.Response, error) {
+	if r.Body == nil || r.Body == http.NoBody {
+		return c.inner.Do(r)
+	}
+	raw, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	var body map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &body); err != nil {
+		return nil, fmt.Errorf("drop %q from a body that is no JSON object: %w", c.name, err)
+	}
+	delete(body, c.name)
+	if raw, err = json.Marshal(body); err != nil {
+		return nil, err
+	}
+	r = r.Clone(r.Context())
+	r.Body = io.NopCloser(bytes.NewReader(raw))
+	r.ContentLength = int64(len(raw))
 	return c.inner.Do(r)
 }
 

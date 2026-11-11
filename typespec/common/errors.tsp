@@ -27,6 +27,11 @@ enum ProblemCode {
   /** A required Sign-up item has a version the User has not accepted (ADR 0062): until they
    * accept it, only the few operations marked `x-allowed-while-acceptance-pending` answer them */
   acceptancePending: "acceptance_pending",
+
+  /** The edit names a `revision` of the resource that is no longer the stored one (ADR 0119):
+   * someone changed the resource since it was read. Nothing was written; the client reads the
+   * resource again and decides */
+  revisionChanged: "revision_changed",
 }
 
 /** What a development server adds to a 500 so the page can show the fault; a production

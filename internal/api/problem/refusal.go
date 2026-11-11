@@ -19,7 +19,7 @@ import (
 // and refusal turns it into the problem, so no handler maps them itself. The core error types know
 // nothing of HTTP; this is where they meet a status. A module's sentinel refusal
 // (validation.RefusalError) carries its kind, and the kind decides the status and the code: not
-// found 404, refused 422, conflict 409, forbidden 403 with code permission_required, unauthorized
+// found 404, refused 422, conflict 409, a changed revision 409 with code revision_changed, forbidden 403 with code permission_required, unauthorized
 // 401, denied 403, unverified 403 with code email_verification_required, a pending acceptance 403
 // with code acceptance_pending, a withheld User 403 with code second_factor_required, an invalid
 // link 400, incomplete 428, an unknown reference (a pending sign-up that is gone, a foreign
@@ -70,7 +70,7 @@ func kindStatus(kind validation.Kind) int {
 	switch kind {
 	case validation.KindNotFound:
 		return http.StatusNotFound
-	case validation.KindConflict:
+	case validation.KindConflict, validation.KindRevisionChanged:
 		return http.StatusConflict
 	case validation.KindForbidden:
 		return http.StatusForbidden
@@ -103,6 +103,8 @@ func kindCode(kind validation.Kind) (siteapi.ProblemCode, bool) {
 		return siteapi.ProblemCodeAcceptancePending, true
 	case validation.KindSecondFactorRequired:
 		return siteapi.ProblemCodeSecondFactorRequired, true
+	case validation.KindRevisionChanged:
+		return siteapi.ProblemCodeRevisionChanged, true
 	default:
 		return "", false
 	}

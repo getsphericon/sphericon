@@ -57,6 +57,8 @@ func (c *ConverterImpl) CollectCode(source site.ProblemCode) collect.ProblemCode
 		collectapiProblemCode = collect.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		collectapiProblemCode = collect.ProblemCodePermissionRequired
+	case site.ProblemCodeRevisionChanged:
+		collectapiProblemCode = collect.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
 		collectapiProblemCode = collect.ProblemCodeSecondFactorRequired
 	default:
@@ -122,6 +124,8 @@ func (c *ConverterImpl) ExternalCode(source site.ProblemCode) external.ProblemCo
 		externalapiProblemCode = external.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		externalapiProblemCode = external.ProblemCodePermissionRequired
+	case site.ProblemCodeRevisionChanged:
+		externalapiProblemCode = external.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
 		externalapiProblemCode = external.ProblemCodeSecondFactorRequired
 	default:
@@ -187,6 +191,8 @@ func (c *ConverterImpl) ServiceCode(source site.ProblemCode) service.ProblemCode
 		serviceapiProblemCode = service.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		serviceapiProblemCode = service.ProblemCodePermissionRequired
+	case site.ProblemCodeRevisionChanged:
+		serviceapiProblemCode = service.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
 		serviceapiProblemCode = service.ProblemCodeSecondFactorRequired
 	default:
@@ -268,6 +274,8 @@ func (c *ConverterImpl) StaffCode(source site.ProblemCode) staff.ProblemCode {
 		staffapiProblemCode = staff.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		staffapiProblemCode = staff.ProblemCodePermissionRequired
+	case site.ProblemCodeRevisionChanged:
+		staffapiProblemCode = staff.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
 		staffapiProblemCode = staff.ProblemCodeSecondFactorRequired
 	default:
@@ -333,6 +341,8 @@ func (c *ConverterImpl) StaffeeCode(source site.ProblemCode) staffee.ProblemCode
 		staffeeapiProblemCode = staffee.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		staffeeapiProblemCode = staffee.ProblemCodePermissionRequired
+	case site.ProblemCodeRevisionChanged:
+		staffeeapiProblemCode = staffee.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
 		staffeeapiProblemCode = staffee.ProblemCodeSecondFactorRequired
 	default:

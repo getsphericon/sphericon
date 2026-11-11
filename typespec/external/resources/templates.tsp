@@ -26,6 +26,9 @@ model TemplateResource {
   /** Version of the editor that rendered the document; null with it */
   editorVersion?: string | null;
 
+  /** The revision of the state this answer shows (ADR 0119): an update names it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 

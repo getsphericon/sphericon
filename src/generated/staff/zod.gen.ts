@@ -77,7 +77,8 @@ export const zProblemCode = z.enum([
   'email_verification_required',
   'permission_required',
   'migrations_pending',
-  'acceptance_pending'
+  'acceptance_pending',
+  'revision_changed'
 ]);
 
 /**
@@ -97,6 +98,13 @@ export const zProblemDebug = z.object({
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
 export const zRegionalFormat = z.string().max(35);
+
+/**
+ * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The resource carries the one of the state it shows, and an update names the one it was made on:
+ * a stale one is a 409 with code `revision_changed`, and nothing is written.
+ */
+export const zRevision = z.int().gte(1);
 
 /**
  * A Sign-up item's key: its address, and the last segment of its Legal document's public page

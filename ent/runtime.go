@@ -431,6 +431,8 @@ func init() {
 	emailtemplateMixin := schema.EmailTemplate{}.Mixin()
 	emailtemplateMixinFields0 := emailtemplateMixin[0].Fields()
 	_ = emailtemplateMixinFields0
+	emailtemplateMixinFields2 := emailtemplateMixin[2].Fields()
+	_ = emailtemplateMixinFields2
 	emailtemplateFields := schema.EmailTemplate{}.Fields()
 	_ = emailtemplateFields
 	// emailtemplateDescCreatedAt is the schema descriptor for created_at field.
@@ -443,6 +445,12 @@ func init() {
 	emailtemplate.DefaultUpdatedAt = emailtemplateDescUpdatedAt.Default.(func() time.Time)
 	// emailtemplate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	emailtemplate.UpdateDefaultUpdatedAt = emailtemplateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// emailtemplateDescRevision is the schema descriptor for revision field.
+	emailtemplateDescRevision := emailtemplateMixinFields2[0].Descriptor()
+	// emailtemplate.DefaultRevision holds the default value on creation for the revision field.
+	emailtemplate.DefaultRevision = emailtemplateDescRevision.Default.(int64)
+	// emailtemplate.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	emailtemplate.RevisionValidator = emailtemplateDescRevision.Validators[0].(func(int64) error)
 	// emailtemplateDescName is the schema descriptor for name field.
 	emailtemplateDescName := emailtemplateFields[1].Descriptor()
 	// emailtemplate.NameValidator is a validator for the "name" field. It is called by the builders before save.

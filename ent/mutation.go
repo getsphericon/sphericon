@@ -18749,6 +18749,8 @@ type EmailTemplateMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
+	revision         *int64
+	addrevision      *int64
 	name             *string
 	subject          *string
 	body             *string
@@ -18973,6 +18975,62 @@ func (m *EmailTemplateMutation) OldWorkspaceID(ctx context.Context) (v int64, er
 // ResetWorkspaceID resets all changes to the "workspace_id" field.
 func (m *EmailTemplateMutation) ResetWorkspaceID() {
 	m.workspace = nil
+}
+
+// SetRevision sets the "revision" field.
+func (m *EmailTemplateMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *EmailTemplateMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the EmailTemplate entity.
+// If the EmailTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EmailTemplateMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *EmailTemplateMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *EmailTemplateMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *EmailTemplateMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
 }
 
 // SetName sets the "name" field.
@@ -19258,7 +19316,7 @@ func (m *EmailTemplateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EmailTemplateMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, emailtemplate.FieldCreatedAt)
 	}
@@ -19267,6 +19325,9 @@ func (m *EmailTemplateMutation) Fields() []string {
 	}
 	if m.workspace != nil {
 		fields = append(fields, emailtemplate.FieldWorkspaceID)
+	}
+	if m.revision != nil {
+		fields = append(fields, emailtemplate.FieldRevision)
 	}
 	if m.name != nil {
 		fields = append(fields, emailtemplate.FieldName)
@@ -19297,6 +19358,8 @@ func (m *EmailTemplateMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case emailtemplate.FieldWorkspaceID:
 		return m.WorkspaceID()
+	case emailtemplate.FieldRevision:
+		return m.Revision()
 	case emailtemplate.FieldName:
 		return m.Name()
 	case emailtemplate.FieldSubject:
@@ -19322,6 +19385,8 @@ func (m *EmailTemplateMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldUpdatedAt(ctx)
 	case emailtemplate.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
+	case emailtemplate.FieldRevision:
+		return m.OldRevision(ctx)
 	case emailtemplate.FieldName:
 		return m.OldName(ctx)
 	case emailtemplate.FieldSubject:
@@ -19361,6 +19426,13 @@ func (m *EmailTemplateMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWorkspaceID(v)
+		return nil
+	case emailtemplate.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
 		return nil
 	case emailtemplate.FieldName:
 		v, ok := value.(string)
@@ -19405,6 +19477,9 @@ func (m *EmailTemplateMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *EmailTemplateMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, emailtemplate.FieldRevision)
+	}
 	return fields
 }
 
@@ -19413,6 +19488,8 @@ func (m *EmailTemplateMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *EmailTemplateMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case emailtemplate.FieldRevision:
+		return m.AddedRevision()
 	}
 	return nil, false
 }
@@ -19422,6 +19499,13 @@ func (m *EmailTemplateMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *EmailTemplateMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case emailtemplate.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	}
 	return fmt.Errorf("unknown EmailTemplate numeric field %s", name)
 }
@@ -19472,6 +19556,9 @@ func (m *EmailTemplateMutation) ResetField(name string) error {
 		return nil
 	case emailtemplate.FieldWorkspaceID:
 		m.ResetWorkspaceID()
+		return nil
+	case emailtemplate.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case emailtemplate.FieldName:
 		m.ResetName()

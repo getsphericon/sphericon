@@ -628,6 +628,13 @@ export default interface Resources {
       },
       "title": "Captured messages"
     },
+    "changed": {
+      "load": "Load the saved version",
+      "loadUnsavedTitle": "Load the saved version?",
+      "message": "Someone saved this since you opened it. Your edits are still here and not saved.",
+      "overwrite": "Save mine over it",
+      "title": "Changed since you opened it"
+    },
     "confirmEmailChange": {
       "errorBody": "This confirmation link is invalid or has expired.",
       "errorTitle": "Confirmation failed",

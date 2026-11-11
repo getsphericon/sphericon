@@ -31,6 +31,7 @@ const WITH_DOC = {
   body: '<p>Hello there</p>',
   doc: DOC,
   editorVersion: '1.7.14',
+  revision: 1,
   ...TIMESTAMPS,
 }
 
@@ -41,6 +42,7 @@ const AS_HTML = {
   body: '<table><tr><td>Hello</td></tr></table>',
   doc: null,
   editorVersion: null,
+  revision: 1,
   ...TIMESTAMPS,
 }
 
@@ -74,7 +76,9 @@ test('saving a message written in the editor sends its document and no body', as
   await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Welcome', subject: 'Hi', doc: DOC }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ name: 'Welcome', subject: 'Hi', doc: DOC, revision: 1 }])
 })
 
 test('the variable picker inserts a merge tag into the document', async () => {
@@ -115,7 +119,7 @@ test('a message with no document opens as editable source and saves a body only'
 
   await expect
     .poll(() => bodies)
-    .toEqual([{ name: 'Imported', subject: 'Hi', body: '<p>Rewritten</p>' }])
+    .toEqual([{ name: 'Imported', subject: 'Hi', body: '<p>Rewritten</p>', revision: 1 }])
 })
 
 test('a refused save shows the reason the server gave', async () => {
@@ -171,5 +175,7 @@ test('a message already written is opened with the look it has, not the Brand ki
   await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Welcome', subject: 'Hi', doc: DOC }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ name: 'Welcome', subject: 'Hi', doc: DOC, revision: 1 }])
 })

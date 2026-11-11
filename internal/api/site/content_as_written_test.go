@@ -32,7 +32,8 @@ func TestSiteStoresBodiesAsWritten(t *testing.T) {
 	assert.Equal(t, writtenBody, created.Body)
 
 	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
-		Body: siteapi.NewOptString(`<img src="https://example.com/a.png" onerror="fallback()">{{ first_name }}`),
+		Revision: created.Revision,
+		Body:     siteapi.NewOptString(`<img src="https://example.com/a.png" onerror="fallback()">{{ first_name }}`),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: created.ID})
 	require.NoError(t, err)
 	assert.Equal(t, `<img src="https://example.com/a.png" onerror="fallback()">{{ first_name }}`, updated.Body)

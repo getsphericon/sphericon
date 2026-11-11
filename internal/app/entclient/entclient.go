@@ -7,6 +7,7 @@
 package entclient
 
 import (
+	"context"
 	"database/sql"
 
 	"entgo.io/ent/dialect"
@@ -40,6 +41,7 @@ func WithEdition(hooks, guards []ent.Hook) Clients {
 // transaction (events.Bus.WithinTx).
 func (c Clients) New(sqlDB *sql.DB) *ent.Client {
 	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
+	client.Use(Revision)
 	client.Use(workspacefeed.Guard, usertombstones.Guard, trackinghostchanges.Guard)
 	client.Use(c.guards...)
 	return client
@@ -56,7 +58,25 @@ func (c Clients) NewOnTx(sqlDB *sql.DB) *ent.Client {
 // bound to a transaction is built here, so the two kinds of client keep the same hooks.
 func (c Clients) NewTx(drv dialect.Driver) *ent.Client {
 	client := ent.NewClient(ent.Driver(drv))
+	client.Use(Revision)
 	client.Use(workspacefeed.Hook, usertombstones.Hook, trackinghostchanges.Hook)
 	client.Use(c.hooks...)
 	return client
+}
+
+// revised is the mutation of a type with a revision (schema.RevisionMixin).
+type revised interface {
+	AddRevision(by int64)
+}
+
+// Revision is the hook that moves a row's revision on every update of a type that has one (ADR
+// 0119), on every client of the application, so no writer can forget it: an editor's write names
+// the revision it was made on, and any other write in between makes it stale.
+func Revision(next ent.Mutator) ent.Mutator {
+	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+		if r, ok := m.(revised); ok && m.Op().Is(ent.OpUpdate|ent.OpUpdateOne) {
+			r.AddRevision(1)
+		}
+		return next.Mutate(ctx, m)
+	})
 }

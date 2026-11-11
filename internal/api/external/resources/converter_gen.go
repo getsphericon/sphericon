@@ -779,6 +779,7 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) exter
 		externalapiTemplateResource.Body = (*source).Body
 		externalapiTemplateResource.Doc = editorDocument((*source).Doc)
 		externalapiTemplateResource.EditorVersion = optNilString((*source).EditorVersion)
+		externalapiTemplateResource.Revision = revision((*source).Revision)
 		externalapiTemplateResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiTemplateResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

@@ -94,7 +94,7 @@ test('editing shows a loader, then existing values; cleared fields are sent as e
   worker.use(
     handleSiteTemplatesUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '7', name: 'Welcome' })
+      return HttpResponse.json({ id: '7', name: 'Welcome', revision: 2 })
     }),
     handleSiteTemplatesList(() => {
       listFetches++
@@ -105,7 +105,13 @@ test('editing shows a loader, then existing values; cleared fields are sent as e
       if (detailFetches === 1) {
         await detailGate.promise
       }
-      return HttpResponse.json({ id: '7', name: 'Welcome', subject: 'Hi', body: '<p>x</p>' })
+      return HttpResponse.json({
+        id: '7',
+        name: 'Welcome',
+        subject: 'Hi',
+        body: '<p>x</p>',
+        revision: 1,
+      })
     }),
   )
 
@@ -127,7 +133,9 @@ test('editing shows a loader, then existing values; cleared fields are sent as e
   await screen.getByLabelText('Subject').fill('')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Welcome', subject: '', body: '<p>x</p>' }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ name: 'Welcome', subject: '', body: '<p>x</p>', revision: 1 }])
   await expect.element(screen.getByText('Template updated')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => detailFetches).toBeGreaterThan(1)

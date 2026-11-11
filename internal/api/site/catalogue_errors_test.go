@@ -178,7 +178,7 @@ func TestSiteTemplatesErrorBranches(t *testing.T) {
 	got := g4
 	assert.Equal(t, fixtures.TemplateWelcomeName, got.Name)
 
-	rename := &siteapi.UpdateTemplateInput{Name: siteapi.NewOptName("Renamed")}
+	rename := &siteapi.UpdateTemplateInput{Revision: got.Revision, Name: siteapi.NewOptName("Renamed")}
 	_, err = c.SiteTemplatesUpdate(ctx, rename, siteapi.SiteTemplatesUpdateParams{WorkspaceId: foreign, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = c.SiteTemplatesUpdate(ctx, rename, siteapi.SiteTemplatesUpdateParams{WorkspaceId: acme, ID: missing})
