@@ -20,7 +20,11 @@ a second caller never builds its own, because the one prior-art project whose ca
   consecutive failures, last error and reason for being disabled. A 410, or persistent failure over
   a window of time (a count alone would let a restart in a burst retire a healthy endpoint),
   disables it and mails its owners; a 429 is not a failure and honours `Retry-After`. The retry
-  horizon is days, not river's default of about four hours. An HTTP step and a Rule's HTTP Action
+  horizon is days, not river's default of about four hours. Each retry waits its delay spread by
+  ±10%, drawn uniformly as in river's default policy, so deliveries that failed together against
+  one receiver do not all retry at the same instant when it comes back; the attempts a call is
+  queued with are counted from the shortest waits, so the last one still falls at or after the
+  horizon. An HTTP step and a Rule's HTTP Action
   retry only what another attempt can fix (`webhook.Retryable`: a timeout, a transport error, a 5xx,
   a 408); a blocked address or any other 4xx fails at once. Threshold, window and horizon are
   constants, not settings. There is no delivery table and no replay: the endpoint's state is the

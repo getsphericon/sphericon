@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand/v2"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -132,9 +133,9 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, deps.Callbacks))
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus, stepper)})
-	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules))
-	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper))
-	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, bus))
+	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, rand.Float64))
+	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper, rand.Float64))
+	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, rand.Float64, bus))
 	river.AddWorker(workers, NewNoticeEventWorker(deps.Notices, systemSender))
 	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
 	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor, now))

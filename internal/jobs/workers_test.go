@@ -292,7 +292,7 @@ func TestDeliverWebhookWorker(t *testing.T) {
 	}
 	rcv := newWebhookReceiver(t)
 	worker := func(allow webhook.Allowlist) *jobs.DeliverWebhookWorker {
-		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, allow), time.Now, env.Bus)
+		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, allow), time.Now, lowestDraw, env.Bus)
 	}
 	ws := env.DB.Scoped(fixtures.AcmeID)
 	_, err := ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
@@ -333,7 +333,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 
 	clock := time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)
 	worker := func(allow webhook.Allowlist, timeout time.Duration) *jobs.DeliverWebhookWorker {
-		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(timeout, allow), func() time.Time { return clock }, env.Bus)
+		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(timeout, allow), func() time.Time { return clock }, lowestDraw, env.Bus)
 	}
 	deliver := func(w *jobs.DeliverWebhookWorker) error {
 		return w.Work(ctx, job(jobs.DeliverWebhookArgs{EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`)}))
@@ -417,7 +417,7 @@ func newDisableHarness(t *testing.T) *disableHarness {
 	h := &disableHarness{t: t, env: env, rcv: newWebhookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
 	_, err := env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(h.rcv.srv.URL).Save(context.Background())
 	require.NoError(t, err)
-	h.w = jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, h.rcv.allow), func() time.Time { return h.clock }, env.Bus)
+	h.w = jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, h.rcv.allow), func() time.Time { return h.clock }, lowestDraw, env.Bus)
 	return h
 }
 

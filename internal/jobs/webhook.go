@@ -35,17 +35,20 @@ type DeliverWebhookWorker struct {
 	ent    *ent.Client
 	client webhook.Doer
 	now    func() time.Time
+	jitter webhook.HookJitter
 	// mod keeps the endpoint's failure state and disables it, which tells the owners.
 	mod *webhookendpoints.Module
 }
 
-// NewDeliverWebhookWorker builds the worker that delivers a webhook through doer on the clock now;
-// an endpoint the delivery turns off publishes it on bus, which tells the owners (ADR 0105).
-func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, bus *events.Bus) *DeliverWebhookWorker {
+// NewDeliverWebhookWorker builds the worker that delivers a webhook through doer on the clock now,
+// spreading its retries by jitter; an endpoint the delivery turns off publishes it on bus, which
+// tells the owners (ADR 0105).
+func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, jitter webhook.HookJitter, bus *events.Bus) *DeliverWebhookWorker {
 	return &DeliverWebhookWorker{
 		ent:    client,
 		client: doer,
 		now:    now,
+		jitter: jitter,
 		mod:    webhookendpoints.New(bus, cipher, nil, nil, now),
 	}
 }
@@ -92,7 +95,7 @@ func (w *DeliverWebhookWorker) NextRetry(job *river.Job[DeliverWebhookArgs]) tim
 	if job.AttemptedAt == nil {
 		return time.Time{} // river falls back to its default
 	}
-	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt)
+	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt, w.jitter)
 }
 
 // NewWebhookDispatcher is the dispatcher that queues the deliveries of an event through the river
