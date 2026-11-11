@@ -2,7 +2,11 @@
 status: accepted
 ---
 
-# The tracker waits for storage consent when asked, and forms show without it
+# The tracker waits for Tracker consent when asked, and forms show without it
+
+> **Renamed by [[0120-engagement-tracking-is-consented-per-destination]]:** the state this ADR
+> first called Storage consent is Tracker consent, apart from a message's Engagement tracking
+> consent.
 
 The tracker writes its Visitor cookie (`om_vid`, 365 days) and a localStorage queue on `init()`, with
 no way for a site's consent banner to hold it back. ePrivacy art. 5(3) makes any storing in, or
@@ -16,7 +20,7 @@ frequency ticket of the on-site map (getsphericon/sphericon#957).
 
 ## Decisions
 
-- **The tracker has a Storage consent state:** `granted`, `pending` or `denied`, given in `init` or
+- **The tracker has a Tracker consent state:** `granted`, `pending` or `denied`, given in `init` or
   changed by a call from the site or its consent manager. `granted` is the default, so a site with
   no banner works as today.
 - **The Workspace can make waiting the default.** A setting on the Tracking page puts `pending` into

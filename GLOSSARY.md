@@ -83,7 +83,7 @@ _Avoid_: Label, list, group, category
 An anonymous device/browser identity — a `visitor_id` cookie, unique per workspace. Resolves
 to a Contact once Identify establishes who it is; before that it may belong to no Contact. One
 Contact owns many Visitors (the same person across devices). The tracker makes one only once it
-has **Storage consent**.
+has **Tracker consent**.
 _Avoid_: Tracking visitor, session, device, anonymous user
 
 **Contact lock**:
@@ -98,12 +98,14 @@ Destinations of Suppressions and Unsubscribes), so one address is one row whatev
 in, and it matches the same address wherever it is stored.
 _Avoid_: Case folding, normalization (unqualified)
 
-**Storage consent**:
+**Tracker consent**:
 Whether the tracker may store and send what it keeps in a visitor's browser: `granted`, `pending`
 (waiting for the site's consent banner) or `denied`. Until it is granted the tracker keeps no
 Visitor, records no Event and remembers only what the visitor asked it to, for the session; On-site
-forms still show. Set by the site, or by the Workspace's choice to wait for consent.
-_Avoid_: Cookie consent, tracking consent, opt-in (that is a Confirmation)
+forms still show. Set by the site, or by the Workspace's choice to wait for consent. It is about a
+browser on the customer's site, never about a message: that is **Engagement tracking consent**.
+_Avoid_: Storage consent, cookie consent, tracking consent (it does not say which tracking), opt-in
+(that is a Confirmation)
 
 **Identify** (identity resolution):
 The act of binding a Visitor to a Contact and asserting that Contact's alias keys
@@ -183,8 +185,8 @@ reserved `email.*` Events and delivery records stay as anonymous rows, so delive
 metering counts do not change. Its Orders stay as Orders of no known Contact (ADR 0064), so revenue
 does not change either; they keep the shop's `order_id`, which a later refund matches. What survives
 of the person is the minimum that keeps the refusal honored: the
-Unsubscribe rows and the active Suppression rows for its Destinations (lifted ones refuse
-nothing and go); on SMS they keep only the phone number's hash, which still refuses the number, and
+Unsubscribe rows, the active Suppression rows and the `denied` Engagement tracking consents for
+its Destinations (lifted ones refuse nothing and go); on SMS they keep only the phone number's hash, which still refuses the number, and
 nothing else of the number stays (sphericon does not delete the texts in Twilio's own log). It
 leaves a PII-free `contact.erased`
 Event, stored without any Contact reference (its webhook delivery carries the customer's own
@@ -419,6 +421,29 @@ after a full opt-out requires re-confirmation. Unlike an Unsubscribe it is **not
 required to survive erasure — losing it merely forces re-confirmation, which fails safe.
 _Avoid_: Subscribed flag, subscription status, opt-in flag, double opt-in status
 
+**Engagement tracking consent**:
+A per-(workspace, channel, destination) choice whether the opens and clicks of messages to that
+Destination are recorded: `granted` or `denied`, one choice for opens and clicks together. Like a
+Confirmation, its truth is an Event of its Channel (`email.engagement_tracking_granted`,
+`email.engagement_tracking_denied`, and so on) with a derived row beside it. Where none is
+recorded, the Workspace's **Engagement tracking default** decides. A message to a Destination that
+is not tracked goes out without the open pixel and with its links as written, and nothing is
+recorded of it later, even after an open or a click. A `denied` also takes back the opens and clicks
+already recorded of that Destination's messages. Carries **provenance**: `page` (the person, on
+the page a message to that Destination links to), `manual` (a member of the Workspace), `imported`
+(the API or an import) or `onsite_form` (a checkbox of an On-site form, with the email consent of
+the same filling). A `denied` applies from any of them; a standing `denied` gives way only to the
+person's `page` or a member's `manual` grant. A `denied` survives **Erasure**, as an Unsubscribe
+does; a `granted` does not.
+_Avoid_: Tracking consent (it does not say which tracking), engagement consent, open tracking
+opt-out, Do Not Track
+
+**Engagement tracking default**:
+The Workspace's choice for a Destination with no Engagement tracking consent: `track` (until the
+Workspace changes it) or `dont_track`, for the Workspaces whose regulators require consent before
+an open is measured.
+_Avoid_: Tracking mode, privacy mode
+
 ### Sending
 
 **Broadcast**:
@@ -515,8 +540,8 @@ requirement switched off) is not sent. Each Notice is sent and retried on its ow
 
 **Outbound message**:
 The durable record of one Outbound send — which surface and which of its records it belongs to,
-the Sending source (none for Transactional), the Sending domain, the provider's message id, the
-outcome, and the lasting delivery and human engagement figures. Human opens, clicks and email
+the Sending source (none for Transactional), the Sending domain, the provider's message id, whether
+it went out tracked, the outcome, and the lasting delivery and human engagement figures. Human opens, clicks and email
 delivery results keep the earliest time the Instance observed each kind, independently of the
 order in which observations are handled; machine engagement contributes nothing. Those figures
 may lag behind the recorded Events, but accepted observations survive the Contact's Erasure as
@@ -931,8 +956,10 @@ _Avoid_: Dashboard (that is the page), metrics, Telemetry report (that is the In
 
 **Engagement rates**:
 The open, click and click-to-open ratios of the analytics reports over a chosen window (7, 30 or 90 **Report days**).
-A **send cohort**: the denominator is the Broadcast and Automation Outbound messages sent in the
-window (a Transactional one is left out, and each message counts once, not each person), and opens
+A **send cohort**: the denominator is the tracked Broadcast and Automation Outbound messages sent in
+the window (a Transactional one is left out, and so is one sent untracked for want of
+**Engagement tracking consent**, which the reports count beside the rates; each message counts once,
+not each person), and opens
 and clicks, the stamps on those messages, are counted among that same cohort, so opened never
 exceeds sent and the rates stay within [0, 1]. Not the **Complaint rate** or **Bounce rate**: those are deliverability flow rates per
 Sending domain, counted from Events by their own time and never tied to a send.
@@ -1598,8 +1625,9 @@ built), campaign, widget, popup (as the umbrella term)
 A visitor sending an On-site form: one `onsite_form.submitted` Event per filling, at the step that
 names the person (or at the last step of a form that names no one). Unlike Identify it is typed by
 anyone, so it binds only an anonymous Visitor to the Contact it names, never moves a Visitor that
-belongs to another Contact, and only fills a known Contact's empty attributes. It acts on nothing
-else: Tags, enrollments and calls are a Rule's, reacting to its Event. There is no submission record
+belongs to another Contact, and only fills a known Contact's empty attributes. A ticked tracking
+checkbox grants **Engagement tracking consent** for the email typed into it, with that email's
+consent: at once under single opt-in, on confirmation otherwise. It acts on nothing else: Tags, enrollments and calls are a Rule's, reacting to its Event. There is no submission record
 besides that Event. It records no consent for a phone typed into it (that comes from a message the
 person sends) and never lifts an `everything` Unsubscribe or a Suppression; returning through a
 form takes the email confirmation link.

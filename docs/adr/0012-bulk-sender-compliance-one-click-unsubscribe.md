@@ -4,6 +4,10 @@ status: accepted
 
 # Bulk-sender compliance: RFC 8058 one-click unsubscribe & DMARC readiness
 
+> **Amended by [[0120-engagement-tracking-is-consented-per-destination]]:** the unsubscribe footer
+> of a Broadcast or Automation email also links to the page where the person grants or refuses
+> Engagement tracking consent; that page is method-split the same way.
+
 Gmail/Yahoo/Microsoft enforce bulk-sender requirements (2024+) as the **receiving** side: any
 mail landing in those inboxes — regardless of the transport it was sent through (SES, SMTP, …) —
 must be DKIM-authenticated, come from a domain with a published DMARC record, and (for senders
