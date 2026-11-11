@@ -2690,6 +2690,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		// siteapiSiteWorkspaceResource.Holds: ignore
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)
 		// siteapiSiteWorkspaceResource.SecondFactorGraceEndsAt: ignore
+		// siteapiSiteWorkspaceResource.SecondFactorRequirementGraceEndsAt: ignore
 		// siteapiSiteWorkspaceResource.SendCap: ignore
 		// siteapiSiteWorkspaceResource.AccountLinkAvailable: ignore
 		siteapiSiteWorkspaceResource.CreatedAt = timestamp((*source).CreatedAt)

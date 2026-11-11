@@ -104,6 +104,8 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	assert.True(t, time.Time(w.SecondFactorRequiredAt.Value).Equal(at))
 	assert.True(t, time.Time(w.SecondFactorGraceEndsAt.Value).Equal(at.Add(7*24*time.Hour)),
 		"an existing Membership gets 7 days from the requirement's start")
+	assert.True(t, time.Time(w.SecondFactorRequirementGraceEndsAt.Value).Equal(at.Add(7*24*time.Hour)),
+		"the members there at the requirement's start have 7 days from it")
 
 	entries := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, entries, 1)
@@ -115,6 +117,7 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	c.t = at.Add(48 * time.Hour)
 	again := requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 	assert.True(t, time.Time(again.SecondFactorRequiredAt.Value).Equal(at))
+	assert.True(t, time.Time(again.SecondFactorRequirementGraceEndsAt.Value).Equal(at.Add(7*24*time.Hour)))
 	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 1)
 
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
@@ -128,6 +131,7 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	cleared, err := tryLiftRequirement(t, sam, fixtures.UmbrellaPublicID)
 	require.NoError(t, err, "an admin may clear it")
 	assert.False(t, cleared.SecondFactorRequiredAt.Set)
+	assert.False(t, cleared.SecondFactorRequirementGraceEndsAt.Set)
 	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 2)
 }
 

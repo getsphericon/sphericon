@@ -20,6 +20,7 @@ import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { requiresEmailVerification } from '../../instance.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
+import { secondsFromNow } from '../../utils/datetime.ts'
 import { signupItemAnswers } from '../../utils/signupItems.ts'
 
 // Seconds the resend button waits after a send; the server's per-IP limit stays the real gate.
@@ -41,14 +42,14 @@ export function SignUpPage() {
   const [ticked, setTicked] = useState<Record<string, boolean>>({})
 
   // The moment the resend button is offered again; none until a link is resent.
-  const [resendAt, setResendAt] = useState<number>()
+  const [resendAt, setResendAt] = useState<string>()
   const [cooldownLeft] = useCountDown({ targetDate: resendAt })
   const cooldown = Math.ceil(cooldownLeft / 1000)
   const resendMutation = useResourceMutation({
     mutation: siteAuthResendVerificationMutation(),
     successMessage: t(($) => $.login.resendSuccess),
     errorTitle: t(($) => $.login.resendErrorTitle),
-    onDone: () => setResendAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000),
+    onDone: () => setResendAt(secondsFromNow(RESEND_COOLDOWN_SECONDS)),
   })
 
   const form = useForm<Required<Omit<SiteSignUpInput, 'signupItems'>> & { confirm: string }>({

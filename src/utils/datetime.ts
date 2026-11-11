@@ -104,6 +104,16 @@ export function daysFromNow(count: number): string {
   return dayjs().add(count, 'day').toISOString()
 }
 
+// The instant count seconds from now, as an ISO timestamp.
+export function secondsFromNow(count: number): string {
+  return dayjs().add(count, 'second').toISOString()
+}
+
+// How many minutes are left until the instant, negative once it has passed.
+export function minutesUntil(value: DateInput): number {
+  return dayjs(value).diff(dayjs(), 'minute', true)
+}
+
 // The calendar day ("2026-03-01") the instant falls on in the zone.
 export function dayOf(value: DateInput, timeZone?: string): string {
   return inZone(value, timeZone).format('YYYY-MM-DD')

@@ -51,6 +51,9 @@ type Summary struct {
 	SMSMaxLength    smsrender.Limit
 	// TrackingTarget is the host a Tracking domain's CNAME points at, "" when the Instance has none.
 	TrackingTarget string
+	// SecondFactorRequirementGraceEndsAt is when the grace of the members the Workspace had when
+	// its Two-factor requirement began ends (ADR 0020); nil without a requirement.
+	SecondFactorRequirementGraceEndsAt *time.Time
 }
 
 // View is the summary of a Workspace as one of its members sees it.
@@ -242,5 +245,7 @@ func (u *UseCase) summarize(ctx context.Context, s *ent.Scoped, ws *ent.Workspac
 		ShortLinkLength: linkLength,
 		SMSMaxLength:    u.outbound.SMSLengthLimit(),
 		TrackingTarget:  u.trackingDomains.Target(),
+
+		SecondFactorRequirementGraceEndsAt: secondfactors.RequirementGraceEnds(ws.SecondFactorRequiredAt),
 	}, nil
 }

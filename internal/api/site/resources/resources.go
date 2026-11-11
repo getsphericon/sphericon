@@ -195,6 +195,9 @@ type Converter interface {
 	// The grace end, the role and its Permissions belong to the authenticated User's Membership,
 	// which the mapper cannot see: the handler attaches them.
 	// goverter:ignore SecondFactorGraceEndsAt
+	// The requirement's grace end is the Two-factor module's rule, read into the summary: the
+	// handler attaches it.
+	// goverter:ignore SecondFactorRequirementGraceEndsAt
 	// goverter:ignore Role
 	// goverter:ignore Permissions
 	// goverter:ignore AccountLinkAvailable

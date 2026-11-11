@@ -89,6 +89,17 @@ func deadlines(ctx context.Context, client *ent.Client, ms []*ent.Membership) (m
 	return ends, nil
 }
 
+// RequirementGraceEnds returns when the grace of the members a Workspace had when its Two-factor
+// requirement began (requiredAt) ends, nil when it has no requirement. A later member's grace
+// counts from their joining instead.
+func RequirementGraceEnds(requiredAt *time.Time) *time.Time {
+	end, ok := graceEnds(requiredAt, time.Time{})
+	if !ok {
+		return nil
+	}
+	return &end
+}
+
 // graceEnds returns when a member's grace under a Workspace's Two-factor requirement ends:
 // GracePeriod after the later of the requirement's start (requiredAt) and the Membership's
 // creation. ok is false when the Workspace has no requirement (requiredAt is nil). It does not

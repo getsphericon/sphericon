@@ -1,6 +1,13 @@
 import { afterEach, expect, test, vi } from 'vitest'
 
-import { daysBefore, daysFromNow, formatLongDate, formatRelative } from './datetime.ts'
+import {
+  daysBefore,
+  daysFromNow,
+  formatLongDate,
+  formatRelative,
+  minutesUntil,
+  secondsFromNow,
+} from './datetime.ts'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -22,4 +29,15 @@ test('days before a day cross month and year ends', () => {
 test('days from now land on the same time of day, the calendar days on', () => {
   vi.useFakeTimers({ now: new Date(2026, 0, 30, 9, 30) })
   expect(daysFromNow(30)).toBe(new Date(2026, 2, 1, 9, 30).toISOString())
+})
+
+test('minutes until an instant count down to it and below zero past it', () => {
+  vi.useFakeTimers({ now: new Date('2026-03-01T12:00:00Z') })
+  expect(minutesUntil('2026-03-01T13:30:00Z')).toBe(90)
+  expect(minutesUntil('2026-03-01T11:59:30Z')).toBe(-0.5)
+})
+
+test('seconds from now is the instant that many seconds on', () => {
+  vi.useFakeTimers({ now: new Date('2026-03-01T12:00:00Z') })
+  expect(secondsFromNow(60)).toBe('2026-03-01T12:01:00.000Z')
 })

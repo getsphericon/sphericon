@@ -27137,6 +27137,10 @@ type SiteWorkspaceResource struct {
 	// User has a Second factor. After it, every request to this Workspace answers 403 with code
 	// second_factor_required until the User enrolls one.
 	SecondFactorGraceEndsAt OptNilTimestamp `json:"secondFactorGraceEndsAt"`
+	// When the grace of the members the Workspace had when its Two-factor requirement was switched on
+	// ends: 7 days after `secondFactorRequiredAt`. A later member's grace counts from their joining.
+	// Absent without a requirement.
+	SecondFactorRequirementGraceEndsAt OptNilTimestamp `json:"secondFactorRequirementGraceEndsAt"`
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
 	// Send cap applies. Read-only: no operation lets the Workspace change it.
 	SendCap OptNilSiteSendCap `json:"sendCap"`
@@ -27235,6 +27239,11 @@ func (s *SiteWorkspaceResource) GetSecondFactorRequiredAt() OptNilTimestamp {
 // GetSecondFactorGraceEndsAt returns the value of SecondFactorGraceEndsAt.
 func (s *SiteWorkspaceResource) GetSecondFactorGraceEndsAt() OptNilTimestamp {
 	return s.SecondFactorGraceEndsAt
+}
+
+// GetSecondFactorRequirementGraceEndsAt returns the value of SecondFactorRequirementGraceEndsAt.
+func (s *SiteWorkspaceResource) GetSecondFactorRequirementGraceEndsAt() OptNilTimestamp {
+	return s.SecondFactorRequirementGraceEndsAt
 }
 
 // GetSendCap returns the value of SendCap.
@@ -27340,6 +27349,11 @@ func (s *SiteWorkspaceResource) SetSecondFactorRequiredAt(val OptNilTimestamp) {
 // SetSecondFactorGraceEndsAt sets the value of SecondFactorGraceEndsAt.
 func (s *SiteWorkspaceResource) SetSecondFactorGraceEndsAt(val OptNilTimestamp) {
 	s.SecondFactorGraceEndsAt = val
+}
+
+// SetSecondFactorRequirementGraceEndsAt sets the value of SecondFactorRequirementGraceEndsAt.
+func (s *SiteWorkspaceResource) SetSecondFactorRequirementGraceEndsAt(val OptNilTimestamp) {
+	s.SecondFactorRequirementGraceEndsAt = val
 }
 
 // SetSendCap sets the value of SendCap.
