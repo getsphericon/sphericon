@@ -26,6 +26,13 @@ var hidingStyles = []string{
 	"display:none !important;display:block",
 	"color:red);display:none",
 	"color:red];max-height:0;overflow:hidden",
+	"display:none;display:bogus",
+	"display:bogus !important;display:none",
+	"visibility:hidden;visibility:0",
+	"opacity:0;opacity:none",
+	"max-height:0;max-height:auto;overflow:hidden;overflow:none",
+	"mso-hide:all;mso-hide:some",
+	"max-height:0;overflow:hidden;max-height:8s",
 }
 
 func TestFinalHTMLToTextDropsHiddenElements(t *testing.T) {
@@ -70,10 +77,38 @@ func TestFinalHTMLToTextNeverReadsAHidingStyleQuotedInsideAValue(t *testing.T) {
 	})
 }
 
+func TestFinalHTMLToTextKeepsHidingWhenALaterValueIsNotOneThePropertyTakes(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		style := rapid.SampledFrom(hidingStyles).Draw(t, "style")
+		prop := rapid.SampledFrom([]string{"display", "visibility", "mso-hide", "opacity", "max-height", "overflow"}).Draw(t, "prop")
+		junk := rapid.StringMatching(`zz[a-z]{0,6}|[0-9]{1,3}(s|ms|deg|hz|dpi)|"[a-z]{0,4}"`).Draw(t, "junk")
+		markup := `<div style="` + style + ";" + prop + ":" + junk + `">SECRET</div>`
+
+		text := emailrender.FinalHTMLToText(markup)
+
+		assert.NotContains(t, text, "SECRET")
+	})
+}
+
 // The declaration that applies is the last one of a property, unless an earlier one is
-// !important (that case is in hidingStyles).
+// !important or the later one's value is not one the property takes (those cases are in
+// hidingStyles). A value that holds a function is only known when it is used, so it applies.
 func TestFinalHTMLToTextKeepsAnElementWhoseLastDeclarationShowsIt(t *testing.T) {
-	for _, style := range []string{"display:none;display:block", "display:none;display:block !important"} {
+	for _, style := range []string{
+		"display:none;display:block",
+		"display:none;display:block !important",
+		"display:none;display:INLINE FLEX",
+		"display:none;display:var(--shown)",
+		"display:none;display:inherit",
+		"visibility:hidden;visibility:visible",
+		"opacity:0;opacity:50%",
+		"opacity:0;opacity:.5",
+		"max-height:0;overflow:hidden;max-height:none",
+		"max-height:0;overflow:hidden;max-height:2.5em",
+		"max-height:0;overflow:hidden;max-height:calc(1em + 2px)",
+		"max-height:0;overflow:hidden;overflow:visible auto",
+		"mso-hide:all;mso-hide:none",
+	} {
 		t.Run(style, func(t *testing.T) {
 			text := emailrender.FinalHTMLToText(`<div style="` + style + `">Shown</div>`)
 
