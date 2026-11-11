@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -67,6 +68,11 @@ var (
 	ErrPhoneCountryRequired = validation.RefuseField(FieldPhone, "contacts: phone has no country code and the contact no country", i18n.ErrorsPhoneCountryRequired)
 	ErrPhoneExtension       = validation.RefuseField(FieldPhone, "contacts: phone has an extension", i18n.ErrorsPhoneExtension)
 )
+
+// ErrEmailDomainNoMail means a Contact intake row brings an address new to the Workspace whose
+// domain cannot receive mail (ADR 0117): it does not exist, has no mail exchanger or publishes a
+// null MX.
+var ErrEmailDomainNoMail = validation.RefuseField(FieldEmail, "contacts: the email's domain does not accept mail", i18n.ErrorsEmailDomainNoMail)
 
 // constraints are the unique constraints of the Contact's tables (ADR 0106): an alias key is the
 // Workspace's once, so a key another Contact holds is its conflict; a Custom field definition is
@@ -138,15 +144,34 @@ type Result struct {
 	// reads it), nil when it asserted none. It is not the Contact's when the Contact had one
 	// already: an upsert fills an alias key, never overwrites it.
 	Phone *string
+	// Flags are the traits of the address a Contact intake row asserted that the importer should
+	// see (ADR 0117): a disposable address, a role's. Only UpsertBatch sets them.
+	Flags []addresscheck.Flag
 }
 
 // Module is the contacts module.
 type Module struct {
-	bus *events.Bus
+	bus  *events.Bus
+	mail addresscheck.Resolver
+}
+
+// Option configures the module.
+type Option func(*Module)
+
+// WithMailResolver is the DNS the Contact intake reads an address's domain from (ADR 0117).
+// Without it every domain is Unknown, so the intake refuses no address for its domain.
+func WithMailResolver(r addresscheck.Resolver) Option {
+	return func(m *Module) { m.mail = r }
 }
 
 // New builds the module.
-func New(bus *events.Bus) *Module { return &Module{bus: bus} }
+func New(bus *events.Bus, opts ...Option) *Module {
+	m := &Module{bus: bus}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
 
 // Create makes a Contact from the given door (its Contact source, kept for good), gives it its
 // Tags and publishes contact.created in one transaction, and returns it with its Tags. An alias

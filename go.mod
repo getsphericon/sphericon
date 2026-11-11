@@ -6,6 +6,7 @@ require (
 	ariga.io/atlas v1.3.0
 	code.dny.dev/ssrf v0.3.0
 	entgo.io/ent v0.14.6
+	github.com/AfterShip/email-verifier v1.5.0
 	github.com/aws/aws-sdk-go-v2 v1.48.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.21.0
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.79.9
@@ -158,6 +159,7 @@ require (
 	github.com/grbit/go-json v0.11.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.25.0 // indirect
+	github.com/hbollon/go-edlib v1.7.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.9 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect

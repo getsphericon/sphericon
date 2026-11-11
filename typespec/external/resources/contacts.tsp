@@ -198,6 +198,16 @@ enum ContactBatchStatus {
   failed,
 }
 
+/**
+ * A trait of an item's email address worth the importer's attention; the contact is stored all the
+ * same. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of
+ * a function rather than a person, such as info@ or sales@.
+ */
+enum ContactBatchWarning {
+  disposable_email,
+  role_email,
+}
+
 /** Per-item result of a contacts batch, in request order */
 model ContactBatchItemResult {
   /** Zero-based position of the item in the request */
@@ -211,6 +221,9 @@ model ContactBatchItemResult {
 
   /** Why the item failed; absent on success */
   error?: string;
+
+  /** Traits of the item's email address worth a look; absent when there are none or the item failed */
+  warnings?: ContactBatchWarning[];
 }
 
 /** Per-item results of a contacts batch */
@@ -222,7 +235,12 @@ model UpsertContactsResult {
 @route("/contacts/batch")
 @tag("Contacts")
 namespace ContactsBatch {
-  /** Upsert up to 1000 contacts by alias keys; a failing item does not affect the others */
+  /**
+   * Upsert up to 1000 contacts by alias keys; a failing item does not affect the others. An item
+   * that brings an email address new to the workspace fails when the address's domain cannot
+   * receive mail: it does not exist, has no mail exchanger or publishes a null MX. A domain DNS
+   * does not answer for is accepted.
+   */
   @post
   @requiresScopes(#[ApiTokenScope.contactsWrite])
   op upsert(@body body: UpsertContactsInput): UpsertContactsResult | Problem;

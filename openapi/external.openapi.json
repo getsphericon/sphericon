@@ -1760,7 +1760,7 @@
     "/contacts/batch": {
       "post": {
         "operationId": "ContactsBatch_upsert",
-        "description": "Upsert up to 1000 contacts by alias keys; a failing item does not affect the others",
+        "description": "Upsert up to 1000 contacts by alias keys; a failing item does not affect the others. An item\nthat brings an email address new to the workspace fails when the address's domain cannot\nreceive mail: it does not exist, has no mail exchanger or publishes a null MX. A domain DNS\ndoes not answer for is accepted.",
         "parameters": [],
         "responses": {
           "200": {
@@ -7387,6 +7387,13 @@
           "error": {
             "type": "string",
             "description": "Why the item failed; absent on success"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactBatchWarning"
+            },
+            "description": "Traits of the item's email address worth a look; absent when there are none or the item failed"
           }
         },
         "description": "Per-item result of a contacts batch, in request order"
@@ -7395,6 +7402,11 @@
         "type": "string",
         "enum": ["created", "updated", "failed"],
         "description": "Outcome of one item of a contacts batch"
+      },
+      "ContactBatchWarning": {
+        "type": "string",
+        "enum": ["disposable_email", "role_email"],
+        "description": "A trait of an item's email address worth the importer's attention; the contact is stored all the\nsame. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of\na function rather than a person, such as info"
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",

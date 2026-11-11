@@ -6909,7 +6909,10 @@ func (s *Server) handleConfirmationsCreateRequest(args [0]string, argsEscaped bo
 
 // handleContactsBatchUpsertRequest handles ContactsBatch_upsert operation.
 //
-// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.
+// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others. An item that
+// brings an email address new to the workspace fails when the address's domain cannot receive mail: it
+// does not exist, has no mail exchanger or publishes a null MX. A domain DNS does not answer for is
+// accepted.
 //
 // POST /contacts/batch
 func (s *Server) handleContactsBatchUpsertRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

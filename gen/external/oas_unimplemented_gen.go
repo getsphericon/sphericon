@@ -343,7 +343,10 @@ func (UnimplementedHandler) ConfirmationsCreate(ctx context.Context, req *Create
 
 // ContactsBatchUpsert implements ContactsBatch_upsert operation.
 //
-// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.
+// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others. An item that
+// brings an email address new to the workspace fails when the address's domain cannot receive mail: it
+// does not exist, has no mail exchanger or publishes a null MX. A domain DNS does not answer for is
+// accepted.
 //
 // POST /contacts/batch
 func (UnimplementedHandler) ContactsBatchUpsert(ctx context.Context, req *UpsertContactsInput) (r *UpsertContactsResult, _ error) {

@@ -170,7 +170,9 @@ _Avoid_: Historical import, replay, silent event
 **Contact intake**:
 The **Import** of Contacts: each row upserts its Contact in a transaction of its own and, when it
 carries the evidence of SMS consent the phone gave outside sphericon, records the phone's imported
-**Confirmation** in that same transaction. The whole batch is one `contact.import` Audit entry.
+**Confirmation** in that same transaction. The whole batch is one `contact.import` Audit entry. A row
+that brings an email address new to the Workspace at a domain that cannot receive mail is refused;
+a disposable or role address is stored with a warning (ADR 0117).
 _Avoid_: Sync, bulk create
 
 **Erasure**:

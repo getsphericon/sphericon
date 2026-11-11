@@ -76,10 +76,10 @@ func TestCommandAppBuildsWhatTheCommandsCall(t *testing.T) {
 	assert.NotNil(t, built(a.Bus()))
 }
 
-func TestE2EDKIMLookupOptionIsRefusedOutsideTheE2EProfile(t *testing.T) {
+func TestE2EDNSOptionIsRefusedOutsideTheE2EProfile(t *testing.T) {
 	for _, env := range []string{"production", "development", "test", ""} {
 		t.Run(env, func(t *testing.T) {
-			a, err := app.New(env, app.WithE2EDKIMLookup())
+			a, err := app.New(env, app.WithE2EDNS())
 			require.ErrorIs(t, err, app.ErrE2EOnly)
 			assert.Nil(t, a)
 		})

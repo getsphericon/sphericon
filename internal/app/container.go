@@ -99,6 +99,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
@@ -377,9 +378,15 @@ var messagingPackage = do.Package(
 	// The DKIM DNS resolver of Sending domain and Join domain verification (ADR 0010): published
 	// DNS records on every Instance; a development stack points the resolver at its own DNS
 	// server (SPHERICON_DNS_ADDR) that publishes the Brightpath demo records. The e2e suite's
-	// domains self-verify (WithE2EDKIMLookup).
+	// domains self-verify (WithE2EDNS).
 	do.Lazy(func(i do.Injector) (domainname.TXTLookup, error) {
 		return dnsResolver(do.MustInvoke[*config.Config](i).DNSAddr).LookupTXT, nil
+	}),
+	// The DNS the Contact intake reads an address's domain from (ADR 0117): the host's resolver,
+	// not SPHERICON_DNS_ADDR, whose server publishes only the Instance's own proof records. The
+	// e2e suite's addresses are at no real domain (WithE2EDNS).
+	do.Lazy(func(do.Injector) (addresscheck.Resolver, error) {
+		return net.DefaultResolver, nil
 	}),
 )
 
@@ -767,7 +774,7 @@ var audiencePackage = do.Package(
 		return segments.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
-		return contacts.New(do.MustInvoke[*events.Bus](i)), nil
+		return contacts.New(do.MustInvoke[*events.Bus](i), contacts.WithMailResolver(do.MustInvoke[addresscheck.Resolver](i))), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
 		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil

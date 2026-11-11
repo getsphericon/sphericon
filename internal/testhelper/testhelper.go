@@ -57,6 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -295,6 +296,9 @@ type setup struct {
 	// txt is the TXT resolver Sending domain and Join domain verification use; nil is the
 	// always-NXDOMAIN stub (WithTXTLookup).
 	txt domainname.TXTLookup
+	// mail is the DNS the Contact intake reads an address's domain from; nil is
+	// addresscheck.AllAccept (WithMailResolver).
+	mail addresscheck.Resolver
 	// signinOpts point the Sign-in registry at a fake provider (WithSignin).
 	signinOpts []signinprovider.Option
 }
@@ -303,6 +307,20 @@ type setup struct {
 // test publishes and withdraws records in a zone of its own (dnstest.NewZone). The default
 // answers NXDOMAIN to everything.
 func WithTXTLookup(lookup domainname.TXTLookup) Option { return func(s *setup) { s.txt = lookup } }
+
+// mailResolver is the DNS of the Contact intake's address check: the test's, or every domain
+// accepting mail.
+func (s *setup) mailResolver() addresscheck.Resolver {
+	if s.mail != nil {
+		return s.mail
+	}
+	return addresscheck.AllAccept{}
+}
+
+// WithMailResolver replaces the DNS the Contact intake reads an address's domain from (ADR 0117),
+// so a test serves the domains of its addresses (dnstest.Resolver). The default gives every domain
+// a mail exchanger, as the fixtures' addresses are at no real domain.
+func WithMailResolver(r addresscheck.Resolver) Option { return func(s *setup) { s.mail = r } }
 
 // WithOAuthFetcher replaces the client that downloads OAuth Client ID Metadata Documents, so a
 // test serves a document from an httptest TLS server (the production client refuses loopback).
@@ -490,6 +508,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// SES's quota lookup is answered by a fake instead of the AWS API.
 	do.OverrideValue(injector, catalogWith(fakeSES, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL))
 	do.OverrideValue(injector, stubTXT)
+	do.OverrideValue(injector, st.mailResolver())
 	do.OverrideValue[privaterelayranges.Source](injector, relay)
 	do.OverrideValue(injector, presets)
 	do.OverrideValue(injector, Renderer())
