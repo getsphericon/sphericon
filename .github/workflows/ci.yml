@@ -309,6 +309,11 @@ jobs:
   test-frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Vitest Browser Mode needs a real Chromium and its system libraries. The Playwright image has
+    # both, so no run installs packages from the Ubuntu archive, whose mirrors a runner cannot always
+    # reach. Its version is package.json's `playwright` (`mise run check:playwright-image`).
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
     strategy:
       fail-fast: false
       matrix:
@@ -326,16 +331,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Vitest Browser Mode needs a real Chromium. The browser download is cached per lockfile;
-      # `install` still runs for the system libraries and finds the browser already there.
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+      # The image ships the browser for its version; this finds it there and downloads nothing.
+      - name: Check Playwright Chromium
+        run: pnpm exec playwright install chromium
 
       - name: Run frontend tests (shard ${{ matrix.shard }}/3)
         run: mise run test:frontend:shard ${{ matrix.shard }}/3
