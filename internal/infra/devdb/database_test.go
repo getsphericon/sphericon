@@ -99,3 +99,13 @@ func ping(t *testing.T, dsn string) error {
 	defer cleanup.Close(db, "ping")
 	return db.PingContext(t.Context())
 }
+
+// With no database in the DSN and no PGDATABASE to fall back on there is nothing to create: the task
+// says so, and sends the server no empty identifier.
+func TestCreateRefusesADSNThatNamesNoDatabase(t *testing.T) {
+	t.Setenv("PGDATABASE", "")
+
+	_, err := devdb.Create(t.Context(), "host=127.0.0.1 sslmode=disable")
+
+	require.EqualError(t, err, "the database DSN names no database")
+}

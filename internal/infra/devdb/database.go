@@ -53,6 +53,9 @@ func admin(dsn string, fn func(adminDB *sql.DB, dbName, ident string) (string, e
 		return "", fmt.Errorf("parse the database DSN: %w", err)
 	}
 	dbName := cfg.Database
+	if dbName == "" {
+		return "", errors.New("the database DSN names no database")
+	}
 	ident := pgx.Identifier{dbName}.Sanitize()
 	cfg.Database = "postgres"
 
