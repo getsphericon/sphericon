@@ -73,6 +73,7 @@
   "errors.linked_identity_not_found": "no such linked sign-in provider on your account",
   "errors.linked_identity_last_sign_in": "this is your only way to sign in: set a password or link another provider first",
   "errors.email_exists": "email already exists",
+  "errors.email_domain_no_mail": "the domain of this email address does not accept mail",
   "errors.invalid_credentials": "invalid email or password",
   "errors.login_challenge_invalid": "the sign-in step expired, sign in again",
   "errors.oauth_grant_invalid": "invalid grant",

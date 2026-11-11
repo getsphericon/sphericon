@@ -10,7 +10,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/batch"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 )
 
 // IntakeInput is one row of a Contact intake (GLOSSARY, ADR 0022): the Contact it asserts and the
@@ -30,6 +32,11 @@ type IntakeInput struct {
 // Confirmation (confirmations, ADR 0077) in the row's transaction. The outcomes are in the order
 // of items: the Contact's Result, or the domain or storage error of its row.
 //
+// Before any row it reads, once per domain and outside every transaction, whether the domains of
+// the batch's addresses accept mail (ADR 0117): a row that brings an address new to the Workspace
+// at a domain that cannot receive mail is refused (ErrEmailDomainNoMail), and a stored row's
+// Result carries the Flags of its address.
+//
 // A batch is an import (ADR 0022): its rows are written through an unaudited scope and
 // the whole batch is recorded as ONE contact.import entry (counts only), not one entry
 // per row. It brings earlier state rather than something happening now, so it records no
@@ -39,7 +46,8 @@ type IntakeInput struct {
 // that happened.
 func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []IntakeInput) batch.Result[Result] {
 	rows := events.Unaudited(s)
-	out := batch.Each(items, func(in IntakeInput) (Result, error) { return m.intake(ctx, rows, src, in) })
+	mail := m.mailVerdicts(ctx, items)
+	out := batch.Each(items, func(in IntakeInput) (Result, error) { return m.intake(ctx, rows, src, in, mail) })
 	var sum importSummary
 	for _, o := range out.Items {
 		switch {
@@ -57,10 +65,24 @@ func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Sou
 	return out
 }
 
-// intake is one row in its own transaction: the Contact, then its SMS consent.
-func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, in IntakeInput) (Result, error) {
+// mailVerdicts reads whether the domain of each address the batch asserts accepts mail, one
+// lookup per domain.
+func (m *Module) mailVerdicts(ctx context.Context, items []IntakeInput) map[string]addresscheck.Verdict {
+	domains := lo.Uniq(lo.FilterMap(items, func(in IntakeInput, _ int) (string, bool) {
+		d := addresscheck.Domain(lo.FromPtr(in.Email))
+		return d, d != ""
+	}))
+	return addresscheck.Domains(ctx, m.mail, domains)
+}
+
+// intake is one row in its own transaction: the address check, the Contact, then its SMS
+// consent.
+func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, in IntakeInput, mail map[string]addresscheck.Verdict) (Result, error) {
 	var res Result
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		if err := admitAddress(ctx, ts, in.Email, mail); err != nil {
+			return err
+		}
 		var err error
 		res, err = importIn(ctx, ts, pub, src, in.UpsertInput)
 		if err != nil {
@@ -71,7 +93,31 @@ func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, 
 	if err != nil {
 		return Result{}, err
 	}
+	if in.Email != nil {
+		res.Flags = addresscheck.Flags(emailcase.Of(*in.Email))
+	}
 	return res, nil
+}
+
+// admitAddress refuses an address new to the Workspace whose domain cannot receive mail (ADR
+// 0117). An address a Contact already holds is past the check: the row sends again what the
+// audience has, so the import stays repeatable whatever DNS answers now.
+func admitAddress(ctx context.Context, s *ent.Scoped, email *string, mail map[string]addresscheck.Verdict) error {
+	if email == nil {
+		return nil
+	}
+	address := emailcase.Of(*email)
+	if mail[addresscheck.Domain(address)] != addresscheck.NoMail {
+		return nil
+	}
+	held, err := s.Contact().Query().Where(contact.EmailEQ(address)).Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if held {
+		return nil
+	}
+	return ErrEmailDomainNoMail
 }
 
 // confirmSMS records the SMS consent a row carries for the phone it names, or the Contact's

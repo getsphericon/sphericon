@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -189,6 +190,12 @@ type Converter interface {
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource
 	// goverter:useEmptyOnNil:slice
 	EmailTemplatesToResources(source []*ent.EmailTemplate) []externalapi.TemplateResource
+
+	// The traits of a batch item's address (ADR 0117); goverter checks each member.
+	// goverter:enum:map Disposable ContactBatchWarningDisposableEmail
+	// goverter:enum:map Role ContactBatchWarningRoleEmail
+	ContactBatchWarning(source addresscheck.Flag) externalapi.ContactBatchWarning
+	ContactBatchWarnings(source []addresscheck.Flag) []externalapi.ContactBatchWarning
 
 	// A lint finding (ADR 0040) names its element and detail only when the check has one.
 	// goverter:map Element Element | optNonEmpty

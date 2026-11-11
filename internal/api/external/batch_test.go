@@ -2,15 +2,18 @@ package external_test
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/foxcpp/go-mockdns"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -58,6 +61,37 @@ func TestExternalContactsBatchUpsertMixedItems(t *testing.T) {
 
 	assert.Equal(t, 1, contactsCreatedFor(t, env, "batch-new@example.com"))
 	assert.Equal(t, 0, contactsCreatedFor(t, env, fixtures.ContactAliceEmail))
+}
+
+// The address check of the intake (ADR 0117): a new address at a domain without mail fails with
+// its reason, a disposable or role address is stored with its warnings.
+func TestExternalContactsBatchUpsertChecksAddresses(t *testing.T) {
+	r := dnstest.Resolver(t, map[string]mockdns.Zone{
+		"mx.test.":        {MX: []net.MX{{Host: "mail.mx.test.", Pref: 10}}},
+		"mailinator.com.": {MX: []net.MX{{Host: "mail.mailinator.com.", Pref: 10}}},
+	})
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock), testhelper.WithMailResolver(r))
+	c := env.ExternalScoped(t, "contacts:write")
+
+	ok, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{
+		Contacts: []externalapi.UpsertContactInput{
+			{Email: externalapi.NewOptNilEmailAddress("ann@missing.test")},
+			{Email: externalapi.NewOptNilEmailAddress("sales@mailinator.com")},
+			{Email: externalapi.NewOptNilEmailAddress("bob@mx.test")},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, ok.Results, 3)
+
+	assert.Equal(t, externalapi.ContactBatchStatusFailed, ok.Results[0].Status)
+	assert.Equal(t, "the domain of this email address does not accept mail", ok.Results[0].Error.Or(""))
+	assert.Empty(t, ok.Results[0].Warnings)
+	assert.Equal(t, externalapi.ContactBatchStatusCreated, ok.Results[1].Status)
+	assert.Equal(t, []externalapi.ContactBatchWarning{
+		externalapi.ContactBatchWarningDisposableEmail, externalapi.ContactBatchWarningRoleEmail,
+	}, ok.Results[1].Warnings)
+	assert.Equal(t, externalapi.ContactBatchStatusCreated, ok.Results[2].Status)
+	assert.Empty(t, ok.Results[2].Warnings)
 }
 
 func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {

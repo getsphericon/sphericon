@@ -404,7 +404,10 @@ export const contactsCreate = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
- * Upsert up to 1000 contacts by alias keys; a failing item does not affect the others
+ * Upsert up to 1000 contacts by alias keys; a failing item does not affect the others. An item
+ * that brings an email address new to the workspace fails when the address's domain cannot
+ * receive mail: it does not exist, has no mail exchanger or publishes a null MX. A domain DNS
+ * does not answer for is accepted.
  */
 export const contactsBatchUpsert = <ThrowOnError extends boolean = false>(options: Options<ContactsBatchUpsertData, ThrowOnError>): RequestResult<ContactsBatchUpsertResponses, ContactsBatchUpsertErrors, ThrowOnError> => (options.client ?? client).post<ContactsBatchUpsertResponses, ContactsBatchUpsertErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

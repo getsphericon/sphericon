@@ -39,6 +39,7 @@ import (
 	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
+	addresscheck "github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
@@ -580,6 +581,28 @@ func (c *ConverterImpl) ConsentChannelToResource(source channels.Channel) extern
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiConsentChannel
+}
+func (c *ConverterImpl) ContactBatchWarning(source addresscheck.Flag) external.ContactBatchWarning {
+	var externalapiContactBatchWarning external.ContactBatchWarning
+	switch source {
+	case addresscheck.Disposable:
+		externalapiContactBatchWarning = external.ContactBatchWarningDisposableEmail
+	case addresscheck.Role:
+		externalapiContactBatchWarning = external.ContactBatchWarningRoleEmail
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiContactBatchWarning
+}
+func (c *ConverterImpl) ContactBatchWarnings(source []addresscheck.Flag) []external.ContactBatchWarning {
+	var externalapiContactBatchWarningList []external.ContactBatchWarning
+	if source != nil {
+		externalapiContactBatchWarningList = make([]external.ContactBatchWarning, len(source))
+		for i := 0; i < len(source); i++ {
+			externalapiContactBatchWarningList[i] = c.ContactBatchWarning(source[i])
+		}
+	}
+	return externalapiContactBatchWarningList
 }
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) external.ContactExportSource {
 	var externalapiContactExportSource external.ContactExportSource

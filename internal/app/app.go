@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/sidelistener"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
+	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -68,19 +69,20 @@ type App struct {
 type Option func(*options)
 
 type options struct {
-	listener      net.Listener
-	e2eDKIMLookup bool
+	listener net.Listener
+	e2eDNS   bool
 }
 
 // ErrE2EOnly means an end-to-end-only option was passed to an app that is not the e2e profile.
 var ErrE2EOnly = errors.New("app: option is only valid in the " + config.EnvE2E + " environment")
 
-// WithE2EDKIMLookup swaps the DKIM DNS lookup for the development one, which echoes a
-// Sending domain's own stored key, so the end-to-end suite verifies domains without
-// real DNS while the development flag stays off. New refuses it outside the e2e
-// profile, so it cannot be wired into a production configuration.
-func WithE2EDKIMLookup() Option {
-	return func(o *options) { o.e2eDKIMLookup = true }
+// WithE2EDNS takes the end-to-end suite off real DNS, whose domains are not real: the DKIM DNS
+// lookup is the development one, which echoes a Sending domain's own stored key, so the suite
+// verifies domains while the development flag stays off, and every address's domain accepts mail
+// in the Contact intake (ADR 0117). New refuses it outside the e2e profile, so it cannot be wired
+// into a production configuration.
+func WithE2EDNS() Option {
+	return func(o *options) { o.e2eDNS = true }
 }
 
 // WithListener makes the App serve on a listener the caller already opened (a free
@@ -98,7 +100,7 @@ func New(env string, opts ...Option) (*App, error) {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	if o.e2eDKIMLookup && env != config.EnvE2E {
+	if o.e2eDNS && env != config.EnvE2E {
 		return nil, ErrE2EOnly
 	}
 	cfg, err := config.Load(env)
@@ -118,13 +120,14 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 		cfg = &own
 	}
 	injector := Container(cfg)
-	if o.e2eDKIMLookup {
+	if o.e2eDNS {
 		// The e2e suite's domains self-verify: devdns answers each record from the rows of the
 		// module that proves it.
 		do.Override(injector, func(i do.Injector) (domainname.TXTLookup, error) {
 			client := do.MustInvoke[*ent.Client](i)
 			return devdns.Lookup(sendingdomains.DevRecords(client), joindomains.DevRecords(client)), nil
 		})
+		do.OverrideValue[addresscheck.Resolver](injector, addresscheck.AllAccept{})
 	}
 
 	// Set the process-wide locale for system emails and API validation messages

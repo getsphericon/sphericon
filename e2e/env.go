@@ -125,7 +125,7 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 		return nil, nil, err
 	}
-	a, err := app.New("e2e", app.WithListener(ln), app.WithE2EDKIMLookup())
+	a, err := app.New("e2e", app.WithListener(ln), app.WithE2EDNS())
 	if err != nil {
 		cleanup.Close(ln, "listener")
 		stopMailpit()

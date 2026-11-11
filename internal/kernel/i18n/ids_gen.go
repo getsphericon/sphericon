@@ -147,6 +147,7 @@ var (
 	ErrorsDestinationEmpty                      = ID{key: "errors.destination_empty"}
 	ErrorsDestinationInvalid                    = ID{key: "errors.destination_invalid"}
 	ErrorsDkimSelectorInvalid                   = ID{key: "errors.dkim_selector_invalid"}
+	ErrorsEmailDomainNoMail                     = ID{key: "errors.email_domain_no_mail"}
 	ErrorsEmailEmpty                            = ID{key: "errors.email_empty"}
 	ErrorsEmailExists                           = ID{key: "errors.email_exists"}
 	ErrorsEmailInvalid                          = ID{key: "errors.email_invalid"}

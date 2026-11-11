@@ -5333,6 +5333,8 @@ type ContactBatchItemResult struct {
 	ContactId OptEntityId `json:"contactId"`
 	// Why the item failed; absent on success.
 	Error OptString `json:"error"`
+	// Traits of the item's email address worth a look; absent when there are none or the item failed.
+	Warnings []ContactBatchWarning `json:"warnings"`
 }
 
 // GetIndex returns the value of Index.
@@ -5355,6 +5357,11 @@ func (s *ContactBatchItemResult) GetError() OptString {
 	return s.Error
 }
 
+// GetWarnings returns the value of Warnings.
+func (s *ContactBatchItemResult) GetWarnings() []ContactBatchWarning {
+	return s.Warnings
+}
+
 // SetIndex sets the value of Index.
 func (s *ContactBatchItemResult) SetIndex(val int32) {
 	s.Index = val
@@ -5373,6 +5380,11 @@ func (s *ContactBatchItemResult) SetContactId(val OptEntityId) {
 // SetError sets the value of Error.
 func (s *ContactBatchItemResult) SetError(val OptString) {
 	s.Error = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *ContactBatchItemResult) SetWarnings(val []ContactBatchWarning) {
+	s.Warnings = val
 }
 
 // Outcome of one item of a contacts batch.
@@ -5419,6 +5431,51 @@ func (s *ContactBatchStatus) UnmarshalText(data []byte) error {
 		return nil
 	case ContactBatchStatusFailed:
 		*s = ContactBatchStatusFailed
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A trait of an item's email address worth the importer's attention; the contact is stored all the
+// same. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of a
+// function rather than a person, such as info.
+// Ref: #/components/schemas/ContactBatchWarning
+type ContactBatchWarning string
+
+const (
+	ContactBatchWarningDisposableEmail ContactBatchWarning = "disposable_email"
+	ContactBatchWarningRoleEmail       ContactBatchWarning = "role_email"
+)
+
+// AllValues returns all ContactBatchWarning values.
+func (ContactBatchWarning) AllValues() []ContactBatchWarning {
+	return []ContactBatchWarning{
+		ContactBatchWarningDisposableEmail,
+		ContactBatchWarningRoleEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactBatchWarning) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactBatchWarningDisposableEmail:
+		return []byte(s), nil
+	case ContactBatchWarningRoleEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactBatchWarning) UnmarshalText(data []byte) error {
+	switch ContactBatchWarning(data) {
+	case ContactBatchWarningDisposableEmail:
+		*s = ContactBatchWarningDisposableEmail
+		return nil
+	case ContactBatchWarningRoleEmail:
+		*s = ContactBatchWarningRoleEmail
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

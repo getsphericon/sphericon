@@ -1471,6 +1471,10 @@ export type ContactBatchItemResult = {
    * Why the item failed; absent on success
    */
   error?: string;
+  /**
+   * Traits of the item's email address worth a look; absent when there are none or the item failed
+   */
+  warnings?: Array<ContactBatchWarning>;
 };
 
 /**
@@ -1486,6 +1490,20 @@ export const ContactBatchStatus = {
  * Outcome of one item of a contacts batch
  */
 export type ContactBatchStatus = typeof ContactBatchStatus[keyof typeof ContactBatchStatus];
+
+/**
+ * A trait of an item's email address worth the importer's attention; the contact is stored all the
+ * same. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of
+ * a function rather than a person, such as info
+ */
+export const ContactBatchWarning = { DISPOSABLE_EMAIL: 'disposable_email', ROLE_EMAIL: 'role_email' } as const;
+
+/**
+ * A trait of an item's email address worth the importer's attention; the contact is stored all the
+ * same. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of
+ * a function rather than a person, such as info
+ */
+export type ContactBatchWarning = typeof ContactBatchWarning[keyof typeof ContactBatchWarning];
 
 /**
  * The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`)

@@ -8392,13 +8392,24 @@ func (s *ContactBatchItemResult) encodeFields(e *jx.Encoder) {
 			s.Error.Encode(e)
 		}
 	}
+	{
+		if s.Warnings != nil {
+			e.FieldStart("warnings")
+			e.ArrStart()
+			for _, elem := range s.Warnings {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
 }
 
-var jsonFieldsNameOfContactBatchItemResult = [4]string{
+var jsonFieldsNameOfContactBatchItemResult = [5]string{
 	0: "index",
 	1: "status",
 	2: "contactId",
 	3: "error",
+	4: "warnings",
 }
 
 // Decode decodes ContactBatchItemResult from json.
@@ -8451,6 +8462,23 @@ func (s *ContactBatchItemResult) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"error\"")
+			}
+		case "warnings":
+			if err := func() error {
+				s.Warnings = make([]ContactBatchWarning, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ContactBatchWarning
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Warnings = append(s.Warnings, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"warnings\"")
 			}
 		default:
 			return d.Skip()
@@ -8546,6 +8574,46 @@ func (s ContactBatchStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ContactBatchStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactBatchWarning as json.
+func (s ContactBatchWarning) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactBatchWarning from json.
+func (s *ContactBatchWarning) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactBatchWarning to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactBatchWarning(v) {
+	case ContactBatchWarningDisposableEmail:
+		*s = ContactBatchWarningDisposableEmail
+	case ContactBatchWarningRoleEmail:
+		*s = ContactBatchWarningRoleEmail
+	default:
+		*s = ContactBatchWarning(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactBatchWarning) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactBatchWarning) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
