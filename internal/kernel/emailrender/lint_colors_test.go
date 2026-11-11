@@ -33,6 +33,13 @@ func TestLintReadsEveryFormOfACSSColorForContrast(t *testing.T) {
 	}
 }
 
+func TestLintReadsTheColorAfterAMalformedDeclaration(t *testing.T) {
+	report := emailrender.Lint("Hi", `<p style="bogus;color:yellow">Pale</p>`, nil)
+
+	require.NoError(t, report.Error)
+	assert.Len(t, details(report, emailrender.CodeLowContrast), 1, "the malformed declaration is skipped, not the rest of the style")
+}
+
 func TestLintSkipsATransparentBackground(t *testing.T) {
 	report := emailrender.Lint("Hi", `<div style="background:#000000"><p style="background-color:rgba(0, 0, 0, 0);color:#ffffff">Light on dark</p></div>`, nil)
 

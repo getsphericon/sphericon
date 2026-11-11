@@ -19,6 +19,10 @@ var hidingStyles = []string{
 	"opacity:0",
 	"max-height:0;overflow:hidden",
 	"color:red;MAX-HEIGHT : 0px;overflow:hidden",
+	"DISPLAY:NONE",
+	"color red;display:none",
+	"bogus;max-height:0;overflow:hidden",
+	"display:none !important;display:block",
 }
 
 func TestFinalHTMLToTextDropsHiddenElements(t *testing.T) {
@@ -27,6 +31,35 @@ func TestFinalHTMLToTextDropsHiddenElements(t *testing.T) {
 			text := emailrender.FinalHTMLToText(`<div style="` + style + `">SECRET</div><p>Shown</p>`)
 
 			assert.NotContains(t, text, "SECRET")
+			assert.Contains(t, text, "Shown")
+		})
+	}
+}
+
+// A ";" inside a url() or a quoted value is part of that value, not the end of a declaration:
+// what follows it declares nothing.
+func TestFinalHTMLToTextKeepsAnElementWhoseValueHoldsAHidingDeclaration(t *testing.T) {
+	for _, style := range []string{
+		`background:url("x;display:none;")`,
+		`background:url(x;display:none;)`,
+		`font-family:"a;display:none;"`,
+		`font-family:'a;max-height:0;overflow:hidden;'`,
+	} {
+		t.Run(style, func(t *testing.T) {
+			text := emailrender.FinalHTMLToText(`<div style='` + strings.ReplaceAll(style, "'", "&#39;") + `'>Shown</div>`)
+
+			assert.Contains(t, text, "Shown")
+		})
+	}
+}
+
+// The declaration that applies is the last one of a property, unless an earlier one is
+// !important (that case is in hidingStyles).
+func TestFinalHTMLToTextKeepsAnElementALaterDeclarationShows(t *testing.T) {
+	for _, style := range []string{"display:none;display:block", "display:none;display:block !important"} {
+		t.Run(style, func(t *testing.T) {
+			text := emailrender.FinalHTMLToText(`<div style="` + style + `">Shown</div>`)
+
 			assert.Contains(t, text, "Shown")
 		})
 	}
@@ -132,6 +165,8 @@ func FuzzFinalHTMLToText(f *testing.F) {
 	f.Add(`<p>Hi</p><div style="display:none">x</div><a href="https://example.com">a</a>`)
 	f.Add(`<style>p{}</style><img src="x" style="opacity:0">`)
 	f.Add(`<div style=";;::"`)
+	f.Add(`<div style='background:url("x;display:none;");font-family:"a;b"'>y</div>`)
+	f.Add(`<p style="color:red);x]:y};display:none !important">x</p><p style="@media{;a:(;b">z</p>`)
 	f.Fuzz(func(t *testing.T, markup string) {
 		// Whatever the bytes, the derivation returns (no panic) and never leaves a hidden marker in.
 		text := emailrender.FinalHTMLToText(`<div style="display:none">` + hiddenMarker + `</div>` + markup)
