@@ -10,7 +10,9 @@ import {
   handleSiteBroadcastsCreate,
   handleSiteBroadcastsGet,
   handleSiteBroadcastsList,
+  handleSiteBroadcastsSchedule,
   handleSiteBroadcastsSend,
+  handleSiteBroadcastsTestSend,
   handleSiteBroadcastsUpdate,
   handleSiteIntegrationsList,
   handleSiteSegmentsList,
@@ -555,4 +557,204 @@ test('an archived broadcast opens its report instead of the form', async () => {
       replace: true,
     })
   await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+})
+
+const SEND_FAILED = 'Failed to send broadcast'
+const REPORT = {
+  to: broadcastsReportRoute.to,
+  params: { workspaceId: 'TestWs01', broadcastId: '7' },
+}
+
+// The draft the edit page opens, of the Channel the test is about; `as` is it in another status.
+function serveDraft(content?: Record<string, unknown>, channel = 'email') {
+  serve('draft')
+  const stored = content
+    ? { ...broadcast('draft'), channel, content: { channel, ...content } }
+    : broadcast('draft')
+  worker.use(handleSiteBroadcastsGet(() => HttpResponse.json(stored)))
+  return { as: (status: string) => ({ ...stored, status }) }
+}
+
+test('Send now and Schedule wait for unsaved edits to be saved', async () => {
+  serveDraft()
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeEnabled()
+
+  await screen.getByLabelText(/^Name/).fill('Launch, edited')
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+
+  await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeDisabled()
+  await expect.element(screen.getByRole('button', { name: 'Schedule', exact: true })).toBeDisabled()
+  await expect
+    .element(screen.getByText('Save your changes first', { exact: false }))
+    .toBeInTheDocument()
+})
+
+test('Send now and Schedule wait while Save is pending, then deliver what was saved', async () => {
+  const received = Promise.withResolvers<undefined>()
+  const release = Promise.withResolvers<undefined>()
+  const sent: string[] = []
+  serveDraft()
+  worker.use(
+    handleSiteBroadcastsUpdate(async () => {
+      received.resolve(undefined)
+      await release.promise
+      return HttpResponse.json({ ...broadcast('draft'), name: 'Launch, edited' })
+    }),
+    handleSiteBroadcastsSend(({ params }) => {
+      sent.push(params.id)
+      return HttpResponse.json(broadcast('sending'))
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+  await screen.getByLabelText(/^Name/).fill('Launch, edited')
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await received.promise
+
+  await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeDisabled()
+  await expect.element(screen.getByRole('button', { name: 'Schedule', exact: true })).toBeDisabled()
+  release.resolve(undefined)
+
+  await expect.element(screen.getByText('Broadcast updated')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Send now' }).click()
+  await expect.poll(() => sent).toEqual(['7'])
+  await expect.poll(() => navigate.mock.calls).toContainEqual([REPORT])
+})
+
+test('scheduling a draft posts the chosen time as an ISO timestamp and opens the report', async () => {
+  const bodies: unknown[] = []
+  serveDraft()
+  worker.use(
+    handleSiteBroadcastsSchedule(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(broadcast('scheduled'))
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
+  expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
+  await expect.poll(() => navigate.mock.calls).toContainEqual([REPORT])
+})
+
+test('a refused Send now shows the error toast and stays on the page', async () => {
+  serveDraft()
+  worker.use(
+    handleSiteBroadcastsSend(() => problem(409, { title: 'Conflict', detail: 'Already sending' })),
+  )
+  const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByRole('button', { name: 'Send now' }).click()
+
+  await expect.element(screen.getByText(SEND_FAILED)).toBeInTheDocument()
+  await expect.element(screen.getByText('Already sending')).toBeInTheDocument()
+  expect(navigate).not.toHaveBeenCalled()
+})
+
+test('a test send posts the typed address and confirms without navigating', async () => {
+  const bodies: unknown[] = []
+  serveDraft()
+  worker.use(
+    handleSiteBroadcastsTestSend(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ from: 'noreply@sphericon.test', captured: false })
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Send a test to').fill('qa@example.com')
+  await screen.getByRole('button', { name: 'Send test' }).click()
+
+  await expect.element(screen.getByText('Test email sent')).toBeInTheDocument()
+  await expect.element(screen.getByText(/Sent from noreply@sphericon\.test/)).toBeInTheDocument()
+  expect(bodies).toEqual([{ email: 'qa@example.com' }])
+  expect(navigate).not.toHaveBeenCalled()
+})
+
+test('a test send captured by a Test inbox says it was not sent to the address named', async () => {
+  serveDraft()
+  worker.use(
+    handleSiteBroadcastsTestSend(() =>
+      HttpResponse.json({ from: 'hello@acme.test', captured: true }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Send a test to').fill('qa@example.com')
+  await screen.getByRole('button', { name: 'Send test' }).click()
+
+  await expect
+    .element(screen.getByText('Captured in your Test inbox, not sent to the address you named.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/Sent from/)).not.toBeInTheDocument()
+})
+
+test('a rejected test send shows the error toast', async () => {
+  serveDraft()
+  worker.use(
+    handleSiteBroadcastsTestSend(() => problem(422, { title: 'Bad', detail: 'No integration' })),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Send a test to').fill('qa@example.com')
+  await screen.getByRole('button', { name: 'Send test' }).click()
+
+  await expect.element(screen.getByText(SEND_FAILED)).toBeInTheDocument()
+})
+
+// Telegram has no Test send (ADR 0080): the action is not offered, and scheduling is.
+test('a Telegram broadcast offers no test send and can be scheduled', async () => {
+  const bodies: unknown[] = []
+  const draft = serveDraft({ text: 'Hello', buttons: [], linkPreview: true }, 'telegram')
+  worker.use(
+    handleSiteBroadcastsSchedule(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(draft.as('scheduled'))
+    }),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
+  expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
+  expect(screen.getByLabelText('Send a test to').elements()).toHaveLength(0)
+  expect(screen.getByRole('button', { name: 'Send test' }).elements()).toHaveLength(0)
+})
+
+// An SMS Broadcast is tested on a phone number the author types (ADR 0080), then scheduled.
+test('an SMS broadcast is test-sent to the typed number, then scheduled', async () => {
+  const bodies: unknown[] = []
+  const schedules: unknown[] = []
+  const draft = serveDraft({ text: 'Hello', linkTracking: true }, 'sms')
+  worker.use(
+    handleSiteBroadcastsTestSend(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ captured: false })
+    }),
+    handleSiteBroadcastsSchedule(async ({ request }) => {
+      schedules.push(await request.json())
+      return HttpResponse.json(draft.as('scheduled'))
+    }),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Send a test text to').fill('+1 415 555 0100')
+  await screen.getByRole('button', { name: 'Send test' }).click()
+
+  await expect.element(screen.getByText('Test text sent')).toBeInTheDocument()
+  expect(bodies).toEqual([{ phone: '+1 415 555 0100' }])
+  expect(screen.getByLabelText('Send a test to').elements()).toHaveLength(0)
+  await expect.element(screen.getByText(/Sent from/)).not.toBeInTheDocument()
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
+  expect(schedules).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
 })

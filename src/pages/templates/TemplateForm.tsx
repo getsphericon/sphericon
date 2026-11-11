@@ -21,15 +21,9 @@ export function TemplateForm({
 }: ResourceFormProps<CreateTemplateInput, TemplateValues>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  // A message written in the editor is its document and the server builds the body; sending
-  // both is a 422.
-  const submit = (payload: CreateTemplateInput) => {
-    const { doc: written, name, subject } = payload
-    onSubmit(written ? { name, ...(subject !== undefined && { subject }), doc: written } : payload)
-  }
 
   return (
-    <form onSubmit={form.onSubmit(submit)}>
+    <form onSubmit={form.onSubmit(onSubmit)}>
       <Stack>
         <TextInput
           label={t(($) => $.templates.nameLabel)}

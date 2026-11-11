@@ -98,7 +98,7 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
 }
 
 // tagsOf reads the operation tags a generated query or mutation key carries in its first element.
-function tagsOf(key: QueryKey | undefined): readonly string[] {
+export function tagsOf(key: QueryKey | undefined): readonly string[] {
   const head: unknown = key?.[0]
   if (typeof head !== 'object' || head === null || !('tags' in head) || !Array.isArray(head.tags)) {
     return []

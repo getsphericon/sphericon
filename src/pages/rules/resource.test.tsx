@@ -20,6 +20,7 @@ import type {
   SiteConditionGroup,
   SiteRuleResource,
 } from '../../generated/site/types.gen.ts'
+import { zSiteUpdateRuleInput } from '../../generated/site/zod.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
@@ -324,4 +325,104 @@ test('a background refetch preserves unfinished structured edits and their dirty
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Tag signups')
   await expect.element(screen.getByLabelText('Tag')).toHaveValue('unfinished')
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
+})
+
+// A server whose first write waits at the gate until released; it then holds what it was sent as
+// the draft above the live version, which a refetch reads.
+function gatedRuleServer(initial: SiteRuleResource) {
+  const received = Promise.withResolvers<undefined>()
+  const release = Promise.withResolvers<undefined>()
+  let server = initial
+  worker.use(
+    handleSiteRulesGet(() => HttpResponse.json(server)),
+    handleSiteRulesUpdate(async ({ request }) => {
+      const { name, ...definition } = zSiteUpdateRuleInput.parse(await request.json())
+      received.resolve(undefined)
+      await release.promise
+      server = {
+        ...server,
+        name: name ?? server.name,
+        draft: {
+          number: server.draft?.number ?? (server.live?.number ?? 0) + 1,
+          triggerEvents: definition.triggerEvents ?? [],
+          actions: definition.actions ?? [],
+        },
+      }
+      return HttpResponse.json(server)
+    }),
+  )
+  return { received: received.promise, release: () => release.resolve(undefined) }
+}
+
+test.each([
+  ['a live rule without a draft', { ...EDITED, draft: null }, 'live'],
+  ['a rule with a draft', EDITED, 'drafted'],
+])(
+  'on %s, an edit made while Save is pending stays, unsaved, after the acknowledgement',
+  async (_case, rule, tag) => {
+    serveCatalogue()
+    const gate = gatedRuleServer(rule)
+
+    const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+    await expect.element(screen.getByLabelText('Tag')).toHaveValue(tag)
+    await screen.getByLabelText('Tag').fill('saved')
+    await screen.getByRole('button', { name: 'Save' }).click()
+    await gate.received
+    await screen.getByLabelText('Name', { exact: false }).fill('Renamed meanwhile')
+    gate.release()
+
+    await expect.element(screen.getByText('Rule updated')).toBeInTheDocument()
+    await expect.element(screen.getByText('Unpublished changes')).toBeInTheDocument()
+    await expect
+      .element(screen.getByLabelText('Name', { exact: false }))
+      .toHaveValue('Renamed meanwhile')
+    await expect.element(screen.getByLabelText('Tag')).toHaveValue('saved')
+    await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
+  },
+)
+
+test('Publish and Revert wait while Save is pending', async () => {
+  serveCatalogue()
+  const gate = gatedRuleServer(EDITED)
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await gate.received
+
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
+  await expect.element(screen.getByRole('button', { name: 'Revert' })).toBeDisabled()
+  gate.release()
+  await expect.element(screen.getByText('Rule updated')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
+})
+
+test('Revert over unsaved edits asks first, and keeps them when the person stays', async () => {
+  const reverted: string[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteRulesGet({ body: EDITED }),
+    handleSiteRulesRevert(({ params }) => {
+      reverted.push(params.id)
+      return HttpResponse.json({ ...EDITED, draft: null })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  await screen.getByLabelText('Tag').fill('edited')
+  await screen.getByRole('button', { name: 'Revert' }).click()
+  const dialog = screen.getByRole('dialog', { name: 'Revert without saving?' })
+  await expect.element(dialog.getByText('Your changes are not saved.')).toBeInTheDocument()
+  await dialog.getByRole('button', { name: 'Keep editing' }).click()
+
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('edited')
+  expect(reverted).toEqual([])
+
+  await screen.getByRole('button', { name: 'Revert' }).click()
+  await screen
+    .getByRole('dialog', { name: 'Revert without saving?' })
+    .getByRole('button', { name: 'Revert' })
+    .click()
+  await expect.poll(() => reverted).toEqual(['7'])
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('live')
 })

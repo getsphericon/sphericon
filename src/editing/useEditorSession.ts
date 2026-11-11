@@ -8,6 +8,7 @@ import type {
   EditorAdapter,
   EditorEffects,
   EditorHandle,
+  EditorOperationInput,
   EditorReceipt,
   EditorSubmission,
 } from './editorSession.ts'
@@ -63,28 +64,61 @@ export function useEditorSession<
     },
   })
 
+  // The outcome of the pending write, or `error` when the session stopped before it, which then
+  // changes nothing.
+  const settle = useCallback(async () => {
+    try {
+      const settled = await waitFor(actor, (state) => state.matches('idle'))
+      return settled.context.result
+    } catch {
+      return 'error' as const
+    }
+  }, [actor])
+
   const { resource } = subject
   useEffect(() => {
     send({ type: 'REFRESH', resource })
   }, [send, resource])
 
   // Whether content the page holds (a value it re-renders on) differs from the acknowledged one.
-  const { saved } = snapshot.context
+  const { saved, submitted } = snapshot.context
   const dirty = (content: TContent) => adapter.fingerprint(content) !== saved
+  // Whether leaving now would lose that content: it differs from the acknowledged content and from
+  // the submission a pending Save carries.
+  const wouldLose = (content: TContent) => {
+    const fingerprint = adapter.fingerprint(content)
+    return fingerprint !== saved && fingerprint !== submitted
+  }
 
   // An operation's event carries the current content's fingerprint for its guard.
-  const operationEvent = (type: TOperation) => ({
-    type,
-    current: adapter.fingerprint(latest.current.editor.read()),
-  })
+  const operationEvent = useCallback(
+    (type: TOperation, input?: EditorOperationInput) => ({
+      type,
+      current: adapter.fingerprint(latest.current.editor.read()),
+      ...(input && { input }),
+    }),
+    [adapter, latest],
+  )
   const can = (type: TOperation) => snapshot.can(operationEvent(type))
-  const run = (type: TOperation) => {
-    send(operationEvent(type))
-  }
+  // Starts the operation and resolves with its outcome: `busy` when it may not start now (another
+  // one is pending, or its guard refuses), else as `save` does.
+  const run = useCallback(
+    async (
+      type: TOperation,
+      input?: EditorOperationInput,
+    ): Promise<'success' | 'error' | 'busy'> => {
+      actor.send(operationEvent(type, input))
+      if (!actor.getSnapshot().matches('operating')) {
+        return 'busy'
+      }
+      return settle()
+    },
+    [actor, operationEvent, settle],
+  )
 
   // Captures the current content and sends it, resolving with the outcome: `busy` when another
   // operation is pending (nothing is captured), `error` when the adapter or `review` refuses the
-  // submission, or when the session stopped before the acknowledgement, which then changes nothing.
+  // submission, or when the session stopped before the acknowledgement.
   // `review` shows the page's own refusals (validation, a warning) and may hold the Save back.
   const save = useCallback(
     async (
@@ -99,15 +133,10 @@ export function useEditorSession<
         return 'error'
       }
       actor.send({ type: 'SAVE', submission })
-      try {
-        const settled = await waitFor(actor, (state) => state.matches('idle'))
-        return settled.context.result
-      } catch {
-        return 'error'
-      }
+      return settle()
     },
-    [actor, adapter, latest],
+    [actor, adapter, latest, settle],
   )
 
-  return { snapshot, dirty, can, run, save }
+  return { snapshot, dirty, wouldLose, can, run, save }
 }

@@ -3,9 +3,13 @@ import * as z from 'zod'
 import {
   siteBroadcastsCreateMutation,
   siteBroadcastsGetOptions,
-  siteBroadcastsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { CreateBroadcastInput } from '../../generated/site/types.gen.ts'
+import {
+  siteBroadcastsSchedule,
+  siteBroadcastsSend,
+  siteBroadcastsUpdate,
+} from '../../generated/site/sdk.gen.ts'
+import type { CreateBroadcastInput, SiteBroadcastResource } from '../../generated/site/types.gen.ts'
 import {
   zBroadcastChannel,
   zCreateBroadcastInput,
@@ -123,12 +127,51 @@ const broadcastSchema: ResourceFormSchema<CreateBroadcastInput, BroadcastValues>
   toValues: flatValues,
 }
 
+// Send now and Schedule deliver the saved content of a draft: the form holds no unsaved edits.
+function deliverable({ resource, dirty }: { resource: SiteBroadcastResource; dirty: boolean }) {
+  return resource.status === 'draft' && !dirty
+}
+
 const broadcastResource = defineResource({
   schema: broadcastSchema,
   Form: BroadcastForm,
   getOptions: siteBroadcastsGetOptions,
   createMutation: siteBroadcastsCreateMutation,
-  updateMutation: siteBroadcastsUpdateMutation,
+  update: siteBroadcastsUpdate,
+  // Delivery of the saved draft, serialized with Save by the editor session.
+  operations: {
+    SEND: {
+      request: async ({ subject: { path }, signal }) => {
+        const { data } = await siteBroadcastsSend({ path, signal, throwOnError: true })
+        return data
+      },
+      available: deliverable,
+      texts: (t) => ({
+        accepted: t(($) => $.notifications.broadcastSent),
+        failedTitle: t(($) => $.alerts.broadcastSendErrorTitle),
+      }),
+    },
+    SCHEDULE: {
+      request: async ({ subject: { path }, input, signal }) => {
+        const { scheduledAt } = input
+        if (scheduledAt === undefined) {
+          throw new Error('Schedule was started without a time')
+        }
+        const { data } = await siteBroadcastsSchedule({
+          path,
+          body: { scheduledAt },
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      available: deliverable,
+      texts: (t) => ({
+        accepted: t(($) => $.notifications.broadcastScheduled),
+        failedTitle: t(($) => $.alerts.broadcastSendErrorTitle),
+      }),
+    },
+  },
   editRoute: broadcastsEditRoute,
   idParam: 'broadcastId',
   texts: (t) => ({
@@ -157,7 +200,7 @@ export function BroadcastCreatePage() {
 export function BroadcastEditPage() {
   return (
     <broadcastResource.EditPage>
-      {(broadcast) => <DeliveryBlock broadcast={broadcast} />}
+      {(broadcast, editor) => <DeliveryBlock broadcast={broadcast} editor={editor} />}
     </broadcastResource.EditPage>
   )
 }

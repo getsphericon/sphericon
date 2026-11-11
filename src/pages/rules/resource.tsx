@@ -1,36 +1,24 @@
 import { useTranslation } from 'react-i18next'
 
-import { emptyGroup } from '../../components/conditions/condition.ts'
-import { DraftControls } from '../../components/DraftControls.tsx'
+import { DraftActions } from '../../components/DraftControls.tsx'
 import {
   siteRulesCreateMutation,
   siteRulesGetOptions,
-  siteRulesUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { zSiteCreateRuleInput } from '../../generated/site/zod.gen.ts'
+import { siteRulesUpdate } from '../../generated/site/sdk.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
-import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
-import { ruleDraftActions } from './draftActions.ts'
 import { RuleDryRun } from './RuleDryRun.tsx'
+import { editedRule, ruleOperations, ruleSchema } from './ruleEditor.ts'
 import { RuleForm } from './RuleForm.tsx'
-import type { RuleValues } from './RuleForm.tsx'
-
-// A Rule's Condition is optional on the wire; the editor always holds one, and the empty group
-// matches every Contact. A new Rule has no Actions yet.
-const blankRule: RuleValues = { name: '', triggerEvents: [], condition: emptyGroup, actions: [] }
-
-const ruleSchema = resourceFormSchema(
-  zSiteCreateRuleInput.required({ condition: true, actions: true }),
-  blankRule,
-)
 
 const ruleResource = defineResource({
   schema: ruleSchema,
   Form: RuleForm,
   getOptions: siteRulesGetOptions,
   createMutation: siteRulesCreateMutation,
-  updateMutation: siteRulesUpdateMutation,
+  update: siteRulesUpdate,
+  operations: ruleOperations,
   editRoute: rulesEditRoute,
   idParam: 'ruleId',
   texts: (t) => ({
@@ -45,9 +33,7 @@ const ruleResource = defineResource({
     to: rulesEditRoute.to,
     params: { workspaceId, ruleId: created.id },
   }),
-  // The editor edits the draft, else the live version (ADR 0065); a Revert reloads it.
-  editedValues: (rule) => ({ name: rule.name, ...(rule.draft ?? rule.live) }),
-  revision: (rule) => String((rule.draft ?? rule.live)?.number ?? 0),
+  editedValues: editedRule,
 })
 
 // Function declarations (hoisted) because the route files and this module import each other.
@@ -60,13 +46,21 @@ export function RuleEditPage() {
   const { workspaceId, ruleId } = rulesEditRoute.useParams()
   return (
     <ruleResource.EditPage>
-      {(rule, { dirty }) => (
+      {(rule, editor) => (
         <>
-          <DraftControls
-            workspaceId={workspaceId}
-            resource={rule}
-            dirty={dirty}
-            {...ruleDraftActions(t)}
+          <DraftActions
+            pending={rule.live !== null && rule.draft !== null}
+            publishable={editor.can('PUBLISH')}
+            publishing={editor.operation === 'PUBLISH'}
+            reverting={editor.operation === 'REVERT'}
+            disabled={editor.busy}
+            {...(editor.dirty && { unsaved: t(($) => $.leave.message) })}
+            onPublish={() => {
+              void editor.run('PUBLISH')
+            }}
+            onRevert={() => {
+              void editor.run('REVERT')
+            }}
           />
           <RuleDryRun workspaceId={workspaceId} ruleId={ruleId} />
         </>

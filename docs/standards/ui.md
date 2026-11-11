@@ -194,22 +194,29 @@ An editor of a saved resource runs an editor session (`src/editing/editorSession
 `useEditorSession`). The page hands it the mounted editor's current content to read and write; its
 kind of resource supplies an adapter: how to fingerprint content, build a submission or refuse an
 invalid one, fold an acknowledgement into content that has moved on, and its operations (Publish,
-Revert, …). Whether the editor is unsaved, and whether an operation may start, comes from the
-session, never from the page. The Automation editor is the first; its canvas adapter is in
-`src/pages/automations/editorSession.ts`.
+Revert, Send now, …). Whether the editor is unsaved, and whether an operation may start, comes from
+the session, never from the page. The Automation editor runs one, with its canvas adapter in
+`src/pages/automations/editorSession.ts`; so does the edit page of every resource described with
+`defineResource`, with the schema-form adapter in `src/resources/resourceEditor.ts`, whose content is
+the form's values. A create page or modal has no session.
 
 - **Three contents.** The current content belongs to the editor: the form or the canvas. The
   submitted content is what a Save captured before its request. The acknowledged content is what
   the server confirmed; its fingerprint is taken from the submission, never rebuilt from the
-  response. The editor is unsaved while the current content differs from the acknowledged one.
+  response, unless the session replaced the content with the server's normalized form of it (below).
+  The editor is unsaved while the current content differs from the acknowledged one.
 - **Edits stay enabled during Save.** An edit made while Save is pending stays, and stays unsaved
   after the acknowledgement. The other operations act on stored content, so the editor is
-  read-only while one of them is pending, and one operation runs at a time: Publish and Revert
-  wait for Save, and Publish waits for unsaved edits to be saved.
+  read-only while one of them is pending, and one operation runs at a time: Publish, Revert, Send
+  now and Schedule wait for Save. Publish waits for unsaved edits to be saved, and so do Send now
+  and Schedule, which deliver the saved content. An operation's event may carry an input, such as
+  the time Schedule sends at.
 - **Only the session replaces content**: an explicit Revert, or a Save whose submission still
-  equals the current content and which takes the server's normalized form of it. Only then are the
-  stateful field editors reloaded. Revert over unsaved edits asks first, in the leave dialog's
-  words.
+  equals the current content and which takes the server's normalized form of it, which is then the
+  acknowledged content. Only then are the stateful field editors reloaded. Revert over unsaved edits
+  asks first, in the leave dialog's words.
+- **Leaving during Save** asks only when the current content differs from both the acknowledged and
+  the submitted content: what the pending Save carries is not lost.
 - **A query refresh updates metadata only**: a refetched resource changes the draft and status
   badges and what the operations allow, never the content. Changes made in another tab or by
   another person are not merged.

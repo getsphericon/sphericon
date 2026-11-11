@@ -172,7 +172,7 @@ function BuilderBar({
   session: SnapshotFrom<typeof editorSession>
   dirty: (content: AutomationContent) => boolean
   can: (operation: AutomationOperation) => boolean
-  run: (operation: AutomationOperation) => void
+  run: (operation: AutomationOperation) => Promise<unknown>
   onSave: () => Promise<DidSaveStatus>
 }) {
   const { t } = useTranslation()
@@ -218,8 +218,12 @@ function BuilderBar({
             reverting={operation === 'REVERT'}
             disabled={busy}
             {...(unsaved && { unsaved: t(($) => $.automations.leaveMessage) })}
-            onPublish={() => run('PUBLISH')}
-            onRevert={() => run('REVERT')}
+            onPublish={() => {
+              void run('PUBLISH')
+            }}
+            onRevert={() => {
+              void run('REVERT')
+            }}
           />
         </Group>
       </Group>
