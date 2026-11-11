@@ -25,5 +25,5 @@ on-site messages. Decided in the frequency ticket
   does not show. sphericon infers nothing more from what a Contact already has.
 - **The state lives in the browser,** beside the Visitor, and is not synced across devices. Safari
   wipes script storage after seven days without interaction, so a form
-  closed long ago may return there; that is accepted. Before Storage consent is granted the state
+  closed long ago may return there; that is accepted. Before Tracker consent is granted the state
   is kept only as the visitor's own close, for the session (ADR 0093).

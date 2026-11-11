@@ -4,6 +4,10 @@ status: accepted
 
 # Clicks on every Channel, and attribution across them
 
+> **Amended by [[0120-engagement-tracking-is-consented-per-destination]]:** a message's links are
+> also kept as written when its Destination's Engagement tracking consent does not allow tracking,
+> on SMS and Telegram alike, whatever the author's switch says.
+
 Email links go through the Tracking domain and record `email.clicked`; a click by software is
 machine engagement and counts nothing (ADR 0053); revenue goes to the Broadcast or Automation of the
 Contact's last `email.clicked` inside the Attribution window (ADR 0064). The new Channels carry links

@@ -4,6 +4,10 @@ status: accepted
 
 # Outbound message projections follow events and keep the earliest observation
 
+> **Amended by [[0120-engagement-tracking-is-consented-per-destination]]:** an observation is
+> accepted only while its Destination's Engagement tracking consent allows tracking, and a `denied`
+> removes the opens and clicks already kept on that Destination's messages.
+
 A recorded human open or click, and an email Delivery notice, cause the Outbound message's
 lasting report projection through an asynchronous consumer. The Event and the consumer's work
 commit together; the report may lag behind the Event. The Outbound message module owns the

@@ -11,6 +11,11 @@ status: accepted
 > human engagement and email delivery projections run asynchronously, retain the earliest observed
 > time regardless of handling order and survive Erasure anonymously. That replaces their
 > same-transaction and set-only-while-empty requirements below.
+>
+> **Amended by [[0120-engagement-tracking-is-consented-per-destination]]:** a message is tracked
+> only when its Destination's Engagement tracking consent allows it, a Transactional send's `track`
+> included; an open or click is recorded only while it still does; and Engagement rates count
+> tracked messages only.
 
 Opens and clicks were recorded once per Broadcast recipient, only for Broadcasts, and counted
 whatever made the request; delivery was inferred (ADR 0011). We now record the full set a sender
