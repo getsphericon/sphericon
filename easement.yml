@@ -94,12 +94,12 @@ x-no-container: &no-container
   - &no-container-do
     name: github.com/samber/do
     because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture/backend.md, DI)
-# The global i18next instance belongs to @workflowbuilder/sdk, which re-initialises it at import time;
-# the app runs on its own instance (src/i18n.ts). The types (`TFunction`, `i18n`) stay allowed.
+# The app runs on its own i18next instance (src/i18n.ts); the global default one is never
+# initialised and holds no string. The types (`TFunction`, `i18n`) stay allowed.
 x-no-global-i18n: &no-global-i18n
   forbid_symbol:
     - name: i18next.i18next
-      because: the app's strings live on its own instance from src/i18n.ts, reached through useTranslation; the global one is the workflow builder SDK's, which wipes it on import
+      because: the app's strings live on its own instance from src/i18n.ts, reached through useTranslation; the global default instance is never initialised, so a string read from it is its key
 x-no-dayjs: &no-dayjs
   name: dayjs
   because: dates go through src/utils/datetime.ts (src/AGENTS.md), which holds the plugins, the time zone and the formats

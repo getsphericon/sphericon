@@ -46,6 +46,31 @@ const STORED: SiteAutomationResource = {
   updatedAt: NOW,
 }
 
+test('the builder shows the SDK strings and the app strings inside it as text, not keys', async () => {
+  worker.use(
+    handleSiteAutomationsGet(() => HttpResponse.json(STORED)),
+    handleSiteIntegrationsList({ body: [] }),
+    handleSiteEnrollmentsList({
+      body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
+    }),
+  )
+
+  const { screen, router } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  // The SDK's own panel, the app's bar, a properties control the app renders for the SDK, and
+  // the dialog the leave guard opens from inside the canvas.
+  await expect.element(screen.getByText('Nodes Library')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+  await screen.getByText('Trigger', { exact: true }).click()
+  await expect
+    .element(screen.getByText('The event that enrolls a contact into this automation.'))
+    .toBeInTheDocument()
+  await screen.getByRole('textbox', { name: 'Name' }).fill('Welcome flow, renamed')
+  router.history.push('/workspaces/TestWs01/automations')
+  await expect.element(screen.getByText('Leave without saving?')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Keep editing' })).toBeInTheDocument()
+})
+
 test('saving a graph whose branches cannot be represented warns that they were dropped', async () => {
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(STORED)),
