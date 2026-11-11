@@ -72,8 +72,8 @@ func (m VersionedMixin) Edges() []ent.Edge {
 
 func (VersionedMixin) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("live_version_id"),
-		index.Fields("draft_version_id"),
+		index.Fields("workspace_id", "live_version_id"),
+		index.Fields("workspace_id", "draft_version_id"),
 	}
 }
 

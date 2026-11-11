@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -162,14 +163,13 @@ func TestPlanFailsOnABrokenSegment(t *testing.T) {
 	// A draft takes the copy of its Segment's Condition as it leaves draft (ADR 0065): a Segment it
 	// cannot read refuses the move, and the draft stays a draft.
 	t.Run("segment of another workspace", func(t *testing.T) {
+		// No Broadcast can point at another Workspace's Segment: the database refuses the write,
+		// whatever client makes it (ADR 0017's composite foreign keys), so no plan meets one.
 		d := newDelivery(t, time.Now)
-		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentGlobexID).ExecX(d.t.Context())
+		err := d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentGlobexID).Exec(d.t.Context())
 
-		_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
-
-		require.ErrorIs(t, err, broadcasts.ErrSegmentNotFound)
-		status := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).Status
-		assert.Equal(t, broadcast.StatusDraft, status)
+		require.Error(t, err)
+		assert.True(t, ent.IsConstraintError(err), "a foreign key refuses it: %v", err)
 	})
 
 	t.Run("sending broadcast whose condition was never copied", func(t *testing.T) {

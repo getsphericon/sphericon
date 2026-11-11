@@ -135,7 +135,7 @@ func active(a *ent.Automation) bool {
 
 // The unique constraints of the Automation's tables (ADR 0106): no client can break them.
 var _ = db.Declare(
-	db.Fault("automation_runs_automation_id_contact_id",
+	db.Fault("automation_runs_workspace_id_automation_id_contact_id",
 		"an Enrollment is written with ON CONFLICT DO NOTHING: a Contact enrolls in an Automation once"),
 	db.Fault("automation_versions_workspace_id_automation_id_version",
 		"a version's number is the next after the newest, read under the Workspace lock (versioneddefinition)"),
@@ -251,7 +251,7 @@ func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveSh
 	if len(o.Properties) > 0 {
 		create.SetEventProperties(o.Properties)
 	}
-	runID, err = create.OnConflictColumns(automationrun.FieldAutomationID, automationrun.FieldContactID).DoNothing().ID(ctx)
+	runID, err = create.OnConflictColumns(automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID).DoNothing().ID(ctx)
 	inserted, err = db.Inserted(err)
 	return runID, inserted, err
 }

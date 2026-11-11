@@ -15,7 +15,7 @@ func TestServerMajorIsASupportedVersion(t *testing.T) {
 	major, err := postgres.ServerMajor(t.Context(), db)
 
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, major, 14)
+	require.GreaterOrEqual(t, major, postgres.MinMajor)
 }
 
 func TestLockTxIsReleasedWhenTheTransactionEnds(t *testing.T) {

@@ -1195,121 +1195,123 @@ url = "https://github.com/mokevnin/heavy/releases/download/v0.1.2/heavy-x86_64-a
 url_api = "https://api.github.com/repos/mokevnin/heavy/releases/assets/679429461"
 
 [[tools."github:mokevnin/schemalens"]]
-version = "0.1.5"
+version = "0.1.6"
 backend = "github:mokevnin/schemalens"
-specifiers = ["0.1.5"]
+specifiers = ["0.1.6"]
 
 [tools."github:mokevnin/schemalens".options]
 additional_asset_patterns = "schemalens-adapter-ent_*_linux_arm64.tar.gz"
 asset_pattern = "schemalens_*_linux_arm64.tar.gz"
 
 [tools."github:mokevnin/schemalens"."platforms.linux-arm64"]
-checksum = "sha256:5e29c43f0e4780a348d0197c75adf355da274e7d77f77f9a5672f3e169a64877"
+checksum = "sha256:6475587410bb364426a3e9204a16bc8d07c750a98c95fb9b254ecd8d98540980"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens_0.1.5_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423201"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens_0.1.6_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735529021"
 
 [[tools."github:mokevnin/schemalens"."platforms.linux-arm64".additional_artifacts]]
-checksum = "sha256:396015ca02a99fbee7406fef5df26a498a65aa56c4120e1b5e8ae54a0fd3396f"
+checksum = "sha256:23b05285f84df3613e07a760d565494cd3e2edfe8c66b5ea7222b208b82c6a26"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens-adapter-ent_0.1.5_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423286"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens-adapter-ent_0.1.6_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735529121"
 
 [tools."github:mokevnin/schemalens"."platforms.linux-arm64-musl"]
-checksum = "sha256:5e29c43f0e4780a348d0197c75adf355da274e7d77f77f9a5672f3e169a64877"
+checksum = "sha256:6475587410bb364426a3e9204a16bc8d07c750a98c95fb9b254ecd8d98540980"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens_0.1.5_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423201"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens_0.1.6_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735529021"
 
 [[tools."github:mokevnin/schemalens"."platforms.linux-arm64-musl".additional_artifacts]]
-checksum = "sha256:396015ca02a99fbee7406fef5df26a498a65aa56c4120e1b5e8ae54a0fd3396f"
+checksum = "sha256:23b05285f84df3613e07a760d565494cd3e2edfe8c66b5ea7222b208b82c6a26"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens-adapter-ent_0.1.5_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423286"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens-adapter-ent_0.1.6_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735529121"
 
 [[tools."github:mokevnin/schemalens"]]
-version = "0.1.5"
+version = "0.1.6"
 backend = "github:mokevnin/schemalens"
-specifiers = ["0.1.5"]
+specifiers = ["0.1.6"]
 
 [tools."github:mokevnin/schemalens".options]
 additional_asset_patterns = "schemalens-adapter-ent_*_linux_amd64.tar.gz"
 asset_pattern = "schemalens_*_linux_amd64.tar.gz"
 
 [tools."github:mokevnin/schemalens"."platforms.linux-x64"]
-checksum = "sha256:c05f34b05e7ba79473ba6f0e60bfc609b6ceedac245138b0b3b6f5a8ebae31c2"
+checksum = "sha256:5cd4b8cc20a319600cf793bab5c98723a932c007571c530861d6ecf75bcbf860"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens_0.1.5_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423197"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens_0.1.6_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735528935"
 
 [[tools."github:mokevnin/schemalens"."platforms.linux-x64".additional_artifacts]]
-checksum = "sha256:d73f77ba0a6e74306a1a13897251f30fc6299514604ee51b3c3568d7cc778c73"
+checksum = "sha256:66afc08889ca861d7803b31ec9d9620f4e9dfd8a6267c181e3bc62bd39f2b6e3"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens-adapter-ent_0.1.5_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423290"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens-adapter-ent_0.1.6_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735529150"
 
 [tools."github:mokevnin/schemalens"."platforms.linux-x64-musl"]
-checksum = "sha256:c05f34b05e7ba79473ba6f0e60bfc609b6ceedac245138b0b3b6f5a8ebae31c2"
+checksum = "sha256:5cd4b8cc20a319600cf793bab5c98723a932c007571c530861d6ecf75bcbf860"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens_0.1.5_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423197"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens_0.1.6_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735528935"
 
 [[tools."github:mokevnin/schemalens"."platforms.linux-x64-musl".additional_artifacts]]
-checksum = "sha256:d73f77ba0a6e74306a1a13897251f30fc6299514604ee51b3c3568d7cc778c73"
+checksum = "sha256:66afc08889ca861d7803b31ec9d9620f4e9dfd8a6267c181e3bc62bd39f2b6e3"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens-adapter-ent_0.1.5_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423290"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens-adapter-ent_0.1.6_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735529150"
 
 [[tools."github:mokevnin/schemalens"]]
-version = "0.1.5"
+version = "0.1.6"
 backend = "github:mokevnin/schemalens"
-specifiers = ["0.1.5"]
+specifiers = ["0.1.6"]
 
 [tools."github:mokevnin/schemalens".options]
 additional_asset_patterns = "schemalens-adapter-ent_*_darwin_arm64.tar.gz"
 asset_pattern = "schemalens_*_darwin_arm64.tar.gz"
 
 [tools."github:mokevnin/schemalens"."platforms.macos-arm64"]
-checksum = "sha256:246934acc684f437029f5e6e13100ee437188ba39f8f3073f1cd8e36c4416efc"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens_0.1.5_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423200"
+checksum = "sha256:d5fc5a685501656e2abe67fa5a437491a95b312d10133dfea9272e8691133493"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens_0.1.6_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735528992"
 
 [[tools."github:mokevnin/schemalens"."platforms.macos-arm64".additional_artifacts]]
-checksum = "sha256:d366fbc6ba0b2b2a3efb2ca1ef3319cf521fabe043618c097b82a33ec88873c8"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens-adapter-ent_0.1.5_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423368"
+checksum = "sha256:022a3aff801ed15932a12340a7a7a73a49a5cf43154e5b7c7d2609008361615c"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens-adapter-ent_0.1.6_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735528991"
 
 [[tools."github:mokevnin/schemalens"]]
-version = "0.1.5"
+version = "0.1.6"
 backend = "github:mokevnin/schemalens"
-specifiers = ["0.1.5"]
+specifiers = ["0.1.6"]
 
 [tools."github:mokevnin/schemalens".options]
 additional_asset_patterns = "schemalens-adapter-ent_*_darwin_amd64.tar.gz"
 asset_pattern = "schemalens_*_darwin_amd64.tar.gz"
 
 [tools."github:mokevnin/schemalens"."platforms.macos-x64"]
-checksum = "sha256:725e3e178e1d02889f8a807b67bfa3601a396bbb2f49a27ea38281dc34d912e7"
+checksum = "sha256:9dda86866ffc1538e97981c0a6ecdde9cf02991710b774faa8a769e72c4354d1"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens_0.1.5_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423203"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens_0.1.6_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735528926"
 
 [[tools."github:mokevnin/schemalens"."platforms.macos-x64".additional_artifacts]]
-checksum = "sha256:68b4182e36c4c8cad25da909431c4cbee2fd6fa6b7a26bab11993cb3256a6b89"
+checksum = "sha256:4595540f98f8a9469a1be5048d06203adcb985559adffc5e7bdba3fb10324de9"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens-adapter-ent_0.1.5_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423381"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens-adapter-ent_0.1.6_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735528994"
 
 [[tools."github:mokevnin/schemalens"]]
-version = "0.1.5"
+version = "0.1.6"
 backend = "github:mokevnin/schemalens"
-specifiers = ["0.1.5"]
+specifiers = ["0.1.6"]
 
 [tools."github:mokevnin/schemalens"."platforms.windows-x64"]
-checksum = "sha256:c7b5a14959747783e2bfcdc91ebd35a4fe164905e386489a4ae02e985670679d"
+checksum = "sha256:bd36699dfece4388008e8fb3c6520d2b4295d84b965b64a06de179f4e332aea6"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.5/schemalens_0.1.5_windows_amd64.zip"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/689423295"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.6/schemalens_0.1.6_windows_amd64.zip"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/735528929"
 
 [[tools."github:sbdchd/squawk"]]
 version = "2.72.0"

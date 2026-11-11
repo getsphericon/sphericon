@@ -52,14 +52,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "apitoken_workspace_id",
+				Name:    "apitoken_workspace_id_membership_id",
 				Unique:  false,
-				Columns: []*schema.Column{APITokensColumns[12]},
-			},
-			{
-				Name:    "apitoken_membership_id",
-				Unique:  false,
-				Columns: []*schema.Column{APITokensColumns[10]},
+				Columns: []*schema.Column{APITokensColumns[12], APITokensColumns[10]},
 			},
 			{
 				Name:    "apitoken_oauth_client_id",
@@ -187,19 +182,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "automation_live_version_id",
+				Name:    "automation_workspace_id_live_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[7]},
+				Columns: []*schema.Column{AutomationsColumns[9], AutomationsColumns[7]},
 			},
 			{
-				Name:    "automation_draft_version_id",
+				Name:    "automation_workspace_id_draft_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[8]},
-			},
-			{
-				Name:    "automation_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[9]},
+				Columns: []*schema.Column{AutomationsColumns[9], AutomationsColumns[8]},
 			},
 		},
 	}
@@ -256,9 +246,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "automation_runs_automation_id_contact_id",
+				Name:    "automation_runs_workspace_id_automation_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationRunsColumns[13], AutomationRunsColumns[14]},
+				Columns: []*schema.Column{AutomationRunsColumns[16], AutomationRunsColumns[13], AutomationRunsColumns[14]},
 			},
 			{
 				Name:    "automationrun_workspace_id_contact_id",
@@ -271,9 +261,9 @@ var (
 				Columns: []*schema.Column{AutomationRunsColumns[14]},
 			},
 			{
-				Name:    "automationrun_version_id",
+				Name:    "automationrun_workspace_id_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[15]},
+				Columns: []*schema.Column{AutomationRunsColumns[16], AutomationRunsColumns[15]},
 			},
 		},
 	}
@@ -375,24 +365,19 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "bindings_integration_destination",
+				Name:    "bindings_workspace_id_integration_destination",
 				Unique:  true,
-				Columns: []*schema.Column{BindingsColumns[9], BindingsColumns[4]},
+				Columns: []*schema.Column{BindingsColumns[11], BindingsColumns[9], BindingsColumns[4]},
 			},
 			{
-				Name:    "bindings_contact_id",
+				Name:    "bindings_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{BindingsColumns[8]},
+				Columns: []*schema.Column{BindingsColumns[11], BindingsColumns[8]},
 			},
 			{
-				Name:    "bindings_visitor_id",
+				Name:    "bindings_workspace_id_visitor_id",
 				Unique:  false,
-				Columns: []*schema.Column{BindingsColumns[10]},
-			},
-			{
-				Name:    "binding_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{BindingsColumns[11]},
+				Columns: []*schema.Column{BindingsColumns[11], BindingsColumns[10]},
 			},
 		},
 	}
@@ -491,19 +476,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "broadcast_workspace_id",
+				Name:    "broadcast_workspace_id_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[27]},
+				Columns: []*schema.Column{BroadcastsColumns[27], BroadcastsColumns[25]},
 			},
 			{
-				Name:    "broadcast_segment_id",
+				Name:    "broadcast_workspace_id_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[25]},
-			},
-			{
-				Name:    "broadcast_integration_id",
-				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[26]},
+				Columns: []*schema.Column{BroadcastsColumns[27], BroadcastsColumns[26]},
 			},
 		},
 	}
@@ -545,19 +525,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "broadcast_recipients_broadcast_id_contact_id",
+				Name:    "broadcast_recipients_workspace_id_broadcast_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[5], BroadcastRecipientsColumns[6]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[7], BroadcastRecipientsColumns[5], BroadcastRecipientsColumns[6]},
 			},
 			{
-				Name:    "broadcastrecipient_workspace_id",
+				Name:    "broadcast_recipients_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[7]},
-			},
-			{
-				Name:    "broadcast_recipients_contact_id",
-				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[6]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[7], BroadcastRecipientsColumns[6]},
 			},
 		},
 	}
@@ -618,14 +593,14 @@ var (
 				Columns: []*schema.Column{CapturedMessagesColumns[16], CapturedMessagesColumns[5]},
 			},
 			{
-				Name:    "captured_messages_integration_id",
+				Name:    "captured_messages_workspace_id_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{CapturedMessagesColumns[15]},
+				Columns: []*schema.Column{CapturedMessagesColumns[16], CapturedMessagesColumns[15]},
 			},
 			{
-				Name:    "captured_messages_outbound_message_id",
+				Name:    "captured_messages_workspace_id_outbound_message_id",
 				Unique:  false,
-				Columns: []*schema.Column{CapturedMessagesColumns[14]},
+				Columns: []*schema.Column{CapturedMessagesColumns[16], CapturedMessagesColumns[14]},
 			},
 		},
 	}
@@ -669,9 +644,9 @@ var (
 				Columns: []*schema.Column{ConfirmationsColumns[10], ConfirmationsColumns[3], ConfirmationsColumns[4]},
 			},
 			{
-				Name:    "confirmations_contact_id",
+				Name:    "confirmations_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{ConfirmationsColumns[9]},
+				Columns: []*schema.Column{ConfirmationsColumns[10], ConfirmationsColumns[9]},
 			},
 		},
 	}
@@ -869,13 +844,6 @@ var (
 				Columns:    []*schema.Column{EmailTemplatesColumns[8]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "emailtemplate_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{EmailTemplatesColumns[8]},
 			},
 		},
 	}
@@ -1218,11 +1186,6 @@ var (
 				},
 			},
 			{
-				Name:    "integration_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{IntegrationsColumns[22]},
-			},
-			{
 				Name:    "integrations_one_inbox_per_workspace",
 				Unique:  true,
 				Columns: []*schema.Column{IntegrationsColumns[22], IntegrationsColumns[6]},
@@ -1431,11 +1394,6 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{MembershipsColumns[6], MembershipsColumns[7]},
 			},
-			{
-				Name:    "membership_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{MembershipsColumns[7]},
-			},
 		},
 	}
 	// OauthClientsColumns holds the columns for the "oauth_clients" table.
@@ -1501,14 +1459,9 @@ var (
 				Columns: []*schema.Column{OauthCodesColumns[10]},
 			},
 			{
-				Name:    "oauthcode_workspace_id",
+				Name:    "oauthcode_workspace_id_membership_id",
 				Unique:  false,
-				Columns: []*schema.Column{OauthCodesColumns[11]},
-			},
-			{
-				Name:    "oauthcode_membership_id",
-				Unique:  false,
-				Columns: []*schema.Column{OauthCodesColumns[9]},
+				Columns: []*schema.Column{OauthCodesColumns[11], OauthCodesColumns[9]},
 			},
 		},
 	}
@@ -1606,19 +1559,19 @@ var (
 				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[3]},
 			},
 			{
-				Name:    "order_contact_id",
+				Name:    "order_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[6]},
+				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[6]},
 			},
 			{
-				Name:    "order_broadcast_id",
+				Name:    "order_workspace_id_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[7]},
+				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[7]},
 			},
 			{
-				Name:    "order_automation_id",
+				Name:    "order_workspace_id_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[8]},
+				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[8]},
 			},
 		},
 	}
@@ -1661,9 +1614,9 @@ var (
 				Columns: []*schema.Column{OrderMovementsColumns[9], OrderMovementsColumns[5]},
 			},
 			{
-				Name:    "ordermovement_order_id",
+				Name:    "ordermovement_workspace_id_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderMovementsColumns[8]},
+				Columns: []*schema.Column{OrderMovementsColumns[9], OrderMovementsColumns[8]},
 			},
 			{
 				Name:    "ordermovement_workspace_id_order_id_refund_id",
@@ -1807,9 +1760,9 @@ var (
 				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
 			},
 			{
-				Name:    "outbound_messages_contact_id",
+				Name:    "outbound_messages_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[31]},
+				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[31]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_broadcast_id_status",
@@ -1817,9 +1770,9 @@ var (
 				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[26], OutboundMessagesColumns[10]},
 			},
 			{
-				Name:    "outbound_messages_broadcast_recipient_id",
+				Name:    "outbound_messages_workspace_id_broadcast_recipient_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[29]},
+				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[29]},
 			},
 			{
 				Name:    "outbound_messages_broadcast_id",
@@ -1832,19 +1785,19 @@ var (
 				Columns: []*schema.Column{OutboundMessagesColumns[28]},
 			},
 			{
-				Name:    "outbound_messages_automation_id",
+				Name:    "outbound_messages_workspace_id_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[27]},
+				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[27]},
 			},
 			{
-				Name:    "outbound_messages_automation_run_id",
+				Name:    "outbound_messages_workspace_id_automation_run_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[30]},
+				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[30]},
 			},
 			{
-				Name:    "outbound_messages_template_id",
+				Name:    "outbound_messages_workspace_id_template_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[32]},
+				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[32]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_sent_at_broadcast",
@@ -1995,9 +1948,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "providerlimiter_workspace_id",
+				Name:    "providerlimiter_workspace_id_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProviderLimitersColumns[7]},
+				Columns: []*schema.Column{ProviderLimitersColumns[7], ProviderLimitersColumns[6]},
 			},
 		},
 	}
@@ -2071,19 +2024,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "rule_live_version_id",
+				Name:    "rule_workspace_id_live_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{RulesColumns[7]},
+				Columns: []*schema.Column{RulesColumns[9], RulesColumns[7]},
 			},
 			{
-				Name:    "rule_draft_version_id",
+				Name:    "rule_workspace_id_draft_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{RulesColumns[8]},
-			},
-			{
-				Name:    "rule_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{RulesColumns[9]},
+				Columns: []*schema.Column{RulesColumns[9], RulesColumns[8]},
 			},
 		},
 	}
@@ -2135,19 +2083,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "rulefiring_rule_id_source_id",
+				Name:    "rulefiring_workspace_id_rule_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{RuleFiringsColumns[8], RuleFiringsColumns[4]},
+				Columns: []*schema.Column{RuleFiringsColumns[11], RuleFiringsColumns[8], RuleFiringsColumns[4]},
 			},
 			{
-				Name:    "rulefiring_workspace_id",
+				Name:    "rule_firings_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{RuleFiringsColumns[11]},
-			},
-			{
-				Name:    "rule_firings_contact_id",
-				Unique:  false,
-				Columns: []*schema.Column{RuleFiringsColumns[9]},
+				Columns: []*schema.Column{RuleFiringsColumns[11], RuleFiringsColumns[9]},
 			},
 			{
 				Name:    "rulefiring_created_at",
@@ -2155,9 +2098,9 @@ var (
 				Columns: []*schema.Column{RuleFiringsColumns[1]},
 			},
 			{
-				Name:    "rulefiring_version_id",
+				Name:    "rulefiring_workspace_id_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{RuleFiringsColumns[10]},
+				Columns: []*schema.Column{RuleFiringsColumns[11], RuleFiringsColumns[10]},
 			},
 		},
 	}
@@ -2239,9 +2182,9 @@ var (
 				Columns: []*schema.Column{RuleVersionTriggersColumns[5], RuleVersionTriggersColumns[3]},
 			},
 			{
-				Name:    "ruleversiontrigger_version_id_action",
+				Name:    "ruleversiontrigger_workspace_id_version_id_action",
 				Unique:  true,
-				Columns: []*schema.Column{RuleVersionTriggersColumns[4], RuleVersionTriggersColumns[3]},
+				Columns: []*schema.Column{RuleVersionTriggersColumns[5], RuleVersionTriggersColumns[4], RuleVersionTriggersColumns[3]},
 			},
 		},
 	}
@@ -2305,13 +2248,6 @@ var (
 				Columns:    []*schema.Column{SegmentsColumns[6]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "segment_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{SegmentsColumns[6]},
 			},
 		},
 	}
@@ -2541,19 +2477,19 @@ var (
 				Columns: []*schema.Column{StartTokensColumns[9], StartTokensColumns[3]},
 			},
 			{
-				Name:    "start_tokens_integration_id",
+				Name:    "start_tokens_workspace_id_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{StartTokensColumns[7]},
+				Columns: []*schema.Column{StartTokensColumns[9], StartTokensColumns[7]},
 			},
 			{
-				Name:    "start_tokens_contact_id",
+				Name:    "start_tokens_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{StartTokensColumns[6]},
+				Columns: []*schema.Column{StartTokensColumns[9], StartTokensColumns[6]},
 			},
 			{
-				Name:    "start_tokens_visitor_id",
+				Name:    "start_tokens_workspace_id_visitor_id",
 				Unique:  false,
-				Columns: []*schema.Column{StartTokensColumns[8]},
+				Columns: []*schema.Column{StartTokensColumns[9], StartTokensColumns[8]},
 			},
 			{
 				Name:    "start_tokens_expires_at",
@@ -2674,14 +2610,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "tracked_links_outbound_message_id",
+				Name:    "tracked_links_workspace_id_outbound_message_id",
 				Unique:  false,
-				Columns: []*schema.Column{TrackedLinksColumns[5]},
-			},
-			{
-				Name:    "trackedlink_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{TrackedLinksColumns[6]},
+				Columns: []*schema.Column{TrackedLinksColumns[6], TrackedLinksColumns[5]},
 			},
 		},
 	}
@@ -2796,9 +2727,9 @@ var (
 				Columns: []*schema.Column{UnsubscribesColumns[8], UnsubscribesColumns[3], UnsubscribesColumns[4], UnsubscribesColumns[5]},
 			},
 			{
-				Name:    "unsubscribes_contact_id",
+				Name:    "unsubscribes_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{UnsubscribesColumns[7]},
+				Columns: []*schema.Column{UnsubscribesColumns[8], UnsubscribesColumns[7]},
 			},
 		},
 	}
@@ -2961,9 +2892,9 @@ var (
 				Columns: []*schema.Column{VisitorsColumns[6], VisitorsColumns[3]},
 			},
 			{
-				Name:    "visitor_contact_id",
+				Name:    "visitor_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{VisitorsColumns[5]},
+				Columns: []*schema.Column{VisitorsColumns[6], VisitorsColumns[5]},
 			},
 		},
 	}

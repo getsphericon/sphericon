@@ -94,7 +94,7 @@ func (Confirmation) Indexes() []ent.Index {
 			StorageKey("confirmations_ws_channel_dest"),
 		// Erasure and contact lookups reach this table by contact. Not partial: it is also the
 		// contact foreign key's index.
-		index.Fields("contact_id").
-			StorageKey("confirmations_contact_id"),
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("confirmations_workspace_id_contact_id"),
 	}
 }

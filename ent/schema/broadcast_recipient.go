@@ -70,13 +70,12 @@ func (BroadcastRecipient) Edges() []ent.Edge {
 
 func (BroadcastRecipient) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("broadcast_id", "contact_id").
+		index.Fields("workspace_id", "broadcast_id", "contact_id").
 			Unique().
-			StorageKey("broadcast_recipients_broadcast_id_contact_id"),
-		index.Fields("workspace_id"),
+			StorageKey("broadcast_recipients_workspace_id_broadcast_id_contact_id"),
 		// Erasure and contact lookups reach this table by contact; the contact foreign key's
 		// index (whole: a key's index cannot be partial).
-		index.Fields("contact_id").
-			StorageKey("broadcast_recipients_contact_id"),
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("broadcast_recipients_workspace_id_contact_id"),
 	}
 }

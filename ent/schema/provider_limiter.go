@@ -63,6 +63,7 @@ func (ProviderLimiter) Edges() []ent.Edge {
 
 func (ProviderLimiter) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id"),
+		// Serves both foreign keys: the Workspace's and the Integration's composite one.
+		index.Fields("workspace_id", "integration_id"),
 	}
 }

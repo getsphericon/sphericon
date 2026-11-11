@@ -5,7 +5,6 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 )
 
 type Segment struct {
@@ -33,11 +32,5 @@ func (Segment) Fields() []ent.Field {
 		field.String("condition").
 			Optional().
 			Nillable(),
-	}
-}
-
-func (Segment) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("workspace_id"),
 	}
 }

@@ -55,12 +55,6 @@ func (Rule) Edges() []ent.Edge {
 	}
 }
 
-func (Rule) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("workspace_id"),
-	}
-}
-
 // RuleVersion is one copy of a Rule's definition (ADR 0065, GLOSSARY: Rule version): its Trigger
 // events (rule_version_triggers), its Condition and its Actions. The live version is never
 // rewritten; the draft is rewritten in place until it is published. A Firing references the
@@ -153,8 +147,9 @@ func (RuleVersionTrigger) Indexes() []ent.Index {
 	return []ent.Index{
 		// The lookup of an Event: the versions of a Workspace that react to an action.
 		index.Fields("workspace_id", "action"),
-		// A version names an action once; the leading version_id also serves the foreign key.
-		index.Fields("version_id", "action").
+		// A version names an action once; the leading workspace_id and version_id also serve the
+		// composite foreign key.
+		index.Fields("workspace_id", "version_id", "action").
 			Unique(),
 	}
 }
@@ -231,17 +226,16 @@ func (RuleFiring) Edges() []ent.Edge {
 
 func (RuleFiring) Indexes() []ent.Index {
 	return []ent.Index{
-		// At most one Firing per Rule and Event; the leading rule_id also serves the foreign key.
-		index.Fields("rule_id", "source_id").
+		// At most one Firing per Rule and Event; the leading workspace_id and rule_id also serve the
+		// composite foreign key.
+		index.Fields("workspace_id", "rule_id", "source_id").
 			Unique(),
-		// The Workspace foreign key's index: erasing a Workspace finds its Firings by it.
-		index.Fields("workspace_id"),
 		// The contact foreign key's index: deleting a Contact finds its Firings by it.
-		index.Fields("contact_id").
-			StorageKey("rule_firings_contact_id"),
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("rule_firings_workspace_id_contact_id"),
 		// The retention prune (ADR 0019) selects the Firings older than the window.
 		index.Fields("created_at"),
 		// The version foreign key's index.
-		index.Fields("version_id"),
+		index.Fields("workspace_id", "version_id"),
 	}
 }

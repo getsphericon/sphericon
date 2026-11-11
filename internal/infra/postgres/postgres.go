@@ -28,6 +28,12 @@ func LockTx(ctx context.Context, e Execer, key int64) error {
 	return err
 }
 
+// MinMajor is the oldest Postgres major the Instance runs on. The schema relies on 15 and later: a
+// Workspace-owned table's composite foreign key names the one column its ON DELETE SET NULL clears
+// (ADR 0017), and 16 is the oldest major still supported upstream for long enough to run on. `sphericon
+// doctor` fails below it, and the self-hosting guide on the documentation site cites it.
+const MinMajor = 16
+
 // ServerMajor is the major version of the Postgres server (server_version_num is
 // major*10000+minor from version 10 on).
 func ServerMajor(ctx context.Context, q Queryer) (int, error) {

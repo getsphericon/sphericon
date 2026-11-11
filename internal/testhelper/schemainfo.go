@@ -50,8 +50,10 @@ func UnvalidatedConstraints(t *testing.T, sqlDB *sql.DB, table string) []string 
 	return names
 }
 
-// UniqueIndexes maps each unique index of the public schema that is no primary key to its table. A
-// unique constraint is an index too, and Postgres reports a violation by the index's name.
+// UniqueIndexes maps each unique index of the public schema that is no primary key, and holds no
+// primary key's columns either, to its table: such a key (the Workspace's (workspace_id, id)) can no
+// more be broken than the primary key. A unique constraint is an index too, and Postgres reports a
+// violation by the index's name.
 func UniqueIndexes(t *testing.T, sqlDB *sql.DB) map[string]string {
 	t.Helper()
 	// raw sql: reads pg_index, which is not an ent entity.
@@ -60,7 +62,9 @@ func UniqueIndexes(t *testing.T, sqlDB *sql.DB) map[string]string {
 		JOIN pg_class i ON i.oid = x.indexrelid
 		JOIN pg_class c ON c.oid = x.indrelid
 		JOIN pg_namespace n ON n.oid = c.relnamespace
-		WHERE x.indisunique AND NOT x.indisprimary AND n.nspname = 'public'`)
+		WHERE x.indisunique AND NOT x.indisprimary AND n.nspname = 'public'
+		  AND NOT EXISTS (SELECT 1 FROM pg_index p WHERE p.indrelid = x.indrelid AND p.indisprimary
+		    AND p.indkey::int2[] <@ x.indkey::int2[])`)
 	require.NoError(t, err)
 	defer func() { _ = rows.Close() }()
 	out := map[string]string{}

@@ -3,10 +3,12 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io/fs"
 	"math"
 
 	sphericon "github.com/getsphericon/sphericon"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/pressly/goose/v3"
 	"github.com/pressly/goose/v3/lock"
 )
@@ -76,6 +78,15 @@ func MigrateFS(ctx context.Context, sqlDB *sql.DB, files fs.FS) (int, error) {
 }
 
 func migrateFS(ctx context.Context, sqlDB *sql.DB, files fs.FS, gos []*goose.Migration) (int, error) {
+	// A server older than the schema needs stops here, before a migration it cannot run (a SET NULL
+	// with a column list) leaves the schema half changed.
+	major, err := postgres.ServerMajor(ctx, sqlDB)
+	if err != nil {
+		return 0, err
+	}
+	if major < postgres.MinMajor {
+		return 0, fmt.Errorf("PostgreSQL %d is older than %d, the oldest the schema runs on: upgrade PostgreSQL first", major, postgres.MinMajor)
+	}
 	// A lock wait is bounded by ctx alone: goose's own default would give up after five minutes.
 	locker, err := lock.NewPostgresSessionLocker(lock.WithLockTimeout(1, math.MaxInt32))
 	if err != nil {

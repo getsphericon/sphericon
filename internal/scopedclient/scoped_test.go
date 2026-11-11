@@ -263,7 +263,7 @@ func TestScopedCreateBulk(t *testing.T) {
 			require.NoError(t, br.CreateBulk(
 				newRecipient(fixtures.ContactAliceID),
 				newRecipient(fixtures.ContactBobID),
-			).OnConflictColumns(broadcastrecipient.FieldBroadcastID, broadcastrecipient.FieldContactID).Ignore().Exec(ctx))
+			).OnConflictColumns(broadcastrecipient.FieldWorkspaceID, broadcastrecipient.FieldBroadcastID, broadcastrecipient.FieldContactID).Ignore().Exec(ctx))
 		}
 		rows, err := br.Query().Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID)).All(ctx)
 		require.NoError(t, err)

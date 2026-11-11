@@ -89,14 +89,13 @@ func (Binding) Edges() []ent.Edge {
 func (Binding) Indexes() []ent.Index {
 	return []ent.Index{
 		// One Binding per Destination of an Integration; the `/start` upsert finds it here.
-		index.Fields("integration_id", "destination").
+		index.Fields("workspace_id", "integration_id", "destination").
 			Unique().
-			StorageKey("bindings_integration_destination"),
+			StorageKey("bindings_workspace_id_integration_destination"),
 		// A Contact's Bindings and the cascade of its delete (a key's index is whole).
-		index.Fields("contact_id").
-			StorageKey("bindings_contact_id"),
-		index.Fields("visitor_id").
-			StorageKey("bindings_visitor_id"),
-		index.Fields("workspace_id"),
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("bindings_workspace_id_contact_id"),
+		index.Fields("workspace_id", "visitor_id").
+			StorageKey("bindings_workspace_id_visitor_id"),
 	}
 }

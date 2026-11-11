@@ -95,8 +95,7 @@ func (ApiToken) Edges() []ent.Edge {
 
 func (ApiToken) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id"),
-		index.Fields("membership_id"),
+		index.Fields("workspace_id", "membership_id"),
 		index.Fields("oauth_client_id"),
 	}
 }

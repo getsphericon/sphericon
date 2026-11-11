@@ -121,15 +121,17 @@ func (AutomationRun) Edges() []ent.Edge {
 
 func (AutomationRun) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("automation_id", "contact_id").
+		// One run per Automation and Contact; the leading workspace_id also serves the Automation's
+		// composite foreign key.
+		index.Fields("workspace_id", "automation_id", "contact_id").
 			Unique().
-			StorageKey("automation_runs_automation_id_contact_id"),
+			StorageKey("automation_runs_workspace_id_automation_id_contact_id"),
 		// Erasure reaches runs by contact; the leading workspace_id also serves workspace scans.
 		index.Fields("workspace_id", "contact_id"),
 		// The contact foreign key's index: deleting a Contact finds its runs by it.
 		index.Fields("contact_id").
 			StorageKey("automation_runs_contact_id"),
 		// "Does an Enrollment stand on this version" decides rewrite or supersede.
-		index.Fields("version_id"),
+		index.Fields("workspace_id", "version_id"),
 	}
 }

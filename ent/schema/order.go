@@ -102,10 +102,10 @@ func (Order) Indexes() []ent.Index {
 		index.Fields("workspace_id", "order_id").
 			Unique(),
 		// The contact foreign key's index: deleting a Contact finds its Orders by it.
-		index.Fields("contact_id"),
+		index.Fields("workspace_id", "contact_id"),
 		// The credit's foreign keys' indexes, and the revenue of one Broadcast or Automation.
-		index.Fields("broadcast_id"),
-		index.Fields("automation_id"),
+		index.Fields("workspace_id", "broadcast_id"),
+		index.Fields("workspace_id", "automation_id"),
 	}
 }
 
@@ -177,7 +177,7 @@ func (OrderMovement) Indexes() []ent.Index {
 		// Backs the revenue reads: the movements of one Workspace in a window of time.
 		index.Fields("workspace_id", "occurred_at"),
 		// The order foreign key's index: an Order's Movements, and the cascade.
-		index.Fields("order_id"),
+		index.Fields("workspace_id", "order_id"),
 		// A refund_id refunds once per order: a resent refund finds its Movement.
 		index.Fields("workspace_id", "order_id", "refund_id").
 			Unique().

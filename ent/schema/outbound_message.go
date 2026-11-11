@@ -217,25 +217,25 @@ func (OutboundMessage) Indexes() []ent.Index {
 		index.Fields("workspace_id", "updated_at", "id"),
 		// Erasure and contact lookups reach this table by contact; the contact foreign key's
 		// index (whole: a key's index cannot be partial).
-		index.Fields("contact_id").
-			StorageKey("outbound_messages_contact_id"),
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("outbound_messages_workspace_id_contact_id"),
 		// A Broadcast's delivery figures: its messages grouped by status (ADR 0015).
 		index.Fields("workspace_id", "broadcast_id", "status"),
 		// A Broadcast recipient's message: one per recipient, so "is this recipient still
 		// pending" is an indexed lookup. Only Broadcast sends carry the column.
-		index.Fields("broadcast_recipient_id").
-			StorageKey("outbound_messages_broadcast_recipient_id"),
+		index.Fields("workspace_id", "broadcast_recipient_id").
+			StorageKey("outbound_messages_workspace_id_broadcast_recipient_id"),
 		// The keys that need a lookup by the referenced row: its delete or its restriction check.
 		index.Fields("broadcast_id").
 			StorageKey("outbound_messages_broadcast_id"),
 		index.Fields("integration_id").
 			StorageKey("outbound_messages_integration_id"),
-		index.Fields("automation_id").
-			StorageKey("outbound_messages_automation_id"),
-		index.Fields("automation_run_id").
-			StorageKey("outbound_messages_automation_run_id"),
-		index.Fields("template_id").
-			StorageKey("outbound_messages_template_id"),
+		index.Fields("workspace_id", "automation_id").
+			StorageKey("outbound_messages_workspace_id_automation_id"),
+		index.Fields("workspace_id", "automation_run_id").
+			StorageKey("outbound_messages_workspace_id_automation_run_id"),
+		index.Fields("workspace_id", "template_id").
+			StorageKey("outbound_messages_workspace_id_template_id"),
 		// The workspace analytics dashboard's send cohort: Broadcast sends by send time.
 		index.Fields("workspace_id", "sent_at").
 			StorageKey("outbound_messages_workspace_id_sent_at_broadcast").

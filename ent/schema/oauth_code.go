@@ -83,7 +83,6 @@ func (OAuthCode) Edges() []ent.Edge {
 func (OAuthCode) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("client_id"),
-		index.Fields("workspace_id"),
-		index.Fields("membership_id"),
+		index.Fields("workspace_id", "membership_id"),
 	}
 }
