@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { afterEach, expect, test, vi } from 'vitest'
+import { expect, test } from 'vitest'
 
 import {
   handleSiteTokensCreate,
@@ -11,10 +11,6 @@ import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { ApiKeysSection } from './ApiKeysSection.tsx'
-
-afterEach(() => {
-  vi.restoreAllMocks()
-})
 
 test('creates a token and reveals the one-time secret', async () => {
   let created = false

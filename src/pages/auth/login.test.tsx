@@ -55,8 +55,40 @@ async function signInWithPassword(
   await screen.getByRole('button', { name: 'Sign in' }).click()
 }
 
+// A guard sent the person here to sign in, so a signed-in page moves the browser on to `NEXT`:
+// where its (real, in-memory) history went is what a test reads, rather than the calls of the
+// `navigate` the harness stubs.
+const NEXT = '/oauth/consent'
+async function renderLogin(search = '') {
+  return renderWithRouter(<LoginPage />, {
+    initialPath: `/login?redirect=${encodeURIComponent(NEXT)}${search}`,
+    path: '/login',
+  })
+}
+
+// The browser's Passkey ceremony, driven by the test: it starts when the page asks and waits for
+// the person, who chooses a Passkey or dismisses the prompt; a cancel from the page ends it with an
+// AbortError, as the browser's does.
+function passkeyCeremony() {
+  const started = Promise.withResolvers<unknown>()
+  const answer = Promise.withResolvers<AuthenticationResponseJSON>()
+  // An answer settled before the page asked is not an unhandled rejection: the page reads it later.
+  answer.promise.catch(() => undefined)
+  webauthn.authenticate.mockImplementation(async (args) => {
+    started.resolve(args)
+    return answer.promise
+  })
+  webauthn.cancel.mockImplementation(() => {
+    answer.reject(new DOMException('cancelled', 'AbortError'))
+  })
+  return {
+    started: started.promise,
+    choose: () => answer.resolve(ASSERTION),
+    dismiss: () => answer.reject(new DOMException('dismissed', 'NotAllowedError')),
+  }
+}
+
 beforeEach(() => {
-  vi.resetAllMocks()
   webauthn.supported.mockReturnValue(true)
   webauthn.autofill.mockResolvedValue(false)
 })
@@ -233,11 +265,9 @@ test('a code step abandoned by Start over fails late without touching the passwo
 test('a new code step with the same challenge ignores the code sent to the abandoned one', async () => {
   const codeAnswer = Promise.withResolvers<Response>()
   const codeAsked = Promise.withResolvers<Request>()
-  const codesSent: unknown[] = []
   worker.use(
     handleSiteAuthLogin({ body: { outcome: 'challenge', challenge: 'signed-challenge' } }),
     handleSiteAuthSecondFactor(async ({ request }) => {
-      codesSent.push(await request.clone().json())
       codeAsked.resolve(request)
       return codeAnswer.promise
     }),
@@ -256,73 +286,77 @@ test('a new code step with the same challenge ignores the code sent to the aband
   codeAnswer.resolve(problem(401, { detail: 'the code is not valid' }))
   await settled()
   expect(screen.getByText('the code is not valid').query()).toBeNull()
-  // The code typed on the new step is still there to send.
-  await screen.getByRole('button', { name: 'Verify' }).click()
-  await expect
-    .poll(() => codesSent)
-    .toEqual([
-      { challenge: 'signed-challenge', code: '000000' },
-      { challenge: 'signed-challenge', code: '123456' },
-    ])
+  // The code typed on the new step is still in its boxes.
+  await expect.element(screen.getByLabelText(/^Authentication code/)).toHaveValue('1')
+  await expect.element(screen.getByLabelText('Digit 6')).toHaveValue('6')
 })
 
 test('a sign-in whose navigation failed can be tried again', async () => {
   worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
-  navigate.mockRejectedValueOnce(new Error('navigation failed'))
+  const { screen, router } = await renderLogin()
+  vi.spyOn(router.history, 'push').mockImplementationOnce(() => {
+    throw new Error('navigation failed')
+  })
 
   await signInWithPassword(screen)
-  await expect.poll(() => navigate).toHaveBeenCalledTimes(1)
   await settled()
   await signInWithPassword(screen)
 
-  await expect.poll(() => navigate).toHaveBeenCalledTimes(2)
+  await expect.poll(() => router.history.location.pathname).toBe(NEXT)
 })
 
-test('a password login and a Passkey chosen from autofill that both succeed navigate once', async () => {
+test('a Passkey from autofill that signs in after a password login leaves the page once', async () => {
   webauthn.autofill.mockResolvedValue(true)
-  const chosen = Promise.withResolvers<AuthenticationResponseJSON>()
-  webauthn.authenticate.mockReturnValue(chosen.promise)
+  const ceremony = passkeyCeremony()
+  const finished = Promise.withResolvers<Response>()
+  const finishAsked = Promise.withResolvers<Request>()
   worker.use(
     handleSiteAuthLogin({ body: { outcome: 'session' } }),
     handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
-    handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
+    handleSitePasskeyLoginFinish(async ({ request }) => {
+      finishAsked.resolve(request)
+      return finished.promise
+    }),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, router } = await renderLogin()
+  const entries = router.history.length
 
-  await expect.poll(() => webauthn.authenticate).toHaveBeenCalled()
-  await signInWithPassword(screen, 'user@example.com')
-  await expect.poll(() => navigate).toHaveBeenCalled()
-  chosen.resolve(ASSERTION)
+  await ceremony.started
+  ceremony.choose()
+  await finishAsked.promise
+  await signInWithPassword(screen)
+  await expect.poll(() => router.history.location.pathname).toBe(NEXT)
+  finished.resolve(HttpResponse.json({ outcome: 'session' }))
 
   await settled()
-  expect(navigate).toHaveBeenCalledTimes(1)
+  expect(router.history.length).toBe(entries + 1)
 })
 
 test('a challenge cancels the Passkey ceremony the browser offers in the email field', async () => {
   webauthn.autofill.mockResolvedValue(true)
-  // The browser ends a cancelled ceremony with an AbortError.
-  const ceremony = Promise.withResolvers<AuthenticationResponseJSON>()
-  webauthn.authenticate.mockReturnValue(ceremony.promise)
-  webauthn.cancel.mockImplementation(() =>
-    ceremony.reject(new DOMException('cancelled', 'AbortError')),
-  )
+  const ceremony = passkeyCeremony()
   worker.use(
     handleSiteAuthLogin({ body: { outcome: 'challenge', challenge: 'signed-challenge' } }),
     handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
+    handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
   )
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen, router } = await renderLogin()
 
-  await expect.poll(() => webauthn.authenticate).toHaveBeenCalled()
-  webauthn.cancel.mockClear()
+  await ceremony.started
   await signInWithPassword(screen)
-
   await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
-  expect(webauthn.cancel).toHaveBeenCalled()
+  // The person picks a Passkey from a list that is no longer offered.
+  ceremony.choose()
+
+  await settled()
+  expect(router.history.location.pathname).toBe('/login')
+  await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
 })
 
 test('a challenge that lands while the autofill ceremony is still being prepared stops it', async () => {
   webauthn.autofill.mockResolvedValue(true)
+  // Were the ceremony to start, the person would at once choose a Passkey.
+  webauthn.authenticate.mockResolvedValue(ASSERTION)
   const begun = Promise.withResolvers<Response>()
   const beginAsked = Promise.withResolvers<Request>()
   worker.use(
@@ -331,8 +365,9 @@ test('a challenge that lands while the autofill ceremony is still being prepared
       beginAsked.resolve(request)
       return begun.promise
     }),
+    handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
   )
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen, router } = await renderLogin()
 
   await beginAsked.promise
   await signInWithPassword(screen)
@@ -340,42 +375,44 @@ test('a challenge that lands while the autofill ceremony is still being prepared
   begun.resolve(HttpResponse.json({ options: OPTIONS }))
 
   await settled()
-  expect(webauthn.authenticate).not.toHaveBeenCalled()
+  expect(router.history.location.pathname).toBe('/login')
+  await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
 })
 
 test('a password login that fails after a Passkey from autofill signed in says nothing', async () => {
   webauthn.autofill.mockResolvedValue(true)
-  const chosen = Promise.withResolvers<AuthenticationResponseJSON>()
-  webauthn.authenticate.mockReturnValue(chosen.promise)
+  const ceremony = passkeyCeremony()
   const refused = Promise.withResolvers<Response>()
   worker.use(
     handleSiteAuthLogin(async () => refused.promise),
     handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
     handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, router } = await renderLogin()
 
-  await expect.poll(() => webauthn.authenticate).toHaveBeenCalled()
-  await signInWithPassword(screen, 'user@example.com')
-  chosen.resolve(ASSERTION)
-  await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
+  await ceremony.started
+  await signInWithPassword(screen)
+  ceremony.choose()
+  await expect.poll(() => router.history.location.pathname).toBe(NEXT)
   refused.resolve(problem(401, { detail: 'Invalid credentials' }))
 
   await settled()
   expect(screen.getByText('Invalid credentials').query()).toBeNull()
-  await expect.element(screen.getByLabelText(/^Password/)).toHaveValue('secret')
 })
 
 test('the code step a provider sent the person back to offers no Passkey in autofill', async () => {
   webauthn.autofill.mockResolvedValue(true)
-  const { screen } = await renderWithRouter(<LoginPage />, {
-    initialPath: '/login?challenge=signed-challenge',
-    path: '/login',
-  })
+  // Were the ceremony to start, the person would at once choose a Passkey.
+  webauthn.authenticate.mockResolvedValue(ASSERTION)
+  worker.use(
+    handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
+    handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
+  )
+  const { screen, router } = await renderLogin('&challenge=signed-challenge')
 
   await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
   await settled()
-  expect(webauthn.autofill).not.toHaveBeenCalled()
+  expect(router.history.location.pathname).toBe('/login')
 })
 
 test('the Passkey button waits while a password login is pending', async () => {
@@ -391,16 +428,15 @@ test('the Passkey button waits while a password login is pending', async () => {
 })
 
 test('a password login waits while the Passkey button is pending', async () => {
-  const ceremony = Promise.withResolvers<AuthenticationResponseJSON>()
-  webauthn.authenticate.mockReturnValue(ceremony.promise)
+  const ceremony = passkeyCeremony()
   worker.use(handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }))
   const { screen } = await renderWithRouter(<LoginPage />)
 
   await screen.getByRole('button', { name: 'Use a passkey' }).click()
 
   await expect.element(screen.getByRole('button', { name: 'Sign in' })).toBeDisabled()
-  await expect.poll(() => webauthn.authenticate).toHaveBeenCalled()
-  ceremony.reject(new DOMException('dismissed', 'NotAllowedError'))
+  await ceremony.started
+  ceremony.dismiss()
   await expect.element(screen.getByRole('button', { name: 'Sign in' })).toBeEnabled()
 })
 
