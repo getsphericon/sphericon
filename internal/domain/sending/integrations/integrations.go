@@ -273,18 +273,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 		return View{}, err
 	}
 
-	// The save holds the Workspace's lock (ADR 0108): a new default moves every send of its Channel
-	// that names no Integration onto it, which the Removal check of a deletion reads under the lock.
 	var row *ent.Integration
-	err = m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
-		// A new default clears the channel's current one first, in the same transaction,
-		// so the partial unique index never trips on our own writes.
-		if in.IsDefault {
-			if err := clearDefault(ctx, wl, channel, 0); err != nil {
-				return err
-			}
-		}
-		create := wl.Integration().Create().
+	insert := func(ts *ent.Scoped, q events.Enqueuer, isDefault bool) error {
+		create := ts.Integration().Create().
 			SetName(name).
 			SetChannel(channel).
 			SetProvider(provider).
@@ -292,21 +283,37 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 			SetIngestKey(key).
 			SetNillablePreset(inb.preset).
 			SetEnabled(enabled).
-			SetIsDefault(in.IsDefault).
+			SetIsDefault(isDefault).
 			SetNillableMaxPerSecond(in.MaxPerSecond).
 			SetNillableMaxPerDay(in.MaxPerDay).
 			SetNillableProviderMaxPerSecond(providerPerSecond)
 		if inb.sealed != nil {
 			create.SetParamsEncrypted(*inb.sealed)
 		}
-		if err := constraints.Write(ctx, wl, func() (err error) {
+		if err := constraints.Write(ctx, ts, func() (err error) {
 			row, err = create.Save(ctx)
 			return err
 		}); err != nil {
 			return err
 		}
 		return m.discoverQuota(ctx, q, row)
-	})
+	}
+	if in.IsDefault {
+		// A new default moves every send of its Channel that names no Integration onto it, which
+		// the Removal check of a deletion reads under the Workspace's lock, so it takes the lock (ADR
+		// 0108) and clears the channel's current default first, in the same transaction, so the
+		// partial unique index never trips on our own writes.
+		err = m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
+			if err := clearDefault(ctx, wl, channel, 0); err != nil {
+				return err
+			}
+			return insert(wl.Scope(), q, true)
+		})
+	} else {
+		err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+			return insert(ts, q, false)
+		})
+	}
 	if err != nil {
 		if provider == providers.Telegram && enabled {
 			// The bot was pointed at a hook that was never saved.

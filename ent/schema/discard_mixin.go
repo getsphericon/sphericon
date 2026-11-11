@@ -30,9 +30,8 @@ type DiscardMixin struct {
 	Restorable bool
 }
 
-// GivenUpOnDiscard marks a field a discarded row gives up: the generated Discard clears it (a bool
-// to false, an optional field to null) in the statement that stamps discarded_at, so no reader sees
-// the row discarded and still holding it. An Integration's is_default: a deleted Integration is no
+// GivenUpOnDiscard marks a bool a discarded row gives up: the generated Discard sets it to false in
+// the statement that stamps discarded_at, so no reader sees the row discarded and still holding it. An Integration's is_default: a deleted Integration is no
 // Channel's default (ADR 0108).
 type GivenUpOnDiscard struct{}
 

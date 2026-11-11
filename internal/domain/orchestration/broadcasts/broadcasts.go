@@ -176,21 +176,10 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
 	var claimed *ent.Broadcast
 	err := m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
+		if err := m.arm(ctx, wl, id, t, set); err != nil {
+			return err
+		}
 		ts := wl.Scope()
-		// The move lands only on a Broadcast that is not archived (ADR 0109); a refused one that is
-		// archived is ErrArchived.
-		unarchived := func(u *ent.BroadcastScopedUpdate) {
-			u.Where(broadcast.ArchivedAtIsNil())
-			if set != nil {
-				set(u)
-			}
-		}
-		if err := fire(ctx, ts, id, t, unarchived); err != nil {
-			if refusal := m.notArchived(ctx, ts, id); refusal != nil {
-				return refusal
-			}
-			return notSendable(err)
-		}
 		var err error
 		if claimed, err = ts.Broadcast().Get(ctx, id); err != nil {
 			return err
@@ -210,6 +199,26 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 		return nil, err
 	}
 	return claimed, nil
+}
+
+// arm moves the Broadcast out of draft or scheduled by t, the move that makes it Live use, so it
+// takes the Workspace's lock (ADR 0108). The move lands only on a Broadcast that is not archived
+// (ADR 0109); a refused one that is archived is ErrArchived.
+func (m *Module) arm(ctx context.Context, wl *ent.WorkspaceLocked, id int64, t trigger, set update) error {
+	unarchived := func(u *ent.BroadcastScopedUpdate) {
+		u.Where(broadcast.ArchivedAtIsNil())
+		if set != nil {
+			set(u)
+		}
+	}
+	ts := wl.Scope()
+	if err := fire(ctx, ts, id, t, unarchived); err != nil {
+		if refusal := m.notArchived(ctx, ts, id); refusal != nil {
+			return refusal
+		}
+		return notSendable(err)
+	}
+	return nil
 }
 
 // --- Authoring (ADR 0016): drafts, Segment, report ---

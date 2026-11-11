@@ -59,9 +59,9 @@ a write that moves a use run in `events.Bus.WithinWorkspaceLockTx` (or
 `WithinWorkspaceLockEnqueueTx`), whose first statement takes the Workspace's transaction-scoped
 advisory lock, so a check never passes on work that becomes live before the removal commits. A
 write moves a use when, after it, live work uses a different row. The lock is a type: the bus hands
-its callback `*ent.WorkspaceLocked` (`ent/template/scoped_lock.tmpl`), the one caller of
-`ent.Scoped.LockWorkspace` (forbidigo), and the list of what needs the lock is the set of
-signatures that take that type, so a forgotten lock does not compile:
+its callback `*ent.WorkspaceLocked` (`ent/template/scoped_lock.tmpl`) and is the one caller of
+`ent.Scoped.LockWorkspace` (forbidigo). What needs the lock takes that type, so calling it without
+the lock does not compile:
 
 - the readers of Live use and Definition use: the Removal check's methods, the `<module>use`
   readers (`UsingTag`, `UnfitForCustomFieldType`, `LiveSends`) and `rules.ActiveEnrollingInto`,
@@ -71,14 +71,14 @@ signatures that take that type, so a forgotten lock does not compile:
   `sendingdomainsunchecked.DeleteIn`. `integrationsunchecked.DeleteIn` takes the id and gives up
   the Integration's default in the statement that discards it (`schema.GivenUpOnDiscard`);
 - the writes that move a use: a version of a Versioned definition (`Definition.Write`, on Create
-  and Edit) and its Publish, a Broadcast's claim, saving a Segment, and an Integration's save
-  (`integrations.Create` and `Update`, whose promotion to its Channel's default, `clearDefault`,
-  moves every send that names no Integration, and whose config may change the From its sends go
-  out with).
+  and Edit) and its Publish (`Lifecycle.publish`), a Broadcast's claim (`broadcasts.arm`), a
+  Segment's save (`segments.createIn`, `updateIn`) and an Integration's promotion to its Channel's
+  default (`integrations.clearDefault`), which moves every send that names no Integration.
 
-A Tracking domain's moves take the lock to run one at a time; they hold no use. The lock comes
-before any row lock. A hot path (a Rule firing, an Enrollment, a send) never takes it: it locks the
-row it acts on and checks it again under that lock, and the lock is a value the write takes. An
-Enrollment is written (`automations.begin`) with the Contact locked (`contactlock.Locked`) and the
-Automation share-locked on its live version; a Firing (`rules.recordFiring`) with its Rule
-share-locked while it still fires on that version.
+`integrations.Create` takes the lock for a new default; `integrations.Update` always does, since a
+new config may change the From its sends go out with. A Tracking domain's moves take the lock to
+run one at a time; they hold no use. The lock comes before any row lock. A hot path (a Rule firing,
+an Enrollment, a send) never takes it: it locks the row it acts on and checks it again under that
+lock, and the locked row is a value the write takes. An Enrollment is written (`automations.begin`)
+with the Contact locked (`contactlock.Locked`) and the Automation share-locked on its live version;
+a Firing (`rules.recordFiring`) with its Rule share-locked while it still fires on that version.
