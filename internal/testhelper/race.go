@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 )
 
 // Writer is one side of a race: a call that opens a transaction of its own, named by the test.
@@ -100,6 +101,25 @@ func Clients(t *testing.T) entclient.Clients {
 func (r *WorkspaceRace) Queue(t *testing.T, writers ...Writer) map[string]error {
 	t.Helper()
 	return QueuedBehind(t, r.DB, holdWorkspaceLock(t, r.Bus, r.Scope), writers...)
+}
+
+// QueueBehindKey runs the writers queued behind the advisory lock key, which the race holds until
+// all of them wait for it (QueuedBehind): a writer that takes no lock of that key fails the test.
+func (r *WorkspaceRace) QueueBehindKey(t *testing.T, key int64, writers ...Writer) map[string]error {
+	t.Helper()
+	return QueuedBehind(t, r.DB, holdKey(t, r.DB, key), writers...)
+}
+
+// holdKey takes the advisory lock key in a transaction of its own on db and holds it until the
+// returned release is called.
+func holdKey(t *testing.T, db *sql.DB, key int64) (release func()) {
+	t.Helper()
+	tx, err := db.BeginTx(context.Background(), nil)
+	require.NoError(t, err)
+	require.NoError(t, postgres.LockTx(context.Background(), tx, key))
+	release = sync.OnceFunc(func() { require.NoError(t, tx.Commit()) })
+	t.Cleanup(release)
+	return release
 }
 
 // holdWorkspaceLock takes the Workspace's lock (events.Bus.WithinWorkspaceLockTx) in a transaction

@@ -1,6 +1,7 @@
 package usages_test
 
 import (
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -11,9 +12,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
@@ -207,4 +211,108 @@ func TestContactsPeakIsNotKeptForAWorkspaceInItsDeletionWindow(t *testing.T) {
 	after, err := s.Usage().Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, before, after)
+}
+
+// Two transactions that add a Contact at once both count in the peak: each counts and raises it in
+// turn, behind the Workspace's contacts-peak lock, so the second counts the first's committed row.
+func TestContactsPeakCountsContactsAddedAtOnce(t *testing.T) {
+	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	base, err := race.Scope.Contact().Query().Where(contact.EmailNotNil()).Count(t.Context())
+	require.NoError(t, err)
+	add := func(email string) testhelper.Writer {
+		return testhelper.Writer{Name: email, Run: func() error {
+			return race.Bus.WithinScopedTx(t.Context(), race.Scope, func(ts *ent.Scoped, _ events.Publisher) error {
+				// test writes: the contacts-peak hook fires on this Contact write
+				return ts.Contact().Create().SetEmail(email).Exec(t.Context())
+			})
+		}}
+	}
+
+	errs := race.QueueBehindKey(t, postgres.WorkspaceKey(usages.PeakLock, fixtures.AcmeID),
+		add("first@example.com"), add("second@example.com"))
+
+	require.NoError(t, errs["first@example.com"])
+	require.NoError(t, errs["second@example.com"])
+	peak, err := race.Scope.Usage().Query().Where(entusage.Metric(string(usages.Contacts))).Only(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, int64(base+2), peak.Value)
+}
+
+// A transaction that adds a Contact takes the contacts-peak lock only right before it commits,
+// after its row locks. Here B holds Bob's row and adds a Contact while A, which added one first,
+// waits for Bob's row: had A taken the lock at its write, B would wait for A and A for B.
+func TestContactsPeakLockWaitsForNoRowLock(t *testing.T) {
+	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	base, err := race.Scope.Contact().Query().Where(contact.EmailNotNil()).Count(t.Context())
+	require.NoError(t, err)
+	aAdded, bAdded := make(chan struct{}), make(chan struct{})
+
+	a := goWrite(func() error {
+		return race.Bus.WithinScopedTx(t.Context(), race.Scope, func(ts *ent.Scoped, _ events.Publisher) error {
+			return addThenRename(t, ts, "a@example.com", aAdded, bAdded)
+		})
+	})
+	b := goWrite(func() error {
+		return race.Bus.WithinScopedTx(t.Context(), race.Scope, func(ts *ent.Scoped, _ events.Publisher) error {
+			return renameThenAdd(t, ts, "b@example.com", aAdded, bAdded)
+		})
+	})
+
+	require.NoError(t, testhelper.Receive(t, b, "B commits"))
+	require.NoError(t, testhelper.Receive(t, a, "A commits once B let Bob go"))
+	peak, err := race.Scope.Usage().Query().Where(entusage.Metric(string(usages.Contacts))).Only(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, int64(base+2), peak.Value)
+}
+
+// addThenRename adds a Contact, lets the other side know, and once it added its own renames Bob,
+// whose row the other side holds.
+func addThenRename(t *testing.T, ts *ent.Scoped, email string, added chan<- struct{}, other <-chan struct{}) error {
+	t.Helper()
+	// test writes: the contacts-peak hook fires on this Contact write
+	if err := ts.Contact().Create().SetEmail(email).Exec(t.Context()); err != nil {
+		return err
+	}
+	close(added)
+	if err := await(other); err != nil {
+		return err
+	}
+	// test writes: Bob's row, which the other side holds until it commits
+	return ts.Contact().UpdateOneID(fixtures.ContactBobID).SetFirstName("A").Exec(t.Context())
+}
+
+// renameThenAdd renames Bob, holding his row, and adds a Contact once the other side added one.
+func renameThenAdd(t *testing.T, ts *ent.Scoped, email string, other <-chan struct{}, added chan<- struct{}) error {
+	t.Helper()
+	// test writes: takes Bob's row before the other side asks for it
+	if err := ts.Contact().UpdateOneID(fixtures.ContactBobID).SetFirstName("B").Exec(t.Context()); err != nil {
+		return err
+	}
+	if err := await(other); err != nil {
+		return err
+	}
+	// test writes: the contacts-peak hook fires on this Contact write
+	if err := ts.Contact().Create().SetEmail(email).Exec(t.Context()); err != nil {
+		return err
+	}
+	close(added)
+	return nil
+}
+
+// await waits for ch to close, or fails after a while: a side that waits for the other forever is
+// the two waiting for each other.
+func await(ch <-chan struct{}) error {
+	select {
+	case <-ch:
+		return nil
+	case <-time.After(10 * time.Second):
+		return errors.New("the other side never got there")
+	}
+}
+
+// goWrite runs write on a goroutine of its own and hands its error over.
+func goWrite(write func() error) <-chan error {
+	done := make(chan error, 1)
+	go func() { done <- write() }()
+	return done
 }

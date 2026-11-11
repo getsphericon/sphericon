@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"hash/fnv"
 )
 
 // Execer runs a statement that returns no rows.
@@ -33,6 +34,16 @@ func LockTx(ctx context.Context, e Execer, key int64) error {
 // (ADR 0017), and 16 is the oldest major still supported upstream for long enough to run on. `sphericon
 // doctor` fails below it, and the self-hosting guide on the documentation site cites it.
 const MinMajor = 16
+
+// WorkspaceKey is the advisory lock key of one kind of lock of one Workspace: "workspace" for its
+// removals and the writes that move Live use, "orders" for its order Events, "contacts-peak" for the
+// Usage contacts peak. Every key LockTx takes for a Workspace comes from here, so the kinds hash
+// apart, and two Workspaces whose keys collide only take turns.
+func WorkspaceKey(kind string, workspaceID int64) int64 {
+	h := fnv.New32a()
+	_, _ = fmt.Fprintf(h, "%s:%d", kind, workspaceID)
+	return int64(h.Sum32())
+}
 
 // ServerMajor is the major version of the Postgres server (server_version_num is
 // major*10000+minor from version 10 on).

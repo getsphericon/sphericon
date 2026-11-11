@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -68,7 +69,8 @@ func (b *Bus) OnStored(fs ...func(context.Context, DomainEvent)) {
 // WithinTx runs fn inside a single SQL transaction. The *ent.Client handed to fn is bound to
 // that transaction, and so is the Publisher: what an event published via pub writes, its Event
 // row and its consumers' jobs, joins the transaction. The tx commits iff fn returns nil, so state
-// and events commit (or roll back) together.
+// and events commit (or roll back) together. Right before it commits, the transaction runs the
+// work its writes registered with ent.Client.BeforeCommit, and a failure of it rolls it back.
 //
 // In tests this rides go-txdb's savepoint nesting, so the commit here is a
 // RELEASE SAVEPOINT contained by the per-test rollback.
@@ -99,13 +101,17 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	}()
 
 	// ent client bound to the *sql.Tx the event jobs are inserted on.
-	txClient := b.newTxClient(newTxDriver(sqlTx))
+	drv := newTxDriver(sqlTx)
+	txClient := b.newTxClient(drv)
 	txClient.Use(b.hooks...)
 
 	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers, subscribers: b.subscribers, stored: b.stored, now: b.now}
 	err = fn(txClient, pub)
 	if err == nil {
 		err = pub.failed
+	}
+	if err == nil {
+		err = drv.runPreCommit(ctx)
 	}
 	if err != nil {
 		_ = sqlTx.Rollback()
@@ -127,12 +133,51 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 // transaction that reuses the same tx; the real commit/rollback is owned by
 // Bus.WithinTx, which rolls the whole tx back on any error. (Canonical ent
 // "bring-your-own-transaction" pattern.)
-func newTxDriver(tx *sql.Tx) dialect.Driver {
+func newTxDriver(tx *sql.Tx) *txDriver {
 	return &txDriver{conn: entsql.Conn{ExecQuerier: tx}}
 }
 
 type txDriver struct {
 	conn entsql.Conn
+
+	mu sync.Mutex
+	// preCommit is the work registered by BeforeCommit, in order, and byKey the same work by key.
+	preCommit []ent.PreCommit
+	byKey     map[any]ent.PreCommit
+}
+
+// BeforeCommit registers what mk makes to run right before the transaction commits, unless work
+// is registered under key already, and returns the work under key (ent.PreCommitter).
+func (d *txDriver) BeforeCommit(key any, mk func() ent.PreCommit) ent.PreCommit {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if w, ok := d.byKey[key]; ok {
+		return w
+	}
+	if d.byKey == nil {
+		d.byKey = map[any]ent.PreCommit{}
+	}
+	w := mk()
+	d.byKey[key] = w
+	d.preCommit = append(d.preCommit, w)
+	return w
+}
+
+// runPreCommit runs the registered work in order, including what the work itself registers; the
+// first error stops it and the transaction rolls back.
+func (d *txDriver) runPreCommit(ctx context.Context) error {
+	for i := 0; ; i++ {
+		d.mu.Lock()
+		if i >= len(d.preCommit) {
+			d.mu.Unlock()
+			return nil
+		}
+		w := d.preCommit[i]
+		d.mu.Unlock()
+		if err := w.Run(ctx); err != nil {
+			return fmt.Errorf("before commit: %w", err)
+		}
+	}
 }
 
 func (d *txDriver) Exec(ctx context.Context, query string, args, v any) error {

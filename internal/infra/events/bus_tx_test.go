@@ -83,3 +83,53 @@ func TestWithinTxRollsBackAndRepanics(t *testing.T) {
 	})
 	assert.Zero(t, publishedTo(t, env, "panicked@example.com"))
 }
+
+// preCommit counts its runs and fails with err.
+type preCommit struct {
+	runs int
+	err  error
+}
+
+func (w *preCommit) Run(context.Context) error {
+	w.runs++
+	return w.err
+}
+
+// Work registered under one key runs once, right before the transaction commits, however many
+// writes registered it.
+func TestWithinTxRunsWorkRegisteredUnderAKeyOnceBeforeCommit(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	work := &preCommit{}
+
+	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		for range 3 {
+			_, ok := tx.BeforeCommit("key", func() ent.PreCommit { return work })
+			require.True(t, ok, "the bus's transaction runs work before it commits")
+		}
+		assert.Zero(t, work.runs, "nothing runs before the body returns")
+		return nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, work.runs)
+}
+
+// Work that fails before the commit rolls the transaction back.
+func TestWithinTxRollsBackWhenWorkBeforeCommitFails(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	boom := errors.New("work failed")
+
+	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		// test writes: the rollback of this write is the subject
+		tx.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetSubjectID("before-commit@example.com").SetAction("x").ExecX(ctx)
+		tx.BeforeCommit("key", func() ent.PreCommit { return &preCommit{err: boom} })
+		return nil
+	})
+
+	require.ErrorIs(t, err, boom)
+	exists, err := env.DB.Event.Query().Where(event.SubjectID("before-commit@example.com")).Exist(ctx)
+	require.NoError(t, err)
+	assert.False(t, exists)
+}

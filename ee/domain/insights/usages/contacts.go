@@ -16,6 +16,7 @@ import (
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 )
 
 // Contacts is the peak number of identified Contacts reached during the Usage period:
@@ -65,10 +66,12 @@ var ErrNeedsTransaction = errors.New("contact change outside a transaction")
 // transaction (the event bus's), and Guard on every other one. Without the `staff` license
 // the returned hook hands every mutation straight on.
 //
-// A mutation that can only raise the count (a create or an email set) raises the open
-// period's peak to the count afterwards; one that lowers it (a delete, an email
-// cleared) first records the count before it. Both run in the mutation's own
-// transaction, so the peak commits with the change it describes.
+// The peak is raised right before the transaction commits (ent.Client.BeforeCommit), once per
+// Workspace however many Contacts the transaction changed, to the count it then sees: after every
+// write of the transaction took its row locks, so the lock the count takes (PeakLock) never waits
+// behind them. A mutation that lowers the count (a delete, an email cleared) first counts the
+// Contacts before it, and the peak is raised to at least that. All of it runs in the mutation's
+// own transaction, so the peak commits with the change it describes.
 func Hook(lic *licensekey.License, now func() time.Time) entgo.Hook {
 	return func(next entgo.Mutator) entgo.Mutator {
 		if !lic.Has(licensekey.FeatureStaff) {
@@ -83,14 +86,26 @@ func Hook(lic *licensekey.License, now func() time.Time) entgo.Hook {
 			if err != nil {
 				return nil, err
 			}
-			if err := raise(ctx, mu.Client(), now(), before...); err != nil {
-				return nil, err
+			c := mu.Client()
+			for _, id := range before {
+				n, err := countIdentified(ctx, c.Scoped(id))
+				if err != nil {
+					return nil, fmt.Errorf("count contacts: %w", err)
+				}
+				if err := track(ctx, c, now, id, n); err != nil {
+					return nil, err
+				}
 			}
 			v, err := next.Mutate(ctx, m)
 			if err != nil {
 				return v, err
 			}
-			return v, raise(ctx, mu.Client(), now(), after...)
+			for _, id := range after {
+				if err := track(ctx, c, now, id, 0); err != nil {
+					return v, err
+				}
+			}
+			return v, nil
 		})
 	}
 }
@@ -179,45 +194,88 @@ func workspacesOf(ctx context.Context, mu *ent.ContactMutation, identifiedOnly b
 	return out, nil
 }
 
-// raise lifts the open period's contacts peak of each Workspace to the number of
-// identified Contacts it has now, never lowering it and never touching a closed row.
-func raise(ctx context.Context, c *ent.Client, now time.Time, workspaceIDs ...int64) error {
+// PeakLock is the kind of the advisory lock (postgres.WorkspaceKey) a Workspace's contacts peak is
+// counted and raised under.
+const PeakLock = "contacts-peak"
+
+// peakKey is the key a transaction registers a Workspace's peak under (ent.Client.BeforeCommit).
+type peakKey struct{ workspaceID int64 }
+
+// peak is the contacts peak a transaction raises for one Workspace right before it commits.
+type peak struct {
+	client      *ent.Client
+	now         func() time.Time
+	workspaceID int64
+	// floor is the most Contacts the transaction counted before a change that lowered the count.
+	floor int64
+}
+
+func (p *peak) Run(ctx context.Context) error {
+	return raise(ctx, p.client, p.now(), p.workspaceID, p.floor)
+}
+
+// track has the Workspace's peak raised, to at least floor, right before c's transaction
+// commits; on a client whose transaction runs no such work (a test's go-txdb connection) it raises
+// it at once.
+func track(ctx context.Context, c *ent.Client, now func() time.Time, workspaceID, floor int64) error {
+	w, ok := c.BeforeCommit(peakKey{workspaceID}, func() ent.PreCommit {
+		return &peak{client: c, now: now, workspaceID: workspaceID}
+	})
+	if !ok {
+		return raise(ctx, c, now(), workspaceID, floor)
+	}
+	p, ok := w.(*peak)
+	if !ok {
+		return fmt.Errorf("contacts peak of workspace %d: registered as %T", workspaceID, w)
+	}
+	p.floor = max(p.floor, floor)
+	return nil
+}
+
+// raise lifts the open period's contacts peak of the Workspace to the number of identified
+// Contacts it has now, or to floor when that is more, never lowering it and never touching a
+// closed row.
+func raise(ctx context.Context, c *ent.Client, now time.Time, id, floor int64) error {
 	period := PeriodOf(now)
-	for _, id := range workspaceIDs {
-		// A Workspace in its deletion window, or erased, is no longer measured.
-		live, err := c.Workspace.Query().Where(entworkspace.ID(id), workspaces.Live()).Exist(ctx)
-		if err != nil {
-			return fmt.Errorf("load workspace: %w", err)
-		}
-		if !live {
-			continue
-		}
-		s := c.Scoped(id)
-		n, err := countIdentified(ctx, s)
-		if err != nil {
-			return fmt.Errorf("count contacts: %w", err)
-		}
-		// A growing import finds the row and raises it: one statement. Only when nothing
-		// was raised (the row is absent, or already at least n) is the row inserted.
-		raised, err := s.Usage().Update().
-			Where(entusage.PeriodStart(period), entusage.Metric(string(Contacts)), entusage.FinalizedAtIsNil(), entusage.ValueLT(n)).
-			SetValue(n).SetComputedAt(now).
-			Save(ctx)
-		if err != nil {
-			return fmt.Errorf("raise contacts peak: %w", err)
-		}
-		if raised > 0 {
-			continue
-		}
-		err = s.Usage().Create().
-			SetPeriodStart(period).SetMetric(string(Contacts)).
-			SetValue(n).SetComputedAt(now).
-			OnConflictColumns(entusage.FieldWorkspaceID, entusage.FieldPeriodStart, entusage.FieldMetric).
-			DoNothing().Exec(ctx)
-		_, err = db.Inserted(err)
-		if err != nil {
-			return fmt.Errorf("record contacts peak: %w", err)
-		}
+	// A Workspace in its deletion window, or erased, is no longer measured.
+	live, err := c.Workspace.Query().Where(entworkspace.ID(id), workspaces.Live()).Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("load workspace: %w", err)
+	}
+	if !live {
+		return nil
+	}
+	// Two transactions that each add a Contact would each count without the other's row and store
+	// one less than the peak they reach together. The count and the raise take turns per
+	// Workspace, so the second counts after the first commits.
+	if err := postgres.LockTx(ctx, c, postgres.WorkspaceKey(PeakLock, id)); err != nil {
+		return fmt.Errorf("lock the contacts peak: %w", err)
+	}
+	s := c.Scoped(id)
+	n, err := countIdentified(ctx, s)
+	if err != nil {
+		return fmt.Errorf("count contacts: %w", err)
+	}
+	n = max(n, floor)
+	// A growing import finds the row and raises it: one statement. Only when nothing
+	// was raised (the row is absent, or already at least n) is the row inserted.
+	raised, err := s.Usage().Update().
+		Where(entusage.PeriodStart(period), entusage.Metric(string(Contacts)), entusage.FinalizedAtIsNil(), entusage.ValueLT(n)).
+		SetValue(n).SetComputedAt(now).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("raise contacts peak: %w", err)
+	}
+	if raised > 0 {
+		return nil
+	}
+	err = s.Usage().Create().
+		SetPeriodStart(period).SetMetric(string(Contacts)).
+		SetValue(n).SetComputedAt(now).
+		OnConflictColumns(entusage.FieldWorkspaceID, entusage.FieldPeriodStart, entusage.FieldMetric).
+		DoNothing().Exec(ctx)
+	if _, err = db.Inserted(err); err != nil {
+		return fmt.Errorf("record contacts peak: %w", err)
 	}
 	return nil
 }
