@@ -3789,6 +3789,7 @@ export const zSiteWorkspaceResource = z.object({
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
+  secondFactorRequirementGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
   sendCap: z.exactOptional(zSiteSendCap.nullable()),
   accountLinkAvailable: z.boolean(),
   createdAt: zTimestamp

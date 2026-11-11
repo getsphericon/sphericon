@@ -3,15 +3,15 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteBroadcastLimit, SiteBroadcastProgress } from '../../generated/site/types.gen.ts'
+import { minutesUntil } from '../../utils/datetime.ts'
 
-const MS_PER_MINUTE = 60_000
 const MINUTES_PER_HOUR = 60
 const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR
 
 // The estimate is rendered coarsely on purpose ("about 3 hours"): it is derived from a
 // rate, so a precise countdown would claim more than the server knows.
 function remainingText(t: TFunction, completionAt: string): string {
-  const minutes = Math.round((Date.parse(completionAt) - Date.now()) / MS_PER_MINUTE)
+  const minutes = Math.round(minutesUntil(completionAt))
   if (minutes < 1) {
     return t(($) => $.broadcasts.progress.almostDone)
   }

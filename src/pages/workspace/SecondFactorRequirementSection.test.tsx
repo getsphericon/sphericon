@@ -58,7 +58,10 @@ test('a member holding second_factor:manage switches the requirement on', async 
 
 test('without second_factor:manage the requirement and its grace show but do not change', async () => {
   worker.use(listRoute)
-  const required = workspace({ secondFactorRequiredAt: '2026-03-01T00:00:00Z' })
+  const required = workspace({
+    secondFactorRequiredAt: '2026-03-01T00:00:00Z',
+    secondFactorRequirementGraceEndsAt: '2026-03-08T00:00:00Z',
+  })
   const { screen } = await renderWithRouter(<SecondFactorRequirementSection workspace={required} />)
 
   const toggle = screen.getByRole('switch', { name: 'Require two-factor authentication' })

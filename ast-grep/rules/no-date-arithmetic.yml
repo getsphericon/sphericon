@@ -1,0 +1,32 @@
+id: no-date-arithmetic
+language: Tsx
+severity: error
+message: Count days, minutes and moments through `src/utils/datetime.ts`, not with `Date` arithmetic.
+note: >-
+  The calendar, the User time zone (ADR 0068) and daylight saving are `datetime.ts`'s business:
+  milliseconds added to `Date.now()`, a `Date` built from its parts or moved with `setDate` read
+  the day in the browser's zone and count a day as 24 hours. A length the server decides (a grace,
+  an expiry) comes from the contract, never from a constant copied here.
+rule:
+  any:
+    - pattern: Date.now() + $A
+    - pattern: Date.now() - $A
+    - pattern: $A - Date.now()
+    - pattern: Date.parse($A) + $B
+    - pattern: Date.parse($A) - $B
+    - pattern: $A - Date.parse($B)
+    - pattern: new Date($Y, $M, $$$REST)
+    - pattern: $D.setDate($$$)
+    - pattern: $D.setMonth($$$)
+    - pattern: $D.setFullYear($$$)
+    - pattern: $D.setHours($$$)
+files:
+  - src/**/*.ts
+  - src/**/*.tsx
+ignores:
+  - src/generated/**
+  - src/test/**
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  # The one place dates are counted.
+  - src/utils/datetime.ts

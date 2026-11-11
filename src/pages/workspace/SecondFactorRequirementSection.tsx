@@ -9,10 +9,6 @@ import {
 } from '../../hooks/useSecondFactorRequirement.ts'
 import { can } from '../../utils/permissions.ts'
 
-// The grace a member without a Second factor gets (ADR 0020), counted from the later
-// of the requirement's start and their Membership's creation.
-const GRACE_MS = 7 * 24 * 60 * 60 * 1000
-
 // SecondFactorRequirementSection shows the Workspace's Two-factor requirement and the
 // grace it gives; an Owner or Admin can switch it on or off (the server refuses a
 // Member).
@@ -25,6 +21,8 @@ export function SecondFactorRequirementSection({
   const { t } = useTranslation()
   const canChange = can(workspace, 'second_factor:manage')
   const requiredAt = workspace.secondFactorRequiredAt
+  // The grace of the members there when the requirement began: the server's rule (ADR 0020).
+  const graceEndsAt = workspace.secondFactorRequirementGraceEndsAt
   const requireMutation = useRequireSecondFactor()
   const liftMutation = useLiftSecondFactorRequirement()
 
@@ -47,11 +45,11 @@ export function SecondFactorRequirementSection({
             })
           }
         />
-        {requiredAt ? (
+        {requiredAt && graceEndsAt ? (
           <Text size="sm">
             {t(($) => $.secondFactorRequirement.graceVisibility, {
               since: formatDate(requiredAt),
-              until: formatDate(Date.parse(requiredAt) + GRACE_MS),
+              until: formatDate(graceEndsAt),
             })}
           </Text>
         ) : null}

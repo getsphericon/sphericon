@@ -1,0 +1,21 @@
+id: no-date-arithmetic
+valid:
+  - |-
+    const expiry = daysFromNow(30)
+  - |-
+    const minutes = Math.round(minutesUntil(completionAt))
+  - |-
+    const blocked = Date.parse(endsAt) <= now
+  - |-
+    const at = new Date(value)
+invalid:
+  - |-
+    const expiry = new Date(Date.now() + 30 * DAY_MS)
+  - |-
+    const minutes = (Date.parse(completionAt) - Date.now()) / 60_000
+  - |-
+    const until = Date.parse(requiredAt) + GRACE_MS
+  - |-
+    const start = new Date(year, month - 1, day)
+  - |-
+    to.setDate(to.getDate() + 1)

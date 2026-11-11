@@ -1,0 +1,32 @@
+id: no-date-arithmetic
+snapshots:
+  const expiry = new Date(Date.now() + 30 * DAY_MS):
+    labels:
+      - source: Date.now() + 30 * DAY_MS
+        style: primary
+        start: 24
+        end: 48
+  const minutes = (Date.parse(completionAt) - Date.now()) / 60_000:
+    labels:
+      - source: Date.parse(completionAt) - Date.now()
+        style: primary
+        start: 17
+        end: 54
+  'const start = new Date(year, month - 1, day)':
+    labels:
+      - source: new Date(year, month - 1, day)
+        style: primary
+        start: 14
+        end: 44
+  const until = Date.parse(requiredAt) + GRACE_MS:
+    labels:
+      - source: Date.parse(requiredAt) + GRACE_MS
+        style: primary
+        start: 14
+        end: 47
+  to.setDate(to.getDate() + 1):
+    labels:
+      - source: to.setDate(to.getDate() + 1)
+        style: primary
+        start: 0
+        end: 28

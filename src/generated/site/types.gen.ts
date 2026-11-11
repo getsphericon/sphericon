@@ -7050,6 +7050,12 @@ export type SiteWorkspaceResource = {
    */
   secondFactorGraceEndsAt?: Timestamp | null;
   /**
+   * When the grace of the members the Workspace had when its Two-factor requirement was
+   * switched on ends: 7 days after `secondFactorRequiredAt`. A later member's grace counts
+   * from their joining. Absent without a requirement.
+   */
+  secondFactorRequirementGraceEndsAt?: Timestamp | null;
+  /**
    * The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null
    * when no Send cap applies. Read-only: no operation lets the Workspace change it.
    */

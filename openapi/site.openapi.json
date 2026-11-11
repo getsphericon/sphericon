@@ -19750,6 +19750,16 @@
             "nullable": true,
             "description": "When the authenticated User's grace under the Two-factor requirement ends:\n7 days after the later of the requirement's start and their Membership's\ncreation. Absent without a requirement or once the User has a Second factor.\nAfter it, every request to this Workspace answers 403 with code\nsecond_factor_required until the User enrolls one."
           },
+          "secondFactorRequirementGraceEndsAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the grace of the members the Workspace had when its Two-factor requirement was\nswitched on ends: 7 days after `secondFactorRequiredAt`. A later member's grace counts\nfrom their joining. Absent without a requirement."
+          },
           "sendCap": {
             "type": "object",
             "allOf": [

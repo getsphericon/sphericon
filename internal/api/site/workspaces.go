@@ -58,6 +58,9 @@ func (h *Handlers) workspaceResource(v workspaceview.View) siteapi.SiteWorkspace
 	if end := v.SecondFactorGraceEndsAt; end != nil {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*end))
 	}
+	if end := sum.SecondFactorRequirementGraceEndsAt; end != nil {
+		r.SecondFactorRequirementGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*end))
+	}
 	r.Holds = mapper.HoldsToResources(sum.Holds)
 	r.SendCap = mapper.SendCapStatusToResource(sum.SendCap)
 	r.ShortLinkLength = narrow.Int32(sum.ShortLinkLength)
