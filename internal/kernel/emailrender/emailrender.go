@@ -204,18 +204,17 @@ var zeroLengths = []string{"0", "0px", "0pt", "0em"}
 
 // hidesElement reports whether an inline style hides its element: one of the hiding
 // declarations, or a zero max-height that clips its content (overflow:hidden), the shape of a
-// preheader. A zero max-height alone clips nothing.
+// preheader. A zero max-height alone clips nothing. The values are compared lower-case.
 func hidesElement(style string) bool {
-	declared := parseStyle(style)
-	for prop, value := range declared {
-		declared[prop] = strings.TrimSpace(strings.TrimSuffix(strings.ToLower(value), "!important"))
-	}
-	for prop, values := range hidingDeclarations {
-		if slices.Contains(values, declared[prop]) {
+	parsed := parseStyle(style)
+	for prop, hiding := range hidingDeclarations {
+		value := strings.ToLower(parsed[prop])
+		if slices.Contains(hiding, value) {
 			return true
 		}
 	}
-	return slices.Contains(zeroLengths, declared["max-height"]) && declared["overflow"] == "hidden"
+	maxHeight, overflow := strings.ToLower(parsed["max-height"]), strings.ToLower(parsed["overflow"])
+	return slices.Contains(zeroLengths, maxHeight) && overflow == "hidden"
 }
 
 // dropHidden removes, in place, every element whose inline style hides it.

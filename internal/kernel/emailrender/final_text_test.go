@@ -1,6 +1,7 @@
 package emailrender_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -46,16 +47,30 @@ func TestFinalHTMLToTextKeepsAnElementWhoseValueHoldsAHidingDeclaration(t *testi
 		`font-family:'a;max-height:0;overflow:hidden;'`,
 	} {
 		t.Run(style, func(t *testing.T) {
-			text := emailrender.FinalHTMLToText(`<div style='` + strings.ReplaceAll(style, "'", "&#39;") + `'>Shown</div>`)
+			markup := `<div style='` + strings.ReplaceAll(style, "'", "&#39;") + `'>Shown</div>`
+
+			text := emailrender.FinalHTMLToText(markup)
 
 			assert.Contains(t, text, "Shown")
 		})
 	}
 }
 
+func TestFinalHTMLToTextNeverReadsAHidingStyleQuotedInsideAValue(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		style := rapid.SampledFrom(hidingStyles).Draw(t, "style")
+		wrapper := rapid.SampledFrom([]string{`font-family:"%s;"`, `font-family:'%s;'`, `background:url("%s;")`}).Draw(t, "wrapper")
+		markup := `<div style='` + strings.ReplaceAll(fmt.Sprintf(wrapper, style), "'", "&#39;") + `'>Shown</div>`
+
+		text := emailrender.FinalHTMLToText(markup)
+
+		assert.Contains(t, text, "Shown")
+	})
+}
+
 // The declaration that applies is the last one of a property, unless an earlier one is
 // !important (that case is in hidingStyles).
-func TestFinalHTMLToTextKeepsAnElementALaterDeclarationShows(t *testing.T) {
+func TestFinalHTMLToTextKeepsAnElementWhoseLastDeclarationShowsIt(t *testing.T) {
 	for _, style := range []string{"display:none;display:block", "display:none;display:block !important"} {
 		t.Run(style, func(t *testing.T) {
 			text := emailrender.FinalHTMLToText(`<div style="` + style + `">Shown</div>`)
