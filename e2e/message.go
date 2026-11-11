@@ -4,8 +4,11 @@ package e2e
 
 import (
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 // angleURL picks the <...> entries of a List-Unsubscribe value (RFC 2369).
@@ -51,4 +54,38 @@ func (m Message) UnsubscribeURL() string {
 // one-click request; "" when the header is absent.
 func (m Message) OneClickBody() string {
 	return m.Header("List-Unsubscribe-Post")
+}
+
+// Link is the first http(s) URL an <a href> of the email's HTML points at whose path holds
+// pathPart, or "" when there is none.
+//
+// Both read the HTML the way a mail client does, through an HTML parser: an attribute may be
+// quoted with either quote or not at all, its name may be in any case, and a character reference
+// in it (&amp;) is decoded. A pattern over the markup sees one spelling of each, so a link the
+// app writes in another one reads as missing, or as a URL no client would request.
+func (m Message) Link(pathPart string) string { return m.urlIn("a", "href", pathPart) }
+
+// Image is Link for an <img src>.
+func (m Message) Image(pathPart string) string { return m.urlIn("img", "src", pathPart) }
+
+func (m Message) urlIn(tag, attr, pathPart string) string {
+	doc, err := html.Parse(strings.NewReader(m.HTML))
+	if err != nil {
+		return ""
+	}
+	for n := range doc.Descendants() {
+		if n.Type != html.ElementNode || n.Data != tag {
+			continue
+		}
+		for _, a := range n.Attr {
+			if a.Key != attr {
+				continue
+			}
+			u, err := url.Parse(strings.TrimSpace(a.Val))
+			if err == nil && (u.Scheme == "https" || u.Scheme == "http") && strings.Contains(u.Path, pathPart) {
+				return u.String()
+			}
+		}
+	}
+	return ""
 }
