@@ -9343,7 +9343,8 @@ func (s *Server) handleEmailSchemaGetRequest(args [0]string, argsEscaped bool, w
 // status `suppressed`) but not marketing Unsubscribe — transactional mail carries no sending source.
 //
 // Supply an `Idempotency-Key` to make retries safe: a repeated key replays the original result without
-// sending a second email, and a key whose first request is still in flight returns 409.
+// sending a second email, a key whose first request is still in flight returns 409, and a key repeated
+// with a different request (another template, destination, variables or tracking) returns 422.
 //
 // POST /emails
 func (s *Server) handleEmailsSendRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

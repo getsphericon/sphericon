@@ -358,6 +358,10 @@ type Request struct {
 
 	// Ref is the surface record the message is sent for, and so its kind. Required.
 	Ref Ref
+
+	// digest is what a Transactional request with the caller's key asked for (requestDigest); ""
+	// for every other send. Only Transactional sets it.
+	digest string
 }
 
 // Kind is the surface that asked for the send: its Ref's.
@@ -421,6 +425,9 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	// message already left (or was already decided), nothing new is being sent.
 	existing, err := m.find(ctx, s, req.Key)
 	if err != nil {
+		return Result{}, err
+	}
+	if err := sameRequest(existing, req); err != nil {
 		return Result{}, err
 	}
 	if existing != nil && existing.Status != outboundmessage.StatusPending {
@@ -977,4 +984,19 @@ func (m *Module) recordOptedOut(ctx context.Context, s *ent.Scoped, req Request,
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return ch.optedOut(ctx, ts, pub, g.route.Integration, msg, t, m.now())
 	})
+}
+
+// ErrKeyReused is a request whose key an earlier send already holds for a different request: the
+// caller reused its Idempotency-Key. Replaying the earlier send would answer a request that was
+// never made, so it is refused.
+var ErrKeyReused = errors.New("outbound: the idempotency key was used for a different request")
+
+// sameRequest refuses req when the send recorded under its key (existing, nil for none) was made
+// for a different request. A send without a digest (every surface but a Transactional one with a
+// client key, and a message whose digest Erasure cleared) is not compared.
+func sameRequest(existing *ent.OutboundMessage, req Request) error {
+	if existing == nil || existing.RequestDigest == nil || req.digest == "" || *existing.RequestDigest == req.digest {
+		return nil
+	}
+	return ErrKeyReused
 }

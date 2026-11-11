@@ -2391,7 +2391,7 @@
     "/emails": {
       "post": {
         "operationId": "Emails_send",
-        "description": "Send a transactional email. The referenced Template's current content is\nrendered with the supplied variables at send time. Respects the workspace\nSuppression list (a suppressed destination returns status `suppressed`) but\nnot marketing Unsubscribe — transactional mail carries no sending source.\n\nSupply an `Idempotency-Key` to make retries safe: a repeated key replays the\noriginal result without sending a second email, and a key whose first request\nis still in flight returns 409.",
+        "description": "Send a transactional email. The referenced Template's current content is\nrendered with the supplied variables at send time. Respects the workspace\nSuppression list (a suppressed destination returns status `suppressed`) but\nnot marketing Unsubscribe — transactional mail carries no sending source.\n\nSupply an `Idempotency-Key` to make retries safe: a repeated key replays the\noriginal result without sending a second email, a key whose first request\nis still in flight returns 409, and a key repeated with a different request\n(another template, destination, variables or tracking) returns 422.",
         "parameters": [
           {
             "name": "Idempotency-Key",

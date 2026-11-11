@@ -68,6 +68,9 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		create.SetContactID(contactID)
 	}
 	req.Ref.stamp(create)
+	if req.digest != "" {
+		create.SetRequestDigest(req.digest)
+	}
 
 	id, err := create.OnConflictColumns(outboundmessage.FieldWorkspaceID, outboundmessage.FieldIdempotencyKey).DoNothing().ID(ctx)
 	inserted, err := db.Inserted(err)
@@ -86,6 +89,9 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 	}
 	if other == nil {
 		return nil, nil, fmt.Errorf("%w: %q", errKeyVanished, req.Key)
+	}
+	if err := sameRequest(other, req); err != nil {
+		return nil, nil, err
 	}
 	if other.Status != outboundmessage.StatusPending {
 		r := replayResult(other)

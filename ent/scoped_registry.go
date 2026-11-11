@@ -1712,6 +1712,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.TemplateID != nil {
 					b.SetTemplateID(remap("EmailTemplate", *src.TemplateID))
 				}
+				if src.RequestDigest != nil {
+					b.SetRequestDigest(*src.RequestDigest)
+				}
 				if src.Subject != nil {
 					b.SetSubject(*src.Subject)
 				}

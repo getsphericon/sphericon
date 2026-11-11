@@ -58,3 +58,41 @@ func TestSendTransactionalSendsTheTemplateToTheNormalizedAddress(t *testing.T) {
 	assert.Equal(t, outboundmessage.KindTransactional, msg.Kind)
 	assert.Equal(t, "receipt@example.com", msg.Destination)
 }
+
+// An Idempotency-Key repeated with the same request replays the first send, however its variables'
+// JSON is written; repeated with a different request (another destination, variables or tracking)
+// it is refused, and nothing is sent for it.
+func TestSendTransactionalReplaysAKeyOnlyForTheSameRequest(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := newModule(env, time.Now)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	request := func(destination, vars string, track bool) outboundmessages.TransactionalRequest {
+		var variables map[string]json.RawMessage
+		require.NoError(t, json.Unmarshal([]byte(vars), &variables))
+		return outboundmessages.TransactionalRequest{
+			TemplateID: fixtures.TemplateWithVariablesID, Destination: destination, Variables: variables,
+			IdempotencyKey: "order-42", Track: track,
+		}
+	}
+
+	first, err := m.SendTransactional(ctx, acme, request("a@example.com", `{"name": "Ann", "order": {"id": 42, "total": 9}}`, false))
+	require.NoError(t, err)
+	again, err := m.SendTransactional(ctx, acme, request(" A@Example.com ", `{"order":{"total":9,"id":42},"name":"Ann"}`, false))
+	require.NoError(t, err)
+	assert.Equal(t, first.MessageID, again.MessageID, "the same request, written differently, replays the first send")
+
+	for name, req := range map[string]outboundmessages.TransactionalRequest{
+		"another destination": request("b@example.com", `{"name": "Ann", "order": {"id": 42, "total": 9}}`, false),
+		"other variables":     request("a@example.com", `{"name": "Bob", "order": {"id": 42, "total": 9}}`, false),
+		"tracking turned on":  request("a@example.com", `{"name": "Ann", "order": {"id": 42, "total": 9}}`, true),
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := m.SendTransactional(ctx, acme, req)
+			require.ErrorIs(t, err, outboundmessages.ErrTransactionalKeyReused)
+		})
+	}
+	sent, err := env.DB.OutboundMessage.Query().Where(outboundmessage.IdempotencyKey("transactional:order-42")).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, sent)
+}

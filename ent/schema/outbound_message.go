@@ -152,6 +152,14 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Int64("integration_id").Optional().Nillable(),
 		// The Template a transactional send referenced (ADR 0005).
 		field.Int64("template_id").Optional().Nillable(),
+		// The SHA-256 of what a Transactional request with the caller's Idempotency-Key asked for
+		// (its Template, destination, variables and tracking): a request that repeats the key is
+		// replayed only when it asks for the same, and refused otherwise. Nil for every other send,
+		// whose key the surface derives from its own record. Derived from personal data: cleared
+		// with the Contact (ADR 0021).
+		field.String("request_digest").
+			Optional().
+			Nillable(),
 		// The subject the recipient received, merge tags filled, written when an email is sent
 		// so a feed can name the email an Event is about after its Broadcast or Automation step
 		// changed or went. Personal data: cleared with the Contact (ADR 0021). Nil for a message

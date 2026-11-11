@@ -330,7 +330,8 @@ type Handler interface {
 	// status `suppressed`) but not marketing Unsubscribe — transactional mail carries no sending source.
 	//
 	// Supply an `Idempotency-Key` to make retries safe: a repeated key replays the original result without
-	// sending a second email, and a key whose first request is still in flight returns 409.
+	// sending a second email, a key whose first request is still in flight returns 409, and a key repeated
+	// with a different request (another template, destination, variables or tracking) returns 422.
 	//
 	// POST /emails
 	EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (*SendTransactionalEmailResponse, error)

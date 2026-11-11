@@ -428,6 +428,20 @@ func (_c *OutboundMessageCreate) SetNillableTemplateID(v *int64) *OutboundMessag
 	return _c
 }
 
+// SetRequestDigest sets the "request_digest" field.
+func (_c *OutboundMessageCreate) SetRequestDigest(v string) *OutboundMessageCreate {
+	_c.mutation.SetRequestDigest(v)
+	return _c
+}
+
+// SetNillableRequestDigest sets the "request_digest" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableRequestDigest(v *string) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetRequestDigest(*v)
+	}
+	return _c
+}
+
 // SetSubject sets the "subject" field.
 func (_c *OutboundMessageCreate) SetSubject(v string) *OutboundMessageCreate {
 	_c.mutation.SetSubject(v)
@@ -750,6 +764,10 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
 		_node.AutomationStep = &value
+	}
+	if value, ok := _c.mutation.RequestDigest(); ok {
+		_spec.SetField(outboundmessage.FieldRequestDigest, field.TypeString, value)
+		_node.RequestDigest = &value
 	}
 	if value, ok := _c.mutation.Subject(); ok {
 		_spec.SetField(outboundmessage.FieldSubject, field.TypeString, value)
@@ -1419,6 +1437,24 @@ func (u *OutboundMessageUpsert) ClearTemplateID() *OutboundMessageUpsert {
 	return u
 }
 
+// SetRequestDigest sets the "request_digest" field.
+func (u *OutboundMessageUpsert) SetRequestDigest(v string) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldRequestDigest, v)
+	return u
+}
+
+// UpdateRequestDigest sets the "request_digest" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateRequestDigest() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldRequestDigest)
+	return u
+}
+
+// ClearRequestDigest clears the value of the "request_digest" field.
+func (u *OutboundMessageUpsert) ClearRequestDigest() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldRequestDigest)
+	return u
+}
+
 // SetSubject sets the "subject" field.
 func (u *OutboundMessageUpsert) SetSubject(v string) *OutboundMessageUpsert {
 	u.Set(outboundmessage.FieldSubject, v)
@@ -2026,6 +2062,27 @@ func (u *OutboundMessageUpsertOne) UpdateTemplateID() *OutboundMessageUpsertOne 
 func (u *OutboundMessageUpsertOne) ClearTemplateID() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearTemplateID()
+	})
+}
+
+// SetRequestDigest sets the "request_digest" field.
+func (u *OutboundMessageUpsertOne) SetRequestDigest(v string) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetRequestDigest(v)
+	})
+}
+
+// UpdateRequestDigest sets the "request_digest" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateRequestDigest() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateRequestDigest()
+	})
+}
+
+// ClearRequestDigest clears the value of the "request_digest" field.
+func (u *OutboundMessageUpsertOne) ClearRequestDigest() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearRequestDigest()
 	})
 }
 
@@ -2805,6 +2862,27 @@ func (u *OutboundMessageUpsertBulk) UpdateTemplateID() *OutboundMessageUpsertBul
 func (u *OutboundMessageUpsertBulk) ClearTemplateID() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearTemplateID()
+	})
+}
+
+// SetRequestDigest sets the "request_digest" field.
+func (u *OutboundMessageUpsertBulk) SetRequestDigest(v string) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetRequestDigest(v)
+	})
+}
+
+// UpdateRequestDigest sets the "request_digest" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateRequestDigest() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateRequestDigest()
+	})
+}
+
+// ClearRequestDigest clears the value of the "request_digest" field.
+func (u *OutboundMessageUpsertBulk) ClearRequestDigest() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearRequestDigest()
 	})
 }
 

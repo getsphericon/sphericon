@@ -86,6 +86,8 @@ type OutboundMessage struct {
 	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// TemplateID holds the value of the "template_id" field.
 	TemplateID *int64 `json:"template_id,omitempty"`
+	// RequestDigest holds the value of the "request_digest" field.
+	RequestDigest *string `json:"request_digest,omitempty"`
 	// Subject holds the value of the "subject" field.
 	Subject *string `json:"subject,omitempty"`
 	// AppOrigin holds the value of the "app_origin" field.
@@ -227,7 +229,7 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationStep, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
-		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
+		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
 		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt:
 			values[i] = new(sql.NullTime)
@@ -452,6 +454,13 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 				_m.TemplateID = new(int64)
 				*_m.TemplateID = value.Int64
 			}
+		case outboundmessage.FieldRequestDigest:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field request_digest", values[i])
+			} else if value.Valid {
+				_m.RequestDigest = new(string)
+				*_m.RequestDigest = value.String
+			}
 		case outboundmessage.FieldSubject:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field subject", values[i])
@@ -675,6 +684,11 @@ func (_m *OutboundMessage) String() string {
 	if v := _m.TemplateID; v != nil {
 		builder.WriteString("template_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RequestDigest; v != nil {
+		builder.WriteString("request_digest=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	if v := _m.Subject; v != nil {

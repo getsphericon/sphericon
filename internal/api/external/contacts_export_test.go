@@ -114,7 +114,7 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 	covered(reflect.TypeFor[externalapi.ContactExportSuppression](), suppression.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportConfirmation](), confirmation.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportOutboundMessage](), outboundmessage.Columns,
-		"workspace_id", "contact_id", "updated_at", "idempotency_key", "broadcast_recipient_id", "automation_run_id", "integration_id", "app_origin",
+		"workspace_id", "contact_id", "updated_at", "idempotency_key", outboundmessage.FieldRequestDigest, "broadcast_recipient_id", "automation_run_id", "integration_id", "app_origin",
 		// The rendered subject (#899) is kept for the feeds only: #899 leaves the export as it was.
 		outboundmessage.FieldSubject)
 	covered(reflect.TypeFor[externalapi.ContactExportBroadcastRecipient](), broadcastrecipient.Columns,

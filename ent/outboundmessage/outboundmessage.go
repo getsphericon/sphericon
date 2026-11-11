@@ -76,6 +76,8 @@ const (
 	FieldIntegrationID = "integration_id"
 	// FieldTemplateID holds the string denoting the template_id field in the database.
 	FieldTemplateID = "template_id"
+	// FieldRequestDigest holds the string denoting the request_digest field in the database.
+	FieldRequestDigest = "request_digest"
 	// FieldSubject holds the string denoting the subject field in the database.
 	FieldSubject = "subject"
 	// FieldAppOrigin holds the string denoting the app_origin field in the database.
@@ -198,6 +200,7 @@ var Columns = []string{
 	FieldAutomationStep,
 	FieldIntegrationID,
 	FieldTemplateID,
+	FieldRequestDigest,
 	FieldSubject,
 	FieldAppOrigin,
 }
@@ -447,6 +450,11 @@ func ByIntegrationID(opts ...sql.OrderTermOption) OrderOption {
 // ByTemplateID orders the results by the template_id field.
 func ByTemplateID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTemplateID, opts...).ToFunc()
+}
+
+// ByRequestDigest orders the results by the request_digest field.
+func ByRequestDigest(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestDigest, opts...).ToFunc()
 }
 
 // BySubject orders the results by the subject field.

@@ -346,6 +346,7 @@
   "errors.variables_invalid": "invalid variables",
   "errors.send_in_progress": "a send with this Idempotency-Key is already in progress",
   "errors.send_key_failed": "a previous send with this Idempotency-Key failed; retry with a new key",
+  "errors.send_key_reused": "this Idempotency-Key was used for a different request; retry with a new key",
   "errors.event_rejected": "the event was refused",
   "errors.sending_source_invalid": "sendingSource must be broadcasts, everything or automation:<id>",
   "errors.sending_source_automation_unknown": "sendingSource names no automation of this workspace",

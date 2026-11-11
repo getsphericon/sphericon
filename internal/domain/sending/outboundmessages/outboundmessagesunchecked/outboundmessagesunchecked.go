@@ -45,7 +45,7 @@ func AnonymizeContact(ctx context.Context, s *ent.Scoped, contactID int64, phone
 		return err
 	}
 	_, err := s.OutboundMessage().Update().Where(outboundmessage.ContactID(contactID)).
-		ClearContactID().ClearDestination().ClearSubject().Save(ctx)
+		ClearContactID().ClearDestination().ClearSubject().ClearRequestDigest().Save(ctx)
 	return err
 }
 
@@ -57,7 +57,7 @@ func AnonymizeDestinations(ctx context.Context, s *ent.Scoped, destinations []st
 		return nil
 	}
 	_, err := s.OutboundMessage().Update().Where(outboundmessage.DestinationIn(destinations...)).
-		ClearContactID().ClearDestination().ClearSubject().Save(ctx)
+		ClearContactID().ClearDestination().ClearSubject().ClearRequestDigest().Save(ctx)
 	return err
 }
 
