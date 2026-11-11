@@ -645,6 +645,7 @@ depends = [
   "check:adr",
   "check:helm",
   "check:links",
+  "check:playwright-image",
 ]
 
 ["check:fe"]
@@ -745,6 +746,10 @@ run = "heavy -- golangci-lint custom --version v$(mise current golangci-lint)"
 ["check:lint-pins"]
 description = "The analyzers' x/tools and plugin-register versions are the ones that golangci-lint itself uses"
 run = "node mise/scripts/check-lint-pins.ts"
+
+["check:playwright-image"]
+description = "CI's frontend tests run in the Playwright image of the version package.json pins"
+run = "node mise/scripts/check-playwright-image.ts"
 
 ["check:schema"]
 description = "schemalens: the ent schema and the migrated database agree, and the database passes its rules"
