@@ -400,6 +400,12 @@ linters:
         linters:
           - gosec
         text: G704
+      # G704: the recorded Telegram tests ask the Bot API (telegram.DefaultAPIURL, a constant host)
+      # about the recording bot; only the token from the environment is in the path.
+      - path: ^internal/infra/messaging/telegram/recorded_test\.go$
+        linters:
+          - gosec
+        text: G704
       # G705: the probe body is a hex HMAC (trackingdomain.ProbeValue) served as text/plain.
       - path: ^internal/server/trackinghost\.go$
         linters:
