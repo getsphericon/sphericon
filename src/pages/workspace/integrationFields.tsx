@@ -113,6 +113,8 @@ export function EmailFields({
             <NumberInput
               label={t(($) => $.settings.integrations.fields.port)}
               required
+              // A port is a number that names, not a quantity: it is never grouped.
+              thousandSeparator={false}
               {...form.getInputProps('port')}
             />
           </Group>

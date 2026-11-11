@@ -2,8 +2,7 @@ import { Card, Group, Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import type { StaffDeliverability, StaffRate } from '../generated/staffee/types.gen.ts'
-import { resolveLocale } from '../i18n.ts'
-import { formatPercent } from './format.ts'
+import { formatNumber, formatPercent } from './format.ts'
 
 // A rate as its percentage over its "<numerator> / <denominator>" counts: the counts always
 // show, and the percentage is replaced by the floor notice while the rate is undefined
@@ -45,7 +44,7 @@ export function DeliverabilityCard({ deliverability }: { deliverability: StaffDe
           {t(($) => $.console.workspace.rates.sendVolume)}
         </Text>
         <Text size="lg" fw={600}>
-          {new Intl.NumberFormat(resolveLocale()).format(deliverability.sendVolume)}
+          {formatNumber(deliverability.sendVolume)}
         </Text>
       </Group>
       {deliverability.domains.length === 0 ? (

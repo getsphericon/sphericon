@@ -29,7 +29,6 @@ export function ProviderLimitFields({
         allowNegative={false}
         min={PER_SECOND.min}
         max={PER_SECOND.max}
-        thousandSeparator=" "
         {...perSecondProps}
       />
       <NumberInput
@@ -40,7 +39,6 @@ export function ProviderLimitFields({
         allowNegative={false}
         min={PER_DAY.min}
         max={PER_DAY.max}
-        thousandSeparator=" "
         {...perDayProps}
       />
     </Group>
