@@ -192,7 +192,7 @@ func TestLeaveAuditsTheUserAsActor(t *testing.T) {
 
 	entry, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionMembershipDelete)).Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, events.ActorUser, entry.ActorKind)
+	assert.Equal(t, auditentry.ActorKindUser, entry.ActorKind)
 	assert.Equal(t, fixtures.InitechMemberMaxName, lo.FromPtr(entry.ActorName))
 	assert.Equal(t, fixtures.InitechMemberMaxName, lo.FromPtr(entry.TargetName))
 }

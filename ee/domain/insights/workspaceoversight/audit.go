@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -49,8 +50,8 @@ func staffPageOf(p pagination.IDPage[*ent.AuditEntry]) auditlog.Page {
 	out := auditlog.Page{Entries: make([]auditlog.View, len(p.Items))}
 	for i, e := range p.Items {
 		v := auditlog.ViewOf(e)
-		if e.ActorKind == events.ActorService {
-			v.ActorKind, v.ActorID, v.ActorName = e.ActorKind, e.ActorID, e.ActorName
+		if e.ActorKind == auditentry.ActorKindService {
+			v.ActorKind, v.ActorID, v.ActorName = string(e.ActorKind), e.ActorID, e.ActorName
 		}
 		out.Entries[i] = v
 	}

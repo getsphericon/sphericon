@@ -9,18 +9,21 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+
+	"github.com/getsphericon/sphericon/ent/auditentry"
 )
 
-// Actor kinds of an Audit entry. A scope built from a secret rather than a login carries
-// ActorIngest, which is never audited.
+// Actor kinds of an Audit entry: the values of its actor_kind enum, which the database checks. A
+// scope built from a secret rather than a login carries ActorIngest, which is never audited and so
+// is no value of the enum.
 const (
-	ActorUser     = "user"
-	ActorAPIToken = "api_token"
-	ActorStaff    = "staff"
+	ActorUser     = string(auditentry.ActorKindUser)
+	ActorAPIToken = string(auditentry.ActorKindAPIToken)
+	ActorStaff    = string(auditentry.ActorKindStaff)
 	// ActorService is a Service credential (ADR 0026): a machine identity of the platform,
 	// named in the log, which every customer-facing read shows as ActorStaff.
-	ActorService = "service"
-	ActorSystem  = "system"
+	ActorService = string(auditentry.ActorKindService)
+	ActorSystem  = string(auditentry.ActorKindSystem)
 	ActorIngest  = "ingest"
 )
 

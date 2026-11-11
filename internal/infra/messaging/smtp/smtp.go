@@ -15,7 +15,6 @@ import (
 	"github.com/wneessen/go-mail"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
@@ -43,7 +42,6 @@ func Descriptor() messaging.ProviderDescriptor { return NewDescriptor(false) }
 // the stored password cannot be sent to an internal service nor the server used to probe one.
 func NewDescriptor(allowPrivate bool) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  channels.Email,
 		Provider: providers.SMTP,
 		Validate: func(raw []byte) error { return validate(raw, allowPrivate) },
 		Build: func(raw []byte, deps messaging.Deps) (any, error) {

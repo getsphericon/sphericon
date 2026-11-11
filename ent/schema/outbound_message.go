@@ -29,11 +29,24 @@ type OutboundMessage struct {
 }
 
 // Annotations adds to the enum checks that a message's final report is delivered or undelivered,
-// never both (ADR 0079). It needs no Channel condition: only an SMS report sets undelivered_at.
+// never both (ADR 0079), and that it carries exactly its kind's provenance. The report needs no
+// Channel condition: only an SMS report sets undelivered_at.
 func (OutboundMessage) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("outbound_messages", OutboundMessage{}.Fields())
 	a.Checks["outbound_messages_final_report_check"] = "delivered_at IS NULL OR undelivered_at IS NULL"
+	a.Checks["outbound_messages_provenance_check"] = variantCheck("kind", outboundProvenance)
 	return []schema.Annotation{WithLowerCheck(a, "destination")}
+}
+
+// outboundProvenance is the surface record each kind of Outbound message points at: a Broadcast
+// message its Broadcast, an Automation message its Automation and step, and neither of them the
+// other's. A column whose foreign key is ON DELETE SET NULL (the recipient, the run, the Template)
+// is never required: it is cleared when its row goes and the message stays. A kind added to the
+// enum adds its entry here.
+var outboundProvenance = []variant{
+	{value: "broadcast", required: []string{"broadcast_id"}, optional: []string{"broadcast_recipient_id"}},
+	{value: "automation", required: []string{"automation_id", "automation_step"}, optional: []string{"automation_run_id"}},
+	{value: "transactional", optional: []string{"template_id"}},
 }
 
 func (OutboundMessage) Mixin() []ent.Mixin {

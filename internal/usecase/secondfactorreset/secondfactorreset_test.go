@@ -149,7 +149,7 @@ func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 	assert.Equal(t, int64(fixtures.GlobexID), got[0].WorkspaceID)
 	assert.Equal(t, int64(fixtures.UmbrellaID), got[1].WorkspaceID)
 	for _, e := range got {
-		assert.Equal(t, events.ActorStaff, e.ActorKind)
+		assert.Equal(t, auditentry.ActorKindStaff, e.ActorKind)
 	}
 }
 

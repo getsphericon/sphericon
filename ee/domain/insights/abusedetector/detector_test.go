@@ -264,7 +264,7 @@ func TestAFreezeIsAuditedAsTheSystemAndSendsNoWarning(t *testing.T) {
 	entries := env.DB.Scoped(fixtures.VandelayID).AuditEntry().Query().
 		Where(auditentry.Action(events.ActionWorkspaceSuspend)).AllX(t.Context())
 	require.Len(t, entries, 1)
-	assert.Equal(t, string(events.ActorSystem), entries[0].ActorKind)
+	assert.Equal(t, auditentry.ActorKindSystem, entries[0].ActorKind)
 	for _, m := range env.SystemMail.Messages() {
 		assert.Contains(t, m.Subject, "suspended", "a direct freeze mails the freeze notice only")
 	}

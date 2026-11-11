@@ -48,7 +48,7 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 
 	onChannel := req.Channel()
 	create := s.OutboundMessage().Create().
-		SetKind(req.Kind).
+		SetKind(req.Kind()).
 		SetIdempotencyKey(req.Key).
 		SetChannel(onChannel).
 		SetClaimedAt(m.claimTime())
@@ -67,25 +67,7 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 	if contactID := req.contactID(); contactID != 0 {
 		create.SetContactID(contactID)
 	}
-	ref := req.Ref
-	if ref.BroadcastID != 0 {
-		create.SetBroadcastID(ref.BroadcastID)
-	}
-	if ref.BroadcastRecipient != 0 {
-		create.SetBroadcastRecipientID(ref.BroadcastRecipient)
-	}
-	if ref.AutomationID != 0 {
-		create.SetAutomationID(ref.AutomationID)
-	}
-	if ref.AutomationRunID != 0 {
-		create.SetAutomationRunID(ref.AutomationRunID)
-	}
-	if ref.AutomationStep != nil {
-		create.SetAutomationStep(*ref.AutomationStep)
-	}
-	if ref.TemplateID != 0 {
-		create.SetTemplateID(ref.TemplateID)
-	}
+	req.Ref.stamp(create)
 
 	id, err := create.OnConflictColumns(outboundmessage.FieldWorkspaceID, outboundmessage.FieldIdempotencyKey).DoNothing().ID(ctx)
 	inserted, err := db.Inserted(err)

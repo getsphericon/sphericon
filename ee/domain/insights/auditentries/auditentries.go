@@ -73,7 +73,7 @@ func persist(ctx context.Context, client *ent.Client, env events.Envelope, e *ev
 	create := client.Scoped(env.WorkspaceID).AuditEntry().Create().
 		SetEntryKey(env.ID).
 		SetOccurredAt(env.OccurredAt).
-		SetActorKind(e.Actor.Kind).
+		SetActorKind(auditentry.ActorKind(e.Actor.Kind)).
 		SetAction(e.Action).
 		SetTargetType(e.TargetType)
 	if e.Actor.ID != "" {
@@ -160,7 +160,7 @@ func (l *Log) Facets(ctx context.Context, s *ent.Scoped) (auditlog.Facets, error
 		Newest int64   `json:"newest"`
 	}
 	err := s.AuditEntry().Query().
-		Where(auditentry.ActorKindNotIn(events.ActorStaff, events.ActorService)).
+		Where(auditentry.ActorKindNotIn(auditentry.ActorKindStaff, auditentry.ActorKindService)).
 		GroupBy(auditentry.FieldActorKind, auditentry.FieldActorID, auditentry.FieldActorName).
 		Aggregate(ent.As(ent.Max(auditentry.FieldID), "newest")).
 		Scan(ctx, &rows)
@@ -168,7 +168,7 @@ func (l *Log) Facets(ctx context.Context, s *ent.Scoped) (auditlog.Facets, error
 		return auditlog.Facets{}, fmt.Errorf("audit facets actors: %w", err)
 	}
 	staff, err := s.AuditEntry().Query().
-		Where(auditentry.ActorKindIn(events.ActorStaff, events.ActorService)).
+		Where(auditentry.ActorKindIn(auditentry.ActorKindStaff, auditentry.ActorKindService)).
 		Exist(ctx)
 	if err != nil {
 		return auditlog.Facets{}, fmt.Errorf("audit facets staff: %w", err)
@@ -224,15 +224,15 @@ func predicates(f events.AuditFilter) []predicate.AuditEntry {
 	// The staff member kind covers every staff identity (a Service credential reads as an
 	// Staff member to a customer), so the filter matches both.
 	if f.ActorKind == events.ActorStaff {
-		ps = append(ps, auditentry.ActorKindIn(events.ActorStaff, events.ActorService))
+		ps = append(ps, auditentry.ActorKindIn(auditentry.ActorKindStaff, auditentry.ActorKindService))
 	} else if f.ActorKind != "" {
-		ps = append(ps, auditentry.ActorKind(f.ActorKind))
+		ps = append(ps, auditentry.ActorKindEQ(auditentry.ActorKind(f.ActorKind)))
 	}
 	// A staff id is never exposed, so it must not be probeable either: with the
 	// staff member kind the id filter is ignored, and without a kind an id filter never
 	// matches a staff entry (ADR 0022).
 	if f.ActorID != "" && f.ActorKind != events.ActorStaff {
-		ps = append(ps, auditentry.ActorID(f.ActorID), auditentry.ActorKindNotIn(events.ActorStaff, events.ActorService))
+		ps = append(ps, auditentry.ActorID(f.ActorID), auditentry.ActorKindNotIn(auditentry.ActorKindStaff, auditentry.ActorKindService))
 	}
 	if f.Action != "" {
 		ps = append(ps, auditentry.Action(f.Action))

@@ -2,9 +2,6 @@ package schema
 
 import (
 	"encoding/json"
-	"fmt"
-	"slices"
-	"strings"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
@@ -191,55 +188,19 @@ func (Broadcast) Indexes() []ent.Index {
 // write that moves the status). It also checks that the content is exactly the Channel's.
 func broadcastTable() entsql.Annotation {
 	a := TableWithEnumChecks("broadcasts", Broadcast{}.Fields())
-	a.Checks["broadcasts_content_check"] = contentCheck(broadcastContents)
+	a.Checks["broadcasts_content_check"] = variantCheck("channel", broadcastContents)
 	a.Checks["broadcasts_scheduled_at_check"] = "status <> 'scheduled' OR scheduled_at IS NOT NULL"
 	a.Checks["broadcasts_sent_at_check"] = "status <> 'sent' OR sent_at IS NOT NULL"
 	a.Checks["broadcasts_failed_at_check"] = "status <> 'failed' OR failed_at IS NOT NULL"
 	return a
 }
 
-// channelContent names the columns of one Channel's content on the broadcasts table: required
-// ones are set on a Broadcast of that Channel, and none of them is set on another Channel's unless
-// that Channel's content has the column too (the text of Telegram and SMS).
-type channelContent struct {
-	channel            string
-	required, optional []string
-}
-
-// broadcastContents is the content of each Channel a Broadcast is sent on (ADR 0078). A Channel
-// added to the channel enum adds its entry here.
-var broadcastContents = []channelContent{
-	{channel: "email", required: []string{"subject", "body"}, optional: []string{"from_name", "from_email", "doc", "editor_version"}},
-	{channel: "telegram", required: []string{"text", "buttons"}, optional: []string{"image_url", "unsubscribe_button"}},
-	{channel: "sms", required: []string{"text"}},
-}
-
-// contentCheck is the CHECK that a row holds exactly its Channel's content: one arm per Channel,
-// each requiring that Channel's required columns and leaving unset every column of another
-// Channel's content that is not one of its own.
-func contentCheck(contents []channelContent) string {
-	arms := make([]string, len(contents))
-	for i, c := range contents {
-		conds := []string{fmt.Sprintf("channel = '%s'", c.channel)}
-		for _, col := range c.required {
-			conds = append(conds, col+" IS NOT NULL")
-		}
-		own := slices.Concat(c.required, c.optional)
-		var unset []string
-		for _, other := range contents {
-			if other.channel == c.channel {
-				continue
-			}
-			for _, col := range slices.Concat(other.required, other.optional) {
-				if !slices.Contains(own, col) && !slices.Contains(unset, col) {
-					unset = append(unset, col)
-				}
-			}
-		}
-		for _, col := range unset {
-			conds = append(conds, col+" IS NULL")
-		}
-		arms[i] = "(" + strings.Join(conds, " AND ") + ")"
-	}
-	return strings.Join(arms, " OR ")
+// broadcastContents is the content of each Channel a Broadcast is sent on (ADR 0078): required
+// columns are set on a Broadcast of that Channel, and none of them is set on another Channel's
+// unless that Channel's content has the column too (the text of Telegram and SMS). A Channel added
+// to the channel enum adds its entry here.
+var broadcastContents = []variant{
+	{value: "email", required: []string{"subject", "body"}, optional: []string{"from_name", "from_email", "doc", "editor_version"}},
+	{value: "telegram", required: []string{"text", "buttons"}, optional: []string{"image_url", "unsubscribe_button"}},
+	{value: "sms", required: []string{"text"}},
 }

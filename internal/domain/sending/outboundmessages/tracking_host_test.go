@@ -29,7 +29,7 @@ const linkHTML = `<p><a href="https://example.com/offer">Offer</a></p>`
 func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outboundmessages.Module, ws int64, key, domain string) messaging.EmailMessage {
 	t.Helper()
 	res, err := m.Send(context.Background(), env.DB.Scoped(ws), outboundmessages.Request{
-		Kind:        outboundmessage.KindBroadcast,
+		Ref:         broadcastIn(t, ws),
 		Key:         key,
 		Destination: "reader@example.com",
 		Source:      eligibility.SourceBroadcasts,
@@ -110,7 +110,7 @@ func TestTrackingHostLookupErrorIsRetriedNotFailed(t *testing.T) {
 	}))
 	send := func(key string) (outboundmessages.Result, error) {
 		return m.Send(ctx, scoped, outboundmessages.Request{
-			Kind:        outboundmessage.KindBroadcast,
+			Ref:         broadcastIn(t, fixtures.UmbrellaID),
 			Key:         key,
 			Destination: "reader@example.com",
 			Source:      eligibility.SourceBroadcasts,

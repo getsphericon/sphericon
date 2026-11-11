@@ -266,7 +266,7 @@ func TestDefaultFrom(t *testing.T) {
 
 func TestDescriptorValidate(t *testing.T) {
 	d := ses.Descriptor()
-	assert.Equal(t, channels.Email, d.Channel)
+	assert.Equal(t, channels.Email, d.Provider.Channel())
 	assert.Equal(t, providers.SES, d.Provider)
 
 	cases := map[string]struct {

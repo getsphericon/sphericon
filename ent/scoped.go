@@ -1858,7 +1858,7 @@ func (x *AuditEntryScopedCreate) SetOccurredAt(v time.Time) *AuditEntryScopedCre
 }
 
 // SetActorKind sets the "actor_kind" field.
-func (x *AuditEntryScopedCreate) SetActorKind(v string) *AuditEntryScopedCreate {
+func (x *AuditEntryScopedCreate) SetActorKind(v auditentry.ActorKind) *AuditEntryScopedCreate {
 	x.b.SetActorKind(v)
 	return x
 }
@@ -18257,12 +18257,6 @@ func (x *IntegrationScopedCreate) SetName(v string) *IntegrationScopedCreate {
 // SetChannel sets the "channel" field.
 func (x *IntegrationScopedCreate) SetChannel(v channels.Channel) *IntegrationScopedCreate {
 	x.b.SetChannel(v)
-	return x
-}
-
-// SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableChannel(v *channels.Channel) *IntegrationScopedCreate {
-	x.b.SetNillableChannel(v)
 	return x
 }
 

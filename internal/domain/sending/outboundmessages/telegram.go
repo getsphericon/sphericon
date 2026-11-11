@@ -191,7 +191,7 @@ func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Requ
 		Destination:       dest,
 		WorkspaceID:       ws.ID,
 		ContactID:         req.contactID(),
-		BroadcastID:       req.Ref.BroadcastID,
+		BroadcastID:       req.broadcastID(),
 		OutboundMessageID: messageID,
 	})
 	if err != nil {
@@ -293,10 +293,10 @@ func (telegramAdapter) publishSent(ctx context.Context, pub events.Publisher, f 
 		WorkspaceID:       f.workspaceID,
 		ContactID:         f.req.contactID(),
 		Destination:       f.dest,
-		BroadcastID:       f.req.Ref.BroadcastID,
-		AutomationID:      f.req.Ref.AutomationID,
+		BroadcastID:       f.req.broadcastID(),
+		AutomationID:      f.req.automationID(),
 		OutboundMessageID: f.messageID,
-		Surface:           string(f.req.Kind),
+		Surface:           string(f.req.Kind()),
 		SendingSource:     f.req.Source,
 		DedupID:           fmt.Sprintf("%s:%d", events.NameTelegramSent, f.messageID),
 	}

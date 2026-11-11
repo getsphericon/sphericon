@@ -75,7 +75,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "entry_key", Type: field.TypeString},
 		{Name: "occurred_at", Type: field.TypeTime},
-		{Name: "actor_kind", Type: field.TypeString},
+		{Name: "actor_kind", Type: field.TypeEnum, Enums: []string{"user", "api_token", "staff", "service", "system"}},
 		{Name: "actor_id", Type: field.TypeString, Nullable: true},
 		{Name: "actor_name", Type: field.TypeString, Nullable: true},
 		{Name: "action", Type: field.TypeString},
@@ -1176,7 +1176,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}},
 		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses", "inbox", "telegram", "twilio"}},
 		{Name: "config_encrypted", Type: field.TypeString},
 		{Name: "preset", Type: field.TypeString, Nullable: true},
@@ -3137,6 +3137,9 @@ func init() {
 	AuditEntriesTable.Annotation = &entsql.Annotation{
 		Table: "audit_entries",
 	}
+	AuditEntriesTable.Annotation.Checks = map[string]string{
+		"audit_entries_actor_kind_check": "actor_kind IN ('user', 'api_token', 'staff', 'service', 'system')",
+	}
 	AuthAttemptsTable.Annotation = &entsql.Annotation{
 		Table: "auth_attempts",
 	}
@@ -3301,6 +3304,7 @@ func init() {
 	}
 	IntegrationsTable.Annotation.Checks = map[string]string{
 		"integrations_channel_check":              "channel IN ('email', 'telegram', 'sms')",
+		"integrations_provider_channel_check":     "(channel = 'email' AND provider IN ('smtp', 'ses', 'inbox')) OR (channel = 'telegram' AND provider IN ('telegram')) OR (channel = 'sms' AND provider IN ('twilio'))",
 		"integrations_provider_check":             "provider IN ('smtp', 'ses', 'inbox', 'telegram', 'twilio')",
 		"integrations_provider_enforcement_check": "provider_enforcement IN ('probation', 'shutdown')",
 	}
@@ -3356,6 +3360,10 @@ func init() {
 	OrdersTable.Annotation = &entsql.Annotation{
 		Table: "orders",
 	}
+	OrdersTable.Annotation.Checks = map[string]string{
+		"orders_credit_check":    "(broadcast_id IS NULL OR automation_id IS NULL) AND (credited_click_at IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL)",
+		"orders_currency_format": "currency ~ '^[A-Z]{3}$'",
+	}
 	OrderMovementsTable.ForeignKeys[0].RefTable = OrdersTable
 	OrderMovementsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	OrderMovementsTable.Annotation = &entsql.Annotation{
@@ -3380,6 +3388,7 @@ func init() {
 		"outbound_messages_destination_lower":  "destination = lower(destination)",
 		"outbound_messages_final_report_check": "delivered_at IS NULL OR undelivered_at IS NULL",
 		"outbound_messages_kind_check":         "kind IN ('broadcast', 'automation', 'transactional')",
+		"outbound_messages_provenance_check":   "(kind = 'broadcast' AND broadcast_id IS NOT NULL AND automation_id IS NULL AND automation_step IS NULL AND automation_run_id IS NULL AND template_id IS NULL) OR (kind = 'automation' AND automation_id IS NOT NULL AND automation_step IS NOT NULL AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND template_id IS NULL) OR (kind = 'transactional' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_step IS NULL AND automation_run_id IS NULL)",
 		"outbound_messages_status_check":       "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}
 	PasskeysTable.ForeignKeys[0].RefTable = UsersTable
@@ -3571,6 +3580,7 @@ func init() {
 	WorkspacesTable.Annotation.Checks = map[string]string{
 		"workspaces_public_id_max_length_check": "char_length(public_id) <= 8",
 		"workspaces_public_id_min_length_check": "char_length(public_id) >= 8",
+		"workspaces_reporting_currency_format":  "reporting_currency ~ '^[A-Z]{3}$'",
 		"workspaces_suspended_by_kind_check":    "suspended_by_kind IN ('system', 'cli', 'staff')",
 		"workspaces_suspension_check":           "(suspended_at IS NULL) = (suspended_by_kind IS NULL) AND (suspended_at IS NULL) = (suspension_reason IS NULL) AND COALESCE(suspended_by_kind = 'staff', false) = (suspended_by_id IS NOT NULL)",
 	}

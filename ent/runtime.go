@@ -131,10 +131,6 @@ func init() {
 	auditentryDescEntryKey := auditentryFields[1].Descriptor()
 	// auditentry.EntryKeyValidator is a validator for the "entry_key" field. It is called by the builders before save.
 	auditentry.EntryKeyValidator = auditentryDescEntryKey.Validators[0].(func(string) error)
-	// auditentryDescActorKind is the schema descriptor for actor_kind field.
-	auditentryDescActorKind := auditentryFields[3].Descriptor()
-	// auditentry.ActorKindValidator is a validator for the "actor_kind" field. It is called by the builders before save.
-	auditentry.ActorKindValidator = auditentryDescActorKind.Validators[0].(func(string) error)
 	// auditentryDescAction is the schema descriptor for action field.
 	auditentryDescAction := auditentryFields[6].Descriptor()
 	// auditentry.ActionValidator is a validator for the "action" field. It is called by the builders before save.

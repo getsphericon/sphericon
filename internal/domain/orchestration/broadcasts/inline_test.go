@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -39,7 +38,7 @@ func TestRunInlineStopsAtADeferral(t *testing.T) {
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 		res, err := d.out.Send(d.t.Context(), d.s, outboundmessages.Request{
-			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
+			Ref: outboundmessages.TransactionalRef{}, Key: key, Destination: "a@example.com",
 			Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
 		})
 		require.NoError(t, err)

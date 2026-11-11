@@ -785,6 +785,12 @@ const (
 	BroadcastGlobexID = 900
 	// BroadcastGlobexName is from fixtures/broadcasts.
 	BroadcastGlobexName = "Globex only"
+	// BroadcastGlobexRecentSendsID is from fixtures/broadcasts.
+	BroadcastGlobexRecentSendsID = 7344
+	// BroadcastGlobexRecentSendsName is from fixtures/broadcasts.
+	BroadcastGlobexRecentSendsName = "Globex news"
+	// BroadcastGlobexRecentSendsSubject is from fixtures/broadcasts.
+	BroadcastGlobexRecentSendsSubject = "Globex news"
 	// BroadcastGlobexSubject is from fixtures/broadcasts.
 	BroadcastGlobexSubject = "Globex only"
 	// BroadcastGothamDaylightSavingID is from fixtures/broadcasts.
@@ -915,12 +921,24 @@ const (
 	BroadcastMeridianViaRelayName = "Meridian via relay"
 	// BroadcastMeridianViaRelaySubject is from fixtures/broadcasts.
 	BroadcastMeridianViaRelaySubject = "Meridian via relay"
+	// BroadcastPinewoodTestSendsID is from fixtures/broadcasts.
+	BroadcastPinewoodTestSendsID = 7346
+	// BroadcastPinewoodTestSendsName is from fixtures/broadcasts.
+	BroadcastPinewoodTestSendsName = "Pinewood test sends"
+	// BroadcastPinewoodTestSendsSubject is from fixtures/broadcasts.
+	BroadcastPinewoodTestSendsSubject = "News"
 	// BroadcastProSegmentID is from fixtures/broadcasts.
 	BroadcastProSegmentID = 105
 	// BroadcastProSegmentName is from fixtures/broadcasts.
 	BroadcastProSegmentName = "Pro plan perks"
 	// BroadcastProSegmentSubject is from fixtures/broadcasts.
 	BroadcastProSegmentSubject = "Your pro perks"
+	// BroadcastRecentSendsID is from fixtures/broadcasts.
+	BroadcastRecentSendsID = 7343
+	// BroadcastRecentSendsName is from fixtures/broadcasts.
+	BroadcastRecentSendsName = "This week's news"
+	// BroadcastRecentSendsSubject is from fixtures/broadcasts.
+	BroadcastRecentSendsSubject = "This week"
 	// BroadcastRecipientBystanderID is from fixtures/broadcast_recipients.
 	BroadcastRecipientBystanderID = 3001
 	// BroadcastRecipientBystanderPendingID is from fixtures/broadcast_recipients.
@@ -1001,6 +1019,10 @@ const (
 	BroadcastSmsDraftID = 7340
 	// BroadcastSmsDraftName is from fixtures/broadcasts.
 	BroadcastSmsDraftName = "Flash sale"
+	// BroadcastSmsSentID is from fixtures/broadcasts.
+	BroadcastSmsSentID = 7342
+	// BroadcastSmsSentName is from fixtures/broadcasts.
+	BroadcastSmsSentName = "Spring sale"
 	// BroadcastSoukID is from fixtures/broadcasts.
 	BroadcastSoukID = 7203
 	// BroadcastSoukName is from fixtures/broadcasts.
@@ -1017,6 +1039,12 @@ const (
 	BroadcastTelegramInviteName = "Join us on Telegram"
 	// BroadcastTelegramInviteSubject is from fixtures/broadcasts.
 	BroadcastTelegramInviteSubject = "Join us on Telegram"
+	// BroadcastUmbrellaTestSendsID is from fixtures/broadcasts.
+	BroadcastUmbrellaTestSendsID = 7345
+	// BroadcastUmbrellaTestSendsName is from fixtures/broadcasts.
+	BroadcastUmbrellaTestSendsName = "Umbrella test sends"
+	// BroadcastUmbrellaTestSendsSubject is from fixtures/broadcasts.
+	BroadcastUmbrellaTestSendsSubject = "News"
 	// BroadcastWithoutTelegramID is from fixtures/broadcasts.
 	BroadcastWithoutTelegramID = 7410
 	// BroadcastWithoutTelegramName is from fixtures/broadcasts.

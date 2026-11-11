@@ -3,6 +3,7 @@
 package auditentry
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -99,13 +100,37 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// EntryKeyValidator is a validator for the "entry_key" field. It is called by the builders before save.
 	EntryKeyValidator func(string) error
-	// ActorKindValidator is a validator for the "actor_kind" field. It is called by the builders before save.
-	ActorKindValidator func(string) error
 	// ActionValidator is a validator for the "action" field. It is called by the builders before save.
 	ActionValidator func(string) error
 	// TargetTypeValidator is a validator for the "target_type" field. It is called by the builders before save.
 	TargetTypeValidator func(string) error
 )
+
+// ActorKind defines the type for the "actor_kind" enum field.
+type ActorKind string
+
+// ActorKind values.
+const (
+	ActorKindUser     ActorKind = "user"
+	ActorKindAPIToken ActorKind = "api_token"
+	ActorKindStaff    ActorKind = "staff"
+	ActorKindService  ActorKind = "service"
+	ActorKindSystem   ActorKind = "system"
+)
+
+func (ak ActorKind) String() string {
+	return string(ak)
+}
+
+// ActorKindValidator is a validator for the "actor_kind" field enum values. It is called by the builders before save.
+func ActorKindValidator(ak ActorKind) error {
+	switch ak {
+	case ActorKindUser, ActorKindAPIToken, ActorKindStaff, ActorKindService, ActorKindSystem:
+		return nil
+	default:
+		return fmt.Errorf("auditentry: invalid enum value for actor_kind field: %q", ak)
+	}
+}
 
 // OrderOption defines the ordering options for the AuditEntry queries.
 type OrderOption func(*sql.Selector)

@@ -1,6 +1,9 @@
 package schema
 
 import (
+	"fmt"
+	"strings"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
@@ -21,9 +24,14 @@ type Integration struct {
 	ent.Schema
 }
 
+// Annotations adds to the enum checks that an Integration's channel is its provider's: a provider
+// sends on one Channel (providers.Provider.Channel), and a row that paired it with another would be
+// picked as that Channel's default and routed to the wrong sender.
 func (Integration) Annotations() []schema.Annotation {
+	a := TableWithEnumChecks("integrations", Integration{}.Fields())
+	a.Checks["integrations_provider_channel_check"] = providerChannelCheck()
 	return []schema.Annotation{
-		TableWithEnumChecks("integrations", Integration{}.Fields()),
+		a,
 		Audited{Action: "integration", NameField: nameField},
 	}
 }
@@ -39,9 +47,11 @@ func (Integration) Fields() []ent.Field {
 			Immutable(),
 		field.String(nameField).
 			NotEmpty(),
+		// The provider's Channel (providers.Provider.Channel), stored for the per-Channel indexes
+		// and checked against the provider; no default, so a writer cannot pair a provider with a
+		// Channel it does not send on by leaving it out.
 		field.Enum("channel").
-			GoType(channels.Channel("")).
-			Default("email"),
+			GoType(channels.Channel("")),
 		field.Enum("provider").
 			GoType(providers.Provider("")),
 		// Encrypted JSON blob produced by internal/kernel/secrets.Cipher.
@@ -165,4 +175,21 @@ func (Integration) Indexes() []ent.Index {
 			Annotations(entsql.IndexWhere("provider = 'inbox' AND discarded_at IS NULL")).
 			Unique(),
 	}
+}
+
+// providerChannelCheck is one arm per Channel, naming the providers that send on it.
+func providerChannelCheck() string {
+	var arms []string
+	for _, ch := range channels.Channel("").Values() {
+		ps := providers.OnChannel(channels.Channel(ch))
+		if len(ps) == 0 {
+			continue
+		}
+		quoted := make([]string, len(ps))
+		for i, p := range ps {
+			quoted[i] = "'" + string(p) + "'"
+		}
+		arms = append(arms, fmt.Sprintf("(channel = '%s' AND provider IN (%s))", ch, strings.Join(quoted, ", ")))
+	}
+	return strings.Join(arms, " OR ")
 }

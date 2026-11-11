@@ -8,13 +8,12 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
-// The three Request constructors are the only code that derives a Kind, a Source, a Ref
-// and an idempotency key. The key formats are stored on every Outbound message, so they
+// The three Request constructors are the only code that derives a Source, a Ref (and with it
+// the Kind) and an idempotency key. The key formats are stored on every Outbound message, so they
 // must not change while a send recorded under one may still be retried.
 
 func broadcastRecipientKey(recipientID int64) string {
@@ -57,14 +56,13 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 		return Request{}, err
 	}
 	return Request{
-		Kind:          outboundmessage.KindBroadcast,
 		Key:           broadcastRecipientKey(rec.ID),
 		Destination:   contactDestination(content.Channel(), c),
 		Contact:       c,
 		Source:        eligibility.SourceBroadcasts,
 		Content:       content,
 		Track:         true,
-		Ref:           Ref{BroadcastID: b.ID, BroadcastRecipient: rec.ID},
+		Ref:           BroadcastRef{BroadcastID: b.ID, RecipientID: rec.ID},
 		IntegrationID: b.IntegrationID,
 	}, nil
 }
@@ -77,14 +75,13 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 // message binds the Event the run began on as `event` (#752).
 func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, integrationID *int64, c *ent.Contact, content Content) Request {
 	return Request{
-		Kind:          outboundmessage.KindAutomation,
 		Key:           fmt.Sprintf("automation:%d:%d", run.ID, step),
 		Destination:   contactDestination(content.Channel(), c),
 		Contact:       c,
 		Source:        eligibility.AutomationSource(a.ID),
 		Content:       content,
 		Track:         true,
-		Ref:           Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
+		Ref:           AutomationRef{AutomationID: a.ID, RunID: run.ID, Step: step},
 		IntegrationID: integrationID,
 		Variables:     EnrollmentVariables(run),
 	}
@@ -125,13 +122,12 @@ func Transactional(m TransactionalMessage) Request {
 		key = "transactional:" + m.ClientKey
 	}
 	return Request{
-		Kind:        outboundmessage.KindTransactional,
 		Key:         key,
 		Destination: m.Destination,
 		ContactID:   m.ContactID,
 		Content:     m.Content,
 		Variables:   m.Variables,
 		Track:       m.Track,
-		Ref:         Ref{TemplateID: m.TemplateID},
+		Ref:         TransactionalRef{TemplateID: m.TemplateID},
 	}
 }

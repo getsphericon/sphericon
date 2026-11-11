@@ -12,7 +12,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
@@ -212,7 +211,7 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 	contact := env.DB.Contact.GetX(t.Context(), int64(fixtures.ContactTexterID))
 	id := int64(sms.Integration.ID)
 	res, err := env.OutboundModule().Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), outboundmessages.Request{
-		Kind: outboundmessage.KindBroadcast, Key: "sms:after-start", Destination: knownNumber, Contact: contact,
+		Ref: outboundmessages.BroadcastRef{BroadcastID: fixtures.BroadcastSmsSentID}, Key: "sms:after-start", Destination: knownNumber, Contact: contact,
 		Source: eligibility.SourceBroadcasts, Content: outboundmessages.SMSContent{Text: "Welcome back"}, IntegrationID: &id,
 	})
 	require.NoError(t, err)

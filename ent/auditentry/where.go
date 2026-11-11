@@ -80,11 +80,6 @@ func OccurredAt(v time.Time) predicate.AuditEntry {
 	return predicate.AuditEntry(sql.FieldEQ(FieldOccurredAt, v))
 }
 
-// ActorKind applies equality check predicate on the "actor_kind" field. It's identical to ActorKindEQ.
-func ActorKind(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldEQ(FieldActorKind, v))
-}
-
 // ActorID applies equality check predicate on the "actor_id" field. It's identical to ActorIDEQ.
 func ActorID(v string) predicate.AuditEntry {
 	return predicate.AuditEntry(sql.FieldEQ(FieldActorID, v))
@@ -336,68 +331,23 @@ func OccurredAtLTE(v time.Time) predicate.AuditEntry {
 }
 
 // ActorKindEQ applies the EQ predicate on the "actor_kind" field.
-func ActorKindEQ(v string) predicate.AuditEntry {
+func ActorKindEQ(v ActorKind) predicate.AuditEntry {
 	return predicate.AuditEntry(sql.FieldEQ(FieldActorKind, v))
 }
 
 // ActorKindNEQ applies the NEQ predicate on the "actor_kind" field.
-func ActorKindNEQ(v string) predicate.AuditEntry {
+func ActorKindNEQ(v ActorKind) predicate.AuditEntry {
 	return predicate.AuditEntry(sql.FieldNEQ(FieldActorKind, v))
 }
 
 // ActorKindIn applies the In predicate on the "actor_kind" field.
-func ActorKindIn(vs ...string) predicate.AuditEntry {
+func ActorKindIn(vs ...ActorKind) predicate.AuditEntry {
 	return predicate.AuditEntry(sql.FieldIn(FieldActorKind, vs...))
 }
 
 // ActorKindNotIn applies the NotIn predicate on the "actor_kind" field.
-func ActorKindNotIn(vs ...string) predicate.AuditEntry {
+func ActorKindNotIn(vs ...ActorKind) predicate.AuditEntry {
 	return predicate.AuditEntry(sql.FieldNotIn(FieldActorKind, vs...))
-}
-
-// ActorKindGT applies the GT predicate on the "actor_kind" field.
-func ActorKindGT(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldGT(FieldActorKind, v))
-}
-
-// ActorKindGTE applies the GTE predicate on the "actor_kind" field.
-func ActorKindGTE(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldGTE(FieldActorKind, v))
-}
-
-// ActorKindLT applies the LT predicate on the "actor_kind" field.
-func ActorKindLT(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldLT(FieldActorKind, v))
-}
-
-// ActorKindLTE applies the LTE predicate on the "actor_kind" field.
-func ActorKindLTE(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldLTE(FieldActorKind, v))
-}
-
-// ActorKindContains applies the Contains predicate on the "actor_kind" field.
-func ActorKindContains(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldContains(FieldActorKind, v))
-}
-
-// ActorKindHasPrefix applies the HasPrefix predicate on the "actor_kind" field.
-func ActorKindHasPrefix(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldHasPrefix(FieldActorKind, v))
-}
-
-// ActorKindHasSuffix applies the HasSuffix predicate on the "actor_kind" field.
-func ActorKindHasSuffix(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldHasSuffix(FieldActorKind, v))
-}
-
-// ActorKindEqualFold applies the EqualFold predicate on the "actor_kind" field.
-func ActorKindEqualFold(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldEqualFold(FieldActorKind, v))
-}
-
-// ActorKindContainsFold applies the ContainsFold predicate on the "actor_kind" field.
-func ActorKindContainsFold(v string) predicate.AuditEntry {
-	return predicate.AuditEntry(sql.FieldContainsFold(FieldActorKind, v))
 }
 
 // ActorIDEQ applies the EQ predicate on the "actor_id" field.

@@ -172,8 +172,6 @@ var (
 	DefaultProviderSandbox bool
 )
 
-const DefaultChannel channels.Channel = "email"
-
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
 func ChannelValidator(c channels.Channel) error {
 	switch c {

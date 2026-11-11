@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
 )
@@ -30,12 +29,12 @@ func TestCatalogSenderCountsSendOutcomes(t *testing.T) {
 	failing := errors.New("provider down")
 	catalog := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SMTP,
-			Build: func([]byte, messaging.Deps) (any, error) { return outcomeSender{}, nil },
+			Provider: providers.SMTP,
+			Build:    func([]byte, messaging.Deps) (any, error) { return outcomeSender{}, nil },
 		},
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SES,
-			Build: func([]byte, messaging.Deps) (any, error) { return outcomeSender{err: failing}, nil },
+			Provider: providers.SES,
+			Build:    func([]byte, messaging.Deps) (any, error) { return outcomeSender{err: failing}, nil },
 		},
 	)
 	ctx := t.Context()
@@ -79,7 +78,7 @@ func TestRecordSendOutcomeBounceAndComplaint(t *testing.T) {
 func TestCatalogSenderCountsDeferralsApartFromErrors(t *testing.T) {
 	metricstest.StartMetrics(t)
 	catalog := messaging.NewCatalog(messaging.ProviderDescriptor{
-		Channel: channels.Email, Provider: providers.SES,
+		Provider: providers.SES,
 		Build: func(cfg []byte, _ messaging.Deps) (any, error) {
 			switch string(cfg) {
 			case "busy":

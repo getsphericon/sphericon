@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -247,7 +246,7 @@ func TestAutomationAndBroadcastSendsShareOneLimit(t *testing.T) {
 	limited(t, env, new(1), nil)
 
 	auto := marketing(t, env, "auto:1", fixtures.ContactAliceID)
-	auto.Kind = outboundmessage.KindAutomation
+	auto.Ref = outboundmessages.AutomationRef{AutomationID: fixtures.AutomationHoldDemoID}
 	auto.Source = eligibility.AutomationSource(fixtures.AutomationHoldDemoID)
 	res, err := m.Send(context.Background(), acme(env), auto)
 	require.NoError(t, err)

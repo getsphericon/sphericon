@@ -193,7 +193,7 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	h.env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	stored := h.env.DB.Scoped(fixtures.AcmeID).AuditEntry().Query().Where(auditentry.TargetName("attributed-tag")).OnlyX(t.Context())
-	assert.Equal(t, events.ActorService, stored.ActorKind)
+	assert.Equal(t, auditentry.ActorKindService, stored.ActorKind)
 	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, *stored.ActorName)
 	assert.Equal(t, strconv.Itoa(fixtures.ServiceCredentialPrimaryID), *stored.ActorID)
 

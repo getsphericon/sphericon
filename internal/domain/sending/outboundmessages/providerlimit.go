@@ -23,7 +23,7 @@ func (m *Module) reserve(ctx context.Context, s *ent.Scoped, req Request, r Rout
 	if r.Integration != nil {
 		res.IntegrationID, res.Limits = r.Integration.ID, r.Limits
 	}
-	if req.Kind == outboundmessage.KindTransactional {
+	if req.Kind() == outboundmessage.KindTransactional {
 		if err := providerlimit.Spend(ctx, s, m.bus.WithinAuditTx, res, m.now()); err != nil {
 			return providerlimit.Shortfall{}, fmt.Errorf("outbound: spend send capacity: %w", err)
 		}

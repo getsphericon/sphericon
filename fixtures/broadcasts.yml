@@ -284,6 +284,34 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 
+# Acme's sent SMS Broadcast: the one OutboundTexterSms (outbound_messages.yml) was sent for, which
+# the delivery report tests report on.
+- id: 7342 # fixture: BroadcastSmsSent
+  name: Spring sale
+  channel: sms
+  text: 'Spring sale'
+  integration_id: 8
+  status: sent
+  sent_at: '2026-02-01 00:00:00'
+  workspace_id: 1
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'
+
+# Acme's recent email Broadcast, sent and then archived so no list shows it: the Broadcast of the
+# three unengaged messages of the last 30 hours in outbound_messages.yml (107, 109, 110), which count
+# in the Integrations' usage and in every analytics window's cohort.
+- id: 7343 # fixture: BroadcastRecentSends
+  name: This week's news
+  subject: This week
+  from_name: CodeBasics
+  body: '<p>This week.</p>'
+  status: sent
+  sent_at: '{{hoursAgo 30}}'
+  archived_at: '{{hoursAgo 1}}'
+  workspace_id: 1
+  created_at: '{{hoursAgo 31}}'
+  updated_at: '{{hoursAgo 1}}'
+
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BroadcastGlobex
   name: Globex only
@@ -295,6 +323,46 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Globex's archived email Broadcast: the Broadcast of its one usage message (901 in
+# outbound_messages.yml), the marketing message in every analytics window's cohort.
+- id: 7344 # fixture: BroadcastGlobexRecentSends
+  name: Globex news
+  subject: Globex news
+  from_name: Globex
+  body: '<p>Globex news.</p>'
+  status: sent
+  sent_at: '{{hoursAgo 1}}'
+  archived_at: '{{hoursAgo 1}}'
+  workspace_id: 2
+  created_at: '{{hoursAgo 2}}'
+  updated_at: '{{hoursAgo 1}}'
+
+# Archived sent email Broadcasts of Umbrella (workspace 4) and Pinewood (workspace 85), which no list
+# shows: the Broadcast a test's own Broadcast send in those Workspaces points at, since every
+# Broadcast message names its Broadcast (outboundmessages.BroadcastRef).
+- id: 7345 # fixture: BroadcastUmbrellaTestSends
+  name: Umbrella test sends
+  subject: News
+  from_name: Umbrella
+  body: '<p>News.</p>'
+  status: sent
+  sent_at: '{{daysAgo 400}}'
+  archived_at: '{{daysAgo 400}}'
+  workspace_id: 4
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'
+- id: 7346 # fixture: BroadcastPinewoodTestSends
+  name: Pinewood test sends
+  subject: News
+  from_name: Pinewood
+  body: '<p>News.</p>'
+  status: sent
+  sent_at: '{{daysAgo 400}}'
+  archived_at: '{{daysAgo 400}}'
+  workspace_id: 85
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'
 
 # Hooli (workspace 5): a draft, the only row besides its owner, for a Test send that must leave the
 # Setup checklist's last step todo.

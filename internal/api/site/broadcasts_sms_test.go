@@ -253,5 +253,5 @@ func TestSiteBroadcastListFiltersSMSBroadcasts(t *testing.T) {
 	require.NoError(t, err)
 	list := res
 	ids := lo.Map(list.Items, func(b siteapi.SiteBroadcastResource, _ int) siteapi.EntityId { return b.ID })
-	assert.ElementsMatch(t, []siteapi.EntityId{idStr(fixtures.BroadcastSmsDraftID), idStr(fixtures.BroadcastSmsBlankDraftID)}, ids)
+	assert.ElementsMatch(t, []siteapi.EntityId{idStr(fixtures.BroadcastSmsDraftID), idStr(fixtures.BroadcastSmsBlankDraftID), idStr(fixtures.BroadcastSmsSentID)}, ids)
 }

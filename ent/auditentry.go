@@ -30,7 +30,7 @@ type AuditEntry struct {
 	// OccurredAt holds the value of the "occurred_at" field.
 	OccurredAt time.Time `json:"occurred_at,omitempty"`
 	// ActorKind holds the value of the "actor_kind" field.
-	ActorKind string `json:"actor_kind,omitempty"`
+	ActorKind auditentry.ActorKind `json:"actor_kind,omitempty"`
 	// ActorID holds the value of the "actor_id" field.
 	ActorID *string `json:"actor_id,omitempty"`
 	// ActorName holds the value of the "actor_name" field.
@@ -145,7 +145,7 @@ func (_m *AuditEntry) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field actor_kind", values[i])
 			} else if value.Valid {
-				_m.ActorKind = value.String
+				_m.ActorKind = auditentry.ActorKind(value.String)
 			}
 		case auditentry.FieldActorID:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -273,7 +273,7 @@ func (_m *AuditEntry) String() string {
 	builder.WriteString(_m.OccurredAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("actor_kind=")
-	builder.WriteString(_m.ActorKind)
+	builder.WriteString(fmt.Sprintf("%v", _m.ActorKind))
 	builder.WriteString(", ")
 	if v := _m.ActorID; v != nil {
 		builder.WriteString("actor_id=")

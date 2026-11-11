@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -40,12 +39,13 @@ func sendUmbrella(t *testing.T, env *testhelper.TestEnv, req outboundmessages.Re
 	return msgs[len(msgs)-1]
 }
 
-func marketingRequest(key string, track bool) outboundmessages.Request {
+func marketingRequest(t *testing.T, key string, track bool) outboundmessages.Request {
+	t.Helper()
 	return outboundmessages.Request{
-		Kind:   outboundmessage.KindBroadcast,
 		Key:    key,
 		Source: eligibility.SourceBroadcasts,
 		Track:  track,
+		Ref:    broadcastIn(t, fixtures.UmbrellaID),
 	}
 }
 
@@ -59,7 +59,7 @@ func requireCleanText(t *testing.T, text string) {
 
 func TestTrackedMarketingTextPartCarriesTrackedLinksUnsubscribeAndAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	msg := sendUmbrella(t, env, marketingRequest("tp:tracked", true))
+	msg := sendUmbrella(t, env, marketingRequest(t, "tp:tracked", true))
 
 	requireCleanText(t, msg.Text)
 	assert.Contains(t, msg.Text, "Offer")
@@ -74,7 +74,7 @@ func TestTrackedMarketingTextPartCarriesTrackedLinksUnsubscribeAndAddress(t *tes
 
 func TestUntrackedMarketingTextPartCarriesUnsubscribeAndAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	msg := sendUmbrella(t, env, marketingRequest("tp:untracked", false))
+	msg := sendUmbrella(t, env, marketingRequest(t, "tp:untracked", false))
 
 	requireCleanText(t, msg.Text)
 	assert.Contains(t, msg.Text, "https://example.com/offer", "untracked links stay as written")
@@ -85,7 +85,7 @@ func TestUntrackedMarketingTextPartCarriesUnsubscribeAndAddress(t *testing.T) {
 }
 
 func transactionalRequest(key string, track bool) outboundmessages.Request {
-	return outboundmessages.Request{Kind: outboundmessage.KindTransactional, Key: key, Track: track}
+	return outboundmessages.Request{Key: key, Track: track, Ref: outboundmessages.TransactionalRef{}}
 }
 
 func TestTrackedTransactionalTextPartCarriesTrackedLinksAndNoFooter(t *testing.T) {

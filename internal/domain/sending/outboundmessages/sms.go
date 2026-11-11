@@ -184,10 +184,10 @@ func (smsAdapter) publishSent(ctx context.Context, pub events.Publisher, f sentF
 		ContactID:         f.req.contactID(),
 		Destination:       f.dest,
 		IntegrationID:     f.integrationID,
-		BroadcastID:       f.req.Ref.BroadcastID,
-		AutomationID:      f.req.Ref.AutomationID,
+		BroadcastID:       f.req.broadcastID(),
+		AutomationID:      f.req.automationID(),
 		OutboundMessageID: f.messageID,
-		Surface:           string(f.req.Kind),
+		Surface:           string(f.req.Kind()),
 		SendingSource:     f.req.Source,
 		DedupID:           fmt.Sprintf("%s:%d", events.NameSmsSent, f.messageID),
 	}
