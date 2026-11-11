@@ -36,6 +36,14 @@ test('logout calls the site logout operation and navigates to login', async () =
   await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/login' }])
 })
 
+test('names its icon-only button, so assistive technology can find the menu', async () => {
+  const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
+
+  await screen.getByRole('button', { name: 'Account menu' }).click()
+
+  await expect.element(screen.getByRole('menu')).toBeVisible()
+})
+
 test('shows workspace settings only when a workspace is active', async () => {
   const { screen } = await renderWithRouter(<UserMenu />)
   await screen.getByRole('button').click()

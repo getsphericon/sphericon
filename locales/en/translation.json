@@ -2542,6 +2542,7 @@
     "erasedOn": "erased {{date}}",
     "logout": "Sign out",
     "logoutErrorTitle": "Sign out failed",
+    "menuLabel": "Account menu",
     "profile": "Profile",
     "restore": "Restore {{name}}",
     "restored": "Workspace restored",

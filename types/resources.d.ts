@@ -2504,6 +2504,7 @@ export default interface Resources {
       "erasedOn": "erased {{date}}",
       "logout": "Sign out",
       "logoutErrorTitle": "Sign out failed",
+      "menuLabel": "Account menu",
       "profile": "Profile",
       "restore": "Restore {{name}}",
       "restoreErrorTitle": "Could not restore the workspace",
