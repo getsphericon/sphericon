@@ -29,7 +29,6 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -62,7 +61,6 @@ func Descriptor() messaging.ProviderDescriptor {
 // test can point the provider at a local fake. Production uses Descriptor.
 func NewDescriptor(client aws.HTTPClient) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  channels.Email,
 		Provider: providers.SES,
 		Validate: validate,
 		Build: func(raw []byte, deps messaging.Deps) (any, error) {

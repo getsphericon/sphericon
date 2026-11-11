@@ -241,7 +241,7 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	// Transactional traffic spends the Integration's capacity and is itself never slowed.
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 		res, err := d.out.Send(d.t.Context(), d.s, outboundmessages.Request{
-			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
+			Ref: outboundmessages.TransactionalRef{}, Key: key, Destination: "a@example.com",
 			Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
 		})
 		require.NoError(t, err)
@@ -269,7 +269,7 @@ func TestDeferralFollowsTheBroadcastsOwnIntegration(t *testing.T) {
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 		res, err := d.out.Send(d.t.Context(), d.s, outboundmessages.Request{
-			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
+			Ref: outboundmessages.TransactionalRef{}, Key: key, Destination: "a@example.com",
 			Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"}, IntegrationID: &mailgun,
 		})
 		require.NoError(t, err)

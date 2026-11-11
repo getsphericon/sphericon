@@ -57,7 +57,7 @@ func (r *Resolver) Sender(_ context.Context, s *ent.Scoped, row *ent.Integration
 	if r.capturers != nil {
 		deps.Capturer = r.capturers(s, row.ID)
 	}
-	return r.catalog.Build(row.Channel, row.Provider, config, deps)
+	return r.catalog.Build(row.Provider, config, deps)
 }
 
 // EmailSender is Sender for an email Integration, typed: the sender of an Integration of another

@@ -19,7 +19,6 @@ import (
 	ta "github.com/mymmrac/telego/telegoapi"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -50,7 +49,6 @@ func ValidToken(token string) bool { return tokenFormat.MatchString(token) }
 // base URL every bot of the Instance is reached at.
 func Descriptor(apiURL string) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  channels.Telegram,
 		Provider: providers.Telegram,
 		Validate: func(config []byte) error {
 			c, err := parse(config)

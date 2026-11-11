@@ -32,7 +32,7 @@ func textTo(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAcco
 	c := env.DB.Contact.GetX(t.Context(), fixtures.ContactTexterID)
 	id := int64(account.Integration.ID)
 	return outboundmessages.Request{
-		Kind:          outboundmessage.KindBroadcast,
+		Ref:           outboundmessages.BroadcastRef{BroadcastID: fixtures.BroadcastSmsSentID},
 		Key:           key,
 		Destination:   *c.Phone,
 		Contact:       c,

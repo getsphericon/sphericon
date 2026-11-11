@@ -244,5 +244,7 @@ func workspaceTable() entsql.Annotation {
 		" AND COALESCE(suspended_by_kind = 'staff', false) = (suspended_by_id IS NOT NULL)"
 	a.Checks["workspaces_public_id_max_length_check"] = "char_length(public_id) <= 8"
 	a.Checks["workspaces_public_id_min_length_check"] = "char_length(public_id) >= 8"
+	currency, currencyExpr := CurrencyCheck("workspaces", "reporting_currency")
+	a.Checks[currency] = currencyExpr
 	return a
 }

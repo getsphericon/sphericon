@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -27,9 +26,8 @@ func (deliveringSender) Send(context.Context, messaging.EmailMessage) (messaging
 func automationRequest(t *testing.T, env *testhelper.TestEnv, key string) outboundmessages.Request {
 	t.Helper()
 	req := marketing(t, env, key, fixtures.ContactAliceID)
-	req.Kind = outboundmessage.KindAutomation
 	req.Source = eligibility.AutomationSource(fixtures.AutomationHoldDemoID)
-	req.Ref.AutomationID = fixtures.AutomationHoldDemoID
+	req.Ref = outboundmessages.AutomationRef{AutomationID: fixtures.AutomationHoldDemoID}
 	return req
 }
 
@@ -46,7 +44,7 @@ func TestASendThroughASenderThatKeepsItsMailIsMarkedCapturedOnEverySurface(t *te
 	}
 
 	for _, req := range requests {
-		surface := string(req.Kind)
+		surface := string(req.Kind())
 		res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 		require.NoError(t, err, surface)
 		require.Equal(t, outboundmessages.Sent, res.Outcome, surface)

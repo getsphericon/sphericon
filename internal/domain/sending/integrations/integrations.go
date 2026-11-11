@@ -608,9 +608,8 @@ func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, [
 		if err := validTwilio(c); err != nil {
 			return "", "", nil, err
 		}
-		channel, _ := m.catalog.ChannelOf(providers.Twilio)
 		plaintext, err = json.Marshal(twilioStored(in.Twilio))
-		return providers.Twilio, channel, plaintext, err
+		return providers.Twilio, providers.Twilio.Channel(), plaintext, err
 	case in.Telegram != nil:
 		// A blank token is an update that keeps the stored one; the bot's id and @username come from
 		// getMe when it connects.
@@ -618,9 +617,8 @@ func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, [
 		if token != "" && !telegram.ValidToken(token) {
 			return "", "", nil, tokenFormatError()
 		}
-		channel, _ := m.catalog.ChannelOf(providers.Telegram)
 		plaintext, err = json.Marshal(telegram.Config{Token: token})
-		return providers.Telegram, channel, plaintext, err
+		return providers.Telegram, providers.Telegram.Channel(), plaintext, err
 	default:
 		return "", "", nil, configError(errUnknownProvider)
 	}
@@ -628,14 +626,13 @@ func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, [
 		return "", "", nil, err
 	}
 
-	channel, ok := m.catalog.ChannelOf(provider)
-	if !ok {
+	if _, ok := m.catalog.Descriptor(provider); !ok {
 		return "", "", nil, configError(errUnknownProvider)
 	}
-	if err := m.catalog.Validate(channel, provider, plaintext); err != nil {
+	if err := m.catalog.Validate(provider, plaintext); err != nil {
 		return "", "", nil, configError(err)
 	}
-	return provider, channel, plaintext, nil
+	return provider, provider.Channel(), plaintext, nil
 }
 
 // configError is a provider config the catalog refuses, worded by the catalog's own reason.

@@ -2,7 +2,6 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -20,7 +19,7 @@ type AuditEntry struct {
 
 func (AuditEntry) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "audit_entries"},
+		TableWithEnumChecks("audit_entries", AuditEntry{}.Fields()),
 	}
 }
 
@@ -41,9 +40,10 @@ func (AuditEntry) Fields() []ent.Field {
 		field.Time("occurred_at").
 			Annotations(Attribute(reasonHistory)).
 			Immutable(),
-		// user | api_token | staff | system (ingest is never recorded).
-		field.String("actor_kind").
-			NotEmpty().
+		// Who acted; the generated scoped client names these kinds (ent.ActorUser and the rest).
+		// The `ingest` actor of a scope built from a secret is never recorded, so it is no value.
+		field.Enum("actor_kind").
+			Values("user", "api_token", "staff", "service", "system").
 			Immutable(),
 		field.String("actor_id").
 			Optional().

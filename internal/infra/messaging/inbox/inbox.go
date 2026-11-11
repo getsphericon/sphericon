@@ -18,7 +18,6 @@ import (
 	"golang.org/x/net/html"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -30,7 +29,6 @@ const PerDay = 200
 // stored blob is ignored.
 func Descriptor() messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  channels.Email,
 		Provider: providers.Inbox,
 		Validate: func([]byte) error { return nil },
 		Build: func(_ []byte, deps messaging.Deps) (any, error) {

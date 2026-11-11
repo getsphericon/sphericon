@@ -63,7 +63,7 @@ func ViewOf(e *ent.AuditEntry) View {
 	v := View{
 		ID:         e.ID,
 		OccurredAt: e.OccurredAt,
-		ActorKind:  e.ActorKind,
+		ActorKind:  string(e.ActorKind),
 		ActorID:    e.ActorID,
 		ActorName:  e.ActorName,
 		Action:     e.Action,
@@ -74,7 +74,7 @@ func ViewOf(e *ent.AuditEntry) View {
 		IP:         e.IP,
 		UserAgent:  e.UserAgent,
 	}
-	if events.IsStaff(e.ActorKind) {
+	if events.IsStaff(string(e.ActorKind)) {
 		label := events.StaffLabel
 		v.ActorKind, v.ActorID, v.ActorName = events.ActorStaff, nil, &label
 	}

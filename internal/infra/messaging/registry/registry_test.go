@@ -6,16 +6,17 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
-func TestDefaultRegistersBuiltInProviders(t *testing.T) {
+// Every Provider an Integration can store has its descriptor in the default catalog, so a stored
+// provider is always one the catalog can validate and build.
+func TestDefaultRegistersEveryProvider(t *testing.T) {
 	cat := registry.Default()
-	for _, p := range []providers.Provider{providers.SMTP, providers.SES} {
-		_, ok := cat.Descriptor(channels.Email, p)
+	for _, p := range providers.Provider("").Values() {
+		_, ok := cat.Descriptor(providers.Provider(p))
 		assert.True(t, ok, "provider %s", p)
 	}
-	_, ok := cat.Descriptor(channels.SMS, providers.SMTP)
+	_, ok := cat.Descriptor(providers.Provider("carrier-pigeon"))
 	assert.False(t, ok)
 }

@@ -70,7 +70,7 @@ func (_c *AuditEntryCreate) SetOccurredAt(v time.Time) *AuditEntryCreate {
 }
 
 // SetActorKind sets the "actor_kind" field.
-func (_c *AuditEntryCreate) SetActorKind(v string) *AuditEntryCreate {
+func (_c *AuditEntryCreate) SetActorKind(v auditentry.ActorKind) *AuditEntryCreate {
 	_c.mutation.SetActorKind(v)
 	return _c
 }
@@ -346,7 +346,7 @@ func (_c *AuditEntryCreate) createSpec() (*AuditEntry, *sqlgraph.CreateSpec) {
 		_node.OccurredAt = value
 	}
 	if value, ok := _c.mutation.ActorKind(); ok {
-		_spec.SetField(auditentry.FieldActorKind, field.TypeString, value)
+		_spec.SetField(auditentry.FieldActorKind, field.TypeEnum, value)
 		_node.ActorKind = value
 	}
 	if value, ok := _c.mutation.ActorID(); ok {

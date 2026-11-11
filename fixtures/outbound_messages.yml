@@ -110,6 +110,7 @@
 - id: 107
   kind: broadcast
   idempotency_key: 'broadcast:fixture-usage-107'
+  broadcast_id: 7343
   channel: email
   destination: usage.one@codebasics.dev
   status: sent
@@ -122,6 +123,8 @@
 - id: 108 # fixture: OutboundMessageAutomationSentRecently
   kind: automation
   idempotency_key: 'automation:fixture-usage-108'
+  automation_id: 108
+  automation_step: 0
   channel: email
   destination: usage.two@codebasics.dev
   status: sent
@@ -134,6 +137,7 @@
 - id: 109
   kind: broadcast
   idempotency_key: 'broadcast:fixture-usage-109'
+  broadcast_id: 7343
   channel: email
   destination: usage.old@codebasics.dev
   status: sent
@@ -146,6 +150,7 @@
 - id: 110
   kind: broadcast
   idempotency_key: 'broadcast:fixture-usage-110'
+  broadcast_id: 7343
   channel: email
   destination: usage.ses@codebasics.dev
   status: sent
@@ -171,6 +176,7 @@
 - id: 901
   kind: broadcast
   idempotency_key: 'broadcast:fixture-usage-901'
+  broadcast_id: 7344
   channel: email
   destination: usage@globex.test
   status: sent
@@ -190,6 +196,7 @@
   destination: reader@globex.test
   contact_id: 901
   automation_id: 900
+  automation_step: 0
   status: sent
   integration_id: 902
   captured: true
@@ -4298,7 +4305,7 @@
 # month with a straggler 10, a send a minute either side of a month boundary 20/19, a catch-up over 7 to 5, a send in flight at a month's close 3. The
 # pending ones are moved to sent by the test that needs the send to arrive later.
 - id: 5800
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:emails-b'
   channel: email
   destination: meter-emails-b@example.com
@@ -4309,7 +4316,7 @@
   created_at: '{{monthAgo 17 3 10 0}}'
   updated_at: '{{monthAgo 17 3 10 0}}'
 - id: 5801
-  kind: automation
+  kind: transactional
   idempotency_key: 'meter:emails-a'
   channel: email
   destination: meter-emails-a@example.com
@@ -4331,7 +4338,7 @@
   created_at: '{{monthAgo 17 28 23 0}}'
   updated_at: '{{monthAgo 17 28 23 0}}'
 - id: 5803
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:emails-skipped'
   channel: email
   destination: meter-emails-skipped@example.com
@@ -4341,7 +4348,7 @@
   created_at: '{{monthAgo 17 5 10 0}}'
   updated_at: '{{monthAgo 17 5 10 0}}'
 - id: 5804
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:emails-failed'
   channel: email
   destination: meter-emails-failed@example.com
@@ -4351,7 +4358,7 @@
   created_at: '{{monthAgo 17 6 10 0}}'
   updated_at: '{{monthAgo 17 6 10 0}}'
 - id: 5805
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:emails-next'
   channel: email
   destination: meter-emails-next@example.com
@@ -4362,7 +4369,7 @@
   created_at: '{{monthAgo 16 1 0 0}}'
   updated_at: '{{monthAgo 16 1 0 0}}'
 - id: 5806
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:live-sent'
   channel: email
   destination: meter-live-sent@example.com
@@ -4373,7 +4380,7 @@
   created_at: '{{monthAgo 14 2 9 0}}'
   updated_at: '{{monthAgo 14 2 9 0}}'
 - id: 5807
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:live-inflight'
   channel: email
   destination: meter-live-inflight@example.com
@@ -4393,7 +4400,7 @@
   created_at: '{{monthAgo 12 10 13 0}}'
   updated_at: '{{monthAgo 12 10 13 0}}'
 - id: 5809
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:closed-one'
   channel: email
   destination: meter-closed-one@example.com
@@ -4404,7 +4411,7 @@
   created_at: '{{monthAgo 10 3 10 0}}'
   updated_at: '{{monthAgo 10 3 10 0}}'
 - id: 5810
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:closed-straggler'
   channel: email
   destination: meter-closed-straggler@example.com
@@ -4414,7 +4421,7 @@
   created_at: '{{monthAgo 10 20 10 0}}'
   updated_at: '{{monthAgo 10 20 10 0}}'
 - id: 5811
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:catchup-jan'
   channel: email
   destination: meter-catchup-jan@example.com
@@ -4425,7 +4432,7 @@
   created_at: '{{monthAgo 7 3 10 0}}'
   updated_at: '{{monthAgo 7 3 10 0}}'
 - id: 5812
-  kind: automation
+  kind: transactional
   idempotency_key: 'meter:catchup-feb1'
   channel: email
   destination: meter-catchup-feb1@example.com
@@ -4436,7 +4443,7 @@
   created_at: '{{monthAgo 6 3 10 0}}'
   updated_at: '{{monthAgo 6 3 10 0}}'
 - id: 5813
-  kind: automation
+  kind: transactional
   idempotency_key: 'meter:catchup-feb2'
   channel: email
   destination: meter-catchup-feb2@example.com
@@ -4458,7 +4465,7 @@
   created_at: '{{monthAgo 5 4 10 0}}'
   updated_at: '{{monthAgo 5 4 10 0}}'
 - id: 5815
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:close-inflight'
   channel: email
   destination: meter-close-inflight@example.com
@@ -4468,7 +4475,7 @@
   created_at: '{{monthAgo 3 28 23 0}}'
   updated_at: '{{monthAgo 3 28 23 0}}'
 - id: 5816
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:midnight-before'
   channel: email
   destination: meter-midnight-before@example.com
@@ -4479,7 +4486,7 @@
   created_at: '{{monthAgo 19 1 0 -1}}'
   updated_at: '{{monthAgo 19 1 0 -1}}'
 - id: 5817
-  kind: broadcast
+  kind: transactional
   idempotency_key: 'meter:midnight-after'
   channel: email
   destination: meter-midnight-after@example.com
@@ -4518,6 +4525,7 @@
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   automation_id: 100
+  automation_step: 0
   delivered_at: '{{daysAgo 400}}'
   bounced_at: '{{daysAgo 400}}'
   workspace_id: 1
@@ -4533,6 +4541,7 @@
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   automation_id: 5570
+  automation_step: 0
   workspace_id: 1
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
@@ -4550,6 +4559,7 @@
   delivered_at: '{{daysAgo 400}}'
   complained_at: '{{daysAgo 399}}'
   automation_id: 100
+  automation_step: 0
   workspace_id: 1
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
@@ -4840,6 +4850,7 @@
 # yet: the delivery report tests (internal/usecase/callbackinterpretation) report on it.
 - id: 7500 # fixture: OutboundTexterSms
   kind: broadcast
+  broadcast_id: 7342
   idempotency_key: 'sms:delivery'
   channel: sms
   destination: '+14155550810'

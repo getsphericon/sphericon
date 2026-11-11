@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -58,12 +57,12 @@ func (f *FakeSES) SendQuota(context.Context) (messaging.Quota, error) {
 func (f *FakeSES) Catalog() *messaging.Catalog {
 	return messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SES,
-			Build: func([]byte, messaging.Deps) (any, error) { return f, nil },
+			Provider: providers.SES,
+			Build:    func([]byte, messaging.Deps) (any, error) { return f, nil },
 		},
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SMTP,
-			Build: func([]byte, messaging.Deps) (any, error) { return plainSender{}, nil },
+			Provider: providers.SMTP,
+			Build:    func([]byte, messaging.Deps) (any, error) { return plainSender{}, nil },
 		},
 	)
 }

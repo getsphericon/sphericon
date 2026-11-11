@@ -22,37 +22,26 @@ func TestDomainOf(t *testing.T) {
 	assert.Empty(t, messaging.DomainOf("trailing@"))
 }
 
-func TestCatalogChannelOf(t *testing.T) {
-	cat := registry.Default()
-
-	ch, ok := cat.ChannelOf(providers.SES)
-	assert.True(t, ok)
-	assert.Equal(t, channels.Email, ch)
-
-	_, ok = cat.ChannelOf(providers.Provider("carrier-pigeon"))
-	assert.False(t, ok)
-}
-
 func TestCatalogValidate(t *testing.T) {
 	boom := errors.New("boom")
 	cat := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SMTP,
+			Provider: providers.SMTP,
 			Validate: func([]byte) error { return boom },
 		},
-		messaging.ProviderDescriptor{Channel: channels.Email, Provider: providers.SES},
+		messaging.ProviderDescriptor{Provider: providers.SES},
 	)
 
-	require.ErrorIs(t, cat.Validate(channels.Email, providers.SMTP, nil), boom)
-	require.NoError(t, cat.Validate(channels.Email, providers.SES, nil), "no Validate hook means nothing to check")
-	assert.ErrorContains(t, cat.Validate(channels.SMS, providers.SES, nil), "unknown provider")
+	require.ErrorIs(t, cat.Validate(providers.SMTP, nil), boom)
+	require.NoError(t, cat.Validate(providers.SES, nil), "no Validate hook means nothing to check")
+	assert.ErrorContains(t, cat.Validate(providers.Twilio, nil), "unknown provider")
 }
 
 func TestCatalogBuildEmail(t *testing.T) {
 	boom := errors.New("build failed")
 	cat := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SMTP,
+			Provider: providers.SMTP,
 			Build: func([]byte, messaging.Deps) (any, error) {
 				return &EmailSenderMock{SendFunc: func(context.Context, messaging.EmailMessage) (messaging.Receipt, error) {
 					return messaging.Receipt{MessageID: "stub"}, nil
@@ -60,12 +49,12 @@ func TestCatalogBuildEmail(t *testing.T) {
 			},
 		},
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SES,
-			Build: func([]byte, messaging.Deps) (any, error) { return nil, boom },
+			Provider: providers.SES,
+			Build:    func([]byte, messaging.Deps) (any, error) { return nil, boom },
 		},
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.Provider("wrong"),
-			Build: func([]byte, messaging.Deps) (any, error) { return "not a sender", nil },
+			Provider: providers.Inbox,
+			Build:    func([]byte, messaging.Deps) (any, error) { return "not a sender", nil },
 		},
 	)
 
@@ -76,11 +65,11 @@ func TestCatalogBuildEmail(t *testing.T) {
 	_, err = cat.BuildEmail(providers.SES, nil, messaging.Deps{})
 	require.ErrorIs(t, err, boom)
 
-	_, err = cat.BuildEmail(providers.Provider("wrong"), nil, messaging.Deps{})
+	_, err = cat.BuildEmail(providers.Inbox, nil, messaging.Deps{})
 	require.ErrorContains(t, err, "did not build an EmailSender")
 
 	_, err = cat.BuildEmail(providers.Provider("missing"), nil, messaging.Deps{})
-	assert.ErrorContains(t, err, "unknown email provider")
+	assert.ErrorContains(t, err, "unknown provider")
 }
 
 func TestBuildMIMEInvalidAddresses(t *testing.T) {

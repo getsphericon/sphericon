@@ -322,22 +322,10 @@ func (m *Module) channel(ch channels.Channel) (channel, error) {
 	return c, nil
 }
 
-// Ref ties a Request to the surface's own records. They are stored on the Outbound
-// message as plain ids and stamped on the Channel's sent Event.
-type Ref struct {
-	BroadcastID        int64
-	BroadcastRecipient int64
-	AutomationID       int64
-	AutomationRunID    int64
-	AutomationStep     *int
-	TemplateID         int64
-}
-
 // Request describes one message to send on one Channel. Content is the already-bound Message
 // content, whose Channel is the send's (a marketing surface passes its own copy, Transactional
 // the live Template's current content — see ADR 0003, 0005); the module never looks it up.
 type Request struct {
-	Kind outboundmessage.Kind
 	// Key is unique per logical send: a retry of the same send repeats it. Required.
 	Key string
 
@@ -368,7 +356,23 @@ type Request struct {
 	// Outbound message (ADR 0053).
 	Track bool
 
+	// Ref is the surface record the message is sent for, and so its kind. Required.
 	Ref Ref
+}
+
+// Kind is the surface that asked for the send: its Ref's.
+func (r Request) Kind() outboundmessage.Kind { return r.Ref.Kind() }
+
+// broadcastID is the Broadcast the message is sent for, 0 for none.
+func (r Request) broadcastID() int64 {
+	b, _ := r.Ref.owners()
+	return b
+}
+
+// automationID is the Automation the message is sent for, 0 for none.
+func (r Request) automationID() int64 {
+	_, a := r.Ref.owners()
+	return a
 }
 
 // Channel is the Channel the message goes out on: its content's.
@@ -388,6 +392,8 @@ func (r Request) validate() error {
 		return errors.New("outbound: idempotency key required")
 	case r.Content == nil:
 		return errors.New("outbound: content required")
+	case r.Ref == nil:
+		return errors.New("outbound: ref required")
 	case emailcase.Of(r.Destination) == "" && r.Contact == nil:
 		return errors.New("outbound: destination required")
 	}
@@ -496,7 +502,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{Outcome: Deferral, Cause: short.Cause, Wait: short.Wait}, nil
 	}
 
-	origin := messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind), Source: req.Source}
+	origin := messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind()), Source: req.Source}
 	first, stopped, skip, err := m.deliver(ctx, s, g, req, rendered, eligible, origin, msg)
 	if err != nil {
 		if stopped != nil {
@@ -634,7 +640,7 @@ func (m *Module) stopOf(ctx context.Context, s *ent.Scoped, g gateResult, req Re
 		// The claim is dropped so the same Request can run again.
 		return &Result{Outcome: Held, Reason: reason}, err
 	}
-	if wait := deferralBackoff(err); wait > 0 && req.Kind != outboundmessage.KindTransactional {
+	if wait := deferralBackoff(err); wait > 0 && req.Kind() != outboundmessage.KindTransactional {
 		// The provider answered "too fast" or "quota exceeded": it refused the
 		// message, so nothing left. A Deferral, like our own spent limit: the claim
 		// is dropped, no attempt is consumed and the same Request runs again later.
@@ -741,14 +747,14 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, rec *ent.Broa
 		return Result{}, err
 	}
 	if msg == nil {
+		ref := BroadcastRef{BroadcastID: rec.BroadcastID, RecipientID: rec.ID}
 		create := s.OutboundMessage().Create().
-			SetKind(outboundmessage.KindBroadcast).
+			SetKind(ref.Kind()).
 			SetIdempotencyKey(key).
 			SetSendingSource(eligibility.SourceBroadcasts).
-			SetBroadcastID(rec.BroadcastID).
-			SetBroadcastRecipientID(rec.ID).
 			SetStatus(outboundmessage.StatusFailed).
 			SetReason(cause.Error())
+		ref.stamp(create)
 		if rec.ContactID != 0 {
 			create.SetContactID(rec.ContactID)
 		}

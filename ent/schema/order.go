@@ -15,9 +15,16 @@ type Order struct {
 	ent.Schema
 }
 
+// Annotations checks the credit (at most one of the Broadcast and the Automation, and the click time
+// exactly when one is set) and the currency's form.
 func (Order) Annotations() []schema.Annotation {
+	currency, currencyExpr := CurrencyCheck("orders", "currency")
 	return []schema.Annotation{
-		entsql.Annotation{Table: "orders"},
+		entsql.Annotation{Table: "orders", Checks: map[string]string{
+			"orders_credit_check": "(broadcast_id IS NULL OR automation_id IS NULL) AND " +
+				"(credited_click_at IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL)",
+			currency: currencyExpr,
+		}},
 	}
 }
 

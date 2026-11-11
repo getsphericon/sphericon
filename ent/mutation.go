@@ -1371,7 +1371,7 @@ type AuditEntryMutation struct {
 	updated_at       *time.Time
 	entry_key        *string
 	occurred_at      *time.Time
-	actor_kind       *string
+	actor_kind       *auditentry.ActorKind
 	actor_id         *string
 	actor_name       *string
 	action           *string
@@ -1675,12 +1675,12 @@ func (m *AuditEntryMutation) ResetOccurredAt() {
 }
 
 // SetActorKind sets the "actor_kind" field.
-func (m *AuditEntryMutation) SetActorKind(s string) {
-	m.actor_kind = &s
+func (m *AuditEntryMutation) SetActorKind(ak auditentry.ActorKind) {
+	m.actor_kind = &ak
 }
 
 // ActorKind returns the value of the "actor_kind" field in the mutation.
-func (m *AuditEntryMutation) ActorKind() (r string, exists bool) {
+func (m *AuditEntryMutation) ActorKind() (r auditentry.ActorKind, exists bool) {
 	v := m.actor_kind
 	if v == nil {
 		return
@@ -1691,7 +1691,7 @@ func (m *AuditEntryMutation) ActorKind() (r string, exists bool) {
 // OldActorKind returns the old "actor_kind" field's value of the AuditEntry entity.
 // If the AuditEntry object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AuditEntryMutation) OldActorKind(ctx context.Context) (v string, err error) {
+func (m *AuditEntryMutation) OldActorKind(ctx context.Context) (v auditentry.ActorKind, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldActorKind is only allowed on UpdateOne operations")
 	}
@@ -2410,7 +2410,7 @@ func (m *AuditEntryMutation) SetField(name string, value ent.Value) error {
 		m.SetOccurredAt(v)
 		return nil
 	case auditentry.FieldActorKind:
-		v, ok := value.(string)
+		v, ok := value.(auditentry.ActorKind)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

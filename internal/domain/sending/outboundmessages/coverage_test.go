@@ -82,6 +82,7 @@ func TestSendRejectsIncompleteRequests(t *testing.T) {
 	}{
 		"no key":         {func(r *outboundmessages.Request) { r.Key = "" }, "idempotency key required"},
 		"no destination": {func(r *outboundmessages.Request) { r.Destination = "   " }, "destination required"},
+		"no ref":         {func(r *outboundmessages.Request) { r.Ref = nil }, "ref required"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -315,28 +316,79 @@ func TestTrackedMarketingSendRewritesLinksAndAddsPixel(t *testing.T) {
 	assert.NotEmpty(t, msgs[0].ListUnsubscribeURL)
 }
 
-func TestClaimRecordsEveryRefOnTheMessage(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	step := 3
-	req := transactional("tx:refs", "refs@example.com")
-	req.ContactID = fixtures.ContactAliceID
-	req.Ref = outboundmessages.Ref{
-		BroadcastID: fixtures.BroadcastSentID, BroadcastRecipient: fixtures.BroadcastRecipientSentID, AutomationID: fixtures.AutomationWelcomeSeriesID,
-		AutomationRunID: fixtures.AutomationRunWelcomeCompletedID, AutomationStep: &step, TemplateID: fixtures.TemplateWelcomeID,
+// Each kind of Ref stamps its own record on the message, and the kind with it, and nothing of
+// another kind's.
+func TestClaimRecordsTheRefOfItsKindOnTheMessage(t *testing.T) {
+	cases := []struct {
+		ref   outboundmessages.Ref
+		check func(t *testing.T, row *ent.OutboundMessage)
+	}{
+		{
+			outboundmessages.BroadcastRef{BroadcastID: fixtures.BroadcastSentID, RecipientID: fixtures.BroadcastRecipientSentID},
+			func(t *testing.T, row *ent.OutboundMessage) {
+				t.Helper()
+				assert.Equal(t, int64(fixtures.BroadcastSentID), *row.BroadcastID)
+				assert.Equal(t, int64(fixtures.BroadcastRecipientSentID), *row.BroadcastRecipientID)
+				assert.Nil(t, row.AutomationID)
+				assert.Nil(t, row.TemplateID)
+			},
+		},
+		{
+			outboundmessages.AutomationRef{AutomationID: fixtures.AutomationWelcomeSeriesID, RunID: fixtures.AutomationRunWelcomeCompletedID, Step: 3},
+			func(t *testing.T, row *ent.OutboundMessage) {
+				t.Helper()
+				assert.Equal(t, int64(fixtures.AutomationWelcomeSeriesID), *row.AutomationID)
+				assert.Equal(t, int64(fixtures.AutomationRunWelcomeCompletedID), *row.AutomationRunID)
+				assert.Equal(t, 3, *row.AutomationStep)
+				assert.Nil(t, row.BroadcastID)
+				assert.Nil(t, row.TemplateID)
+			},
+		},
+		{
+			outboundmessages.TransactionalRef{TemplateID: fixtures.TemplateWelcomeID},
+			func(t *testing.T, row *ent.OutboundMessage) {
+				t.Helper()
+				assert.Equal(t, int64(fixtures.TemplateWelcomeID), *row.TemplateID)
+				assert.Nil(t, row.BroadcastID)
+				assert.Nil(t, row.AutomationID)
+			},
+		},
 	}
+	for _, tc := range cases {
+		name := string(tc.ref.Kind())
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := context.Background()
+			req := transactional("refs:"+name, "refs@example.com")
+			req.ContactID = fixtures.ContactAliceID
+			req.Ref = tc.ref
 
-	res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
-	require.NoError(t, err)
+			res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
+			require.NoError(t, err)
 
-	row := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
-	assert.Equal(t, int64(fixtures.BroadcastSentID), *row.BroadcastID)
-	assert.Equal(t, int64(fixtures.BroadcastRecipientSentID), *row.BroadcastRecipientID)
-	assert.Equal(t, int64(fixtures.AutomationWelcomeSeriesID), *row.AutomationID)
-	assert.Equal(t, int64(fixtures.AutomationRunWelcomeCompletedID), *row.AutomationRunID)
-	assert.Equal(t, 3, *row.AutomationStep)
-	assert.Equal(t, int64(fixtures.TemplateWelcomeID), *row.TemplateID)
-	assert.Equal(t, int64(fixtures.ContactAliceID), *row.ContactID)
+			row := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
+			assert.Equal(t, tc.ref.Kind(), row.Kind)
+			assert.Equal(t, int64(fixtures.ContactAliceID), *row.ContactID)
+			tc.check(t, row)
+		})
+	}
+}
+
+// The database refuses a message that claims one surface and points at another's record, whatever
+// code writes it (outbound_messages_provenance_check).
+func TestTheDatabaseRefusesAMessageOfOneKindWithAnotherKindsRecord(t *testing.T) {
+	env := testhelper.Setup(t)
+	// test writes: the refused insert is the operation under test.
+	err := env.DB.Scoped(fixtures.AcmeID).OutboundMessage().Create().
+		SetKind(outboundmessage.KindAutomation).
+		SetIdempotencyKey("mixed").
+		SetChannel(channels.Email).
+		SetAutomationID(fixtures.AutomationWelcomeSeriesID).
+		SetAutomationStep(0).
+		SetBroadcastID(fixtures.BroadcastSentID).
+		Exec(t.Context())
+	require.Error(t, err)
+	assert.True(t, ent.IsConstraintError(err), "a constraint refuses it: %v", err)
 }
 
 func TestClaimErrors(t *testing.T) {

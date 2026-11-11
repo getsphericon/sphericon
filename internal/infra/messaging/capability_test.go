@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -34,12 +33,12 @@ func (r *recordingCapturer) Capture(_ context.Context, c messaging.Captured) err
 func TestDeliversOutsideIsReadThroughTheMetricsDecorator(t *testing.T) {
 	catalog := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SMTP,
-			Build: func([]byte, messaging.Deps) (any, error) { return silentSender{}, nil },
+			Provider: providers.SMTP,
+			Build:    func([]byte, messaging.Deps) (any, error) { return silentSender{}, nil },
 		},
 		messaging.ProviderDescriptor{
-			Channel: channels.Email, Provider: providers.SES,
-			Build: func([]byte, messaging.Deps) (any, error) { return keepingSender{}, nil },
+			Provider: providers.SES,
+			Build:    func([]byte, messaging.Deps) (any, error) { return keepingSender{}, nil },
 		},
 	)
 
@@ -58,7 +57,7 @@ func TestBuilderReceivesItsDependencies(t *testing.T) {
 	capturer := &recordingCapturer{}
 	var got messaging.Deps
 	catalog := messaging.NewCatalog(messaging.ProviderDescriptor{
-		Channel: channels.Email, Provider: providers.SMTP,
+		Provider: providers.SMTP,
 		Build: func(_ []byte, deps messaging.Deps) (any, error) {
 			got = deps
 			return silentSender{}, nil

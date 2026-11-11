@@ -65,11 +65,11 @@ func newModule(env *testhelper.TestEnv, now func() time.Time, opts ...outboundme
 
 func transactional(key, to string) outboundmessages.Request {
 	return outboundmessages.Request{
-		Kind:        outboundmessage.KindTransactional,
 		Key:         key,
 		Destination: to,
 		Content:     outboundmessages.EmailContent{Subject: "Receipt {{ order }}", Body: htmlBody},
 		Variables:   map[string]any{"order": "42"},
+		Ref:         outboundmessages.TransactionalRef{},
 	}
 }
 
@@ -77,13 +77,28 @@ func marketing(t *testing.T, env *testhelper.TestEnv, key string, contactID int6
 	t.Helper()
 	c := env.DB.Contact.GetX(context.Background(), contactID)
 	return outboundmessages.Request{
-		Kind:        outboundmessage.KindBroadcast,
 		Key:         key,
 		Destination: *c.Email,
 		Contact:     c,
 		Source:      eligibility.SourceBroadcasts,
 		Content:     outboundmessages.EmailContent{Subject: "News", Body: htmlBody},
+		Ref:         broadcastIn(t, c.WorkspaceID),
 	}
+}
+
+// broadcastIn is the Ref of a Broadcast message of the Workspace: a test's own Broadcast send names
+// one of the Workspace's sent Broadcasts from the fixtures.
+func broadcastIn(t *testing.T, ws int64) outboundmessages.BroadcastRef {
+	t.Helper()
+	ids := map[int64]int64{
+		fixtures.AcmeID:     fixtures.BroadcastRecentSendsID,
+		fixtures.InitechID:  fixtures.BroadcastInitechID,
+		fixtures.UmbrellaID: fixtures.BroadcastUmbrellaTestSendsID,
+		fixtures.PinewoodID: fixtures.BroadcastPinewoodTestSendsID,
+	}
+	id, ok := ids[ws]
+	require.True(t, ok, "no fixture Broadcast for workspace %d", ws)
+	return outboundmessages.BroadcastRef{BroadcastID: id}
 }
 
 // withEmail is the email req with its content changed by change.

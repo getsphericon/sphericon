@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -290,8 +289,8 @@ func TestRefreshQuotaReturnsAConfigTheProviderCannotBuildFrom(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	unbuildable := errors.New("unreadable config")
 	catalog := messaging.NewCatalog(messaging.ProviderDescriptor{
-		Channel: channels.Email, Provider: providers.SES,
-		Build: func([]byte, messaging.Deps) (any, error) { return nil, unbuildable },
+		Provider: providers.SES,
+		Build:    func([]byte, messaging.Deps) (any, error) { return nil, unbuildable },
 	})
 
 	err := quotaModule(env.Cipher, catalog).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID))

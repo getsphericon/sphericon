@@ -123,7 +123,7 @@ func TestSiteBroadcastsListFiltersByChannel(t *testing.T) {
 
 	assert.Equal(t, []siteapi.BroadcastChannel{siteapi.BroadcastChannelEmail}, channels)
 	assert.Equal(t, []string{fixtures.BroadcastTelegramDraftName}, lo.Map(telegramList.Items, func(b siteapi.SiteBroadcastResource, _ int) string { return b.Name }))
-	assert.ElementsMatch(t, []string{fixtures.BroadcastSmsDraftName, fixtures.BroadcastSmsBlankDraftName},
+	assert.ElementsMatch(t, []string{fixtures.BroadcastSmsDraftName, fixtures.BroadcastSmsBlankDraftName, fixtures.BroadcastSmsSentName},
 		lo.Map(smsList.Items, func(b siteapi.SiteBroadcastResource, _ int) string { return b.Name }))
 	assert.Equal(t, everyList.TotalItems, emailList.TotalItems+telegramList.TotalItems+smsList.TotalItems)
 }

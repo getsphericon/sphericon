@@ -3,6 +3,8 @@
 // carries. It is a leaf, so the ent schema types those columns with it.
 package providers
 
+import "github.com/getsphericon/sphericon/internal/kernel/channels"
+
 // Provider identifies a concrete provider implementation.
 type Provider string
 
@@ -18,13 +20,46 @@ const (
 	Twilio Provider = "twilio"
 )
 
-var allProviders = []Provider{SMTP, SES, Inbox, Telegram, Twilio}
+// channelOf is the Channel each Provider sends on, in the order the enum lists them. A Provider
+// belongs to exactly one Channel: an Integration's channel is read from here, and the database
+// refuses an Integration whose channel is not its provider's (ent/schema/integration.go).
+var channelOf = []struct {
+	provider Provider
+	channel  channels.Channel
+}{
+	{SMTP, channels.Email},
+	{SES, channels.Email},
+	{Inbox, channels.Email},
+	{Telegram, channels.Telegram},
+	{Twilio, channels.SMS},
+}
+
+// Channel is the Channel the Provider sends on, "" for a value that names no Provider.
+func (p Provider) Channel() channels.Channel {
+	for _, c := range channelOf {
+		if c.provider == p {
+			return c.channel
+		}
+	}
+	return ""
+}
+
+// OnChannel is every Provider of the Channel, in enum order.
+func OnChannel(ch channels.Channel) []Provider {
+	var out []Provider
+	for _, c := range channelOf {
+		if c.channel == ch {
+			out = append(out, c.provider)
+		}
+	}
+	return out
+}
 
 // Values is every Provider as a string, for the ent enum column typed with it.
 func (Provider) Values() []string {
-	values := make([]string, len(allProviders))
-	for i, p := range allProviders {
-		values[i] = string(p)
+	values := make([]string, len(channelOf))
+	for i, c := range channelOf {
+		values[i] = string(c.provider)
 	}
 	return values
 }

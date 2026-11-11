@@ -89,14 +89,6 @@ func (_c *IntegrationCreate) SetChannel(v channels.Channel) *IntegrationCreate {
 	return _c
 }
 
-// SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_c *IntegrationCreate) SetNillableChannel(v *channels.Channel) *IntegrationCreate {
-	if v != nil {
-		_c.SetChannel(*v)
-	}
-	return _c
-}
-
 // SetProvider sets the "provider" field.
 func (_c *IntegrationCreate) SetProvider(v providers.Provider) *IntegrationCreate {
 	_c.mutation.SetProvider(v)
@@ -414,10 +406,6 @@ func (_c *IntegrationCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := integration.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
-	}
-	if _, ok := _c.mutation.Channel(); !ok {
-		v := integration.DefaultChannel
-		_c.mutation.SetChannel(v)
 	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		v := integration.DefaultEnabled
