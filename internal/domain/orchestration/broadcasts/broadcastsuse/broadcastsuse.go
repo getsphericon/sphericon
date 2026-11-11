@@ -22,8 +22,8 @@ import (
 // copied Condition names the Tag by its name, in id order (ADR 0065). The copy keeps the name, not
 // an id, so deleting the Tag would change who they reach. A draft follows its Segment, which
 // answers for itself; a finished Broadcast resolves nothing any more.
-func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Broadcast, error) {
-	armed, err := armedWithCondition(ctx, s)
+func UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Broadcast, error) {
+	armed, err := armedWithCondition(ctx, l)
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +37,8 @@ func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Broadcast
 // planned), in id order, whose copied Condition tests the Custom field key with a leaf a field of
 // type t does not take (ADR 0065): retyping the field would fail their planning. A draft follows
 // its Segment, which answers for itself.
-func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) ([]*ent.Broadcast, error) {
-	armed, err := armedWithCondition(ctx, s)
+func UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Broadcast, error) {
+	armed, err := armedWithCondition(ctx, l)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +49,8 @@ func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t c
 }
 
 // armedWithCondition returns the armed Broadcasts that hold a copied Condition, in id order.
-func armedWithCondition(ctx context.Context, s *ent.Scoped) ([]*ent.Broadcast, error) {
-	return s.Broadcast().Query().
+func armedWithCondition(ctx context.Context, l *ent.WorkspaceLocked) ([]*ent.Broadcast, error) {
+	return l.Broadcast().Query().
 		Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending), broadcast.ConditionNotNil()).
 		Order(ent.Asc(broadcast.FieldID)).
 		All(ctx)
@@ -60,15 +60,15 @@ func armedWithCondition(ctx context.Context, s *ent.Scoped) ([]*ent.Broadcast, e
 // scheduled or sending Broadcast, through the Integration its Send route takes and from its own
 // From. A draft sends nothing until it is scheduled (ADR 0065); a sent or failed Broadcast is
 // history.
-func LiveSends(ctx context.Context, s *ent.Scoped) ([]liveuse.Send, error) {
-	live, err := s.Broadcast().Query().
+func LiveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveuse.Send, error) {
+	live, err := l.Broadcast().Query().
 		Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).
 		Order(ent.Asc(broadcast.FieldID)).
 		All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	through := messaging.NewThroughs(s)
+	through := messaging.NewThroughs(l.Scope())
 	sends := make([]liveuse.Send, 0, len(live))
 	for _, b := range live {
 		integ, err := through.Of(ctx, b.Channel, b.IntegrationID)

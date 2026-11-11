@@ -157,9 +157,13 @@ func TestADraftThatNamesATagUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	neverPublished, err := rulesuse.UsingTag(ctx, acme(env), "rule-inactive")
+	neverPublished, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
+		return rulesuse.UsingTag(ctx, l, "rule-inactive")
+	})
 	require.NoError(t, err)
-	draftOfActive, err := rulesuse.UsingTag(ctx, acme(env), "rule-clicked-v2")
+	draftOfActive, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
+		return rulesuse.UsingTag(ctx, l, "rule-clicked-v2")
+	})
 	require.NoError(t, err)
 
 	assert.Equal(t, []int64{fixtures.RuleInactiveID}, lo.Map(neverPublished, func(r *ent.Rule, _ int) int64 { return r.ID }))
@@ -179,7 +183,9 @@ func TestOnlyTheLiveVersionOfAnActiveRuleEnrollsInAnAutomation(t *testing.T) {
 	_, err = m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Actions: &enroll})
 	require.NoError(t, err)
 
-	using, err := rules.ActiveEnrollingInto(ctx, acme(env), fixtures.AutomationJobsWaitFirstID)
+	using, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
+		return rules.ActiveEnrollingInto(ctx, l, fixtures.AutomationJobsWaitFirstID)
+	})
 
 	require.NoError(t, err)
 	assert.Equal(t, []int64{fixtures.RuleEnrollWaitFirstID}, lo.Map(using, func(r *ent.Rule, _ int) int64 { return r.ID }))

@@ -237,10 +237,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		// Read under the update's lock, so the Custom fields compared are the ones it replaces.
-		before, err := contactlock.Lock(ctx, ts, id)
+		locked, err := contactlock.Lock(ctx, ts, id)
 		if err != nil {
 			return err
 		}
+		before := locked.Contact()
 		phone, err := patchedPhone(in, before.Country)
 		if err != nil {
 			return err
@@ -463,10 +464,11 @@ func createCore(q *ent.ContactScopedCreate, c Core) {
 // The Contact is read again under the lock the update takes anyway, so two Identifies of one
 // Contact merge, and record, one after the other.
 func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, in UpsertInput, typed map[string]any, ch changes) (*ent.Contact, error) {
-	existing, err := contactlock.Lock(ctx, s, id)
+	locked, err := contactlock.Lock(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
+	existing := locked.Contact()
 	q := s.Contact().UpdateOneID(existing.ID)
 	fillMissing(existing.SubjectID, in.SubjectID, q.SetNillableSubjectID)
 	fillMissing(existing.Email, in.Email, q.SetNillableEmail)

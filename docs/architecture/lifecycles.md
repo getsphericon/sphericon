@@ -36,9 +36,9 @@ and the send path agree on where work sends; a Sending domain's check reads the 
 Integration sends with from the resolver a send builds its sender with
 (`messaging.EffectiveFrom`). Two easement components, one per context (`domain-contacts-removalcheck-readers`,
 `domain-orchestration-removalcheck-readers`), own the four subpackages with `allow_importers:
-[domain-orchestration-removalcheck]` (ADR 0110), so no other package reads a holder and a new holder is a reader the Removal check adds. The Removal check takes the
-transaction's `*ent.Scoped`; the scope type of the Workspace lock (ADR 0108) replaces it in its
-methods and its readers when that type exists. A domain module that checks the holders of its own
+[domain-orchestration-removalcheck]` (ADR 0110), so no other package reads a holder and a new holder is a reader the Removal check adds. The Removal check and its readers
+take the scope of the Workspace lock, `*ent.WorkspaceLocked` (ADR 0108), so none of them runs
+without it. A domain module that checks the holders of its own
 row (an Automation's archive) returns the same `*liveuse.Error`. `liveuse` is a leaf that holds no
 raw `*ent.Client`: it only maps rows to users and states these shapes.
 
@@ -54,12 +54,31 @@ API views and the version lifecycle. The shared reader neither queries nor execu
 
 ## Workspace lock
 
-**The Workspace lock (ADR 0099)**: a removal that checks Live use or Definition use (archiving a
-Segment; deleting an Integration, a Sending domain or a Tag and editing a Custom field, which run
-the Removal check) and a write that creates a use (a Broadcast's claim, saving a Segment, Create,
-Edit, Publish and Archive of a Versioned definition) run in
-`events.Bus.WithinWorkspaceLockTx` (or `WithinWorkspaceLockEnqueueTx`), whose first statement
-takes the Workspace's transaction-scoped advisory lock, so a check never passes on work that
-becomes live before the removal commits. The lock comes before any row lock. A hot path (a Rule
-firing, an Enrollment, a send) never takes it: it locks the row it acts on and checks it again
-under that lock.
+**The Workspace lock (ADR 0099, ADR 0108)**: a removal that checks Live use or Definition use and
+a write that moves a use run in `events.Bus.WithinWorkspaceLockTx` (or
+`WithinWorkspaceLockEnqueueTx`), whose first statement takes the Workspace's transaction-scoped
+advisory lock, so a check never passes on work that becomes live before the removal commits. A
+write moves a use when, after it, live work uses a different row. The lock is a type: the bus hands
+its callback `*ent.WorkspaceLocked` (`ent/template/scoped_lock.tmpl`) and is the one caller of
+`ent.Scoped.LockWorkspace` (forbidigo). What needs the lock takes that type, so calling it without
+the lock does not compile:
+
+- the readers of Live use and Definition use: the Removal check's methods, the `<module>use`
+  readers (`UsingTag`, `UnfitForCustomFieldType`, `LiveSends`) and `rules.ActiveEnrollingInto`,
+  which an Automation's Archive reads through `versioneddefinition.Definition.Archivable`;
+- the unchecked removals behind their check: `tagsunchecked.DeleteIn`,
+  `contactsunchecked.UpdateCustomFieldIn`, `integrationsunchecked.DeleteIn` and
+  `sendingdomainsunchecked.DeleteIn`. `integrationsunchecked.DeleteIn` takes the id and gives up
+  the Integration's default in the statement that discards it (`schema.GivenUpOnDiscard`);
+- the writes that move a use: a version of a Versioned definition (`Definition.Write`, on Create
+  and Edit) and its Publish (`Lifecycle.publish`), a Broadcast's claim (`broadcasts.arm`), a
+  Segment's save (`segments.createIn`, `updateIn`) and an Integration's promotion to its Channel's
+  default (`integrations.clearDefault`), which moves every send that names no Integration.
+
+`integrations.Create` takes the lock for a new default; `integrations.Update` always does, since a
+new config may change the From its sends go out with. A Tracking domain's moves take the lock to
+run one at a time; they hold no use. The lock comes before any row lock. A hot path (a Rule firing,
+an Enrollment, a send) never takes it: it locks the row it acts on and checks it again under that
+lock, and the locked row is a value the write takes. An Enrollment is written (`automations.begin`)
+with the Contact locked (`contactlock.Locked`) and the Automation share-locked on its live version;
+a Firing (`rules.recordFiring`) with its Rule share-locked while it still fires on that version.

@@ -84,20 +84,24 @@ func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*e
 	}
 	in.Name = name
 	var seg *ent.Segment
-	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
-		if in.Condition != nil {
-			if err := s.Validate(ctx, ts, *in.Condition); err != nil {
-				return err
-			}
-		}
-		var err error
-		seg, err = ts.Segment().Create().
-			SetName(in.Name).
-			SetNillableCondition(in.Condition).
-			Save(ctx)
+	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		seg, err = s.createIn(ctx, wl, in)
 		return err
 	})
 	return seg, err
+}
+
+// createIn validates the condition and stores the Segment under the Workspace's lock (ADR 0108).
+func (s *Module) createIn(ctx context.Context, wl *ent.WorkspaceLocked, in CreateInput) (*ent.Segment, error) {
+	if in.Condition != nil {
+		if err := s.Validate(ctx, wl.Scope(), *in.Condition); err != nil {
+			return nil, err
+		}
+	}
+	return wl.Segment().Create().
+		SetName(in.Name).
+		SetNillableCondition(in.Condition).
+		Save(ctx)
 }
 
 // Get returns one Segment. An unknown id is ErrNotFound.
@@ -120,29 +124,36 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 	}
 	in.Name = name
 	var seg *ent.Segment
-	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
-		if cond, ok := in.Condition.Get(); ok {
-			if err := s.Validate(ctx, ts, cond); err != nil {
-				return err
-			}
-		}
-		q := ts.Segment().UpdateOneID(id).Where(segment.ArchivedAtIsNil())
-		patch.ApplySet(in.Name, q.SetName)
-		patch.ApplySet(in.Condition, q.SetCondition)
-		seg, err = q.Save(ctx)
-		if !ent.IsNotFound(err) {
-			return err
-		}
-		// The update missed: the Segment is archived, or the Workspace has none of this id.
-		if _, err := ts.Segment().Get(ctx, id); err != nil {
-			return err
-		}
-		return ErrArchived
+	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		seg, err = s.updateIn(ctx, wl, id, in)
+		return err
 	})
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
 	return seg, err
+}
+
+// updateIn validates a changed condition and applies the change under the Workspace's lock (ADR
+// 0108), conditioned on the Segment's not being archived (ErrArchived).
+func (s *Module) updateIn(ctx context.Context, wl *ent.WorkspaceLocked, id int64, in UpdateInput) (*ent.Segment, error) {
+	if cond, ok := in.Condition.Get(); ok {
+		if err := s.Validate(ctx, wl.Scope(), cond); err != nil {
+			return nil, err
+		}
+	}
+	q := wl.Segment().UpdateOneID(id).Where(segment.ArchivedAtIsNil())
+	patch.ApplySet(in.Name, q.SetName)
+	patch.ApplySet(in.Condition, q.SetCondition)
+	seg, err := q.Save(ctx)
+	if !ent.IsNotFound(err) {
+		return seg, err
+	}
+	// The update missed: the Segment is archived, or the Workspace has none of this id.
+	if _, err := wl.Segment().Get(ctx, id); err != nil {
+		return nil, err
+	}
+	return nil, ErrArchived
 }
 
 // PreviewInput is an unsaved Condition to preview, nil for every Contact, and the Channel of a
@@ -242,8 +253,8 @@ func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, 
 // holds the Workspace's lock (ADR 0099), so a draft being scheduled meanwhile either took its copy
 // first or finds the Segment archived.
 func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segment, error) {
-	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
-		seg, err := ts.Segment().Get(ctx, id)
+	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		seg, err := wl.Segment().Get(ctx, id)
 		if ent.IsNotFound(err) {
 			return ErrNotFound
 		}
@@ -253,7 +264,7 @@ func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Se
 		if seg.ArchivedAt != nil {
 			return nil
 		}
-		return ts.Segment().Archive(ctx, id, s.now())
+		return wl.Segment().Archive(ctx, id, s.now())
 	})
 	if err != nil {
 		return nil, err

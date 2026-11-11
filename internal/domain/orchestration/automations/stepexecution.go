@@ -340,7 +340,7 @@ type stepMove struct {
 func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, mv stepMove) error {
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		if mv.contactID != 0 {
-			locked, err := lockContact(ctx, ts, mv.contactID)
+			_, locked, err := lockContact(ctx, ts, mv.contactID)
 			if err != nil || !locked {
 				return err // an erased Contact's Enrollment is erased with it
 			}

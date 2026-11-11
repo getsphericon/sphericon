@@ -18,15 +18,29 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 )
 
+// Locked stands for the Contact's row locked by Lock to the end of the transaction (ADR 0108): a
+// write the lock orders (the making of an Enrollment) takes it, so it cannot be made before the lock
+// is taken. Only Lock makes one.
+type Locked struct {
+	contact *ent.Contact
+}
+
+// Contact is the Contact as read under the lock.
+func (l Locked) Contact() *ent.Contact { return l.contact }
+
 // Lock reads the Contact under FOR NO KEY UPDATE, to the end of the transaction s is bound to. Not
 // FOR UPDATE: a row that references the Contact (an Event stored for it, the Outbound message of a
 // step's send) takes the key-share lock, which this one leaves free, so neither an Events consumer
 // nor a send in flight ever waits for it. The update of the Contact that follows takes the same
 // lock anyway. An ent not-found error when the Contact is not in the Workspace.
-func Lock(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Contact, error) {
+func Lock(ctx context.Context, s *ent.Scoped, contactID int64) (Locked, error) {
 	q := s.Contact().Query().Where(contact.ID(contactID))
 	q.Modify(func(sel *entsql.Selector) { sel.For(entsql.LockNoKeyUpdate) })
-	return q.Only(ctx)
+	c, err := q.Only(ctx)
+	if err != nil {
+		return Locked{}, err
+	}
+	return Locked{contact: c}, nil
 }
 
 // Referenced is contactID while the Contact is in the Workspace, read under FOR KEY SHARE, the lock

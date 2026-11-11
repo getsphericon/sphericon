@@ -145,6 +145,21 @@ func scopedFuncs() template.FuncMap {
 				return ""
 			}
 		},
+		// discardClears lists the bools of n a Discard gives up (schema.GivenUpOnDiscard), which the
+		// generated Discard sets to false.
+		"discardClears": func(n *gen.Type) []*gen.Field {
+			var out []*gen.Field
+			for _, f := range n.Fields {
+				if _, ok := f.Annotations["GivenUpOnDiscard"]; !ok {
+					continue
+				}
+				if !f.IsBool() {
+					log.Fatalf("%s.%s: a field a Discard gives up is a bool", n.Name, f.Name)
+				}
+				out = append(out, f)
+			}
+			return out
+		},
 		"auditSensitive": func(f *gen.Field) bool {
 			_, ok := f.Annotations["Sensitive"]
 			return ok

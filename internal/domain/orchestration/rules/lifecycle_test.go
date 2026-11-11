@@ -135,22 +135,28 @@ func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
-	drafted, err := rulesuse.UsingTag(ctx, acme(env), "rule-inactive")
+	usingTag := func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) { return rulesuse.UsingTag(ctx, l, "rule-inactive") }
+	drafted, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), usingTag)
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, acme(env), fixtures.RuleInactiveID)
 	require.NoError(t, err)
-	published, err := rulesuse.UsingTag(ctx, acme(env), "rule-inactive")
+	published, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), usingTag)
 	require.NoError(t, err)
 
 	assert.Equal(t, []int64{fixtures.RuleInactiveID}, lo.Map(drafted, func(r *ent.Rule, _ int) int64 { return r.ID }))
 	assert.Equal(t, []int64{fixtures.RuleInactiveID}, lo.Map(published, func(r *ent.Rule, _ int) int64 { return r.ID }))
 }
 
+// usingVip reads the kept Rules that name the vip Tag.
+func usingVip(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
+	return rulesuse.UsingTag(context.Background(), l, "vip")
+}
+
 func TestAnActiveRuleWhoseConditionNamesATagUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// RuleVipOnly is active and its Condition tests the vip Tag; RuleMultiTrigger removes it.
-	using, err := rulesuse.UsingTag(context.Background(), acme(env), "vip")
+	using, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), usingVip)
 
 	require.NoError(t, err)
 	ids := make([]int64, 0, len(using))
@@ -167,7 +173,7 @@ func TestADeletedRuleUsesNoTag(t *testing.T) {
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleVipOnlyID))
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleMultiTriggerID))
 
-	using, err := rulesuse.UsingTag(ctx, acme(env), "vip")
+	using, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), usingVip)
 
 	require.NoError(t, err)
 	assert.Empty(t, using)

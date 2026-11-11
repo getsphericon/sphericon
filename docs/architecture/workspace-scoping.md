@@ -91,7 +91,8 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
 5. transactions: `events.Bus.WithinScopedTx` (and its variants: `WithinScopedEnqueueTx`, and
    `WithinWorkspaceLockTx` / `WithinWorkspaceLockEnqueueTx`, which first take the Workspace's
-   advisory lock, ADR 0099), and `tx.Scoped(...)` inside
+   advisory lock, ADR 0099, and hand over the scope that stands for it, `*ent.WorkspaceLocked`,
+   which only they build, through `ent.Scoped.LockWorkspace`, ADR 0108), and `tx.Scoped(...)` inside
    `users.Module.AcceptInvitation` (its `acceptInvitationIn`, which the completion of a pending
    sign-up also runs in its own transaction), re-scope a transaction's client to the same Workspace;
    `events.Bus.WithinHandOverTx` also scopes it to the Workspace a Join domain moves away from

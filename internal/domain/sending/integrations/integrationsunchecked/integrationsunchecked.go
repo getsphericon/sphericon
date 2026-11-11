@@ -12,17 +12,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 )
 
-// DeleteIn discards the Integration row for good (ADR 0049) on the transaction's scoped client,
-// without asking whether work still sends through it: internal/usecase/integrationdeletion runs the
-// Removal check (its Live use) under the Workspace lock first. A deleted Integration gives up the
-// default: its channel has none until another is picked. A missing row is integrations.ErrNotFound.
-func DeleteIn(ctx context.Context, ts *ent.Scoped, row *ent.Integration, at time.Time) error {
-	if row.IsDefault {
-		if err := ts.Integration().UpdateOneID(row.ID).SetIsDefault(false).Exec(ctx); err != nil {
-			return missing(err)
-		}
+// DeleteIn discards the Integration with the id for good (ADR 0049) in the transaction l holds the
+// Workspace's lock in (ADR 0108), without asking whether work still sends through it:
+// internal/usecase/integrationdeletion runs the Removal check (its Live use) under the same lock
+// first. A deleted Integration gives up the default in the statement that discards it
+// (schema.GivenUpOnDiscard): its channel has none until another is picked. It returns the row as
+// discarded. An unknown id, or an Integration deleted already, is integrations.ErrNotFound.
+func DeleteIn(ctx context.Context, l *ent.WorkspaceLocked, id int64, at time.Time) (*ent.Integration, error) {
+	if err := l.Integration().Discard(ctx, id, at); err != nil {
+		return nil, missing(err)
 	}
-	return missing(ts.Integration().Discard(ctx, row.ID, at))
+	row, err := l.Integration().Get(ctx, id)
+	return row, missing(err)
 }
 
 // missing turns ent's not found into integrations.ErrNotFound.

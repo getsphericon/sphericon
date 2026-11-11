@@ -4,26 +4,21 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// underLock runs check in a transaction of the Workspace holding its lock (ADR 0099), as every
-// removal that checks a row runs it, and returns what it answered.
-func underLock(t *testing.T, env *testhelper.TestEnv, workspaceID int64, check func(*ent.Scoped) error) error {
+// underLock runs check in a transaction of the Workspace holding its lock (ADR 0099, ADR 0108), as
+// every removal that checks a row runs it, and returns what it answered.
+func underLock(t *testing.T, env *testhelper.TestEnv, workspaceID int64, check func(*ent.WorkspaceLocked) error) error {
 	t.Helper()
-	var answer error
-	err := env.Bus.WithinWorkspaceLockTx(t.Context(), env.DB.Scoped(workspaceID), func(ts *ent.Scoped, _ events.Publisher) error {
-		answer = check(ts)
-		return nil
+	_, answer := testhelper.UnderWorkspaceLock(t, env.Bus, env.DB.Scoped(workspaceID), func(l *ent.WorkspaceLocked) (struct{}, error) {
+		return struct{}{}, check(l)
 	})
-	require.NoError(t, err)
 	return answer
 }
 
@@ -32,8 +27,8 @@ func underLock(t *testing.T, env *testhelper.TestEnv, workspaceID int64, check f
 func TestATagNamedByDefinitionsIsRefusedNamingThemInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	vip := underLock(t, env, fixtures.AcmeID, func(s *ent.Scoped) error { return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagVipName) })
-	newsletter := underLock(t, env, fixtures.AcmeID, func(s *ent.Scoped) error {
+	vip := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error { return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagVipName) })
+	newsletter := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagNewsletterName)
 	})
 
@@ -52,7 +47,7 @@ func TestATagNamedByDefinitionsIsRefusedNamingThemInOrder(t *testing.T) {
 func TestATagNamedOnlyInAnArmedBroadcastsCopyIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	refused := underLock(t, env, fixtures.AcmeID, func(s *ent.Scoped) error {
+	refused := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagRenewalDueName)
 	})
 
@@ -64,7 +59,9 @@ func TestATagNamedOnlyInAnArmedBroadcastsCopyIsRefused(t *testing.T) {
 func TestATagNothingNamesPasses(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	answer := underLock(t, env, fixtures.AcmeID, func(s *ent.Scoped) error { return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagUnusedName) })
+	answer := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
+		return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagUnusedName)
+	})
 
 	assert.NoError(t, answer)
 }
@@ -75,10 +72,10 @@ func TestATagNothingNamesPasses(t *testing.T) {
 func TestACustomFieldRetypeIsRefusedOnlyByALeafTheNewTypeDoesNotTake(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	endsOn := underLock(t, env, fixtures.DuffID, func(s *ent.Scoped) error {
+	endsOn := underLock(t, env, fixtures.DuffID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.CustomFieldRetype(t.Context(), s, fixtures.CustomFieldDuffEndsOnKey, customfield.TypeString)
 	})
-	hasIt := underLock(t, env, fixtures.DuffID, func(s *ent.Scoped) error {
+	hasIt := underLock(t, env, fixtures.DuffID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.CustomFieldRetype(t.Context(), s, fixtures.CustomFieldDuffHasItKey, customfield.TypeString)
 	})
 
@@ -93,7 +90,7 @@ func TestACustomFieldRetypeIsRefusedOnlyByALeafTheNewTypeDoesNotTake(t *testing.
 func TestAnIntegrationLiveWorkSendsThroughIsRefusedNamingItInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	refused := underLock(t, env, fixtures.MeridianID, func(s *ent.Scoped) error {
+	refused := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.Integration(t.Context(), s, fixtures.IntegrationMeridianDefaultID)
 	})
 
@@ -108,7 +105,7 @@ func TestAnIntegrationLiveWorkSendsThroughIsRefusedNamingItInOrder(t *testing.T)
 func TestAnIntegrationOnlyADraftSendsThroughPasses(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	answer := underLock(t, env, fixtures.MeridianID, func(s *ent.Scoped) error {
+	answer := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.Integration(t.Context(), s, fixtures.IntegrationMeridianDraftOnlyID)
 	})
 
@@ -121,7 +118,7 @@ func TestAnIntegrationOnlyADraftSendsThroughPasses(t *testing.T) {
 func TestASendingDomainIsRefusedThroughTheFromOfTheIntegrationASendGoesThrough(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	refused := underLock(t, env, fixtures.MeridianID, func(s *ent.Scoped) error {
+	refused := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianRelayDomain)
 	})
 
@@ -135,10 +132,10 @@ func TestASendingDomainIsRefusedThroughTheFromOfTheIntegrationASendGoesThrough(t
 func TestASendingDomainIsRefusedThroughABroadcastsOwnFromAndNotByHistory(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	news := underLock(t, env, fixtures.MeridianID, func(s *ent.Scoped) error {
+	news := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianNewsDomain)
 	})
-	mail := underLock(t, env, fixtures.MeridianID, func(s *ent.Scoped) error {
+	mail := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
 		return env.RemovalCheck.SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianMailDomain)
 	})
 

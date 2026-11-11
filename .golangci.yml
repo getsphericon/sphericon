@@ -169,6 +169,12 @@ linters:
         - pattern: ^ent\.(\w+Pointers|VersionedStore(\[.*\])?)\.(CompareAndSwap|DeleteVersion)$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: a Versioned definition's pointers move only through internal/domain/content/versioneddefinition (ADR 0065); call the module's Update, Publish or Revert
+        # ADR 0108: the scope of the Workspace lock, *ent.WorkspaceLocked, is handed out by the
+        # events bus alone, whose WithinWorkspaceLockTx takes the lock as the first statement of its
+        # transaction, before any row lock.
+        - pattern: ^ent\.Scoped\.LockWorkspace$
+          pkg: '^github\.com/getsphericon/sphericon/ent$'
+          msg: the Workspace lock is taken only by events.Bus.WithinWorkspaceLockTx (ADR 0108), first in its transaction; run the write there
         - pattern: ^time\.Sleep$
           msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
         - pattern: ^time\.(Now|Since|Until)$
@@ -377,6 +383,11 @@ linters:
         linters:
           - forbidigo
         text: pointers move only through internal/domain/content/versioneddefinition
+      # The events bus is the one place the Workspace lock is taken (ADR 0108).
+      - path: ^internal/infra/events/workspacelock\.go$
+        linters:
+          - forbidigo
+        text: the Workspace lock is taken only by events.Bus.WithinWorkspaceLockTx
       # gosec's taint rules (G702-G705, G710) and the cookie rule (G124) cannot see a check that
       # is made before the sink. Each exclusion below names the files and the reason; every
       # finding was read, and the ones that were defects are fixed in code.

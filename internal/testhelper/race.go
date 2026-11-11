@@ -110,7 +110,7 @@ func holdWorkspaceLock(t *testing.T, bus *events.Bus, s *ent.Scoped) (release fu
 	held, let := make(chan struct{}), make(chan struct{})
 	ended := make(chan error, 1)
 	go func() {
-		ended <- bus.WithinWorkspaceLockTx(context.Background(), s, func(*ent.Scoped, events.Publisher) error {
+		ended <- bus.WithinWorkspaceLockTx(context.Background(), s, func(*ent.WorkspaceLocked, events.Publisher) error {
 			close(held)
 			<-let
 			return nil

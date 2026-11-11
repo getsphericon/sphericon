@@ -246,7 +246,8 @@ func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.Track
 		return nil, ErrOwnHost
 	}
 	var row, promoted *ent.TrackingDomain
-	err := m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := m.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, pub events.Publisher) error {
+		ts := wl.Scope()
 		rows, err := ts.TrackingDomain().Query().All(ctx)
 		if err != nil {
 			return err
@@ -302,7 +303,8 @@ func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.Track
 // cancelled; a retired host is forgotten, so links sent on it stop working. An unknown id is
 // ErrNotFound.
 func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	return m.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		ts := wl.Scope()
 		row, err := ts.TrackingDomain().Get(ctx, id)
 		if err != nil {
 			return notFound(err)
@@ -412,7 +414,8 @@ func (m *Module) checkRow(ctx context.Context, s *ent.Scoped, row *ent.TrackingD
 		return err
 	}
 	now := m.now()
-	err = m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err = m.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, pub events.Publisher) error {
+		ts := wl.Scope()
 		if next == row.State {
 			return ts.TrackingDomain().UpdateOneID(row.ID).SetCheckedAt(now).ClearReason().Exec(ctx)
 		}

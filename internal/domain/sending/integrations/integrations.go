@@ -271,14 +271,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 	}
 
 	var row *ent.Integration
-	err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
-		// A new default clears the channel's current one first, in the same transaction,
-		// so the partial unique index never trips on our own writes.
-		if in.IsDefault {
-			if err := clearDefault(ctx, ts, channel); err != nil {
-				return err
-			}
-		}
+	insert := func(ts *ent.Scoped, q events.Enqueuer, isDefault bool) error {
 		create := ts.Integration().Create().
 			SetName(name).
 			SetChannel(channel).
@@ -287,7 +280,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 			SetIngestKey(key).
 			SetNillablePreset(inb.preset).
 			SetEnabled(enabled).
-			SetIsDefault(in.IsDefault).
+			SetIsDefault(isDefault).
 			SetNillableMaxPerSecond(in.MaxPerSecond).
 			SetNillableMaxPerDay(in.MaxPerDay).
 			SetNillableProviderMaxPerSecond(providerPerSecond)
@@ -301,7 +294,23 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 			return err
 		}
 		return m.discoverQuota(ctx, q, row)
-	})
+	}
+	if in.IsDefault {
+		// A new default moves every send of its Channel that names no Integration onto it, which
+		// the Removal check of a deletion reads under the Workspace's lock, so it takes the lock (ADR
+		// 0108) and clears the channel's current default first, in the same transaction, so the
+		// partial unique index never trips on our own writes.
+		err = m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
+			if err := clearDefault(ctx, wl, channel, 0); err != nil {
+				return err
+			}
+			return insert(wl.Scope(), q, true)
+		})
+	} else {
+		err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+			return insert(ts, q, false)
+		})
+	}
 	if err != nil {
 		if provider == providers.Telegram && enabled {
 			// The bot was pointed at a hook that was never saved.
@@ -358,36 +367,27 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return View{}, err
 	}
 
-	// Promoting to default touches sibling rows, so it clears the channel's current
-	// default first, in the same transaction as the update.
-	isDefault, _ := in.IsDefault.Get()
-	promote := isDefault && !row.IsDefault
-
+	// The save holds the Workspace's lock (ADR 0108): a promotion to default and a new config, which
+	// may change the From its sends go out with, move Live use, which the Removal check of a deletion
+	// reads under the lock. A deletion that holds it first leaves no row to edit.
 	var updated *ent.Integration
-	err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
-		if promote {
-			if err := clearDefault(ctx, ts, row.Channel); err != nil {
-				return err
+	promote, _ := in.IsDefault.Get()
+	err = m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
+		var err error
+		updated, err = saveEdit(ctx, wl, row, promote, func(upd *ent.IntegrationScopedUpdateOne) {
+			applyEdit(upd, in, name, sealed, inb)
+			if tg.connected {
+				upd.SetProviderMaxPerSecond(telegramPerSecond)
 			}
-		}
-		// A Delete that landed meanwhile leaves no row to edit.
-		upd := ts.Integration().UpdateOneID(row.ID).Where(integration.DiscardedAtIsNil())
-		applyEdit(upd, in, name, sealed, inb)
-		if tg.connected {
-			upd.SetProviderMaxPerSecond(telegramPerSecond)
-		}
-		err := constraints.Write(ctx, ts, func() (err error) {
-			updated, err = upd.Save(ctx)
-			return err
 		})
 		if err != nil || sealed == nil {
 			return err
 		}
 		// The provider's refusal of the old credentials goes with them.
-		if err := renewCredentials(ctx, ts, updated); err != nil {
+		if err := renewCredentials(ctx, wl.Scope(), updated); err != nil {
 			return err
 		}
-		if updated, err = ts.Integration().Get(ctx, row.ID); err != nil {
+		if updated, err = wl.Integration().Get(ctx, row.ID); err != nil {
 			return err
 		}
 		// New credentials or endpoint: what the provider allows may have changed.
@@ -400,6 +400,26 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		m.release(ctx, updated)
 	}
 	return m.viewOf(ctx, s, updated)
+}
+
+// saveEdit writes an Update to the Integration row: apply sets what it changes and promote makes it
+// its Channel's default. A promotion and a new config move Live use, so it takes the Workspace's
+// lock (ADR 0108). A promotion clears the channel's current default first, in the same transaction.
+// A Delete that landed meanwhile leaves no row to edit (ent's not found).
+func saveEdit(ctx context.Context, wl *ent.WorkspaceLocked, row *ent.Integration, promote bool, apply func(*ent.IntegrationScopedUpdateOne)) (*ent.Integration, error) {
+	if promote {
+		if err := clearDefault(ctx, wl, row.Channel, row.ID); err != nil {
+			return nil, err
+		}
+	}
+	upd := wl.Integration().UpdateOneID(row.ID).Where(integration.DiscardedAtIsNil())
+	apply(upd)
+	var updated *ent.Integration
+	err := constraints.Write(ctx, wl, func() (err error) {
+		updated, err = upd.Save(ctx)
+		return err
+	})
+	return updated, err
 }
 
 // sealEditedConfig validates an edited provider config and seals it, nil when the edit sends
@@ -543,10 +563,11 @@ func (m *Module) reportsQuota(row *ent.Integration) bool {
 	return err == nil && ok
 }
 
-// clearDefault unsets the existing default Integration for the channel.
-func clearDefault(ctx context.Context, ts *ent.Scoped, channel channels.Channel) error {
-	_, err := ts.Integration().Update().
-		Where(integration.ChannelEQ(channel), integration.IsDefault(true)).
+// clearDefault unsets the channel's default Integration unless it is promoted, the one about to be
+// made default (0 for a new one), under the Workspace's lock the promotion needs (ADR 0108).
+func clearDefault(ctx context.Context, l *ent.WorkspaceLocked, channel channels.Channel, promoted int64) error {
+	_, err := l.Integration().Update().
+		Where(integration.ChannelEQ(channel), integration.IsDefault(true), integration.IDNEQ(promoted)).
 		SetIsDefault(false).
 		Save(ctx)
 	return err

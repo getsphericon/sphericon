@@ -36,14 +36,14 @@ func New(bus *events.Bus, check *removalcheck.Module) *UseCase {
 // transaction under the Workspace's lock (ADR 0099), which saving a Segment, a Rule or an
 // Automation takes too, so none of them names the Tag between the check and the delete.
 func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return u.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		t, err := tags.Get(ctx, ts, id)
+	return u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		t, err := tags.Get(ctx, wl.Scope(), id)
 		if err != nil {
 			return err
 		}
-		if err := u.check.Tag(ctx, ts, t.Name); err != nil {
+		if err := u.check.Tag(ctx, wl, t.Name); err != nil {
 			return err
 		}
-		return tagsunchecked.DeleteIn(ctx, ts, id)
+		return tagsunchecked.DeleteIn(ctx, wl, id)
 	})
 }

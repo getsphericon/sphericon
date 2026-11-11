@@ -39,23 +39,25 @@ func New(bus *events.Bus, integs *integrations.Module, check *removalcheck.Modul
 // Integration it names or, naming none, its own Channel's default. A sent or failed Broadcast is
 // history and does not block. A deleted Integration gives up the default: its channel has none
 // until another is picked. Deleting a deleted Integration changes nothing. An unknown id is
-// integrations.ErrNotFound. The check and the discard hold the Workspace's lock (ADR 0099), so no
-// work becomes live between them; a Telegram bot lets go of its webhook once the discard commits.
+// integrations.ErrNotFound. The read, the check and the discard hold the Workspace's lock (ADR
+// 0099, ADR 0108), which a promotion to default and a change of config take too, so no work becomes
+// live between them and the Integration is never discarded as its Channel's default; a Telegram bot
+// lets go of its webhook once the discard commits.
 func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	var released *ent.Integration
-	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		row, err := u.integrations.Get(ctx, ts, id)
+	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		row, err := u.integrations.Get(ctx, wl.Scope(), id)
 		if err != nil {
 			return err
 		}
 		if row.DiscardedAt != nil {
 			return nil
 		}
-		if err := u.check.Integration(ctx, ts, row.ID); err != nil {
+		if err := u.check.Integration(ctx, wl, id); err != nil {
 			return err
 		}
-		released = row
-		return integrationsunchecked.DeleteIn(ctx, ts, row, u.now())
+		released, err = integrationsunchecked.DeleteIn(ctx, wl, id, u.now())
+		return err
 	})
 	if err != nil {
 		return err

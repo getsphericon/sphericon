@@ -12,11 +12,11 @@ import (
 )
 
 // DeleteIn removes the Tag from the catalogue, and from every Contact that has it, inside the
-// transaction s is bound to. It does not ask whether a Segment, an Automation, a Rule or a Broadcast
-// names the Tag: internal/usecase/tagdeletion runs the Removal check (the Tag's Definition use) and
-// this removal in one transaction under the Workspace's lock. A missing Tag is tags.ErrNotFound.
-func DeleteIn(ctx context.Context, s *ent.Scoped, id int64) error {
-	err := s.Tag().DeleteOneID(id).Exec(ctx)
+// transaction l holds the Workspace's lock in (ADR 0108). It does not ask whether a Segment, an
+// Automation, a Rule or a Broadcast names the Tag: internal/usecase/tagdeletion runs the Removal
+// check (the Tag's Definition use) first under the same lock. A missing Tag is tags.ErrNotFound.
+func DeleteIn(ctx context.Context, l *ent.WorkspaceLocked, id int64) error {
+	err := l.Tag().DeleteOneID(id).Exec(ctx)
 	if ent.IsNotFound(err) {
 		return tags.ErrNotFound
 	}

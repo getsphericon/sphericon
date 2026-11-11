@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
 )
@@ -28,6 +29,15 @@ type DiscardMixin struct {
 	// Restorable marks the one discardable entity that comes back within its window, the Workspace.
 	Restorable bool
 }
+
+// GivenUpOnDiscard marks a bool a discarded row gives up: the generated Discard sets it to false in
+// the statement that stamps discarded_at, so no reader sees the row discarded and still holding it. An Integration's is_default: a deleted Integration is no
+// Channel's default (ADR 0108).
+type GivenUpOnDiscard struct{}
+
+func (GivenUpOnDiscard) Name() string { return "GivenUpOnDiscard" }
+
+var _ schema.Annotation = GivenUpOnDiscard{}
 
 func (m DiscardMixin) Fields() []ent.Field {
 	form := Latch()
