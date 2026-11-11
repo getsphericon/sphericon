@@ -17622,16 +17622,18 @@ func (m *ContactMutation) ResetEdge(name string) error {
 // ContactTagMutation represents an operation that mutates the ContactTag nodes in the graph.
 type ContactTagMutation struct {
 	config
-	op             Op
-	typ            string
-	clearedFields  map[string]struct{}
-	contact        *int64
-	clearedcontact bool
-	tag            *int64
-	clearedtag     bool
-	done           bool
-	oldValue       func(context.Context) (*ContactTag, error)
-	predicates     []predicate.ContactTag
+	op               Op
+	typ              string
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	contact          *int64
+	clearedcontact   bool
+	tag              *int64
+	clearedtag       bool
+	done             bool
+	oldValue         func(context.Context) (*ContactTag, error)
+	predicates       []predicate.ContactTag
 }
 
 var _ ent.Mutation = (*ContactTagMutation)(nil)
@@ -17672,6 +17674,25 @@ func (m ContactTagMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *ContactTagMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *ContactTagMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *ContactTagMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
 // SetContactID sets the "contact_id" field.
 func (m *ContactTagMutation) SetContactID(i int64) {
 	m.contact = &i
@@ -17708,6 +17729,33 @@ func (m *ContactTagMutation) TagID() (r int64, exists bool) {
 // ResetTagID resets all changes to the "tag_id" field.
 func (m *ContactTagMutation) ResetTagID() {
 	m.tag = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *ContactTagMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[contacttag.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *ContactTagMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *ContactTagMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *ContactTagMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
 }
 
 // ClearContact clears the "contact" edge to the Contact entity.
@@ -17798,7 +17846,10 @@ func (m *ContactTagMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactTagMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
+	if m.workspace != nil {
+		fields = append(fields, contacttag.FieldWorkspaceID)
+	}
 	if m.contact != nil {
 		fields = append(fields, contacttag.FieldContactID)
 	}
@@ -17813,6 +17864,8 @@ func (m *ContactTagMutation) Fields() []string {
 // schema.
 func (m *ContactTagMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case contacttag.FieldWorkspaceID:
+		return m.WorkspaceID()
 	case contacttag.FieldContactID:
 		return m.ContactID()
 	case contacttag.FieldTagID:
@@ -17833,6 +17886,13 @@ func (m *ContactTagMutation) OldField(ctx context.Context, name string) (ent.Val
 // type.
 func (m *ContactTagMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case contacttag.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
 	case contacttag.FieldContactID:
 		v, ok := value.(int64)
 		if !ok {
@@ -17899,6 +17959,9 @@ func (m *ContactTagMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *ContactTagMutation) ResetField(name string) error {
 	switch name {
+	case contacttag.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
 	case contacttag.FieldContactID:
 		m.ResetContactID()
 		return nil
@@ -17911,7 +17974,10 @@ func (m *ContactTagMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ContactTagMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.workspace != nil {
+		edges = append(edges, contacttag.EdgeWorkspace)
+	}
 	if m.contact != nil {
 		edges = append(edges, contacttag.EdgeContact)
 	}
@@ -17925,6 +17991,10 @@ func (m *ContactTagMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ContactTagMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case contacttag.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
 	case contacttag.EdgeContact:
 		if id := m.contact; id != nil {
 			return []ent.Value{*id}
@@ -17939,7 +18009,7 @@ func (m *ContactTagMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ContactTagMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -17951,7 +18021,10 @@ func (m *ContactTagMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ContactTagMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.clearedworkspace {
+		edges = append(edges, contacttag.EdgeWorkspace)
+	}
 	if m.clearedcontact {
 		edges = append(edges, contacttag.EdgeContact)
 	}
@@ -17965,6 +18038,8 @@ func (m *ContactTagMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ContactTagMutation) EdgeCleared(name string) bool {
 	switch name {
+	case contacttag.EdgeWorkspace:
+		return m.clearedworkspace
 	case contacttag.EdgeContact:
 		return m.clearedcontact
 	case contacttag.EdgeTag:
@@ -17977,6 +18052,9 @@ func (m *ContactTagMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *ContactTagMutation) ClearEdge(name string) error {
 	switch name {
+	case contacttag.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
 	case contacttag.EdgeContact:
 		m.ClearContact()
 		return nil
@@ -17991,6 +18069,9 @@ func (m *ContactTagMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ContactTagMutation) ResetEdge(name string) error {
 	switch name {
+	case contacttag.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
 	case contacttag.EdgeContact:
 		m.ResetContact()
 		return nil

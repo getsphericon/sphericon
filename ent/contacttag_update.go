@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // ContactTagUpdate is the builder for updating ContactTag entities.
@@ -27,6 +28,20 @@ type ContactTagUpdate struct {
 // Where appends a list predicates to the ContactTagUpdate builder.
 func (_u *ContactTagUpdate) Where(ps ...predicate.ContactTag) *ContactTagUpdate {
 	_u.mutation.Where(ps...)
+	return _u
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (_u *ContactTagUpdate) SetWorkspaceID(v int64) *ContactTagUpdate {
+	_u.mutation.SetWorkspaceID(v)
+	return _u
+}
+
+// SetNillableWorkspaceID sets the "workspace_id" field if the given value is not nil.
+func (_u *ContactTagUpdate) SetNillableWorkspaceID(v *int64) *ContactTagUpdate {
+	if v != nil {
+		_u.SetWorkspaceID(*v)
+	}
 	return _u
 }
 
@@ -58,6 +73,11 @@ func (_u *ContactTagUpdate) SetNillableTagID(v *int64) *ContactTagUpdate {
 	return _u
 }
 
+// SetWorkspace sets the "workspace" edge to the Workspace entity.
+func (_u *ContactTagUpdate) SetWorkspace(v *Workspace) *ContactTagUpdate {
+	return _u.SetWorkspaceID(v.ID)
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (_u *ContactTagUpdate) SetContact(v *Contact) *ContactTagUpdate {
 	return _u.SetContactID(v.ID)
@@ -71,6 +91,12 @@ func (_u *ContactTagUpdate) SetTag(v *Tag) *ContactTagUpdate {
 // Mutation returns the ContactTagMutation object of the builder.
 func (_u *ContactTagUpdate) Mutation() *ContactTagMutation {
 	return _u.mutation
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (_u *ContactTagUpdate) ClearWorkspace() *ContactTagUpdate {
+	_u.mutation.ClearWorkspace()
+	return _u
 }
 
 // ClearContact clears the "contact" edge to the Contact entity.
@@ -114,6 +140,9 @@ func (_u *ContactTagUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ContactTagUpdate) check() error {
+	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "ContactTag.workspace"`)
+	}
 	if _u.mutation.ContactCleared() && len(_u.mutation.ContactIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ContactTag.contact"`)
 	}
@@ -140,6 +169,35 @@ func (_u *ContactTagUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 				ps[i](selector)
 			}
 		}
+	}
+	if _u.mutation.WorkspaceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   contacttag.WorkspaceTable,
+			Columns: []string{contacttag.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.WorkspaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   contacttag.WorkspaceTable,
+			Columns: []string{contacttag.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.ContactCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -221,6 +279,20 @@ type ContactTagUpdateOne struct {
 	modifiers []func(*sql.UpdateBuilder)
 }
 
+// SetWorkspaceID sets the "workspace_id" field.
+func (_u *ContactTagUpdateOne) SetWorkspaceID(v int64) *ContactTagUpdateOne {
+	_u.mutation.SetWorkspaceID(v)
+	return _u
+}
+
+// SetNillableWorkspaceID sets the "workspace_id" field if the given value is not nil.
+func (_u *ContactTagUpdateOne) SetNillableWorkspaceID(v *int64) *ContactTagUpdateOne {
+	if v != nil {
+		_u.SetWorkspaceID(*v)
+	}
+	return _u
+}
+
 // SetContactID sets the "contact_id" field.
 func (_u *ContactTagUpdateOne) SetContactID(v int64) *ContactTagUpdateOne {
 	_u.mutation.SetContactID(v)
@@ -249,6 +321,11 @@ func (_u *ContactTagUpdateOne) SetNillableTagID(v *int64) *ContactTagUpdateOne {
 	return _u
 }
 
+// SetWorkspace sets the "workspace" edge to the Workspace entity.
+func (_u *ContactTagUpdateOne) SetWorkspace(v *Workspace) *ContactTagUpdateOne {
+	return _u.SetWorkspaceID(v.ID)
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (_u *ContactTagUpdateOne) SetContact(v *Contact) *ContactTagUpdateOne {
 	return _u.SetContactID(v.ID)
@@ -262,6 +339,12 @@ func (_u *ContactTagUpdateOne) SetTag(v *Tag) *ContactTagUpdateOne {
 // Mutation returns the ContactTagMutation object of the builder.
 func (_u *ContactTagUpdateOne) Mutation() *ContactTagMutation {
 	return _u.mutation
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (_u *ContactTagUpdateOne) ClearWorkspace() *ContactTagUpdateOne {
+	_u.mutation.ClearWorkspace()
+	return _u
 }
 
 // ClearContact clears the "contact" edge to the Contact entity.
@@ -318,6 +401,9 @@ func (_u *ContactTagUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ContactTagUpdateOne) check() error {
+	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "ContactTag.workspace"`)
+	}
 	if _u.mutation.ContactCleared() && len(_u.mutation.ContactIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ContactTag.contact"`)
 	}
@@ -363,6 +449,35 @@ func (_u *ContactTagUpdateOne) sqlSave(ctx context.Context) (_node *ContactTag, 
 				ps[i](selector)
 			}
 		}
+	}
+	if _u.mutation.WorkspaceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   contacttag.WorkspaceTable,
+			Columns: []string{contacttag.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.WorkspaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   contacttag.WorkspaceTable,
+			Columns: []string{contacttag.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.ContactCleared() {
 		edge := &sqlgraph.EdgeSpec{

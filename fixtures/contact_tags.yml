@@ -1,148 +1,219 @@
 # Join rows Contact <-> Tag (workspace acme). See fixtures/tags.yml.
-- contact_id: 1
+- workspace_id: 1
+  contact_id: 1
   tag_id: 1
-- contact_id: 3
+- workspace_id: 1
+  contact_id: 3
   tag_id: 1
-- contact_id: 1
+- workspace_id: 1
+  contact_id: 1
   tag_id: 2
 # Initech (workspace 3): the tag is on ContactErasable and ContactBystander.
-- contact_id: 300
+- workspace_id: 3
+  contact_id: 300
   tag_id: 300
-- contact_id: 301
+- workspace_id: 3
+  contact_id: 301
   tag_id: 300
 # Export subject (contact 800): vip + newsletter.
-- contact_id: 800
+- workspace_id: 1
+  contact_id: 800
   tag_id: 1
-- contact_id: 800
+- workspace_id: 1
+  contact_id: 800
   tag_id: 2
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
-- contact_id: 20001
+- workspace_id: 20
+  contact_id: 20001
   tag_id: 20001
-- contact_id: 20002
+- workspace_id: 20
+  contact_id: 20002
   tag_id: 20001
-- contact_id: 20003
+- workspace_id: 20
+  contact_id: 20003
   tag_id: 20001
-- contact_id: 20004
+- workspace_id: 20
+  contact_id: 20004
   tag_id: 20001
-- contact_id: 20005
+- workspace_id: 20
+  contact_id: 20005
   tag_id: 20001
-- contact_id: 20006
+- workspace_id: 20
+  contact_id: 20006
   tag_id: 20001
-- contact_id: 20007
+- workspace_id: 20
+  contact_id: 20007
   tag_id: 20001
-- contact_id: 20008
+- workspace_id: 20
+  contact_id: 20008
   tag_id: 20001
-- contact_id: 20009
+- workspace_id: 20
+  contact_id: 20009
   tag_id: 20001
-- contact_id: 20010
+- workspace_id: 20
+  contact_id: 20010
   tag_id: 20001
-- contact_id: 20011
+- workspace_id: 20
+  contact_id: 20011
   tag_id: 20001
-- contact_id: 20012
+- workspace_id: 20
+  contact_id: 20012
   tag_id: 20001
-- contact_id: 20013
+- workspace_id: 20
+  contact_id: 20013
   tag_id: 20001
-- contact_id: 20014
+- workspace_id: 20
+  contact_id: 20014
   tag_id: 20001
-- contact_id: 20015
+- workspace_id: 20
+  contact_id: 20015
   tag_id: 20002
-- contact_id: 20027
+- workspace_id: 20
+  contact_id: 20027
   tag_id: 20002
-- contact_id: 20028
+- workspace_id: 20
+  contact_id: 20028
   tag_id: 20002
-- contact_id: 20029
+- workspace_id: 20
+  contact_id: 20029
   tag_id: 20002
-- contact_id: 20013
+- workspace_id: 20
+  contact_id: 20013
   tag_id: 20003
-- contact_id: 20014
+- workspace_id: 20
+  contact_id: 20014
   tag_id: 20003
-- contact_id: 20032
+- workspace_id: 20
+  contact_id: 20032
   tag_id: 20003
-- contact_id: 20034
+- workspace_id: 20
+  contact_id: 20034
   tag_id: 20003
-- contact_id: 20036
+- workspace_id: 20
+  contact_id: 20036
   tag_id: 20003
-- contact_id: 20038
+- workspace_id: 20
+  contact_id: 20038
   tag_id: 20003
-- contact_id: 20040
+- workspace_id: 20
+  contact_id: 20040
   tag_id: 20003
-- contact_id: 20042
+- workspace_id: 20
+  contact_id: 20042
   tag_id: 20003
-- contact_id: 20044
+- workspace_id: 20
+  contact_id: 20044
   tag_id: 20003
-- contact_id: 20017
+- workspace_id: 20
+  contact_id: 20017
   tag_id: 20004
-- contact_id: 20020
+- workspace_id: 20
+  contact_id: 20020
   tag_id: 20004
-- contact_id: 20023
+- workspace_id: 20
+  contact_id: 20023
   tag_id: 20004
-- contact_id: 20025
+- workspace_id: 20
+  contact_id: 20025
   tag_id: 20004
-- contact_id: 20015
+- workspace_id: 20
+  contact_id: 20015
   tag_id: 20005
-- contact_id: 20016
+- workspace_id: 20
+  contact_id: 20016
   tag_id: 20005
-- contact_id: 20017
+- workspace_id: 20
+  contact_id: 20017
   tag_id: 20005
-- contact_id: 20018
+- workspace_id: 20
+  contact_id: 20018
   tag_id: 20005
-- contact_id: 20019
+- workspace_id: 20
+  contact_id: 20019
   tag_id: 20005
-- contact_id: 20020
+- workspace_id: 20
+  contact_id: 20020
   tag_id: 20005
-- contact_id: 20021
+- workspace_id: 20
+  contact_id: 20021
   tag_id: 20005
-- contact_id: 20022
+- workspace_id: 20
+  contact_id: 20022
   tag_id: 20005
-- contact_id: 20023
+- workspace_id: 20
+  contact_id: 20023
   tag_id: 20005
-- contact_id: 20024
+- workspace_id: 20
+  contact_id: 20024
   tag_id: 20005
-- contact_id: 20025
+- workspace_id: 20
+  contact_id: 20025
   tag_id: 20005
-- contact_id: 20026
+- workspace_id: 20
+  contact_id: 20026
   tag_id: 20005
-- contact_id: 20027
+- workspace_id: 20
+  contact_id: 20027
   tag_id: 20005
-- contact_id: 20028
+- workspace_id: 20
+  contact_id: 20028
   tag_id: 20005
-- contact_id: 20029
+- workspace_id: 20
+  contact_id: 20029
   tag_id: 20005
-- contact_id: 20030
+- workspace_id: 20
+  contact_id: 20030
   tag_id: 20005
-- contact_id: 20031
+- workspace_id: 20
+  contact_id: 20031
   tag_id: 20005
-- contact_id: 20032
+- workspace_id: 20
+  contact_id: 20032
   tag_id: 20005
-- contact_id: 20033
+- workspace_id: 20
+  contact_id: 20033
   tag_id: 20005
-- contact_id: 20034
+- workspace_id: 20
+  contact_id: 20034
   tag_id: 20005
-- contact_id: 20035
+- workspace_id: 20
+  contact_id: 20035
   tag_id: 20005
-- contact_id: 20036
+- workspace_id: 20
+  contact_id: 20036
   tag_id: 20005
-- contact_id: 20037
+- workspace_id: 20
+  contact_id: 20037
   tag_id: 20005
-- contact_id: 20038
+- workspace_id: 20
+  contact_id: 20038
   tag_id: 20005
-- contact_id: 20039
+- workspace_id: 20
+  contact_id: 20039
   tag_id: 20005
-- contact_id: 20040
+- workspace_id: 20
+  contact_id: 20040
   tag_id: 20005
-- contact_id: 20041
+- workspace_id: 20
+  contact_id: 20041
   tag_id: 20005
-- contact_id: 20042
+- workspace_id: 20
+  contact_id: 20042
   tag_id: 20005
-- contact_id: 20043
+- workspace_id: 20
+  contact_id: 20043
   tag_id: 20005
-- contact_id: 20044
+- workspace_id: 20
+  contact_id: 20044
   tag_id: 20005
 # Duff (workspace 94): filter-vip on both VIPs, filter-beta on the German one.
-- contact_id: 7700
+- workspace_id: 94
+  contact_id: 7700
   tag_id: 7700
-- contact_id: 7701
+- workspace_id: 94
+  contact_id: 7701
   tag_id: 7700
-- contact_id: 7701
+- workspace_id: 94
+  contact_id: 7701
   tag_id: 7701

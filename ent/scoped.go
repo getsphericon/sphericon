@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -12071,18 +12072,6 @@ func (x *ContactScopedCreate) AddStartTokens(v ...*StartToken) *ContactScopedCre
 	return x
 }
 
-// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
-func (x *ContactScopedCreate) AddTagIDs(ids ...int64) *ContactScopedCreate {
-	x.b.AddTagIDs(ids...)
-	return x
-}
-
-// AddTags adds the "tags" edges to the Tag entity.
-func (x *ContactScopedCreate) AddTags(v ...*Tag) *ContactScopedCreate {
-	x.b.AddTags(v...)
-	return x
-}
-
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
 func (x *ContactScopedCreate) AddEventIDs(ids ...int64) *ContactScopedCreate {
 	x.b.AddEventIDs(ids...)
@@ -12118,9 +12107,6 @@ func (x *ContactScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
 		return fmt.Errorf("start_tokens: %w", err)
-	}
-	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
-		return fmt.Errorf("tags: %w", err)
 	}
 	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
 		return fmt.Errorf("events: %w", err)
@@ -12212,15 +12198,6 @@ func (b *ContactScopedCreateBulk) check(ctx context.Context) error {
 		}
 		if err := b.s.verifyStartToken(ctx, ids); err != nil {
 			return fmt.Errorf("start_tokens: %w", err)
-		}
-	}
-	{
-		var ids []int64
-		for _, x := range b.xs {
-			ids = append(ids, x.b.Mutation().TagsIDs()...)
-		}
-		if err := b.s.verifyTag(ctx, ids); err != nil {
-			return fmt.Errorf("tags: %w", err)
 		}
 	}
 	{
@@ -12994,36 +12971,6 @@ func (x *ContactScopedUpdateOne) RemoveStartTokens(v ...*StartToken) *ContactSco
 	return x
 }
 
-// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
-func (x *ContactScopedUpdateOne) AddTagIDs(ids ...int64) *ContactScopedUpdateOne {
-	x.b.AddTagIDs(ids...)
-	return x
-}
-
-// AddTags adds the "tags" edges to the Tag entity.
-func (x *ContactScopedUpdateOne) AddTags(v ...*Tag) *ContactScopedUpdateOne {
-	x.b.AddTags(v...)
-	return x
-}
-
-// ClearTags clears the "tags" edges to the Tag entity.
-func (x *ContactScopedUpdateOne) ClearTags() *ContactScopedUpdateOne {
-	x.b.ClearTags()
-	return x
-}
-
-// RemoveTagIDs removes the "tags" edge to Tag entities by IDs.
-func (x *ContactScopedUpdateOne) RemoveTagIDs(ids ...int64) *ContactScopedUpdateOne {
-	x.b.RemoveTagIDs(ids...)
-	return x
-}
-
-// RemoveTags removes "tags" edges to Tag entities.
-func (x *ContactScopedUpdateOne) RemoveTags(v ...*Tag) *ContactScopedUpdateOne {
-	x.b.RemoveTags(v...)
-	return x
-}
-
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
 func (x *ContactScopedUpdateOne) AddEventIDs(ids ...int64) *ContactScopedUpdateOne {
 	x.b.AddEventIDs(ids...)
@@ -13095,9 +13042,6 @@ func (x *ContactScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
 		return fmt.Errorf("start_tokens: %w", err)
-	}
-	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
-		return fmt.Errorf("tags: %w", err)
 	}
 	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
 		return fmt.Errorf("events: %w", err)
@@ -13480,36 +13424,6 @@ func (x *ContactScopedUpdate) RemoveStartTokens(v ...*StartToken) *ContactScoped
 	return x
 }
 
-// AddTagIDs adds the "tags" edge to the Tag entity by IDs.
-func (x *ContactScopedUpdate) AddTagIDs(ids ...int64) *ContactScopedUpdate {
-	x.b.AddTagIDs(ids...)
-	return x
-}
-
-// AddTags adds the "tags" edges to the Tag entity.
-func (x *ContactScopedUpdate) AddTags(v ...*Tag) *ContactScopedUpdate {
-	x.b.AddTags(v...)
-	return x
-}
-
-// ClearTags clears the "tags" edges to the Tag entity.
-func (x *ContactScopedUpdate) ClearTags() *ContactScopedUpdate {
-	x.b.ClearTags()
-	return x
-}
-
-// RemoveTagIDs removes the "tags" edge to Tag entities by IDs.
-func (x *ContactScopedUpdate) RemoveTagIDs(ids ...int64) *ContactScopedUpdate {
-	x.b.RemoveTagIDs(ids...)
-	return x
-}
-
-// RemoveTags removes "tags" edges to Tag entities.
-func (x *ContactScopedUpdate) RemoveTags(v ...*Tag) *ContactScopedUpdate {
-	x.b.RemoveTags(v...)
-	return x
-}
-
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
 func (x *ContactScopedUpdate) AddEventIDs(ids ...int64) *ContactScopedUpdate {
 	x.b.AddEventIDs(ids...)
@@ -13582,9 +13496,6 @@ func (x *ContactScopedUpdate) check(ctx context.Context) error {
 	if err := x.s.verifyStartToken(ctx, m.StartTokensIDs()); err != nil {
 		return fmt.Errorf("start_tokens: %w", err)
 	}
-	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
-		return fmt.Errorf("tags: %w", err)
-	}
 	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
 		return fmt.Errorf("events: %w", err)
 	}
@@ -13642,6 +13553,421 @@ func (x *ContactScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *ContactScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ContactTagScoped reaches ContactTag entities of one Workspace.
+type ContactTagScoped struct{ s *Scoped }
+
+// ContactTag returns the ContactTag entities of the Workspace.
+func (s *Scoped) ContactTag() *ContactTagScoped { return &ContactTagScoped{s: s} }
+
+// Query returns a ContactTag query already confined to the Workspace.
+func (t *ContactTagScoped) Query() *ContactTagQuery {
+	return t.s.c.ContactTag.Query().Where(contacttag.WorkspaceID(t.s.ws))
+}
+
+// ContactTagScopedDelete wraps ContactTagDelete.
+type ContactTagScopedDelete struct {
+	s *Scoped
+	b *ContactTagDelete
+}
+
+// Delete deletes the ContactTag entities of the Workspace that match the predicates.
+func (t *ContactTagScoped) Delete() *ContactTagScopedDelete {
+	return &ContactTagScopedDelete{s: t.s, b: t.s.c.ContactTag.Delete().Where(contacttag.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactTagScopedDelete) Where(ps ...predicate.ContactTag) *ContactTagScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *ContactTagScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// ContactTagScopedCreate wraps ContactTagCreate. It has no way to name a Workspace.
+type ContactTagScopedCreate struct {
+	s *Scoped
+	b *ContactTagCreate
+}
+
+// Create starts a ContactTag in the Workspace.
+func (t *ContactTagScoped) Create() *ContactTagScopedCreate {
+	return &ContactTagScopedCreate{s: t.s, b: t.s.c.ContactTag.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *ContactTagScopedCreate) SetContactID(v int64) *ContactTagScopedCreate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetTagID sets the "tag_id" field.
+func (x *ContactTagScopedCreate) SetTagID(v int64) *ContactTagScopedCreate {
+	x.b.SetTagID(v)
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *ContactTagScopedCreate) SetContact(v *Contact) *ContactTagScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
+// SetTag sets the "tag" edge to the Tag entity.
+func (x *ContactTagScopedCreate) SetTag(v *Tag) *ContactTagScopedCreate {
+	x.b.SetTag(v)
+	return x
+}
+
+func (x *ContactTagScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyTag(ctx, m.TagIDs()); err != nil {
+		return fmt.Errorf("tag: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the ContactTag.
+func (x *ContactTagScopedCreate) Save(ctx context.Context) (*ContactTag, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactTagScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// ContactTagScopedCreateBulk creates several ContactTag entities of one Workspace at once.
+type ContactTagScopedCreateBulk struct {
+	s  *Scoped
+	xs []*ContactTagScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *ContactTagScoped) CreateBulk(xs ...*ContactTagScopedCreate) *ContactTagScopedCreateBulk {
+	return &ContactTagScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *ContactTagScopedCreateBulk) raw(ctx context.Context) (*ContactTagCreateBulk, error) {
+	builders := make([]*ContactTagCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("ContactTag: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		builders[i] = x.b
+	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
+	return b.s.c.ContactTag.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *ContactTagScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().TagIDs()...)
+		}
+		if err := b.s.verifyTag(ctx, ids); err != nil {
+			return fmt.Errorf("tag: %w", err)
+		}
+	}
+	return nil
+}
+
+// Save verifies every builder's references, then creates the ContactTag entities.
+func (b *ContactTagScopedCreateBulk) Save(ctx context.Context) ([]*ContactTag, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *ContactTagScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// ContactTagScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type ContactTagScopedUpsert struct{ u *sql.UpdateSet }
+
+// UpdateContactID sets the "contact_id" field to the value that was provided on create.
+func (u *ContactTagScopedUpsert) UpdateContactID() *ContactTagScopedUpsert {
+	u.u.SetExcluded(contacttag.FieldContactID)
+	return u
+}
+
+// UpdateTagID sets the "tag_id" field to the value that was provided on create.
+func (u *ContactTagScopedUpsert) UpdateTagID() *ContactTagScopedUpsert {
+	u.u.SetExcluded(contacttag.FieldTagID)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ContactTagScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(contacttag.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// ContactTagScopedUpsertOne is the "upsert" of one ContactTag.
+type ContactTagScopedUpsertOne struct {
+	x *ContactTagScopedCreate
+	u *ContactTagUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *ContactTagScopedCreate) OnConflictColumns(columns ...string) *ContactTagScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ContactTagScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ContactTagScopedUpsertOne {
+	return &ContactTagScopedUpsertOne{x: x, u: x.b.OnConflict((&ContactTagScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactTagScopedUpsertOne) UpdateNewValues() *ContactTagScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactTagScopedUpsertOne) Ignore() *ContactTagScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactTagScopedUpsertOne) DoNothing() *ContactTagScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactTagScopedUpsertOne) Update(set func(*ContactTagScopedUpsert)) *ContactTagScopedUpsertOne {
+	u.u.Update(func(s *ContactTagUpsert) { set(&ContactTagScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *ContactTagScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ContactTagScopedUpsertBulk is the "upsert" of several ContactTag entities.
+type ContactTagScopedUpsertBulk struct {
+	b       *ContactTagScopedCreateBulk
+	t       *ContactTagScoped
+	columns []string
+	opts    []func(*ContactTagUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *ContactTagScopedCreateBulk) OnConflictColumns(columns ...string) *ContactTagScopedUpsertBulk {
+	return &ContactTagScopedUpsertBulk{b: b, t: &ContactTagScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactTagScopedUpsertBulk) UpdateNewValues() *ContactTagScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *ContactTagUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactTagScopedUpsertBulk) Ignore() *ContactTagScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *ContactTagUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactTagScopedUpsertBulk) DoNothing() *ContactTagScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *ContactTagUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactTagScopedUpsertBulk) Update(set func(*ContactTagScopedUpsert)) *ContactTagScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *ContactTagUpsertBulk) {
+		r.Update(func(s *ContactTagUpsert) { set(&ContactTagScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *ContactTagScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// ContactTagScopedUpdate wraps ContactTagUpdate: a conditional bulk update of one Workspace.
+type ContactTagScopedUpdate struct {
+	s *Scoped
+	b *ContactTagUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the ContactTag entities of the Workspace that match the predicates.
+func (t *ContactTagScoped) Update() *ContactTagScopedUpdate {
+	return &ContactTagScopedUpdate{s: t.s, b: t.s.c.ContactTag.Update().Where(contacttag.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactTagScopedUpdate) Where(ps ...predicate.ContactTag) *ContactTagScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *ContactTagScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *ContactTagScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(contacttag.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *ContactTagScopedUpdate) SetContactID(v int64) *ContactTagScopedUpdate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *ContactTagScopedUpdate) SetNillableContactID(v *int64) *ContactTagScopedUpdate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// SetTagID sets the "tag_id" field.
+func (x *ContactTagScopedUpdate) SetTagID(v int64) *ContactTagScopedUpdate {
+	x.b.SetTagID(v)
+	return x
+}
+
+// SetNillableTagID sets the "tag_id" field if the given value is not nil.
+func (x *ContactTagScopedUpdate) SetNillableTagID(v *int64) *ContactTagScopedUpdate {
+	x.b.SetNillableTagID(v)
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *ContactTagScopedUpdate) SetContact(v *Contact) *ContactTagScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *ContactTagScopedUpdate) ClearContact() *ContactTagScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
+// SetTag sets the "tag" edge to the Tag entity.
+func (x *ContactTagScopedUpdate) SetTag(v *Tag) *ContactTagScopedUpdate {
+	x.b.SetTag(v)
+	return x
+}
+
+// ClearTag clears the "tag" edge to the Tag entity.
+func (x *ContactTagScopedUpdate) ClearTag() *ContactTagScopedUpdate {
+	x.b.ClearTag()
+	return x
+}
+
+func (x *ContactTagScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyTag(ctx, m.TagIDs()); err != nil {
+		return fmt.Errorf("tag: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *ContactTagScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *ContactTagScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }
@@ -34480,24 +34806,9 @@ func (x *TagScopedCreate) SetName(v string) *TagScopedCreate {
 	return x
 }
 
-// AddContactIDs adds the "contacts" edge to the Contact entity by IDs.
-func (x *TagScopedCreate) AddContactIDs(ids ...int64) *TagScopedCreate {
-	x.b.AddContactIDs(ids...)
-	return x
-}
-
-// AddContacts adds the "contacts" edges to the Contact entity.
-func (x *TagScopedCreate) AddContacts(v ...*Contact) *TagScopedCreate {
-	x.b.AddContacts(v...)
-	return x
-}
-
 func (x *TagScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyContact(ctx, m.ContactsIDs()); err != nil {
-		return fmt.Errorf("contacts: %w", err)
-	}
 	return nil
 }
 
@@ -34557,15 +34868,6 @@ func (b *TagScopedCreateBulk) raw(ctx context.Context) (*TagCreateBulk, error) {
 // check verifies the references of every builder against the Workspace, one query per
 // reference for the whole batch rather than one per row.
 func (b *TagScopedCreateBulk) check(ctx context.Context) error {
-	{
-		var ids []int64
-		for _, x := range b.xs {
-			ids = append(ids, x.b.Mutation().ContactsIDs()...)
-		}
-		if err := b.s.verifyContact(ctx, ids); err != nil {
-			return fmt.Errorf("contacts: %w", err)
-		}
-	}
 	return nil
 }
 
@@ -34827,42 +35129,9 @@ func (x *TagScopedUpdateOne) SetNillableName(v *string) *TagScopedUpdateOne {
 	return x
 }
 
-// AddContactIDs adds the "contacts" edge to the Contact entity by IDs.
-func (x *TagScopedUpdateOne) AddContactIDs(ids ...int64) *TagScopedUpdateOne {
-	x.b.AddContactIDs(ids...)
-	return x
-}
-
-// AddContacts adds the "contacts" edges to the Contact entity.
-func (x *TagScopedUpdateOne) AddContacts(v ...*Contact) *TagScopedUpdateOne {
-	x.b.AddContacts(v...)
-	return x
-}
-
-// ClearContacts clears the "contacts" edges to the Contact entity.
-func (x *TagScopedUpdateOne) ClearContacts() *TagScopedUpdateOne {
-	x.b.ClearContacts()
-	return x
-}
-
-// RemoveContactIDs removes the "contacts" edge to Contact entities by IDs.
-func (x *TagScopedUpdateOne) RemoveContactIDs(ids ...int64) *TagScopedUpdateOne {
-	x.b.RemoveContactIDs(ids...)
-	return x
-}
-
-// RemoveContacts removes "contacts" edges to Contact entities.
-func (x *TagScopedUpdateOne) RemoveContacts(v ...*Contact) *TagScopedUpdateOne {
-	x.b.RemoveContacts(v...)
-	return x
-}
-
 func (x *TagScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyContact(ctx, m.ContactsIDs()); err != nil {
-		return fmt.Errorf("contacts: %w", err)
-	}
 	return nil
 }
 
@@ -34950,42 +35219,9 @@ func (x *TagScopedUpdate) SetNillableName(v *string) *TagScopedUpdate {
 	return x
 }
 
-// AddContactIDs adds the "contacts" edge to the Contact entity by IDs.
-func (x *TagScopedUpdate) AddContactIDs(ids ...int64) *TagScopedUpdate {
-	x.b.AddContactIDs(ids...)
-	return x
-}
-
-// AddContacts adds the "contacts" edges to the Contact entity.
-func (x *TagScopedUpdate) AddContacts(v ...*Contact) *TagScopedUpdate {
-	x.b.AddContacts(v...)
-	return x
-}
-
-// ClearContacts clears the "contacts" edges to the Contact entity.
-func (x *TagScopedUpdate) ClearContacts() *TagScopedUpdate {
-	x.b.ClearContacts()
-	return x
-}
-
-// RemoveContactIDs removes the "contacts" edge to Contact entities by IDs.
-func (x *TagScopedUpdate) RemoveContactIDs(ids ...int64) *TagScopedUpdate {
-	x.b.RemoveContactIDs(ids...)
-	return x
-}
-
-// RemoveContacts removes "contacts" edges to Contact entities.
-func (x *TagScopedUpdate) RemoveContacts(v ...*Contact) *TagScopedUpdate {
-	x.b.RemoveContacts(v...)
-	return x
-}
-
 func (x *TagScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyContact(ctx, m.ContactsIDs()); err != nil {
-		return fmt.Errorf("contacts: %w", err)
-	}
 	return nil
 }
 

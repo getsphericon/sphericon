@@ -935,12 +935,6 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
-					Name: "tags", Target: "Tag",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Contact().UpdateOneID(id).AddTagIDs(target).Exec(ctx)
-					},
-				},
-				{
 					Name: "events", Target: "Event",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Contact().UpdateOneID(id).AddEventIDs(target).Exec(ctx)
@@ -2351,14 +2345,7 @@ func ScopedEntities() []ScopedEntity {
 				}
 				return created.WorkspaceID, nil
 			},
-			Refs: []ScopedRef{
-				{
-					Name: "contacts", Target: "Contact",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Tag().UpdateOneID(id).AddContactIDs(target).Exec(ctx)
-					},
-				},
-			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Name:         "TrackedLink",

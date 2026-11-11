@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // ContactTagCreate is the builder for creating a ContactTag entity.
@@ -21,6 +22,12 @@ type ContactTagCreate struct {
 	mutation *ContactTagMutation
 	hooks    []Hook
 	conflict []sql.ConflictOption
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (_c *ContactTagCreate) SetWorkspaceID(v int64) *ContactTagCreate {
+	_c.mutation.SetWorkspaceID(v)
+	return _c
 }
 
 // SetContactID sets the "contact_id" field.
@@ -33,6 +40,11 @@ func (_c *ContactTagCreate) SetContactID(v int64) *ContactTagCreate {
 func (_c *ContactTagCreate) SetTagID(v int64) *ContactTagCreate {
 	_c.mutation.SetTagID(v)
 	return _c
+}
+
+// SetWorkspace sets the "workspace" edge to the Workspace entity.
+func (_c *ContactTagCreate) SetWorkspace(v *Workspace) *ContactTagCreate {
+	return _c.SetWorkspaceID(v.ID)
 }
 
 // SetContact sets the "contact" edge to the Contact entity.
@@ -79,11 +91,17 @@ func (_c *ContactTagCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *ContactTagCreate) check() error {
+	if _, ok := _c.mutation.WorkspaceID(); !ok {
+		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "ContactTag.workspace_id"`)}
+	}
 	if _, ok := _c.mutation.ContactID(); !ok {
 		return &ValidationError{Name: "contact_id", err: errors.New(`ent: missing required field "ContactTag.contact_id"`)}
 	}
 	if _, ok := _c.mutation.TagID(); !ok {
 		return &ValidationError{Name: "tag_id", err: errors.New(`ent: missing required field "ContactTag.tag_id"`)}
+	}
+	if len(_c.mutation.WorkspaceIDs()) == 0 {
+		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "ContactTag.workspace"`)}
 	}
 	if len(_c.mutation.ContactIDs()) == 0 {
 		return &ValidationError{Name: "contact", err: errors.New(`ent: missing required edge "ContactTag.contact"`)}
@@ -114,6 +132,23 @@ func (_c *ContactTagCreate) createSpec() (*ContactTag, *sqlgraph.CreateSpec) {
 		_spec = sqlgraph.NewCreateSpec(contacttag.Table, nil)
 	)
 	_spec.OnConflict = _c.conflict
+	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   contacttag.WorkspaceTable,
+			Columns: []string{contacttag.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.ContactIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -155,7 +190,7 @@ func (_c *ContactTagCreate) createSpec() (*ContactTag, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.ContactTag.Create().
-//		SetContactID(v).
+//		SetWorkspaceID(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -164,7 +199,7 @@ func (_c *ContactTagCreate) createSpec() (*ContactTag, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ContactTagUpsert) {
-//			SetContactID(v+v).
+//			SetWorkspaceID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ContactTagCreate) OnConflict(opts ...sql.ConflictOption) *ContactTagUpsertOne {
@@ -199,6 +234,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (u *ContactTagUpsert) SetWorkspaceID(v int64) *ContactTagUpsert {
+	u.Set(contacttag.FieldWorkspaceID, v)
+	return u
+}
+
+// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
+func (u *ContactTagUpsert) UpdateWorkspaceID() *ContactTagUpsert {
+	u.SetExcluded(contacttag.FieldWorkspaceID)
+	return u
+}
 
 // SetContactID sets the "contact_id" field.
 func (u *ContactTagUpsert) SetContactID(v int64) *ContactTagUpsert {
@@ -262,6 +309,20 @@ func (u *ContactTagUpsertOne) Update(set func(*ContactTagUpsert)) *ContactTagUps
 		set(&ContactTagUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (u *ContactTagUpsertOne) SetWorkspaceID(v int64) *ContactTagUpsertOne {
+	return u.Update(func(s *ContactTagUpsert) {
+		s.SetWorkspaceID(v)
+	})
+}
+
+// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
+func (u *ContactTagUpsertOne) UpdateWorkspaceID() *ContactTagUpsertOne {
+	return u.Update(func(s *ContactTagUpsert) {
+		s.UpdateWorkspaceID()
+	})
 }
 
 // SetContactID sets the "contact_id" field.
@@ -403,7 +464,7 @@ func (_c *ContactTagCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ContactTagUpsert) {
-//			SetContactID(v+v).
+//			SetWorkspaceID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ContactTagCreateBulk) OnConflict(opts ...sql.ConflictOption) *ContactTagUpsertBulk {
@@ -470,6 +531,20 @@ func (u *ContactTagUpsertBulk) Update(set func(*ContactTagUpsert)) *ContactTagUp
 		set(&ContactTagUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (u *ContactTagUpsertBulk) SetWorkspaceID(v int64) *ContactTagUpsertBulk {
+	return u.Update(func(s *ContactTagUpsert) {
+		s.SetWorkspaceID(v)
+	})
+}
+
+// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
+func (u *ContactTagUpsertBulk) UpdateWorkspaceID() *ContactTagUpsertBulk {
+	return u.Update(func(s *ContactTagUpsert) {
+		s.UpdateWorkspaceID()
+	})
 }
 
 // SetContactID sets the "contact_id" field.

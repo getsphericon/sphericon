@@ -11,11 +11,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // ContactTag is the model entity for the ContactTag schema.
 type ContactTag struct {
 	config `json:"-"`
+	// WorkspaceID holds the value of the "workspace_id" field.
+	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
 	ContactID int64 `json:"contact_id,omitempty"`
 	// TagID holds the value of the "tag_id" field.
@@ -28,13 +31,26 @@ type ContactTag struct {
 
 // ContactTagEdges holds the relations/edges for other nodes in the graph.
 type ContactTagEdges struct {
+	// Workspace holds the value of the workspace edge.
+	Workspace *Workspace `json:"workspace,omitempty"`
 	// Contact holds the value of the contact edge.
 	Contact *Contact `json:"contact,omitempty"`
 	// Tag holds the value of the tag edge.
 	Tag *Tag `json:"tag,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
+}
+
+// WorkspaceOrErr returns the Workspace value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ContactTagEdges) WorkspaceOrErr() (*Workspace, error) {
+	if e.Workspace != nil {
+		return e.Workspace, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: workspace.Label}
+	}
+	return nil, &NotLoadedError{edge: "workspace"}
 }
 
 // ContactOrErr returns the Contact value or an error if the edge
@@ -42,7 +58,7 @@ type ContactTagEdges struct {
 func (e ContactTagEdges) ContactOrErr() (*Contact, error) {
 	if e.Contact != nil {
 		return e.Contact, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: contact.Label}
 	}
 	return nil, &NotLoadedError{edge: "contact"}
@@ -53,7 +69,7 @@ func (e ContactTagEdges) ContactOrErr() (*Contact, error) {
 func (e ContactTagEdges) TagOrErr() (*Tag, error) {
 	if e.Tag != nil {
 		return e.Tag, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: tag.Label}
 	}
 	return nil, &NotLoadedError{edge: "tag"}
@@ -64,7 +80,7 @@ func (*ContactTag) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case contacttag.FieldContactID, contacttag.FieldTagID:
+		case contacttag.FieldWorkspaceID, contacttag.FieldContactID, contacttag.FieldTagID:
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -81,6 +97,12 @@ func (_m *ContactTag) assignValues(columns []string, values []any) error {
 	}
 	for i := range columns {
 		switch columns[i] {
+		case contacttag.FieldWorkspaceID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
+			} else if value.Valid {
+				_m.WorkspaceID = value.Int64
+			}
 		case contacttag.FieldContactID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field contact_id", values[i])
@@ -104,6 +126,11 @@ func (_m *ContactTag) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *ContactTag) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryWorkspace queries the "workspace" edge of the ContactTag entity.
+func (_m *ContactTag) QueryWorkspace() *WorkspaceQuery {
+	return NewContactTagClient(_m.config).QueryWorkspace(_m)
 }
 
 // QueryContact queries the "contact" edge of the ContactTag entity.
@@ -138,6 +165,9 @@ func (_m *ContactTag) Unwrap() *ContactTag {
 func (_m *ContactTag) String() string {
 	var builder strings.Builder
 	builder.WriteString("ContactTag(")
+	builder.WriteString("workspace_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
+	builder.WriteString(", ")
 	builder.WriteString("contact_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ContactID))
 	builder.WriteString(", ")

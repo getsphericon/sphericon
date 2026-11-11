@@ -10,20 +10,33 @@ import (
 const (
 	// Label holds the string label denoting the contacttag type in the database.
 	Label = "contact_tag"
+	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
+	FieldWorkspaceID = "workspace_id"
 	// FieldContactID holds the string denoting the contact_id field in the database.
 	FieldContactID = "contact_id"
 	// FieldTagID holds the string denoting the tag_id field in the database.
 	FieldTagID = "tag_id"
+	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
+	EdgeWorkspace = "workspace"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
 	EdgeContact = "contact"
 	// EdgeTag holds the string denoting the tag edge name in mutations.
 	EdgeTag = "tag"
+	// WorkspaceFieldID holds the string denoting the ID field of the Workspace.
+	WorkspaceFieldID = "id"
 	// ContactFieldID holds the string denoting the ID field of the Contact.
 	ContactFieldID = "id"
 	// TagFieldID holds the string denoting the ID field of the Tag.
 	TagFieldID = "id"
 	// Table holds the table name of the contacttag in the database.
 	Table = "contact_tags"
+	// WorkspaceTable is the table that holds the workspace relation/edge.
+	WorkspaceTable = "contact_tags"
+	// WorkspaceInverseTable is the table name for the Workspace entity.
+	// It exists in this package in order to avoid circular dependency with the "workspace" package.
+	WorkspaceInverseTable = "workspaces"
+	// WorkspaceColumn is the table column denoting the workspace relation/edge.
+	WorkspaceColumn = "workspace_id"
 	// ContactTable is the table that holds the contact relation/edge.
 	ContactTable = "contact_tags"
 	// ContactInverseTable is the table name for the Contact entity.
@@ -42,6 +55,7 @@ const (
 
 // Columns holds all SQL columns for contacttag fields.
 var Columns = []string{
+	FieldWorkspaceID,
 	FieldContactID,
 	FieldTagID,
 }
@@ -59,6 +73,11 @@ func ValidColumn(column string) bool {
 // OrderOption defines the ordering options for the ContactTag queries.
 type OrderOption func(*sql.Selector)
 
+// ByWorkspaceID orders the results by the workspace_id field.
+func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
+}
+
 // ByContactID orders the results by the contact_id field.
 func ByContactID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContactID, opts...).ToFunc()
@@ -67,6 +86,13 @@ func ByContactID(opts ...sql.OrderTermOption) OrderOption {
 // ByTagID orders the results by the tag_id field.
 func ByTagID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTagID, opts...).ToFunc()
+}
+
+// ByWorkspaceField orders the results by workspace field.
+func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newWorkspaceStep(), sql.OrderByField(field, opts...))
+	}
 }
 
 // ByContactField orders the results by contact field.
@@ -81,6 +107,13 @@ func ByTagField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newTagStep(), sql.OrderByField(field, opts...))
 	}
+}
+func newWorkspaceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, WorkspaceColumn),
+		sqlgraph.To(WorkspaceInverseTable, WorkspaceFieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+	)
 }
 func newContactStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
