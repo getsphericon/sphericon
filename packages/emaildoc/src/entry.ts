@@ -75,7 +75,10 @@ async function render(json: string): Promise<string> {
     extensionManager: { extensions },
     getJSON: () => doc.toJSON(),
   }
-  const { html, text } = await composeReactEmail({ editor })
+  // The HTML is stored and sent, and read as source only in the Test inbox's HTML tab: Prettier's
+  // pass would be most of a render's time under goja and inflate the body, so it is skipped and
+  // `html` is the unformatted export.
+  const { html, text } = await composeReactEmail({ editor, pretty: false })
   return JSON.stringify({ html, text })
 }
 
