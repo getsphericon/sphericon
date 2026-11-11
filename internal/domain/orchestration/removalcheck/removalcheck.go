@@ -48,20 +48,20 @@ func New(senders *messaging.Resolver) *Module { return &Module{senders: senders}
 // version or draft (a Condition leaf or a tag Action) and the Condition an armed Broadcast copied
 // from its Segment (ADR 0065). Each names the Tag, not its id, so it would silently stop matching
 // or applying. It returns nil, or a *liveuse.Error naming them in that order.
-func (m *Module) Tag(ctx context.Context, s *ent.WorkspaceLocked, name string) error {
-	segs, err := segmentsuse.UsingTag(ctx, s, name)
+func (m *Module) Tag(ctx context.Context, l *ent.WorkspaceLocked, name string) error {
+	segs, err := segmentsuse.UsingTag(ctx, l, name)
 	if err != nil {
 		return err
 	}
-	autos, err := automationsuse.UsingTag(ctx, s, name)
+	autos, err := automationsuse.UsingTag(ctx, l, name)
 	if err != nil {
 		return err
 	}
-	kept, err := rulesuse.UsingTag(ctx, s, name)
+	kept, err := rulesuse.UsingTag(ctx, l, name)
 	if err != nil {
 		return err
 	}
-	armed, err := broadcastsuse.UsingTag(ctx, s, name)
+	armed, err := broadcastsuse.UsingTag(ctx, l, name)
 	if err != nil {
 		return err
 	}
@@ -73,16 +73,16 @@ func (m *Module) Tag(ctx context.Context, s *ent.WorkspaceLocked, name string) e
 // Conditions would stop compiling (ADR 0006). An Automation holds no Condition, and a leaf every
 // type takes (notNull) does not hold the type. It returns nil, or a *liveuse.Error naming them in
 // that order.
-func (m *Module) CustomFieldRetype(ctx context.Context, s *ent.WorkspaceLocked, key string, t customfield.Type) error {
-	segs, err := segmentsuse.UnfitForCustomFieldType(ctx, s, key, t)
+func (m *Module) CustomFieldRetype(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) error {
+	segs, err := segmentsuse.UnfitForCustomFieldType(ctx, l, key, t)
 	if err != nil {
 		return err
 	}
-	kept, err := rulesuse.UnfitForCustomFieldType(ctx, s, key, t)
+	kept, err := rulesuse.UnfitForCustomFieldType(ctx, l, key, t)
 	if err != nil {
 		return err
 	}
-	armed, err := broadcastsuse.UnfitForCustomFieldType(ctx, s, key, t)
+	armed, err := broadcastsuse.UnfitForCustomFieldType(ctx, l, key, t)
 	if err != nil {
 		return err
 	}
@@ -94,8 +94,8 @@ func (m *Module) CustomFieldRetype(ctx context.Context, s *ent.WorkspaceLocked, 
 // unfinished Enrollment stands on, whose send goes through it by the resolution a send takes
 // (messaging.Through): the Integration it names or, naming none, its own Channel's default. It
 // returns nil, or a *liveuse.Error naming that work, Broadcasts first, then Automations.
-func (m *Module) Integration(ctx context.Context, s *ent.WorkspaceLocked, id int64) error {
-	sends, err := liveSends(ctx, s)
+func (m *Module) Integration(ctx context.Context, l *ent.WorkspaceLocked, id int64) error {
+	sends, err := liveSends(ctx, l)
 	if err != nil {
 		return err
 	}
@@ -108,8 +108,8 @@ func (m *Module) Integration(ctx context.Context, s *ent.WorkspaceLocked, id int
 // with, its own or, without one, the From of the Integration it goes through (an Automation step
 // carries none), by the resolution a send takes (messaging.Through, messaging.EffectiveFrom). It
 // returns nil, or a *liveuse.Error naming that work, Broadcasts first, then Automations.
-func (m *Module) SendingDomain(ctx context.Context, s *ent.WorkspaceLocked, domain string) error {
-	sends, err := liveSends(ctx, s)
+func (m *Module) SendingDomain(ctx context.Context, l *ent.WorkspaceLocked, domain string) error {
+	sends, err := liveSends(ctx, l)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (m *Module) SendingDomain(ctx context.Context, s *ent.WorkspaceLocked, doma
 		var sender messaging.EmailSender
 		if send.Integration != nil {
 			if sender = senders[send.Integration.ID]; sender == nil {
-				if sender, err = m.senders.EmailSender(ctx, s.Scope(), send.Integration); err != nil {
+				if sender, err = m.senders.EmailSender(ctx, l.Scope(), send.Integration); err != nil {
 					return err
 				}
 				senders[send.Integration.ID] = sender
@@ -136,12 +136,12 @@ func (m *Module) SendingDomain(ctx context.Context, s *ent.WorkspaceLocked, doma
 }
 
 // liveSends is the Live use that sends (ADR 0099): the Broadcasts' sends, then the Automations'.
-func liveSends(ctx context.Context, s *ent.WorkspaceLocked) ([]liveuse.Send, error) {
-	sent, err := broadcastsuse.LiveSends(ctx, s)
+func liveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveuse.Send, error) {
+	sent, err := broadcastsuse.LiveSends(ctx, l)
 	if err != nil {
 		return nil, err
 	}
-	stepped, err := automationsuse.LiveSends(ctx, s)
+	stepped, err := automationsuse.LiveSends(ctx, l)
 	if err != nil {
 		return nil, err
 	}

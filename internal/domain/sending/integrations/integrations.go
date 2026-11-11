@@ -374,23 +374,14 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	// may change the From its sends go out with, move Live use, which the Removal check of a deletion
 	// reads under the lock. A deletion that holds it first leaves no row to edit.
 	var updated *ent.Integration
+	promote, _ := in.IsDefault.Get()
 	err = m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
-		// Promoting to default touches sibling rows, so it clears the channel's current default
-		// first, in the same transaction as the update.
-		if isDefault, _ := in.IsDefault.Get(); isDefault {
-			if err := clearDefault(ctx, wl, row.Channel, row.ID); err != nil {
-				return err
+		var err error
+		updated, err = saveEdit(ctx, wl, row, promote, func(upd *ent.IntegrationScopedUpdateOne) {
+			applyEdit(upd, in, name, sealed, inb)
+			if tg.connected {
+				upd.SetProviderMaxPerSecond(telegramPerSecond)
 			}
-		}
-		// A Delete that landed meanwhile leaves no row to edit.
-		upd := wl.Integration().UpdateOneID(row.ID).Where(integration.DiscardedAtIsNil())
-		applyEdit(upd, in, name, sealed, inb)
-		if tg.connected {
-			upd.SetProviderMaxPerSecond(telegramPerSecond)
-		}
-		err := constraints.Write(ctx, wl, func() (err error) {
-			updated, err = upd.Save(ctx)
-			return err
 		})
 		if err != nil || sealed == nil {
 			return err
@@ -412,6 +403,26 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		m.release(ctx, updated)
 	}
 	return m.viewOf(ctx, s, updated)
+}
+
+// saveEdit writes an Update to the Integration row: apply sets what it changes and promote makes it
+// its Channel's default. A promotion and a new config move Live use, so it takes the Workspace's
+// lock (ADR 0108). A promotion clears the channel's current default first, in the same transaction.
+// A Delete that landed meanwhile leaves no row to edit (ent's not found).
+func saveEdit(ctx context.Context, wl *ent.WorkspaceLocked, row *ent.Integration, promote bool, apply func(*ent.IntegrationScopedUpdateOne)) (*ent.Integration, error) {
+	if promote {
+		if err := clearDefault(ctx, wl, row.Channel, row.ID); err != nil {
+			return nil, err
+		}
+	}
+	upd := wl.Integration().UpdateOneID(row.ID).Where(integration.DiscardedAtIsNil())
+	apply(upd)
+	var updated *ent.Integration
+	err := constraints.Write(ctx, wl, func() (err error) {
+		updated, err = upd.Save(ctx)
+		return err
+	})
+	return updated, err
 }
 
 // sealEditedConfig validates an edited provider config and seals it, nil when the edit sends
