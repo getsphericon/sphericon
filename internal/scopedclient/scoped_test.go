@@ -33,7 +33,6 @@ func TestScopedOverTransaction(t *testing.T) {
 		// test writes: the scoped wrapper is the subject
 		created, err := tx.Client().Scoped(acme).Tag().Create().
 			SetName("via-tx").
-			AddContactIDs(fixtures.ContactAliceID).
 			Save(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, acme, created.WorkspaceID)
@@ -48,9 +47,9 @@ func TestScopedOverTransaction(t *testing.T) {
 		tx, err := env.DB.Tx(ctx)
 		require.NoError(t, err)
 		// test writes: the scoped wrapper is the subject
-		_, err = tx.Client().Scoped(acme).Tag().Create().
-			SetName("via-tx-bad").
-			AddContactIDs(fixtures.ContactGlobexID).
+		_, err = tx.Client().Scoped(acme).ContactTag().Create().
+			SetContactID(fixtures.ContactGlobexID).
+			SetTagID(fixtures.TagVipID).
 			Save(ctx)
 		require.ErrorIs(t, err, ent.ErrNotInWorkspace)
 		require.NoError(t, tx.Rollback())
@@ -78,7 +77,6 @@ func TestScopedOverEventsBusTx(t *testing.T) {
 		// test writes: the scoped wrapper is the subject
 		_, err := c.Scoped(acme).Tag().Create().
 			SetName("via-bus").
-			AddContactIDs(fixtures.ContactAliceID).
 			Save(ctx)
 		return err
 	})
@@ -89,9 +87,9 @@ func TestScopedOverEventsBusTx(t *testing.T) {
 
 	err = env.Bus.WithinTx(ctx, func(c *ent.Client, _ events.Publisher) error {
 		// test writes: the scoped wrapper is the subject
-		_, err := c.Scoped(acme).Tag().Create().
-			SetName("via-bus-bad").
-			AddContactIDs(fixtures.ContactGlobexID).
+		_, err := c.Scoped(acme).ContactTag().Create().
+			SetContactID(fixtures.ContactGlobexID).
+			SetTagID(fixtures.TagVipID).
 			Save(ctx)
 		return err
 	})
@@ -322,7 +320,7 @@ func TestScopedGroupBy(t *testing.T) {
 func TestScopedNotInWorkspaceIsTyped(t *testing.T) {
 	env := testhelper.Setup(t)
 	// test writes: the scoped wrapper is the subject
-	_, err := env.DB.Scoped(acme).Tag().Create().SetName("x").AddContactIDs(fixtures.ContactGlobexID).Save(t.Context())
+	_, err := env.DB.Scoped(acme).ContactTag().Create().SetContactID(fixtures.ContactGlobexID).SetTagID(fixtures.TagVipID).Save(t.Context())
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ent.ErrNotInWorkspace)
 }

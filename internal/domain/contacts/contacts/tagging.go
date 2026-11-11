@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
@@ -57,9 +58,10 @@ func ApplyTagIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contac
 	if err != nil || has {
 		return t, err
 	}
-	// An update by id moves the Contact's updated_at (TimeMixin's UpdateDefault) in the
-	// same transaction as the join row, so the Contacts Export stream re-delivers it.
-	if err := events.Unaudited(s).Contact().UpdateOneID(contactID).AddTagIDs(t.ID).Exec(ctx); err != nil {
+	if err := s.ContactTag().Create().SetContactID(contactID).SetTagID(t.ID).Exec(ctx); err != nil {
+		return nil, err
+	}
+	if err := touch(ctx, s, contactID); err != nil {
 		return nil, err
 	}
 	return t, publishTagChange(ctx, s, pub, events.NameContactTagged, c, t)
@@ -84,8 +86,10 @@ func RemoveTagIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, conta
 	if err != nil || !has {
 		return err
 	}
-	// Same touch of updated_at as ApplyTagIn, in the same transaction as the join row.
-	if err := events.Unaudited(s).Contact().UpdateOneID(contactID).RemoveTagIDs(t.ID).Exec(ctx); err != nil {
+	if _, err := s.ContactTag().Delete().Where(contacttag.ContactID(contactID), contacttag.TagID(t.ID)).Exec(ctx); err != nil {
+		return err
+	}
+	if err := touch(ctx, s, contactID); err != nil {
 		return err
 	}
 	return publishTagChange(ctx, s, pub, events.NameContactUntagged, c, t)
@@ -135,7 +139,13 @@ func lockTagged(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Conta
 
 // hasTag reports whether the Contact has the Tag.
 func hasTag(ctx context.Context, s *ent.Scoped, contactID, tagID int64) (bool, error) {
-	return s.Tag().Query().Where(tag.ID(tagID), tag.HasContactsWith(contact.ID(contactID))).Exist(ctx)
+	return s.ContactTag().Query().Where(contacttag.ContactID(contactID), contacttag.TagID(tagID)).Exist(ctx)
+}
+
+// touch moves the Contact's updated_at (TimeMixin's UpdateDefault) in the transaction of the
+// change of its join rows, so the Contacts Export stream re-delivers it.
+func touch(ctx context.Context, s *ent.Scoped, contactID int64) error {
+	return events.Unaudited(s).Contact().UpdateOneID(contactID).Exec(ctx)
 }
 
 // publishTagChange records the change of the Contact's Tags as the System event action.

@@ -87,7 +87,7 @@ func uniqueIDs(ids []int64) []int64 {
 	return slices.Compact(s)
 }
 
-{{ range $n := scopedNodes $ }}
+{{ range $n := scopedNodes $ }}{{ if $n.HasOneFieldID }}
 // verify{{ $n.Name }} fails with ErrNotInWorkspace unless every id is a {{ $n.Name }} of the Workspace.
 func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
@@ -103,7 +103,7 @@ func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 	}
 	return nil
 }
-{{ end }}
+{{ end }}{{ end }}
 
 {{ range $n := scopedNodes $ }}
 {{ $N := $n.Name }}
@@ -143,10 +143,12 @@ func (t *{{ $N }}Scoped) QueryArchived() *{{ $N }}Query {
 	return t.QueryWithArchived().Where({{ $P }}.ArchivedAtNotNil())
 }
 {{ end }}
+{{ if $n.HasOneFieldID }}
 // Get returns the {{ $N }} with the id{{ if $D }}, discarded or not{{ end }}{{ if $R }}, archived or not{{ end }}; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
 	return t.Query{{ if $D }}WithDiscarded{{ end }}{{ if $R }}WithArchived{{ end }}().Where({{ $P }}.ID(id)).Only(ctx)
 }
+{{ end }}
 {{ if $R }}
 // Archive stamps archived_at, at `at`, on the kept {{ $N }} with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
@@ -223,6 +225,7 @@ func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, at time.Time, ps
 }
 {{ end }}
 
+{{ if $n.HasOneFieldID }}
 // {{ $N }}ScopedDeleteOne wraps {{ $N }}DeleteOne.
 type {{ $N }}ScopedDeleteOne struct {
 	s *Scoped
@@ -260,6 +263,7 @@ func (x *{{ $N }}ScopedDeleteOne) Exec(ctx context.Context) error {
 	return x.b.Exec(ctx)
 }
 
+{{ end }}
 // {{ $N }}ScopedDelete wraps {{ $N }}Delete.
 type {{ $N }}ScopedDelete struct {
 	s *Scoped
@@ -557,6 +561,7 @@ func (u *{{ $N }}ScopedUpsertOne) Exec(ctx context.Context) error {
 	return u.u.Exec(ctx)
 }
 
+{{ if $n.HasOneFieldID }}
 // ID is like Exec, returning the inserted or updated id.
 func (u *{{ $N }}ScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	if err := u.x.check(ctx); err != nil {
@@ -594,6 +599,7 @@ func (u *{{ $N }}ScopedUpsertOne) audited(ctx context.Context) (int64, error) {
 }
 {{- end }}
 
+{{ end }}
 // {{ $N }}ScopedUpsertBulk is the "upsert" of several {{ $N }} entities.
 type {{ $N }}ScopedUpsertBulk struct {
 	b *{{ $N }}ScopedCreateBulk
@@ -654,6 +660,7 @@ func (u *{{ $N }}ScopedUpsertBulk) Exec(ctx context.Context) error {
 
 // ---------------------------------------------------------------- update
 
+{{ if $n.HasOneFieldID }}
 // {{ $N }}ScopedUpdateOne wraps {{ $N }}UpdateOne. It has no way to move the row to another Workspace.
 type {{ $N }}ScopedUpdateOne struct {
 	s *Scoped
@@ -718,6 +725,7 @@ func (x *{{ $N }}ScopedUpdateOne) Exec(ctx context.Context) error {
 	return err
 }
 
+{{ end }}
 // {{ $N }}ScopedUpdate wraps {{ $N }}Update: a conditional bulk update of one Workspace.
 type {{ $N }}ScopedUpdate struct {
 	s *Scoped
@@ -869,7 +877,9 @@ func (x *{{ $B }}) Clear{{ $f.StructField }}() *{{ $B }} {
 {{ end }}
 
 {{ range $e := $.EdgesWithID }}
-{{- if ne $e.Type.Name "Workspace" }}
+{{- /* A many-to-many edge through a Workspace-owned edge table has no setter: its rows carry
+       workspace_id, which ent's edge setters cannot fill, so they are written as rows of their own. */}}
+{{- if and (ne $e.Type.Name "Workspace") (not (and $e.Through (scopedIs $e.Through))) }}
 {{- if or (not $updater) (scopedEdgeMutable $e) }}
 {{- $op := "add" }}{{ $idsFunc := $e.MutationAdd }}{{ if $e.Unique }}{{ $op = "set" }}{{ $idsFunc = $e.MutationSet }}{{ end }}
 {{- $withSetter := not $e.HasFieldSetter }}

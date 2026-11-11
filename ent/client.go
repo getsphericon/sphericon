@@ -3416,6 +3416,13 @@ func (c *ContactTagClient) Query() *ContactTagQuery {
 	}
 }
 
+// QueryWorkspace queries the workspace edge of a ContactTag.
+func (c *ContactTagClient) QueryWorkspace(_m *ContactTag) *WorkspaceQuery {
+	return c.Query().
+		Where(contacttag.ContactID(_m.ContactID), contacttag.TagID(_m.TagID)).
+		QueryWorkspace()
+}
+
 // QueryContact queries the contact edge of a ContactTag.
 func (c *ContactTagClient) QueryContact(_m *ContactTag) *ContactQuery {
 	return c.Query().
@@ -12482,6 +12489,22 @@ func (c *WorkspaceClient) QueryTags(_m *Workspace) *TagQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, id),
 			sqlgraph.To(tag.Table, tag.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.TagsTable, workspace.TagsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContactTags queries the contact_tags edge of a Workspace.
+func (c *WorkspaceClient) QueryContactTags(_m *Workspace) *ContactTagQuery {
+	query := (&ContactTagClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(contacttag.Table, contacttag.WorkspaceColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactTagsTable, workspace.ContactTagsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

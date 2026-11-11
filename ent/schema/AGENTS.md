@@ -53,6 +53,9 @@
   it references), each foreign key added `NOT VALID` then `VALIDATE`d, and a dropped index last. The index that serves such an edge leads with `workspace_id`:
   `index.Fields("workspace_id", "x_id")`, and a unique key over the edge column starts with
   `workspace_id` too; `check:schema` names an edge without one (`fk-without-index`).
+  An edge table (`Through`) between two Workspace-owned entities carries `WorkspaceMixin` too
+  (`contact_tag.go`), and its rows are written through its scoped client: the many-to-many
+  setters (`AddTagIDs`) cannot fill `workspace_id`.
 - **A rule a schema comment states about its columns is a CHECK.** A table that keeps several kinds
   of row (a Broadcast per channel, an Outbound message per kind) lists which columns each kind owns
   with `variantCheck` (`variant_check.go`), so the database refuses a row that mixes them; a column

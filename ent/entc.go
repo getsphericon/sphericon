@@ -101,11 +101,13 @@ func scopedFuncs() template.FuncMap {
 			log.Fatalf("%s: a Versioned definition needs the versions edge of VersionedMixin, and its version the owner edge of VersionMixin", n.Name)
 			return nil
 		},
-		// scopedEdges lists the edges of n that point at another scoped entity.
+		// scopedEdges lists the edges of n that point at another scoped entity and are set on n's
+		// builders: not a many-to-many edge through a scoped edge table, whose rows are written as
+		// rows of their own.
 		"scopedEdges": func(n *gen.Type) []*gen.Edge {
 			var out []*gen.Edge
 			for _, e := range n.EdgesWithID() {
-				if isScoped(e.Type) {
+				if isScoped(e.Type) && (e.Through == nil || !isScoped(e.Through)) {
 					out = append(out, e)
 				}
 			}

@@ -762,6 +762,7 @@ var (
 	ContactTagsColumns = []*schema.Column{
 		{Name: "contact_id", Type: field.TypeInt64},
 		{Name: "tag_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// ContactTagsTable holds the schema information for the "contact_tags" table.
 	ContactTagsTable = &schema.Table{
@@ -781,12 +782,23 @@ var (
 				RefColumns: []*schema.Column{TagsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
+			{
+				Symbol:     "contact_tags_workspaces_contact_tags",
+				Columns:    []*schema.Column{ContactTagsColumns[2]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "contacttag_tag_id",
+				Name:    "contacttag_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactTagsColumns[1]},
+				Columns: []*schema.Column{ContactTagsColumns[2], ContactTagsColumns[0]},
+			},
+			{
+				Name:    "contacttag_workspace_id_tag_id",
+				Unique:  false,
+				Columns: []*schema.Column{ContactTagsColumns[2], ContactTagsColumns[1]},
 			},
 		},
 	}
@@ -3181,6 +3193,7 @@ func init() {
 	}
 	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable
 	ContactTagsTable.ForeignKeys[1].RefTable = TagsTable
+	ContactTagsTable.ForeignKeys[2].RefTable = WorkspacesTable
 	ContactTagsTable.Annotation = &entsql.Annotation{
 		Table: "contact_tags",
 	}

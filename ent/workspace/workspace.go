@@ -73,6 +73,8 @@ const (
 	EdgeCustomFields = "custom_fields"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
+	// EdgeContactTags holds the string denoting the contact_tags edge name in mutations.
+	EdgeContactTags = "contact_tags"
 	// EdgeSegments holds the string denoting the segments edge name in mutations.
 	EdgeSegments = "segments"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
@@ -176,6 +178,13 @@ const (
 	TagsInverseTable = "tags"
 	// TagsColumn is the table column denoting the tags relation/edge.
 	TagsColumn = "workspace_id"
+	// ContactTagsTable is the table that holds the contact_tags relation/edge.
+	ContactTagsTable = "contact_tags"
+	// ContactTagsInverseTable is the table name for the ContactTag entity.
+	// It exists in this package in order to avoid circular dependency with the "contacttag" package.
+	ContactTagsInverseTable = "contact_tags"
+	// ContactTagsColumn is the table column denoting the contact_tags relation/edge.
+	ContactTagsColumn = "workspace_id"
 	// SegmentsTable is the table that holds the segments relation/edge.
 	SegmentsTable = "segments"
 	// SegmentsInverseTable is the table name for the Segment entity.
@@ -735,6 +744,20 @@ func ByTagsCount(opts ...sql.OrderTermOption) OrderOption {
 func ByTags(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newTagsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByContactTagsCount orders the results by contact_tags count.
+func ByContactTagsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newContactTagsStep(), opts...)
+	}
+}
+
+// ByContactTags orders the results by contact_tags terms.
+func ByContactTags(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactTagsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1316,6 +1339,13 @@ func newTagsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TagsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TagsTable, TagsColumn),
+	)
+}
+func newContactTagsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactTagsInverseTable, ContactTagsColumn),
+		sqlgraph.Edge(sqlgraph.O2M, false, ContactTagsTable, ContactTagsColumn),
 	)
 }
 func newSegmentsStep() *sqlgraph.Step {
