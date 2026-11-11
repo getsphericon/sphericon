@@ -17,93 +17,9 @@ allowBuilds:
   better-sqlite3: true
   esbuild: true
 minimumReleaseAgeExclude:
-  - '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@typescript/native-preview-darwin-x64@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@typescript/native-preview-linux-arm64@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@typescript/native-preview-linux-arm@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@typescript/native-preview-linux-x64@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@typescript/native-preview-win32-arm64@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@typescript/native-preview-win32-x64@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@typescript/native-preview@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@tanstack/query-core@5.101.1 || 5.101.2 || 5.104.4 || 5.104.5 || 5.105.3'
-  - '@tanstack/react-query@5.101.1 || 5.101.2 || 5.104.4 || 5.104.5 || 5.105.3'
-  - '@vitejs/plugin-react@6.0.3'
-  - i18next@26.3.2 || 26.5.2 || 26.5.3 || 26.5.4 || 26.5.6 || 26.5.12 || 27.1.1
-  - playwright-core@1.61.1
-  - playwright@1.61.1
-  - vite@8.1.0 || 8.3.4 || 8.3.5
-  - npm-check-updates@22.2.8
-  - '@types/node@26.1.1 || 26.6.5'
-  - '@typespec/asset-emitter@0.79.3'
-  - '@typespec/compiler@1.17.0'
-  - '@typespec/http@1.17.0'
-  - '@typespec/openapi3@1.17.0'
-  - '@typespec/openapi@1.17.0'
-  - '@typespec/rest@0.87.0'
-  - '@typespec/versioning@0.87.0'
-  - i18next-cli@1.75.1 || 1.75.2 || 1.77.0 || 1.79.1 || 1.80.7 || 1.82.4
-  - knip@6.41.0 || 6.42.1 || 6.45.0
   # Mantine is taken as soon as it is released, without the release-age wait.
   - '@mantine/*'
-  - react-i18next@17.1.0 || 17.1.4 || 17.1.12
-  - '@oxfmt/binding-android-arm-eabi@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-android-arm64@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-darwin-arm64@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-darwin-x64@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-freebsd-x64@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-arm-gnueabihf@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-arm-musleabihf@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-arm64-gnu@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-arm64-musl@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-ppc64-gnu@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-riscv64-gnu@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-riscv64-musl@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-s390x-gnu@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-x64-gnu@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-linux-x64-musl@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-openharmony-arm64@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-win32-arm64-msvc@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-win32-ia32-msvc@0.74.0 || 0.76.0'
-  - '@oxfmt/binding-win32-x64-msvc@0.74.0 || 0.76.0'
-  - '@oxlint/binding-android-arm-eabi@1.89.0 || 1.91.0'
-  - '@oxlint/binding-android-arm64@1.89.0 || 1.91.0'
-  - '@oxlint/binding-darwin-arm64@1.89.0 || 1.91.0'
-  - '@oxlint/binding-darwin-x64@1.89.0 || 1.91.0'
-  - '@oxlint/binding-freebsd-x64@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-arm-gnueabihf@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-arm-musleabihf@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-arm64-gnu@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-arm64-musl@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-ppc64-gnu@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-riscv64-gnu@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-riscv64-musl@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-s390x-gnu@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-x64-gnu@1.89.0 || 1.91.0'
-  - '@oxlint/binding-linux-x64-musl@1.89.0 || 1.91.0'
-  - '@oxlint/binding-openharmony-arm64@1.89.0 || 1.91.0'
-  - '@oxlint/binding-win32-arm64-msvc@1.89.0 || 1.91.0'
-  - '@oxlint/binding-win32-ia32-msvc@1.89.0 || 1.91.0'
-  - '@oxlint/binding-win32-x64-msvc@1.89.0 || 1.91.0'
-  - oxfmt@0.74.0 || 0.76.0
-  - oxlint@1.89.0 || 1.91.0
-  - '@oxlint-tsgolint/darwin-arm64@7.0.2005'
-  - '@oxlint-tsgolint/darwin-x64@7.0.2005'
-  - '@oxlint-tsgolint/linux-arm64@7.0.2005'
-  - '@oxlint-tsgolint/linux-x64@7.0.2005'
-  - '@oxlint-tsgolint/win32-arm64@7.0.2005'
-  - '@oxlint-tsgolint/win32-x64@7.0.2005'
-  - '@size-limit/file@14.3.0'
-  - '@tanstack/react-router@1.170.46'
-  - '@tanstack/router-cli@1.167.46'
-  - '@tanstack/router-core@1.171.39'
-  - '@tanstack/router-generator@1.167.46'
-  - '@tanstack/router-plugin@1.168.48'
-  - oxlint-tsgolint@7.0.2005
-  - size-limit@14.3.0
-  - '@react-email/editor@1.7.18 || 1.7.19 || 1.8.4'
-  - '@tanstack/query-devtools@5.105.3'
-  - '@tanstack/react-query-devtools@5.105.3'
-  - xstate@5.33.4
+  - '@react-email/editor@1.8.4'
   - '@react-email/render@2.3.1'
   - '@sentry/browser-utils@11.12.0'
   - '@sentry/browser@11.12.0'
@@ -112,6 +28,8 @@ minimumReleaseAgeExclude:
   - '@sentry/react@11.12.0'
   - '@sentry/replay-canvas@11.12.0'
   - '@sentry/replay@11.12.0'
+  - i18next@27.1.1
+  - knip@6.45.0
   - libphonenumber-js@1.13.16
   - react-email@6.11.11
 # Transitive dependencies of the build tooling that an advisory has fixed; pnpm picks the fixed
@@ -121,8 +39,6 @@ overrides:
   js-yaml: '>=5.4.1'
   esbuild: '>=0.28.1'
   happy-dom: '>=21.0.4'
-  glob: '>=14.0.2'
-  minimatch: '>=11.0.1'
 permissions:
   '@tanstack/react-router':
     skills: true

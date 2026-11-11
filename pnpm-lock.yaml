@@ -9,8 +9,6 @@ overrides:
   js-yaml: '>=5.4.1'
   esbuild: '>=0.28.1'
   happy-dom: '>=21.0.4'
-  glob: '>=14.0.2'
-  minimatch: '>=11.0.1'
 
 patchedDependencies:
   '@workflowbuilder/sdk@3.0.0': 03f5d7d6efab71694360b8c8eff852e9d3175674b93be4354b7b6dfbc0098012
