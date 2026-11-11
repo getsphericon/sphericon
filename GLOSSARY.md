@@ -338,8 +338,9 @@ _Avoid_: Topic, list, mailing list, subscription group
 A per-(workspace, channel, destination, Sending source) opt-out from marketing — keyed by
 destination, not by Contact, so it survives contact deletion and re-import (the GDPR-erasure
 case: the opt-out is the minimum data retained to honor the refusal; on SMS it keeps the number's
-hash instead of the number once its Contact is erased). Toggleable: a contact can
-resubscribe.
+hash instead of the number once its Contact is erased). Only the person lifts it: from the
+**Preference page** on email and for a Telegram source, by START or `/start` in the Channel for a
+Channel stop. A member, the API and an agent only ever add one.
 Absence means subscribed — there is no positive subscription row and no "subscribed" flag on
 the Contact. The default in-email link unsubscribes from the _sending source_ only;
 "unsubscribe from everything" is a distinct, deliberate action. A bounce or complaint is not
@@ -347,7 +348,7 @@ an Unsubscribe; those are Suppression entries.
 On the other Channels an opt-out the person makes in the Channel itself — a STOP keyword, `/stop`
 or a blocked bot, WhatsApp's stop, an unsubscribe button — has the `everything` scope of that
 Channel, as the law and WhatsApp treat it; a source-scoped opt-out there is only a link to the
-unsubscribe page that the author put into the message. Its reversal (START, a resume, an unblocked
+**Preference page** that the author put into the message. Its reversal (START, a resume, an unblocked
 bot) lifts it.
 On Telegram the Destination is the user's id, so one stop covers every bot of the Workspace, and it
 is recorded with the `telegram.unsubscribed` System event: `/stop`, a STOP keyword (the core's list,
@@ -373,8 +374,8 @@ the opt-out already stands creates no second change or attribution.
 On email the opt-out is offered two ways with **identical scope**: the visible footer link and an RFC 8058
 **one-click** `List-Unsubscribe` header (Broadcast + Automation only, never Transactional — see
 ADR 0012), both carrying the same source-scoped token; a mailbox provider's one-click button never
-reaches the `everything` scope. The endpoint is **method-split for safety**: `GET` renders a
-confirmation page and changes nothing, `POST` performs the opt-out — so link scanners and security
+reaches the `everything` scope. The endpoint is **method-split for safety**: `GET` renders the
+**Preference page** and changes nothing, `POST` performs the opt-out — so link scanners and security
 proxies that GET every email link cannot silently unsubscribe a live subscriber.
 _Avoid_: Opt-out flag, status
 
@@ -392,6 +393,19 @@ The **scope** of an unsubscribe (what the contact is opted out of) is distinct f
 message is attributed to that Broadcast, on any Channel, independently of its scope. Attribution
 requires a link or button on that message: a standalone Channel stop and a provider's refusal of
 a new send are not attributed to the Broadcast attempting that send.
+
+**Preference page**:
+The public page of one Destination on one Channel, reached from the unsubscribe link of a message:
+the Sending sources it received from or is opted out of, `everything`, and its **Engagement
+tracking consent**. From a marketing message, opting out of that message's source comes first.
+Narrowing (an opt-out, a refusal) takes effect from any link however old. Only the person lifts a
+refusal, and widening on the page takes a fresh proof of the address: a link from a message of the
+last 7 days, or else a fresh link sent to it on the same Channel. A return to a
+source records `email.resubscribed` (or `telegram.resubscribed`). On SMS and
+Telegram it shows a **Channel stop** and how to undo it in the Channel. It shows no other address
+of the Contact, and only narrowing once no Contact holds the Destination.
+_Avoid_: Preference center, subscription center, notification center, unsubscribe page,
+confirmation page (a **Confirmation** is consent)
 
 **Channel stop**:
 An opt-out a person makes in the Channel itself: a STOP keyword, `/stop` or a blocked bot, an
@@ -411,7 +425,7 @@ opt-in can be modeled **without** reintroducing a subscription status: the truth
 a mutable flag. Required on SMS and WhatsApp always, and on email only when the workspace's
 **require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds
 the one positive layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a
-confirmation link), `grandfathered` (existing contacts at policy-enablement), `imported`
+confirmation link, or returned from `everything` on the **Preference page** on fresh proof), `grandfathered` (existing contacts at policy-enablement), `imported`
 (asserted through the API or an import from the customer's server, with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
 START sent on the Channel, from an On-site form's prefilled link carrying a Start token too); the strongest provenance wins (`double_opt_in` > `keyword` > `imported` > `grandfathered`): a weaker or equal one never replaces the one that stands. sphericon runs no SMS
 confirmation flow of its own. Confirmed via a signed link whose endpoint
@@ -433,7 +447,7 @@ already recorded of that Destination's messages. Carries **provenance**: `page` 
 the page a message to that Destination links to), `manual` (a member of the Workspace), `imported`
 (the API or an import) or `onsite_form` (a checkbox of an On-site form, with the email consent of
 the same filling). A `denied` applies from any of them; a standing `denied` gives way only to the
-person's `page` or a member's `manual` grant. A `denied` survives **Erasure**, as an Unsubscribe
+person's own `page` grant, never to a member, an import or a form. A `denied` survives **Erasure**, as an Unsubscribe
 does; a `granted` does not.
 _Avoid_: Tracking consent (it does not say which tracking), engagement consent, open tracking
 opt-out, Do Not Track
@@ -775,7 +789,7 @@ _Avoid_: Plain-text email, text template, text version
 A Workspace's visual identity as data — colors, fonts, logo, button style and footer. It sets
 the palette the editor offers and what an agent is told to use. Its values are written into a
 message when the message is authored, so changing the Brand kit never changes a message that is
-already written.
+already written. The **Preference page** reads it live, as the sender's page.
 _Avoid_: Theme, style guide
 
 ### Operational

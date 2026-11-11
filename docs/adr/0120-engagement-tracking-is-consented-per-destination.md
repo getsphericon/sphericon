@@ -4,6 +4,10 @@ status: accepted
 
 # Engagement tracking is consented per Destination, and an untracked message leaves the rates
 
+> **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** the
+> tracking page and its separate footer link are the Preference page, and a standing `denied` gives
+> way only to the person's own grant there, no longer to a member's.
+
 Every Broadcast and Automation email carries an open pixel and rewritten click links, and nobody
 can refuse them: not the recipient, not the Workspace. An SMS Broadcast may keep its links as
 written, but that is the author's switch, not the person's (ADR 0083). The pixel reads the
