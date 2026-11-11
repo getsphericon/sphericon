@@ -61,7 +61,7 @@ func newRoot() *cli.Command {
 
 // onDatabase runs task on the database SPHERICON_DATABASE_URL of this environment points at and logs what
 // it did.
-func onDatabase(ctx context.Context, task func(ctx context.Context, databaseURL string) (string, error)) error {
+func onDatabase(ctx context.Context, task func(ctx context.Context, dsn string) (string, error)) error {
 	envName := os.Getenv("SPHERICON_ENV")
 	if envName == "" {
 		envName = "development"
