@@ -98,6 +98,12 @@ export function daysBefore(day: string, count: number): string {
   return dayjs.utc(day).subtract(count, 'day').format('YYYY-MM-DD')
 }
 
+// The instant count days from now, as an ISO timestamp: the same time of day count calendar days
+// on, in the browser's zone.
+export function daysFromNow(count: number): string {
+  return dayjs().add(count, 'day').toISOString()
+}
+
 // The calendar day ("2026-03-01") the instant falls on in the zone.
 export function dayOf(value: DateInput, timeZone?: string): string {
   return inZone(value, timeZone).format('YYYY-MM-DD')

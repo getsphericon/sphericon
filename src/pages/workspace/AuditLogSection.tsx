@@ -21,6 +21,7 @@ import type { DatesRangeValue } from '@mantine/dates'
 import { useDisclosure } from '@mantine/hooks'
 import { IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { saveAs } from 'file-saver'
 import { Fragment, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -46,7 +47,7 @@ import type {
 import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
 import { useAuditActionLabel } from '../../hooks/useAuditActionLabel.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
-import { useFormat } from '../../hooks/useFormat.ts'
+import { useFormat, useTimeZone } from '../../hooks/useFormat.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
@@ -310,10 +311,11 @@ function AuditPage(props: AuditPageProps) {
 function AuditPageRows({ workspaceId, filter, onFilterChange, cursor, first }: AuditPageProps) {
   const { t } = useTranslation()
   const [showNext, setShowNext] = useState(false)
+  const timeZone = useTimeZone()
   const { items, nextCursor } = useSuspenseQuery(
     siteAuditListOptions({
       path: { workspaceId },
-      query: { ...auditQuery(filter), limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) },
+      query: { ...auditQuery(filter, timeZone), limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) },
     }),
   ).data
 
@@ -375,16 +377,6 @@ function AuditPageRows({ workspaceId, filter, onFilterChange, cursor, first }: A
   )
 }
 
-// saveCsv hands the exported text to the browser as a file download.
-function saveCsv(csv: string, filename: string) {
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-  URL.revokeObjectURL(url)
-}
-
 // AuditExportButton exports the log narrowed by the filter currently applied, so the file
 // matches what the page shows. It renders nothing where the log is not offered (a plain member,
 // or no Enterprise license), so the page can place it beside its title.
@@ -399,14 +391,16 @@ export function AuditExportButton({
   const offered = useAuditLogOffered(workspaceId)
   const notify = useNotify()
   const queryClient = useQueryClient()
+  const timeZone = useTimeZone()
   const exportCsv = useMutation({
     mutationFn: async () =>
       queryClient.query({
-        ...siteAuditExportOptions({ path: { workspaceId }, query: auditQuery(filter) }),
+        ...siteAuditExportOptions({ path: { workspaceId }, query: auditQuery(filter, timeZone) }),
         staleTime: 0,
         gcTime: 0,
       }),
-    onSuccess: (csv) => saveCsv(csv, `audit-log-${workspaceId}.csv`),
+    onSuccess: (csv) =>
+      saveAs(new Blob([csv], { type: 'text/csv' }), `audit-log-${workspaceId}.csv`),
     onError: () =>
       notify({
         color: 'red',
@@ -524,7 +518,9 @@ function PeriodInput({ filter, onFilterChange }: FilterProps) {
     filter.from ?? null,
     filter.to ?? null,
   ])
-  const [today] = useState(() => dayOf(Date.now()))
+  const timeZone = useTimeZone()
+  // The User's today (ADR 0068), whose days the period is read in.
+  const [today] = useState(() => dayOf(Date.now(), timeZone))
 
   return (
     <DatePickerInput

@@ -2,17 +2,19 @@ import { z } from 'zod'
 
 import type { SiteAuditActor } from '../generated/site/types.gen.ts'
 import { zAuditAction, zSiteAuditActorKind } from '../generated/site/zod.gen.ts'
+import { nextDay, startOfDay } from './datetime.ts'
 
 // The Audit log filter lives in the settings route's search, so a Change history link
 // (and a reload) opens the log already narrowed. Every field is optional text; `from`
-// and `to` are calendar dates (YYYY-MM-DD). An actor kind or an action the contract does
-// not know (an old link) is dropped rather than sent.
+// and `to` are calendar days (YYYY-MM-DD). A day that is no calendar day, an actor kind or an
+// action the contract does not know (an old link) is dropped rather than sent.
 // Coerced because the router parses an all-digit value (an id) back to a number.
 const optionalText = z.coerce.string().optional().catch(undefined)
+const optionalDay = z.iso.date().optional().catch(undefined)
 
 export const auditFilterSchema = z.object({
-  from: optionalText,
-  to: optionalText,
+  from: optionalDay,
+  to: optionalDay,
   actorKind: zSiteAuditActorKind.optional().catch(undefined),
   actorId: optionalText,
   action: zAuditAction.optional().catch(undefined),
@@ -28,21 +30,13 @@ export type AuditFilter = z.infer<typeof auditFilterSchema>
 export const AUDIT_TARGET_INTEGRATION = 'integration'
 export const AUDIT_TARGET_WEBHOOK_ENDPOINT = 'webhook_endpoint'
 
-function startOfDay(date: string) {
-  const [year, month, day] = date.split('-').map(Number)
-  return new Date(year ?? 0, (month ?? 1) - 1, day ?? 1)
-}
-
 // auditQuery maps the filter to the API's query: the period's days become an inclusive
-// start and an exclusive end (the start of the day after `to`), in the viewer's timezone.
-export function auditQuery(filter: AuditFilter) {
-  const to = filter.to ? startOfDay(filter.to) : undefined
-  if (to) {
-    to.setDate(to.getDate() + 1)
-  }
+// start and an exclusive end (the start of the day after `to`), in the User time zone
+// (ADR 0068), undefined for the browser's.
+export function auditQuery(filter: AuditFilter, timeZone?: string) {
   return {
-    ...(filter.from ? { from: startOfDay(filter.from).toISOString() } : {}),
-    ...(to ? { to: to.toISOString() } : {}),
+    ...(filter.from ? { from: startOfDay(filter.from, timeZone) } : {}),
+    ...(filter.to ? { to: startOfDay(nextDay(filter.to), timeZone) } : {}),
     ...(filter.actorKind ? { actorKind: filter.actorKind } : {}),
     ...(filter.actorId ? { actorId: filter.actorId } : {}),
     ...(filter.action ? { action: filter.action } : {}),

@@ -3,6 +3,7 @@ import {
   formatDateTime as formatDateTimeIn,
   formatLongDate as formatLongDateIn,
 } from '../utils/datetime.ts'
+import { formatNumber as formatNumberIn } from '../utils/number.ts'
 import { formatPercent as formatPercentIn } from '../utils/percent.ts'
 
 // The Staff console has no signed-in User's Regional format to follow (#1010): it keeps the
@@ -15,6 +16,10 @@ export function formatDateTime(value: Parameters<typeof formatDateTimeIn>[0]): s
 
 export function formatLongDate(value: Parameters<typeof formatLongDateIn>[0]): string {
   return formatLongDateIn(value, resolveLocale())
+}
+
+export function formatNumber(value: number): string {
+  return formatNumberIn(value, resolveLocale())
 }
 
 export function formatPercent(rate: number): string {

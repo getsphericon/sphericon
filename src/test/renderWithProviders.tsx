@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { render } from 'vitest-browser-react'
 
 import { NotificationsProvider } from '../components/NotificationsProvider.tsx'
+import { RegionalNumberInputs } from '../components/RegionalNumberInputs.tsx'
 import { theme } from '../theme.tsx'
 import { trackQueryClient } from './queryClients.ts'
 
@@ -31,9 +32,11 @@ export async function renderWithProviders(ui: ReactNode) {
     return (
       <QueryClientProvider client={queryClient}>
         <MantineProvider theme={theme} env="test">
-          <ModalsProvider>
-            <NotificationsProvider>{children}</NotificationsProvider>
-          </ModalsProvider>
+          <RegionalNumberInputs>
+            <ModalsProvider>
+              <NotificationsProvider>{children}</NotificationsProvider>
+            </ModalsProvider>
+          </RegionalNumberInputs>
         </MantineProvider>
       </QueryClientProvider>
     )

@@ -22,8 +22,16 @@ test('turns the period days into an inclusive start and an exclusive end', () =>
   expect(query.to).toBe(new Date(2026, 3, 1).toISOString())
 })
 
-test('a day missing its month and day starts on the first of the year', () => {
-  expect(auditQuery({ from: '2026' }).from).toBe(new Date(2026, 0, 1).toISOString())
+test('reads the period days in the User time zone', () => {
+  const query = auditQuery({ from: '2026-03-01', to: '2026-03-31' }, 'Asia/Tokyo')
+  expect(query).toEqual({ from: '2026-02-28T15:00:00.000Z', to: '2026-03-31T15:00:00.000Z' })
+})
+
+test('drops a period day that is no calendar day', () => {
+  expect(auditFilterSchema.parse({ from: '2026', to: 'yesterday' })).toEqual({
+    from: undefined,
+    to: undefined,
+  })
 })
 
 test('passes every other field through', () => {

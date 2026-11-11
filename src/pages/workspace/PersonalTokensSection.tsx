@@ -36,6 +36,7 @@ import type {
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { daysFromNow } from '../../utils/datetime.ts'
 import { can } from '../../utils/permissions.ts'
 import { ScopePicker } from './ScopePicker.tsx'
 
@@ -43,13 +44,9 @@ import { ScopePicker } from './ScopePicker.tsx'
 const LIFETIMES = ['never', '30', '90', '365'] as const
 type Lifetime = (typeof LIFETIMES)[number]
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
 // expiryOf is the expiry a lifetime gives a token minted now, or null for none.
 function expiryOf(lifetime: Lifetime): string | null {
-  return lifetime === 'never'
-    ? null
-    : new Date(Date.now() + Number(lifetime) * DAY_MS).toISOString()
+  return lifetime === 'never' ? null : daysFromNow(Number(lifetime))
 }
 
 // PersonalTokensTable lists the tokens; the section's boundary shows the load and its failure.
