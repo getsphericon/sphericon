@@ -47,8 +47,10 @@ permissions:
   react-querybuilder:
     skills: true
 # Where pnpm links the approved packages' skills: the directory mise links its tools' skills into
-# (.claude/skills links to it). Named here, since pnpm finds no directory of its own on a
-# machine where neither an agent runs nor mise has linked one yet (CI with a warm tool cache).
+# (.claude/skills links to it), and only there. Unset, pnpm links into every `.<name>/skills` of
+# the root and creates the directory of the agent that runs it, so under Claude Code a checkout
+# without the link would get a .claude/skills directory of its own; named, it is created if
+# missing.
 skills:
   dirs:
     - .agents/skills

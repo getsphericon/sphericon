@@ -99,8 +99,11 @@ run = '''
 set -euo pipefail
 # A server answering at PGHOST:PGPORT is used as is: that is the no-op case, an external
 # Postgres (SPHERICON_PG_*), and what makes concurrent callers safe. Otherwise the primary
-# checkout's daemon is started (pitchfork treats a start of a running or starting daemon as
-# done), and we wait for the port.
+# checkout's daemon is started, and we wait for the port ourselves. A pitchfork 2.34 supervisor
+# makes a start that finds the daemon still in its ready check (the preset's pg_isready) wait for
+# that check and return its result (jdx/pitchfork#1108); an older one answers "already running"
+# at once. The supervisor is shared by every project and outlives an upgrade of the CLI, so an
+# older one may still be serving: the loop stays until no such supervisor can be running.
 if ! nc -z "$PGHOST" "$PGPORT" 2>/dev/null; then
   case "$PGHOST" in
     127.0.0.1|localhost) ;;
