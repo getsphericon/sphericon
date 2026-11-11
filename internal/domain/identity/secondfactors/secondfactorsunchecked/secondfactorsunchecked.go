@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // ResetIn clears the User's Second factor (a pending enrollment included) and Recovery codes on the
@@ -29,7 +30,7 @@ func ResetIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, erro
 	}
 	user := before.User
 	reset := secondfactors.Change{Trigger: secondfactors.FactorReset}
-	machine := secondfactors.Machine(before.Factor, reset, func(ctx context.Context, _ secondfactors.State) (bool, error) {
+	machine := secondfactors.Machine(before.Factor, reset, lifecycle.Storage[secondfactors.State]{Write: func(ctx context.Context, _, _ secondfactors.State) (bool, error) {
 		saved, bumped, err := users.BumpSessionEpochFromIn(ctx, tx, before.User)
 		if err != nil || !bumped {
 			return false, err
@@ -44,7 +45,7 @@ func ResetIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, erro
 			ClearSecretEncrypted().ClearConfirmedAt().SetLastStep(0).
 			Save(ctx)
 		return n == 1, err
-	})
+	}})
 	if err := machine.FireCtx(ctx, reset.Trigger); err != nil {
 		return nil, err
 	}

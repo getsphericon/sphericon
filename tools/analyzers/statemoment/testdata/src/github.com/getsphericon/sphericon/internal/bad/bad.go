@@ -5,41 +5,66 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
-func chain(ctx context.Context, c *ent.Client) error {
-	return c.SendingDomain().SetVerifiedAt(time.Now()).Exec(ctx) // want `rule 7: SetVerifiedAt writes a state moment without a condition on the state it leaves`
+// A machine field written by a bare update, fenced or not, skips the machine's table.
+func bareMachine(ctx context.Context, c *ent.Client) error {
+	_, err := c.SendingDomain().Where(ent.Predicate{}).SetVerifiedAt(time.Now()).Save(ctx) // want `rule 7: SetVerifiedAt writes the machine field SendingDomain.VerifiedAt outside a lifecycle.Storage Write`
+	return err
 }
 
-func viaVariable(ctx context.Context, c *ent.Client, lost bool) error {
-	upd := c.SendingDomain().SetLastCheckedAt(time.Now())
-	if lost {
-		upd.SetVerificationLostAt(time.Now()) // want `rule 7: SetVerificationLostAt writes a state moment without a condition on the state it leaves`
+func scopedMachine(c *ent.Client) {
+	c.ScopedSendingDomain().SetVerifiedAt(time.Now()) // want `rule 7: SetVerifiedAt writes the machine field SendingDomain.VerifiedAt outside`
+}
+
+func upsertMachine(c *ent.Client) {
+	c.SendingDomainUpsert().UpdateVerifiedAt() // want `rule 7: UpdateVerifiedAt writes the machine field SendingDomain.VerifiedAt outside`
+}
+
+// A method value escapes the check no more than a call.
+func methodValue(c *ent.Client, apply func(func(time.Time) *ent.SendingDomainUpdateOne)) {
+	apply(c.SendingDomain().SetVerifiedAt) // want `rule 7: SetVerifiedAt writes the machine field`
+}
+
+// Inside the storage, the write is still the compare-and-swap on the state it leaves.
+func unfencedWrite(c *ent.Client) lifecycle.Storage[bool] {
+	return lifecycle.Storage[bool]{
+		Write: func(ctx context.Context, _, _ bool) (bool, error) {
+			n, err := c.SendingDomain().ClearVerifiedAt().Save(ctx) // want `rule 7: ClearVerifiedAt writes the machine field SendingDomain.VerifiedAt without a condition`
+			return n == 1, err
+		},
 	}
-	return upd.Exec(ctx)
 }
 
-func scoped(ctx context.Context, c *ent.Client) error {
-	return c.ScopedSendingDomain().SetVerificationLostAt(time.Now()).Exec(ctx) // want `rule 7: SetVerificationLostAt writes a state moment`
+// A machine's field in a latch is still outside its machine.
+func machineInLatch(ctx context.Context, c *ent.Client) error {
+	return lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := c.SendingDomain().Where(ent.Predicate{}).SetVerifiedAt(time.Now()).Save(ctx) // want `rule 7: SetVerifiedAt writes the machine field`
+		return n == 1, err
+	})
 }
 
-func webhook(c *ent.Client) {
-	c.WebhookEndpoint().SetDisabledAt(time.Now()) // want `rule 7: SetDisabledAt writes a state moment`
+func bareLatch(ctx context.Context, c *ent.Client) error {
+	_, err := c.Invitation().Where(invitation.AcceptedAtIsNil()).SetAcceptedAt(time.Now()).Save(ctx) // want `rule 7: SetAcceptedAt writes the latch Invitation.AcceptedAt outside lifecycle.Latch`
+	return err
 }
 
-func join(c *ent.Client) {
-	c.JoinDomain().ClearVerifiedAt() // want `rule 7: ClearVerifiedAt writes a state moment`
+func latchWithoutCondition(ctx context.Context, c *ent.Client) error {
+	return lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := c.Invitation().Where(invitation.ID(1)).SetAcceptedAt(time.Now()).Save(ctx) // want `rule 7: SetAcceptedAt writes the latch Invitation.AcceptedAt without AcceptedAtIsNil\(\) in its condition`
+		return n == 1, err
+	})
 }
 
-func usage(c *ent.Client) {
-	c.Usage().SetFinalizedAt(time.Now()) // want `rule 7: SetFinalizedAt writes a state moment`
+func clearLatch(ctx context.Context, c *ent.Client) error {
+	return lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := c.Invitation().Where(invitation.AcceptedAtIsNil()).ClearAcceptedAt().Save(ctx) // want `rule 7: ClearAcceptedAt clears the latch Invitation.AcceptedAt, and a latch is never cleared`
+		return n == 1, err
+	})
 }
 
-func usageNillable(c *ent.Client, at *time.Time) {
-	c.Usage().SetNillableFinalizedAt(at) // want `rule 7: SetNillableFinalizedAt writes a state moment`
-}
-
-func quota(c *ent.Client) {
-	c.Integration().SetProviderQuotaFailedAt(time.Now()) // want `rule 7: SetProviderQuotaFailedAt writes a state moment`
-	c.Integration().ClearProviderQuotaFailedAt()         // want `rule 7: ClearProviderQuotaFailedAt writes a state moment`
+func nillableLatch(c *ent.Client, at *time.Time) {
+	c.Invitation().SetNillableAcceptedAt(at) // want `rule 7: SetNillableAcceptedAt writes the latch`
 }

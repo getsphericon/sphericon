@@ -45,7 +45,8 @@ func (AuthAttempt) Fields() []ent.Field {
 		field.Int("failures").
 			Default(0),
 		// The most recent failure: the window and the delay are measured from it.
-		field.Time("last_attempt_at"),
+		field.Time("last_attempt_at").
+			Annotations(Attribute(reasonLatest)),
 	}
 }
 

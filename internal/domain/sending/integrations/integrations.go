@@ -386,6 +386,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if err != nil || sealed == nil {
 			return err
 		}
+		// The provider's refusal of the old credentials goes with them.
+		if err := renewCredentials(ctx, ts, updated); err != nil {
+			return err
+		}
+		if updated, err = ts.Integration().Get(ctx, row.ID); err != nil {
+			return err
+		}
 		// New credentials or endpoint: what the provider allows may have changed.
 		return m.discoverQuota(ctx, q, updated)
 	})
@@ -436,8 +443,8 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	if sealed != nil {
 		// The account's standing was read with the old credentials, which may name another
 		// account: it goes until the read the save schedules, so a failed one holds nothing. The
-		// provider's refusal of the old credentials goes with them: new ones are tried at the next send.
-		upd.SetConfigEncrypted(*sealed).ClearProviderEnforcement().ClearProviderRefusedAt().SetProviderSandbox(false)
+		// provider's refusal of the old credentials is lifted after the save (renewCredentials).
+		upd.SetConfigEncrypted(*sealed).ClearProviderEnforcement().SetProviderSandbox(false)
 	}
 	if inb.apply {
 		if inb.preset == nil {

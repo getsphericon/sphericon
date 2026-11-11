@@ -46,6 +46,7 @@ func (Membership) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.Time("second_factor_reminded_at").
+			Annotations(Attribute("when the last reminder went out; the reminder job claims a send by its value")).
 			Optional().
 			Nillable(),
 	}

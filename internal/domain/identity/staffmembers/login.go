@@ -216,9 +216,8 @@ func (m *Module) verify(ctx context.Context, tx *ent.Tx, id int64, held, code st
 	if !ok {
 		return login.CodeWrong, nil
 	}
-	upd := tx.StaffMember.UpdateOneID(id).SetTotpLastStep(step)
 	if !Enrolled(op) {
-		upd = upd.SetTotpConfirmedAt(m.now()).AddSessionEpoch(1)
+		return login.CodeAccepted, m.confirmEnrolment(ctx, tx, op, step)
 	}
-	return login.CodeAccepted, upd.Exec(ctx)
+	return login.CodeAccepted, tx.StaffMember.UpdateOneID(id).SetTotpLastStep(step).Exec(ctx)
 }

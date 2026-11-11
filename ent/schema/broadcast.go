@@ -81,6 +81,7 @@ func (Broadcast) Fields() []ent.Field {
 			Optional(),
 		// Only a Telegram Broadcast reads it; an email Broadcast keeps the default.
 		field.Bool("link_preview").
+			Annotations(Attribute(reasonSetting)).
 			Default(true),
 		field.String("unsubscribe_button").
 			Optional().
@@ -88,6 +89,7 @@ func (Broadcast) Fields() []ent.Field {
 		// Whether the links of an SMS Broadcast's text go out as short tracked links (ADR 0083). Only
 		// an SMS Broadcast reads it; any other keeps the default.
 		field.Bool("link_tracking").
+			Annotations(Attribute(reasonSetting)).
 			Default(true),
 		// Email-ready HTML with Liquid merge tags (ADR 0040).
 		field.String("body").
@@ -119,17 +121,21 @@ func (Broadcast) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.Enum("status").
+			Annotations(Machine()).
 			Values("draft", "scheduled", "sending", "sent", "failed").
 			Default("draft"),
 		field.Time("scheduled_at").
+			Annotations(Attribute("the planned send time, written with its status by its machine")).
 			Optional().
 			Nillable(),
 		field.Time("sent_at").
+			Annotations(Attribute(reasonWithStatus)).
 			Optional().
 			Nillable(),
 		// When the Broadcast failed, set in the write that moves it to failed: Needs attention
 		// reads a recent failure from it, so a later edit of the row does not move its age.
 		field.Time("failed_at").
+			Annotations(Attribute(reasonWithStatus)).
 			Optional().
 			Nillable(),
 		// No delivery figures are stored: they are derived from the recipients and their
@@ -149,6 +155,7 @@ func (Broadcast) Fields() []ent.Field {
 		// derived from this and the recipients still pending. Nil when the plan was not
 		// paced (no Provider limit).
 		field.Time("last_scheduled_at").
+			Annotations(Attribute("the planner's bookkeeping of the last occurrence it scheduled")).
 			Optional().
 			Nillable(),
 	}

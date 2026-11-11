@@ -14,14 +14,14 @@ import (
 )
 
 // The Owner invariant of a Role (GLOSSARY "Role"): a Workspace always keeps at least one owner,
-// refused with ErrDemoteLastOwner or ErrRemoveLastOwner (422). Granting the owner Role and
-// changing or removing an owner's Membership need the Permission owners:manage (ADR 0061),
-// refused as Require refuses it (403).
+// refused with ErrDemoteLastOwner or ErrRemoveLastOwner (409: the Workspace's state refuses it).
+// Granting the owner Role and changing or removing an owner's Membership need the Permission
+// owners:manage (ADR 0061), refused as Require refuses it (403).
 var (
 	// ErrDemoteLastOwner refuses giving the last owner another Role, on the role field.
-	ErrDemoteLastOwner = validation.RefuseField("role", "memberships: cannot demote the last owner", i18n.ErrorsKeepOneOwner)
+	ErrDemoteLastOwner = validation.ConflictField("role", "memberships: cannot demote the last owner", i18n.ErrorsKeepOneOwner)
 	// ErrRemoveLastOwner refuses removing the last owner's Membership, on the member it names.
-	ErrRemoveLastOwner = validation.RefuseField("member", "memberships: cannot remove the last owner", i18n.ErrorsKeepOneOwner)
+	ErrRemoveLastOwner = validation.ConflictField("member", "memberships: cannot remove the last owner", i18n.ErrorsKeepOneOwner)
 	// ErrMemberNotFound means no Membership of that id is in the Workspace.
 	ErrMemberNotFound = validation.NotFound("memberships: member not found", i18n.ErrorsMemberNotFound)
 )
@@ -86,7 +86,7 @@ func (ms *Module) Remove(ctx context.Context, s *ent.Scoped, actor events.Actor,
 
 // ErrOnlyOwnerLeaves refuses the only Owner leaving the Workspace (Leaving, ADR 0050): they make
 // another member an Owner or delete the Workspace first.
-var ErrOnlyOwnerLeaves = validation.RefuseField("workspace", "memberships: the only owner cannot leave", i18n.ErrorsLeaveOnlyOwner)
+var ErrOnlyOwnerLeaves = validation.ConflictField("workspace", "memberships: the only owner cannot leave", i18n.ErrorsLeaveOnlyOwner)
 
 // Leave removes User userID's own Membership in the Workspace s (Leaving, ADR 0050) in a
 // transaction of its own. See LeaveIn for the rules; the only Owner is refused with

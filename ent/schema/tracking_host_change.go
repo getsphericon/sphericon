@@ -45,6 +45,7 @@ func (TrackingHostChange) Fields() []ent.Field {
 			Immutable(),
 		// The state the host entered, or removed when it left dns_verified and serving.
 		field.Enum("state").
+			Annotations(Attribute(reasonFact)).
 			Values("dns_verified", "serving", "removed").
 			Immutable(),
 	}

@@ -176,10 +176,18 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
 	var claimed *ent.Broadcast
 	err := m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
-		if err := m.notArchived(ctx, ts, id); err != nil {
-			return err
+		// The move lands only on a Broadcast that is not archived (ADR 0109); a refused one that is
+		// archived is ErrArchived.
+		unarchived := func(u *ent.BroadcastScopedUpdate) {
+			u.Where(broadcast.ArchivedAtIsNil())
+			if set != nil {
+				set(u)
+			}
 		}
-		if err := fire(ctx, ts, id, t, set); err != nil {
+		if err := fire(ctx, ts, id, t, unarchived); err != nil {
+			if refusal := m.notArchived(ctx, ts, id); refusal != nil {
+				return refusal
+			}
 			return notSendable(err)
 		}
 		var err error
@@ -208,7 +216,7 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 var (
 	// ErrNotDraft: the Broadcast is past draft (scheduled, sending, sent, failed) and
 	// can no longer be edited or re-targeted through the authoring surface.
-	ErrNotDraft = validation.Refuse("broadcasts: broadcast is not a draft", i18n.ErrorsBroadcastNotDraft)
+	ErrNotDraft = validation.Conflict("broadcasts: broadcast is not a draft", i18n.ErrorsBroadcastNotDraft)
 	// ErrSegmentNotFound: the Segment does not exist in this Workspace.
 	ErrSegmentNotFound = validation.Refuse("broadcasts: segment not found", i18n.ErrorsBroadcastSegmentNotFound)
 	// ErrSegmentArchived: a draft leaving draft, or a write that sets the Segment, names an archived

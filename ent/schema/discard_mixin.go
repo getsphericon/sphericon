@@ -18,13 +18,25 @@ import (
 //
 // A unique index on a discardable entity MUST be partial,
 // entsql.IndexWhere("discarded_at IS NULL"): otherwise a discarded row holds the name for ever.
+//
+// discarded_at is a latch (ADR 0109): the generated Discard stamps it once, conditioned on its being
+// null, and nothing clears it. The Workspace's is a machine instead, its deletion cycle (ADR 0043), so
+// it passes Restorable.
 type DiscardMixin struct {
 	mixin.Schema
+
+	// Restorable marks the one discardable entity that comes back within its window, the Workspace.
+	Restorable bool
 }
 
-func (DiscardMixin) Fields() []ent.Field {
+func (m DiscardMixin) Fields() []ent.Field {
+	form := Latch()
+	if m.Restorable {
+		form = Machine()
+	}
 	return []ent.Field{
 		field.Time("discarded_at").
+			Annotations(form).
 			Optional().
 			Nillable(),
 	}

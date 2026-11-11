@@ -38,9 +38,10 @@ transaction, together with jobs for independent work. River runs those jobs afte
 consumers handle retries and repeated delivery. A failed transaction leaves no queued work.
 Retained report inputs can be replayed without republishing the original fact.
 
-The schema distinguishes state machines, one-way latches and ordinary attributes. The owner
-declares legal transitions. Conditional writes reject stale changes;
-locks coordinate invariants across rows. Saving a draft, publishing it and archiving it are separate
+The schema declares each state field a machine, a one-way latch or an ordinary attribute
+(`schema.State`, ADR 0109), and the `statemoment` analyzer holds every write of a machine or a latch
+to the `lifecycle` primitives. The owner declares legal transitions. Conditional writes reject stale
+changes, an archived row's included; locks coordinate invariants across rows and Live use. Saving a draft, publishing it and archiving it are separate
 operations, and work already started keeps its version.
 
 ## Contracts, frontend and tests

@@ -68,13 +68,15 @@ func lastStep(f *ent.SecondFactor) int64 {
 }
 
 // Machine declares the entire lifecycle of the factor row before (nil for a User who never
-// enrolled). Fire change.Trigger once in the transaction of write. Internal transitions call write
-// explicitly: stateless does not call its storage mutator for them. Reset from none also fences
-// removal of the User's Passkeys; the reset use case checks that there is something to reset.
-func Machine(before *ent.SecondFactor, change Change, write func(context.Context, State) (bool, error)) *stateless.StateMachine {
+// enrolled). Fire change.Trigger once in the transaction of storage. storage.Write is the
+// compare-and-swap of the factor row (ADR 0109); its Read is not called, since the machine reads
+// the state of before. Internal transitions call Write explicitly: stateless does not call its
+// storage mutator for them. Reset from none also fences removal of the User's Passkeys; the reset
+// use case checks that there is something to reset.
+func Machine(before *ent.SecondFactor, change Change, storage lifecycle.Storage[State]) *stateless.StateMachine {
 	current := stateOf(before)
 	persist := func(ctx context.Context, to State) (bool, error) {
-		swapped, err := write(ctx, to)
+		swapped, err := storage.Write(ctx, current, to)
 		if err == nil && swapped {
 			current = to
 		}
@@ -152,7 +154,7 @@ var errResetUnchecked = errors.New("secondfactors: a reset is written by secondf
 // The caller writes Recovery codes and audit/outbox entries on tx after this move.
 func move(ctx context.Context, tx *ent.Client, before Snapshot, change Change) (Moved, error) {
 	out := Moved(before)
-	machine := Machine(before.Factor, change, func(ctx context.Context, _ State) (bool, error) {
+	machine := Machine(before.Factor, change, lifecycle.Storage[State]{Write: func(ctx context.Context, _, _ State) (bool, error) {
 		if endsSessions(change.Trigger) {
 			saved, bumped, err := users.BumpSessionEpochFromIn(ctx, tx, before.User)
 			if err != nil || !bumped {
@@ -191,7 +193,7 @@ func move(ctx context.Context, tx *ent.Client, before Snapshot, change Change) (
 		}
 		out.Factor = saved
 		return err == nil, err
-	})
+	}})
 	if err := machine.FireCtx(ctx, change.Trigger); err != nil {
 		return Moved{}, err
 	}

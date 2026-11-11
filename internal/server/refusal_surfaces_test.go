@@ -178,7 +178,7 @@ func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 			want:   `{"status":404,"title":"Not Found","detail":"template not found"}`,
 		},
 		{
-			name: "refused",
+			name: "in conflict with its state",
 			site: func(ctx context.Context, c *siteapi.Client) error {
 				_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName("x")},
 					siteapi.SiteBroadcastsUpdateParams{WorkspaceId: ws, ID: fixtures.BroadcastSentID})
@@ -189,8 +189,8 @@ func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 					externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastSentID})
 				return err
 			},
-			status: http.StatusUnprocessableEntity,
-			want:   `{"status":422,"title":"Unprocessable Entity","detail":"only draft broadcasts can be changed"}`,
+			status: http.StatusConflict,
+			want:   `{"status":409,"title":"Conflict","detail":"only draft broadcasts can be changed"}`,
 		},
 		{
 			name: "refused with a detail",

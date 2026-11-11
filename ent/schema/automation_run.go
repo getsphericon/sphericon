@@ -45,12 +45,14 @@ func (AutomationRun) Fields() []ent.Field {
 		// event mid-run) — distinct from completing the sequence. goal_reached: the Contact
 		// did what the Automation was for (its goal event) before the steps ran out.
 		field.Enum("status").
+			Annotations(Machine()).
 			Values("active", "completed", "failed", "exited", "goal_reached").
 			Default("active"),
 		// When the Enrollment began (#751): the occurred_at of the Event that triggered it, or of
 		// the Event a Rule fired on when a Rule's Action enrolled. An exit or goal Event ends it
 		// only when it occurred at this moment or later, so loaded or late history does not.
 		field.Time("began_at").
+			Annotations(Attribute(reasonWithStatus)).
 			Default(time.Now).
 			Immutable().
 			Annotations(entsql.Default("CURRENT_TIMESTAMP")),
@@ -74,12 +76,14 @@ func (AutomationRun) Fields() []ent.Field {
 		// unsubscribe ends it at its caller's clock. Null while it is active. The Automation report
 		// counts an outcome on the Report day of this moment and measures a duration from began_at.
 		field.Time("ended_at").
+			Annotations(Attribute(reasonWithStatus)).
 			Optional().
 			Nillable(),
 		field.Int("current_step").
 			Default(0).
 			NonNegative(),
 		field.Time("resume_at").
+			Annotations(Attribute("the wake-up time of a waiting run, written with its status by its machine")).
 			Optional().
 			Nillable(),
 		// Why a failed enrollment failed, set by an HTTP step (ADR 0039): the closed error

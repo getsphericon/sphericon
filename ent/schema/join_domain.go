@@ -49,6 +49,7 @@ func (JoinDomain) Fields() []ent.Field {
 			Annotations(State{Form: FormMachine}),
 		// When the TXT record was most recently checked (nil = never checked yet).
 		field.Time("last_checked_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 	}

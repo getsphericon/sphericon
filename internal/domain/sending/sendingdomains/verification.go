@@ -2,6 +2,7 @@ package sendingdomains
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"strings"
 	"time"
@@ -10,8 +11,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // Verify runs the live DNS check of the domain now, when a person asks for it, and returns the
@@ -96,27 +97,27 @@ func (m *Module) checkDMARC(ctx context.Context, s *ent.Scoped, dom *ent.Sending
 // ADR 0105): s and pub are the transaction's. A check's outcome is not an edit by whoever asked
 // for it: the write is left out of the Audit log (events.Unaudited), as is recordDMARC's.
 func recordDKIM(ctx context.Context, s *ent.Scoped, pub events.Publisher, dom *ent.SendingDomain, verified bool, now time.Time) (lost bool, err error) {
-	was := dkimstate.Is(dom)
-	upd := events.Unaudited(s).SendingDomain().UpdateOneID(dom.ID).
-		Where(sendingdomain.DiscardedAtIsNil()).
-		SetLastCheckedAt(now)
-	if verified != was {
-		// Compare-and-swap on the state the check read: the write lands only while the row
-		// still is in it, so the Owners are told once per loss.
-		if was {
-			upd.Where(dkimstate.Verified()).SetVerificationLostAt(now)
-		} else {
-			upd.Where(sendingdomain.Not(dkimstate.Verified())).SetVerifiedAt(now).ClearVerificationLostAt()
-		}
+	s = events.Unaudited(s)
+	trigger := DKIMMissing
+	if verified {
+		trigger = DKIMFound
 	}
-	if err := upd.Exec(ctx); err != nil {
-		if ent.IsNotFound(err) {
-			// Lost the swap (or the domain is deleted or gone): the stored state is the answer.
-			return false, nil
-		}
+	moved, err := moveDKIM(ctx, s, dom, trigger, now, func(u *ent.SendingDomainScopedUpdate) { u.SetLastCheckedAt(now) })
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		// Lost the swap: another check moved the domain, its selector or key moved, or it is
+		// deleted or gone. The stored state is the answer.
+		return false, nil
+	}
+	if err != nil {
 		return false, err
 	}
-	if !was || verified {
+	if !moved {
+		// The check found what the state says: only the check time moves, while the domain is
+		// still the one the check judged.
+		_, err := s.SendingDomain().Update().Where(asJudged(dom)...).SetLastCheckedAt(now).Save(ctx)
+		return false, err
+	}
+	if DKIMStateOf(dom) != DKIMVerified {
 		return false, nil
 	}
 	return true, pub.Publish(ctx, &events.SendingDomainVerificationLost{

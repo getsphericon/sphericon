@@ -49,6 +49,7 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		// Written by an owner or by the delivery worker, so a write is a compare-and-swap
 		// on nil.
 		field.Time("disabled_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		// An explicit owner enable starts a new health generation. A delivery loaded before
@@ -77,6 +78,7 @@ func (WebhookEndpoint) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.Time("last_failure_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// Why the endpoint is off (ADR 0039): an owner turned it off, the receiver answered 410,

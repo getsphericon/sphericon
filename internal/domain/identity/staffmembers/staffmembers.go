@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -164,20 +165,28 @@ func (m *Module) EndSessions(ctx context.Context, id int64) error {
 // ResetTOTP is the only way a lost TOTP is reset (`sphericon staff reset-totp`, no
 // web flow exists): it clears the secret and its confirmation, bumps the session epoch
 // (which ends every session and kills any live challenge) and leaves the Staff member to
-// re-enrol at next login. ErrNotFound for an unknown email.
+// re-enrol at next login. ErrNotFound for an unknown email; lifecycle.ErrInvalidTransition when a
+// login confirmed or a reset changed the enrolment between the read and the write.
 func (m *Module) ResetTOTP(ctx context.Context, email string) error {
-	n, err := m.ent.StaffMember.Update().
-		Where(entstaffmember.Email(emailcase.Of(email))).
-		SetTotpSecretEncrypted("").
-		ClearTotpConfirmedAt().
-		SetTotpLastStep(0).
-		AddSessionEpoch(1).
-		Save(ctx)
+	op, err := m.ent.StaffMember.Query().Where(entstaffmember.Email(emailcase.Of(email))).Only(ctx)
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
 	if err != nil {
 		return err
 	}
-	if n == 0 {
-		return ErrNotFound
-	}
-	return nil
+	machine := enrolmentMachine(lifecycle.Storage[enrolment]{
+		Read: func(context.Context) (enrolment, error) { return enrolmentOf(op), nil },
+		Write: func(ctx context.Context, from, _ enrolment) (bool, error) {
+			n, err := m.ent.StaffMember.Update().
+				Where(entstaffmember.ID(op.ID), enrolledAs(from)).
+				SetTotpSecretEncrypted("").
+				ClearTotpConfirmedAt().
+				SetTotpLastStep(0).
+				AddSessionEpoch(1).
+				Save(ctx)
+			return n == 1, err
+		},
+	})
+	return machine.FireCtx(ctx, triggerReset)
 }

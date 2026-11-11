@@ -19,6 +19,7 @@ package apitokens
 import (
 	"context"
 	"crypto/subtle"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -177,17 +179,17 @@ func Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.ApiToken, error) {
 // belongs to another Workspace, is a User's (a Connection or a Personal token) or is already
 // revoked is ErrNotFound.
 func Revoke(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
-	n, err := s.ApiToken().Update().
-		Where(apitoken.ID(id), isWorkspaceToken(), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(at).
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := s.ApiToken().Update().
+			Where(apitoken.ID(id), isWorkspaceToken(), apitoken.RevokedAtIsNil()).
+			SetRevokedAt(at).
+			Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return ErrNotFound
 	}
-	return nil
+	return err
 }
 
 // Rename changes the name of an active API token and returns the updated row. A token that is

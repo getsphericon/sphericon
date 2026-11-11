@@ -2,12 +2,14 @@ package workspaces
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -17,31 +19,85 @@ import (
 // internal/usecase/noticedelivery). These functions
 // are their writes; each runs on the client or transaction it is given.
 
+// standing is the suspension state of a Workspace (ADR 0026), kept as suspended_at: a machine
+// (ADR 0109) whose two moves are Suspend and Unsuspend.
+type standing string
+
+const (
+	standingActive    standing = "active"
+	standingSuspended standing = "suspended"
+)
+
+type standingTrigger string
+
+const (
+	triggerSuspend   standingTrigger = "suspend"
+	triggerUnsuspend standingTrigger = "unsuspend"
+)
+
+// suspension is what a Suspend writes with the moment: who did it and why.
+type suspension struct {
+	kind   workspace.SuspendedByKind
+	byID   *string
+	reason string
+}
+
+// moveStanding fires trigger on the standing of the Workspace id inside tx and reports whether it
+// moved. A Workspace already in the state the trigger leads to stays as it is, its first actor and
+// reason standing, and so does one that a concurrent move changed first or that does not exist.
+func moveStanding(ctx context.Context, tx *ent.Client, id int64, trigger standingTrigger, by suspension, at time.Time) (bool, error) {
+	moved := false
+	machine := lifecycle.New(lifecycle.Storage[standing]{
+		Read: func(ctx context.Context) (standing, error) {
+			row, err := tx.Workspace.Query().Where(workspace.ID(id)).Select(workspace.FieldSuspendedAt).Only(ctx)
+			if err != nil {
+				return "", err
+			}
+			if row.SuspendedAt != nil {
+				return standingSuspended, nil
+			}
+			return standingActive, nil
+		},
+		Write: func(ctx context.Context, from, to standing) (bool, error) {
+			upd := tx.Workspace.Update().Where(workspace.ID(id))
+			if from == standingSuspended {
+				upd.Where(workspace.SuspendedAtNotNil())
+			} else {
+				upd.Where(workspace.SuspendedAtIsNil())
+			}
+			if to == standingSuspended {
+				upd.SetSuspendedAt(at).SetSuspendedByKind(by.kind).SetNillableSuspendedByID(by.byID).
+					SetSuspensionReason(by.reason)
+			} else {
+				upd.ClearSuspendedAt().ClearSuspendedByKind().ClearSuspendedByID().ClearSuspensionReason().
+					SetClearedAt(at)
+			}
+			n, err := upd.Save(ctx)
+			moved = n == 1
+			return moved, err
+		},
+	})
+	machine.Configure(standingActive).Permit(triggerSuspend, standingSuspended).Ignore(triggerUnsuspend)
+	machine.Configure(standingSuspended).Permit(triggerUnsuspend, standingActive).Ignore(triggerSuspend)
+	err := machine.FireCtx(ctx, trigger)
+	if ent.IsNotFound(err) || errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return false, nil
+	}
+	return moved, err
+}
+
 // SuspendIn suspends the Workspace id inside tx while it is not suspended: it sets suspended_at to
-// `at` with who did it (kind, and byID for a Staff member) and why. It returns how many rows it
-// changed: 0 when the Workspace was already suspended, whose first actor and reason stand.
-func SuspendIn(ctx context.Context, tx *ent.Client, id int64, kind workspace.SuspendedByKind, byID *string, reason string, at time.Time) (int, error) {
-	return tx.Workspace.Update().
-		Where(workspace.ID(id), workspace.SuspendedAtIsNil()).
-		SetSuspendedAt(at).
-		SetSuspendedByKind(kind).
-		SetNillableSuspendedByID(byID).
-		SetSuspensionReason(reason).
-		Save(ctx)
+// `at` with who did it (kind, and byID for a Staff member) and why. It reports whether it did:
+// false when the Workspace was already suspended, whose first actor and reason stand.
+func SuspendIn(ctx context.Context, tx *ent.Client, id int64, kind workspace.SuspendedByKind, byID *string, reason string, at time.Time) (bool, error) {
+	return moveStanding(ctx, tx, id, triggerSuspend, suspension{kind: kind, byID: byID, reason: reason}, at)
 }
 
 // UnsuspendIn lifts the suspension of the Workspace id inside tx while it is suspended: it clears
-// the suspension and its attribution and stamps cleared_at with `at`. It returns how many rows it
-// changed: 0 when the Workspace was not suspended.
-func UnsuspendIn(ctx context.Context, tx *ent.Client, id int64, at time.Time) (int, error) {
-	return tx.Workspace.Update().
-		Where(workspace.ID(id), workspace.SuspendedAtNotNil()).
-		ClearSuspendedAt().
-		ClearSuspendedByKind().
-		ClearSuspendedByID().
-		ClearSuspensionReason().
-		SetClearedAt(at).
-		Save(ctx)
+// the suspension and its attribution and stamps cleared_at with `at`. It reports whether it did:
+// false when the Workspace was not suspended.
+func UnsuspendIn(ctx context.Context, tx *ent.Client, id int64, at time.Time) (bool, error) {
+	return moveStanding(ctx, tx, id, triggerUnsuspend, suspension{}, at)
 }
 
 // SetAbuseExemptIn sets the abuse exemption of the Workspace id inside tx while it differs, and

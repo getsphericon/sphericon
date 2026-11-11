@@ -2,16 +2,20 @@ package integrations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 
+	"github.com/qmuntal/stateless"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -139,8 +143,81 @@ func clearQuotaFailed(ctx context.Context, s *ent.Scoped, id int64) error {
 	return err
 }
 
-// RecordRefused stores, at, that the provider refused the Integration's credentials
-// (ProviderRefusedAt), which holds the Integration's Send route: Outbound send records it.
-func RecordRefused(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
-	return s.Integration().UpdateOneID(id).SetProviderRefusedAt(at).Exec(ctx)
+// RecordRefused stores, at, that the provider refused the credentials integ was read with
+// (ProviderRefusedAt), which holds the Integration's Send route: Outbound send records it. The
+// refusal is of those credentials only: one that lands after a save replaced them, or after another
+// send recorded it, changes nothing.
+func RecordRefused(ctx context.Context, s *ent.Scoped, integ *ent.Integration, at time.Time) error {
+	err := refusalMachine(lifecycle.Storage[refusal]{
+		Read: func(context.Context) (refusal, error) { return refusalOf(integ), nil },
+		Write: func(ctx context.Context, _, _ refusal) (bool, error) {
+			n, err := s.Integration().Update().
+				Where(integration.ID(integ.ID), integration.ConfigEncrypted(integ.ConfigEncrypted),
+					integration.ProviderRefusedAtIsNil()).
+				SetProviderRefusedAt(at).
+				Save(ctx)
+			return n == 1, err
+		},
+	}).FireCtx(ctx, triggerRefuse)
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil
+	}
+	return err
+}
+
+// renewCredentials lifts the provider's refusal of the credentials saved replaced, on the
+// transaction s of the save: new credentials are tried at the next send. saved is the Integration as
+// the save stored it.
+func renewCredentials(ctx context.Context, s *ent.Scoped, saved *ent.Integration) error {
+	return refusalMachine(lifecycle.Storage[refusal]{
+		Read: func(context.Context) (refusal, error) { return refusalOf(saved), nil },
+		Write: func(ctx context.Context, _, _ refusal) (bool, error) {
+			n, err := s.Integration().Update().
+				Where(integration.ID(saved.ID), integration.ConfigEncrypted(saved.ConfigEncrypted),
+					integration.ProviderRefusedAtNotNil()).
+				ClearProviderRefusedAt().
+				Save(ctx)
+			return n == 1, err
+		},
+	}).FireCtx(ctx, triggerRenew)
+}
+
+// refusal is the provider's standing of an Integration's credentials, kept as provider_refused_at:
+// a machine (ADR 0109). A send the provider refused holds the Send route, and a save of new
+// credentials lifts it, so a background send races the Owner's save: each move is conditioned on
+// the credentials it judged.
+type refusal string
+
+const (
+	refusalAccepted refusal = "accepted"
+	refusalRefused  refusal = "refused"
+)
+
+type refusalTrigger string
+
+const (
+	// triggerRefuse is a send the provider refused for its credentials.
+	triggerRefuse refusalTrigger = "refuse"
+	// triggerRenew is a save of new credentials.
+	triggerRenew refusalTrigger = "renew"
+)
+
+func refusalOf(integ *ent.Integration) refusal {
+	if integ.ProviderRefusedAt != nil {
+		return refusalRefused
+	}
+	return refusalAccepted
+}
+
+// refusalMachine is the table of the credentials' standing: a refusal already recorded and new
+// credentials of an Integration nothing refused change nothing.
+func refusalMachine(storage lifecycle.Storage[refusal]) *stateless.StateMachine {
+	m := lifecycle.New(storage)
+	m.Configure(refusalAccepted).
+		Permit(triggerRefuse, refusalRefused).
+		Ignore(triggerRenew)
+	m.Configure(refusalRefused).
+		Permit(triggerRenew, refusalAccepted).
+		Ignore(triggerRefuse)
+	return m
 }

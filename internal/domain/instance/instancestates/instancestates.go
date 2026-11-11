@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -328,14 +329,19 @@ func (m *Module) SetTelemetry(ctx context.Context, enabled bool) (State, error) 
 // AcknowledgeNotice records that a Staff member saw the one-time notice; the first time stands.
 // No report is sent before it.
 func (m *Module) AcknowledgeNotice(ctx context.Context) (State, error) {
-	row, err := m.Ensure(ctx)
-	if err != nil {
+	if _, err := m.Ensure(ctx); err != nil {
 		return State{}, err
 	}
-	if row.NoticeAcknowledgedAt == nil {
-		if err := m.ent.InstanceState.UpdateOneID(stateID).SetNoticeAcknowledgedAt(m.now()).Exec(ctx); err != nil {
-			return State{}, err
-		}
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := m.ent.InstanceState.Update().
+			Where(instancestate.ID(stateID), instancestate.NoticeAcknowledgedAtIsNil()).
+			SetNoticeAcknowledgedAt(m.now()).
+			Save(ctx)
+		return n > 0, err
+	})
+	// Acknowledged before: the first moment stands.
+	if err != nil && !errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return State{}, err
 	}
 	return m.State(ctx)
 }

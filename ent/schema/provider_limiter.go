@@ -45,7 +45,8 @@ func (ProviderLimiter) Fields() []ent.Field {
 		// capacity (max_per_day tokens).
 		field.Float("day_fill"),
 		// The instant both buckets were last topped up.
-		field.Time("refilled_at"),
+		field.Time("refilled_at").
+			Annotations(Attribute(reasonBucket)),
 	}
 }
 

@@ -29,12 +29,14 @@ func (VersionedMixin) Fields() []ent.Field {
 		// active: acts (enrolls Contacts, fires); inactive: acts on nothing. Publish makes the
 		// object active, Deactivate and Archive inactive (ADR 0065).
 		field.Enum("status").
+			Annotations(Machine()).
 			Values("active", "inactive").
 			Default("inactive"),
 		// When the object last moved from inactive to active by Publish; kept while it is
 		// inactive. A Rule acts only on Events recorded at or after it, so publishing never
 		// replays history.
 		field.Time("activated_at").
+			Annotations(Attribute("when the definition last became active, written with its status by its machine")).
 			Optional().
 			Nillable(),
 		// What the object does: its live version. Nil until it is first published.

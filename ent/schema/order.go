@@ -59,6 +59,7 @@ func (Order) Fields() []ent.Field {
 			Nillable().
 			Immutable(),
 		field.Time("credited_click_at").
+			Annotations(Attribute(reasonHistory)).
 			Optional().
 			Nillable().
 			Immutable(),
@@ -134,6 +135,7 @@ func (OrderMovement) Fields() []ent.Field {
 			Immutable(),
 		// The time of the Event that caused it (its `occurredAt`).
 		field.Time("occurred_at").
+			Annotations(Attribute(reasonHistory)).
 			Immutable(),
 		// The `refund_id` of an Order Refunded, when it sent one: a repeat of it is a no-op.
 		field.String("refund_id").
@@ -221,6 +223,7 @@ func (HeldOrderEvent) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Time("occurred_at").
+			Annotations(Attribute(reasonHistory)).
 			Immutable(),
 	}
 }

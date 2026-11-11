@@ -69,8 +69,10 @@ func (Integration) Fields() []ent.Field {
 			Unique().
 			Annotations(Sensitive{}),
 		field.Bool("enabled").
+			Annotations(Attribute(reasonSetting)).
 			Default(true),
 		field.Bool("is_default").
+			Annotations(Attribute(reasonSetting)).
 			Default(false),
 		// Provider limit (ADR 0023): the most messages that may leave this Integration
 		// per second and per rolling 24 hours. Nil means no limit of that kind.
@@ -105,22 +107,26 @@ func (Integration) Fields() []ent.Field {
 		// Whether the provider last said the account is in its sandbox, delivering only to
 		// verified addresses (SES without production access); a warning, not a hold.
 		field.Bool("provider_sandbox").
+			Annotations(Attribute(reasonLatest)).
 			Default(false),
 		// When a send found the provider refusing the Integration's credentials (Telegram's 401):
 		// the Integration is held (provider_refused) until it is saved again with credentials the
 		// provider accepts, which clears it. Nil is not refused. Unlike provider_enforcement it is
 		// found at send time, not read from the provider.
 		field.Time("provider_refused_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		// When the quota was last looked up, successfully or not.
 		field.Time("provider_quota_checked_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// When the lookup first failed (no ses:GetSendQuota permission, an SES-compatible
 		// service) in the failing run it is still in; the UI warns while it is set and a
 		// later success clears it. A further failure keeps the first moment.
 		field.Time("provider_quota_failed_at").
+			Annotations(Attribute(reasonFoundRun)).
 			Optional().
 			Nillable(),
 	}

@@ -66,6 +66,7 @@ func (Erasure) Fields() []ent.Field {
 			Immutable(),
 		// When the Erasure happened; the age the prune job reads.
 		field.Time("erased_at").
+			Annotations(Attribute(reasonHistory)).
 			Immutable(),
 	}
 }

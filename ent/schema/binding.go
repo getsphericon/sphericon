@@ -59,9 +59,11 @@ func (Binding) Fields() []ent.Field {
 		// Whether telegram.bound was recorded for the Contact the Binding reaches. A Contact's own
 		// Binding is announced when it is made; a Visitor's when Identify resolves the Visitor.
 		field.Bool("announced").
+			Annotations(Attribute("whether the bound event was published; it carries a dedup id, and a rebind resets the flag")).
 			Default(false),
 		// When the current owner got the Binding: creation, or the latest move to another owner.
-		field.Time("bound_at"),
+		field.Time("bound_at").
+			Annotations(Attribute("the latest binding of the chat; a rebind moves it")),
 	}
 }
 

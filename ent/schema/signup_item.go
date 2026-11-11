@@ -57,6 +57,7 @@ func (SignupItem) Fields() []ent.Field {
 		// Whether the item stands for consent to the operator's mailings: a setting the Staff
 		// member chooses, held by at most one item.
 		field.Bool("mailings_consent").
+			Annotations(Attribute(reasonSetting)).
 			Default(false),
 	}
 }

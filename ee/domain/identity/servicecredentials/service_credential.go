@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -173,14 +174,17 @@ func (m *Module) RevokeServiceCredential(ctx context.Context, id int64) error {
 	if err := m.licensed(); err != nil {
 		return err
 	}
-	n, err := m.ent.ServiceCredential.Update().
-		Where(entcredential.ID(id), entcredential.RevokedAtIsNil()).
-		SetRevokedAt(m.now()).
-		Save(ctx)
-	if err != nil {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := m.ent.ServiceCredential.Update().
+			Where(entcredential.ID(id), entcredential.RevokedAtIsNil()).
+			SetRevokedAt(m.now()).
+			Save(ctx)
+		return n > 0, err
+	})
+	if err != nil && !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return err
 	}
-	if n == 0 {
+	if err != nil {
 		exists, err := m.ent.ServiceCredential.Query().Where(entcredential.ID(id)).Exist(ctx)
 		if err != nil {
 			return err

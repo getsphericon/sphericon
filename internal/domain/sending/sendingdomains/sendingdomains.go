@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -139,7 +140,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 
 // Update edits a Sending domain. Changing the selector moves the DKIM record, so the
 // domain becomes unverified until the new record is published and checked. An unknown id, or a
-// deleted domain's, is ErrNotFound, whatever the edit.
+// deleted domain's, is ErrNotFound, whatever the edit. The edit is a compare-and-swap on the domain
+// as read: one that a check moved meanwhile is lifecycle.ErrInvalidTransition (a lost race, 409),
+// never a selector change under a verification nobody checked.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.SendingDomain, error) {
 	var row *ent.SendingDomain
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -159,19 +162,26 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if selector == cur.DkimSelector {
 			return nil
 		}
+		setSelector := func(u *ent.SendingDomainScopedUpdate) { u.SetDkimSelector(selector) }
 		if dkimstate.Is(cur) {
-			// The published record is under the old selector: the verification is lost. The
-			// loss lands only while the domain is still verified; a miss means a check moved
-			// it meanwhile, and the plain edit below stands.
-			row, err = ts.SendingDomain().UpdateOneID(id).Where(dkimstate.Verified(), sendingdomain.DiscardedAtIsNil()).
-				SetDkimSelector(selector).SetVerificationLostAt(m.now()).Save(ctx)
-			if !ent.IsNotFound(err) {
+			// The published record is under the old selector: the verification is lost
+			// (DKIMSelectorMoved). The Owner made the edit, so no Owner is told.
+			if _, err := moveDKIM(ctx, ts, cur, DKIMSelectorMoved, m.now(), setSelector); err != nil {
 				return err
 			}
+		} else {
+			upd := ts.SendingDomain().Update().Where(asJudged(cur)...)
+			setSelector(upd)
+			n, err := upd.Save(ctx)
+			if err != nil {
+				return err
+			}
+			if n == 0 {
+				return lifecycle.ErrInvalidTransition
+			}
 		}
-		// A Delete that landed meanwhile leaves no row to edit.
-		row, err = ts.SendingDomain().UpdateOneID(id).Where(sendingdomain.DiscardedAtIsNil()).SetDkimSelector(selector).Save(ctx)
-		return notFound(err)
+		row, err = ts.SendingDomain().Get(ctx, id)
+		return err
 	})
 	if err != nil {
 		return nil, err

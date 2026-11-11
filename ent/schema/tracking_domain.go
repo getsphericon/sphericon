@@ -44,20 +44,24 @@ func (TrackingDomain) Fields() []ent.Field {
 		// it serves), replacement (becomes current once it serves) or retired (serves what was
 		// sent and installed on it, nothing new). At most one current and one replacement.
 		field.Enum("role").
+			Annotations(Machine()).
 			Values("current", "replacement", "retired"),
 		// pending until a live DNS check finds the CNAME at the Instance's edge host
 		// (dns_verified, the edge may now provision), serving once an HTTPS probe of the host
 		// succeeds (ADR 0038). A retired host keeps the state it had: only DNS ends it.
 		field.Enum("state").
+			Annotations(Machine()).
 			Values("pending", "dns_verified", "serving").
 			Default("pending"),
 		// When the host first reached serving (nil = never served): only a host that served is
 		// retired rather than deleted, since only it can have links in sent mail.
 		field.Time("served_at").
+			Annotations(Attribute("when the domain first served; written once by its machine, no move is conditioned on it")).
 			Optional().
 			Nillable(),
 		// When the host was most recently checked (nil = never checked yet).
 		field.Time("checked_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// Why the host is not advancing although its CNAME is right: host_taken means another
@@ -69,6 +73,7 @@ func (TrackingDomain) Fields() []ent.Field {
 			Nillable(),
 		// When state most recently changed (nil = never changed).
 		field.Time("state_changed_at").
+			Annotations(Attribute(reasonWithStatus)).
 			Optional().
 			Nillable(),
 	}

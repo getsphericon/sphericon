@@ -1,4 +1,5 @@
-// Package ent is a stub of the generated ent package: the builders of a state moment.
+// Package ent is a stub of the generated ent package: the forms ent/entc.go declares and the builders
+// that write them.
 package ent
 
 import (
@@ -6,62 +7,43 @@ import (
 	"time"
 )
 
+const (
+	StateFormSendingDomainVerifiedAt = "machine"
+	StateFormInvitationAcceptedAt    = "latch"
+)
+
 type Predicate struct{}
 
 type SendingDomainUpdateOne struct{}
 
-func (x *SendingDomainUpdateOne) Where(...Predicate) *SendingDomainUpdateOne { return x }
-func (x *SendingDomainUpdateOne) SetVerifiedAt(time.Time) *SendingDomainUpdateOne {
-	return x
-}
-func (x *SendingDomainUpdateOne) SetVerificationLostAt(time.Time) *SendingDomainUpdateOne {
-	return x
-}
-func (x *SendingDomainUpdateOne) SetLastCheckedAt(time.Time) *SendingDomainUpdateOne {
-	return x
-}
-func (*SendingDomainUpdateOne) Exec(context.Context) error { return nil }
+func (x *SendingDomainUpdateOne) Where(...Predicate) *SendingDomainUpdateOne         { return x }
+func (x *SendingDomainUpdateOne) SetVerifiedAt(time.Time) *SendingDomainUpdateOne    { return x }
+func (x *SendingDomainUpdateOne) ClearVerifiedAt() *SendingDomainUpdateOne           { return x }
+func (x *SendingDomainUpdateOne) SetLastCheckedAt(time.Time) *SendingDomainUpdateOne { return x }
+func (*SendingDomainUpdateOne) Save(context.Context) (int, error)                    { return 0, nil }
 
 type SendingDomainScopedUpdateOne struct{}
 
-func (x *SendingDomainScopedUpdateOne) Where(...Predicate) *SendingDomainScopedUpdateOne {
+func (x *SendingDomainScopedUpdateOne) Where(...Predicate) *SendingDomainScopedUpdateOne { return x }
+func (x *SendingDomainScopedUpdateOne) SetVerifiedAt(time.Time) *SendingDomainScopedUpdateOne {
 	return x
 }
-func (x *SendingDomainScopedUpdateOne) SetVerificationLostAt(time.Time) *SendingDomainScopedUpdateOne {
-	return x
-}
-func (*SendingDomainScopedUpdateOne) Exec(context.Context) error { return nil }
+
+type SendingDomainUpsert struct{}
+
+func (x *SendingDomainUpsert) UpdateVerifiedAt() *SendingDomainUpsert { return x }
 
 type SendingDomainCreate struct{}
 
 func (x *SendingDomainCreate) SetVerifiedAt(time.Time) *SendingDomainCreate { return x }
 
-type WebhookEndpointUpdate struct{}
+type InvitationUpdate struct{}
 
-func (x *WebhookEndpointUpdate) Where(...Predicate) *WebhookEndpointUpdate { return x }
-func (x *WebhookEndpointUpdate) SetDisabledAt(time.Time) *WebhookEndpointUpdate {
-	return x
-}
-func (x *WebhookEndpointUpdate) ClearDisabledAt() *WebhookEndpointUpdate { return x }
-
-type JoinDomainUpdateOne struct{}
-
-func (x *JoinDomainUpdateOne) Where(...Predicate) *JoinDomainUpdateOne { return x }
-func (x *JoinDomainUpdateOne) ClearVerifiedAt() *JoinDomainUpdateOne   { return x }
-
-type UsageUpdateOne struct{}
-
-func (x *UsageUpdateOne) Where(...Predicate) *UsageUpdateOne                { return x }
-func (x *UsageUpdateOne) SetFinalizedAt(time.Time) *UsageUpdateOne          { return x }
-func (x *UsageUpdateOne) SetNillableFinalizedAt(*time.Time) *UsageUpdateOne { return x }
-
-type IntegrationUpdate struct{}
-
-func (x *IntegrationUpdate) Where(...Predicate) *IntegrationUpdate { return x }
-func (x *IntegrationUpdate) SetProviderQuotaFailedAt(time.Time) *IntegrationUpdate {
-	return x
-}
-func (x *IntegrationUpdate) ClearProviderQuotaFailedAt() *IntegrationUpdate { return x }
+func (x *InvitationUpdate) Where(...Predicate) *InvitationUpdate               { return x }
+func (x *InvitationUpdate) SetAcceptedAt(time.Time) *InvitationUpdate          { return x }
+func (x *InvitationUpdate) ClearAcceptedAt() *InvitationUpdate                 { return x }
+func (x *InvitationUpdate) SetNillableAcceptedAt(*time.Time) *InvitationUpdate { return x }
+func (*InvitationUpdate) Save(context.Context) (int, error)                    { return 0, nil }
 
 type TagUpdateOne struct{}
 
@@ -73,9 +55,7 @@ func (*Client) SendingDomain() *SendingDomainUpdateOne { return &SendingDomainUp
 func (*Client) ScopedSendingDomain() *SendingDomainScopedUpdateOne {
 	return &SendingDomainScopedUpdateOne{}
 }
-func (*Client) WebhookEndpoint() *WebhookEndpointUpdate { return &WebhookEndpointUpdate{} }
-func (*Client) JoinDomain() *JoinDomainUpdateOne        { return &JoinDomainUpdateOne{} }
-func (*Client) Usage() *UsageUpdateOne                  { return &UsageUpdateOne{} }
-func (*Client) Integration() *IntegrationUpdate         { return &IntegrationUpdate{} }
-func (*Client) Tag() *TagUpdateOne                      { return &TagUpdateOne{} }
-func (*Client) NewSendingDomain() *SendingDomainCreate  { return &SendingDomainCreate{} }
+func (*Client) SendingDomainUpsert() *SendingDomainUpsert { return &SendingDomainUpsert{} }
+func (*Client) NewSendingDomain() *SendingDomainCreate    { return &SendingDomainCreate{} }
+func (*Client) Invitation() *InvitationUpdate             { return &InvitationUpdate{} }
+func (*Client) Tag() *TagUpdateOne                        { return &TagUpdateOne{} }

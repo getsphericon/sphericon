@@ -55,27 +55,32 @@ func (SendingDomain) Fields() []ent.Field {
 			NotEmpty(),
 		// When the DKIM DNS was most recently checked (nil = never checked yet).
 		field.Time("last_checked_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// When the domain most recently became verified (nil = never verified). Kept after a
 		// loss, so it is the history of verified.
 		field.Time("verified_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		// When a re-check most recently found the verified DKIM DNS gone (nil = not lost: never
 		// verified, or verified again since).
 		field.Time("verification_lost_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		// When a DMARC lookup most recently got an answer, the record found or not (nil = none has:
 		// never run, or every lookup failed). Until then nothing is known of the domain's DMARC.
 		field.Time("dmarc_checked_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// When a lookup first found the domain's DMARC record published, at the domain or its
 		// organizational domain (nil = the last lookup found none, or none has answered). It is the
 		// bulk-ready signal of ADR 0012 and never gates sending.
 		field.Time("dmarc_found_at").
+			Annotations(Attribute(reasonFoundRun)).
 			Optional().
 			Nillable(),
 	}

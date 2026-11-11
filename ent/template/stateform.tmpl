@@ -1,0 +1,21 @@
+{{/*
+The form of every state field the schema declares a machine or a latch (schema.State, ADR 0109).
+The statemoment analyzer (tools/analyzers/statemoment) looks these constants up by the entity and
+the field a builder method writes, and refuses the write outside the lifecycle primitives. An
+attribute is not listed: nothing restricts its writes.
+*/}}
+{{ define "stateform" }}
+{{ template "header" $ }}
+
+// StateForm<Entity><Field> is the form ent/schema declares for a machine or latch field (schema.State,
+// ADR 0109): "machine" or "latch". The statemoment analyzer reads these constants.
+const (
+{{- range $n := $.Nodes }}
+	{{- range $f := $n.Fields }}
+		{{- with stateForm $f }}
+	StateForm{{ $n.Name }}{{ $f.StructField }} = "{{ . }}"
+		{{- end }}
+	{{- end }}
+{{- end }}
+)
+{{ end }}

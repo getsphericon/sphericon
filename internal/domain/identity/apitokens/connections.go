@@ -2,11 +2,13 @@ package apitokens
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -30,15 +32,15 @@ func Connections(ctx context.Context, s *ent.Scoped, caller *ent.Membership) ([]
 // the Policy of Connections: the caller's own, or anyone's when the Role holds members:manage. A
 // Connection the caller may not see is ErrConnectionNotFound, as an unknown one is.
 func RevokeConnection(ctx context.Context, s *ent.Scoped, caller *ent.Membership, id int64, at time.Time) error {
-	n, err := s.ApiToken().Update().
-		Where(apitoken.ID(id), isConnection(), visibleTo(caller), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(at).
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := s.ApiToken().Update().
+			Where(apitoken.ID(id), isConnection(), visibleTo(caller), apitoken.RevokedAtIsNil()).
+			SetRevokedAt(at).
+			Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return ErrConnectionNotFound
 	}
-	return nil
+	return err
 }

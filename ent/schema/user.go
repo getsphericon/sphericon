@@ -41,6 +41,7 @@ func (User) Fields() []ent.Field {
 		// Login is gated on it (ADR 0030): a User without it is an Unverified User, deleted
 		// by the prune job once it is stale and holds no Membership.
 		field.Time("email_verified_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		// When the User's address was proven to be theirs (ADR 0048): set by a Sign-in
@@ -49,6 +50,7 @@ func (User) Fields() []ent.Field {
 		// email_verified_at, which an install that turned verification off sets at
 		// registration without any proof; only a proven address may be linked silently.
 		field.Time("email_proven_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		// The generation of the User's sessions (ADR 0020): every session token
@@ -61,6 +63,7 @@ func (User) Fields() []ent.Field {
 		// join-domain admission, a pre-existing User, or the survey already answered. The
 		// submit clears it in the transaction that creates the SignupSurveyResponse.
 		field.Time("signup_survey_due_at").
+			Annotations(Attribute("when the survey is next offered; answering clears it")).
 			Optional().
 			Nillable(),
 		// The User time zone (ADR 0068): the IANA name the app shows the User's times in and the

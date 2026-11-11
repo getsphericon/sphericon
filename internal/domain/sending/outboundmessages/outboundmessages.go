@@ -667,7 +667,7 @@ func (m *Module) refuse(ctx context.Context, s *ent.Scoped, integ *ent.Integrati
 	if integ == nil {
 		return nil
 	}
-	if err := integrations.RecordRefused(ctx, s, integ.ID, m.now()); err != nil {
+	if err := integrations.RecordRefused(ctx, s, integ, m.now()); err != nil {
 		return fmt.Errorf("outbound: hold the refused integration: %w", err)
 	}
 	return nil

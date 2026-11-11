@@ -46,10 +46,12 @@ func (Usage) Fields() []ent.Field {
 		// The moment the period closed and the row became a Usage snapshot, which is
 		// immutable; nil while the row is Live usage.
 		field.Time("finalized_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		// When the value was last computed.
-		field.Time("computed_at"),
+		field.Time("computed_at").
+			Annotations(Attribute(reasonLatest)),
 	}
 }
 

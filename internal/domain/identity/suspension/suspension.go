@@ -99,8 +99,8 @@ func suspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Ac
 		if err != nil {
 			return err
 		}
-		n, err := workspaces.SuspendIn(ctx, tx, workspaceID, by.Kind, nilIfEmpty(by.ID), reason, at)
-		if err != nil || n == 0 {
+		moved, err := workspaces.SuspendIn(ctx, tx, workspaceID, by.Kind, nilIfEmpty(by.ID), reason, at)
+		if err != nil || !moved {
 			return err
 		}
 		changed = true
@@ -137,8 +137,8 @@ func unsuspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by 
 		if err != nil {
 			return err
 		}
-		n, err := workspaces.UnsuspendIn(ctx, tx, workspaceID, at)
-		if err != nil || n == 0 {
+		moved, err := workspaces.UnsuspendIn(ctx, tx, workspaceID, at)
+		if err != nil || !moved {
 			return err
 		}
 		changed = true

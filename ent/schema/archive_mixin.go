@@ -25,6 +25,7 @@ type ArchiveMixin struct {
 func (ArchiveMixin) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("archived_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 	}

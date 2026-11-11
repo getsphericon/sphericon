@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/devdns"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -219,6 +220,50 @@ func TestRecheck_staleCheckDoesNotReportASecondFlip(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, env.SystemMail.Messages(), 1, "the owner is told once, by the check that won")
+}
+
+// A check judges the selector and key it read. An Owner who moves the selector of an unverified
+// domain during the check's lookup makes the check stale: the record it found under the old
+// selector verifies nothing, and the domain stays unverified under the new one (#1245).
+func TestRecheck_aCheckUnderAMovedSelectorDoesNotVerify(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
+	require.NoError(t, err)
+	published := dnstest.Resolver(t, map[string]mockdns.Zone{
+		dom.DkimSelector + "._domainkey." + dom.Domain + ".": {TXT: []string{dom.DkimPublicKey}},
+	}).LookupTXT
+	moving := func(ctx context.Context, name string) ([]string, error) {
+		if dkimLookup(name) {
+			_, err := domains(env, published).Update(ctx, acme(env), dom.ID, sendingdomains.UpdateInput{Selector: patch.Set("moved")})
+			require.NoError(t, err)
+		}
+		return published(ctx, name)
+	}
+
+	err = domains(env, moving).Recheck(ctx, acme(env), dom.ID)
+
+	require.NoError(t, err)
+	row, err := env.DB.SendingDomain.Get(ctx, dom.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "moved", row.DkimSelector)
+	assert.False(t, dkimstate.Is(row), "a record nobody checked under the new selector verifies nothing")
+}
+
+// Moving the selector of a verified domain loses its verification at once: the published record
+// is under the old selector. It is the Owner's own edit, so no Owner is told (#1245).
+func TestUpdate_movingTheSelectorOfAVerifiedDomainLosesItWithoutANotice(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	row, err := domains(env, dnstest.Resolver(t, nil).LookupTXT).Update(ctx, acme(env), fixtures.SendingDomainVerifiedID,
+		sendingdomains.UpdateInput{Selector: patch.Set("moved")})
+
+	require.NoError(t, err)
+	assert.Equal(t, "moved", row.DkimSelector)
+	assert.False(t, dkimstate.Is(row))
+	assert.NotNil(t, row.VerificationLostAt)
+	assert.Empty(t, env.SystemMail.Messages(), "the Owner who moved it is not told")
 }
 
 // A check looks the DMARC record up next to DKIM and keeps when it found one: publishing the

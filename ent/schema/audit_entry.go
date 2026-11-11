@@ -39,6 +39,7 @@ func (AuditEntry) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Time("occurred_at").
+			Annotations(Attribute(reasonHistory)).
 			Immutable(),
 		// user | api_token | staff | system (ingest is never recorded).
 		field.String("actor_kind").

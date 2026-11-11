@@ -2,6 +2,7 @@ package apitokens
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/samber/lo"
@@ -11,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -79,15 +81,15 @@ func PersonalTokens(ctx context.Context, s *ent.Scoped, caller *ent.Membership) 
 // caller's own, or anyone's when the Role holds members:manage. One the caller may not see is
 // ErrPersonalTokenNotFound, as an unknown one is.
 func RevokePersonal(ctx context.Context, s *ent.Scoped, caller *ent.Membership, id int64, at time.Time) error {
-	n, err := s.ApiToken().Update().
-		Where(apitoken.ID(id), isPersonalToken(), visibleTo(caller), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(at).
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := s.ApiToken().Update().
+			Where(apitoken.ID(id), isPersonalToken(), visibleTo(caller), apitoken.RevokedAtIsNil()).
+			SetRevokedAt(at).
+			Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return ErrPersonalTokenNotFound
 	}
-	return nil
+	return err
 }

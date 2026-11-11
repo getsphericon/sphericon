@@ -47,9 +47,11 @@ func (StartToken) Fields() []ent.Field {
 			Immutable().
 			Sensitive(),
 		field.Time("expires_at").
+			Annotations(Attribute(reasonExpiry)).
 			Immutable(),
 		// When the token was redeemed; set once.
 		field.Time("used_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 	}

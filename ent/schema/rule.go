@@ -206,6 +206,7 @@ func (RuleFiring) Fields() []ent.Field {
 			Default("[]"),
 		// When the last Action finished. A moment, not a flag: it is set once by the Actions job.
 		field.Time("completed_at").
+			Annotations(Attribute(reasonHistory)).
 			Optional().
 			Nillable(),
 	}

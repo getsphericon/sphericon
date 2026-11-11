@@ -3,6 +3,7 @@ package secondfactors
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // The unique constraints of the tables this package writes (ADR 0106).
@@ -55,18 +57,21 @@ func deleteCodesIn(ctx context.Context, tx *ent.Client, userID int64) error {
 // spendCodeIn spends code, an unused Recovery code of the User, at, on the transaction tx; false
 // when code is none of them (or already spent). Case and spacing do not matter.
 func spendCodeIn(ctx context.Context, tx *ent.Client, userID int64, code string, at time.Time) (bool, error) {
-	n, err := tx.RecoveryCode.Update().
-		Where(
-			recoverycode.UserID(userID),
-			recoverycode.CodeHash(credentials.HashRecoveryCode(code)),
-			recoverycode.UsedAtIsNil(),
-		).
-		SetUsedAt(at).
-		Save(ctx)
-	if err != nil {
-		return false, err
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := tx.RecoveryCode.Update().
+			Where(
+				recoverycode.UserID(userID),
+				recoverycode.CodeHash(credentials.HashRecoveryCode(code)),
+				recoverycode.UsedAtIsNil(),
+			).
+			SetUsedAt(at).
+			Save(ctx)
+		return n == 1, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return false, nil
 	}
-	return n == 1, nil
+	return err == nil, err
 }
 
 // newCode is ten random base32 characters (50 bits) as two groups of five.

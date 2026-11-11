@@ -47,8 +47,10 @@ func (Invitation) Fields() []ent.Field {
 		field.Int64("invited_by").
 			Optional().
 			Nillable(),
-		field.Time("expires_at"),
+		field.Time("expires_at").
+			Annotations(Attribute(reasonExpiry)),
 		field.Time("accepted_at").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 	}

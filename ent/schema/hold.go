@@ -48,7 +48,8 @@ func (Hold) Fields() []ent.Field {
 		field.String("action_url").
 			Optional().
 			Nillable(),
-		field.Time("expires_at"),
+		field.Time("expires_at").
+			Annotations(Attribute(reasonExpiry)),
 		// The name of the Service credential that last set it.
 		field.String("set_by").
 			NotEmpty(),

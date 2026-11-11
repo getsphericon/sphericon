@@ -49,8 +49,10 @@ func (Passkey) Fields() []ent.Field {
 		field.JSON("transports", []string{}).
 			Optional(),
 		field.Bool("backup_eligible").
+			Annotations(Attribute(reasonLatest)).
 			Immutable(),
-		field.Bool("backup_state"),
+		field.Bool("backup_state").
+			Annotations(Attribute(reasonLatest)),
 		field.Bytes("aaguid").
 			Optional().
 			Immutable(),
@@ -61,6 +63,7 @@ func (Passkey) Fields() []ent.Field {
 		field.String(nameField).
 			NotEmpty(),
 		field.Time("last_used_at").
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 	}

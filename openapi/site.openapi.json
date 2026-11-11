@@ -6659,7 +6659,7 @@
     "/workspaces/{workspaceId}/leave": {
       "post": {
         "operationId": "SiteWorkspaces_leave",
-        "description": "Leave a Workspace (any Role): the caller's own Membership is removed at once, with no\nOwner involved (Leaving, ADR 0050). 422 when the caller is the only Owner: another\nMember must become Owner, or the Workspace be deleted, first. Recorded as an Audit\nentry with the caller as actor.",
+        "description": "Leave a Workspace (any Role): the caller's own Membership is removed at once, with no\nOwner involved (Leaving, ADR 0050). 409 when the caller is the only Owner: another\nMember must become Owner, or the Workspace be deleted, first. Recorded as an Audit\nentry with the caller as actor.",
         "parameters": [
           {
             "name": "workspaceId",

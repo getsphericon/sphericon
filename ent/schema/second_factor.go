@@ -47,6 +47,7 @@ func (SecondFactor) Fields() []ent.Field {
 		// When enrollment was confirmed with a valid code. Nil with a secret set is a pending
 		// enrollment, which is not a Second factor yet.
 		field.Time("confirmed_at").
+			Annotations(Machine()).
 			Optional().
 			Nillable(),
 		// The last TOTP time step a code was accepted for: a code of that step or an earlier one is
