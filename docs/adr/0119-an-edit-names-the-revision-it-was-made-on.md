@@ -45,11 +45,11 @@ overwrite a person, and a person overwrites them, the same way.
   is conditional on it (`UPDATE … WHERE id = ? AND revision = ?`, or the comparison inside the
   transaction that already reads the row). The answer to a successful update carries the new
   `revision`.
-- **On `/site` the `revision` is required; on `/api` and MCP it is optional.** The console is the
-  editor and must not be able to forget it. A script or an agent that sends none writes
-  unconditionally, which is its choice and the contract says so. An update model shared by both
-  surfaces is wrapped per surface to say it. A contract check fails an update operation of a
-  resource with a `revision` whose body does not take it.
+- **The `revision` is required on every surface**: `/site`, `/api` and so MCP. An update without
+  one is the lost update itself, whoever sends it, and there is no client to keep: a script or an
+  agent reads the resource before it writes, as the console does. A contract check fails an update
+  operation of a resource with a `revision` whose body does not require it, and the editor
+  session's operations below likewise.
 - **A stale revision is a 409 with the code `revision_changed`** (`ProblemCode`, ADR 0103). It is
   "lost a race" in the sense of ADR 0109, and the client branches on the code, not on the status.
   The body carries nothing more: the client reads the resource again.
@@ -72,7 +72,8 @@ overwrite a person, and a person overwrites them, the same way.
 - A migration adds `revision bigint NOT NULL DEFAULT 1` to each table of the list below: an add-only
   change (ADR 0033).
 - Every update test of these resources sends a `revision`, and each resource gets a test that a
-  stale one is refused and leaves the row as it was.
+  stale one is refused and leaves the row as it was. Every caller of an update, the e2e steps and
+  the MCP tools' descriptions included, reads the resource first.
 - The editor session gains the base revision and the "changed since it was opened" state;
   `docs/standards/ui.md` says how the console handles it instead of "not merged".
 - Machine writers that rewrite unchanged values (Identify's enrichment does an update even when no
@@ -92,6 +93,9 @@ overwrite a person, and a person overwrites them, the same way.
 - **`updated_at` as the token, sent with microseconds.** It needs no column, but it is a time, not a
   counter: it is set by the process clock, it moves on writes that are not edits, and nothing stops
   two writes from reading the same value.
+- **`revision` optional on `/api` and MCP**, an update without it written unconditionally, for
+  scripts that write blind. It keeps the lost update for exactly the writers a person cannot see,
+  and the project has no external client whose calls it would keep working.
 - **Merging concurrent edits.** Field-level merge breaks on the fields that are replaced whole
   (`steps`, `condition`, `tags`, a body), which are the ones people edit. A refusal the person
   resolves is honest; a merge that is right most of the time is not.
