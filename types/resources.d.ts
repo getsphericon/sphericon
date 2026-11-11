@@ -516,6 +516,7 @@ export default interface Resources {
       "createTitle": "New broadcast",
       "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
       "deliveryLabel": "Delivery",
+      "deliveryUnsaved": "Save your changes first: Send now and Schedule deliver the saved broadcast.",
       "editTitle": "Edit broadcast",
       "fromDomainLabel": "From domain",
       "fromEmailLabel": "From address",

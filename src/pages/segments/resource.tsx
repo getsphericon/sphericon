@@ -2,8 +2,8 @@ import { emptyGroup } from '../../components/conditions/condition.ts'
 import {
   siteSegmentsCreateMutation,
   siteSegmentsGetOptions,
-  siteSegmentsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { siteSegmentsUpdate } from '../../generated/site/sdk.gen.ts'
 import { zSiteCreateSegmentInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
@@ -27,7 +27,8 @@ const segmentResource = defineResource({
   Form: SegmentForm,
   getOptions: siteSegmentsGetOptions,
   createMutation: siteSegmentsCreateMutation,
-  updateMutation: siteSegmentsUpdateMutation,
+  update: siteSegmentsUpdate,
+  operations: {},
   editRoute: segmentsEditRoute,
   idParam: 'segmentId',
   texts: (t) => ({

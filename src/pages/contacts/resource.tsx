@@ -1,8 +1,8 @@
 import {
   siteContactsCreateMutation,
   siteContactsGetOptions,
-  siteContactsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { siteContactsUpdate } from '../../generated/site/sdk.gen.ts'
 import { zSiteUpdateContactInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
@@ -48,7 +48,8 @@ const contactResource = defineResource({
   Form: ContactForm,
   getOptions: siteContactsGetOptions,
   createMutation: siteContactsCreateMutation,
-  updateMutation: siteContactsUpdateMutation,
+  update: siteContactsUpdate,
+  operations: {},
   editRoute: contactsEditRoute,
   idParam: 'contactId',
   texts: (t) => ({

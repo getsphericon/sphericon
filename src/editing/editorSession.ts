@@ -19,8 +19,12 @@ export interface EditorReceipt<TResource> {
   fingerprint: string
 }
 
-interface EditorOperation<TSubject, TResource, TContent> {
-  request: (call: { subject: TSubject; signal: AbortSignal }) => Promise<TResource>
+// What an operation's event may carry besides its name, such as the time Schedule sends at.
+export type EditorOperationInput = Readonly<Record<string, string>>
+
+// A write is never aborted: it outlives the editor that started it (docs/standards/ui.md).
+export interface EditorOperation<TSubject, TResource, TContent> {
+  request: (call: { subject: TSubject; input: EditorOperationInput }) => Promise<TResource>
   // Whether the operation may start. `dirty` is false only when the event carried the current
   // fingerprint and it equals the acknowledged one.
   available: (state: { resource: TResource; dirty: boolean }) => boolean
@@ -44,14 +48,11 @@ export interface EditorAdapter<
   fingerprint: (content: TContent) => string
   // The submission Save sends, captured before any asynchronous work; null refuses invalid content.
   submit: (content: TContent) => TSubmission | null
-  save: (call: {
-    subject: TSubject
-    submission: TSubmission
-    signal: AbortSignal
-  }) => Promise<TResource>
+  save: (call: { subject: TSubject; submission: TSubmission }) => Promise<TResource>
   acknowledge: (submission: TSubmission, resource: TResource) => TReceipt
   // Folds an acknowledgement into the current content, which may have moved on since the
-  // submission. `replaces` is set when stateful field editors must re-read the result.
+  // submission. `replaces` is set when stateful field editors must re-read the result: the content
+  // is then the server's form of the submission, and becomes the acknowledged content.
   fold: (current: TContent, receipt: TReceipt) => { content: TContent; replaces: boolean }
   // The other operations, named by their event (PUBLISH, REVERT, …). They act on stored content,
   // so the editor is read-only while one is pending.
@@ -65,7 +66,9 @@ export interface EditorHandle<TContent> {
 }
 
 // What the page does on an operation's outcome, run once the write is acknowledged or refused.
-// Invalidation starts after the acknowledgement and is never part of the pending operation.
+// Invalidation starts after the acknowledgement and is never part of the pending operation. The
+// cache's two, `store` and `invalidate`, belong to the write and run even after the editor closed;
+// the others only while it is open.
 export interface EditorEffects<TResource, TOperation extends string> {
   store: (resource: TResource) => void
   accepted: (operation: TOperation | 'SAVE') => void
@@ -99,21 +102,25 @@ export const draftGuards = {
 export interface EditorSessionContext<TSubject, TResource, TContent, TOperation extends string> {
   subject: TSubject
   resource: TResource
-  // The fingerprint of the acknowledged content.
+  // The fingerprint of the acknowledged content, and of the submission a pending Save carries.
   saved: string
+  submitted: string | null
   content: { value: TContent; revision: number }
   operation: TOperation | null
+  input: EditorOperationInput
   result: 'success' | 'error'
   editor: EditorHandle<TContent> | undefined
   effects: EditorEffects<TResource, TOperation> | undefined
 }
 
 // An operation's event (PUBLISH, REVERT, …) may carry the current fingerprint, which its guard
-// compares with the acknowledged one. Its type is any string to xstate, which cannot type a
-// machine's transitions over a generic event type; an event no operation names is ignored.
+// compares with the acknowledged one, and the operation's input. Its type is any string to xstate,
+// which cannot type a machine's transitions over a generic event type; an event no operation names
+// is ignored.
 interface EditorOperationEvent {
   type: string
   current?: string
+  input?: EditorOperationInput
 }
 
 export type EditorSessionEvent<TResource, TSubmission> =
@@ -152,26 +159,40 @@ export function defineEditorSession<
   return setup({
     types,
     actors: {
+      // A write updates the cache itself, so its acknowledgement reaches the cache even when the
+      // session has stopped and its outcome is ignored.
       save: fromPromise(
         async ({
-          input,
-          signal,
+          input: { subject, submission, effects },
         }: {
-          input: { subject: TSubject; submission: TSubmission }
-          signal: AbortSignal
+          input: {
+            subject: TSubject
+            submission: TSubmission
+            effects: EditorEffects<TResource, TOperation> | undefined
+          }
         }) => {
-          const resource = await adapter.save({ ...input, signal })
-          return adapter.acknowledge(input.submission, resource)
+          const resource = await adapter.save({ subject, submission })
+          effects?.store(resource)
+          effects?.invalidate()
+          return adapter.acknowledge(submission, resource)
         },
       ),
       operation: fromPromise(
         async ({
-          input,
-          signal,
+          input: { subject, operation, input, effects },
         }: {
-          input: { subject: TSubject; operation: TOperation }
-          signal: AbortSignal
-        }) => adapter.operations[input.operation].request({ subject: input.subject, signal }),
+          input: {
+            subject: TSubject
+            operation: TOperation
+            input: EditorOperationInput
+            effects: EditorEffects<TResource, TOperation> | undefined
+          }
+        }) => {
+          const resource = await adapter.operations[operation].request({ subject, input })
+          effects?.store(resource)
+          effects?.invalidate()
+          return resource
+        },
       ),
     },
     guards: {
@@ -190,7 +211,7 @@ export function defineEditorSession<
       fail: enqueueActions(({ context, event, enqueue }) => {
         const operation = context.operation ?? 'SAVE'
         const error = 'error' in event ? event.error : undefined
-        enqueue.assign({ result: 'error', operation: null })
+        enqueue.assign({ result: 'error', operation: null, input: {}, submitted: null })
         enqueue(() => context.effects?.failed(operation, error))
         enqueue.emit({ type: 'failed', operation, error } as Notice)
       }),
@@ -204,8 +225,10 @@ export function defineEditorSession<
         subject: input,
         resource: input.resource,
         saved: adapter.fingerprint(value),
+        submitted: null,
         content: { value, revision: 0 },
         operation: null,
+        input: {},
         result: 'error',
         editor: input.editor,
         effects: input.effects,
@@ -220,11 +243,19 @@ export function defineEditorSession<
     states: {
       idle: {
         on: {
-          SAVE: 'saving',
+          SAVE: {
+            target: 'saving',
+            actions: assign(({ event }) =>
+              'submission' in event ? { submitted: event.submission.fingerprint } : {},
+            ),
+          },
           '*': {
             target: 'operating',
             guard: 'available',
-            actions: assign(({ event }) => ({ operation: operationOf(event) })),
+            actions: assign(({ event }) => ({
+              operation: operationOf(event),
+              input: ('input' in event && event.input) || {},
+            })),
           },
         },
       },
@@ -236,7 +267,11 @@ export function defineEditorSession<
             if (!('submission' in event)) {
               throw new Error(`Save started by ${event.type}`)
             }
-            return { subject: context.subject, submission: event.submission }
+            return {
+              subject: context.subject,
+              submission: event.submission,
+              effects: context.effects,
+            }
           },
           onDone: {
             target: 'idle',
@@ -248,19 +283,19 @@ export function defineEditorSession<
               enqueue.assign({
                 resource: receipt.resource,
                 saved: receipt.fingerprint,
+                submitted: null,
                 result: 'success',
                 ...(folded?.replaces && {
+                  saved: adapter.fingerprint(folded.content),
                   content: { value: folded.content, revision: context.content.revision + 1 },
                 }),
               })
               if (folded && folded.content !== current) {
                 enqueue(() => editor?.write(folded.content))
               }
-              enqueue(() => effects?.store(receipt.resource))
               enqueue(() => effects?.accepted('SAVE'))
               const { fingerprint: _fingerprint, ...details } = receipt
               enqueue.emit({ type: 'accepted', operation: 'SAVE', ...details })
-              enqueue(() => effects?.invalidate())
             }),
           },
           onError: { target: 'idle', actions: 'fail' },
@@ -275,7 +310,12 @@ export function defineEditorSession<
             if (context.operation === null) {
               throw new Error('No operation is pending')
             }
-            return { subject: context.subject, operation: context.operation }
+            return {
+              subject: context.subject,
+              operation: context.operation,
+              input: context.input,
+              effects: context.effects,
+            }
           },
           onDone: {
             target: 'idle',
@@ -290,6 +330,7 @@ export function defineEditorSession<
                 resource,
                 result: 'success',
                 operation: null,
+                input: {},
                 ...(value !== undefined && {
                   saved: adapter.fingerprint(value),
                   content: { value, revision: context.content.revision + 1 },
@@ -298,10 +339,8 @@ export function defineEditorSession<
               if (value !== undefined) {
                 enqueue(() => editor?.write(value))
               }
-              enqueue(() => effects?.store(resource))
               enqueue(() => effects?.accepted(operation))
               enqueue.emit({ type: 'accepted', operation, resource } as Notice)
-              enqueue(() => effects?.invalidate())
             }),
           },
           onError: { target: 'idle', actions: 'fail' },

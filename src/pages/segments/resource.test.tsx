@@ -15,6 +15,7 @@ import {
   handleSiteSegmentsUpdate,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
+import { zSiteSegmentsUpdateBody } from '../../generated/site/zod.gen.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
@@ -251,6 +252,59 @@ test('editing shows no form while the segment loads, then the loaded values', as
   gate.resolve(undefined)
 
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Mail users')
+})
+
+test('an edit made while Save is pending stays after the acknowledgement, and leaving asks first', async () => {
+  const received = Promise.withResolvers<undefined>()
+  const release = Promise.withResolvers<undefined>()
+  let stored = { id: '7', name: 'Mail users', condition: RULE, ...TIMESTAMPS }
+  serveCatalogue()
+  worker.use(
+    handleSiteSegmentsGet(() => HttpResponse.json(stored)),
+    handleSiteSegmentsUpdate(async ({ request }) => {
+      const body = zSiteSegmentsUpdateBody.parse(await request.json())
+      received.resolve(undefined)
+      await release.promise
+      stored = { ...stored, name: body.name ?? stored.name }
+      return HttpResponse.json(stored)
+    }),
+  )
+
+  const { screen, router } = await renderWithRouter(<SegmentEditPage />, EDIT_ROUTE)
+  await screen.getByLabelText('Name', { exact: false }).fill('Saved name')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await received.promise
+  await screen.getByLabelText('Name', { exact: false }).fill('Newer name')
+  release.resolve(undefined)
+
+  await expect.element(screen.getByText('Segment updated')).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Newer name')
+  router.history.push('/workspaces/TestWs01')
+  await expect.element(screen.getByRole('dialog', { name: 'Leave without saving?' })).toBeVisible()
+})
+
+test('leaving while Save is pending does not ask when nothing was edited since', async () => {
+  const received = Promise.withResolvers<undefined>()
+  serveCatalogue()
+  worker.use(
+    handleSiteSegmentsGet({
+      body: { id: '7', name: 'Mail users', condition: RULE, ...TIMESTAMPS },
+    }),
+    handleSiteSegmentsUpdate(async () => {
+      received.resolve(undefined)
+      // The write is never answered.
+      return Promise.withResolvers<never>().promise
+    }),
+  )
+
+  const { screen, router } = await renderWithRouter(<SegmentEditPage />, EDIT_ROUTE)
+  await screen.getByLabelText('Name', { exact: false }).fill('Saved name')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await received.promise
+  router.history.push('/workspaces/TestWs01')
+
+  await expect.poll(() => router.history.location.pathname).toBe('/workspaces/TestWs01')
+  expect(screen.getByRole('dialog', { name: 'Leave without saving?' }).elements()).toEqual([])
 })
 
 // An archived Segment is read-only until it is unarchived (ADR 0100): its edit URL opens its page,

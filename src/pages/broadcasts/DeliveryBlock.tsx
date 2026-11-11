@@ -3,22 +3,28 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-  siteBroadcastsGetQueryKey,
-  siteBroadcastsListQueryKey,
-  siteBroadcastsScheduleMutation,
-  siteBroadcastsSendMutation,
-  siteBroadcastsTestSendMutation,
-} from '../../generated/site/@tanstack/react-query.gen.ts'
+import { siteBroadcastsTestSendMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import type { ResourceEditor } from '../../resources/defineResource.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 
-// Send now, schedule and test send for a loaded Broadcast. Sending and scheduling are only
-// possible for drafts; test send works for any status of an email Broadcast, to an address, and of
-// an SMS one, to a phone number: Telegram has none, so its action is not offered (ADR 0080).
-export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource }) {
+// The operations of a Broadcast's editor session that deliver it.
+export type BroadcastDelivery = 'SEND' | 'SCHEDULE'
+
+// Send now, schedule and test send for a loaded Broadcast. Sending and scheduling run through the
+// editor's session: they deliver the saved content, so they wait for a pending Save and for the
+// form's unsaved edits to be saved, and are only possible for drafts. Test send works for any
+// status of an email Broadcast, to an address, and of an SMS one, to a phone number: Telegram has
+// none, so its action is not offered (ADR 0080).
+export function DeliveryBlock({
+  broadcast,
+  editor,
+}: {
+  broadcast: SiteBroadcastResource
+  editor: ResourceEditor<BroadcastDelivery>
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { workspaceId } = workspaceRoute.useParams()
@@ -27,29 +33,18 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
   const [testTo, setTestTo] = useState('')
 
   const path = { workspaceId, id: broadcast.id }
-  const isDraft = broadcast.status === 'draft'
-  const invalidate = [
-    siteBroadcastsListQueryKey({ path: { workspaceId } }),
-    siteBroadcastsGetQueryKey({ path }),
-  ]
-  const toReport = async () =>
-    navigate({ to: broadcastsReportRoute.to, params: { workspaceId, broadcastId: broadcast.id } })
-
-  const sendMutation = useResourceMutation({
-    mutation: siteBroadcastsSendMutation(),
-    invalidate,
-    successMessage: t(($) => $.notifications.broadcastSent),
-    errorTitle: t(($) => $.alerts.broadcastSendErrorTitle),
-    onDone: toReport,
-  })
-
-  const scheduleMutation = useResourceMutation({
-    mutation: siteBroadcastsScheduleMutation(),
-    invalidate,
-    successMessage: t(($) => $.notifications.broadcastScheduled),
-    errorTitle: t(($) => $.alerts.broadcastSendErrorTitle),
-    onDone: toReport,
-  })
+  // A delivered Broadcast is followed on its report.
+  const deliver = async (
+    operation: BroadcastDelivery,
+    input?: Parameters<typeof editor.run>[1],
+  ) => {
+    if ((await editor.run(operation, input)) === 'success') {
+      await navigate({
+        to: broadcastsReportRoute.to,
+        params: { workspaceId, broadcastId: broadcast.id },
+      })
+    }
+  }
 
   const testSendMutation = useResourceMutation({
     mutation: siteBroadcastsTestSendMutation(),
@@ -66,12 +61,19 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
       <Text size="sm" c="dimmed">
         {t(($) => $.broadcasts.deliveryHint)}
       </Text>
+      {editor.dirty && broadcast.status === 'draft' && (
+        <Text size="sm" c="dimmed">
+          {t(($) => $.broadcasts.deliveryUnsaved)}
+        </Text>
+      )}
       <Group align="flex-end">
         <Button
           color="teal"
-          disabled={!isDraft}
-          loading={sendMutation.isPending}
-          onClick={() => sendMutation.mutate({ path })}
+          disabled={!editor.can('SEND')}
+          loading={editor.operation === 'SEND'}
+          onClick={() => {
+            void deliver('SEND')
+          }}
         >
           {t(($) => $.broadcasts.sendNow)}
         </Button>
@@ -83,14 +85,11 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
         />
         <Button
           variant="light"
-          disabled={!isDraft || scheduledAt === ''}
-          loading={scheduleMutation.isPending}
-          onClick={() =>
-            scheduleMutation.mutate({
-              path,
-              body: { scheduledAt: new Date(scheduledAt).toISOString() },
-            })
-          }
+          disabled={!editor.can('SCHEDULE') || scheduledAt === ''}
+          loading={editor.operation === 'SCHEDULE'}
+          onClick={() => {
+            void deliver('SCHEDULE', { scheduledAt: new Date(scheduledAt).toISOString() })
+          }}
         >
           {t(($) => $.broadcasts.schedule)}
         </Button>

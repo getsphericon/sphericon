@@ -1,18 +1,25 @@
-import { Modal, Stack, Title } from '@mantine/core'
+import { Fieldset, Modal, Stack, Title } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { Navigate, useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
-import { useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { LeaveDialog } from '../components/LeaveDialog.tsx'
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../components/Skeletons.tsx'
+import { defineEditorSession } from '../editing/editorSession.ts'
+import type { EditorOperationInput } from '../editing/editorSession.ts'
+import { useEditorEffects } from '../editing/useEditorEffects.ts'
+import type { EditorOutcomeTexts } from '../editing/useEditorEffects.ts'
+import { useEditorSession } from '../editing/useEditorSession.ts'
+import type { EditorOutcome } from '../editing/useEditorSession.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
+import { resourceEditorAdapter } from './resourceEditor.ts'
+import type { ResourceOperation, ResourceUpdate } from './resourceEditor.ts'
 import type { ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
 import { useSchemaForm } from './schemaForm.ts'
 import type { SchemaForm } from './schemaForm.ts'
@@ -24,7 +31,8 @@ type ResourceForm<TPayload, TValues extends object> = SchemaForm<TValues, TPaylo
 
 // What a resource's form component receives. `form` validates through the resource's form
 // schema and `onSubmit` is handed the normalized API payload; the component only renders
-// fields and buttons.
+// fields and buttons. It never reshapes the payload: the edit page's session sends the schema's
+// output of the values it captures, so whatever makes the request body belongs to the schema.
 export interface ResourceFormProps<TPayload, TValues extends object> {
   form: ResourceForm<TPayload, TValues>
   isPending: boolean
@@ -42,10 +50,30 @@ interface ResourceTexts {
   saveErrorTitle: string
 }
 
+// An operation of the edit page besides Save, with the toasts of its outcome.
+export interface ResourceEditOperation<TResource, TValues> extends ResourceOperation<
+  TResource,
+  TValues
+> {
+  texts: (t: TFunction) => EditorOutcomeTexts
+}
+
+// What the content under the edit form receives of its editor session: whether the form holds
+// unsaved edits, whether a write is pending and which operation it is, and the operations.
+export interface ResourceEditor<TOperation extends string> {
+  dirty: boolean
+  busy: boolean
+  operation: TOperation | null
+  can: (operation: TOperation) => boolean
+  // Starts the operation and resolves with its outcome (`busy` when it may not start now).
+  run: (operation: TOperation, input?: EditorOperationInput) => Promise<EditorOutcome>
+}
+
 // The whole interface of the resource form lifecycle module: describe a resource once and
 // get a create page and an edit page that own load/error states, hydration, validation,
-// normalization, mutation, invalidation and post-create navigation. The generic parameters
-// are inferred from the generated pieces; callers never write them.
+// normalization, writes, invalidation and post-create navigation. The edit page runs an editor
+// session (docs/standards/ui.md, "Editor sessions"). The generic parameters are inferred from
+// the generated pieces; callers never write them.
 export interface ResourceDescription<
   TPayload,
   TValues extends object,
@@ -54,13 +82,14 @@ export interface ResourceDescription<
   TError extends ApiErrorLike,
   TGetKey extends QueryKey,
   TIdParam extends string,
+  TOperation extends string,
 > {
   // Form values <-> API payload, derived from the generated zod schema (resourceFormSchema).
   schema: ResourceFormSchema<TPayload, TValues>
   // The resource's field-rendering form.
   Form: ComponentType<ResourceFormProps<TPayload, TValues>>
-  // The generated react-query pieces, passed as generated. The module calls them with
-  // { path: { workspaceId } } (list, create) or { path: { workspaceId, id } } (get, update).
+  // The generated pieces, passed as generated. The module calls them with
+  // { path: { workspaceId } } (create) or { path: { workspaceId, id } } (get, update).
   getOptions: (options: {
     path: { workspaceId: string; id: string }
   }) => UseSuspenseQueryOptions<TResource, TError, TResource, TGetKey>
@@ -69,11 +98,11 @@ export interface ResourceDescription<
     TError,
     { path: { workspaceId: string }; body: TPayload }
   >
-  updateMutation: () => UseMutationOptions<
-    TResource,
-    TError,
-    { path: { workspaceId: string; id: string }; body: TPayload }
-  >
+  // The generated client call that saves an edit.
+  update: ResourceUpdate<TPayload, TResource>
+  // The edit page's operations besides Save, named by their event (PUBLISH, SEND, …); `{}` for a
+  // resource that has none.
+  operations: Record<TOperation, ResourceEditOperation<TResource, TValues>>
   // The edit route and the name of its param that holds the resource id, e.g. 'contactId'.
   editRoute: { useParams: () => Record<TIdParam, string> }
   idParam: TIdParam
@@ -87,9 +116,6 @@ export interface ResourceDescription<
   // The edited values of a loaded resource whose fields are not at its top level (a Rule keeps
   // its definition in its draft or live version). Without it the resource is edited as it is.
   editedValues?: (loaded: TResource) => ResourceValues<TPayload>
-  // Which revision of the resource the form edits, when something besides the form's own save
-  // can replace what it edits (a Rule's draft dropped by Revert): a new revision reloads the form.
-  revision?: (loaded: TResource) => string
   // The page the edit URL of a resource that takes no edit opens instead of the form (an archived
   // one, read-only until it is unarchived, ADR 0100); undefined for a resource that is edited.
   readOnlyTarget?: (
@@ -98,10 +124,10 @@ export interface ResourceDescription<
   ) => { to: string; params: Record<string, string> } | undefined
 }
 
-export interface ResourceEditPageProps<TResource> {
-  // Extra content rendered under the form, given the loaded resource (e.g. delivery actions) and
-  // whether the form holds unsaved changes.
-  children?: (loaded: TResource, form: { dirty: boolean }) => ReactNode
+export interface ResourceEditPageProps<TResource, TOperation extends string> {
+  // Extra content rendered under the form (e.g. delivery actions), given the stored resource and
+  // the editor session.
+  children?: (loaded: TResource, editor: ResourceEditor<TOperation>) => ReactNode
 }
 
 export function defineResource<
@@ -112,9 +138,29 @@ export function defineResource<
   TError extends ApiErrorLike,
   TGetKey extends QueryKey,
   TIdParam extends string,
+  TOperation extends string,
 >(
-  resource: ResourceDescription<TPayload, TValues, TResource, TCreated, TError, TGetKey, TIdParam>,
+  resource: ResourceDescription<
+    TPayload,
+    TValues,
+    TResource,
+    TCreated,
+    TError,
+    TGetKey,
+    TIdParam,
+    TOperation
+  >,
 ) {
+  const { operations } = resource
+  const adapter = resourceEditorAdapter({
+    id: `${resource.idParam}Editor`,
+    schema: resource.schema,
+    editedValues: resource.editedValues,
+    update: resource.update,
+    operations,
+  })
+  const editorSession = defineEditorSession(adapter)
+
   function CreatePage() {
     const { t } = useTranslation()
     const navigate = useNavigate()
@@ -184,59 +230,84 @@ export function defineResource<
 
   // Mounted only once the resource is loaded, so the form is created with the hydrated values
   // (the schema's encode direction) and never renders blank. It is keyed by resource id by the
-  // caller and not by the fetched data: a background refetch (invalidation, window focus) must
-  // not remount the form and clobber unsaved edits. After a successful save the form is reset
-  // to the saved resource instead, so it is clean and shows the server's normalized values. A
-  // resource with revisions is keyed by its revision too: when another action replaces what the
-  // form edits, the form reloads.
+  // caller and not by the fetched data: a refetch updates the session's metadata only, never the
+  // form. Only the session replaces the form's values, on Revert or on a Save the form still
+  // holds, and then remounts its fields, whose stateful editors read their initial value once.
   function EditForm({
     workspaceId,
     id,
     loaded,
     children,
-  }: ResourceEditPageProps<TResource> & { workspaceId: string; id: string; loaded: TResource }) {
+  }: ResourceEditPageProps<TResource, TOperation> & {
+    workspaceId: string
+    id: string
+    loaded: TResource
+  }) {
     const { t } = useTranslation()
     const texts = resource.texts(t)
 
-    const values = (from: TResource) =>
-      resource.schema.toValues(resource.editedValues?.(from) ?? from)
-    const form = useSchemaForm(resource.schema.update, values(loaded))
-    const [savedRevision, setSavedRevision] = useState(0)
+    const path = { workspaceId, id }
+    // The values the session opens with, the same the form starts from.
+    const form = useSchemaForm(resource.schema.update, adapter.open({ path, resource: loaded }))
+    const effects = useEditorEffects<TResource, TOperation>(
+      resource.getOptions({ path }).queryKey,
+      (operation) =>
+        operation === 'SAVE'
+          ? { accepted: texts.updated, failedTitle: texts.saveErrorTitle }
+          : operations[operation].texts(t),
+    )
 
-    const mutation = useResourceMutation({
-      mutation: resource.updateMutation(),
-      successMessage: texts.updated,
-      errorTitle: texts.saveErrorTitle,
-      onDone: (saved) => {
-        const next = values(saved)
-        form.setValues(next)
-        form.resetDirty(next)
-        // Stateful editors read their initial value once. A successful save reloads them
-        // from the normalized response; background refetches leave unfinished edits alone.
-        setSavedRevision((revision) => revision + 1)
+    const {
+      snapshot: session,
+      dirty,
+      wouldLose,
+      can,
+      run,
+      save,
+    } = useEditorSession(adapter, editorSession, {
+      subject: { path, resource: loaded },
+      editor: {
+        read: () => form.getValues(),
+        // A changed field's error goes with its old value (clearInputErrorOnChange).
+        write: (content) => {
+          form.setValues(content)
+        },
       },
+      effects,
     })
+
+    // Subscribed: the page re-renders on every edit.
+    const current = form.values
+    const editor: ResourceEditor<TOperation> = {
+      dirty: dirty(current),
+      busy: !session.matches('idle'),
+      operation: session.context.operation,
+      can,
+      run,
+    }
 
     return (
       <Stack>
         <Title order={4}>{texts.editTitle}</Title>
-        <resource.Form
-          key={savedRevision}
-          form={form}
-          isPending={mutation.isPending}
-          onSubmit={(body) => mutation.mutate({ path: { workspaceId, id }, body })}
-        />
-        {children?.(loaded, { dirty: form.isDirty() })}
-        <LeaveDialog
-          dirty={form.isDirty() && !mutation.isPending}
-          message={t(($) => $.leave.message)}
-        />
+        {/* Fields stay enabled during Save; the other operations act on the stored resource. */}
+        <Fieldset variant="unstyled" disabled={session.hasTag('readOnly')}>
+          <resource.Form
+            key={session.context.content.revision}
+            form={form}
+            isPending={session.matches('saving')}
+            onSubmit={() => {
+              void save((submission) => submission !== null)
+            }}
+          />
+        </Fieldset>
+        {children?.(session.context.resource, editor)}
+        <LeaveDialog dirty={wouldLose(current)} message={t(($) => $.leave.message)} />
       </Stack>
     )
   }
 
   // The loaded resource; the edit page's boundary shows its load and a failed load.
-  function LoadedEditForm({ children }: ResourceEditPageProps<TResource>) {
+  function LoadedEditForm({ children }: ResourceEditPageProps<TResource, TOperation>) {
     const { workspaceId } = workspaceRoute.useParams()
     const id = resource.editRoute.useParams()[resource.idParam]
     const { data } = useSuspenseQuery(resource.getOptions({ path: { workspaceId, id } }))
@@ -248,7 +319,7 @@ export function defineResource<
 
     return (
       <EditForm
-        key={`${id}:${resource.revision?.(data) ?? ''}`}
+        key={id}
         workspaceId={workspaceId}
         id={id}
         loaded={data}
@@ -257,7 +328,7 @@ export function defineResource<
     )
   }
 
-  function EditPage({ children }: ResourceEditPageProps<TResource>) {
+  function EditPage({ children }: ResourceEditPageProps<TResource, TOperation>) {
     const { t } = useTranslation()
     return (
       <QueryBoundary fallback={<PageSkeleton />} errorTitle={resource.texts(t).loadErrorTitle}>

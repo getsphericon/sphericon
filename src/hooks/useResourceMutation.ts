@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { QueryKey, UseMutationOptions } from '@tanstack/react-query'
+import type { QueryClient, QueryKey, UseMutationOptions } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { isForbiddenError } from '../utils/apiErrors.ts'
@@ -59,11 +59,8 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
     ...mutation,
     onSuccess: async (data, variables) => {
       if (invalidate !== false) {
-        const own = new Set(tagsOf(mutation.mutationKey))
         await Promise.all([
-          queryClient.invalidateQueries({
-            predicate: (query) => tagsOf(query.queryKey).some((tag) => own.has(tag)),
-          }),
+          invalidateOwn(queryClient, mutation.mutationKey),
           ...(invalidate ?? []).map(async (queryKey) =>
             queryClient.invalidateQueries({ queryKey }),
           ),
@@ -98,6 +95,15 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
 }
 
 // tagsOf reads the operation tags a generated query or mutation key carries in its first element.
+// invalidateOwn invalidates every query that carries one of the operation tags of `key`: the
+// queries of its own resource (its list, its detail).
+export async function invalidateOwn(queryClient: QueryClient, key: QueryKey | undefined) {
+  const own = new Set(tagsOf(key))
+  return queryClient.invalidateQueries({
+    predicate: (query) => tagsOf(query.queryKey).some((tag) => own.has(tag)),
+  })
+}
+
 function tagsOf(key: QueryKey | undefined): readonly string[] {
   const head: unknown = key?.[0]
   if (typeof head !== 'object' || head === null || !('tags' in head) || !Array.isArray(head.tags)) {
