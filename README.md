@@ -11,6 +11,12 @@
   <a href="LICENSING.md"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue" /></a>
 </p>
 
+> [!WARNING]
+> Sphericon is in early development and changes fast. Until 1.0, any release may break the API,
+> the configuration or the stored data, and features may change or go away. Try it and tell us
+> what you think, but do not rely on it in production yet. Read the [changelog](CHANGELOG.md)
+> before you upgrade; the [roadmap](ROADMAP.md) says what comes next.
+
 ![The Sphericon workspace overview: email engagement, contacts and automations](docs/public/screenshot.png)
 
 ## About
