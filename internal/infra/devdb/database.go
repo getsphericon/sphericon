@@ -50,12 +50,13 @@ func Drop(ctx context.Context, dsn string) (string, error) {
 func admin(dsn string, fn func(adminDB *sql.DB, dbName, ident string) (string, error)) (string, error) {
 	cfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
-		return "", fmt.Errorf("parse SPHERICON_DATABASE_URL: %w", err)
+		return "", fmt.Errorf("parse the database DSN: %w", err)
 	}
 	dbName := cfg.Database
+	ident := pgx.Identifier{dbName}.Sanitize()
 	cfg.Database = "postgres"
 
 	adminDB := stdlib.OpenDB(*cfg)
 	defer cleanup.Close(adminDB, "database")
-	return fn(adminDB, dbName, pgx.Identifier{dbName}.Sanitize())
+	return fn(adminDB, dbName, ident)
 }
