@@ -218,6 +218,10 @@ func (a *Attempts) Delay(ctx context.Context, kind Kind, email string) (time.Dur
 		return 0, nil
 	}
 	wait := rule.Wait(row.Failures)
+	// No wait is none however the clock reads against the last failure.
+	if wait == 0 {
+		return 0, nil
+	}
 	until := row.LastAttemptAt.Add(wait)
 	return max(until.Sub(now), 0), nil
 }

@@ -80,6 +80,15 @@ func TestDelayShrinksAsTheClockAdvancesAndEnds(t *testing.T) {
 	assert.Zero(t, delay(t, a, "x@attempts.test"))
 }
 
+// A clock that reads earlier than the last failure (another replica's, or one stepped back)
+// does not make an address below the threshold wait.
+func TestNoDelayBeforeTheThresholdWhenTheClockReadsEarlier(t *testing.T) {
+	a, c, _ := newAttempts(t)
+	fail(t, a, "x@attempts.test", 1)
+	c.advance(-time.Second)
+	assert.Zero(t, delay(t, a, "x@attempts.test"))
+}
+
 func TestSuccessResetsTheCounter(t *testing.T) {
 	a, _, _ := newAttempts(t)
 	fail(t, a, "x@attempts.test", 4)
