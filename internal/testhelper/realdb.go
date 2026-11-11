@@ -2,6 +2,7 @@ package testhelper
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
@@ -74,6 +75,27 @@ func EmptyDBURL(t *testing.T) string {
 	dsn, err := sharedDatabaseURL()
 	require.NoError(t, err)
 	return dbcleanerpg.ScratchDatabase(t, dsn)
+}
+
+// AbsentDBURL is the URL of a database on the test server that does not exist, for code that
+// creates a database itself (the dev database tasks). Its name is name with a random suffix, so it
+// keeps whatever characters name has; whatever the test made of it is dropped when the test ends.
+func AbsentDBURL(t *testing.T, name string) string {
+	t.Helper()
+	shared, err := sharedDatabaseURL()
+	require.NoError(t, err)
+	unique := name + " " + rand.Text()[:10]
+	ctx := context.WithoutCancel(t.Context())
+
+	admin, err := sql.Open("pgx", shared)
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(admin, "AbsentDB admin") })
+	t.Cleanup(func() {
+		// raw sql: DROP DATABASE is server DDL; ent models tables, not databases.
+		_, err := admin.ExecContext(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{unique}.Sanitize()+" WITH (FORCE)")
+		require.NoError(t, err, "drop %s", unique)
+	})
+	return withDatabase(t, shared, unique)
 }
 
 var (

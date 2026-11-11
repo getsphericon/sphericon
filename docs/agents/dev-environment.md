@@ -76,7 +76,8 @@ fixtures into it at the same moment as into the first, and never connects to it 
 test is `CREATE DATABASE <test db>_w<j>_c<n> TEMPLATE <test db>_w<j>` (tens to a few hundred
 milliseconds) and a drop when it ends. Both databases hold the fixtures with the same relative
 dates. The clones a killed run left are dropped by the next process that leases that worker, and gc
-keeps them with their checkout. `EmptyDBURL` is a scratch database with no schema.
+keeps them with their checkout. `EmptyDBURL` is a scratch database with no schema, and
+`AbsentDBURL` the name of one that is not there yet, dropped with the test whatever it made of it.
 
 **Heavy tasks queue machine-wide.** The CPU-heavy commands (`go test`, `golangci-lint`, `tsc`,
 `knip`, vitest, ent/ogen/goverter generation) run through [`heavy`](https://github.com/mokevnin/heavy)

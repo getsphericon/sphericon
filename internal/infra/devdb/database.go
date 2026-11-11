@@ -7,20 +7,20 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
-// Create creates the database databaseURL points at and says what it did: a database that is
-// already there is left as it is.
-func Create(ctx context.Context, databaseURL string) (string, error) {
-	return admin(ctx, databaseURL, func(adminDB *sql.DB, dbName, ident string) (string, error) {
+// Create creates the database dsn points at and says what it did: a database that is already
+// there is left as it is.
+func Create(ctx context.Context, dsn string) (string, error) {
+	return admin(dsn, func(adminDB *sql.DB, dbName, ident string) (string, error) {
 		// raw sql: CREATE DATABASE is a server command with an identifier, not a table operation.
 		if _, err := adminDB.ExecContext(ctx, "CREATE DATABASE "+ident); err != nil {
 			if pgErr := new(pgconn.PgError); errors.As(err, &pgErr) && pgErr.Code == pgerrcode.DuplicateDatabase {
@@ -32,9 +32,9 @@ func Create(ctx context.Context, databaseURL string) (string, error) {
 	})
 }
 
-// Drop drops the database databaseURL points at, if it is there, and says what it did.
-func Drop(ctx context.Context, databaseURL string) (string, error) {
-	return admin(ctx, databaseURL, func(adminDB *sql.DB, dbName, ident string) (string, error) {
+// Drop drops the database dsn points at, if it is there, and says what it did.
+func Drop(ctx context.Context, dsn string) (string, error) {
+	return admin(dsn, func(adminDB *sql.DB, dbName, ident string) (string, error) {
 		// raw sql: DROP DATABASE is a server command with an identifier, not a table operation.
 		if _, err := adminDB.ExecContext(ctx, "DROP DATABASE IF EXISTS "+ident); err != nil {
 			return "", fmt.Errorf("drop database: %w", err)
@@ -43,37 +43,23 @@ func Drop(ctx context.Context, databaseURL string) (string, error) {
 	})
 }
 
-// admin runs fn against the server's `postgres` database, with the name of the database
-// databaseURL points at and that name quoted as an identifier.
-func admin(ctx context.Context, databaseURL string, fn func(adminDB *sql.DB, dbName, ident string) (string, error)) (string, error) {
-	u, err := url.Parse(databaseURL)
+// admin runs fn against the server's `postgres` database, with the name of the database dsn
+// points at and that name quoted as an identifier, for CREATE and DROP DATABASE, which take an
+// identifier and not a bound parameter. dsn is any connection string pgx reads: a URL or
+// keyword/value pairs.
+func admin(dsn string, fn func(adminDB *sql.DB, dbName, ident string) (string, error)) (string, error) {
+	cfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
-		return "", fmt.Errorf("parse SPHERICON_DATABASE_URL: %w", err)
+		return "", fmt.Errorf("parse the database DSN: %w", err)
 	}
-
-	dbName := strings.TrimPrefix(u.Path, "/")
-	u.Path = "/postgres"
-
-	adminDB, err := sql.Open("pgx", u.String())
-	if err != nil {
-		return "", fmt.Errorf("open admin db: %w", err)
+	dbName := cfg.Database
+	if dbName == "" {
+		return "", errors.New("the database DSN names no database")
 	}
+	ident := pgx.Identifier{dbName}.Sanitize()
+	cfg.Database = "postgres"
+
+	adminDB := stdlib.OpenDB(*cfg)
 	defer cleanup.Close(adminDB, "database")
-	ident, err := quoteIdent(ctx, adminDB, dbName)
-	if err != nil {
-		return "", err
-	}
 	return fn(adminDB, dbName, ident)
-}
-
-// quoteIdent has the server quote a database name, so no escaping of our own stands between a
-// name from SPHERICON_DATABASE_URL and the CREATE or DROP DATABASE that takes it: those commands accept an
-// identifier and not a bound parameter.
-func quoteIdent(ctx context.Context, adminDB *sql.DB, name string) (string, error) {
-	var quoted string
-	// raw sql: quote_ident is the server's own identifier quoting; ent has no such function.
-	if err := adminDB.QueryRowContext(ctx, "SELECT quote_ident($1)", name).Scan(&quoted); err != nil {
-		return "", fmt.Errorf("quote database name: %w", err)
-	}
-	return quoted, nil
 }

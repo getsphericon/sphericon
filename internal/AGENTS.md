@@ -29,8 +29,9 @@ a worker called directly. A test that needs a **real commit** (code that opens i
 concurrent workers, a lock one transaction holds against another, a statement
 that fails and must not abort the rest, a whole `app.App`, a river runtime) cannot ride one. It takes
 a database of its own instead: `testhelper.RealDB(t)` (a `*sql.DB`), `RealDBURL(t)` (a URL, e.g.
-`t.Setenv("SPHERICON_DATABASE_URL", ...)` for an app) or `EmptyDBURL(t)` (no schema, to migrate a fresh
-instance). `RealDB` is a clone of a second database the process leases and loads with the fixtures
+`t.Setenv("SPHERICON_DATABASE_URL", ...)` for an app), `EmptyDBURL(t)` (no schema, to migrate a fresh
+instance) or `AbsentDBURL(t, name)` (a database not created yet, for code that creates one).
+`RealDB` is a clone of a second database the process leases and loads with the fixtures
 at the same moment as `Setup`'s, so both see the same rows with the same relative dates; the clone
 is dropped when the test ends, so no test cleans up by hand or resets state at its start. A test
 whose only reason is `rivertest`, which hands a worker a `*sql.Tx`, does not need one: the txdb
