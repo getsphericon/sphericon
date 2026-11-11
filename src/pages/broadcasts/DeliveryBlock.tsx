@@ -4,7 +4,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { siteBroadcastsTestSendMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteBroadcastResource,
+  ScheduleBroadcastInput,
+} from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import type { ResourceEditor } from '../../resources/defineResource.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
@@ -34,10 +37,7 @@ export function DeliveryBlock({
 
   const path = { workspaceId, id: broadcast.id }
   // A delivered Broadcast is followed on its report.
-  const deliver = async (
-    operation: BroadcastDelivery,
-    input?: Parameters<typeof editor.run>[1],
-  ) => {
+  const deliver = async (operation: BroadcastDelivery, input?: ScheduleBroadcastInput) => {
     if ((await editor.run(operation, input)) === 'success') {
       await navigate({
         to: broadcastsReportRoute.to,

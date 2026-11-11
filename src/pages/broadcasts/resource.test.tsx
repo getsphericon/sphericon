@@ -27,6 +27,7 @@ import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspa
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { requestGate } from '../../test/requestGate.ts'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { BroadcastCreatePage, BroadcastEditPage } from './resource.tsx'
@@ -608,14 +609,12 @@ test('Send now and Schedule wait for unsaved edits to be saved', async () => {
 })
 
 test('Send now and Schedule wait while Save is pending, then deliver what was saved', async () => {
-  const received = Promise.withResolvers<undefined>()
-  const release = Promise.withResolvers<undefined>()
+  const gate = requestGate()
   const sent: string[] = []
   serveDraft()
   worker.use(
     handleSiteBroadcastsUpdate(async () => {
-      received.resolve(undefined)
-      await release.promise
+      await gate.hold()
       return HttpResponse.json({ ...broadcast('draft'), name: 'Launch, edited' })
     }),
     handleSiteBroadcastsSend(({ params }) => {
@@ -627,11 +626,11 @@ test('Send now and Schedule wait while Save is pending, then deliver what was sa
   await screen.getByLabelText(/^Name/).fill('Launch, edited')
   await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
   await screen.getByRole('button', { name: 'Save' }).click()
-  await received.promise
+  await gate.received
 
   await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeDisabled()
   await expect.element(screen.getByRole('button', { name: 'Schedule', exact: true })).toBeDisabled()
-  release.resolve(undefined)
+  gate.release()
 
   await expect.element(screen.getByText('Broadcast updated')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Send now' }).click()

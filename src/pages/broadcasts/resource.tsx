@@ -14,6 +14,7 @@ import {
   zBroadcastChannel,
   zCreateBroadcastInput,
   zEmailBroadcastContentInput,
+  zSiteBroadcastsScheduleBody,
   zSmsBroadcastContentInput,
   zTelegramBroadcastContentInput,
 } from '../../generated/site/zod.gen.ts'
@@ -152,16 +153,10 @@ const broadcastResource = defineResource({
       }),
     },
     SCHEDULE: {
+      // Its input is the request's body: the time DeliveryBlock schedules at.
       request: async ({ subject: { path }, input }) => {
-        const { scheduledAt } = input
-        if (scheduledAt === undefined) {
-          throw new Error('Schedule was started without a time')
-        }
-        const { data } = await siteBroadcastsSchedule({
-          path,
-          body: { scheduledAt },
-          throwOnError: true,
-        })
+        const body = zSiteBroadcastsScheduleBody.parse(input)
+        const { data } = await siteBroadcastsSchedule({ path, body, throwOnError: true })
         return data
       },
       available: deliverable,

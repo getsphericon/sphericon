@@ -8,7 +8,6 @@ import type {
   EditorAdapter,
   EditorEffects,
   EditorHandle,
-  EditorOperationInput,
   EditorReceipt,
   EditorSubmission,
 } from './editorSession.ts'
@@ -95,10 +94,10 @@ export function useEditorSession<
 
   // An operation's event carries the current content's fingerprint for its guard.
   const operationEvent = useCallback(
-    (type: TOperation, input?: EditorOperationInput) => ({
+    (type: TOperation, input?: unknown) => ({
       type,
       current: adapter.fingerprint(latest.current.editor.read()),
-      ...(input && { input }),
+      ...(input !== undefined && { input }),
     }),
     [adapter, latest],
   )
@@ -106,7 +105,7 @@ export function useEditorSession<
   // Starts the operation and resolves with its outcome: `busy` when it may not start now (another
   // one is pending, or its guard refuses), else as `save` does.
   const run = useCallback(
-    async (type: TOperation, input?: EditorOperationInput): Promise<EditorOutcome> => {
+    async (type: TOperation, input?: unknown): Promise<EditorOutcome> => {
       const event = operationEvent(type, input)
       if (!actor.getSnapshot().can(event)) {
         return 'busy'

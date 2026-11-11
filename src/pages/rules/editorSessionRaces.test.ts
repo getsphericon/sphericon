@@ -18,6 +18,7 @@ import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
 import { TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
+import { requestGate } from '../../test/requestGate.ts'
 import { worker } from '../../test/worker.ts'
 import { editedRule, ruleOperations, ruleSchema } from './ruleEditor.ts'
 import type { RuleValues } from './RuleForm.tsx'
@@ -113,21 +114,13 @@ async function stored() {
 
 // The server keeps the draft it is sent, and normalizes the name it is sent: it trims it.
 function serve({ refuse }: { refuse: boolean }) {
-  const received = Promise.withResolvers<undefined>()
-  const release = Promise.withResolvers<undefined>()
-  const answered = Promise.withResolvers<undefined>()
+  const gate = requestGate()
   let server = RESOURCE
-  let gated = true
   worker.use(
     handleSiteRulesGet(() => HttpResponse.json(server)),
     handleSiteRulesUpdate(async ({ request }) => {
       const { name, ...definition } = zSiteUpdateRuleInput.parse(await request.json())
-      if (gated) {
-        gated = false
-        received.resolve(undefined)
-        await release.promise
-        queueMicrotask(() => answered.resolve(undefined))
-      }
+      await gate.hold()
       if (refuse) {
         return problem(422, 'Refused definition')
       }
@@ -152,11 +145,7 @@ function serve({ refuse }: { refuse: boolean }) {
       return HttpResponse.json(server)
     }),
   )
-  return {
-    received: received.promise,
-    release: () => release.resolve(undefined),
-    answered: answered.promise,
-  }
+  return gate
 }
 
 function startRaces({ refuse }: { refuse: boolean }): RaceRig<OperationEvent> {

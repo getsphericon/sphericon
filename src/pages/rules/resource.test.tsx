@@ -25,6 +25,7 @@ import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/ru
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { requestGate } from '../../test/requestGate.ts'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { RuleCreatePage, RuleEditPage } from './resource.tsx'
@@ -330,15 +331,13 @@ test('a background refetch preserves unfinished structured edits and their dirty
 // A server whose first write waits at the gate until released; it then holds what it was sent as
 // the draft above the live version, which a refetch reads.
 function gatedRuleServer(initial: SiteRuleResource) {
-  const received = Promise.withResolvers<undefined>()
-  const release = Promise.withResolvers<undefined>()
+  const gate = requestGate()
   let server = initial
   worker.use(
     handleSiteRulesGet(() => HttpResponse.json(server)),
     handleSiteRulesUpdate(async ({ request }) => {
       const { name, ...definition } = zSiteUpdateRuleInput.parse(await request.json())
-      received.resolve(undefined)
-      await release.promise
+      await gate.hold()
       server = {
         ...server,
         name: name ?? server.name,
@@ -351,7 +350,7 @@ function gatedRuleServer(initial: SiteRuleResource) {
       return HttpResponse.json(server)
     }),
   )
-  return { received: received.promise, release: () => release.resolve(undefined) }
+  return gate
 }
 
 test.each([
