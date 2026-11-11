@@ -112,9 +112,9 @@ func (CapturedMessage) Indexes() []ent.Index {
 		// Erasure and the Privacy request reach the messages by recipient.
 		index.Fields("workspace_id", "recipient"),
 		// The keys that need a lookup by the referenced row: its delete or its cascade.
-		index.Fields("integration_id").
-			StorageKey("captured_messages_integration_id"),
-		index.Fields("outbound_message_id").
-			StorageKey("captured_messages_outbound_message_id"),
+		index.Fields("workspace_id", "integration_id").
+			StorageKey("captured_messages_workspace_id_integration_id"),
+		index.Fields("workspace_id", "outbound_message_id").
+			StorageKey("captured_messages_workspace_id_outbound_message_id"),
 	}
 }

@@ -44,6 +44,15 @@
   and `sphericon upgrade-notes` reads the `Upgrade:` lines from its BREAKING CHANGES section; the
   repository squashes with the PR title and the commit messages).
 - The schema is plain tables: no database functions, triggers or views (`CODING_STANDARDS.md`).
+- **A reference between two Workspace-owned tables is a composite foreign key** (ADR 0017):
+  `mise run db:generate` turns an edge's `x_id` key into `(workspace_id, x_id)` → parent
+  `(workspace_id, id)` and gives the parent that unique key (`internal/infra/devdb/tenantkeys.go`),
+  with nothing to declare in the schema. The SQL it writes still needs the hand edit every migration
+  of a live table gets (the Squawk rules above): under `-- +goose NO TRANSACTION`, the parents'
+  unique keys built first and `CONCURRENTLY` (Atlas may write a key before the parent's unique key
+  it references), each foreign key added `NOT VALID` then `VALIDATE`d, and a dropped index last. The index that serves such an edge leads with `workspace_id`:
+  `index.Fields("workspace_id", "x_id")`, and a unique key over the edge column starts with
+  `workspace_id` too; `check:schema` names an edge without one (`fk-without-index`).
 - **A rule a schema comment states about its columns is a CHECK.** A table that keeps several kinds
   of row (a Broadcast per channel, an Outbound message per kind) lists which columns each kind owns
   with `variantCheck` (`variant_check.go`), so the database refuses a row that mixes them; a column

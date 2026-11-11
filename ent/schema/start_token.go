@@ -84,12 +84,12 @@ func (StartToken) Indexes() []ent.Index {
 		index.Fields("workspace_id", "token_hash").
 			Unique().
 			StorageKey("start_tokens_token_hash"),
-		index.Fields("integration_id").
-			StorageKey("start_tokens_integration_id"),
-		index.Fields("contact_id").
-			StorageKey("start_tokens_contact_id"),
-		index.Fields("visitor_id").
-			StorageKey("start_tokens_visitor_id"),
+		index.Fields("workspace_id", "integration_id").
+			StorageKey("start_tokens_workspace_id_integration_id"),
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("start_tokens_workspace_id_contact_id"),
+		index.Fields("workspace_id", "visitor_id").
+			StorageKey("start_tokens_workspace_id_visitor_id"),
 		// The purge of lapsed tokens finds them by their expiry.
 		index.Fields("expires_at").
 			StorageKey("start_tokens_expires_at"),

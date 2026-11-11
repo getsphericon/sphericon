@@ -43,6 +43,10 @@ func GenerateMigration(ctx context.Context, dir, diffURL, name string) (err erro
 	if err := applyMigrations(ctx, dir, diffURL); err != nil {
 		return err
 	}
+	stored, err := setNullActions(ctx, diffURL)
+	if err != nil {
+		return err
+	}
 	gooseDir, err := sqltool.NewGooseDir(dir)
 	if err != nil {
 		return fmt.Errorf("open migrations dir: %w", err)
@@ -65,7 +69,7 @@ func GenerateMigration(ctx context.Context, dir, diffURL, name string) (err erro
 	if err := migrate.NamedDiff(ctx, diffURL, name,
 		schema.WithDir(sumlessDir{gooseDir}),
 		schema.WithMigrationMode(schema.ModeInspect),
-		schema.WithDiffHook(normalized(ctx, normalizer)),
+		schema.WithDiffHook(normalized(ctx, normalizer, stored)),
 		// A removal is a destructive migration (ADR 0033): written here, guarded by hand.
 		schema.WithDropColumn(true),
 		schema.WithDropIndex(true),
@@ -81,13 +85,20 @@ func GenerateMigration(ctx context.Context, dir, diffURL, name string) (err erro
 // rewrites what it keeps (an index predicate's `IN (...)` comes back as `= ANY (ARRAY[...])`), so
 // the schema as ent writes it differs from the same schema read back, and every such difference
 // would land in the migration.
-func normalized(ctx context.Context, n atlas.Normalizer) schema.DiffHook {
+//
+// It also applies tenantKeys to the ent schema, and puts back the column a composite SET NULL key
+// clears on both sides, which Atlas reads as a bare SET NULL: on the database's from stored, on the
+// ent schema's from tenantKeys.
+func normalized(ctx context.Context, n atlas.Normalizer, stored map[string]atlas.ReferenceOption) schema.DiffHook {
 	return func(next schema.Differ) schema.Differ {
 		return schema.DiffFunc(func(current, desired *atlas.Schema) ([]atlas.Change, error) {
+			actions := tenantKeys(desired)
 			normal, err := n.NormalizeSchema(ctx, desired)
 			if err != nil {
 				return nil, fmt.Errorf("normalize the ent schema: %w", err)
 			}
+			withSetNullColumns(normal, actions)
+			withSetNullColumns(current, stored)
 			return next.Diff(current, normal)
 		})
 	}
@@ -118,4 +129,42 @@ func applyMigrations(ctx context.Context, dir, dsn string) (err error) {
 		return fmt.Errorf("apply the migrations to the diff database: %w", err)
 	}
 	return nil
+}
+
+// setNullActions is the delete action of every foreign key of the diff database that clears only
+// some of its columns (ON DELETE SET NULL (x_id)), by the key's name: Atlas reads such a key as a
+// bare SET NULL.
+func setNullActions(ctx context.Context, dsn string) (_ map[string]atlas.ReferenceOption, err error) {
+	diffDB, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("open the diff database: %w", err)
+	}
+	defer func() {
+		if closeErr := diffDB.Close(); err == nil && closeErr != nil {
+			err = fmt.Errorf("close the diff database: %w", closeErr)
+		}
+	}()
+	// raw sql: the columns a SET NULL clears are only in the catalog (pg_constraint.confdelsetcols).
+	rows, err := diffDB.QueryContext(ctx, `SELECT con.conname,
+	  array_to_string(ARRAY(SELECT a.attname FROM unnest(con.confdelsetcols) WITH ORDINALITY AS k(num, ord)
+	    JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = k.num ORDER BY k.ord), ', ')
+	FROM pg_constraint con JOIN pg_namespace n ON n.oid = con.connamespace
+	WHERE n.nspname = 'public' AND con.contype = 'f' AND con.confdelsetcols IS NOT NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("read the SET NULL columns: %w", err)
+	}
+	defer func() {
+		if closeErr := rows.Close(); err == nil && closeErr != nil {
+			err = closeErr
+		}
+	}()
+	out := map[string]atlas.ReferenceOption{}
+	for rows.Next() {
+		var name, columns string
+		if err := rows.Scan(&name, &columns); err != nil {
+			return nil, fmt.Errorf("read the SET NULL columns: %w", err)
+		}
+		out[name] = setNullOf(columns)
+	}
+	return out, rows.Err()
 }

@@ -6,7 +6,6 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 )
 
 // Automation is a workspace-scoped, event-triggered workflow and a Versioned definition
@@ -49,12 +48,5 @@ func (Automation) Edges() []ent.Edge {
 		// purges it, purges its Enrollments with it.
 		edge.To("runs", AutomationRun.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
-	}
-}
-
-func (Automation) Indexes() []ent.Index {
-	return []ent.Index{
-		// The Workspace foreign key's index. The Trigger lookup goes through the versions.
-		index.Fields("workspace_id"),
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 )
 
 // EmailTemplate is a workspace-scoped, reusable email body. Broadcasts copy from
@@ -48,11 +47,5 @@ func (EmailTemplate) Fields() []ent.Field {
 		field.String("editor_version").
 			Optional().
 			Nillable(),
-	}
-}
-
-func (EmailTemplate) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("workspace_id"),
 	}
 }

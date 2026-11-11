@@ -177,9 +177,8 @@ func (Broadcast) Edges() []ent.Edge {
 
 func (Broadcast) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id"),
-		index.Fields("segment_id"),
-		index.Fields("integration_id"),
+		index.Fields("workspace_id", "segment_id"),
+		index.Fields("workspace_id", "integration_id"),
 	}
 }
 

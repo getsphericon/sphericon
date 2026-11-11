@@ -92,7 +92,7 @@ func (Unsubscribe) Indexes() []ent.Index {
 			StorageKey("unsubscribes_ws_channel_dest_source"),
 		// Erasure and contact lookups reach this table by contact; the contact foreign key's
 		// index (whole: a key's index cannot be partial).
-		index.Fields("contact_id").
-			StorageKey("unsubscribes_contact_id"),
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("unsubscribes_workspace_id_contact_id"),
 	}
 }

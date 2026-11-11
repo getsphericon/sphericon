@@ -167,7 +167,6 @@ func (Integration) Indexes() []ent.Index {
 		index.Fields("workspace_id", "channel").
 			Annotations(entsql.IndexWhere("is_default AND discarded_at IS NULL")).
 			Unique(),
-		index.Fields("workspace_id"),
 		// At most one Test inbox per Workspace (ADR 0058); an archived one frees the place,
 		// so restoring it while another is kept trips this index.
 		index.Fields("workspace_id", "provider").

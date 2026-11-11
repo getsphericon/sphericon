@@ -89,7 +89,7 @@ func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 
 // The unique constraint of the Broadcast's recipients (ADR 0106): no client can break it.
 var _ = db.Declare(
-	db.Fault("broadcast_recipients_broadcast_id_contact_id",
+	db.Fault("broadcast_recipients_workspace_id_broadcast_id_contact_id",
 		"the recipients are written with ON CONFLICT: a re-planned Broadcast converges on the rows it has"),
 )
 
@@ -178,7 +178,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 				SetContactID(cid))
 		}
 		if err := s.BroadcastRecipient().CreateBulk(builders...).
-			OnConflictColumns("broadcast_id", "contact_id").
+			OnConflictColumns("workspace_id", "broadcast_id", "contact_id").
 			Ignore().
 			Exec(ctx); err != nil {
 			return nil, err

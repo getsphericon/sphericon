@@ -28,7 +28,8 @@ const module = "github.com/getsphericon/sphericon/"
 // TestEveryUniqueConstraintIsDeclaredByItsOwner holds the declarations of ADR 0106 to the migrated
 // schema. This package imports every module, the Enterprise Edition's included, so every
 // declaration is made by the time the test runs. Each unique index of a table of ours (a primary
-// key aside: its id comes from a sequence) is declared exactly once, by the package that owns the
+// key aside, and a unique key that holds the primary key's columns, as the Workspace's
+// (workspace_id, id) does: the id comes from a sequence, so neither can be broken) is declared exactly once, by the package that owns the
 // table in entrywrite's ownership map; no declaration names an index the schema lacks; and each
 // declared refusal is asserted with ErrorIs in a test of its owner, which breaks the constraint
 // through the module's interface (or, a refusal that never leaves its owner, unexported, is caught

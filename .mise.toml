@@ -55,7 +55,7 @@ version_expr = 'reverse(map(filter(fromJSON(body), hasPrefix(#.name, "v")), trim
 # PATH. The patterns are per platform because mise resolves a templated pattern for the host, which
 # would write the wrong URLs into mise.lock.
 [tools."github:mokevnin/schemalens"]
-version = "0.1.5"
+version = "0.1.6"
 
 [tools."github:mokevnin/schemalens".platforms]
 macos-arm64 = { asset_pattern = "schemalens_*_darwin_arm64.tar.gz", additional_asset_patterns = [

@@ -358,8 +358,8 @@ func (m *Module) merge(ctx context.Context, s *ent.Scoped, base *ent.RuleVersion
 var _ = db.Declare(
 	db.Fault("rule_versions_workspace_id_rule_id_version",
 		"a version's number is the next after the newest, read under the Workspace lock (versioneddefinition)"),
-	db.Fault("rulefiring_rule_id_source_id", "a Firing is written with ON CONFLICT DO NOTHING: an Event fires a Rule once"),
-	db.Fault("ruleversiontrigger_version_id_action", "a version's Trigger events are written once, without repeats (cleanTriggers)"),
+	db.Fault("rulefiring_workspace_id_rule_id_source_id", "a Firing is written with ON CONFLICT DO NOTHING: an Event fires a Rule once"),
+	db.Fault("ruleversiontrigger_workspace_id_version_id_action", "a version's Trigger events are written once, without repeats (cleanTriggers)"),
 )
 
 // saveVersion stores a new version of the Rule with its Trigger events, under the Workspace lock:
@@ -781,7 +781,7 @@ func recordFiring(ctx context.Context, s *ent.Scoped, live firingVersion, ev Eve
 		SetAction(ev.Action).
 		SetSourceID(ev.SourceID).
 		SetNillableProperties(propertiesJSON(ev.Properties)).
-		OnConflictColumns(rulefiring.FieldRuleID, rulefiring.FieldSourceID).
+		OnConflictColumns(rulefiring.FieldWorkspaceID, rulefiring.FieldRuleID, rulefiring.FieldSourceID).
 		DoNothing().
 		ID(ctx)
 	inserted, err = db.Inserted(err)

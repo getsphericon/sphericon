@@ -73,6 +73,5 @@ func (Membership) Indexes() []ent.Index {
 		// A User has at most one Membership per Workspace.
 		index.Fields("user_id", "workspace_id").
 			Unique(),
-		index.Fields("workspace_id"),
 	}
 }

@@ -101,7 +101,7 @@ func (m *Module) IssueVisitorStartLink(ctx context.Context, s *ent.Scoped, visit
 
 // The unique constraints of the Bindings and Start tokens (ADR 0106): no client can break them.
 var _ = db.Declare(
-	db.Fault("bindings_integration_destination",
+	db.Fault("bindings_workspace_id_integration_destination",
 		"a Binding is written with ON CONFLICT DO NOTHING, and a redemption that meets one goes on with it"),
 	db.Fault("start_tokens_token_hash", "a Start token is random (newToken), stored by its hash"),
 )
@@ -360,7 +360,7 @@ func createBinding(ctx context.Context, s *ent.Scoped, bot *ent.Integration, now
 	} else {
 		c.SetVisitorID(*tok.VisitorID)
 	}
-	_, err := c.OnConflictColumns(binding.FieldIntegrationID, binding.FieldDestination).DoNothing().ID(ctx)
+	_, err := c.OnConflictColumns(binding.FieldWorkspaceID, binding.FieldIntegrationID, binding.FieldDestination).DoNothing().ID(ctx)
 	created, err := db.Inserted(err)
 	if err != nil {
 		return false, fmt.Errorf("create binding: %w", err)

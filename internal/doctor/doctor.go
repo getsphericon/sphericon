@@ -21,14 +21,15 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
-// Postgres majors the Instance supports: the oldest we document, and the newest the test
-// suite runs against. the self-hosting guide on the documentation site cites the same range.
+// Postgres majors the Instance supports: the oldest it runs on (postgres.MinMajor), and the newest
+// the test suite runs against. The self-hosting guide on the documentation site cites the same range.
 const (
-	MinPostgresMajor       = 14
+	MinPostgresMajor       = postgres.MinMajor
 	MaxTestedPostgresMajor = 18
 )
 
