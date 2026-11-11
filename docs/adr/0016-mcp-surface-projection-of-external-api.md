@@ -4,6 +4,10 @@ status: accepted
 
 # MCP surface: a projection of the external `/api`, not a second implementation
 
+> **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** only
+> the contact lifts an opt-out; the console lifts none either. Recording consent the customer
+> collected stays as below.
+>
 > Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: the send-class list is
 > Automation and Rule Publish, Email send, and Broadcast schedule and unschedule, and an edit of an
 > active Automation or Rule writes a draft.

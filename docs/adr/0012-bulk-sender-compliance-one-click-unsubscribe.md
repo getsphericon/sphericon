@@ -4,9 +4,9 @@ status: accepted
 
 # Bulk-sender compliance: RFC 8058 one-click unsubscribe & DMARC readiness
 
-> **Amended by [[0120-engagement-tracking-is-consented-per-destination]]:** the unsubscribe footer
-> of a Broadcast or Automation email also links to the page where the person grants or refuses
-> Engagement tracking consent; that page is method-split the same way.
+> **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** the
+> footer carries one link, to the Preference page, which replaces the confirmation page, the
+> `/unsubscribed` page and its `everything` link below. The one-click `POST` is unchanged.
 
 Gmail/Yahoo/Microsoft enforce bulk-sender requirements (2024+) as the **receiving** side: any
 mail landing in those inboxes — regardless of the transport it was sent through (SES, SMTP, …) —

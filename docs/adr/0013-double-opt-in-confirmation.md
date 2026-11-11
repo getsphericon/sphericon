@@ -4,6 +4,11 @@ status: accepted
 
 # Double opt-in: confirmation as a positive event, not a subscription status
 
+> **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** a
+> return from `everything` on the Preference page, on fresh proof of the address, records a
+> Confirmation with provenance `double_opt_in`; the fresh link that page sends for an older link is
+> sent in this ADR's third eligibility mode with `everything` waived.
+
 EU regulation requires, for many acquisition flows, a _confirmed_ opt-in: the contact must
 actively confirm before marketing may flow, and the sender must be able to **demonstrate** that
 consent (GDPR Art. 7). This is table-stakes for anyone sending to the EU — self-hosters included
