@@ -250,10 +250,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 	if err != nil {
 		return View{}, err
 	}
-	key, err := credentials.GenerateIngestKey()
-	if err != nil {
-		return View{}, err
-	}
+	key := credentials.GenerateIngestKey()
 	if provider == providers.Telegram {
 		// The bot is connected before the save: Telegram refuses a wrong token or a webhook it cannot
 		// reach, and the save is refused with it.

@@ -119,6 +119,22 @@ func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
 	assert.NotNil(t, env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageUnengagedSecondID).ClickedAt)
 }
 
+func TestTheTrackingGuardSendsNoRateLimitHeaders(t *testing.T) {
+	env := testhelper.Setup(t, withTrackingLimit(1))
+
+	for _, message := range []int64{fixtures.OutboundMessageUnengagedFirstID, fixtures.OutboundMessageUnengagedSecondID} {
+		path := "/e/o/" + trackingToken(t, env, message)
+		rec := trackingGet(t, env, path)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		header := rec.Header()
+		for _, name := range []string{"X-Ratelimit-Limit", "X-Ratelimit-Remaining", "X-Ratelimit-Reset", "Retry-After"} {
+			values := header.Values(name)
+			assert.Empty(t, values, "%s on the response to message %d", name, message)
+		}
+	}
+}
+
 func TestOneClickUnsubscribeIsNeverRateLimited(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(1))
 	path := unsubPath(t, env.Tracker, linktarget.Unsubscribe{

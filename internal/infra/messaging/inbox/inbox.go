@@ -5,10 +5,13 @@
 package inbox
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"mime"
+	"net/textproto"
 	"slices"
 	"strings"
 
@@ -84,26 +87,30 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 	return messaging.Receipt{MessageID: id, DeliveryConfirmed: true}, nil
 }
 
-// headersOf reads the header block of a serialized message, in order, with folded lines
-// joined.
+// headersOf reads the header block of a serialized message, in order and with duplicates, folded
+// lines joined and encoded-words (RFC 2047, a non-ASCII Subject) decoded; a value whose charset
+// the decoder does not know is kept as it is.
 func headersOf(wire []byte) []messaging.Header {
-	block, _, _ := bytes.Cut(wire, []byte("\r\n\r\n"))
+	r := textproto.NewReader(bufio.NewReader(bytes.NewReader(wire)))
+	var dec mime.WordDecoder
 	var out []messaging.Header
-	for line := range strings.SplitSeq(string(block), "\r\n") {
-		if line == "" {
-			continue
-		}
-		if (line[0] == ' ' || line[0] == '\t') && len(out) > 0 {
-			out[len(out)-1].Value += " " + strings.TrimSpace(line)
-			continue
+	for {
+		line, err := r.ReadContinuedLine()
+		// The blank line ends the header block; a read error can only be the end of a message
+		// that has no body, which ends it too.
+		if err != nil || line == "" {
+			return out
 		}
 		name, value, ok := strings.Cut(line, ":")
 		if !ok {
 			continue
 		}
-		out = append(out, messaging.Header{Name: name, Value: strings.TrimSpace(value)})
+		value = strings.TrimSpace(value)
+		if decoded, err := dec.DecodeHeader(value); err == nil {
+			value = decoded
+		}
+		out = append(out, messaging.Header{Name: name, Value: value})
 	}
-	return out
 }
 
 // linksOf is the distinct URLs of the links of an HTML part, in order of first appearance.

@@ -285,10 +285,7 @@ func samePreset(a, b *string) bool {
 // refusal refuses the regeneration and the old key stays. A deleted Integration keeps its key: it
 // is ErrNotFound, as an unknown id is.
 func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
-	key, err := credentials.GenerateIngestKey()
-	if err != nil {
-		return View{}, err
-	}
+	key := credentials.GenerateIngestKey()
 	current, err := m.editable(ctx, s, id)
 	if err != nil {
 		return View{}, err

@@ -126,12 +126,3 @@ type DKIMKey struct {
 	Selector string
 	Signer   crypto.Signer
 }
-
-// FormatSender renders an email sender as "Name <addr>" when a display name is
-// present, otherwise just the address.
-func FormatSender(addr, name string) string {
-	if name != "" {
-		return name + " <" + addr + ">"
-	}
-	return addr
-}

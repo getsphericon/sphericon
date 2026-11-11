@@ -10,6 +10,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"regexp"
+
+	"github.com/getsphericon/sphericon/internal/kernel/randtext"
 )
 
 const (
@@ -37,18 +39,20 @@ type ParsedToken struct {
 	Secret string
 }
 
-func GenerateTokenPrefix() (string, error) {
-	return randomString(prefixAlphabet, prefixLen)
+// GenerateTokenPrefix returns prefixLen random characters of [a-z0-9]: the public half of an API
+// token or a service credential, by which it is looked up.
+func GenerateTokenPrefix() string {
+	return randtext.FromAlphabet(prefixAlphabet, prefixLen)
 }
 
 // GenerateTokenSecret returns secretLen URL-safe base64 characters. secretLen is a multiple of
 // 4, so the random bytes fill every character and the last one carries no zero padding bits.
-func GenerateTokenSecret() (string, error) {
+// Like GenerateTokenPrefix it returns no error: crypto/rand.Read never fails (the runtime aborts
+// if the system source does).
+func GenerateTokenSecret() string {
 	b := make([]byte, base64.RawURLEncoding.DecodedLen(secretLen))
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
+	_, _ = rand.Read(b)
+	return base64.RawURLEncoding.EncodeToString(b)
 }
 
 func TokenValue(prefix, secret string) string {
@@ -56,24 +60,20 @@ func TokenValue(prefix, secret string) string {
 }
 
 // GenerateCollectKey returns a per-workspace collect write-key (x-collect-key).
-func GenerateCollectKey() (string, error) {
+func GenerateCollectKey() string {
 	return prefixedKey(collectKeyPrefix)
 }
 
 // GenerateIngestKey returns an Integration's hook key (POST /hooks/{key}): the
 // address of one Integration's inbound provider callbacks, which also names its
 // Workspace. Unlike the collect key it is never exposed in the browser tracker.
-func GenerateIngestKey() (string, error) {
+func GenerateIngestKey() string {
 	return prefixedKey(ingestKeyPrefix)
 }
 
 // prefixedKey returns `<kind>_<secret>` with a fresh secret.
-func prefixedKey(kind string) (string, error) {
-	secret, err := GenerateTokenSecret()
-	if err != nil {
-		return "", err
-	}
-	return kind + "_" + secret, nil
+func prefixedKey(kind string) string {
+	return kind + "_" + GenerateTokenSecret()
 }
 
 // HashSecret is the stored form of a generated secret: its SHA-256 hex.
@@ -100,25 +100,4 @@ func parseWith(re *regexp.Regexp, value string) *ParsedToken {
 		return nil
 	}
 	return &ParsedToken{Prefix: m[1], Secret: m[2]}
-}
-
-// randomString draws n characters uniformly from alphabet (at most 256 of them). A random
-// byte at or above the largest multiple of len(alphabet) is dropped rather than reduced
-// modulo, which would favour the first characters.
-func randomString(alphabet string, n int) (string, error) {
-	limit := 256 - 256%len(alphabet)
-	out := make([]byte, 0, n)
-	buf := make([]byte, n)
-	for len(out) < n {
-		chunk := buf[:n-len(out)]
-		if _, err := rand.Read(chunk); err != nil {
-			return "", err
-		}
-		for _, b := range chunk {
-			if int(b) < limit {
-				out = append(out, alphabet[int(b)%len(alphabet)])
-			}
-		}
-	}
-	return string(out), nil
 }

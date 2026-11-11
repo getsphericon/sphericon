@@ -128,10 +128,7 @@ func (m *Module) IssueServiceCredential(ctx context.Context, in IssueInput) (*Is
 	if err != nil {
 		return nil, err
 	}
-	prefix, secret, value, err := credentials.GenerateServiceCredential()
-	if err != nil {
-		return nil, err
-	}
+	prefix, secret, value := credentials.GenerateServiceCredential()
 	create := m.ent.ServiceCredential.Create().
 		SetName(name).
 		SetPrefix(prefix).

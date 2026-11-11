@@ -119,14 +119,8 @@ func checked(in Input) (name string, scopes []string, err error) {
 // mint stores a token of name and scopes, the Workspace's when owner is nil and otherwise that
 // Membership's own, and returns it with its secret.
 func mint(ctx context.Context, s *ent.Scoped, name string, scopes []string, expiresAt *time.Time, owner *int64) (Minted, error) {
-	prefix, err := credentials.GenerateTokenPrefix()
-	if err != nil {
-		return Minted{}, err
-	}
-	secret, err := credentials.GenerateTokenSecret()
-	if err != nil {
-		return Minted{}, err
-	}
+	prefix := credentials.GenerateTokenPrefix()
+	secret := credentials.GenerateTokenSecret()
 
 	create := s.ApiToken().Create().
 		SetName(name).

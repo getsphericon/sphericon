@@ -188,14 +188,8 @@ func (m *Module) Refresh(ctx context.Context, in RefreshInput) (*Issued, error) 
 // it ends with it, named after the client and naming it, which tells it apart from a Personal
 // token. The scopes are the consent's, which oauthclients checked against the User's Role.
 func issueConnection(ctx context.Context, s *ent.Scoped, grant *ent.OAuthCode, expiresAt time.Time) (Minted, error) {
-	prefix, err := credentials.GenerateTokenPrefix()
-	if err != nil {
-		return Minted{}, err
-	}
-	secret, err := credentials.GenerateTokenSecret()
-	if err != nil {
-		return Minted{}, err
-	}
+	prefix := credentials.GenerateTokenPrefix()
+	secret := credentials.GenerateTokenSecret()
 	token, err := s.ApiToken().Create().
 		SetName(grant.Edges.Client.Name).
 		SetPrefix(prefix).
@@ -215,10 +209,7 @@ func issueConnection(ctx context.Context, s *ent.Scoped, grant *ent.OAuthCode, e
 // and expiry, keeping its row and prefix, and returns its new value; false when it was revoked
 // meanwhile.
 func rotateConnection(ctx context.Context, s *ent.Scoped, token *ent.ApiToken, scopes []string, expiresAt time.Time) (value string, rotated bool, err error) {
-	secret, err := credentials.GenerateTokenSecret()
-	if err != nil {
-		return "", false, err
-	}
+	secret := credentials.GenerateTokenSecret()
 	n, err := s.ApiToken().Update().
 		Where(apitoken.ID(token.ID), apitoken.RevokedAtIsNil()).
 		SetSecretHash(credentials.HashSecret(secret)).

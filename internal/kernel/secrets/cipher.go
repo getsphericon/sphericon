@@ -9,14 +9,15 @@ package secrets
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/tink-crypto/tink-go/v2/aead"
+	"github.com/tink-crypto/tink-go/v2/core/cryptofmt"
 	"github.com/tink-crypto/tink-go/v2/insecurecleartextkeyset"
 	"github.com/tink-crypto/tink-go/v2/keyset"
+	tinkpb "github.com/tink-crypto/tink-go/v2/proto/tink_go_proto"
 	"github.com/tink-crypto/tink-go/v2/tink"
 )
 
@@ -29,14 +30,21 @@ var ErrNoKeyset = errors.New("SPHERICON_ENCRYPTION_KEY is not set: there is no e
 
 // Cipher encrypts and decrypts secret values with a Tink AEAD primitive.
 type Cipher struct {
-	aead      tink.AEAD
-	primaryID uint32
+	aead tink.AEAD
+	// primaryPrefix is the output prefix of the primary key, which starts every value it seals.
+	primaryPrefix string
 }
 
 // NewCipher builds a Cipher from a base64-encoded Tink keyset. It fails fast
-// (caller wires this at boot) when the keyset is missing or malformed.
+// (caller wires this at boot) when the keyset is missing or malformed, or when its primary key does
+// not write the TINK output prefix: only that prefix names the key a value was sealed under, which
+// Current reads (a RAW key's empty prefix would match every value).
 func NewCipher(keysetBase64 string) (*Cipher, error) {
 	kh, err := readKeyset(keysetBase64)
+	if err != nil {
+		return nil, err
+	}
+	prefix, err := primaryPrefix(kh)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +52,23 @@ func NewCipher(keysetBase64 string) (*Cipher, error) {
 	if err != nil {
 		return nil, fmt.Errorf("build AEAD: %w", err)
 	}
-	return &Cipher{aead: a, primaryID: kh.KeysetInfo().GetPrimaryKeyId()}, nil
+	return &Cipher{aead: a, primaryPrefix: prefix}, nil
+}
+
+// primaryPrefix is the output prefix of the keyset's primary key, which must be TINK.
+func primaryPrefix(kh *keyset.Handle) (string, error) {
+	ks := insecurecleartextkeyset.KeysetMaterial(kh)
+	for _, k := range ks.GetKey() {
+		if k.GetKeyId() != ks.GetPrimaryKeyId() {
+			continue
+		}
+		if k.GetOutputPrefixType() != tinkpb.OutputPrefixType_TINK {
+			return "", fmt.Errorf("encryption keyset: primary key %d has the %s output prefix, not the TINK output prefix",
+				k.GetKeyId(), k.GetOutputPrefixType())
+		}
+		return cryptofmt.OutputPrefix(k)
+	}
+	return "", errors.New("encryption keyset: no primary key")
 }
 
 func readKeyset(keysetBase64 string) (*keyset.Handle, error) {
@@ -116,14 +140,14 @@ func Retire(keysetBase64 string) (string, error) {
 	return writeKeyset(kh)
 }
 
-// Current reports whether a stored value is sealed under the primary key. Tink ciphertext starts
-// with the byte 1 and the 4-byte big-endian id of the key that sealed it.
+// Current reports whether a stored value is sealed under the primary key: whether it starts with
+// the primary key's output prefix, which names the key that sealed it.
 func (c *Cipher) Current(value string) (bool, error) {
 	ct, err := base64.StdEncoding.DecodeString(value)
-	if err != nil || len(ct) < 5 {
+	if err != nil || len(ct) < cryptofmt.NonRawPrefixSize {
 		return false, fmt.Errorf("%w: no key id", ErrCiphertext)
 	}
-	return ct[0] == 1 && binary.BigEndian.Uint32(ct[1:5]) == c.primaryID, nil
+	return strings.HasPrefix(string(ct), c.primaryPrefix), nil
 }
 
 // Rewrap returns value sealed under the primary key, and whether it had to change: a value that
