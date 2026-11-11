@@ -142,7 +142,7 @@ func (h *httpStepHarness) stepper() *automations.StepExecution {
 func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorker {
 	steps := automations.NewStepExecution(h.Bus, newMod(h.TestEnv, resolvingTo(h.sender), time.Now), noFence, h.cipher,
 		h.rcv.routed(webhook.NewClientAllowing(2*time.Second, allow)), func() time.Time { return h.clock })
-	return jobs.NewRunHTTPStepWorker(h.DB, steps)
+	return jobs.NewRunHTTPStepWorker(h.DB, steps, shortestWait)
 }
 
 // attempt works the HTTP step as river's attempt-th try; the last one is the job's MaxAttempts.
@@ -363,7 +363,7 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 	assert.Equal(t, webhook.HookMaxAttempts(), queued.MaxAttempts)
 
 	next := h.worker(h.rcv.allow).NextRetry(&river.Job[automations.RunHTTPStepArgs]{JobRow: &rivertype.JobRow{Attempt: 2, AttemptedAt: &h.clock}})
-	assert.Equal(t, webhook.HookNextRetry(h.clock, 2), next)
+	assert.Equal(t, h.clock.Add(54*time.Second), next, "a minute less 10%")
 }
 
 func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {

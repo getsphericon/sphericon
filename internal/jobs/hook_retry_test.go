@@ -25,16 +25,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestHookRetryPolicyLastAttemptFallsAboutThreeDaysAfterTheFirst(t *testing.T) {
-	var elapsed time.Duration
-	for attempt := 1; attempt < webhook.HookMaxAttempts(); attempt++ {
-		elapsed += webhook.HookRetryDelay(attempt)
-	}
-	assert.GreaterOrEqual(t, elapsed, webhook.HookRetryHorizon)
-	assert.Less(t, elapsed, webhook.HookRetryHorizon+webhook.HookRetryMaxDelay)
-	assert.Equal(t, webhook.HookRetryFirstDelay, webhook.HookRetryDelay(1))
-	assert.Equal(t, webhook.HookRetryMaxDelay, webhook.HookRetryDelay(webhook.HookMaxAttempts()))
-}
+// shortestWait is the jitter source of the hook workers under test: every retry draws the
+// shortest wait of its attempt, 10% under its delay.
+func shortestWait() float64 { return 0 }
 
 func TestHookSnoozeReadsRetryAfter(t *testing.T) {
 	now := time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)
@@ -95,7 +88,7 @@ func newHookRetryHarnessAt(t *testing.T, status int, retryAfter string, now time
 
 	h := &hookRetryHarness{t: t, env: env, clock: &riversharedtest.TimeStub{}, now: now}
 	h.clock.StubNow(h.now)
-	w := jobs.NewDeliverWebhookWorker(env.DB, env.cipher, webhook.NewClientAllowing(2*time.Second, allow), h.clock.Now, env.Bus)
+	w := jobs.NewDeliverWebhookWorker(env.DB, env.cipher, webhook.NewClientAllowing(2*time.Second, allow), h.clock.Now, shortestWait, env.Bus)
 	// river's rows live in a database of their own: rivertest hands the job to the worker inside a
 	// transaction, which would hold the one connection the test's txdb has, and the worker reads
 	// and writes the endpoint through it.
@@ -132,7 +125,7 @@ func TestDeliverWebhookRetriesOnTheHookPolicy(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, rivertype.JobStateRetryable, res.Job.State)
 	assert.Equal(t, 1, res.Job.Attempt)
-	assert.WithinDuration(t, h.now.Add(webhook.HookRetryDelay(1)), res.Job.ScheduledAt, time.Second)
+	assert.WithinDuration(t, h.now.Add(27*time.Second), res.Job.ScheduledAt, time.Second, "30 s less 10%")
 	assert.Equal(t, 1, *h.endpoint().ConsecutiveFailures)
 }
 

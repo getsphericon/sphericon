@@ -17,13 +17,15 @@ import (
 type RunHTTPStepWorker struct {
 	river.WorkerDefaults[automations.RunHTTPStepArgs]
 
-	ent  *ent.Client
-	step *automations.StepExecution
+	ent    *ent.Client
+	step   *automations.StepExecution
+	jitter webhook.HookJitter
 }
 
-// NewRunHTTPStepWorker builds the queue adapter for the Step execution's HTTP execution.
-func NewRunHTTPStepWorker(client *ent.Client, step *automations.StepExecution) *RunHTTPStepWorker {
-	return &RunHTTPStepWorker{ent: client, step: step}
+// NewRunHTTPStepWorker builds the queue adapter for the Step execution's HTTP execution, spreading
+// its retries by jitter.
+func NewRunHTTPStepWorker(client *ent.Client, step *automations.StepExecution, jitter webhook.HookJitter) *RunHTTPStepWorker {
+	return &RunHTTPStepWorker{ent: client, step: step, jitter: jitter}
 }
 
 func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[automations.RunHTTPStepArgs]) error {
@@ -57,5 +59,5 @@ func (w *RunHTTPStepWorker) NextRetry(job *river.Job[automations.RunHTTPStepArgs
 	if job.AttemptedAt == nil {
 		return time.Time{} // river falls back to its default
 	}
-	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt)
+	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt, w.jitter)
 }
