@@ -18096,13 +18096,14 @@ func (t *IntegrationScoped) Get(ctx context.Context, id int64) (*Integration, er
 	return t.QueryWithDiscarded().Where(integration.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at, at `at`, on the kept Integration with the id (ps fence it further); a row of
+// Discard stamps discarded_at, at `at`, on the kept Integration with the id (ps fence it further)
+// and, in the same statement, gives up is_default (schema.GivenUpOnDiscard); a row of
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *IntegrationScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.Integration) error {
 	where := append([]predicate.Integration{integration.ID(id), integration.WorkspaceID(t.s.ws), integration.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*Integration, error) {
-		return c.Integration.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
+		return c.Integration.UpdateOneID(id).Where(where...).SetDiscardedAt(at).SetIsDefault(false).Save(ctx)
 	}
 	if t.s.auditing() {
 		return t.s.audited(ctx, func(ts *Scoped) error {

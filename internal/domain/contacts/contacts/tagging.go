@@ -126,11 +126,11 @@ func SetTagsIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contact
 // another apply of the same Tag records it once. ErrNotFound when the Contact is not
 // in the Workspace.
 func lockTagged(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Contact, error) {
-	c, err := contactlock.Lock(ctx, s, contactID)
+	locked, err := contactlock.Lock(ctx, s, contactID)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
-	return c, err
+	return locked.Contact(), err
 }
 
 // hasTag reports whether the Contact has the Tag.

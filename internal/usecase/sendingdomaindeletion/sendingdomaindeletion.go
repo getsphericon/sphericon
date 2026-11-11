@@ -42,17 +42,17 @@ func New(bus *events.Bus, domains *sendingdomains.Module, check *removalcheck.Mo
 // a deleted domain changes nothing; an unknown id is sendingdomains.ErrNotFound. The check and the
 // discard hold the Workspace's lock (ADR 0099), so no work becomes live between them.
 func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return u.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		row, err := u.domains.Get(ctx, ts, id)
+	return u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		row, err := u.domains.Get(ctx, wl.Scope(), id)
 		if err != nil {
 			return err
 		}
 		if row.DiscardedAt != nil {
 			return nil
 		}
-		if err := u.check.SendingDomain(ctx, ts, row.Domain); err != nil {
+		if err := u.check.SendingDomain(ctx, wl, row.Domain); err != nil {
 			return err
 		}
-		return sendingdomainsunchecked.DeleteIn(ctx, ts, id, u.now())
+		return sendingdomainsunchecked.DeleteIn(ctx, wl, id, u.now())
 	})
 }

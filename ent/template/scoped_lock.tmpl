@@ -1,0 +1,54 @@
+{{/*
+The scope of the Workspace lock (ADR 0099, ADR 0108). A removal that checks Live use and a write
+that moves it hold the Workspace's transaction-scoped advisory lock; WorkspaceLocked is the scope
+that stands for it, so a signature that takes one cannot be called without the lock. The bus
+(internal/infra/events) is the one caller of LockWorkspace, as the first statement of its
+transaction (forbidigo).
+*/}}
+{{ define "scoped_lock" }}
+{{ template "header" $ }}
+
+import (
+	"context"
+	"fmt"
+	"hash/fnv"
+)
+
+// lockedScope is the scope a WorkspaceLocked embeds: the alias promotes every method of Scoped and
+// keeps the field unexported, so no other package builds a WorkspaceLocked around a scope.
+type lockedScope = Scoped
+
+// WorkspaceLocked is the Workspace-scoped client of a transaction that holds the Workspace's lock
+// (ADR 0099, ADR 0108). Only LockWorkspace makes one, after the lock is taken, and only the events
+// bus calls it, inside WithinWorkspaceLockTx. It reads and writes as its Scoped does. What takes
+// it is the list of what needs the lock: the readers of Live use and Definition use, the unchecked
+// removals behind their check, and the writes that move Live use.
+type WorkspaceLocked struct {
+	*lockedScope
+}
+
+// Scope returns the transaction's scope, for a call that needs no lock of its own (the lock stays
+// held to the end of the transaction either way).
+func (l *WorkspaceLocked) Scope() *Scoped { return l.lockedScope }
+
+// LockWorkspace takes the Workspace's transaction-scoped advisory lock on the transaction s is bound
+// to and returns the scope that stands for it. It waits while another transaction holds the lock.
+// The lock lasts as long as that transaction, so s is bound to one: the events bus, its one caller,
+// calls it first in its own (the bus's driver is its own, which this package cannot tell apart).
+func (s *Scoped) LockWorkspace(ctx context.Context) (*WorkspaceLocked, error) {
+	// raw sql: pg_advisory_xact_lock is a server function; ent has no advisory lock.
+	if _, err := s.c.ExecContext(ctx, "SELECT pg_advisory_xact_lock($1)", AdvisoryKey("workspace", s.ws)); err != nil {
+		return nil, fmt.Errorf("lock the Workspace: %w", err)
+	}
+	return &WorkspaceLocked{lockedScope: s}, nil
+}
+
+// AdvisoryKey is the key of one Workspace's advisory lock of a kind: "workspace" for the lock of
+// LockWorkspace, "orders" for its order Events. Each kind hashes apart from the others, and two
+// Workspaces whose keys collide only take turns.
+func AdvisoryKey(kind string, workspaceID int64) int64 {
+	h := fnv.New32a()
+	_, _ = fmt.Fprintf(h, "%s:%d", kind, workspaceID)
+	return int64(h.Sum32())
+}
+{{ end }}

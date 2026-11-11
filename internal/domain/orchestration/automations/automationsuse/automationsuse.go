@@ -25,7 +25,7 @@ import (
 // UsingTag returns the Workspace's kept Automations whose live version or draft applies or
 // removes the Tag by its name, in id order (spec #767, "In use"). An archived Automation takes no
 // part in new work.
-func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Automation, error) {
+func UsingTag(ctx context.Context, s *ent.WorkspaceLocked, name string) ([]*ent.Automation, error) {
 	all, err := s.Automation().Query().WithLiveVersion().WithDraftVersion().Order(ent.Asc(automation.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
@@ -69,12 +69,12 @@ func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
 // Automation with several send steps gives one Send per step; liveuse.SendUsers dedupes them for a
 // refusal. A step carries no From of its own. A damaged stored definition is an error, so a
 // removal never takes an unreadable definition for an unused one.
-func LiveSends(ctx context.Context, s *ent.Scoped) ([]liveuse.Send, error) {
+func LiveSends(ctx context.Context, s *ent.WorkspaceLocked) ([]liveuse.Send, error) {
 	autos, err := sendingVersions(ctx, s)
 	if err != nil {
 		return nil, err
 	}
-	through := messaging.NewThroughs(s)
+	through := messaging.NewThroughs(s.Scope())
 	var sends []liveuse.Send
 	for _, a := range autos {
 		user := liveuse.User{Kind: liveuse.Automation, ID: a.ID, Name: a.Name}
@@ -103,7 +103,7 @@ func LiveSends(ctx context.Context, s *ent.Scoped) ([]liveuse.Send, error) {
 // those versions in Edges.Versions: the live version of an active, kept Automation, and every
 // version an unfinished Enrollment stands on. An archived Automation is read too: its Enrollments
 // still run.
-func sendingVersions(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
+func sendingVersions(ctx context.Context, s *ent.WorkspaceLocked) ([]*ent.Automation, error) {
 	active, err := s.Automation().Query().
 		Where(automation.StatusEQ(automation.StatusActive), automation.ArchivedAtIsNil(), automation.LiveVersionIDNotNil()).
 		All(ctx)

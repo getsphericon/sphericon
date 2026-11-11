@@ -175,7 +175,8 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 // the removal, and the one that waits reads what the other committed.
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
 	var claimed *ent.Broadcast
-	err := m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+	err := m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
+		ts := wl.Scope()
 		// The move lands only on a Broadcast that is not archived (ADR 0109); a refused one that is
 		// archived is ErrArchived.
 		unarchived := func(u *ent.BroadcastScopedUpdate) {
@@ -516,12 +517,12 @@ var archivable = []broadcast.Status{broadcast.StatusDraft, broadcast.StatusSent,
 // that race cannot leave an archived Broadcast scheduled.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	var archived *ent.Broadcast
-	err := m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		err := ts.Broadcast().Archive(ctx, id, m.out.Now(), broadcast.StatusIn(archivable...))
+	err := m.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		err := wl.Broadcast().Archive(ctx, id, m.out.Now(), broadcast.StatusIn(archivable...))
 		if err != nil && !ent.IsNotFound(err) {
 			return err
 		}
-		got, err := m.Get(ctx, ts, id)
+		got, err := m.Get(ctx, wl.Scope(), id)
 		if err != nil {
 			return err
 		}

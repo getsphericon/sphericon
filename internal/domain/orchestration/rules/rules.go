@@ -289,11 +289,11 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.RuleVers
 
 func (versioned) Equal(v *ent.RuleVersion, def definition) bool { return def.equal(definitionOf(v)) }
 
-func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int, draft *ent.RuleVersion, def definition) (int64, error) {
+func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, number int, draft *ent.RuleVersion, def definition) (int64, error) {
 	if draft != nil {
-		return draft.ID, rewrite(ctx, ts, draft, def)
+		return draft.ID, rewrite(ctx, l, draft, def)
 	}
-	v, err := saveVersion(ctx, ts, id, number, def)
+	v, err := saveVersion(ctx, l, id, number, def)
 	if err != nil {
 		return 0, err
 	}
@@ -305,7 +305,7 @@ func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.Rul
 }
 
 // Archivable never refuses: a Rule is discarded, never archived (ADR 0100), so it is never asked.
-func (versioned) Archivable(context.Context, *ent.Scoped, *ent.Rule) error { return nil }
+func (versioned) Archivable(context.Context, *ent.WorkspaceLocked, *ent.Rule) error { return nil }
 
 // Editable refuses a deleted Rule: it is kept for its Firings and changes no more.
 func (versioned) Editable(r *ent.Rule) error {
@@ -362,9 +362,10 @@ var _ = db.Declare(
 	db.Fault("ruleversiontrigger_version_id_action", "a version's Trigger events are written once, without repeats (cleanTriggers)"),
 )
 
-// saveVersion stores a new version of the Rule with its Trigger events.
-func saveVersion(ctx context.Context, s *ent.Scoped, ruleID int64, number int, def definition) (*ent.RuleVersion, error) {
-	v, err := s.RuleVersion().Create().
+// saveVersion stores a new version of the Rule with its Trigger events, under the Workspace lock:
+// it is Definition use of the Tags and Custom fields it names (ADR 0108).
+func saveVersion(ctx context.Context, l *ent.WorkspaceLocked, ruleID int64, number int, def definition) (*ent.RuleVersion, error) {
+	v, err := l.RuleVersion().Create().
 		SetRuleID(ruleID).
 		SetVersion(number).
 		SetNillableCondition(def.condition).
@@ -373,12 +374,13 @@ func saveVersion(ctx context.Context, s *ent.Scoped, ruleID int64, number int, d
 	if err != nil {
 		return nil, err
 	}
-	return v, saveTriggers(ctx, s, v.ID, def.triggers)
+	return v, saveTriggers(ctx, l.Scope(), v.ID, def.triggers)
 }
 
-// rewrite replaces the definition of a draft in place: no Firing ever stands on a draft.
-func rewrite(ctx context.Context, s *ent.Scoped, draft *ent.RuleVersion, def definition) error {
-	update := s.RuleVersion().UpdateOneID(draft.ID).SetActions(def.actions)
+// rewrite replaces the definition of a draft in place, under the Workspace lock as saveVersion: no
+// Firing ever stands on a draft.
+func rewrite(ctx context.Context, l *ent.WorkspaceLocked, draft *ent.RuleVersion, def definition) error {
+	update := l.RuleVersion().UpdateOneID(draft.ID).SetActions(def.actions)
 	if def.condition == nil {
 		update.ClearCondition()
 	} else {
@@ -387,10 +389,10 @@ func rewrite(ctx context.Context, s *ent.Scoped, draft *ent.RuleVersion, def def
 	if err := update.Exec(ctx); err != nil {
 		return err
 	}
-	if _, err := s.RuleVersionTrigger().Delete().Where(ruleversiontrigger.VersionID(draft.ID)).Exec(ctx); err != nil {
+	if _, err := l.RuleVersionTrigger().Delete().Where(ruleversiontrigger.VersionID(draft.ID)).Exec(ctx); err != nil {
 		return err
 	}
-	return saveTriggers(ctx, s, draft.ID, def.triggers)
+	return saveTriggers(ctx, l.Scope(), draft.ID, def.triggers)
 }
 
 // Get returns one Rule of the Workspace with its live and draft versions, a deleted one too (kept
@@ -725,31 +727,11 @@ func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Even
 func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (*ent.RuleFiring, error) {
 	var fired *ent.RuleFiring
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
-		still, err := ts.Rule().Query().
-			Where(
-				rule.ID(v.RuleID),
-				rule.StatusEQ(rule.StatusActive),
-				rule.ActivatedAtLTE(ev.RecordedAt),
-				rule.LiveVersionID(v.ID),
-			).
-			ForShare().
-			IDs(ctx)
-		if err != nil || len(still) == 0 {
+		live, still, err := shareFiring(ctx, ts, v, ev)
+		if err != nil || !still {
 			return err
 		}
-		// The Rule fires once per Event: a redelivered Event, or the same Event raced, writes
-		// nothing and queues nothing.
-		id, err := ts.RuleFiring().Create().
-			SetRuleID(v.RuleID).
-			SetVersionID(v.ID).
-			SetContactID(ev.ContactID).
-			SetAction(ev.Action).
-			SetSourceID(ev.SourceID).
-			SetNillableProperties(propertiesJSON(ev.Properties)).
-			OnConflictColumns(rulefiring.FieldRuleID, rulefiring.FieldSourceID).
-			DoNothing().
-			ID(ctx)
-		inserted, err := db.Inserted(err)
+		id, inserted, err := recordFiring(ctx, ts, live, ev)
 		if err != nil || !inserted {
 			return err
 		}
@@ -759,6 +741,51 @@ func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev
 		return q.Enqueue(ctx, ActionsArgs{WorkspaceID: ts.WorkspaceID(), FiringID: id}, &river.InsertOpts{})
 	})
 	return fired, err
+}
+
+// firingVersion stands for a Rule share-locked to the end of the transaction while it still fires on
+// its live version for an Event (shareFiring, ADR 0108): a Delete, a Deactivate or a Publish, which
+// lock the row exclusively, either committed before or waits for the Firing written on it. Only
+// shareFiring makes one, and recordFiring takes it.
+type firingVersion struct {
+	version *ent.RuleVersion
+}
+
+// shareFiring share-locks the Rule of v and checks under the lock that it still fires on v for the
+// Event: active, activated before the Event was recorded, v still its live version. false when it no
+// longer does.
+func shareFiring(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (firingVersion, bool, error) {
+	still, err := s.Rule().Query().
+		Where(
+			rule.ID(v.RuleID),
+			rule.StatusEQ(rule.StatusActive),
+			rule.ActivatedAtLTE(ev.RecordedAt),
+			rule.LiveVersionID(v.ID),
+		).
+		ForShare().
+		IDs(ctx)
+	if err != nil || len(still) == 0 {
+		return firingVersion{}, false, err
+	}
+	return firingVersion{version: v}, true, nil
+}
+
+// recordFiring writes the Firing of the share-locked Rule's live version for the Event. The Rule
+// fires once per Event: a redelivered Event, or the same Event raced, writes nothing (inserted
+// false).
+func recordFiring(ctx context.Context, s *ent.Scoped, live firingVersion, ev Event) (id int64, inserted bool, err error) {
+	id, err = s.RuleFiring().Create().
+		SetRuleID(live.version.RuleID).
+		SetVersionID(live.version.ID).
+		SetContactID(ev.ContactID).
+		SetAction(ev.Action).
+		SetSourceID(ev.SourceID).
+		SetNillableProperties(propertiesJSON(ev.Properties)).
+		OnConflictColumns(rulefiring.FieldRuleID, rulefiring.FieldSourceID).
+		DoNothing().
+		ID(ctx)
+	inserted, err = db.Inserted(err)
+	return id, inserted, err
 }
 
 // RunActions runs a Firing's Actions in order, each independent of the others: one that fails
@@ -871,9 +898,10 @@ func requireAutomations(ctx context.Context, s *ent.Scoped, actions []Action) er
 // ActiveEnrollingInto returns the active Rules whose live version has an Action enrolling Contacts
 // in the Automation, in id order: Live use of the Automation, which refuses its Archive (ADR 0099,
 // ADR 0100). A draft enrolls nobody until it is published, and Publish refuses an archived
-// Automation, so neither a draft nor an inactive Rule counts.
-func ActiveEnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*ent.Rule, error) {
-	active, err := s.Rule().Query().
+// Automation, so neither a draft nor an inactive Rule counts. It reads under the Workspace lock, as
+// every reader of Live use does (ADR 0108).
+func ActiveEnrollingInto(ctx context.Context, l *ent.WorkspaceLocked, automationID int64) ([]*ent.Rule, error) {
+	active, err := l.Rule().Query().
 		Where(rule.StatusEQ(rule.StatusActive), rule.HasLiveVersion()).
 		WithLiveVersion().
 		Order(ent.Asc(rule.FieldID)).

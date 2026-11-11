@@ -194,13 +194,14 @@ func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []pred
 	return err
 }
 {{ end }}{{ if $D }}
-// Discard stamps discarded_at, at `at`, on the kept {{ $N }} with the id (ps fence it further); a row of
+// Discard stamps discarded_at, at `at`, on the kept {{ $N }} with the id (ps fence it further){{ with discardClears $n }}
+// and, in the same statement, gives up {{ range $i, $f := . }}{{ if $i }}, {{ end }}{{ $f.Name }}{{ end }} (schema.GivenUpOnDiscard){{ end }}; a row of
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.{{ $N }}) error {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*{{ $N }}, error) {
-		return c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
+		return c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(at){{ range $f := discardClears $n }}.{{ if $f.Optional }}Clear{{ $f.StructField }}(){{ else }}Set{{ $f.StructField }}(false){{ end }}{{ end }}.Save(ctx)
 	}
 	{{- if $A }}
 	if t.s.auditing() {

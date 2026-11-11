@@ -84,14 +84,14 @@ func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*e
 	}
 	in.Name = name
 	var seg *ent.Segment
-	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
 		if in.Condition != nil {
-			if err := s.Validate(ctx, ts, *in.Condition); err != nil {
+			if err := s.Validate(ctx, wl.Scope(), *in.Condition); err != nil {
 				return err
 			}
 		}
 		var err error
-		seg, err = ts.Segment().Create().
+		seg, err = wl.Segment().Create().
 			SetName(in.Name).
 			SetNillableCondition(in.Condition).
 			Save(ctx)
@@ -120,13 +120,13 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 	}
 	in.Name = name
 	var seg *ent.Segment
-	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
 		if cond, ok := in.Condition.Get(); ok {
-			if err := s.Validate(ctx, ts, cond); err != nil {
+			if err := s.Validate(ctx, wl.Scope(), cond); err != nil {
 				return err
 			}
 		}
-		q := ts.Segment().UpdateOneID(id).Where(segment.ArchivedAtIsNil())
+		q := wl.Segment().UpdateOneID(id).Where(segment.ArchivedAtIsNil())
 		patch.ApplySet(in.Name, q.SetName)
 		patch.ApplySet(in.Condition, q.SetCondition)
 		seg, err = q.Save(ctx)
@@ -134,7 +134,7 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 			return err
 		}
 		// The update missed: the Segment is archived, or the Workspace has none of this id.
-		if _, err := ts.Segment().Get(ctx, id); err != nil {
+		if _, err := wl.Segment().Get(ctx, id); err != nil {
 			return err
 		}
 		return ErrArchived
@@ -242,8 +242,8 @@ func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, 
 // holds the Workspace's lock (ADR 0099), so a draft being scheduled meanwhile either took its copy
 // first or finds the Segment archived.
 func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segment, error) {
-	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
-		seg, err := ts.Segment().Get(ctx, id)
+	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		seg, err := wl.Segment().Get(ctx, id)
 		if ent.IsNotFound(err) {
 			return ErrNotFound
 		}
@@ -253,7 +253,7 @@ func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Se
 		if seg.ArchivedAt != nil {
 			return nil
 		}
-		return ts.Segment().Archive(ctx, id, s.now())
+		return wl.Segment().Archive(ctx, id, s.now())
 	})
 	if err != nil {
 		return nil, err

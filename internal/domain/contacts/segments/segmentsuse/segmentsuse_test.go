@@ -23,7 +23,9 @@ func TestUsingTagIncludesArchivedSegments(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, acme.Segment().Archive(ctx, fixtures.SegmentNewsletterReadersID, time.Now()))
 
-	using, err := segmentsuse.UsingTag(ctx, acme, "newsletter")
+	using, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme, func(l *ent.WorkspaceLocked) ([]*ent.Segment, error) {
+		return segmentsuse.UsingTag(ctx, l, "newsletter")
+	})
 	require.NoError(t, err)
 	names := lo.Map(using, func(s *ent.Segment, _ int) string { return s.Name })
 	assert.Contains(t, names, fixtures.SegmentNewsletterReadersName)

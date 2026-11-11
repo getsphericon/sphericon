@@ -72,7 +72,7 @@ func (Integration) Fields() []ent.Field {
 			Annotations(Attribute(reasonSetting)).
 			Default(true),
 		field.Bool("is_default").
-			Annotations(Attribute(reasonSetting)).
+			Annotations(Attribute(reasonSetting), GivenUpOnDiscard{}).
 			Default(false),
 		// Provider limit (ADR 0023): the most messages that may leave this Integration
 		// per second and per rolling 24 hours. Nil means no limit of that kind.

@@ -332,7 +332,7 @@ func findContact(ctx context.Context, s *ent.Scoped, id subject) (*ent.Contact, 
 	if ent.IsNotFound(err) {
 		return findContact(ctx, s, id) // erased meanwhile: resolve what the identifier names now
 	}
-	return locked, err
+	return locked.Contact(), err
 }
 
 // resolveContactless resolves an email or visitor id that has no Contact: it is a

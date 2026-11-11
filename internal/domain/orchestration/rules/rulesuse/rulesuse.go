@@ -22,7 +22,7 @@ import (
 // draft tests the Custom field key in its Condition with a leaf a field of type t does not take, so
 // it would stop compiling were the field retyped. A deleted Rule acts on nothing, so it does not
 // count.
-func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) ([]*ent.Rule, error) {
+func UnfitForCustomFieldType(ctx context.Context, s *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Rule, error) {
 	kept, err := keptWithVersions(ctx, s)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t c
 // UsingTag returns the Workspace's kept Rules, in id order, whose live version or draft names the
 // Tag by its name: in a Condition leaf or in a tag Action (spec #767, "In use"). A deleted Rule
 // acts on nothing, so it does not hold the Tag.
-func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Rule, error) {
+func UsingTag(ctx context.Context, s *ent.WorkspaceLocked, name string) ([]*ent.Rule, error) {
 	kept, err := keptWithVersions(ctx, s)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Rule, err
 
 // keptWithVersions returns the Workspace's kept Rules in id order, each with its live version and
 // its draft.
-func keptWithVersions(ctx context.Context, s *ent.Scoped) ([]*ent.Rule, error) {
+func keptWithVersions(ctx context.Context, s *ent.WorkspaceLocked) ([]*ent.Rule, error) {
 	return s.Rule().Query().WithLiveVersion().WithDraftVersion().Order(ent.Asc(rule.FieldID)).All(ctx)
 }
 

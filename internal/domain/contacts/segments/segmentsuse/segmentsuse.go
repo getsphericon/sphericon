@@ -19,7 +19,7 @@ import (
 // UsingTag returns the Workspace's Segments whose Condition names the Tag by its name, in id order.
 // Archived ones count: restoring one must not leave it naming a missing Tag. A Condition keeps the
 // name, not an id, so deleting the Tag would leave it matching nothing.
-func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Segment, error) {
+func UsingTag(ctx context.Context, s *ent.WorkspaceLocked, name string) ([]*ent.Segment, error) {
 	all, err := s.Segment().QueryWithArchived().Order(ent.Asc(segment.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Segment, 
 // Custom field key with a leaf a field of type t does not take, so they would stop compiling were
 // the field retyped. Archived ones count, as for a Tag: restoring one must not bring back a
 // Condition that no longer compiles.
-func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) ([]*ent.Segment, error) {
+func UnfitForCustomFieldType(ctx context.Context, s *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Segment, error) {
 	all, err := s.Segment().QueryWithArchived().Order(ent.Asc(segment.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err

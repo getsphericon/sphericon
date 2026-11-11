@@ -42,8 +42,8 @@ func New(bus *events.Bus, check *removalcheck.Module) *UseCase {
 // and one saved after is checked against the new type. A rename takes the same path.
 func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, id int64, in contacts.CustomFieldUpdateInput) (*ent.CustomField, error) {
 	var updated *ent.CustomField
-	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		field, err := contacts.CustomField(ctx, ts, id)
+	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		field, err := contacts.CustomField(ctx, wl.Scope(), id)
 		if err != nil {
 			return err
 		}
@@ -51,11 +51,11 @@ func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, id int64, in contac
 			return err
 		}
 		if t, ok := in.Retype(field); ok {
-			if err := u.check.CustomFieldRetype(ctx, ts, field.Key, t); err != nil {
+			if err := u.check.CustomFieldRetype(ctx, wl, field.Key, t); err != nil {
 				return err
 			}
 		}
-		updated, err = contactsunchecked.UpdateCustomFieldIn(ctx, ts, field, in)
+		updated, err = contactsunchecked.UpdateCustomFieldIn(ctx, wl, field, in)
 		return err
 	})
 	if err != nil {

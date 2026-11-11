@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
@@ -102,4 +103,38 @@ func (r integrationRace) broadcast(t *testing.T) *ent.Broadcast {
 	b, err := r.sends.Get(context.Background(), r.Scope, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	return b
+}
+
+// Promoting an Integration to its Channel's default moves Live use (ADR 0108), so it takes the
+// Workspace's lock: a promotion queued behind the Integration's deletion waits for it, then finds
+// the Integration gone, and the Channel keeps the default it had.
+func TestAPromotionQueuedBehindTheDeleteOfItsIntegrationLeavesTheChannelItsDefault(t *testing.T) {
+	ctx := context.Background()
+	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	s, bus := race.Scope, race.Bus
+	presets, err := preset.Load(nil)
+	require.NoError(t, err)
+	integs := integrations.New(bus, testhelper.Cipher(t), nil, presets, "", time.Now)
+	check := removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default()))
+	deletion := integrationdeletion.New(bus, integs, check, time.Now)
+
+	errs := race.Queue(t,
+		testhelper.Writer{Name: "delete", Run: func() error {
+			return deletion.Delete(ctx, s, fixtures.IntegrationAcmeSesID)
+		}},
+		testhelper.Writer{Name: "promote", Run: func() error {
+			_, err := integs.Update(ctx, s, fixtures.IntegrationAcmeSesID, integrations.UpdateInput{IsDefault: patch.Set(true)})
+			return err
+		}},
+	)
+
+	require.NoError(t, errs["delete"])
+	require.ErrorIs(t, errs["promote"], integrations.ErrNotFound)
+	deleted, err := integs.Get(ctx, s, fixtures.IntegrationAcmeSesID)
+	require.NoError(t, err)
+	assert.NotNil(t, deleted.DiscardedAt)
+	assert.False(t, deleted.IsDefault)
+	kept, err := integs.Get(ctx, s, fixtures.IntegrationAcmeDefaultID)
+	require.NoError(t, err)
+	assert.True(t, kept.IsDefault)
 }

@@ -152,7 +152,7 @@ var _ = db.Declare(
 // common trigger-replay path) or another request won the race. enrolled says that a step is to
 // run. The Contact's lock is held to the end of the transaction s is bound to.
 func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin, admits func(*ent.Automation) (bool, error)) (runID int64, enrolled bool, err error) {
-	locked, err := lockContact(ctx, s, contactID)
+	held, locked, err := lockContact(ctx, s, contactID)
 	if err != nil {
 		return 0, false, err
 	}
@@ -161,10 +161,7 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 		// would make says so, so keep that answer.
 		return 0, false, ent.ErrNotInWorkspace
 	}
-	// Share-lock the Automation row and read its live version under the lock, so a Publish (it
-	// locks the row exclusively) is either finished before the version is read or waits for this
-	// Enrollment: the Enrollment never begins on a version that is no longer live.
-	a, err := s.Automation().QueryWithArchived().Where(automation.ID(automationID)).WithLiveVersion().ForShare().Only(ctx)
+	a, err := shareLive(ctx, s, automationID)
 	if ent.IsNotFound(err) {
 		// Another Workspace's Automation is not in this one: the reference check the Create
 		// below would make says so, so keep that answer.
@@ -173,33 +170,15 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 	if err != nil {
 		return 0, false, err
 	}
-	// The Enrollment begins on the Automation's live version and stays on it (ADR 0049, ADR 0065).
-	if a.LiveVersionID == nil {
-		return 0, false, ErrNoVersion
-	}
-	admitted, err := admits(a)
+	admitted, err := admits(a.row)
 	if err != nil || !admitted {
 		return 0, false, err
 	}
-	ending, endedAt, ended, err := endedSince(ctx, s, a.Edges.LiveVersion, contactID, o.OccurredAt)
+	ending, endedAt, ended, err := endedSince(ctx, s, a.row.Edges.LiveVersion, contactID, o.OccurredAt)
 	if err != nil {
 		return 0, false, err
 	}
-	create := s.AutomationRun().Create().
-		SetAutomationID(automationID).
-		SetVersionID(*a.LiveVersionID).
-		SetContactID(contactID).
-		SetBeganAt(o.OccurredAt)
-	if o.Action != "" {
-		create.SetEventAction(o.Action)
-	}
-	if len(o.Properties) > 0 {
-		create.SetEventProperties(o.Properties)
-	}
-	// A Contact enrolls in an Automation once: an Enrollment already there is the answer, and
-	// nothing is written or published.
-	runID, err = create.OnConflictColumns(automationrun.FieldAutomationID, automationrun.FieldContactID).DoNothing().ID(ctx)
-	inserted, err := db.Inserted(err)
+	runID, inserted, err := begin(ctx, s, held, a, o)
 	if err != nil || !inserted {
 		return 0, false, err
 	}
@@ -226,12 +205,55 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 // Events that end them, and against a tag step's change of its Tags. It comes before any write of
 // an Enrollment in the transaction (the lock order above). false when the Contact is not in the
 // Workspace.
-func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (bool, error) {
-	_, err := contactlock.Lock(ctx, s, contactID)
+func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (contactlock.Locked, bool, error) {
+	held, err := contactlock.Lock(ctx, s, contactID)
 	if ent.IsNotFound(err) {
-		return false, nil
+		return contactlock.Locked{}, false, nil
 	}
-	return err == nil, err
+	return held, err == nil, err
+}
+
+// liveShared stands for an Automation share-locked to the end of the transaction with its live
+// version read under the lock (shareLive, ADR 0108): a Publish, which locks the row exclusively,
+// either finished before the version was read or waits for the Enrollment begun on it. Only
+// shareLive makes one, and begin takes it.
+type liveShared struct {
+	row *ent.Automation
+}
+
+// shareLive share-locks the Automation row, archived or not, and reads its live version under the
+// lock, so the Enrollment never begins on a version that is no longer live. ErrNoVersion when the
+// Automation has none; an ent not-found error when it is not in the Workspace.
+func shareLive(ctx context.Context, s *ent.Scoped, automationID int64) (liveShared, error) {
+	a, err := s.Automation().QueryWithArchived().Where(automation.ID(automationID)).WithLiveVersion().ForShare().Only(ctx)
+	if err != nil {
+		return liveShared{}, err
+	}
+	// The Enrollment begins on the Automation's live version and stays on it (ADR 0049, ADR 0065).
+	if a.LiveVersionID == nil {
+		return liveShared{}, ErrNoVersion
+	}
+	return liveShared{row: a}, nil
+}
+
+// begin writes the Enrollment of the Contact held in the Automation a, on a's live version, both
+// locked to the end of the transaction (ADR 0099, ADR 0108). A Contact enrolls in an Automation
+// once: an Enrollment already there is the answer, and nothing is written (inserted false).
+func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveShared, o origin) (runID int64, inserted bool, err error) {
+	create := s.AutomationRun().Create().
+		SetAutomationID(a.row.ID).
+		SetVersionID(*a.row.LiveVersionID).
+		SetContactID(held.Contact().ID).
+		SetBeganAt(o.OccurredAt)
+	if o.Action != "" {
+		create.SetEventAction(o.Action)
+	}
+	if len(o.Properties) > 0 {
+		create.SetEventProperties(o.Properties)
+	}
+	runID, err = create.OnConflictColumns(automationrun.FieldAutomationID, automationrun.FieldContactID).DoNothing().ID(ctx)
+	inserted, err = db.Inserted(err)
+	return runID, inserted, err
 }
 
 // endedSince is the end the first exit or goal Event of the version recorded for the Contact at
@@ -318,7 +340,7 @@ func exitRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int
 // being made meanwhile is either committed before the active ones are read, or made after this
 // transaction and finds the Event among the stored ones.
 func endOnEvent(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, action string, occurredAt time.Time) error {
-	locked, err := lockContact(ctx, s, contactID)
+	_, locked, err := lockContact(ctx, s, contactID)
 	if err != nil || !locked {
 		return err // a Contact erased since has no Enrollment left to end
 	}

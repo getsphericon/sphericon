@@ -573,9 +573,9 @@ func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
 		held.steps == def.steps
 }
 
-func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int, draft *ent.AutomationVersion, def definition) (int64, error) {
+func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, number int, draft *ent.AutomationVersion, def definition) (int64, error) {
 	if draft != nil {
-		upd := ts.AutomationVersion().UpdateOneID(draft.ID).
+		upd := l.AutomationVersion().UpdateOneID(draft.ID).
 			SetTriggerEvent(def.trigger).
 			SetExitEvents(def.exits).
 			SetNillableGoalEvent(def.goal).
@@ -585,7 +585,7 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 		}
 		return draft.ID, upd.Exec(ctx)
 	}
-	created, err := ts.AutomationVersion().Create().
+	created, err := l.AutomationVersion().Create().
 		SetAutomationID(id).
 		SetVersion(number).
 		SetTriggerEvent(def.trigger).
@@ -682,15 +682,15 @@ func (versioned) Editable(*ent.Automation) error { return nil }
 // enrolls Contacts in it through its live version, or it has active Enrollments. The *liveuse.Error
 // names them. A Rule that is not active does not hold it: its Publish refuses an archived
 // Automation.
-func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automation) error {
-	enrolling, err := rules.ActiveEnrollingInto(ctx, ts, a.ID)
+func (versioned) Archivable(ctx context.Context, l *ent.WorkspaceLocked, a *ent.Automation) error {
+	enrolling, err := rules.ActiveEnrollingInto(ctx, l, a.ID)
 	if err != nil {
 		return err
 	}
 	if len(enrolling) > 0 {
 		return &liveuse.Error{What: liveuse.SubjectAutomation, Users: liveuse.Rules(enrolling)}
 	}
-	active, err := ts.AutomationRun().Query().
+	active, err := l.AutomationRun().Query().
 		Where(automationrun.AutomationID(a.ID), automationrun.StatusEQ(automationrun.StatusActive)).
 		Count(ctx)
 	if err != nil {

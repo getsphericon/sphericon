@@ -12,10 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 )
 
-// DeleteIn discards the Sending domain row for good (ADR 0049) on the transaction's scoped client,
-// without asking whether work still sends from it: internal/usecase/sendingdomaindeletion runs the
-// Removal check (its Live use) under the Workspace lock first. The record of mail sent from it
-// stays.
-func DeleteIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
-	return ts.SendingDomain().Discard(ctx, id, at)
+// DeleteIn discards the Sending domain row for good (ADR 0049) in the transaction l holds the
+// Workspace's lock in (ADR 0108), without asking whether work still sends from it:
+// internal/usecase/sendingdomaindeletion runs the Removal check (its Live use) under the same lock
+// first. The record of mail sent from it stays.
+func DeleteIn(ctx context.Context, l *ent.WorkspaceLocked, id int64, at time.Time) error {
+	return l.SendingDomain().Discard(ctx, id, at)
 }

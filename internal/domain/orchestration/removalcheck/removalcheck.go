@@ -12,9 +12,8 @@
 // broadcastsuse) that easement opens to this package alone (ADR 0110), so a new holder is added
 // here and every removal that checks the row sees it. The use cases that remove a checked row
 // (tagdeletion, customfieldretyping, integrationdeletion, sendingdomaindeletion) call it under the
-// Workspace lock, which every write that creates a use takes too. Its methods take the
-// transaction's *ent.Scoped; the scope type of the Workspace lock (ADR 0108) takes its place here
-// and in the readers once it exists.
+// Workspace lock, which every write that moves a use takes too. Its methods and the readers take
+// the scope of that lock, *ent.WorkspaceLocked (ADR 0108), so none of them runs without it.
 package removalcheck
 
 import (
@@ -49,7 +48,7 @@ func New(senders *messaging.Resolver) *Module { return &Module{senders: senders}
 // version or draft (a Condition leaf or a tag Action) and the Condition an armed Broadcast copied
 // from its Segment (ADR 0065). Each names the Tag, not its id, so it would silently stop matching
 // or applying. It returns nil, or a *liveuse.Error naming them in that order.
-func (m *Module) Tag(ctx context.Context, s *ent.Scoped, name string) error {
+func (m *Module) Tag(ctx context.Context, s *ent.WorkspaceLocked, name string) error {
 	segs, err := segmentsuse.UsingTag(ctx, s, name)
 	if err != nil {
 		return err
@@ -74,7 +73,7 @@ func (m *Module) Tag(ctx context.Context, s *ent.Scoped, name string) error {
 // Conditions would stop compiling (ADR 0006). An Automation holds no Condition, and a leaf every
 // type takes (notNull) does not hold the type. It returns nil, or a *liveuse.Error naming them in
 // that order.
-func (m *Module) CustomFieldRetype(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) error {
+func (m *Module) CustomFieldRetype(ctx context.Context, s *ent.WorkspaceLocked, key string, t customfield.Type) error {
 	segs, err := segmentsuse.UnfitForCustomFieldType(ctx, s, key, t)
 	if err != nil {
 		return err
@@ -95,7 +94,7 @@ func (m *Module) CustomFieldRetype(ctx context.Context, s *ent.Scoped, key strin
 // unfinished Enrollment stands on, whose send goes through it by the resolution a send takes
 // (messaging.Through): the Integration it names or, naming none, its own Channel's default. It
 // returns nil, or a *liveuse.Error naming that work, Broadcasts first, then Automations.
-func (m *Module) Integration(ctx context.Context, s *ent.Scoped, id int64) error {
+func (m *Module) Integration(ctx context.Context, s *ent.WorkspaceLocked, id int64) error {
 	sends, err := liveSends(ctx, s)
 	if err != nil {
 		return err
@@ -109,7 +108,7 @@ func (m *Module) Integration(ctx context.Context, s *ent.Scoped, id int64) error
 // with, its own or, without one, the From of the Integration it goes through (an Automation step
 // carries none), by the resolution a send takes (messaging.Through, messaging.EffectiveFrom). It
 // returns nil, or a *liveuse.Error naming that work, Broadcasts first, then Automations.
-func (m *Module) SendingDomain(ctx context.Context, s *ent.Scoped, domain string) error {
+func (m *Module) SendingDomain(ctx context.Context, s *ent.WorkspaceLocked, domain string) error {
 	sends, err := liveSends(ctx, s)
 	if err != nil {
 		return err
@@ -123,7 +122,7 @@ func (m *Module) SendingDomain(ctx context.Context, s *ent.Scoped, domain string
 		var sender messaging.EmailSender
 		if send.Integration != nil {
 			if sender = senders[send.Integration.ID]; sender == nil {
-				if sender, err = m.senders.EmailSender(ctx, s, send.Integration); err != nil {
+				if sender, err = m.senders.EmailSender(ctx, s.Scope(), send.Integration); err != nil {
 					return err
 				}
 				senders[send.Integration.ID] = sender
@@ -137,7 +136,7 @@ func (m *Module) SendingDomain(ctx context.Context, s *ent.Scoped, domain string
 }
 
 // liveSends is the Live use that sends (ADR 0099): the Broadcasts' sends, then the Automations'.
-func liveSends(ctx context.Context, s *ent.Scoped) ([]liveuse.Send, error) {
+func liveSends(ctx context.Context, s *ent.WorkspaceLocked) ([]liveuse.Send, error) {
 	sent, err := broadcastsuse.LiveSends(ctx, s)
 	if err != nil {
 		return nil, err
