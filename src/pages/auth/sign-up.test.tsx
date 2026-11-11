@@ -158,7 +158,7 @@ test('with the gate off it asks for a password, sends it and points to sign in',
   ])
 })
 
-test('sends nothing when the confirmation differs', async () => {
+test('sends nothing when the confirmation differs, and marks and focuses the confirmation', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthSignUp(async ({ request }) => {
@@ -175,6 +175,9 @@ test('sends nothing when the confirmation differs', async () => {
   await screen.getByRole('button', { name: 'Sign up' }).click()
 
   await expect.element(screen.getByText('Passwords do not match')).toBeInTheDocument()
+  const confirm = screen.getByLabelText(/^Confirm password/)
+  await expect.element(confirm).toHaveAttribute('aria-invalid', 'true')
+  await expect.element(confirm).toHaveFocus()
   expect(bodies).toEqual([])
 })
 

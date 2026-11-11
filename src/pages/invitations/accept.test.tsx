@@ -102,6 +102,27 @@ test('an accept failure shows the API error and stays on the page', async () => 
   expect(navigate).not.toHaveBeenCalled()
 })
 
+test('shows a refused password under it, with no toast, and focuses it', async () => {
+  worker.use(
+    handleSiteWorkspacesList(() => problem(401)),
+    handleSitePublicInvitationsLookup({ body: invite }),
+    handleSitePublicInvitationsAccept(() =>
+      problem(422, { errors: { password: ['Use at least 8 characters.'] } }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)
+
+  await screen.getByLabelText(/^Your name/).fill('Ada')
+  const password = screen.getByLabelText(/^Password/)
+  await password.fill('short')
+  await screen.getByRole('button', { name: 'Accept invitation' }).click()
+
+  await expect.element(screen.getByText('Use at least 8 characters.')).toBeInTheDocument()
+  await expect.element(password).toHaveAttribute('aria-invalid', 'true')
+  await expect.element(password).toHaveFocus()
+  await expect.element(screen.getByText('Could not accept invitation')).not.toBeInTheDocument()
+})
+
 test('shows a loading state while the invitation is looked up', async () => {
   worker.use(
     handleSitePublicInvitationsLookup(async () => new Promise<Response>(vi.fn<() => void>())),
@@ -188,7 +209,7 @@ test('an invitee who sets up an account answers the Sign-up items, each unticked
   ])
 })
 
-test('shows the refusal of a required acceptance under its box', async () => {
+test('shows the refusal of a required acceptance under its box, focused, and clears it once ticked', async () => {
   worker.use(
     handleSiteWorkspacesList(() => problem(401)),
     handleSitePublicInvitationsLookup({ body: invite }),
@@ -206,9 +227,13 @@ test('shows the refusal of a required acceptance under its box', async () => {
   await screen.getByLabelText(/^Password/).fill('s3cret')
   await screen.getByRole('button', { name: 'Accept invitation' }).click()
 
-  await expect
-    .element(screen.getByRole('checkbox', { name: 'Terms of service' }))
-    .toHaveAccessibleDescription(/accept the Terms of service to sign up/)
+  const terms = screen.getByRole('checkbox', { name: 'Terms of service' })
+  await expect.element(terms).toHaveAccessibleDescription(/accept the Terms of service to sign up/)
+  await expect.element(terms).toHaveFocus()
+  await expect.element(screen.getByText('Could not accept invitation')).not.toBeInTheDocument()
+
+  await terms.click()
+  await expect.element(terms).not.toHaveAccessibleDescription(/accept the Terms of service/)
 })
 
 test('a signed-in invitee joins without answering the Sign-up items', async () => {

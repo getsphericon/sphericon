@@ -80,7 +80,7 @@ test('shows who signs up, asks the items unticked and completes the sign-up with
   ])
 })
 
-test('shows the refusal of a required acceptance under its box', async () => {
+test('shows the refusal of a required acceptance under its box, focused, and clears it once ticked', async () => {
   pendingSignup()
   worker.use(
     handleSiteAuthSigninPendingSubmit(() =>
@@ -94,10 +94,14 @@ test('shows the refusal of a required acceptance under its box', async () => {
 
   await screen.getByRole('button', { name: 'Create account' }).click()
 
-  await expect
-    .element(screen.getByRole('checkbox', { name: 'Terms of service' }))
-    .toHaveAccessibleDescription(/accept the Terms of service to sign up/)
+  const terms = screen.getByRole('checkbox', { name: 'Terms of service' })
+  await expect.element(terms).toHaveAccessibleDescription(/accept the Terms of service to sign up/)
+  await expect.element(terms).toHaveFocus()
+  await expect.element(screen.getByText('Sign-up failed')).not.toBeInTheDocument()
   expect(navigate).not.toHaveBeenCalled()
+
+  await terms.click()
+  await expect.element(terms).not.toHaveAccessibleDescription(/accept the Terms of service/)
 })
 
 test('declining sends the reference and goes back to sign up', async () => {

@@ -1,9 +1,9 @@
 import { Button, Card, Group, Stack, Text, TextInput, Title } from '@mantine/core'
-import { useForm } from '@mantine/form'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCountDown } from 'ahooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
 import { PasswordField } from '../../components/PasswordField.tsx'
@@ -15,26 +15,18 @@ import {
   siteAuthResendVerificationMutation,
   siteLegalDocumentsSignupItemsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SignupItemKind } from '../../generated/site/types.gen.ts'
-import type { SiteSignUpInput } from '../../generated/site/types.gen.ts'
+import { zEmailAddress, zSiteSignUpInput, zUserName } from '../../generated/site/zod.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { requiresEmailVerification } from '../../instance.ts'
+import { trimmed, useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
-import { getFieldErrors } from '../../utils/apiErrors.ts'
 import { secondsFromNow } from '../../utils/datetime.ts'
-import { signupItemAnswers, signupItemField, signupItemInputId } from '../../utils/signupItems.ts'
+import { signupItemAnswers, signupItemTicks } from '../../utils/signupItems.ts'
 
 // Seconds the resend button waits after a send; the server's per-IP limit stays the real gate.
 const RESEND_COOLDOWN_SECONDS = 60
-
-// The inputs of the form the API can refuse by name, in its problem's `errors`, in page order.
-const FORM_FIELDS = ['name', 'email', 'password'] as const
-
-function isFormField(field: string): field is (typeof FORM_FIELDS)[number] {
-  return (FORM_FIELDS as readonly string[]).includes(field)
-}
 
 export function SignUpPage() {
   const { t } = useTranslation()
@@ -49,7 +41,6 @@ export function SignUpPage() {
   // The Sign-up items in effect (ADR 0062) and the boxes the person ticked: none at first.
   const itemsQuery = useQuery(siteLegalDocumentsSignupItemsOptions())
   const items = itemsQuery.data?.items ?? []
-  const [ticked, setTicked] = useState<Record<string, boolean>>({})
 
   // The moment the resend button is offered again; none until a link is resent.
   const [resendAt, setResendAt] = useState<string>()
@@ -62,16 +53,26 @@ export function SignUpPage() {
     onDone: () => setResendAt(secondsFromNow(RESEND_COOLDOWN_SECONDS)),
   })
 
-  const form = useForm<Required<Omit<SiteSignUpInput, 'signupItems'>> & { confirm: string }>({
-    initialValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirm: '',
-    },
-    validate: {
-      confirm: (value, values) => (value === values.password ? null : t(($) => $.signUp.mismatch)),
-    },
+  // The confirmation must repeat the password; the items' boxes are fields of the form, so a
+  // refusal of either shows under it (docs/standards/ui.md, Errors).
+  const schema = zSiteSignUpInput
+    .extend({
+      name: trimmed(zUserName),
+      email: trimmed(zEmailAddress),
+      password: zSiteSignUpInput.shape.password.unwrap(),
+      confirm: z.string(),
+      signupItems: signupItemTicks,
+    })
+    .refine((values) => values.confirm === values.password, {
+      path: ['confirm'],
+      message: t(($) => $.signUp.mismatch),
+    })
+  const form = useSchemaForm(schema, {
+    name: '',
+    email: '',
+    password: '',
+    confirm: '',
+    signupItems: {},
   })
 
   const signUpMutation = useMutation({
@@ -84,27 +85,8 @@ export function SignUpPage() {
       }
     },
     onError: (error) => {
-      // A refusal of one of the form's own inputs shows under that input, and SignupItemFields
-      // shows a refused item under its box; the first refused element on the page takes the focus
-      // (UI standard, Errors). Only when every refusal is shown in place is the toast left out.
-      const fieldErrors = getFieldErrors(error) ?? {}
-      const refused = FORM_FIELDS.filter((field) => fieldErrors[field]?.[0])
-      for (const field of refused) {
-        form.setFieldError(field, fieldErrors[field]?.[0])
-      }
-      // The boxes come after the inputs on the page, in the order of the items.
-      const boxes = items.filter((item) => item.kind !== SignupItemKind.NOTICE)
-      const refusedBox = boxes.find((item) => fieldErrors[signupItemField(item.key)]?.[0])
-      const first = refused[0]
-        ? form.getInputNode(refused[0])
-        : refusedBox &&
-          document.querySelector<HTMLElement>(`#${CSS.escape(signupItemInputId(refusedBox.key))}`)
-      first?.focus()
-      const shownAtItem = new Set(boxes.map((item) => signupItemField(item.key)))
-      const named = Object.keys(fieldErrors)
-      const allShown =
-        named.length > 0 && named.every((field) => isFormField(field) || shownAtItem.has(field))
-      if (allShown) {
+      // Only a refusal the form cannot show under a field is left for the toast.
+      if (!form.showFieldErrors(error)) {
         return
       }
       notify({
@@ -118,13 +100,13 @@ export function SignUpPage() {
     },
   })
 
-  const handleSubmit = (values: Required<Omit<SiteSignUpInput, 'signupItems'>>) => {
+  const handleSubmit = (values: z.output<typeof schema>) => {
     // With no items the form sends no answers at all, as it did before items existed.
-    const signupItems = signupItemAnswers(items, ticked)
+    const signupItems = signupItemAnswers(items, values.signupItems)
     signUpMutation.mutate({
       body: {
-        name: values.name.trim(),
-        email: values.email.trim(),
+        name: values.name,
+        email: values.email,
         password: values.password,
         ...(signupItems && { signupItems }),
       },
@@ -210,12 +192,7 @@ export function SignUpPage() {
             {...form.getInputProps('confirm')}
           />
 
-          <SignupItemFields
-            items={items}
-            ticked={ticked}
-            onTick={(key, checked) => setTicked((current) => ({ ...current, [key]: checked }))}
-            error={signUpMutation.error}
-          />
+          <SignupItemFields items={items} getInputProps={form.getInputProps} />
 
           <Group justify="space-between" align="center">
             <AnchorLink to={loginRoute.to} size="sm">
