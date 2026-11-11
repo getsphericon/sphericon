@@ -64,6 +64,11 @@ of Acme for a test that needs two. A test of an SMS or Telegram Broadcast sends 
 drafts through `env.LacunaTwilio` or `env.LacunaTelegram`: a Broadcast reaches every eligible
 Contact of its Workspace, and Lacuna's Contacts are no other test's. `ConnectTwilio` connects an
 account through the API, for a test of connecting or one that needs another account or an API key.
+The fake Bot API (`telegramtest`) answers in Telegram's own words, and the recorded tests of
+`internal/infra/messaging/telegram` hold those words to the real Bot API: a change to the provider
+or to a refusal of the fake is recorded again with `mise run record:telegram` (a bot of your own,
+set up once by `dev/telegram-record-bot.sh`). Recording replaces every identifier of the bot and
+the person in the files and fails if one is left.
 The `testwrites` analyzer reads the harness as it reads tests: a helper that creates a row names
 why no fixture can hold it, with the same `// test writes:` comment.
 

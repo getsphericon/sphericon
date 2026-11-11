@@ -1,0 +1,81 @@
+---
+version: 2
+interactions:
+    - id: 0
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 171
+        host: api.telegram.org
+        body: '{"url":"https://example.com/hooks/telegram","allowed_updates":["message","callback_query","my_chat_member"],"drop_pending_updates":true,"secret_token":"recorded-secret_1"}'
+        headers:
+            Content-Type:
+                - application/json
+        url: https://api.telegram.org/bot123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/setWebhook
+        method: POST
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: 57
+        body: '{"ok":true,"result":true,"description":"Webhook was set"}'
+        headers:
+            Access-Control-Allow-Methods:
+                - GET, POST, OPTIONS
+            Access-Control-Allow-Origin:
+                - '*'
+            Access-Control-Expose-Headers:
+                - Content-Length,Content-Type,Date,Server,Connection
+            Content-Length:
+                - "57"
+            Content-Type:
+                - application/json
+            Date:
+                - Wed, 11 Nov 2026 02:53:33 GMT
+            Server:
+                - nginx/1.30.1
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+        status: 200 OK
+        code: 200
+        duration: 155.924791ms
+    - id: 1
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 2
+        host: api.telegram.org
+        body: '{}'
+        headers:
+            Content-Type:
+                - application/json
+        url: https://api.telegram.org/bot123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/deleteWebhook
+        method: POST
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: 61
+        body: '{"ok":true,"result":true,"description":"Webhook was deleted"}'
+        headers:
+            Access-Control-Allow-Methods:
+                - GET, POST, OPTIONS
+            Access-Control-Allow-Origin:
+                - '*'
+            Access-Control-Expose-Headers:
+                - Content-Length,Content-Type,Date,Server,Connection
+            Content-Length:
+                - "61"
+            Content-Type:
+                - application/json
+            Date:
+                - Wed, 11 Nov 2026 02:53:33 GMT
+            Server:
+                - nginx/1.30.1
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+        status: 200 OK
+        code: 200
+        duration: 151.946166ms

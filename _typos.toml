@@ -38,6 +38,8 @@ Optin = "Optin"
 Maily = "Maily"
 maily = "maily"
 RTO = "RTO"
+# The wizard library of dev/telegram-record-bot.sh writes the plural of NAME as "NAMEs".
+NAM = "NAM"
 decorder = "decorder"
 importas = "importas"
 # COSE (CBOR Object Signing and Encryption), the key format of a Passkey's public key.

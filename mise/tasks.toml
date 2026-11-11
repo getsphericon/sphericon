@@ -418,6 +418,15 @@ run = [
   "go tool go-test-coverage --config=.testcoverage.yml",
 ]
 
+["record:telegram"]
+description = "Record the Telegram provider's tests against the real Bot API (internal/infra/messaging/telegram/testdata/recorded) with the recording bot of SPHERICON_TELEGRAM_RECORD_ENV (default ~/.config/sphericon/telegram-record.env, written by dev/telegram-record-bot.sh); the bot's and the person's identifiers are replaced before a file is written"
+run = '''
+env_file="${SPHERICON_TELEGRAM_RECORD_ENV:-$HOME/.config/sphericon/telegram-record.env}"
+[ -f "$env_file" ] || { echo "error: $env_file is missing; run dev/telegram-record-bot.sh first" >&2; exit 1; }
+set -a; . "$env_file"; set +a
+SPHERICON_TELEGRAM_RECORD=1 mise run test -- ./internal/infra/messaging/telegram/ -run '^TestRecorded' -count=1
+'''
+
 ["test:e2e"]
 description = "End-to-end suite (ADR 0024): rebuilds the dedicated e2e DB, starts its own Mailpit, boots the app in-process; pass `go test` flags after `--`; SPHERICON_E2E_HOLD=true keeps the stack up after the run for inspection"
 depends = ["db:up"]

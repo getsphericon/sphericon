@@ -1,0 +1,42 @@
+---
+version: 2
+interactions:
+    - id: 0
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 359
+        host: api.telegram.org
+        body: '{"chat_id":42,"text":"\u003cb\u003eRecorded\u003c/b\u003e message with a \u003ca href=\"https://example.com/offer\"\u003elink\u003c/a\u003e","parse_mode":"HTML","link_preview_options":{"is_disabled":true},"reply_markup":{"inline_keyboard":[[{"text":"Open the offer","url":"https://example.com/offer"}],[{"text":"Unsubscribe","callback_data":"unsubscribe"}]]}}'
+        headers:
+            Content-Type:
+                - application/json
+        url: https://api.telegram.org/bot123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/sendMessage
+        method: POST
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: 620
+        body: '{"ok":true,"result":{"message_id":4,"from":{"id":123456789,"is_bot":true,"first_name":"Sphericon Test","username":"sphericon_test_bot"},"chat":{"id":42,"first_name":"Ann","last_name":"Example","username":"ann_example","type":"private"},"date":1794365613,"text":"Recorded message with a link","entities":[{"offset":0,"length":8,"type":"bold"},{"offset":24,"length":4,"type":"text_link","url":"https://example.com/offer"}],"link_preview_options":{"is_disabled":true},"reply_markup":{"inline_keyboard":[[{"text":"Open the offer","url":"https://example.com/offer"}],[{"text":"Unsubscribe","callback_data":"unsubscribe"}]]}}}'
+        headers:
+            Access-Control-Allow-Methods:
+                - GET, POST, OPTIONS
+            Access-Control-Allow-Origin:
+                - '*'
+            Access-Control-Expose-Headers:
+                - Content-Length,Content-Type,Date,Server,Connection
+            Content-Length:
+                - "620"
+            Content-Type:
+                - application/json
+            Date:
+                - Wed, 11 Nov 2026 02:53:33 GMT
+            Server:
+                - nginx/1.30.1
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+        status: 200 OK
+        code: 200
+        duration: 180.806833ms

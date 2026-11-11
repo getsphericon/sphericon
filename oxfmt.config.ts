@@ -21,6 +21,8 @@ export default defineConfig({
     'internal/server/assets',
     'internal/kernel/emaildoc/assets',
     'internal/kernel/emaildoc/testdata/golden',
+    // Written by the recorder of the recorded Telegram tests (mise run record:telegram).
+    'internal/infra/messaging/telegram/testdata/recorded',
     'charts/*/templates',
     'gen',
     'ent',
