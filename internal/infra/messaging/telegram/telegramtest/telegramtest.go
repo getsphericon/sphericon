@@ -112,8 +112,8 @@ type Failure struct {
 	RetryAfter  int
 }
 
-// The refusals the Bot API answers, in Telegram's own words (from the telegram-bot-api
-// server's source).
+// The refusals the Bot API answers, in Telegram's own words. The recorded tests of package telegram
+// check them against the real Bot API; Blocked, Deactivated and CantInitiate are not recorded.
 var (
 	// Unauthorized is a wrong or revoked token.
 	Unauthorized = Failure{Code: http.StatusUnauthorized, Description: "Unauthorized"}
@@ -129,7 +129,10 @@ var (
 	// BadEntities is a text whose formatting Telegram cannot parse.
 	BadEntities = Failure{Code: http.StatusBadRequest, Description: `Bad Request: can't parse entities: Unsupported start tag "foo" at byte offset 0`}
 	// BadWebhook is a webhook URL Telegram does not accept (not public HTTPS on an allowed port).
-	BadWebhook = Failure{Code: http.StatusBadRequest, Description: "Bad Request: bad webhook: HTTPS url must be provided for webhook"}
+	BadWebhook = Failure{Code: http.StatusBadRequest, Description: "Bad Request: bad webhook: An HTTPS URL must be provided for webhook"}
+	// NullReplyMarkup is a call whose reply_markup is JSON null: the parameter must be an object or
+	// absent.
+	NullReplyMarkup = Failure{Code: http.StatusBadRequest, Description: "Bad Request: object expected as reply markup"}
 )
 
 // TooManyRequests is a 429 that asks to wait seconds before the next call.
@@ -357,14 +360,18 @@ func (s *Server) succeed(w http.ResponseWriter, call Request, bot Bot) {
 			answer(w, BadRequest("bad webhook: secret token contains unallowed characters"))
 			return
 		}
-		if call.String("url") == "" {
-			answer(w, BadRequest("bad webhook: HTTPS url must be provided for webhook"))
+		if !strings.HasPrefix(call.String("url"), "https://") {
+			answer(w, BadWebhook)
 			return
 		}
 		ok(w, true)
 	case DeleteWebhook, AnswerCallbackQuery:
 		ok(w, true)
 	case SendMessage, SendPhoto:
+		if markup, present := call.Params["reply_markup"]; present && markup == nil {
+			answer(w, NullReplyMarkup)
+			return
+		}
 		s.mu.Lock()
 		s.messageID++
 		id := s.messageID

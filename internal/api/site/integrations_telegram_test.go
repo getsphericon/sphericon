@@ -113,7 +113,7 @@ func TestSiteTelegramRefusesWhatTelegramRefuses(t *testing.T) {
 
 		errs := problemOf(t, err)
 		require.Contains(t, errs, "config")
-		assert.Contains(t, errs["config"][0], "HTTPS url must be provided for webhook")
+		assert.Contains(t, errs["config"][0], "An HTTPS URL must be provided for webhook")
 	})
 
 	list, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})

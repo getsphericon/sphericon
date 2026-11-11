@@ -86,14 +86,27 @@ type Bot struct {
 	token string
 }
 
+// Option configures a Bot.
+type Option func(*http.Client)
+
+// WithTransport sends the bot's Bot API calls through rt, so a test records and replays them
+// (the recorded tests of this package).
+func WithTransport(rt http.RoundTripper) Option {
+	return func(c *http.Client) { c.Transport = rt }
+}
+
 // New builds the bot of token at the Bot API base URL apiURL.
-func New(apiURL, token string) (*Bot, error) {
+func New(apiURL, token string, opts ...Option) (*Bot, error) {
 	if !ValidToken(token) {
 		return nil, ErrTokenFormat
 	}
+	client := &http.Client{Timeout: timeout}
+	for _, opt := range opts {
+		opt(client)
+	}
 	b, err := telego.NewBot(token,
 		telego.WithAPIServer(strings.TrimRight(apiURL, "/")),
-		telego.WithHTTPClient(&http.Client{Timeout: timeout}),
+		telego.WithHTTPClient(client),
 		telego.WithDiscardLogger(),
 	)
 	if err != nil {
@@ -133,7 +146,9 @@ func (b *Bot) SendMessage(ctx context.Context, msg messaging.TelegramMessage) (m
 	if err != nil {
 		return messaging.TelegramSent{}, fmt.Errorf("telegram: chat id %q is not a number", msg.ChatID)
 	}
-	var keyboard *telego.InlineKeyboardMarkup
+	// The markup is the interface itself, nil without buttons: a nil *InlineKeyboardMarkup in it
+	// would be sent as "reply_markup": null, which the Bot API refuses.
+	var keyboard telego.ReplyMarkup
 	if len(msg.Buttons) > 0 || msg.UnsubscribeButton != "" {
 		rows := make([][]telego.InlineKeyboardButton, 0, len(msg.Buttons)+1)
 		for _, btn := range msg.Buttons {
