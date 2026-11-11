@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"regexp"
 
 	"github.com/stretchr/testify/require"
 
@@ -141,17 +140,14 @@ func (w *Workspace) RecordEvent(email, action string) {
 	require.NoError(w.t, err, "record event")
 }
 
-// openPixel finds the open pixel a tracked email carries.
-var openPixel = regexp.MustCompile(`src="(https?://[^"]*/e/o/[^"]+)"`)
-
 // OpenMail opens a tracked email the way a mail client does: it loads the open pixel from the
 // email's HTML, and requires success. The open is recorded asynchronously, so a scenario observes
 // its effect (an Automation's email) with Inbox.Wait.
 func (w *Workspace) OpenMail(msg Message) {
 	w.t.Helper()
-	m := openPixel.FindStringSubmatch(msg.HTML)
-	require.NotNil(w.t, m, "the email %q carries an open pixel", msg.Subject)
-	req, err := http.NewRequestWithContext(w.t.Context(), http.MethodGet, m[1], http.NoBody)
+	pixel := msg.Image("/e/o/")
+	require.NotEmpty(w.t, pixel, "the email %q carries an open pixel", msg.Subject)
+	req, err := http.NewRequestWithContext(w.t.Context(), http.MethodGet, pixel, http.NoBody)
 	require.NoError(w.t, err)
 	// A person's mail client, not Go's default agent: that one is machine engagement (ADR 0053).
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")
@@ -160,5 +156,5 @@ func (w *Workspace) OpenMail(msg Message) {
 	_, err = io.Copy(io.Discard, res.Body)
 	require.NoError(w.t, err)
 	require.NoError(w.t, res.Body.Close())
-	require.Equal(w.t, http.StatusOK, res.StatusCode, "open pixel %s", m[1])
+	require.Equal(w.t, http.StatusOK, res.StatusCode, "open pixel %s", pixel)
 }

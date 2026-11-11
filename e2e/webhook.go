@@ -5,7 +5,6 @@ package e2e
 import (
 	"io"
 	"net/http"
-	"regexp"
 
 	"github.com/stretchr/testify/require"
 
@@ -25,17 +24,14 @@ func (w *Workspace) SubscribeWebhook(eventTypes ...string) *Hook {
 	return hook
 }
 
-// trackedLink finds the first tracked link of an email's HTML.
-var trackedLink = regexp.MustCompile(`href="(https?://[^"]*/e/c/[^"]+)"`)
-
 // ClickLink follows the first tracked link of an email the way a person's browser does and
 // requires the redirect to the link's destination. The click is recorded asynchronously, so a
 // scenario observes its effect (a webhook delivery) with Hook.Wait.
 func (w *Workspace) ClickLink(msg Message) {
 	w.t.Helper()
-	m := trackedLink.FindStringSubmatch(msg.HTML)
-	require.NotNil(w.t, m, "the email %q carries a tracked link", msg.Subject)
-	req, err := http.NewRequestWithContext(w.t.Context(), http.MethodGet, m[1], http.NoBody)
+	link := msg.Link("/e/c/")
+	require.NotEmpty(w.t, link, "the email %q carries a tracked link", msg.Subject)
+	req, err := http.NewRequestWithContext(w.t.Context(), http.MethodGet, link, http.NoBody)
 	require.NoError(w.t, err)
 	// A person's browser, not Go's default agent: that one is machine engagement (ADR 0053).
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")
@@ -45,5 +41,5 @@ func (w *Workspace) ClickLink(msg Message) {
 	_, err = io.Copy(io.Discard, res.Body)
 	require.NoError(w.t, err)
 	require.NoError(w.t, res.Body.Close())
-	require.Equal(w.t, http.StatusFound, res.StatusCode, "tracked link %s", m[1])
+	require.Equal(w.t, http.StatusFound, res.StatusCode, "tracked link %s", link)
 }

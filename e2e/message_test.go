@@ -38,3 +38,34 @@ func TestMessageOneClickBody(t *testing.T) {
 	assert.Equal(t, "List-Unsubscribe=One-Click", m.OneClickBody())
 	assert.Empty(t, messageWith(nil).OneClickBody())
 }
+
+// A link is read the way a mail client reads it, whatever spelling of the markup the app writes.
+func TestMessageLinkReadsTheHTMLAsAClientDoes(t *testing.T) {
+	t.Parallel()
+	for name, body := range map[string]string{
+		"double quotes":      `<a href="https://app.test/e/c/tok?a=1&amp;b=2">x</a>`,
+		"single quotes":      `<a href='https://app.test/e/c/tok?a=1&amp;b=2'>x</a>`,
+		"no quotes":          `<a href=https://app.test/e/c/tok?a=1&amp;b=2>x</a>`,
+		"upper-case name":    `<A HREF="https://app.test/e/c/tok?a=1&amp;b=2">x</A>`,
+		"after another link": `<a href="https://example.com/e/x">y</a><a href="https://app.test/e/c/tok?a=1&b=2">x</a>`,
+		"apostrophe nearby":  `<a href="https://app.test/e/c/tok?a=1&amp;b=2" title="it's">x</a>`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, "https://app.test/e/c/tok?a=1&b=2", Message{HTML: body}.Link("/e/c/"))
+		})
+	}
+}
+
+func TestMessageLinkIsEmptyWithoutAMatchingLink(t *testing.T) {
+	t.Parallel()
+	assert.Empty(t, Message{HTML: `<a href="mailto:x@example.test/e/c/">x</a><p>https://app.test/e/c/tok</p>`}.Link("/e/c/"))
+	assert.Empty(t, Message{}.Link("/e/c/"))
+}
+
+func TestMessageImageReadsTheSrc(t *testing.T) {
+	t.Parallel()
+	m := Message{HTML: `<img src='https://app.test/logo.png'><IMG alt="" SRC=https://app.test/e/o/tok>`}
+	assert.Equal(t, "https://app.test/e/o/tok", m.Image("/e/o/"))
+	assert.Empty(t, m.Link("/e/o/"), "an <img> is not a link")
+}
