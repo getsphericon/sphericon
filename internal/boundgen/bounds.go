@@ -64,6 +64,10 @@ var Bounds = []Bound{
 		Spec: site, Schema: "LocaleTag", Owners: []string{"Contact"},
 	},
 	{
+		Name: "CountryCode", Doc: "is an ISO 3166-1 alpha-2 country code, a Contact's country.",
+		Spec: site, Schema: "CountryCode", Owners: []string{"Contact"},
+	},
+	{
 		Name: "ImageURL", Doc: "is the https URL of an image, a Contact's avatar.",
 		Spec: site, Schema: "ImageUrl", Owners: []string{"Contact"},
 	},

@@ -6,6 +6,8 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // TrackingDomain is a host of the Workspace's own (ADR 0071): a CNAME to the Instance's edge
@@ -102,5 +104,5 @@ func (TrackingDomain) Indexes() []ent.Index {
 func trackingDomainTable() entsql.Annotation {
 	a := TableWithEnumChecks("tracking_domains", TrackingDomain{}.Fields())
 	a.Checks["tracking_domains_retired_check"] = "role <> 'retired' OR state IN ('dns_verified', 'serving')"
-	return a
+	return WithFormatCheck(a, "host", domainname.Pattern)
 }

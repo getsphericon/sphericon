@@ -10,7 +10,7 @@ import (
 // (validation.Email), the city, the locale and the avatar within the contract's lengths, and the
 // locale and the avatar of the contract's patterns. A nil value is not set by the write. The
 // address comes back in its Email case.
-func checked(email, city, locale, avatar *string) (*string, error) {
+func checked(email, city, country, locale, avatar *string) (*string, error) {
 	if email != nil {
 		address, err := validation.Email(FieldEmail, *email)
 		if err != nil {
@@ -24,6 +24,7 @@ func checked(email, city, locale, avatar *string) (*string, error) {
 		max            int
 	}{
 		{"city", "", city, bounds.ContactCityMaxLength},
+		{"country", bounds.CountryCodePattern, country, len("US")},
 		{"locale", bounds.LocaleTagPattern, locale, bounds.LocaleTagMaxLength},
 		{"avatar", bounds.ImageURLPattern, avatar, bounds.ImageURLMaxLength},
 	} {

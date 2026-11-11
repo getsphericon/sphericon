@@ -21,6 +21,11 @@ var (
 	ErrExtension = errors.New("phone: a number with an extension")
 )
 
+// E164Pattern is the form Normalize returns: a plus, a country code that does not start with zero
+// and at most fifteen digits in all (ITU-T E.164). The database checks a stored phone against it
+// (ent/schema/contact.go), so a write that skipped Normalize fails.
+const E164Pattern = `^\+[1-9]\d{1,14}$`
+
 // internationalPrefix is the ITU's international call prefix, used in most countries; a number
 // written with it ("0049 30 …") is read as international whatever the Contact's country.
 const internationalPrefix = "00"

@@ -8,6 +8,9 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
 type Contact struct {
@@ -18,6 +21,8 @@ func (Contact) Annotations() []schema.Annotation {
 	table := TableWithEnumChecks("contacts", Contact{}.Fields())
 	name, expr := LowerCheck("contacts", "email")
 	table.Checks[name] = expr
+	table = WithFormatCheck(table, "phone", phone.E164Pattern)
+	table = WithFormatCheck(table, "country", bounds.CountryCodePattern)
 	return []schema.Annotation{
 		table,
 		Audited{Action: "contact", NamesOnly: true},

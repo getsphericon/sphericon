@@ -179,7 +179,7 @@ func New(bus *events.Bus, opts ...Option) *Module {
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, in CreateInput) (*ent.Contact, error) {
 	attrs := in.normalized()
 	var err error
-	if attrs.Email, err = checked(attrs.Email, attrs.City, attrs.Locale, attrs.Avatar); err != nil {
+	if attrs.Email, err = checked(attrs.Email, attrs.City, attrs.Country, attrs.Locale, attrs.Avatar); err != nil {
 		return nil, err
 	}
 	if attrs.Phone, err = e164(attrs.Phone, attrs.Country); err != nil {
@@ -232,7 +232,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 // the Contact is not in the Workspace.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Contact, error) {
 	in = in.normalized()
-	if _, err := checked(in.Email.Ptr(), in.City.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr()); err != nil {
+	if _, err := checked(in.Email.Ptr(), in.City.Ptr(), in.Country.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr()); err != nil {
 		return nil, err
 	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
@@ -370,7 +370,7 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
 		return Result{}, ErrIdentityRequired
 	}
-	email, err := checked(in.Email, in.City.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr())
+	email, err := checked(in.Email, in.City.Ptr(), in.Country.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr())
 	if err != nil {
 		return Result{}, err
 	}
@@ -574,7 +574,7 @@ func (a Attributes) normalized() Attributes {
 		a.Email = new(emailcase.Of(*a.Email))
 	}
 	if a.Country != nil {
-		a.Country = new(strings.ToUpper(*a.Country))
+		a.Country = new(strings.ToUpper(strings.TrimSpace(*a.Country)))
 	}
 	if a.Locale != nil {
 		a.Locale = new(canonicalLocale(*a.Locale))

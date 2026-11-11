@@ -49,7 +49,7 @@
   with `variantCheck` (`variant_check.go`), so the database refuses a row that mixes them; a column
   derived from another (an Integration's channel from its provider) is checked against its source;
   a closed set of values is an enum, which `TableWithEnumChecks` checks; a value the owner
-  normalises (an address, a currency) has its form checked (`LowerCheck`, `CurrencyCheck`). The Go
+  normalises (an address, a phone, a domain, a currency) has its form checked with the normaliser's own pattern (`LowerCheck`, `FormatCheck`). The Go
   type that writes the row says the same thing, so a mismatch does not compile
   (`outboundmessages.Ref`, `providers.Provider.Channel`).
 - `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the history

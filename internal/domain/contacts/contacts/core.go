@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-var countryCodePattern = regexp.MustCompile(`^[A-Z]{2}$`)
+var countryCodePattern = regexp.MustCompile(bounds.CountryCodePattern)
 
 // reservedKeys are the keys that name an alias key or a core attribute of a Contact, the
 // contract's camelCase names (ADR 0072): a trait of one is no Custom field, and no Custom field
@@ -91,7 +91,7 @@ func guess(s *string, read func(string) (string, bool)) *string {
 }
 
 func (c Core) normalized() Core {
-	c.Country = patch.Map(c.Country, strings.ToUpper)
+	c.Country = patch.Map(c.Country, func(s string) string { return strings.ToUpper(strings.TrimSpace(s)) })
 	c.Locale = patch.Map(c.Locale, canonicalLocale)
 	return c
 }
