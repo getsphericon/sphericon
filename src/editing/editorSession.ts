@@ -19,12 +19,11 @@ export interface EditorReceipt<TResource> {
   fingerprint: string
 }
 
-// What an operation's event may carry besides its name, such as the time Schedule sends at.
-export type EditorOperationInput = Readonly<Record<string, string>>
-
 // A write is never aborted: it outlives the editor that started it (docs/standards/ui.md).
 export interface EditorOperation<TSubject, TResource, TContent> {
-  request: (call: { subject: TSubject; input: EditorOperationInput }) => Promise<TResource>
+  // `input` is what the operation's event carried (the time Schedule sends at), unchecked: an
+  // operation that takes one reads it with its request's schema.
+  request: (call: { subject: TSubject; input: unknown }) => Promise<TResource>
   // Whether the operation may start. `dirty` is false only when the event carried the current
   // fingerprint and it equals the acknowledged one.
   available: (state: { resource: TResource; dirty: boolean }) => boolean
@@ -107,7 +106,7 @@ export interface EditorSessionContext<TSubject, TResource, TContent, TOperation 
   submitted: string | null
   content: { value: TContent; revision: number }
   operation: TOperation | null
-  input: EditorOperationInput
+  input: unknown
   result: 'success' | 'error'
   editor: EditorHandle<TContent> | undefined
   effects: EditorEffects<TResource, TOperation> | undefined
@@ -120,7 +119,7 @@ export interface EditorSessionContext<TSubject, TResource, TContent, TOperation 
 interface EditorOperationEvent {
   type: string
   current?: string
-  input?: EditorOperationInput
+  input?: unknown
 }
 
 export type EditorSessionEvent<TResource, TSubmission> =
@@ -184,7 +183,7 @@ export function defineEditorSession<
           input: {
             subject: TSubject
             operation: TOperation
-            input: EditorOperationInput
+            input: unknown
             effects: EditorEffects<TResource, TOperation> | undefined
           }
         }) => {
@@ -211,7 +210,7 @@ export function defineEditorSession<
       fail: enqueueActions(({ context, event, enqueue }) => {
         const operation = context.operation ?? 'SAVE'
         const error = 'error' in event ? event.error : undefined
-        enqueue.assign({ result: 'error', operation: null, input: {}, submitted: null })
+        enqueue.assign({ result: 'error', operation: null, input: undefined, submitted: null })
         enqueue(() => context.effects?.failed(operation, error))
         enqueue.emit({ type: 'failed', operation, error } as Notice)
       }),
@@ -228,7 +227,7 @@ export function defineEditorSession<
         submitted: null,
         content: { value, revision: 0 },
         operation: null,
-        input: {},
+        input: undefined,
         result: 'error',
         editor: input.editor,
         effects: input.effects,
@@ -254,7 +253,7 @@ export function defineEditorSession<
             guard: 'available',
             actions: assign(({ event }) => ({
               operation: operationOf(event),
-              input: ('input' in event && event.input) || {},
+              input: 'input' in event ? event.input : undefined,
             })),
           },
         },
@@ -330,7 +329,7 @@ export function defineEditorSession<
                 resource,
                 result: 'success',
                 operation: null,
-                input: {},
+                input: undefined,
                 ...(value !== undefined && {
                   saved: adapter.fingerprint(value),
                   content: { value, revision: context.content.revision + 1 },

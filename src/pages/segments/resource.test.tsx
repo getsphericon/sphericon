@@ -22,6 +22,7 @@ import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspace
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { requestGate } from '../../test/requestGate.ts'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SegmentCreatePage, SegmentEditPage } from './resource.tsx'
@@ -255,16 +256,14 @@ test('editing shows no form while the segment loads, then the loaded values', as
 })
 
 test('an edit made while Save is pending stays after the acknowledgement, and leaving asks first', async () => {
-  const received = Promise.withResolvers<undefined>()
-  const release = Promise.withResolvers<undefined>()
+  const gate = requestGate()
   let stored = { id: '7', name: 'Mail users', condition: RULE, ...TIMESTAMPS }
   serveCatalogue()
   worker.use(
     handleSiteSegmentsGet(() => HttpResponse.json(stored)),
     handleSiteSegmentsUpdate(async ({ request }) => {
       const body = zSiteSegmentsUpdateBody.parse(await request.json())
-      received.resolve(undefined)
-      await release.promise
+      await gate.hold()
       stored = { ...stored, name: body.name ?? stored.name }
       return HttpResponse.json(stored)
     }),
@@ -273,9 +272,9 @@ test('an edit made while Save is pending stays after the acknowledgement, and le
   const { screen, router } = await renderWithRouter(<SegmentEditPage />, EDIT_ROUTE)
   await screen.getByLabelText('Name', { exact: false }).fill('Saved name')
   await screen.getByRole('button', { name: 'Save' }).click()
-  await received.promise
+  await gate.received
   await screen.getByLabelText('Name', { exact: false }).fill('Newer name')
-  release.resolve(undefined)
+  gate.release()
 
   await expect.element(screen.getByText('Segment updated')).toBeInTheDocument()
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Newer name')

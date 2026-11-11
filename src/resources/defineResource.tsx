@@ -10,7 +10,6 @@ import { LeaveDialog } from '../components/LeaveDialog.tsx'
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../components/Skeletons.tsx'
 import { defineEditorSession } from '../editing/editorSession.ts'
-import type { EditorOperationInput } from '../editing/editorSession.ts'
 import { useEditorEffects } from '../editing/useEditorEffects.ts'
 import type { EditorOutcomeTexts } from '../editing/useEditorEffects.ts'
 import { useEditorSession } from '../editing/useEditorSession.ts'
@@ -66,7 +65,7 @@ export interface ResourceEditor<TOperation extends string> {
   operation: TOperation | null
   can: (operation: TOperation) => boolean
   // Starts the operation and resolves with its outcome (`busy` when it may not start now).
-  run: (operation: TOperation, input?: EditorOperationInput) => Promise<EditorOutcome>
+  run: (operation: TOperation, input?: unknown) => Promise<EditorOutcome>
 }
 
 // The whole interface of the resource form lifecycle module: describe a resource once and

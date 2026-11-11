@@ -15,6 +15,7 @@ import { zSiteUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
 import { problem } from '../../test/problem.ts'
+import { requestGate } from '../../test/requestGate.ts'
 import { worker } from '../../test/worker.ts'
 import { stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
@@ -108,21 +109,13 @@ async function stored() {
 }
 
 function startRaces({ refuse }: { refuse: boolean }): RaceRig<OperationEvent> {
-  const received = Promise.withResolvers<undefined>()
-  const release = Promise.withResolvers<undefined>()
-  const answered = Promise.withResolvers<undefined>()
+  const gate = requestGate()
   let server = RESOURCE
-  let gated = true
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(server)),
     handleSiteAutomationsUpdate(async ({ request }) => {
       const body = zSiteUpdateAutomationInput.parse(await request.json())
-      if (gated) {
-        gated = false
-        received.resolve(undefined)
-        await release.promise
-        queueMicrotask(() => answered.resolve(undefined))
-      }
+      await gate.hold()
       if (refuse) {
         return problem(422, 'Refused definition')
       }
@@ -169,11 +162,7 @@ function startRaces({ refuse }: { refuse: boolean }): RaceRig<OperationEvent> {
     page: canvas.page,
     stored,
     initial: RESOURCE,
-    gate: {
-      received: received.promise,
-      release: () => release.resolve(undefined),
-      answered: answered.promise,
-    },
+    gate,
   }
 }
 
@@ -194,12 +183,10 @@ function withProperties(
 }
 
 test('Save folds the stored HTTP identity into a canvas edited meanwhile, without reloading it', async () => {
-  const received = Promise.withResolvers<undefined>()
-  const release = Promise.withResolvers<undefined>()
+  const gate = requestGate()
   worker.use(
     handleSiteAutomationsUpdate(async () => {
-      received.resolve(undefined)
-      await release.promise
+      await gate.hold()
       return HttpResponse.json({
         ...RESOURCE,
         draft: {
@@ -214,9 +201,9 @@ test('Save folds the stored HTTP identity into a canvas edited meanwhile, withou
   const canvas = startCanvas(graph)
   canvas.edit((content) => withProperties(content, httpId, { url: 'https://example.com/hook' }))
   canvas.actor.send({ type: 'SAVE', submission: capture(canvas.read()) })
-  await received.promise
+  await gate.received
   canvas.edit((content) => withProperties(content, httpId, { body: '{"newer":true}' }))
-  release.resolve(undefined)
+  gate.release()
   const settled = await waitFor(canvas.actor, (state) => state.matches('idle'))
   const http = canvas.read().graph.nodes[1]
   const current = automationAdapter.fingerprint(canvas.read())
