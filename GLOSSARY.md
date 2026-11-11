@@ -218,9 +218,10 @@ _Avoid_: TTL, expiry, purge, archive
 
 **Condition**:
 A tree of tests (a combinator over nested groups) on a Contact's fields, custom fields, Tags and
-past Events, and, when a Rule evaluates it, on the triggering Event's own properties. Evaluated
-live against current data, never materialized. One shared grammar: a Segment is a named Condition
-and a Rule holds one.
+past Events; when a Rule or a **Branch** evaluates it, on the triggering Event's own properties; and
+in a Branch alone, on whether the Enrollment's own messages were opened or clicked, which can be
+unknown. Evaluated live against current data, never materialized. One shared grammar: a Segment is
+a named Condition, and a Rule and a Branch each hold one.
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 
 **Segment**:
@@ -722,17 +723,26 @@ recorded and reported, so one Channel's absence never ends a sequence that also 
 _Avoid_: Run, automation run, journey instance, subscription
 
 **Step**:
-One node in an Automation's **ordered, linear** sequence; an Enrollment points at exactly one
-current Step, whose **execution** does what the Step says for the enrolled Contact and moves the
-Enrollment on. Five kinds today: **send** (a message on one Channel, the Channel fixed by the step,
+One node in an Automation's sequence, with an id it keeps in every version; an Enrollment points at
+exactly one current Step, whose **execution** does what the Step says for the enrolled Contact and moves the
+Enrollment on. Its kinds: **send** (a message on one Channel, the Channel fixed by the step,
 through the Integration the step names or that Channel's default; it holds its _own copy_ of
 Message content, per the marketing copy-at-author-time rule, except on WhatsApp, where it references
 a WhatsApp template), **wait** (a delay before the next
 Step), **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
-nothing and move straight on), and **HTTP step** (below). The Enrollment's single "current step" pointer is deliberate: there is no branching,
-no parallel paths, no per-step conditions yet. Conditional / branching steps are a real
-future want but are **deferred until the sequence builder is real** — not modelled now.
+nothing and move straight on), **HTTP step** (below), **Branch** (below) and **end** (it finishes the
+path and ends the Enrollment as `completed`). There are no parallel paths: an Enrollment is at one
+Step at a time.
 _Avoid_: Action, node, block, stage
+
+**Branch**:
+A Step with a **Condition** and two nested sequences of Steps, `yes` and `no`, which rejoin right
+after it; a path may be empty ("go on") and may hold another Branch. It is evaluated once, when the
+Enrollment reaches it, and the path taken is kept on the Enrollment. Beside the Condition's usual
+tests it can ask whether the message a given send Step sent to this Enrollment was opened or
+clicked: _unknown_ when the message went out untracked, the Step was skipped or the Enrollment never
+passed it, and a Branch that asks says which path unknown takes.
+_Avoid_: Split (an A/B split is something else), decision node, if/else node, filter
 
 **HTTP step**:
 A Step kind that **sphericon calls** a third party's URL (a Slack, Zapier or CRM hook) for the

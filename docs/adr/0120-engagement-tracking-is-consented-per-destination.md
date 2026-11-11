@@ -4,6 +4,9 @@ status: accepted
 
 # Engagement tracking is consented per Destination, and an untracked message leaves the rates
 
+> **Amended by [[0122-an-automation-branches-into-nested-paths-that-rejoin]]:** a Branch's test of an
+> untracked message is unknown, and the Branch must name the path unknown takes.
+>
 > **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** the
 > tracking page and its separate footer link are the Preference page, and a standing `denied` gives
 > way only to the person's own grant there, no longer to a member's.
