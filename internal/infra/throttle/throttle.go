@@ -217,7 +217,9 @@ func (a *Attempts) Delay(ctx context.Context, kind Kind, email string) (time.Dur
 	if now.Sub(row.LastAttemptAt) > rule.Window {
 		return 0, nil
 	}
-	return max(row.LastAttemptAt.Add(rule.Wait(row.Failures)).Sub(now), 0), nil
+	wait := rule.Wait(row.Failures)
+	until := row.LastAttemptAt.Add(wait)
+	return max(until.Sub(now), 0), nil
 }
 
 // Take grants one slot of a budget Kind (password reset: at most Threshold slots per

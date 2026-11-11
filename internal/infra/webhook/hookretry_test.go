@@ -27,21 +27,25 @@ func TestHookRetryDelayDoublesFromThirtySecondsToTheCap(t *testing.T) {
 		6 * time.Hour,
 	}
 	for i, delay := range want {
-		assert.Equal(t, delay, webhook.HookRetryDelay(i+1), "attempt %d", i+1)
-	}
-}
-
-// Every attempt past the 11th waits the cap, up to the last attempt and beyond it.
-func TestHookRetryDelayStaysAtTheCap(t *testing.T) {
-	for attempt := 11; attempt <= webhook.HookMaxAttempts()+5; attempt++ {
-		assert.Equal(t, 6*time.Hour, webhook.HookRetryDelay(attempt), "attempt %d", attempt)
+		got := webhook.HookRetryDelay(i + 1)
+		assert.Equal(t, delay, got, "attempt %d", i+1)
 	}
 }
 
 // 22 attempts cover the 72-hour horizon: ten doubling waits of 8.5 hours in all, then eleven
 // waits of 6 hours.
 func TestHookMaxAttemptsCoverTheHorizon(t *testing.T) {
-	assert.Equal(t, 22, webhook.HookMaxAttempts())
+	attempts := webhook.HookMaxAttempts()
+	assert.Equal(t, 22, attempts)
+}
+
+// Every attempt up to the last one and five past it waits what the doubling schedule gives.
+func TestHookRetryDelayAgreesWithTheDoublingScheduleUpToTheLastAttempt(t *testing.T) {
+	last := webhook.HookMaxAttempts() + 5
+	for attempt := 1; attempt <= last; attempt++ {
+		got, want := webhook.HookRetryDelay(attempt), doublingDelay(attempt)
+		assert.Equal(t, want, got, "attempt %d", attempt)
+	}
 }
 
 func TestHookRetryDelayAgreesWithTheDoublingSchedule(t *testing.T) {
@@ -56,8 +60,7 @@ func TestHookRetryDelayAgreesWithTheDoublingSchedule(t *testing.T) {
 	})
 }
 
-// doublingDelay is the schedule as the hand-written loop computed it before the backoff
-// library: 30 s, doubled per attempt, capped at 6 hours.
+// doublingDelay is the schedule as a plain loop: 30 s, doubled per attempt, capped at 6 hours.
 func doublingDelay(attempt int) time.Duration {
 	delay := 30 * time.Second
 	for i := 1; i < attempt && delay < 6*time.Hour; i++ {
