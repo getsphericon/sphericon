@@ -88,13 +88,11 @@ func (env *TestEnv) ScopedBearer(t *testing.T, scopes ...string) string {
 // tests, e.g. fixtures.GlobexID).
 func (env *TestEnv) ScopedBearerFor(t *testing.T, workspaceID int64, scopes ...string) string {
 	t.Helper()
-	prefix, err := credentials.GenerateTokenPrefix()
-	require.NoError(t, err)
-	secret, err := credentials.GenerateTokenSecret()
-	require.NoError(t, err)
+	prefix := credentials.GenerateTokenPrefix()
+	secret := credentials.GenerateTokenSecret()
 	// test writes: a token of exactly the scopes the caller names, through the production hash
 	// (internal/AGENTS.md, Actors): no fixture can hold every scope set a test asks for.
-	_, err = env.DB.ApiToken.Create().
+	_, err := env.DB.ApiToken.Create().
 		SetName("actor-token").SetPrefix(prefix).SetSecretHash(credentials.HashSecret(secret)).SetScopes(scopes).
 		SetWorkspaceID(workspaceID).
 		Save(t.Context())

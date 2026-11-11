@@ -131,24 +131,38 @@ func (p *Policy) Blocked(w http.ResponseWriter, r *http.Request, key string) err
 	return &LimitedError{Policy: p.name}
 }
 
-// Exceeded counts one request against key and reports whether the budget is spent.
-// Unlike Allow it never answers the request: it is for a recording guard, where the
-// caller keeps serving the response and only skips the side effect (tracking never
-// refuses a recipient, ADR 0025). An exceeded request is counted and logged.
-func (p *Policy) Exceeded(r *http.Request, key string) bool {
-	if p == nil || !p.rl.OnLimit(discardWriter{}, r, key) {
+// recordingPolicy is a limiter for a recording guard: the caller keeps serving the response and
+// only skips a side effect once the budget is spent (tracking never refuses a recipient, ADR
+// 0025). It never touches the response, so it has no Allow. The zero value and nil record
+// everything, which is what a disabled (0) limit builds.
+type recordingPolicy struct {
+	name string
+	rl   *httprate.RateLimiter
+}
+
+// newRecordingPolicy builds a recording guard of limit requests per window, nil when limit is not
+// positive. Its limiter writes no X-RateLimit-* header (httprate skips a header whose name is
+// empty) and answers nothing on a counter error, which counts as exceeded.
+func newRecordingPolicy(name string, limit int, window time.Duration) *recordingPolicy {
+	if limit <= 0 {
+		return nil
+	}
+	return &recordingPolicy{name: name, rl: httprate.NewRateLimiter(limit, window,
+		httprate.WithResponseHeaders(httprate.ResponseHeaders{}),
+		httprate.WithErrorHandler(func(http.ResponseWriter, *http.Request, error) {}),
+	)}
+}
+
+// Exceeded counts one request against key and reports whether the budget is spent. An exceeded
+// request is counted and logged.
+func (p *recordingPolicy) Exceeded(r *http.Request, key string) bool {
+	// The limiter writes no header and no error response, so it is handed no writer.
+	if p == nil || !p.rl.OnLimit(nil, r, key) {
 		return false
 	}
 	Rejected(r.Context(), p.name)
 	return true
 }
-
-// discardWriter swallows the X-RateLimit-* headers a recording guard must not send.
-type discardWriter struct{}
-
-func (discardWriter) Header() http.Header         { return http.Header{} }
-func (discardWriter) Write(b []byte) (int, error) { return len(b), nil }
-func (discardWriter) WriteHeader(int)             {}
 
 // Rejected records one rejection under policy: ratelimit_rejected_total{policy} and
 // a warn log. It carries the policy and the client address only, never an email or
@@ -187,7 +201,7 @@ type Limiter struct {
 	apiBurst   *Policy
 	api        *Policy
 	failedAuth *Policy
-	tracking   *Policy
+	tracking   *recordingPolicy
 	loginIP    *Policy
 	collect    *Policy
 	collectIP  *Policy
@@ -202,7 +216,7 @@ func New(limits config.RateLimits) *Limiter {
 		apiBurst:   NewPolicy(PolicyAPIBurst, limits.APIBurst, burstWindow),
 		api:        NewPolicy(PolicyAPI, limits.APIPerMinute, window),
 		failedAuth: NewPolicy(PolicyFailedAuth, limits.FailedAuth, window),
-		tracking:   NewPolicy(PolicyTracking, limits.Tracking, window),
+		tracking:   newRecordingPolicy(PolicyTracking, limits.Tracking, window),
 		loginIP:    NewPolicy(PolicyLoginIP, limits.LoginIP, window),
 		collect:    NewPolicy(PolicyCollect, limits.Collect, window),
 		collectIP:  NewPolicy(PolicyCollectIP, limits.CollectIP, window),

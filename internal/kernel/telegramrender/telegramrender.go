@@ -7,6 +7,7 @@ package telegramrender
 import (
 	"errors"
 	"fmt"
+	stdhtml "html"
 	"io"
 	"net/netip"
 	"net/url"
@@ -204,7 +205,7 @@ func Check(text string) error {
 func Sanitize(markup string) string {
 	nodes, err := html.ParseFragment(strings.NewReader(markup), &html.Node{Type: html.ElementNode, Data: "body", DataAtom: atom.Body})
 	if err != nil {
-		return escapeText(markup)
+		return stdhtml.EscapeString(markup)
 	}
 	var b strings.Builder
 	for _, n := range nodes {
@@ -218,7 +219,7 @@ type renderState struct{ flat, linked bool }
 func write(b *strings.Builder, n *html.Node, state renderState) {
 	switch n.Type {
 	case html.TextNode:
-		b.WriteString(escapeText(n.Data))
+		b.WriteString(stdhtml.EscapeString(n.Data))
 	case html.ElementNode:
 		element(b, n, state)
 	case html.ErrorNode, html.DocumentNode, html.CommentNode, html.DoctypeNode, html.RawNode:
@@ -243,7 +244,7 @@ func element(b *strings.Builder, n *html.Node, state renderState) {
 			children(b, n, state)
 			return
 		}
-		opening = `<a href="` + escapeAttr(href) + `">`
+		opening = `<a href="` + stdhtml.EscapeString(href) + `">`
 	}
 	var inner strings.Builder
 	state.flat = n.Data == "code" || n.Data == "pre"
@@ -281,14 +282,6 @@ func safeHref(n *html.Node) (string, bool) {
 	}
 	return "", false
 }
-
-var (
-	textEscaper = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
-	attrEscaper = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", `"`, "&quot;")
-)
-
-func escapeText(s string) string { return textEscaper.Replace(s) }
-func escapeAttr(s string) string { return attrEscaper.Replace(s) }
 
 // VisibleLength is the length of the text of markup as Telegram counts it against the limit: the
 // text after tags are removed and entities read, in UTF-16 code units.
@@ -339,7 +332,7 @@ func RewriteLinks(markup string, rewrite func(href string) (string, error)) (str
 			if err != nil {
 				return "", err
 			}
-			b.WriteString(`<a href="` + escapeAttr(href) + `">`)
+			b.WriteString(`<a href="` + stdhtml.EscapeString(href) + `">`)
 		default:
 			b.Write(z.Raw())
 		}

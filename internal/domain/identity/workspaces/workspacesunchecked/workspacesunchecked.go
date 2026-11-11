@@ -46,10 +46,7 @@ func CreateIn(ctx context.Context, tx *ent.Client, name string, newPublicID func
 	if err := workspaces.CheckSendCap(sendCap); err != nil {
 		return nil, err
 	}
-	collectKey, err := credentials.GenerateCollectKey()
-	if err != nil {
-		return nil, err
-	}
+	collectKey := credentials.GenerateCollectKey()
 	for range publicIDAttempts {
 		id, err := tx.Workspace.Create().
 			SetName(name).
@@ -102,10 +99,7 @@ func cycleStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[work
 			case was == workspaces.StatePendingDeletion && to == workspaces.StateErased:
 				// The tombstone: the row stays, with nothing that identifies the Workspace
 				// and a fresh collect key.
-				key, err := credentials.GenerateCollectKey()
-				if err != nil {
-					return false, err
-				}
+				key := credentials.GenerateCollectKey()
 				u.SetName("").SetPostalAddress("").SetCollectKey(key).ClearRetentionDays().SetErasedAt(now)
 			default:
 				return false, fmt.Errorf("workspaces: no move from %s to %s", was, to)

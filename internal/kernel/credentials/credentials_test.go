@@ -11,10 +11,8 @@ import (
 )
 
 func TestAPITokenRoundTripsThroughItsValueAndParses(t *testing.T) {
-	prefix, err := credentials.GenerateTokenPrefix()
-	require.NoError(t, err)
-	secret, err := credentials.GenerateTokenSecret()
-	require.NoError(t, err)
+	prefix := credentials.GenerateTokenPrefix()
+	secret := credentials.GenerateTokenSecret()
 	assert.Len(t, prefix, 12)
 	assert.Len(t, secret, 40)
 
@@ -41,10 +39,8 @@ func TestParseTokenRejectsMalformedValues(t *testing.T) {
 func TestGeneratedPrefixesAndSecretsDrawFromTheWholeAlphabetOnly(t *testing.T) {
 	prefixChars, secretChars := map[rune]bool{}, map[rune]bool{}
 	for range 300 {
-		prefix, err := credentials.GenerateTokenPrefix()
-		require.NoError(t, err)
-		secret, err := credentials.GenerateTokenSecret()
-		require.NoError(t, err)
+		prefix := credentials.GenerateTokenPrefix()
+		secret := credentials.GenerateTokenSecret()
 		assert.Regexp(t, `^[a-z0-9]{12}$`, prefix)
 		assert.Regexp(t, `^[A-Za-z0-9_-]{40}$`, secret)
 		for _, c := range prefix {
@@ -59,8 +55,7 @@ func TestGeneratedPrefixesAndSecretsDrawFromTheWholeAlphabetOnly(t *testing.T) {
 }
 
 func TestAPITokenAndServiceCredentialDoNotParseAsEachOther(t *testing.T) {
-	prefix, secret, value, err := credentials.GenerateServiceCredential()
-	require.NoError(t, err)
+	prefix, secret, value := credentials.GenerateServiceCredential()
 	parsed := credentials.ParseServiceCredential(value)
 	require.NotNil(t, parsed)
 	assert.Equal(t, prefix, parsed.Prefix)
@@ -80,17 +75,14 @@ func TestSecretHashVerifiesOnlyTheOriginal(t *testing.T) {
 }
 
 func TestWorkspaceKeysAreTypedAndUnique(t *testing.T) {
-	collect, err := credentials.GenerateCollectKey()
-	require.NoError(t, err)
-	ingest, err := credentials.GenerateIngestKey()
-	require.NoError(t, err)
+	collect := credentials.GenerateCollectKey()
+	ingest := credentials.GenerateIngestKey()
 	assert.True(t, strings.HasPrefix(collect, "omck_"))
 	assert.True(t, strings.HasPrefix(ingest, "omik_"))
 	assert.Len(t, collect, len("omck_")+40)
 	assert.Len(t, ingest, len("omik_")+40)
 
-	again, err := credentials.GenerateCollectKey()
-	require.NoError(t, err)
+	again := credentials.GenerateCollectKey()
 	assert.NotEqual(t, collect, again)
 }
 

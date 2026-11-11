@@ -54,6 +54,23 @@ func TestSendKeepsTheMessageWithItsHeadersAndLinksAndConfirmsDelivery(t *testing
 	assert.Contains(t, names, "List-Unsubscribe-Post")
 }
 
+func TestSendKeepsANonASCIISubjectReadable(t *testing.T) {
+	capturer := &recordingCapturer{}
+	sender := build(t, capturer)
+	// Long enough to go out as several encoded-words on folded lines.
+	subject := "Привет, Ада! Ваш заказ №42 собран и уже едет к вам — следите за посылкой"
+
+	_, err := sender.Send(context.Background(), messaging.EmailMessage{
+		From: "news@example.com", To: "ada@example.com", Subject: subject, Text: "x",
+	})
+	require.NoError(t, err)
+
+	require.Len(t, capturer.got, 1)
+	got, ok := lo.Find(capturer.got[0].Headers, func(h messaging.Header) bool { return h.Name == "Subject" })
+	require.True(t, ok)
+	assert.Equal(t, subject, got.Value)
+}
+
 func TestTheInboxDeliversNowhereOutsideAndReportsItsOwnCeiling(t *testing.T) {
 	sender := build(t, &recordingCapturer{})
 

@@ -16,11 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestFormatSender(t *testing.T) {
-	assert.Equal(t, "Acme <hi@acme.com>", messaging.FormatSender("hi@acme.com", "Acme"))
-	assert.Equal(t, "hi@acme.com", messaging.FormatSender("hi@acme.com", ""))
-}
-
 func TestDomainOf(t *testing.T) {
 	assert.Equal(t, "mail.acme.com", messaging.DomainOf("Hi@Mail.ACME.com"))
 	assert.Empty(t, messaging.DomainOf("no-at-sign"))

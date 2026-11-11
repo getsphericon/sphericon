@@ -1,10 +1,15 @@
 package secrets_test
 
 import (
+	"bytes"
+	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tink-crypto/tink-go/v2/aead"
+	"github.com/tink-crypto/tink-go/v2/insecurecleartextkeyset"
+	"github.com/tink-crypto/tink-go/v2/keyset"
 
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
@@ -59,4 +64,17 @@ func TestDecryptRejectsTamperedOrForeign(t *testing.T) {
 	require.NoError(t, err)
 	_, err = c.Decrypt(foreign)
 	assert.ErrorIs(t, err, secrets.ErrCiphertext)
+}
+
+// A RAW primary key writes no key id into its ciphertext: its empty prefix would match every stored
+// value, so Current could never tell an old value from a current one.
+func TestNewCipherRefusesAPrimaryKeyWithoutTheTinkPrefix(t *testing.T) {
+	kh, err := keyset.NewHandle(aead.AES256GCMNoPrefixKeyTemplate())
+	require.NoError(t, err)
+	buf := new(bytes.Buffer)
+	require.NoError(t, insecurecleartextkeyset.Write(kh, keyset.NewBinaryWriter(buf)))
+
+	_, err = secrets.NewCipher(base64.StdEncoding.EncodeToString(buf.Bytes()))
+
+	assert.ErrorContains(t, err, "TINK output prefix")
 }

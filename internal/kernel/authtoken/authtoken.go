@@ -7,7 +7,7 @@
 //
 //   - A `prp` (purpose) claim is validated on parse, so a token minted for one
 //     flow (say, signup verification) cannot be replayed against another (reset).
-//   - The HMAC signing key is *derived per token* from (purpose, userID, binding),
+//   - The HMAC signing key is *derived per token* from (purpose, userID, binding) with HKDF,
 //     where `binding` is a value that changes when the action completes — the
 //     user's password hash for reset, their current email for a change. Once the
 //     action lands, the binding no longer matches and the token stops verifying,
@@ -15,7 +15,7 @@
 package authtoken
 
 import (
-	"crypto/hmac"
+	"crypto/hkdf"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -96,7 +96,11 @@ func (s *Signer) Mint(purpose Purpose, userID int64, binding string, ttl time.Du
 		Purpose:   purpose,
 		Extra:     extra,
 	})
-	return tok.SignedString(s.deriveKey(purpose, userID, binding))
+	key, err := s.deriveKey(purpose, userID, binding)
+	if err != nil {
+		return "", err
+	}
+	return tok.SignedString(key)
 }
 
 // Parse validates a token for the expected purpose and returns the user id plus
@@ -122,7 +126,7 @@ func (s *Signer) Parse(token string, purpose Purpose, bindingFor func(userID int
 		if err != nil {
 			return nil, &BindingError{Err: err}
 		}
-		return s.deriveKey(purpose, cl.UserID, binding), nil
+		return s.deriveKey(purpose, cl.UserID, binding)
 	}, jwt.WithValidMethods([]string{"HS256"}), jwt.WithExpirationRequired(), jwt.WithTimeFunc(s.now))
 	if err != nil {
 		return 0, nil, err
@@ -134,10 +138,10 @@ func (s *Signer) Parse(token string, purpose Purpose, bindingFor func(userID int
 }
 
 // deriveKey binds the signing key to (purpose, userID, binding) so the token is
-// scoped to one flow and one user, and stops verifying once the binding changes.
-func (s *Signer) deriveKey(purpose Purpose, userID int64, binding string) []byte {
-	mac := hmac.New(sha256.New, s.secret)
-	// hash.Hash.Write never returns an error.
-	_, _ = fmt.Fprintf(mac, "%s|%d|%s", purpose, userID, binding)
-	return mac.Sum(nil)
+// scoped to one flow and one user, and stops verifying once the binding changes. It is
+// HKDF-SHA256 of the secret with the three as its info: a purpose holds no "|" and a user id
+// only digits, so the binding, last, cannot make two triples read alike.
+func (s *Signer) deriveKey(purpose Purpose, userID int64, binding string) ([]byte, error) {
+	info := fmt.Sprintf("%s|%d|%s", purpose, userID, binding)
+	return hkdf.Key(sha256.New, s.secret, nil, info, sha256.Size)
 }
