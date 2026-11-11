@@ -12,6 +12,7 @@ package emailrender
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/k3a/html2text"
@@ -183,6 +184,51 @@ func separateBlocks(n *html.Node) {
 			continue
 		}
 		separateBlocks(c)
+	}
+}
+
+// hidingDeclarations are the inline style declarations (property, value) mail authors use to
+// hide an element from the reader while keeping it in the HTML. Only inline styles are read:
+// hiding through a class or a <style> rule is not detected. A zero font size is not one of
+// them: it is how a layout table removes the gaps between its columns, and the text inside
+// sets its own size.
+var hidingDeclarations = map[string][]string{
+	"display":    {"none"},
+	"visibility": {"hidden"},
+	"mso-hide":   {"all"},
+	"opacity":    {"0"},
+}
+
+// zeroLengths are the values of a zero max-height.
+var zeroLengths = []string{"0", "0px", "0pt", "0em"}
+
+// hidesElement reports whether an inline style hides its element: one of the hiding
+// declarations, or a zero max-height that clips its content (overflow:hidden), the shape of a
+// preheader. A zero max-height alone clips nothing. The values are compared lower-case.
+func hidesElement(style string) bool {
+	parsed := parseStyle(style)
+	for prop, hiding := range hidingDeclarations {
+		value := strings.ToLower(parsed[prop])
+		if slices.Contains(hiding, value) {
+			return true
+		}
+	}
+	maxHeight, overflow := strings.ToLower(parsed["max-height"]), strings.ToLower(parsed["overflow"])
+	return slices.Contains(zeroLengths, maxHeight) && overflow == "hidden"
+}
+
+// dropHidden removes, in place, every element whose inline style hides it.
+func dropHidden(n *html.Node) {
+	for c := n.FirstChild; c != nil; {
+		next := c.NextSibling
+		if c.Type == html.ElementNode && slices.ContainsFunc(c.Attr, func(a html.Attribute) bool {
+			return a.Key == "style" && hidesElement(a.Val)
+		}) {
+			n.RemoveChild(c)
+		} else {
+			dropHidden(c)
+		}
+		c = next
 	}
 }
 

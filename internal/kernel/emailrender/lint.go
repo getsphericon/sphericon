@@ -226,10 +226,9 @@ func inherited(n *html.Node, prop string, legacy func(*html.Node) string) (strin
 	return "", true
 }
 
-// declared is the element's inline style as property -> value (see parseStyle). The lint takes
-// every value; each of its checks decides what a value it cannot read means.
+// declared is the element's inline style as property -> value (see parseStyle).
 func declared(n *html.Node) map[string]string {
-	return parseStyle(attr(n, "style"), anyValue)
+	return parseStyle(attr(n, "style"))
 }
 
 // neutral colors are allowed in any message: white and black belong to no brand.
