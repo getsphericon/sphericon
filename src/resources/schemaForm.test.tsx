@@ -78,11 +78,13 @@ test('an error that shows is re-checked on each keystroke, a cleared one waits f
 test('a Select shows its error after blur and clears it when an option is chosen', async () => {
   const { screen, plan, name } = await open()
   await plan.click()
-  await name.click()
+  // Leaving Plan for a Name that is valid: an empty one would show its own error on the next blur,
+  // which moves Plan down between the press and the release of the click that opens it.
+  await name.fill('B')
   await expect.element(screen.getByText('Choose a plan.')).toBeInTheDocument()
 
   await plan.click()
-  await userEvent.keyboard('{ArrowDown}{Enter}')
+  await screen.getByRole('option', { name: 'Free' }).click()
   await expect.element(plan).toHaveValue('Free')
   await expect.element(screen.getByText('Choose a plan.')).not.toBeInTheDocument()
 })
