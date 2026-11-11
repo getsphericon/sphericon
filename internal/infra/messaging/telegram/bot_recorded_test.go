@@ -100,6 +100,20 @@ func TestRecordedPlainHTTPWebhookIsBadWebhook(t *testing.T) {
 	requireRefusal(t, telegramtest.BadWebhook, err)
 }
 
+// The person blocked the bot: recorded on its own, with the bot blocked
+// (mise run record:telegram -- '^TestRecordedBlocked'). The classification of a failed send takes
+// this answer for an opt-out (messaging.TelegramError.Blocked).
+func TestRecordedBlockedBotIsBlocked(t *testing.T) {
+	r := recorded(t)
+
+	_, err := r.bot.SendMessage(t.Context(), messaging.TelegramMessage{ChatID: r.chatID, Text: "after the block"})
+
+	requireRefusal(t, telegramtest.Blocked, err)
+	te, ok := errors.AsType[*messaging.TelegramError](err)
+	require.True(t, ok)
+	assert.True(t, te.Blocked())
+}
+
 // requireRefusal checks that err is the Bot API's refusal want, word for word.
 func requireRefusal(t *testing.T, want telegramtest.Failure, err error) {
 	t.Helper()

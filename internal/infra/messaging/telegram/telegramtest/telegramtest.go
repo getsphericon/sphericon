@@ -113,7 +113,7 @@ type Failure struct {
 }
 
 // The refusals the Bot API answers, in Telegram's own words. The recorded tests of package telegram
-// check them against the real Bot API; Blocked, Deactivated and CantInitiate are not recorded.
+// check them against the real Bot API; Deactivated and CantInitiate are not recorded.
 var (
 	// Unauthorized is a wrong or revoked token.
 	Unauthorized = Failure{Code: http.StatusUnauthorized, Description: "Unauthorized"}

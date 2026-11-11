@@ -67,7 +67,8 @@ account through the API, for a test of connecting or one that needs another acco
 The fake Bot API (`telegramtest`) answers in Telegram's own words, and the recorded tests of
 `internal/infra/messaging/telegram` hold those words to the real Bot API: a change to the provider
 or to a refusal of the fake is recorded again with `mise run record:telegram` (a bot of your own,
-set up once by `dev/telegram-record-bot.sh`). Recording replaces every identifier of the bot and
+set up once by `dev/telegram-record-bot.sh`); the blocked-bot test is recorded on its own, with the
+bot blocked (`mise run record:telegram -- '^TestRecordedBlocked'`). Recording replaces every identifier of the bot and
 the person in the files and fails if one is left.
 The `testwrites` analyzer reads the harness as it reads tests: a helper that creates a row names
 why no fixture can hold it, with the same `// test writes:` comment.
