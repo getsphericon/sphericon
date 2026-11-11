@@ -101,10 +101,11 @@ export function editorSessionRaces<TEvent extends { type: string }>(
     rig.stop()
     rig.gate.release()
     await rig.gate.answered
-    // A later round trip through the server: the stopped session had the answer by now.
     const stored = await rig.stored()
-    const current = rig.current()
     expect(stored).not.toEqual(rig.initial)
+    // The answer reaches the cache once the client has read it, then the refresh starts over it.
+    await expect.poll(() => rig.page.refreshedOver).toEqual(stored)
+    const current = rig.current()
     expect(current).toBe(before)
     expect(rig.page).toEqual({ cached: stored, toasts: [], refreshedOver: stored })
   })
