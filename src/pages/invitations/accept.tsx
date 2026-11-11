@@ -1,14 +1,4 @@
-import {
-  Alert,
-  Button,
-  Divider,
-  Loader,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
+import { Alert, Button, Divider, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
@@ -16,6 +6,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
@@ -165,7 +156,7 @@ function AcceptInvitation() {
             required
             {...form.getInputProps('name')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.acceptInvitation.passwordLabel)}
             autoComplete="new-password"
             required

@@ -1,4 +1,4 @@
-import { Button, Card, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Card, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCountDown } from 'ahooks'
@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import { SignupItemFields } from '../../components/SignupItemFields.tsx'
@@ -196,21 +197,17 @@ export function SignUpPage() {
             required
             {...form.getInputProps('email')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.signUp.passwordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('password')}
-            // Mantine's PasswordInput leaves aria-invalid off its input (withAria: false).
-            aria-invalid={form.errors.password ? true : undefined}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.signUp.confirmPasswordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('confirm')}
-            // Mantine's PasswordInput leaves aria-invalid off its input (withAria: false).
-            aria-invalid={form.errors.confirm ? true : undefined}
           />
 
           <SignupItemFields

@@ -1,7 +1,8 @@
-import { PasswordInput, Stack, Textarea, TextInput } from '@mantine/core'
+import { Stack, Textarea, TextInput } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { HttpHeaderRows } from '../../components/HttpHeaderRows.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import type { SiteRuleAction } from '../../generated/site/types.gen.ts'
 
 interface HttpActionFieldsProps {
@@ -27,7 +28,7 @@ export function HttpActionFields({ action, onChange }: HttpActionFieldsProps) {
         saved={saved}
         onChange={(headers) => onChange({ headers })}
       />
-      <PasswordInput
+      <PasswordField
         label={t(($) => $.rules.http.secretLabel)}
         description={
           action.hasSecret ? t(($) => $.rules.http.keepHint) : t(($) => $.rules.http.secretHint)

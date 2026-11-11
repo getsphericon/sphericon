@@ -1,9 +1,10 @@
-import { Alert, Button, Divider, Group, PasswordInput, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Divider, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { PasswordField } from '../../components/PasswordField.tsx'
 import {
   siteSecondFactorGetStatusOptions,
   siteUserDeleteUserLinkMutation,
@@ -115,7 +116,7 @@ export function DeleteUserForm({
           {...form.getInputProps('email')}
         />
         {token === undefined ? (
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.profile.deleteUserPasswordLabel)}
             required
             {...form.getInputProps('currentPassword')}

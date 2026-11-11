@@ -127,6 +127,12 @@ export default defineConfig({
             message:
               "Toasts live in the NotificationsProvider's own store: call `useNotify()` (src/hooks/useNotify.ts).",
           },
+          {
+            name: '@mantine/core',
+            importNames: ['PasswordInput'],
+            message:
+              'A password input is `PasswordField` (src/components/PasswordField.tsx): it marks a refused password aria-invalid.',
+          },
         ],
         patterns: [
           {
@@ -160,6 +166,11 @@ export default defineConfig({
     // The workflow builder's own stylesheet (a library's, not ours) carries global resets, so it is
     // rendered as a <style> while the builder is mounted and goes with it. The one file a <style>
     // element is allowed in.
+    // The one file that wraps Mantine's PasswordInput.
+    {
+      files: ['src/components/PasswordField.tsx'],
+      rules: { 'eslint/no-restricted-imports': 'off' },
+    },
     {
       files: ['src/pages/automations/AutomationBuilder.tsx'],
       rules: { 'react/forbid-elements': 'off' },
