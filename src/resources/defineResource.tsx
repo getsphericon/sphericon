@@ -1,5 +1,5 @@
 import { Fieldset, Modal, Stack, Title } from '@mantine/core'
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { Navigate, useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
@@ -11,11 +11,11 @@ import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../components/Skeletons.tsx'
 import { defineEditorSession } from '../editing/editorSession.ts'
 import type { EditorOperationInput } from '../editing/editorSession.ts'
+import { useEditorEffects } from '../editing/useEditorEffects.ts'
+import type { EditorOutcomeTexts } from '../editing/useEditorEffects.ts'
 import { useEditorSession } from '../editing/useEditorSession.ts'
 import type { EditorOutcome } from '../editing/useEditorSession.ts'
-import { useApiErrorMessage } from '../hooks/useApiErrorMessage.ts'
-import { useNotify } from '../hooks/useNotify.ts'
-import { invalidateOwn, useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import { resourceEditorAdapter } from './resourceEditor.ts'
@@ -55,7 +55,7 @@ export interface ResourceEditOperation<TResource, TValues> extends ResourceOpera
   TResource,
   TValues
 > {
-  texts: (t: TFunction) => { accepted: string; failedTitle: string }
+  texts: (t: TFunction) => EditorOutcomeTexts
 }
 
 // What the content under the edit form receives of its editor session: whether the form holds
@@ -244,15 +244,18 @@ export function defineResource<
     loaded: TResource
   }) {
     const { t } = useTranslation()
-    const notify = useNotify()
-    const apiErrorMessage = useApiErrorMessage()
-    const queryClient = useQueryClient()
     const texts = resource.texts(t)
 
     const path = { workspaceId, id }
     // The values the session opens with, the same the form starts from.
     const form = useSchemaForm(resource.schema.update, adapter.open({ path, resource: loaded }))
-    const getKey = resource.getOptions({ path }).queryKey
+    const effects = useEditorEffects<TResource, TOperation>(
+      resource.getOptions({ path }).queryKey,
+      (operation) =>
+        operation === 'SAVE'
+          ? { accepted: texts.updated, failedTitle: texts.saveErrorTitle }
+          : operations[operation].texts(t),
+    )
 
     const {
       snapshot: session,
@@ -270,37 +273,7 @@ export function defineResource<
           form.setValues(content)
         },
       },
-      effects: {
-        // The write's response is authoritative: an older GET is cancelled before it is cached.
-        store: (stored) => {
-          void queryClient.cancelQueries({ queryKey: getKey })
-          queryClient.setQueryData<TResource>(getKey, stored)
-        },
-        // The queries of the resource's own tags (its list, its detail) refresh in the background.
-        invalidate: () => {
-          void invalidateOwn(queryClient, getKey)
-        },
-        accepted: (operation) => {
-          notify({
-            color: 'teal',
-            title: t(($) => $.notifications.successTitle),
-            message: operation === 'SAVE' ? texts.updated : operations[operation].texts(t).accepted,
-          })
-        },
-        failed: (operation, error) => {
-          notify({
-            color: 'red',
-            title:
-              operation === 'SAVE'
-                ? texts.saveErrorTitle
-                : operations[operation].texts(t).failedTitle,
-            message: apiErrorMessage(
-              error,
-              t(($) => $.notifications.errorMessage),
-            ),
-          })
-        },
-      },
+      effects,
     })
 
     // Subscribed: the page re-renders on every edit.

@@ -215,3 +215,39 @@ test('Publish serializes operations and preserves the current canvas', async () 
   await expect.element(screen.getByRole('combobox', { name: 'Trigger Event' })).toBeEnabled()
   await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
 })
+
+// What a pending Save carries is not lost by leaving (the write outlives the editor): only an
+// edit made since asks first.
+// The editor with a Save of a new name pending, whose write is never answered.
+async function savingName() {
+  const received = Promise.withResolvers<undefined>()
+  noEnrollmentsOrIntegrations()
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(async () => {
+      received.resolve(undefined)
+      return Promise.withResolvers<never>().promise
+    }),
+  )
+  const rendered = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await rendered.screen.getByLabelText('Name', { exact: false }).fill('Submitted name')
+  await rendered.screen.getByRole('button', { name: 'Save' }).click()
+  await received.promise
+  return rendered
+}
+
+test('leaving while Save is pending asks when the content changed since', async () => {
+  const { screen, router } = await savingName()
+  await screen.getByLabelText('Name', { exact: false }).fill('Newer name')
+  router.history.push('/workspaces/TestWs01')
+
+  await expect.element(screen.getByRole('dialog', { name: 'Leave without saving?' })).toBeVisible()
+})
+
+test('leaving while Save is pending does not ask when nothing changed since', async () => {
+  const { screen, router } = await savingName()
+  router.history.push('/workspaces/TestWs01')
+
+  await expect.poll(() => router.history.location.pathname).toBe('/workspaces/TestWs01')
+  expect(screen.getByRole('dialog', { name: 'Leave without saving?' }).elements()).toEqual([])
+})
