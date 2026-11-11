@@ -3,7 +3,6 @@ package events
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
@@ -45,17 +44,8 @@ func (b *Bus) WithinWorkspaceLockEnqueueTx(ctx context.Context, s *ent.Scoped, f
 
 // lockWorkspace takes the Workspace's lock on the transaction tx.
 func lockWorkspace(ctx context.Context, tx *ent.Client, workspaceID int64) error {
-	if err := postgres.LockTx(ctx, tx, advisoryKey("workspace", workspaceID)); err != nil {
+	if err := postgres.LockTx(ctx, tx, postgres.WorkspaceKey("workspace", workspaceID)); err != nil {
 		return fmt.Errorf("lock the Workspace: %w", err)
 	}
 	return nil
-}
-
-// advisoryKey is the key of one Workspace's advisory lock of a kind: "workspace" for its removals
-// and the writes that move Live use, "orders" for its order Events. Each kind hashes apart from the
-// others, and two Workspaces whose keys collide only take turns.
-func advisoryKey(kind string, workspaceID int64) int64 {
-	h := fnv.New32a()
-	_, _ = fmt.Fprintf(h, "%s:%d", kind, workspaceID)
-	return int64(h.Sum32())
 }
