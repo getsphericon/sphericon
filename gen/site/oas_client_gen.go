@@ -328,14 +328,14 @@ type Invoker interface {
 	// refused. 409 for an archived automation too.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
-	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (*SiteAutomationResource, error)
+	SiteAutomationsPublish(ctx context.Context, request *RevisionInput, params SiteAutomationsPublishParams) (*SiteAutomationResource, error)
 	// SiteAutomationsRevert invokes SiteAutomations_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
 	// 409 when the automation is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/revert
-	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (*SiteAutomationResource, error)
+	SiteAutomationsRevert(ctx context.Context, request *RevisionInput, params SiteAutomationsRevertParams) (*SiteAutomationResource, error)
 	// SiteAutomationsUnarchive invokes SiteAutomations_unarchive operation.
 	//
 	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
@@ -972,13 +972,13 @@ type Invoker interface {
 	// neither draft nor live version.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/publish
-	SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (*SiteRuleResource, error)
+	SiteRulesPublish(ctx context.Context, request *RevisionInput, params SiteRulesPublishParams) (*SiteRuleResource, error)
 	// SiteRulesRevert invokes SiteRules_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/revert
-	SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (*SiteRuleResource, error)
+	SiteRulesRevert(ctx context.Context, request *RevisionInput, params SiteRulesRevertParams) (*SiteRuleResource, error)
 	// SiteRulesUpdate invokes SiteRules_update operation.
 	//
 	// Update a resource from the site UI.
@@ -6799,12 +6799,12 @@ func (c *Client) sendSiteAutomationsList(ctx context.Context, params SiteAutomat
 // refused. 409 for an archived automation too.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
-func (c *Client) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (*SiteAutomationResource, error) {
-	res, err := c.sendSiteAutomationsPublish(ctx, params)
+func (c *Client) SiteAutomationsPublish(ctx context.Context, request *RevisionInput, params SiteAutomationsPublishParams) (*SiteAutomationResource, error) {
+	res, err := c.sendSiteAutomationsPublish(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (res *SiteAutomationResource, err error) {
+func (c *Client) sendSiteAutomationsPublish(ctx context.Context, request *RevisionInput, params SiteAutomationsPublishParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -6894,6 +6894,9 @@ func (c *Client) sendSiteAutomationsPublish(ctx context.Context, params SiteAuto
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
+	if err := encodeSiteAutomationsPublishRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
 
 	{
 		type bitset = [1]uint8
@@ -6957,12 +6960,12 @@ func (c *Client) sendSiteAutomationsPublish(ctx context.Context, params SiteAuto
 // 409 when the automation is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/revert
-func (c *Client) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (*SiteAutomationResource, error) {
-	res, err := c.sendSiteAutomationsRevert(ctx, params)
+func (c *Client) SiteAutomationsRevert(ctx context.Context, request *RevisionInput, params SiteAutomationsRevertParams) (*SiteAutomationResource, error) {
+	res, err := c.sendSiteAutomationsRevert(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (res *SiteAutomationResource, err error) {
+func (c *Client) sendSiteAutomationsRevert(ctx context.Context, request *RevisionInput, params SiteAutomationsRevertParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_revert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -7051,6 +7054,9 @@ func (c *Client) sendSiteAutomationsRevert(ctx context.Context, params SiteAutom
 	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteAutomationsRevertRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{
@@ -20206,12 +20212,12 @@ func (c *Client) sendSiteRulesList(ctx context.Context, params SiteRulesListPara
 // neither draft nor live version.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/publish
-func (c *Client) SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (*SiteRuleResource, error) {
-	res, err := c.sendSiteRulesPublish(ctx, params)
+func (c *Client) SiteRulesPublish(ctx context.Context, request *RevisionInput, params SiteRulesPublishParams) (*SiteRuleResource, error) {
+	res, err := c.sendSiteRulesPublish(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (res *SiteRuleResource, err error) {
+func (c *Client) sendSiteRulesPublish(ctx context.Context, request *RevisionInput, params SiteRulesPublishParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -20301,6 +20307,9 @@ func (c *Client) sendSiteRulesPublish(ctx context.Context, params SiteRulesPubli
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
+	if err := encodeSiteRulesPublishRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
 
 	{
 		type bitset = [1]uint8
@@ -20363,12 +20372,12 @@ func (c *Client) sendSiteRulesPublish(ctx context.Context, params SiteRulesPubli
 // Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/revert
-func (c *Client) SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (*SiteRuleResource, error) {
-	res, err := c.sendSiteRulesRevert(ctx, params)
+func (c *Client) SiteRulesRevert(ctx context.Context, request *RevisionInput, params SiteRulesRevertParams) (*SiteRuleResource, error) {
+	res, err := c.sendSiteRulesRevert(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (res *SiteRuleResource, err error) {
+func (c *Client) sendSiteRulesRevert(ctx context.Context, request *RevisionInput, params SiteRulesRevertParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_revert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -20457,6 +20466,9 @@ func (c *Client) sendSiteRulesRevert(ctx context.Context, params SiteRulesRevert
 	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteRulesRevertRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{

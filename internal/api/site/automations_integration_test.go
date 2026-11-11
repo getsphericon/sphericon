@@ -39,10 +39,10 @@ func TestSiteAutomationStepsNameTheirIntegration(t *testing.T) {
 	require.NoError(t, err)
 	res := created
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID}
-	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptName("Renamed")}, params)
+	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))), Name: siteapi.NewOptName("Renamed")}, params)
 	require.NoError(t, err)
 	kept := renamed
-	rewritten, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
+	rewritten, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))),
 		Steps: []siteapi.SiteAutomationStep{siteEmailStepVia(siteapi.OptNilEntityId{})},
 	}, params)
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestSiteAutomationsRefuseAStepsUnknownIntegration(t *testing.T) {
 
 	_, create := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "signup", Steps: steps},
 		siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
-	_, update := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Steps: steps},
+	_, update := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWelcomeSeriesID)))), Steps: steps},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.AutomationWelcomeSeriesID)})
 
 	testhelper.SiteRefusal(t, create, http.StatusUnprocessableEntity)

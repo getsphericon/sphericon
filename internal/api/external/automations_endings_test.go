@@ -33,7 +33,7 @@ func TestExternalAutomationExitAndGoalEvents(t *testing.T) {
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(created.ID))),
 		GoalEvent: externalapi.NewOptNilString("account_closed"),
 	}, externalapi.AutomationsUpdateParams{ID: created.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
@@ -46,7 +46,7 @@ func TestExternalAutomationEndingsEditOfAPublishedAutomationWritesTheDraft(t *te
 	c := env.ExternalScoped(t, "automations:read", "automations:write")
 	ctx := context.Background()
 
-	res, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
+	res, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(entityIDString(fixtures.AutomationPaymentRecoveryID)))),
 		ExitEvents: []string{"card_removed"}, GoalEvent: externalapi.NewOptNilString("invoice_paid"),
 	}, externalapi.AutomationsUpdateParams{ID: entityIDString(fixtures.AutomationPaymentRecoveryID)})
 	require.NoError(t, err)

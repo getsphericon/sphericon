@@ -146,6 +146,27 @@ func (_u *RuleUpdate) ClearDraftVersionID() *RuleUpdate {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *RuleUpdate) SetRevision(v int64) *RuleUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *RuleUpdate) SetNillableRevision(v *int64) *RuleUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *RuleUpdate) AddRevision(v int64) *RuleUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *RuleUpdate) SetName(v string) *RuleUpdate {
 	_u.mutation.SetName(v)
@@ -313,6 +334,11 @@ func (_u *RuleUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Rule.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := rule.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Rule.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := rule.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
@@ -359,6 +385,12 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ActivatedAtCleared() {
 		_spec.ClearField(rule.FieldActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(rule.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(rule.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(rule.FieldName, field.TypeString, value)
@@ -676,6 +708,27 @@ func (_u *RuleUpdateOne) ClearDraftVersionID() *RuleUpdateOne {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *RuleUpdateOne) SetRevision(v int64) *RuleUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *RuleUpdateOne) SetNillableRevision(v *int64) *RuleUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *RuleUpdateOne) AddRevision(v int64) *RuleUpdateOne {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *RuleUpdateOne) SetName(v string) *RuleUpdateOne {
 	_u.mutation.SetName(v)
@@ -856,6 +909,11 @@ func (_u *RuleUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Rule.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := rule.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Rule.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := rule.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
@@ -919,6 +977,12 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 	}
 	if _u.mutation.ActivatedAtCleared() {
 		_spec.ClearField(rule.FieldActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(rule.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(rule.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(rule.FieldName, field.TypeString, value)

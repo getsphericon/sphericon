@@ -304,7 +304,7 @@ export function defineResource<
         <Title order={4}>{texts.editTitle}</Title>
         {session.context.changed && (
           <ChangedNotice
-            dirty={dirty(current)}
+            isDirty={() => dirty(form.getValues())}
             busy={!session.matches('idle')}
             onLoad={() => {
               void stored(reload)

@@ -95,7 +95,7 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: steps})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
 
-		_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Steps: &steps})
+		_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID), Steps: &steps})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, "update: "+name)
 	}
 
@@ -124,7 +124,7 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	before, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
 
-	renamed, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Name: new("Renamed"), TriggerEvent: new("new.trigger")})
+	renamed, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), before.ID), Name: new("Renamed"), TriggerEvent: new("new.trigger")})
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", renamed.Name)
 	_, draft := automations.LiveAndDraft(renamed)
@@ -132,7 +132,7 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	assert.Equal(t, draftSteps(t, before), draftSteps(t, renamed), "steps untouched when not given")
 	assert.Equal(t, before.Status, renamed.Status)
 
-	resteps, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 1}}})
+	resteps, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), before.ID), Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 1}}})
 	require.NoError(t, err)
 	assert.Equal(t, []automationstep.Step{{Type: automationstep.Wait, Seconds: 1}}, draftSteps(t, resteps))
 }
@@ -145,7 +145,7 @@ func TestPublishAndDeactivateFlipTheStatus(t *testing.T) {
 	off, err := m.Deactivate(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
 	assert.Equal(t, automation.StatusInactive, off.Status)
-	on, err := m.Publish(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
+	on, err := m.Publish(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID))
 	require.NoError(t, err)
 	assert.Equal(t, automation.StatusActive, on.Status)
 
@@ -184,13 +184,13 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 
 	_, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID, automations.UpdateInput{Name: new("hijacked")})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), foreign.ID), Name: new("hijacked")})
 	require.ErrorIs(t, err, automations.ErrNotFound)
-	_, err = m.Publish(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
+	_, err = m.Publish(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID, testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), foreign.ID))
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Deactivate(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
-	_, err = m.Revert(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
+	_, err = m.Revert(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID, testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), foreign.ID))
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Archive(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
@@ -216,7 +216,7 @@ func TestAnArchivedAutomationIsNeitherPublishedNorDeactivated(t *testing.T) {
 	before, err := m.Get(ctx, acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
 
-	_, err = m.Publish(ctx, acme, fixtures.AutomationNotifySlackID)
+	_, err = m.Publish(ctx, acme, fixtures.AutomationNotifySlackID, testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationNotifySlackID))
 	require.ErrorIs(t, err, automations.ErrArchived)
 	_, err = m.Deactivate(ctx, acme, fixtures.AutomationNotifySlackID)
 	require.ErrorIs(t, err, automations.ErrArchived)
@@ -246,7 +246,7 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 	assert.Equal(t, []string{fixtures.AutomationTagOnEngagementName}, live, "its live version removes the Tag")
 
 	tagging := []automationstep.Step{{Type: automationstep.ApplyTag, Tag: fixtures.TagVipName}}
-	_, err := m.Update(ctx, acme, fixtures.AutomationWinBackID, automations.UpdateInput{Steps: &tagging})
+	_, err := m.Update(ctx, acme, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationWinBackID), Steps: &tagging})
 	require.NoError(t, err)
 	drafted := using()
 	assert.ElementsMatch(t, []string{fixtures.AutomationWinBackName, fixtures.AutomationTagOnEngagementName}, drafted, "a draft names it too")
@@ -275,11 +275,11 @@ func TestEachEmailStepSavesTheIntegrationItSendsThrough(t *testing.T) {
 	require.NoError(t, err)
 	created := draftIntegrations(t, a)
 
-	renamed, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Name: new("Renamed")})
+	renamed, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, a.ID), Name: new("Renamed")})
 	require.NoError(t, err)
 	kept := draftIntegrations(t, renamed)
 
-	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Steps: &[]automationstep.Step{emailVia(nil), emailVia(&smtp)}})
+	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, a.ID), Steps: &[]automationstep.Step{emailVia(nil), emailVia(&smtp)}})
 	require.NoError(t, err)
 	rewritten := draftIntegrations(t, moved)
 
@@ -301,7 +301,7 @@ func TestAnAutomationRefusesAStepIntegrationThatIsMissingOrArchived(t *testing.T
 		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", TriggerEvent: "signup", Steps: steps})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 
-		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Steps: &steps})
+		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationWelcomeSeriesID), Steps: &steps})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 	}
 	assert.Equal(t, before, automationNames(t, env), "a refused save stores nothing")

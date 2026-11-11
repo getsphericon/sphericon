@@ -176,6 +176,9 @@ model AutomationResource {
   /** When the automation was archived; null while it is kept */
   archivedAt?: Timestamp | null;
 
+  /** The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -204,6 +207,9 @@ model CreateAutomationInput {
  * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and only publishing makes the draft live. */
 model UpdateAutomationInput {
+  /** The automation's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   name?: Name;
   triggerEvent?: string;
 
@@ -398,15 +404,16 @@ interface Automations
   @action("publish")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsPublish])
-  publish(...ResourceParameters<AutomationResource>):
-    | AutomationResource
-    | Problem;
+  publish(
+    ...ResourceParameters<AutomationResource>,
+    @body body: RevisionInput,
+  ): AutomationResource | Problem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. Needs the automations:write scope. */
   @action("revert")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsWrite])
-  revert(...ResourceParameters<AutomationResource>):
+  revert(...ResourceParameters<AutomationResource>, @body body: RevisionInput):
     | AutomationResource
     | Problem;
 

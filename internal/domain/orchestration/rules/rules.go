@@ -82,6 +82,9 @@ var (
 	// ErrNothingToRevert: the Rule has no draft above a live version. A Rule never published has
 	// only its draft, which is its whole definition, so it has nothing to revert either.
 	ErrNothingToRevert = validation.Refuse("rules: nothing to revert", i18n.ErrorsRuleNothingToRevert)
+	// ErrRevisionChanged is an edit, Publish or Revert made on a revision the Rule has moved past
+	// (ADR 0119): someone changed it since the editor read it. Nothing is written.
+	ErrRevisionChanged = validation.RevisionChanged("rules: rule changed since it was read", i18n.ErrorsRuleRevisionChanged)
 )
 
 // Action is one Action of a Rule as stored: its type and the parameters of that type.
@@ -185,6 +188,7 @@ func New(cipher *secrets.Cipher, bus *events.Bus, client webhook.Doer, now func(
 		Archived:         ErrNotFound,
 		NothingToPublish: ErrNothingToPublish,
 		NothingToRevert:  ErrNothingToRevert,
+		RevisionChanged:  ErrRevisionChanged,
 	}, now)
 	return m
 }
@@ -202,6 +206,8 @@ type CreateInput struct {
 // Trigger events, Condition and Actions write the draft, and the ones left out keep the draft's,
 // else the live version's.
 type UpdateInput struct {
+	// Revision is the one the edit was made on (ADR 0119).
+	Revision      int64
 	Name          *string
 	TriggerEvents *[]string
 	Condition     *string
@@ -265,15 +271,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return nil, err
 	}
 	in.Name = name
-	rename := func(r *ent.Rule) func(context.Context, *ent.Scoped) error {
-		if in.Name == nil || *in.Name == r.Name {
-			return nil
-		}
-		return func(ctx context.Context, ts *ent.Scoped) error {
-			return ts.Rule().UpdateOneID(r.ID).SetName(*in.Name).Exec(ctx)
-		}
-	}
-	return m.life.Edit(ctx, s, id, rename, in)
+	return m.life.Edit(ctx, s, id, in.Revision, in.Name, in)
 }
 
 // versioned is the Rule's part of the lifecycle (versioneddefinition.Definition).
@@ -440,8 +438,8 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 // scope. A draft with no Actions does nothing, so it is refused (ErrInvalid), as is one that
 // enrolls in an Automation that is gone; a Rule with neither draft nor live version has nothing to
 // publish (ErrNothingToPublish). The old live version stays, with its Firings, as history.
-func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	return m.life.Publish(ctx, s, id)
+func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id, revision int64) (*ent.Rule, error) {
+	return m.life.Publish(ctx, s, id, revision)
 }
 
 // publishable refuses a version that cannot run: one with no Actions, or with an enroll Action
@@ -460,8 +458,8 @@ func publishable(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion) error {
 // Revert drops the Rule's draft: its live version is again the latest (ADR 0065). It is
 // authoring, and an audited write of the Rule. A Rule with no draft, or one never published
 // (whose draft is its whole definition), has nothing to revert (ErrNothingToRevert).
-func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	return m.life.Revert(ctx, s, id)
+func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id, revision int64) (*ent.Rule, error) {
+	return m.life.Revert(ctx, s, id, revision)
 }
 
 // Deactivate makes a Rule inactive: it stops firing, and keeps its live version. Deactivating an

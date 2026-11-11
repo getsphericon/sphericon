@@ -506,6 +506,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAu
 		siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
 		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		// siteapiSiteAutomationResource.Revenue: ignore
+		siteapiSiteAutomationResource.Revision = revision((*source).Revision)
 		siteapiSiteAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -566,6 +567,13 @@ func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithR
 	}
 	siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp(pTimeTime)
 	siteapiSiteAutomationResource.Revenue = optMessageRevenue(c, source.Revenue)
+	var pInt642 *int64
+	if source.Automation != nil {
+		pInt642 = &source.Automation.Revision
+	}
+	if pInt642 != nil {
+		siteapiSiteAutomationResource.Revision = revision(*pInt642)
+	}
 	var pTimeTime2 *time.Time
 	if source.Automation != nil {
 		pTimeTime2 = &source.Automation.CreatedAt
@@ -2031,6 +2039,7 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) site.SiteRuleResource {
 		siteapiSiteRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		siteapiSiteRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
 		siteapiSiteRuleResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteRuleResource.Revision = revision((*source).Revision)
 		siteapiSiteRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

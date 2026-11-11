@@ -13,7 +13,7 @@ import {
 import { siteRulesGet, siteRulesUpdate } from '../../generated/site/sdk.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { zSiteUpdateRuleInput } from '../../generated/site/zod.gen.ts'
-import { resourceEditorAdapter } from '../../resources/resourceEditor.ts'
+import { resourceEditorAdapter, withRevision } from '../../resources/resourceEditor.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
 import { TIMESTAMPS } from '../../test/payloads.ts'
@@ -30,7 +30,7 @@ const adapter = resourceEditorAdapter({
   id: 'ruleId',
   schema: ruleSchema,
   editedValues: editedRule,
-  update: siteRulesUpdate,
+  update: withRevision(siteRulesUpdate),
   operations: ruleOperations,
 })
 const session = defineEditorSession(adapter)
@@ -46,6 +46,7 @@ const RESOURCE: SiteRuleResource = {
     triggerEvents: ['signed_up'],
     actions: [{ type: 'apply_tag', tag: 'drafted' }],
   },
+  revision: 1,
   ...TIMESTAMPS,
 }
 const sessions = new Set<ActorRefFrom<typeof session>>()

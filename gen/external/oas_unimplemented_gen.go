@@ -123,7 +123,7 @@ func (UnimplementedHandler) AutomationsList(ctx context.Context, params Automati
 // refused. 409 for an archived automation too. Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
-func (UnimplementedHandler) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (r *AutomationResource, _ error) {
+func (UnimplementedHandler) AutomationsPublish(ctx context.Context, req *RevisionInput, params AutomationsPublishParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -145,7 +145,7 @@ func (UnimplementedHandler) AutomationsReport(ctx context.Context, params Automa
 // 409 when the automation is archived. Needs the automations:write scope.
 //
 // POST /automations/{id}/revert
-func (UnimplementedHandler) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (r *AutomationResource, _ error) {
+func (UnimplementedHandler) AutomationsRevert(ctx context.Context, req *RevisionInput, params AutomationsRevertParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -718,7 +718,7 @@ func (UnimplementedHandler) RulesList(ctx context.Context, params RulesListParam
 // neither draft nor live version. Needs the automations:publish scope.
 //
 // POST /rules/{id}/publish
-func (UnimplementedHandler) RulesPublish(ctx context.Context, params RulesPublishParams) (r *RuleResource, _ error) {
+func (UnimplementedHandler) RulesPublish(ctx context.Context, req *RevisionInput, params RulesPublishParams) (r *RuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -728,7 +728,7 @@ func (UnimplementedHandler) RulesPublish(ctx context.Context, params RulesPublis
 // Needs the automations:write scope.
 //
 // POST /rules/{id}/revert
-func (UnimplementedHandler) RulesRevert(ctx context.Context, params RulesRevertParams) (r *RuleResource, _ error) {
+func (UnimplementedHandler) RulesRevert(ctx context.Context, req *RevisionInput, params RulesRevertParams) (r *RuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

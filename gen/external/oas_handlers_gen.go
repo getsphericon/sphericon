@@ -2551,6 +2551,21 @@ func (s *Server) handleAutomationsPublishRequest(args [1]string, argsEscaped boo
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeAutomationsPublishRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *AutomationResource
 	if m := s.cfg.Middleware; m != nil {
@@ -2559,7 +2574,7 @@ func (s *Server) handleAutomationsPublishRequest(args [1]string, argsEscaped boo
 			OperationName:    AutomationsPublishOperation,
 			OperationSummary: "",
 			OperationID:      "Automations_publish",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -2571,7 +2586,7 @@ func (s *Server) handleAutomationsPublishRequest(args [1]string, argsEscaped boo
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = AutomationsPublishParams
 			Response = *AutomationResource
 		)
@@ -2584,12 +2599,12 @@ func (s *Server) handleAutomationsPublishRequest(args [1]string, argsEscaped boo
 			mreq,
 			unpackAutomationsPublishParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.AutomationsPublish(ctx, params)
+				response, err = s.h.AutomationsPublish(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.AutomationsPublish(ctx, params)
+		response, err = s.h.AutomationsPublish(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
@@ -2959,6 +2974,21 @@ func (s *Server) handleAutomationsRevertRequest(args [1]string, argsEscaped bool
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeAutomationsRevertRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *AutomationResource
 	if m := s.cfg.Middleware; m != nil {
@@ -2967,7 +2997,7 @@ func (s *Server) handleAutomationsRevertRequest(args [1]string, argsEscaped bool
 			OperationName:    AutomationsRevertOperation,
 			OperationSummary: "",
 			OperationID:      "Automations_revert",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -2979,7 +3009,7 @@ func (s *Server) handleAutomationsRevertRequest(args [1]string, argsEscaped bool
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = AutomationsRevertParams
 			Response = *AutomationResource
 		)
@@ -2992,12 +3022,12 @@ func (s *Server) handleAutomationsRevertRequest(args [1]string, argsEscaped bool
 			mreq,
 			unpackAutomationsRevertParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.AutomationsRevert(ctx, params)
+				response, err = s.h.AutomationsRevert(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.AutomationsRevert(ctx, params)
+		response, err = s.h.AutomationsRevert(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
@@ -14578,6 +14608,21 @@ func (s *Server) handleRulesPublishRequest(args [1]string, argsEscaped bool, w h
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeRulesPublishRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *RuleResource
 	if m := s.cfg.Middleware; m != nil {
@@ -14586,7 +14631,7 @@ func (s *Server) handleRulesPublishRequest(args [1]string, argsEscaped bool, w h
 			OperationName:    RulesPublishOperation,
 			OperationSummary: "",
 			OperationID:      "Rules_publish",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -14598,7 +14643,7 @@ func (s *Server) handleRulesPublishRequest(args [1]string, argsEscaped bool, w h
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = RulesPublishParams
 			Response = *RuleResource
 		)
@@ -14611,12 +14656,12 @@ func (s *Server) handleRulesPublishRequest(args [1]string, argsEscaped bool, w h
 			mreq,
 			unpackRulesPublishParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.RulesPublish(ctx, params)
+				response, err = s.h.RulesPublish(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.RulesPublish(ctx, params)
+		response, err = s.h.RulesPublish(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
@@ -14779,6 +14824,21 @@ func (s *Server) handleRulesRevertRequest(args [1]string, argsEscaped bool, w ht
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeRulesRevertRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *RuleResource
 	if m := s.cfg.Middleware; m != nil {
@@ -14787,7 +14847,7 @@ func (s *Server) handleRulesRevertRequest(args [1]string, argsEscaped bool, w ht
 			OperationName:    RulesRevertOperation,
 			OperationSummary: "",
 			OperationID:      "Rules_revert",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -14799,7 +14859,7 @@ func (s *Server) handleRulesRevertRequest(args [1]string, argsEscaped bool, w ht
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = RulesRevertParams
 			Response = *RuleResource
 		)
@@ -14812,12 +14872,12 @@ func (s *Server) handleRulesRevertRequest(args [1]string, argsEscaped bool, w ht
 			mreq,
 			unpackRulesRevertParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.RulesRevert(ctx, params)
+				response, err = s.h.RulesRevert(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.RulesRevert(ctx, params)
+		response, err = s.h.RulesRevert(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {

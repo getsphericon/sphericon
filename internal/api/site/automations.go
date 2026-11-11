@@ -80,9 +80,9 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 }
 
 // SiteAutomationsPublish makes the Automation active: it starts enrolling Contacts.
-func (h *Handlers) SiteAutomationsPublish(ctx context.Context, params siteapi.SiteAutomationsPublishParams) (*siteapi.SiteAutomationResource, error) {
+func (h *Handlers) SiteAutomationsPublish(ctx context.Context, req *siteapi.RevisionInput, params siteapi.SiteAutomationsPublishParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
-	a, err := h.automations.Publish(ctx, ws, int64(params.ID))
+	a, err := h.automations.Publish(ctx, ws, int64(params.ID), int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}
@@ -102,9 +102,9 @@ func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi
 }
 
 // SiteAutomationsRevert drops the Automation's draft: the live version is again the latest.
-func (h *Handlers) SiteAutomationsRevert(ctx context.Context, params siteapi.SiteAutomationsRevertParams) (*siteapi.SiteAutomationResource, error) {
+func (h *Handlers) SiteAutomationsRevert(ctx context.Context, req *siteapi.RevisionInput, params siteapi.SiteAutomationsRevertParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
-	a, err := h.automations.Revert(ctx, ws, int64(params.ID))
+	a, err := h.automations.Revert(ctx, ws, int64(params.ID), int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}

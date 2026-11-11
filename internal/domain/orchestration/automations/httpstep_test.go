@@ -161,7 +161,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 		Type: automationstep.HTTP, ID: stored[1].ID, Body: `{"edited":true}`,
 		Headers: []httpcall.Header{{Name: "Authorization"}},
 	}
-	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automationstep.Step{edit}})
+	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{edit}})
 	require.NoError(t, err)
 	after := draftSteps(t, updated)
 	assert.Equal(t, stored[1].URL, after[0].URL, "the stored ciphertext is copied, not re-sealed")
@@ -180,7 +180,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 		Type: automationstep.HTTP, ID: stored[1].ID, URL: "https://hooks.zapier.com/a", Body: slackBody,
 		Headers: []httpcall.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
 	}
-	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automationstep.Step{replace}})
+	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{replace}})
 	require.NoError(t, err)
 	after = draftSteps(t, updated)
 	opened, err = openStored(env.Cipher, after[0])
@@ -191,6 +191,6 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 
 	// A header with no stored value to keep is refused.
 	bad := automationstep.Step{Type: automationstep.HTTP, ID: stored[1].ID, Body: slackBody, Headers: []httpcall.Header{{Name: "Nope"}}}
-	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automationstep.Step{bad}})
+	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{bad}})
 	assert.ErrorIs(t, err, automations.ErrInvalidStep)
 }

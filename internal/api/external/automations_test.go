@@ -85,7 +85,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	updated, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
+	updated, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(a.ID))),
 		Name:  externalapi.NewOptName("Tag newcomers 2"),
 		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeRemoveTag, Tag: externalapi.NewOptString("vip")}},
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
@@ -94,7 +94,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	require.Len(t, updated.Draft.Value.Steps, 1)
 	assert.Equal(t, externalapi.AutomationStepTypeRemoveTag, updated.Draft.Value.Steps[0].Type)
 
-	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(a.ID))),
 		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeApplyTag}},
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
@@ -117,21 +117,21 @@ func TestExternalAutomationsPublishNeedsThePublishScope(t *testing.T) {
 	id := entityIDString(fixtures.AutomationWinBackID)
 
 	authoring := env.ExternalScoped(t, "automations:read", "automations:write")
-	_, err := authoring.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
+	_, err := authoring.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(id)))}, externalapi.AutomationsPublishParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	still, err := authoring.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.AutomationStatusInactive, still.Status)
 
 	c := env.ExternalScoped(t, "automations:read", "automations:publish")
-	on, err := c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
+	on, err := c.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(id)))}, externalapi.AutomationsPublishParams{ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.AutomationStatusActive, on.Status)
 	read, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.AutomationStatusActive, read.Status)
 
-	_, err = c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: 999999})
+	_, err = c.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(999999)))}, externalapi.AutomationsPublishParams{ID: 999999})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 

@@ -114,7 +114,12 @@ export function RulesListPage() {
                     </Menu.Item>
                   ) : (
                     <Menu.Item
-                      onClick={() => publish.mutate({ path: { workspaceId, id: record.id } })}
+                      onClick={() =>
+                        publish.mutate({
+                          path: { workspaceId, id: record.id },
+                          body: { revision: record.revision },
+                        })
+                      }
                     >
                       {t(($) => $.rules.publish)}
                     </Menu.Item>

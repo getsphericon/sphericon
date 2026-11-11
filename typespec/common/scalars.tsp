@@ -21,6 +21,13 @@ scalar Timestamp extends string;
 @minValue(1)
 scalar Revision extends integer;
 
+/** The body of an editor's operation on stored content (Publish, Revert): the revision of what the
+ * editor shows (ADR 0119) */
+model RevisionInput {
+  /** The resource's `revision` the operation was made on: the one it was read with */
+  revision: Revision;
+}
+
 scalar TimeZoneName extends string;
 
 /** A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and

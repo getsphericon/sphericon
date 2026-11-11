@@ -67,6 +67,7 @@ function stored(steps: SiteAutomationStep[]): SiteAutomationResource {
     status: 'inactive',
     live: null,
     draft: { number: 1, triggerEvent: 'cart_abandoned', exitEvents: [], goalEvent: null, steps },
+    revision: 1,
     ...TIMESTAMPS,
   }
 }

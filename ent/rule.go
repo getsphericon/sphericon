@@ -35,6 +35,8 @@ type Rule struct {
 	LiveVersionID *int64 `json:"live_version_id,omitempty"`
 	// DraftVersionID holds the value of the "draft_version_id" field.
 	DraftVersionID *int64 `json:"draft_version_id,omitempty"`
+	// Revision holds the value of the "revision" field.
+	Revision int64 `json:"revision,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -116,7 +118,7 @@ func (*Rule) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case rule.FieldID, rule.FieldWorkspaceID, rule.FieldLiveVersionID, rule.FieldDraftVersionID:
+		case rule.FieldID, rule.FieldWorkspaceID, rule.FieldLiveVersionID, rule.FieldDraftVersionID, rule.FieldRevision:
 			values[i] = new(sql.NullInt64)
 		case rule.FieldStatus, rule.FieldName:
 			values[i] = new(sql.NullString)
@@ -194,6 +196,12 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DraftVersionID = new(int64)
 				*_m.DraftVersionID = value.Int64
+			}
+		case rule.FieldRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field revision", values[i])
+			} else if value.Valid {
+				_m.Revision = value.Int64
 			}
 		case rule.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -293,6 +301,9 @@ func (_m *Rule) String() string {
 		builder.WriteString("draft_version_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Revision))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

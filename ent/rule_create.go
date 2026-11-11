@@ -129,6 +129,20 @@ func (_c *RuleCreate) SetNillableDraftVersionID(v *int64) *RuleCreate {
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *RuleCreate) SetRevision(v int64) *RuleCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *RuleCreate) SetNillableRevision(v *int64) *RuleCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *RuleCreate) SetName(v string) *RuleCreate {
 	_c.mutation.SetName(v)
@@ -233,6 +247,10 @@ func (_c *RuleCreate) defaults() {
 		v := rule.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := rule.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -252,6 +270,14 @@ func (_c *RuleCreate) check() error {
 	if v, ok := _c.mutation.Status(); ok {
 		if err := rule.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Rule.status": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "Rule.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := rule.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Rule.revision": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
@@ -317,6 +343,10 @@ func (_c *RuleCreate) createSpec() (*Rule, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ActivatedAt(); ok {
 		_spec.SetField(rule.FieldActivatedAt, field.TypeTime, value)
 		_node.ActivatedAt = &value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(rule.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(rule.FieldName, field.TypeString, value)
@@ -565,6 +595,24 @@ func (u *RuleUpsert) ClearDraftVersionID() *RuleUpsert {
 	return u
 }
 
+// SetRevision sets the "revision" field.
+func (u *RuleUpsert) SetRevision(v int64) *RuleUpsert {
+	u.Set(rule.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *RuleUpsert) UpdateRevision() *RuleUpsert {
+	u.SetExcluded(rule.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *RuleUpsert) AddRevision(v int64) *RuleUpsert {
+	u.Add(rule.FieldRevision, v)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *RuleUpsert) SetName(v string) *RuleUpsert {
 	u.Set(rule.FieldName, v)
@@ -751,6 +799,27 @@ func (u *RuleUpsertOne) UpdateDraftVersionID() *RuleUpsertOne {
 func (u *RuleUpsertOne) ClearDraftVersionID() *RuleUpsertOne {
 	return u.Update(func(s *RuleUpsert) {
 		s.ClearDraftVersionID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *RuleUpsertOne) SetRevision(v int64) *RuleUpsertOne {
+	return u.Update(func(s *RuleUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *RuleUpsertOne) AddRevision(v int64) *RuleUpsertOne {
+	return u.Update(func(s *RuleUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *RuleUpsertOne) UpdateRevision() *RuleUpsertOne {
+	return u.Update(func(s *RuleUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -1108,6 +1177,27 @@ func (u *RuleUpsertBulk) UpdateDraftVersionID() *RuleUpsertBulk {
 func (u *RuleUpsertBulk) ClearDraftVersionID() *RuleUpsertBulk {
 	return u.Update(func(s *RuleUpsert) {
 		s.ClearDraftVersionID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *RuleUpsertBulk) SetRevision(v int64) *RuleUpsertBulk {
+	return u.Update(func(s *RuleUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *RuleUpsertBulk) AddRevision(v int64) *RuleUpsertBulk {
+	return u.Update(func(s *RuleUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *RuleUpsertBulk) UpdateRevision() *RuleUpsertBulk {
+	return u.Update(func(s *RuleUpsert) {
+		s.UpdateRevision()
 	})
 }
 

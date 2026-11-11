@@ -78,10 +78,10 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.RuleStatusInactive, res.Status)
 
-	_, err = author.RulesPublish(ctx, externalapi.RulesPublishParams{ID: res.ID})
+	_, err = author.RulesPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.RuleRevision(ctx, t, int64(res.ID)))}, externalapi.RulesPublishParams{ID: res.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	active, err := publisher.RulesPublish(ctx, externalapi.RulesPublishParams{ID: res.ID})
+	active, err := publisher.RulesPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.RuleRevision(ctx, t, int64(res.ID)))}, externalapi.RulesPublishParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.RuleStatusActive, active.Status)
 

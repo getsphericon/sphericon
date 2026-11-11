@@ -202,6 +202,17 @@ export type RegionalFormat = string;
 export type Revision = number;
 
 /**
+ * The body of an editor's operation on stored content (Publish, Revert): the revision of what the
+ * editor shows (ADR 0119)
+ */
+export type RevisionInput = {
+  /**
+   * The resource's `revision` the operation was made on: the one it was read with
+   */
+  revision: Revision;
+};
+
+/**
  * A Sign-up item's key: its address, and the last segment of its Legal document's public page
  */
 export type SignupItemKey = string;

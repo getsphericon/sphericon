@@ -258,6 +258,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.DraftVersionID != nil {
 					b.SetDraftVersionID(remap("AutomationVersion", *src.DraftVersionID))
 				}
+				b.SetRevision(src.Revision)
 				b.SetName(src.Name)
 				created, err := b.Save(ctx)
 				if err != nil {
@@ -1858,6 +1859,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.DraftVersionID != nil {
 					b.SetDraftVersionID(remap("RuleVersion", *src.DraftVersionID))
 				}
+				b.SetRevision(src.Revision)
 				b.SetName(src.Name)
 				created, err := b.Save(ctx)
 				if err != nil {

@@ -24,6 +24,7 @@ const RULE: SiteRuleResource = {
   status: 'inactive',
   live: null,
   draft: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'new' }] },
+  revision: 1,
   ...TIMESTAMPS,
 }
 

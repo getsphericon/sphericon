@@ -41,7 +41,7 @@ func (w *Workspace) PublishAutomation(a Automation) int64 {
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create automation", res, err)
 
-	published, err := w.api.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: created.ID})
+	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
 	got := ok[externalapi.AutomationResource](w.t, "publish automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 	return int64(got.ID)
@@ -80,7 +80,7 @@ func (w *Workspace) PublishAuthoredAutomation(a AuthoredAutomation) {
 		}},
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create authored automation", res, err)
-	published, err := w.api.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: created.ID})
+	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
 	got := ok[externalapi.AutomationResource](w.t, "publish authored automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 }
@@ -121,7 +121,7 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create automation", res, err)
 
-	published, err := w.api.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: created.ID})
+	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
 	got := ok[externalapi.AutomationResource](w.t, "publish automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 }

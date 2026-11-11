@@ -47,7 +47,7 @@ func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationste
 		Name: "Cart reminder", TriggerEvent: smsTrigger, ExitEvents: []string{}, Steps: steps,
 	})
 	require.NoError(t, err)
-	_, err = m.Publish(ctx, s, created.ID)
+	_, err = m.Publish(ctx, s, created.ID, testhelper.AutomationRevisionIn(ctx, t, s, created.ID))
 	require.NoError(t, err)
 	return created.ID
 }

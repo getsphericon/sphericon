@@ -9236,6 +9236,24 @@ type RetentionDays int32
 
 type Revision int
 
+// The body of an editor's operation on stored content (Publish, Revert): the revision of what the
+// editor shows (ADR 0119).
+// Ref: #/components/schemas/RevisionInput
+type RevisionInput struct {
+	// The resource's `revision` the operation was made on: the one it was read with.
+	Revision Revision `json:"revision"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *RevisionInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// SetRevision sets the value of Revision.
+func (s *RevisionInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
 // Request body for scheduling a broadcast.
 // Ref: #/components/schemas/ScheduleBroadcastInput
 type ScheduleBroadcastInput struct {
@@ -12304,6 +12322,8 @@ type SiteAutomationResource struct {
 	// Orders credited to the automation and their net revenue (ADR 0064); set on the list and on the
 	// single read, absent on the responses of a change.
 	Revenue OptSiteMessageRevenue `json:"revenue"`
+	// The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -12343,6 +12363,11 @@ func (s *SiteAutomationResource) GetArchivedAt() OptNilTimestamp {
 // GetRevenue returns the value of Revenue.
 func (s *SiteAutomationResource) GetRevenue() OptSiteMessageRevenue {
 	return s.Revenue
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteAutomationResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -12388,6 +12413,11 @@ func (s *SiteAutomationResource) SetArchivedAt(val OptNilTimestamp) {
 // SetRevenue sets the value of Revenue.
 func (s *SiteAutomationResource) SetRevenue(val OptSiteMessageRevenue) {
 	s.Revenue = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteAutomationResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -22387,6 +22417,8 @@ type SiteRuleResource struct {
 	// When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and
 	// changes no more. Null while it is kept.
 	DiscardedAt OptNilTimestamp `json:"discardedAt"`
+	// The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -22426,6 +22458,11 @@ func (s *SiteRuleResource) GetActivatedAt() OptNilTimestamp {
 // GetDiscardedAt returns the value of DiscardedAt.
 func (s *SiteRuleResource) GetDiscardedAt() OptNilTimestamp {
 	return s.DiscardedAt
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteRuleResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -22471,6 +22508,11 @@ func (s *SiteRuleResource) SetActivatedAt(val OptNilTimestamp) {
 // SetDiscardedAt sets the value of DiscardedAt.
 func (s *SiteRuleResource) SetDiscardedAt(val OptNilTimestamp) {
 	s.DiscardedAt = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteRuleResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -25860,6 +25902,8 @@ func (s *SiteTwilioConfigKind) UnmarshalText(data []byte) error {
 // version's, and publishing makes the draft live.
 // Ref: #/components/schemas/SiteUpdateAutomationInput
 type SiteUpdateAutomationInput struct {
+	// The automation's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision     Revision  `json:"revision"`
 	Name         OptName   `json:"name"`
 	TriggerEvent OptString `json:"triggerEvent"`
 	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
@@ -25867,6 +25911,11 @@ type SiteUpdateAutomationInput struct {
 	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
 	GoalEvent OptNilString         `json:"goalEvent"`
 	Steps     []SiteAutomationStep `json:"steps"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteUpdateAutomationInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -25892,6 +25941,11 @@ func (s *SiteUpdateAutomationInput) GetGoalEvent() OptNilString {
 // GetSteps returns the value of Steps.
 func (s *SiteUpdateAutomationInput) GetSteps() []SiteAutomationStep {
 	return s.Steps
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteUpdateAutomationInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.
@@ -26234,12 +26288,19 @@ func (s *SiteUpdateRevenueSettingsInput) SetAttributionWindowDays(val OptAttribu
 // Actions write the draft, and the ones left out keep the draft's, else the live version's.
 // Ref: #/components/schemas/SiteUpdateRuleInput
 type SiteUpdateRuleInput struct {
-	Name OptName `json:"name"`
+	// The rule's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	Name     OptName  `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
 	TriggerEvents []string              `json:"triggerEvents"`
 	Condition     OptSiteConditionGroup `json:"condition"`
 	// The Actions to run, in order.
 	Actions []SiteRuleAction `json:"actions"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteUpdateRuleInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -26260,6 +26321,11 @@ func (s *SiteUpdateRuleInput) GetCondition() OptSiteConditionGroup {
 // GetActions returns the value of Actions.
 func (s *SiteUpdateRuleInput) GetActions() []SiteRuleAction {
 	return s.Actions
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteUpdateRuleInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.

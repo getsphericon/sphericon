@@ -189,6 +189,8 @@
   "errors.test_send_email_required": "email is required: the address to send the test to",
   "errors.broadcast_from_not_verified": "from email must be on a verified sending domain",
   "errors.template_not_found": "template not found",
+  "errors.automation_revision_changed": "the automation changed since it was opened",
+  "errors.rule_revision_changed": "the rule changed since it was opened",
   "errors.template_revision_changed": "the template changed since it was opened",
   "errors.rule_invalid": "invalid rule",
   "errors.rule_not_found": "rule not found",

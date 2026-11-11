@@ -104,6 +104,15 @@ function draftOf(resource: DraftResource, dirty: boolean) {
   })
 }
 
+// The base revision a write of a resource with a revision names (ADR 0119): the session always
+// holds one for such a resource, so its absence is a fault of the wiring.
+export function based(revision: number | undefined): number {
+  if (revision === undefined) {
+    throw new Error('A resource with a revision is written with the revision it was read with')
+  }
+  return revision
+}
+
 export const draftGuards = {
   publishable: ({ resource, dirty }: { resource: DraftResource; dirty: boolean }) =>
     draftOf(resource, dirty).publishable,

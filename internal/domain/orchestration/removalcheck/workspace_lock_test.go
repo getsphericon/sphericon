@@ -65,16 +65,22 @@ func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
 		{"archive a Broadcast", func() error { _, err := sends.Archive(ctx, s, fixtures.BroadcastFailedID); return err }},
 		{"create a Rule", func() error { _, err := ruleset.Create(ctx, s, rules.CreateInput{Name: "New"}); return err }},
 		{"update a Rule", func() error {
-			_, err := ruleset.Update(ctx, s, fixtures.RuleInactiveID, rules.UpdateInput{Name: renamed})
+			_, err := ruleset.Update(ctx, s, fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, s, fixtures.RuleInactiveID), Name: renamed})
 			return err
 		}},
-		{"publish a Rule", func() error { _, err := ruleset.Publish(ctx, s, fixtures.RuleInactiveID); return err }},
+		{"publish a Rule", func() error {
+			_, err := ruleset.Publish(ctx, s, fixtures.RuleInactiveID, testhelper.RuleRevisionIn(ctx, t, s, fixtures.RuleInactiveID))
+			return err
+		}},
 		{"create an Automation", func() error { _, err := autos.Create(ctx, s, automations.CreateInput{Name: "New"}); return err }},
 		{"update an Automation", func() error {
-			_, err := autos.Update(ctx, s, fixtures.AutomationWinBackID, automations.UpdateInput{Name: renamed})
+			_, err := autos.Update(ctx, s, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationWinBackID), Name: renamed})
 			return err
 		}},
-		{"publish an Automation", func() error { _, err := autos.Publish(ctx, s, fixtures.AutomationWinBackID); return err }},
+		{"publish an Automation", func() error {
+			_, err := autos.Publish(ctx, s, fixtures.AutomationWinBackID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationWinBackID))
+			return err
+		}},
 		{"archive an Automation", func() error { _, err := autos.Archive(ctx, s, fixtures.AutomationJobsEditableID); return err }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

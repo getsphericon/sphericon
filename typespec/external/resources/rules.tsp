@@ -117,6 +117,9 @@ model RuleResource {
   /** When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and changes no more. Null while it is kept. */
   discardedAt?: Timestamp | null;
 
+  /** The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -140,6 +143,9 @@ model CreateRuleInput {
 
 /** Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's. */
 model UpdateRuleInput {
+  /** The rule's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   name?: Name;
 
   /** The Event actions that make the Rule fire; at least one */
@@ -200,13 +206,17 @@ interface Rules
   @action("publish")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsPublish])
-  publish(...ResourceParameters<RuleResource>): RuleResource | Problem;
+  publish(...ResourceParameters<RuleResource>, @body body: RevisionInput):
+    | RuleResource
+    | Problem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope. */
   @action("revert")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsWrite])
-  revert(...ResourceParameters<RuleResource>): RuleResource | Problem;
+  revert(...ResourceParameters<RuleResource>, @body body: RevisionInput):
+    | RuleResource
+    | Problem;
 
   /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. Needs the automations:read scope. */
   @action("dry-run")

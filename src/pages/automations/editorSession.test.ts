@@ -28,6 +28,7 @@ const DRAFT = {
   steps: [],
 }
 const RESOURCE: SiteAutomationResource = {
+  revision: 1,
   id: '5',
   name: 'Welcome flow',
   status: 'active',

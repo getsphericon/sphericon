@@ -29,6 +29,7 @@ const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?
 const NOW = '2026-01-01T00:00:00Z'
 
 const WELCOME: SiteAutomationResource = {
+  revision: 1,
   id: '1',
   name: 'Welcome flow',
   status: 'active',

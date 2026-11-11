@@ -7143,6 +7143,21 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeSiteAutomationsPublishRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
@@ -7151,7 +7166,7 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 			OperationName:    SiteAutomationsPublishOperation,
 			OperationSummary: "",
 			OperationID:      "SiteAutomations_publish",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -7167,7 +7182,7 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = SiteAutomationsPublishParams
 			Response = *SiteAutomationResource
 		)
@@ -7180,12 +7195,12 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 			mreq,
 			unpackSiteAutomationsPublishParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAutomationsPublish(ctx, params)
+				response, err = s.h.SiteAutomationsPublish(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAutomationsPublish(ctx, params)
+		response, err = s.h.SiteAutomationsPublish(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
@@ -7348,6 +7363,21 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeSiteAutomationsRevertRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
@@ -7356,7 +7386,7 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 			OperationName:    SiteAutomationsRevertOperation,
 			OperationSummary: "",
 			OperationID:      "SiteAutomations_revert",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -7372,7 +7402,7 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = SiteAutomationsRevertParams
 			Response = *SiteAutomationResource
 		)
@@ -7385,12 +7415,12 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 			mreq,
 			unpackSiteAutomationsRevertParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAutomationsRevert(ctx, params)
+				response, err = s.h.SiteAutomationsRevert(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAutomationsRevert(ctx, params)
+		response, err = s.h.SiteAutomationsRevert(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
@@ -25636,6 +25666,21 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeSiteRulesPublishRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *SiteRuleResource
 	if m := s.cfg.Middleware; m != nil {
@@ -25644,7 +25689,7 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 			OperationName:    SiteRulesPublishOperation,
 			OperationSummary: "",
 			OperationID:      "SiteRules_publish",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -25660,7 +25705,7 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = SiteRulesPublishParams
 			Response = *SiteRuleResource
 		)
@@ -25673,12 +25718,12 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 			mreq,
 			unpackSiteRulesPublishParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteRulesPublish(ctx, params)
+				response, err = s.h.SiteRulesPublish(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteRulesPublish(ctx, params)
+		response, err = s.h.SiteRulesPublish(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
@@ -25840,6 +25885,21 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeSiteRulesRevertRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *SiteRuleResource
 	if m := s.cfg.Middleware; m != nil {
@@ -25848,7 +25908,7 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 			OperationName:    SiteRulesRevertOperation,
 			OperationSummary: "",
 			OperationID:      "SiteRules_revert",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -25864,7 +25924,7 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = SiteRulesRevertParams
 			Response = *SiteRuleResource
 		)
@@ -25877,12 +25937,12 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 			mreq,
 			unpackSiteRulesRevertParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteRulesRevert(ctx, params)
+				response, err = s.h.SiteRulesRevert(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteRulesRevert(ctx, params)
+		response, err = s.h.SiteRulesRevert(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {

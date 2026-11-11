@@ -842,6 +842,21 @@
         "minimum": 1,
         "description": "The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.\nThe resource carries the one of the state it shows, and an update names the one it was made on:\na stale one is a 409 with code `revision_changed`, and nothing is written."
       },
+      "RevisionInput": {
+        "type": "object",
+        "required": ["revision"],
+        "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The resource's `revision` the operation was made on: the one it was read with"
+          }
+        },
+        "description": "The body of an editor's operation on stored content (Publish, Revert): the revision of what the\neditor shows (ADR 0119)"
+      },
       "SoleOwnedWorkspace": {
         "type": "object",
         "required": ["id", "name"],

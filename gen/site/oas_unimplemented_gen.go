@@ -423,7 +423,7 @@ func (UnimplementedHandler) SiteAutomationsList(ctx context.Context, params Site
 // refused. 409 for an archived automation too.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
-func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (r *SiteAutomationResource, _ error) {
+func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, req *RevisionInput, params SiteAutomationsPublishParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -433,7 +433,7 @@ func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, params S
 // 409 when the automation is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/revert
-func (UnimplementedHandler) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (r *SiteAutomationResource, _ error) {
+func (UnimplementedHandler) SiteAutomationsRevert(ctx context.Context, req *RevisionInput, params SiteAutomationsRevertParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1340,7 +1340,7 @@ func (UnimplementedHandler) SiteRulesList(ctx context.Context, params SiteRulesL
 // neither draft nor live version.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/publish
-func (UnimplementedHandler) SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (r *SiteRuleResource, _ error) {
+func (UnimplementedHandler) SiteRulesPublish(ctx context.Context, req *RevisionInput, params SiteRulesPublishParams) (r *SiteRuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1349,7 +1349,7 @@ func (UnimplementedHandler) SiteRulesPublish(ctx context.Context, params SiteRul
 // Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/revert
-func (UnimplementedHandler) SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (r *SiteRuleResource, _ error) {
+func (UnimplementedHandler) SiteRulesRevert(ctx context.Context, req *RevisionInput, params SiteRulesRevertParams) (r *SiteRuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

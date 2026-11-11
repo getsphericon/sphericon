@@ -56,7 +56,7 @@ func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 	cond := `{"kind":"group","combinator":"and","rules":[]}`
 	actions := tagAction("rule-vip-edited")
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{TriggerEvents: &triggers, Condition: &cond, Actions: &actions})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), TriggerEvents: &triggers, Condition: &cond, Actions: &actions})
 
 	require.NoError(t, err)
 	live, draft := rules.LiveAndDraft(r)
@@ -93,7 +93,7 @@ func TestARewrittenDraftKeepsTheFieldsAnEditLeavesOut(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	actions := tagAction("rule-clicked-v3")
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Actions: &actions})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID), Actions: &actions})
 
 	require.NoError(t, err)
 	_, draft := rules.LiveAndDraft(r)
@@ -112,7 +112,7 @@ func TestAnUnchangedDefinitionMakesNoDraft(t *testing.T) {
 	cond := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}`
 	actions := tagAction("rule-vip-seen")
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Name: &name, TriggerEvents: &triggers, Condition: &cond, Actions: &actions})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), Name: &name, TriggerEvents: &triggers, Condition: &cond, Actions: &actions})
 
 	require.NoError(t, err)
 	_, draft := rules.LiveAndDraft(r)
@@ -127,7 +127,7 @@ func TestAnEmptyConditionGroupIsNoChangeToAVersionWithNoCondition(t *testing.T) 
 	empty := `{"kind":"group","combinator":"and","rules":[]}`
 	triggers := []string{"rule_multi_a", "rule_multi_b"}
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleMultiTriggerID, rules.UpdateInput{TriggerEvents: &triggers, Condition: &empty})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleMultiTriggerID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleMultiTriggerID), TriggerEvents: &triggers, Condition: &empty})
 
 	require.NoError(t, err)
 	_, draft := rules.LiveAndDraft(r)
@@ -139,10 +139,10 @@ func TestPublishRefusesADraftWithNoActions(t *testing.T) {
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	none := []rules.Action{}
-	_, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Actions: &none})
+	_, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID), Actions: &none})
 	require.NoError(t, err)
 
-	_, err = m.Publish(ctx, acme(env), fixtures.RuleTagClickedID)
+	_, err = m.Publish(ctx, acme(env), fixtures.RuleTagClickedID, testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID))
 
 	require.ErrorIs(t, err, rules.ErrInvalid)
 	r, err := m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
@@ -178,9 +178,9 @@ func TestOnlyTheLiveVersionOfAnActiveRuleEnrollsInAnAutomation(t *testing.T) {
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	enroll := []rules.Action{{Type: rules.ActionEnroll, AutomationID: fixtures.AutomationJobsWaitFirstID}}
-	_, err := m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Actions: &enroll})
+	_, err := m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Actions: &enroll})
 	require.NoError(t, err)
-	_, err = m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Actions: &enroll})
+	_, err = m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID), Actions: &enroll})
 	require.NoError(t, err)
 
 	using, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {

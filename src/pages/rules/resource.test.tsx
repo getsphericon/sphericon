@@ -49,6 +49,7 @@ const STORED: SiteRuleResource = {
     condition: CONDITION,
     actions: [{ type: 'apply_tag', tag: 'new' }],
   },
+  revision: 1,
   ...TIMESTAMPS,
 }
 
@@ -175,7 +176,15 @@ test('editing shows the stored rule and saves a change, a removed action include
 
   await expect
     .poll(() => bodies)
-    .toEqual([{ name: 'Renamed', triggerEvents: ['signed_up'], condition: CONDITION, actions: [] }])
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Renamed',
+        triggerEvents: ['signed_up'],
+        condition: CONDITION,
+        actions: [],
+      },
+    ])
   await expect.element(screen.getByText('Rule updated')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
 })
@@ -186,6 +195,7 @@ const automation = (id: string, name: string): SiteAutomationResource => ({
   status: 'active',
   live: { number: 1, triggerEvent: 'signed_up', exitEvents: [], goalEvent: null, steps: [] },
   draft: null,
+  revision: 1,
   ...TIMESTAMPS,
 })
 
@@ -226,6 +236,7 @@ test('an enroll action picks one of the automations and saves it', async () => {
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         name: 'Tag signups',
         triggerEvents: ['signed_up'],
         condition: CONDITION,

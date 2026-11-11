@@ -33,6 +33,7 @@ const DRAFT = {
   steps: [],
 }
 const RESOURCE: SiteAutomationResource = {
+  revision: 1,
   id: '5',
   name: 'Welcome flow',
   status: 'active',
@@ -119,7 +120,12 @@ function startRaces({ refuse }: { refuse: boolean }): RaceRig<OperationEvent> {
       if (refuse) {
         return problem(422, 'Refused definition')
       }
-      server = { ...server, name: body.name ?? server.name, updatedAt: '2026-01-02T00:00:00Z' }
+      server = {
+        ...server,
+        name: body.name ?? server.name,
+        revision: server.revision + 1,
+        updatedAt: '2026-01-02T00:00:00Z',
+      }
       return HttpResponse.json(server)
     }),
     handleSiteAutomationsPublish(() => {
@@ -211,4 +217,39 @@ test('Save folds the stored HTTP identity into a canvas edited meanwhile, withou
   expect(http?.data.properties.body).toBe('{"newer":true}')
   expect(current).not.toBe(settled.context.saved)
   expect(settled.context.content.revision).toBe(0)
+})
+
+// The canvas tells a change made elsewhere from its own (ADR 0119): load, another writer saves, the
+// query refetches, Save is refused with revision_changed, and the canvas is kept as edited.
+test('a Save over a change made elsewhere is refused and the canvas is kept', async () => {
+  let server = RESOURCE
+  const sent: number[] = []
+  worker.use(
+    handleSiteAutomationsGet(() => HttpResponse.json(server)),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      const body = zSiteUpdateAutomationInput.parse(await request.json())
+      sent.push(body.revision)
+      if (body.revision !== server.revision) {
+        return problem(409, { title: 'Changed', code: 'revision_changed' })
+      }
+      server = { ...server, name: body.name ?? server.name, revision: server.revision + 1 }
+      return HttpResponse.json(server)
+    }),
+  )
+  const canvas = startCanvas(GRAPH)
+  canvas.edit((content) => ({ ...content, name: 'Mine' }))
+  server = { ...server, name: 'Saved elsewhere', revision: server.revision + 1 }
+  canvas.actor.send({ type: 'REFRESH', resource: await stored() })
+
+  canvas.actor.send({ type: 'SAVE', submission: capture(canvas.read()) })
+  const { context } = await waitFor(canvas.actor, (state) => state.matches('idle'))
+
+  expect(sent).toEqual([1])
+  expect(context.result).toBe('error')
+  expect(context.changed).toBe(true)
+  expect(context.base).toBe(1)
+  expect(canvas.read().name).toBe('Mine')
+  expect(canvas.page.toasts).toEqual([])
+  const kept = await stored()
+  expect(kept.name).toBe('Saved elsewhere')
 })

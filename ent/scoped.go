@@ -2642,6 +2642,18 @@ func (x *AutomationScopedCreate) SetNillableDraftVersionID(v *int64) *Automation
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *AutomationScopedCreate) SetRevision(v int64) *AutomationScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableRevision(v *int64) *AutomationScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *AutomationScopedCreate) SetName(v string) *AutomationScopedCreate {
 	x.b.SetName(v)
@@ -2916,6 +2928,24 @@ func (u *AutomationScopedUpsert) UpdateDraftVersionID() *AutomationScopedUpsert 
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (u *AutomationScopedUpsert) ClearDraftVersionID() *AutomationScopedUpsert {
 	u.u.SetNull(automation.FieldDraftVersionID)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *AutomationScopedUpsert) SetRevision(v int64) *AutomationScopedUpsert {
+	u.u.Set(automation.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *AutomationScopedUpsert) AddRevision(v int64) *AutomationScopedUpsert {
+	u.u.Add(automation.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateRevision() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldRevision)
 	return u
 }
 
@@ -3199,6 +3229,24 @@ func (x *AutomationScopedUpdateOne) ClearDraftVersionID() *AutomationScopedUpdat
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *AutomationScopedUpdateOne) SetRevision(v int64) *AutomationScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableRevision(v *int64) *AutomationScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *AutomationScopedUpdateOne) AddRevision(v int64) *AutomationScopedUpdateOne {
+	x.b.AddRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *AutomationScopedUpdateOne) SetName(v string) *AutomationScopedUpdateOne {
 	x.b.SetName(v)
@@ -3471,6 +3519,24 @@ func (x *AutomationScopedUpdate) SetNillableDraftVersionID(v *int64) *Automation
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (x *AutomationScopedUpdate) ClearDraftVersionID() *AutomationScopedUpdate {
 	x.b.ClearDraftVersionID()
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *AutomationScopedUpdate) SetRevision(v int64) *AutomationScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableRevision(v *int64) *AutomationScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *AutomationScopedUpdate) AddRevision(v int64) *AutomationScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 
@@ -27769,6 +27835,18 @@ func (x *RuleScopedCreate) SetNillableDraftVersionID(v *int64) *RuleScopedCreate
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *RuleScopedCreate) SetRevision(v int64) *RuleScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableRevision(v *int64) *RuleScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *RuleScopedCreate) SetName(v string) *RuleScopedCreate {
 	x.b.SetName(v)
@@ -28043,6 +28121,24 @@ func (u *RuleScopedUpsert) UpdateDraftVersionID() *RuleScopedUpsert {
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (u *RuleScopedUpsert) ClearDraftVersionID() *RuleScopedUpsert {
 	u.u.SetNull(rule.FieldDraftVersionID)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *RuleScopedUpsert) SetRevision(v int64) *RuleScopedUpsert {
+	u.u.Set(rule.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *RuleScopedUpsert) AddRevision(v int64) *RuleScopedUpsert {
+	u.u.Add(rule.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateRevision() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldRevision)
 	return u
 }
 
@@ -28326,6 +28422,24 @@ func (x *RuleScopedUpdateOne) ClearDraftVersionID() *RuleScopedUpdateOne {
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *RuleScopedUpdateOne) SetRevision(v int64) *RuleScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableRevision(v *int64) *RuleScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *RuleScopedUpdateOne) AddRevision(v int64) *RuleScopedUpdateOne {
+	x.b.AddRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *RuleScopedUpdateOne) SetName(v string) *RuleScopedUpdateOne {
 	x.b.SetName(v)
@@ -28598,6 +28712,24 @@ func (x *RuleScopedUpdate) SetNillableDraftVersionID(v *int64) *RuleScopedUpdate
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (x *RuleScopedUpdate) ClearDraftVersionID() *RuleScopedUpdate {
 	x.b.ClearDraftVersionID()
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *RuleScopedUpdate) SetRevision(v int64) *RuleScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableRevision(v *int64) *RuleScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *RuleScopedUpdate) AddRevision(v int64) *RuleScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 

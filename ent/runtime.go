@@ -167,6 +167,8 @@ func init() {
 	_ = automationMixinFields0
 	automationMixinFields3 := automationMixin[3].Fields()
 	_ = automationMixinFields3
+	automationMixinFields4 := automationMixin[4].Fields()
+	_ = automationMixinFields4
 	automationFields := schema.Automation{}.Fields()
 	_ = automationFields
 	// automationDescCreatedAt is the schema descriptor for created_at field.
@@ -179,6 +181,12 @@ func init() {
 	automation.DefaultUpdatedAt = automationDescUpdatedAt.Default.(func() time.Time)
 	// automation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	automation.UpdateDefaultUpdatedAt = automationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// automationDescRevision is the schema descriptor for revision field.
+	automationDescRevision := automationMixinFields4[0].Descriptor()
+	// automation.DefaultRevision holds the default value on creation for the revision field.
+	automation.DefaultRevision = automationDescRevision.Default.(int64)
+	// automation.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	automation.RevisionValidator = automationDescRevision.Validators[0].(func(int64) error)
 	// automationDescName is the schema descriptor for name field.
 	automationDescName := automationFields[1].Descriptor()
 	// automation.NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -1108,6 +1116,8 @@ func init() {
 	_ = ruleMixinFields0
 	ruleMixinFields3 := ruleMixin[3].Fields()
 	_ = ruleMixinFields3
+	ruleMixinFields4 := ruleMixin[4].Fields()
+	_ = ruleMixinFields4
 	ruleFields := schema.Rule{}.Fields()
 	_ = ruleFields
 	// ruleDescCreatedAt is the schema descriptor for created_at field.
@@ -1120,6 +1130,12 @@ func init() {
 	rule.DefaultUpdatedAt = ruleDescUpdatedAt.Default.(func() time.Time)
 	// rule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	rule.UpdateDefaultUpdatedAt = ruleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ruleDescRevision is the schema descriptor for revision field.
+	ruleDescRevision := ruleMixinFields4[0].Descriptor()
+	// rule.DefaultRevision holds the default value on creation for the revision field.
+	rule.DefaultRevision = ruleDescRevision.Default.(int64)
+	// rule.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	rule.RevisionValidator = ruleDescRevision.Validators[0].(func(int64) error)
 	// ruleDescName is the schema descriptor for name field.
 	ruleDescName := ruleFields[1].Descriptor()
 	// rule.NameValidator is a validator for the "name" field. It is called by the builders before save.

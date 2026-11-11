@@ -107,6 +107,14 @@ export const zRegionalFormat = z.string().max(35);
 export const zRevision = z.int().gte(1);
 
 /**
+ * The body of an editor's operation on stored content (Publish, Revert): the revision of what the
+ * editor shows (ADR 0119)
+ */
+export const zRevisionInput = z.object({
+  revision: zRevision
+});
+
+/**
  * A Sign-up item's key: its address, and the last segment of its Legal document's public page
  */
 export const zSignupItemKey = z.string().min(1).max(64).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);

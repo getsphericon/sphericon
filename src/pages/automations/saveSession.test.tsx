@@ -31,6 +31,7 @@ const LIVE: SiteAutomationVersion = {
 }
 const DRAFT: SiteAutomationVersion = { ...LIVE, number: 2 }
 const STORED: SiteAutomationResource = {
+  revision: 1,
   id: '5',
   name: 'Welcome flow',
   status: 'active',

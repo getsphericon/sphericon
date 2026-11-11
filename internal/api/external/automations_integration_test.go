@@ -40,7 +40,7 @@ func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 	_, refusedCreate := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "x", TriggerEvent: "signup", Steps: []externalapi.AutomationStep{emailStepVia(bad)},
 	})
-	_, refusedUpdate := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{emailStepVia(bad)}},
+	_, refusedUpdate := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStep{emailStepVia(bad)}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 
 	require.Len(t, steps, 2)
