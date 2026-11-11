@@ -17,8 +17,8 @@
     "build": "node build.ts"
   },
   "dependencies": {
-    "@react-email/editor": "1.7.19",
-    "@tiptap/core": "3.32.2",
+    "@react-email/editor": "1.8.4",
+    "@tiptap/core": "3.33.0",
     "esbuild": "0.28.2",
     "react": "19.3.1",
     "react-dom": "19.3.1"

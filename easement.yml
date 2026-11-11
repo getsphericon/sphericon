@@ -950,7 +950,7 @@ rules:
   web-route-lazy:
     <<: *no-global-i18n
     forbid_external: [*no-dayjs]
-    may_depend_on: [web-shared, web-pages, web-console, web-app]
+    may_depend_on: [web-shared, web-pages, web-console]
     because: the lazy route file is the one place a page is bound to its route
   web-pages:
     <<: *no-global-i18n

@@ -175,7 +175,8 @@ func TestSendErrors(t *testing.T) {
 		assert.ErrorContains(t, err, "MessageRejected")
 	})
 
-	for _, code := range []string{"TooManyRequestsException", "LimitExceededException", "Throttling"} {
+	// SlowDownPlease is no code of SES's: the SDK counts its 429 as a throttle all the same.
+	for _, code := range []string{"TooManyRequestsException", "LimitExceededException", "Throttling", "SlowDownPlease"} {
 		t.Run(code+" is busy regardless of its message", func(t *testing.T) {
 			api := newSESAPIWithErrorType(t, http.StatusTooManyRequests, code, throttledBody("Please try again later."))
 			sender := build(t, api.srv.URL)

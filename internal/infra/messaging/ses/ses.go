@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
 	"net/url"
 	"slices"
 	"time"
@@ -151,8 +150,7 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 		if errors.Is(quota, messaging.ErrQuotaExceeded) {
 			return messaging.Receipt{}, fmt.Errorf("ses: send: %w: %w", quota, err)
 		}
-		throttle := retry.ThrottleErrorCode{Codes: retry.DefaultThrottleErrorCodes}
-		throttled := throttle.IsErrorThrottle(err)
+		throttled := throttles.IsErrorThrottle(err)
 		if throttled == aws.TrueTernary {
 			return messaging.Receipt{}, fmt.Errorf("ses: send: %w: %w", messaging.ErrBusy, err)
 		}
@@ -226,14 +224,25 @@ func quotaValue(v float64) *int {
 	return &n
 }
 
+// throttles is every error the SDK counts as throttling, its error codes and an unmodeled 429
+// alike: the one definition both of what is never retried and of what is Busy.
+var throttles = retry.IsErrorThrottles(retry.DefaultThrottles)
+
+// noRetryOnThrottle refuses a retry of any throttle, ahead of the SDK's own retryables, which
+// retry some of them each in its own way, and leaves every other error to them.
+func noRetryOnThrottle(err error) aws.Ternary {
+	throttled := throttles.IsErrorThrottle(err)
+	if throttled == aws.TrueTernary {
+		return aws.FalseTernary
+	}
+	return aws.UnknownTernary
+}
+
 func (s *sender) client() *sesv2.Client {
 	retryer := retry.NewStandard(func(o *retry.StandardOptions) {
 		// Transient transport and server failures stay with the SDK; capacity
 		// errors reach our Deferral path immediately (ADR 0023).
-		o.Retryables = slices.DeleteFunc(o.Retryables, func(check retry.IsErrorRetryable) bool {
-			codes, ok := check.(retry.RetryableErrorCode)
-			return ok && maps.Equal(codes.Codes, retry.DefaultThrottleErrorCodes)
-		})
+		o.Retryables = slices.Insert(o.Retryables, 0, retry.IsErrorRetryable(retry.IsErrorRetryableFunc(noRetryOnThrottle)))
 	})
 	opts := sesv2.Options{
 		Region:      s.cfg.Region,

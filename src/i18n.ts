@@ -53,7 +53,7 @@ void i18n.use(initReactI18next).init({
 // digit grouping and the decimal separator of `{{count, number}}` do (#1022).
 let regionalFormat: string | undefined
 
-// i18next 26 has no `interpolation.format`: a formatter is added to the service after init, and
+// i18next (since 26) has no `interpolation.format`: a formatter is added to the service after init, and
 // it replaces the built-in `number` of the same name. The options after the name
 // (`{{value, number(minimumFractionDigits: 2)}}`) reach `Intl.NumberFormat` as they did.
 const formatter = i18n.services.formatter

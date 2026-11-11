@@ -130,15 +130,7 @@ export default defineConfig({
         ],
         patterns: [
           {
-            group: [
-              './*.css',
-              '../*.css',
-              '**/*.module.*',
-              '#/**/*.css',
-              '**/*.scss',
-              '**/*.sass',
-              '**/*.less',
-            ],
+            group: ['./*.css', '../*.css', '**/*.module.*', '**/*.scss', '**/*.sass', '**/*.less'],
             message: 'No custom CSS: style through Mantine props, theme and components.',
           },
           {

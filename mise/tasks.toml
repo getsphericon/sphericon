@@ -463,10 +463,30 @@ depends = ["update:npm", "update:go"]
 
 ["update:npm"]
 # openapi-ts stays on its pinned next channel: stable still needs the TypeScript package, which breaks under TS7.
-run = "pnpm exec ncu -u --reject @hey-api/openapi-ts && pnpm update"
+# --workspaces --root takes the packages/* manifests along with the root one.
+run = "pnpm exec ncu -u --workspaces --root --reject @hey-api/openapi-ts && pnpm update -r"
 
 ["update:go"]
-run = "go get -u ./... && go mod tidy"
+# Both modules: the root and tools/analyzers, which has a go.mod of its own. Only the modules go.mod
+# requires directly and the `tool` directives' modules (go.mod marks those indirect) move to their
+# latest release; @upgrade keeps one a dependency already needs past it, such as a pseudo-version of
+# golang.org/x/tools. Any other indirect module takes the version its dependents ask for:
+# `go get -u ./...` moved those too, past what they were built against, and took
+# mfridman/interpolate v0.2.0, whose API goose v3.30 does not build with.
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+for dir in . tools/analyzers; do
+  (
+    cd "$dir"
+    {
+      go list -m -json all | jq -r 'select((.Main or .Indirect) | not) | .Path + "@upgrade"'
+      go list -json tool | jq -r '.Module.Path + "@upgrade"' | sort -u
+    } | xargs -r go get
+    go mod tidy
+  )
+done
+'''
 
 # Named like a personal global `upgrade` task a developer may have, so that inside the repository
 # `mise run upgrade` resolves to this one. --no-global: a bare `mise upgrade` also upgrades every
@@ -842,7 +862,7 @@ run = "lychee --config lychee.toml --no-progress '**/*.md'"
 description = "Secrets and workflow linters"
 # The secret scan reads the whole history of HEAD, not every ref: CI fetches every branch, and
 # another branch's commit, checked against this branch's allowlist, would fail this one. Each branch
-# is scanned by its own pull request.
+# is scanned by its own pull request. Its allowlist is named by BETTERLEAKS_CONFIG (.mise.toml).
 run = [
   "betterleaks git --no-banner --redact --log-opts=HEAD",
   "jactionlint",
