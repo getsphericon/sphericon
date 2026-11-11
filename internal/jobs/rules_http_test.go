@@ -58,7 +58,7 @@ func (h *httpRuleHarness) reload() *ent.RuleFiring {
 }
 
 func (h *httpRuleHarness) worker(client webhook.Doer) *jobs.RunRuleHTTPWorker {
-	return jobs.NewRunRuleHTTPWorker(h.env.DB, rules.New(h.env.Cipher, h.env.Bus, client, func() time.Time { return h.clock }), shortestWait)
+	return jobs.NewRunRuleHTTPWorker(h.env.DB, rules.New(h.env.Cipher, h.env.Bus, client, func() time.Time { return h.clock }), lowestDraw)
 }
 
 func (h *httpRuleHarness) allowing() *jobs.RunRuleHTTPWorker {
@@ -267,5 +267,6 @@ func TestAnHTTPActionRunsOnAQueueOfItsOwnWithTheRetryHorizonOfAHook(t *testing.T
 	assert.True(t, opts.UniqueOpts.ByArgs, "a redelivered Actions job does not queue the call twice")
 
 	next := h.allowing().NextRetry(&river.Job[jobs.RunRuleHTTPArgs]{JobRow: &rivertype.JobRow{Attempt: 2, AttemptedAt: &h.clock}})
-	assert.Equal(t, h.clock.Add(54*time.Second), next, "a minute less 10%")
+	want := h.clock.Add(54 * time.Second) // a minute less 10%
+	assert.Equal(t, want, next)
 }

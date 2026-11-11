@@ -34,14 +34,24 @@ func TestHookRetryDelayDoublesFromThirtySecondsToTheCap(t *testing.T) {
 }
 
 // A retry waits the delay of its attempt spread by up to 10% either way: the draw 0 waits 10% less,
-// 0.5 the delay itself, and a draw near 1 just under 10% more.
+// 0.5 the delay itself, and the draw 1 10% more.
 func TestHookRetryWaitSpreadsTheDelayByTenPercent(t *testing.T) {
-	assert.Equal(t, 27*time.Second, webhook.HookRetryWait(1, 0))
-	assert.Equal(t, 30*time.Second, webhook.HookRetryWait(1, 0.5))
-	assert.Equal(t, 33*time.Second, webhook.HookRetryWait(1, 1))
-	assert.Equal(t, 324*time.Minute, webhook.HookRetryWait(11, 0))
-	assert.Equal(t, 6*time.Hour, webhook.HookRetryWait(11, 0.5))
-	assert.Equal(t, 396*time.Minute, webhook.HookRetryWait(11, 1))
+	cases := []struct {
+		attempt int
+		u       float64
+		want    time.Duration
+	}{
+		{1, 0, 27 * time.Second},
+		{1, 0.5, 30 * time.Second},
+		{1, 1, 33 * time.Second},
+		{11, 0, 324 * time.Minute},
+		{11, 0.5, 6 * time.Hour},
+		{11, 1, 396 * time.Minute},
+	}
+	for _, c := range cases {
+		got := webhook.HookRetryWait(c.attempt, c.u)
+		assert.Equal(t, c.want, got, "attempt %d, draw %v", c.attempt, c.u)
+	}
 }
 
 // Whatever the attempt and the draw, a retry waits within 10% of the delay of its attempt.
@@ -51,8 +61,9 @@ func TestHookRetryWaitStaysWithinTenPercentOfTheDelay(t *testing.T) {
 		u := rapid.Float64Range(0, 1).Draw(rt, "u")
 
 		wait, delay := webhook.HookRetryWait(attempt, u), doublingDelay(attempt)
+		outside := 10*wait < 9*delay || 10*wait > 11*delay
 
-		if 10*wait < 9*delay || 10*wait > 11*delay {
+		if outside {
 			rt.Fatalf("attempt %d, draw %v: wait %v, outside 10%% of %v", attempt, u, wait, delay)
 		}
 	})
@@ -61,17 +72,24 @@ func TestHookRetryWaitStaysWithinTenPercentOfTheDelay(t *testing.T) {
 // The next retry is the attempt's wait for the draw of the jitter source it is given.
 func TestHookNextRetryDrawsFromItsJitterSource(t *testing.T) {
 	at := time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)
-	assert.Equal(t, at.Add(27*time.Second), webhook.HookNextRetry(at, 1, func() float64 { return 0 }))
-	assert.Equal(t, at.Add(4*time.Minute), webhook.HookNextRetry(at, 4, func() float64 { return 0.5 }))
+	lowest := func() float64 { return 0 }
+	middle := func() float64 { return 0.5 }
+
+	first, fourth := webhook.HookNextRetry(at, 1, lowest), webhook.HookNextRetry(at, 4, middle)
+
+	assert.Equal(t, time.Date(2026, 10, 18, 9, 0, 27, 0, time.UTC), first)
+	assert.Equal(t, time.Date(2026, 10, 18, 9, 4, 0, 0, time.UTC), fourth)
 }
 
 // With the real source, every retry up to the last attempt falls within 10% of its delay.
 func TestHookNextRetryWithTheRealSourceStaysWithinTheBounds(t *testing.T) {
 	at := time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)
 	for attempt := 1; attempt <= webhook.HookMaxAttempts(); attempt++ {
-		delay := doublingDelay(attempt)
 		next := webhook.HookNextRetry(at, attempt, rand.Float64)
-		assert.WithinRange(t, next, at.Add(delay-delay/10), at.Add(delay+delay/10), "attempt %d", attempt)
+		wait, delay := next.Sub(at), doublingDelay(attempt)
+		lower, upper := delay*9/10, delay*11/10
+		assert.GreaterOrEqual(t, wait, lower, "attempt %d", attempt)
+		assert.LessOrEqual(t, wait, upper, "attempt %d", attempt)
 	}
 }
 
@@ -79,18 +97,19 @@ func TestHookNextRetryWithTheRealSourceStaysWithinTheBounds(t *testing.T) {
 // doubling waits of about 7 h 40 min in all, then twelve waits of 5 h 24 min.
 func TestHookMaxAttemptsCoverTheHorizonAtTheShortestWaits(t *testing.T) {
 	attempts := webhook.HookMaxAttempts()
+	last, beforeLast := shortestElapsed(attempts), shortestElapsed(attempts-1)
+
 	assert.Equal(t, 23, attempts)
-	assert.GreaterOrEqual(t, shortestElapsed(attempts), webhook.HookRetryHorizon)
-	assert.Less(t, shortestElapsed(attempts-1), webhook.HookRetryHorizon, "one attempt fewer falls short")
+	assert.GreaterOrEqual(t, last, 72*time.Hour)
+	assert.Less(t, beforeLast, 72*time.Hour, "one attempt fewer falls short")
 }
 
 // shortestElapsed is how long after the first attempt the last of attempts falls when every
-// retry waits its lower bound.
+// retry waits 90% of the doubling schedule.
 func shortestElapsed(attempts int) time.Duration {
 	var elapsed time.Duration
 	for attempt := 1; attempt < attempts; attempt++ {
-		lower, _ := webhook.HookRetryBounds(attempt)
-		elapsed += lower
+		elapsed += doublingDelay(attempt) * 9 / 10
 	}
 	return elapsed
 }

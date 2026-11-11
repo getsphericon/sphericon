@@ -234,7 +234,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
 	runID := e.enrolledNow(t, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
-	w := jobs.NewRunHTTPStepWorker(e.client, automations.NewStepExecution(bus, nil, e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now), shortestWait)
+	w := jobs.NewRunHTTPStepWorker(e.client, automations.NewStepExecution(bus, nil, e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now), lowestDraw)
 
 	workDone := make(chan error, 1)
 	go func() {

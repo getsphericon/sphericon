@@ -33,20 +33,20 @@ func HookRetryDelay(attempt int) time.Duration {
 	return b.ForAttempt(float64(attempt - 1))
 }
 
-// HookRetryBounds is the shortest and the longest wait after the attempt-th failed attempt:
+// hookRetryBounds is the shortest and the longest wait after the attempt-th failed attempt:
 // HookRetryDelay less and plus a tenth of it.
-func HookRetryBounds(attempt int) (lower, upper time.Duration) {
+func hookRetryBounds(attempt int) (lower, upper time.Duration) {
 	delay := HookRetryDelay(attempt)
 	spread := delay / 10
 	return delay - spread, delay + spread
 }
 
 // HookRetryWait is the wait after the attempt-th failed attempt for the draw u in [0, 1]: spread
-// uniformly across HookRetryBounds, so that u = 0.5 waits HookRetryDelay itself. The jitter keeps
+// uniformly across hookRetryBounds, so that u = 0.5 waits HookRetryDelay itself. The jitter keeps
 // deliveries that failed together against one receiver from all retrying at the same instant
 // when it comes back, the shape of river's default policy.
 func HookRetryWait(attempt int, u float64) time.Duration {
-	lower, upper := HookRetryBounds(attempt)
+	lower, upper := hookRetryBounds(attempt)
 	return lower + time.Duration(u*float64(upper-lower))
 }
 
@@ -57,20 +57,21 @@ func HookMaxAttempts() int {
 	var elapsed time.Duration
 	attempts := 1
 	for ; elapsed < HookRetryHorizon; attempts++ {
-		lower, _ := HookRetryBounds(attempts)
+		lower, _ := hookRetryBounds(attempts)
 		elapsed += lower
 	}
 	return attempts
 }
 
 // HookJitter is the source of a hook retry's jitter: each call returns a draw in [0, 1), as
-// rand.Float64 does, which is the one the Instance wires. A test passes a fixed draw.
+// rand.Float64 does, which the river client's workers are built with. A test passes a fixed draw.
 type HookJitter func() float64
 
 // HookNextRetry is when to retry after the failed attempt-th attempt, which started at
 // attemptedAt, for a draw of jitter. It is the body of a worker's NextRetry.
 func HookNextRetry(attemptedAt time.Time, attempt int, jitter HookJitter) time.Time {
-	return attemptedAt.Add(HookRetryWait(attempt, jitter()))
+	wait := HookRetryWait(attempt, jitter())
+	return attemptedAt.Add(wait)
 }
 
 // HookSnooze is how long to snooze a job whose receiver answered 429 with the given
