@@ -294,6 +294,7 @@ var (
 	ErrorsSendCapsAbsent                        = ID{key: "errors.send_caps_absent"}
 	ErrorsSendInProgress                        = ID{key: "errors.send_in_progress"}
 	ErrorsSendKeyFailed                         = ID{key: "errors.send_key_failed"}
+	ErrorsSendKeyReused                         = ID{key: "errors.send_key_reused"}
 	ErrorsSendRouteHeld                         = ID{key: "errors.send_route_held"}
 	ErrorsSendingDomainExists                   = ID{key: "errors.sending_domain_exists"}
 	ErrorsSendingDomainInvalid                  = ID{key: "errors.sending_domain_invalid"}

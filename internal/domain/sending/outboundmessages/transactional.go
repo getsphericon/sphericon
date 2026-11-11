@@ -30,6 +30,9 @@ var (
 	// ErrTransactionalReplayedFailed: the Idempotency-Key was spent by a send that failed; retry
 	// under a new key.
 	ErrTransactionalReplayedFailed = validation.Conflict("transactional: a send with this key failed", i18n.ErrorsSendKeyFailed)
+	// ErrTransactionalKeyReused: the Idempotency-Key was spent by a send made for a different
+	// request (another Template, destination, variables or tracking); retry under a new key.
+	ErrTransactionalKeyReused = validation.Refuse("transactional: the key was used for a different request", i18n.ErrorsSendKeyReused)
 	// ErrTransactionalInvariant: the Outbound send answered with something a Transactional request
 	// can never get. It is a bug, reported loudly, not a refusal the caller can act on.
 	ErrTransactionalInvariant = errors.New("transactional: invariant violated")
@@ -111,6 +114,9 @@ func (m *Module) SendTransactional(ctx context.Context, s *ent.Scoped, req Trans
 	}))
 	if errors.Is(err, ErrInProgress) {
 		return TransactionalResult{}, ErrTransactionalInProgress
+	}
+	if errors.Is(err, ErrKeyReused) {
+		return TransactionalResult{}, ErrTransactionalKeyReused
 	}
 	if err != nil {
 		return TransactionalResult{}, fmt.Errorf("transactional send: %w", err)

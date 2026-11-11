@@ -542,6 +542,26 @@ func (_u *OutboundMessageUpdate) ClearTemplateID() *OutboundMessageUpdate {
 	return _u
 }
 
+// SetRequestDigest sets the "request_digest" field.
+func (_u *OutboundMessageUpdate) SetRequestDigest(v string) *OutboundMessageUpdate {
+	_u.mutation.SetRequestDigest(v)
+	return _u
+}
+
+// SetNillableRequestDigest sets the "request_digest" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableRequestDigest(v *string) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetRequestDigest(*v)
+	}
+	return _u
+}
+
+// ClearRequestDigest clears the value of the "request_digest" field.
+func (_u *OutboundMessageUpdate) ClearRequestDigest() *OutboundMessageUpdate {
+	_u.mutation.ClearRequestDigest()
+	return _u
+}
+
 // SetSubject sets the "subject" field.
 func (_u *OutboundMessageUpdate) SetSubject(v string) *OutboundMessageUpdate {
 	_u.mutation.SetSubject(v)
@@ -864,6 +884,12 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.AutomationStepCleared() {
 		_spec.ClearField(outboundmessage.FieldAutomationStep, field.TypeInt)
+	}
+	if value, ok := _u.mutation.RequestDigest(); ok {
+		_spec.SetField(outboundmessage.FieldRequestDigest, field.TypeString, value)
+	}
+	if _u.mutation.RequestDigestCleared() {
+		_spec.ClearField(outboundmessage.FieldRequestDigest, field.TypeString)
 	}
 	if value, ok := _u.mutation.Subject(); ok {
 		_spec.SetField(outboundmessage.FieldSubject, field.TypeString, value)
@@ -1676,6 +1702,26 @@ func (_u *OutboundMessageUpdateOne) ClearTemplateID() *OutboundMessageUpdateOne 
 	return _u
 }
 
+// SetRequestDigest sets the "request_digest" field.
+func (_u *OutboundMessageUpdateOne) SetRequestDigest(v string) *OutboundMessageUpdateOne {
+	_u.mutation.SetRequestDigest(v)
+	return _u
+}
+
+// SetNillableRequestDigest sets the "request_digest" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableRequestDigest(v *string) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetRequestDigest(*v)
+	}
+	return _u
+}
+
+// ClearRequestDigest clears the value of the "request_digest" field.
+func (_u *OutboundMessageUpdateOne) ClearRequestDigest() *OutboundMessageUpdateOne {
+	_u.mutation.ClearRequestDigest()
+	return _u
+}
+
 // SetSubject sets the "subject" field.
 func (_u *OutboundMessageUpdateOne) SetSubject(v string) *OutboundMessageUpdateOne {
 	_u.mutation.SetSubject(v)
@@ -2028,6 +2074,12 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.AutomationStepCleared() {
 		_spec.ClearField(outboundmessage.FieldAutomationStep, field.TypeInt)
+	}
+	if value, ok := _u.mutation.RequestDigest(); ok {
+		_spec.SetField(outboundmessage.FieldRequestDigest, field.TypeString, value)
+	}
+	if _u.mutation.RequestDigestCleared() {
+		_spec.ClearField(outboundmessage.FieldRequestDigest, field.TypeString)
 	}
 	if value, ok := _u.mutation.Subject(); ok {
 		_spec.SetField(outboundmessage.FieldSubject, field.TypeString, value)

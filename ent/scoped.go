@@ -24263,6 +24263,18 @@ func (x *OutboundMessageScopedCreate) SetNillableTemplateID(v *int64) *OutboundM
 	return x
 }
 
+// SetRequestDigest sets the "request_digest" field.
+func (x *OutboundMessageScopedCreate) SetRequestDigest(v string) *OutboundMessageScopedCreate {
+	x.b.SetRequestDigest(v)
+	return x
+}
+
+// SetNillableRequestDigest sets the "request_digest" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableRequestDigest(v *string) *OutboundMessageScopedCreate {
+	x.b.SetNillableRequestDigest(v)
+	return x
+}
+
 // SetSubject sets the "subject" field.
 func (x *OutboundMessageScopedCreate) SetSubject(v string) *OutboundMessageScopedCreate {
 	x.b.SetSubject(v)
@@ -24913,6 +24925,24 @@ func (u *OutboundMessageScopedUpsert) ClearTemplateID() *OutboundMessageScopedUp
 	return u
 }
 
+// SetRequestDigest sets the "request_digest" field.
+func (u *OutboundMessageScopedUpsert) SetRequestDigest(v string) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldRequestDigest, v)
+	return u
+}
+
+// UpdateRequestDigest sets the "request_digest" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateRequestDigest() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldRequestDigest)
+	return u
+}
+
+// ClearRequestDigest clears the value of the "request_digest" field.
+func (u *OutboundMessageScopedUpsert) ClearRequestDigest() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldRequestDigest)
+	return u
+}
+
 // SetSubject sets the "subject" field.
 func (u *OutboundMessageScopedUpsert) SetSubject(v string) *OutboundMessageScopedUpsert {
 	u.u.Set(outboundmessage.FieldSubject, v)
@@ -25512,6 +25542,24 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableTemplateID(v *int64) *Outbou
 // ClearTemplateID clears the value of the "template_id" field.
 func (x *OutboundMessageScopedUpdateOne) ClearTemplateID() *OutboundMessageScopedUpdateOne {
 	x.b.ClearTemplateID()
+	return x
+}
+
+// SetRequestDigest sets the "request_digest" field.
+func (x *OutboundMessageScopedUpdateOne) SetRequestDigest(v string) *OutboundMessageScopedUpdateOne {
+	x.b.SetRequestDigest(v)
+	return x
+}
+
+// SetNillableRequestDigest sets the "request_digest" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableRequestDigest(v *string) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableRequestDigest(v)
+	return x
+}
+
+// ClearRequestDigest clears the value of the "request_digest" field.
+func (x *OutboundMessageScopedUpdateOne) ClearRequestDigest() *OutboundMessageScopedUpdateOne {
+	x.b.ClearRequestDigest()
 	return x
 }
 
@@ -26162,6 +26210,24 @@ func (x *OutboundMessageScopedUpdate) SetNillableTemplateID(v *int64) *OutboundM
 // ClearTemplateID clears the value of the "template_id" field.
 func (x *OutboundMessageScopedUpdate) ClearTemplateID() *OutboundMessageScopedUpdate {
 	x.b.ClearTemplateID()
+	return x
+}
+
+// SetRequestDigest sets the "request_digest" field.
+func (x *OutboundMessageScopedUpdate) SetRequestDigest(v string) *OutboundMessageScopedUpdate {
+	x.b.SetRequestDigest(v)
+	return x
+}
+
+// SetNillableRequestDigest sets the "request_digest" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableRequestDigest(v *string) *OutboundMessageScopedUpdate {
+	x.b.SetNillableRequestDigest(v)
+	return x
+}
+
+// ClearRequestDigest clears the value of the "request_digest" field.
+func (x *OutboundMessageScopedUpdate) ClearRequestDigest() *OutboundMessageScopedUpdate {
+	x.b.ClearRequestDigest()
 	return x
 }
 

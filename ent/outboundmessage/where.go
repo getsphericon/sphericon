@@ -191,6 +191,11 @@ func TemplateID(v int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldTemplateID, v))
 }
 
+// RequestDigest applies equality check predicate on the "request_digest" field. It's identical to RequestDigestEQ.
+func RequestDigest(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldRequestDigest, v))
+}
+
 // Subject applies equality check predicate on the "subject" field. It's identical to SubjectEQ.
 func Subject(v string) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldSubject, v))
@@ -1544,6 +1549,81 @@ func TemplateIDIsNil() predicate.OutboundMessage {
 // TemplateIDNotNil applies the NotNil predicate on the "template_id" field.
 func TemplateIDNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldTemplateID))
+}
+
+// RequestDigestEQ applies the EQ predicate on the "request_digest" field.
+func RequestDigestEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldRequestDigest, v))
+}
+
+// RequestDigestNEQ applies the NEQ predicate on the "request_digest" field.
+func RequestDigestNEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldRequestDigest, v))
+}
+
+// RequestDigestIn applies the In predicate on the "request_digest" field.
+func RequestDigestIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldRequestDigest, vs...))
+}
+
+// RequestDigestNotIn applies the NotIn predicate on the "request_digest" field.
+func RequestDigestNotIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldRequestDigest, vs...))
+}
+
+// RequestDigestGT applies the GT predicate on the "request_digest" field.
+func RequestDigestGT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldRequestDigest, v))
+}
+
+// RequestDigestGTE applies the GTE predicate on the "request_digest" field.
+func RequestDigestGTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldRequestDigest, v))
+}
+
+// RequestDigestLT applies the LT predicate on the "request_digest" field.
+func RequestDigestLT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldRequestDigest, v))
+}
+
+// RequestDigestLTE applies the LTE predicate on the "request_digest" field.
+func RequestDigestLTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldRequestDigest, v))
+}
+
+// RequestDigestContains applies the Contains predicate on the "request_digest" field.
+func RequestDigestContains(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContains(FieldRequestDigest, v))
+}
+
+// RequestDigestHasPrefix applies the HasPrefix predicate on the "request_digest" field.
+func RequestDigestHasPrefix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldRequestDigest, v))
+}
+
+// RequestDigestHasSuffix applies the HasSuffix predicate on the "request_digest" field.
+func RequestDigestHasSuffix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldRequestDigest, v))
+}
+
+// RequestDigestIsNil applies the IsNil predicate on the "request_digest" field.
+func RequestDigestIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldRequestDigest))
+}
+
+// RequestDigestNotNil applies the NotNil predicate on the "request_digest" field.
+func RequestDigestNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldRequestDigest))
+}
+
+// RequestDigestEqualFold applies the EqualFold predicate on the "request_digest" field.
+func RequestDigestEqualFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEqualFold(FieldRequestDigest, v))
+}
+
+// RequestDigestContainsFold applies the ContainsFold predicate on the "request_digest" field.
+func RequestDigestContainsFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContainsFold(FieldRequestDigest, v))
 }
 
 // SubjectEQ applies the EQ predicate on the "subject" field.

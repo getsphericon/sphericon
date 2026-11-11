@@ -1,6 +1,9 @@
 package outboundmessages
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 
 	"github.com/oklog/ulid/v2"
@@ -118,8 +121,10 @@ type TransactionalMessage struct {
 // Transactional is the Request for a Transactional message (no unsubscribe Source).
 func Transactional(m TransactionalMessage) Request {
 	key := "transactional:auto:" + ulid.Make().String()
+	digest := ""
 	if m.ClientKey != "" {
 		key = "transactional:" + m.ClientKey
+		digest = requestDigest(m)
 	}
 	return Request{
 		Key:         key,
@@ -129,5 +134,24 @@ func Transactional(m TransactionalMessage) Request {
 		Variables:   m.Variables,
 		Track:       m.Track,
 		Ref:         TransactionalRef{TemplateID: m.TemplateID},
+		digest:      digest,
 	}
+}
+
+// requestDigest is the SHA-256 of what a Transactional request asks for: its Template, destination,
+// variables and tracking. Variables are decoded values, so two requests that write the same JSON
+// differently (key order, spacing) have one digest.
+func requestDigest(m TransactionalMessage) string {
+	b, err := json.Marshal(struct {
+		TemplateID  int64          `json:"templateId"`
+		Destination string         `json:"destination"`
+		Variables   map[string]any `json:"variables"`
+		Track       bool           `json:"track"`
+	}{m.TemplateID, m.Destination, m.Variables, m.Track})
+	if err != nil {
+		// Variables were decoded from JSON, so they encode again.
+		panic(fmt.Sprintf("outbound: encode a transactional request: %v", err))
+	}
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
 }
