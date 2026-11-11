@@ -28,7 +28,6 @@ func TestFromDocumentRendersTheThemeTheEditorWroteIntoTheDocument(t *testing.T) 
 	require.NoError(t, err)
 
 	assert.Contains(t, got.Body, "#abcdef")
-	assert.Equal(t, emailrender.SanitizeHTML(got.Body), got.Body, "the stored body survives the sanitizer")
 }
 
 // editor_branded.json is a document as the editor emitted it for a new message in a Brand kit's

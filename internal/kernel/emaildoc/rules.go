@@ -25,7 +25,6 @@ var (
 	sizeValue     = regexp.MustCompile(`^(auto|\d+(\.\d+)?(px|%)?)$`)
 	liquidValue   = regexp.MustCompile(`^\{\{[^{}]+\}\}`)
 	liquidTags    = regexp.MustCompile(`\{\{[^{}]*\}\}|\{%[^{}]*%\}`)
-	unsafeStyle   = regexp.MustCompile(`(?i)javascript:|vbscript:|expression\s*\(|behavior\s*:|-moz-binding|@import|<|\\`)
 	orderedTypes  = []string{"1", "a", "A", "i", "I"}
 	nodeProps     = []string{"type", "attrs", "content", "marks", "text"}
 	markProps     = []string{"type", "attrs"}
@@ -275,12 +274,8 @@ func checkMarks(value any, where string) error {
 }
 
 func checkStyle(value any, where string) error {
-	style, ok := value.(string)
-	if !ok {
+	if _, ok := value.(string); !ok {
 		return invalidf("%s: attribute \"style\" must be a CSS declaration string like \"color:#333333\", got %s.", where, show(value))
-	}
-	if unsafeStyle.MatchString(style) {
-		return invalidf("%s: attribute \"style\" holds something an email cannot safely carry (a script URL, expression(), an @import, a backslash or a tag). Use plain declarations like \"color:#333333\".", where)
 	}
 	return nil
 }

@@ -3348,8 +3348,7 @@ export const LintCode = {
   MISSING_ALT: 'missing_alt',
   LOW_CONTRAST: 'low_contrast',
   OFF_BRAND_COLOR: 'off_brand_color',
-  OFF_BRAND_FONT: 'off_brand_font',
-  UNKNOWN_CONSTRUCT: 'unknown_construct'
+  OFF_BRAND_FONT: 'off_brand_font'
 } as const;
 
 /**

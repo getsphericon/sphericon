@@ -42,12 +42,12 @@ func TestViewsCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	v := broadcasts.NewViews(broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()))
 	name, subject, from := "Warned", "Hi", "a@"+fixtures.SendingDomainVerifiedDomain
-	body := `<p style="font-family:Georgia, serif">Sale</p><marquee>Scroll</marquee>`
+	body := `<p style="font-family:Georgia, serif">Sale</p><img src="https://cdn.example.com/a.png">`
 
 	got, err := v.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
 		broadcasts.CreateInput{Name: &name, Content: broadcasts.EmailContentInput{Subject: &subject, Body: &body, FromEmail: &from}})
 	require.NoError(t, err)
 	codes := lo.Map(got.Warnings, func(f emailrender.Finding, _ int) emailrender.Code { return f.Code })
-	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeUnknownConstruct}, codes)
-	assert.NotContains(t, *got.Body, "marquee", "stored sanitized")
+	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeMissingAlt}, codes)
+	assert.Equal(t, body, *got.Body, "stored as written")
 }

@@ -294,19 +294,17 @@ func TestMCPToolCallReturnsTheAPIResult(t *testing.T) {
 	require.False(t, res.IsError, text(t, res))
 }
 
-// A body an agent saves over MCP is sanitized like one saved through the API (ADR 0040).
-func TestMCPSanitizesBodiesOnSave(t *testing.T) {
+// A body an agent saves over MCP is stored as written, like one saved through the API (ADR 0118).
+func TestMCPStoresBodiesAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, "templates:write"))
+	body := `<p onclick="track()">Hi {{ first_name }}</p><form action="https://example.com/s"></form>`
 
-	res := call(t, s, "templates_create", map[string]any{
-		"name": "Hostile",
-		"body": `<p onclick="steal()">Hi {{ first_name }}</p><script>alert(1)</script>`,
-	})
+	res := call(t, s, "templates_create", map[string]any{"name": "As written", "body": body})
 	require.False(t, res.IsError, text(t, res))
 	var created map[string]any
 	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &created))
-	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, created["body"])
+	assert.Equal(t, body, created["body"])
 }
 
 // An agent reads the Provider limit and 24-hour usage of the Integrations over MCP,

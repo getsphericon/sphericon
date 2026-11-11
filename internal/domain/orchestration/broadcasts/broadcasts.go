@@ -297,7 +297,7 @@ func setsFrom(from, stored *string) bool {
 // The name is held to the name rule (validation.Name), no content is ErrNoChannel, an SMS Broadcast in a Workspace with no
 // SMS Integration ErrChannelNoIntegration and an Integration of another Channel
 // ErrIntegrationOtherChannel; content that cannot render is emailrender.ErrInvalidContent, and an
-// email body is stored sanitized.
+// email body is stored as written.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent.Broadcast, error) {
 	// A Broadcast always has a name: one left out is refused as blank.
 	name, err := validation.Name(lo.FromPtr(f.Name))

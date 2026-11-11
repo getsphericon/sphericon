@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
-	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -52,7 +51,6 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(stored[0].Doc))
 	assert.Equal(t, res.Draft.Value.Steps[0].Body.Value, stored[0].Body)
-	assert.Equal(t, emailrender.SanitizeHTML(stored[0].Body), stored[0].Body, "the stored body survives the sanitizer")
 	assert.Empty(t, stored[2].Doc)
 
 	// Saving another document rebuilds that step's body.

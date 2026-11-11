@@ -18840,8 +18840,6 @@ func (s *LintCode) Decode(d *jx.Decoder) error {
 		*s = LintCodeOffBrandColor
 	case LintCodeOffBrandFont:
 		*s = LintCodeOffBrandFont
-	case LintCodeUnknownConstruct:
-		*s = LintCodeUnknownConstruct
 	default:
 		*s = LintCode(v)
 	}

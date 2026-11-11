@@ -11,9 +11,9 @@ import (
 
 // An agent drafts in the editor's format (ADR 0040): it reads the Brand kit and the schema, copies
 // a starter Template, edits its document, lints it and saves a Broadcast draft over MCP. It cannot
-// send: a person activates the draft, and the message that then arrives is sanitized, with the
-// variables escaped, its links tracked and the unsubscribe footer added.
-func TestAgentDraftNeedsAPersonsActivationAndArrivesSanitized(t *testing.T) {
+// send: a person activates the draft, and the message that then arrives has the variables
+// escaped, its links tracked and the unsubscribe footer added.
+func TestAgentDraftNeedsAPersonsActivationAndArrivesWithItsVariablesEscaped(t *testing.T) {
 	t.Parallel()
 	w := env.NewWorkspace(t).Ready()
 	w.SaveBrandKit()
@@ -37,7 +37,6 @@ func TestAgentDraftNeedsAPersonsActivationAndArrivesSanitized(t *testing.T) {
 
 	assert.Contains(t, msg.HTML, "Hello, &lt;img src=x onerror=alert(1)&gt;Eve", "the edit is in, and the variable is escaped")
 	assert.NotContains(t, msg.HTML, "<img src=x")
-	assert.NotContains(t, msg.HTML, "<script")
 	assert.Contains(t, msg.HTML, env.BaseURL+"/e/c/", "the button's link goes through the click tracker")
 	assert.Contains(t, msg.HTML, env.BaseURL+"/e/o/", "the open pixel is added")
 	assert.Contains(t, msg.HTML, "unsubscribe</a>", "the unsubscribe footer is added")

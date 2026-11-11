@@ -62,9 +62,9 @@ func TestBroadcastTextPartCarriesTrackedLinkAndUnsubscribe(t *testing.T) {
 	assert.Equal(t, 1, unsubscribeLinks, "the unsubscribe link, once")
 }
 
-// Hostile content reaches the Inbox sanitized (ADR 0040): the saved body loses script,
-// event handlers and javascript: URLs, and a first name that holds markup is shown as text.
-func TestBroadcastWithHostileContentArrivesSanitized(t *testing.T) {
+// A body arrives as it was written (ADR 0118), and a first name that holds markup is shown as text:
+// a Contact's data is escaped where the body writes it.
+func TestBroadcastArrivesAsWrittenWithTheContactDataEscaped(t *testing.T) {
 	t.Parallel()
 	w := env.NewWorkspace(t).Ready()
 	to := w.NewRecipient()
@@ -72,20 +72,17 @@ func TestBroadcastWithHostileContentArrivesSanitized(t *testing.T) {
 	w.ImportContactNamed(to, `<img src=x onerror=alert(1)>Eve`)
 	w.SendBroadcast(Broadcast{
 		Subject: "Hello {{ first_name }}",
-		Body: HTML(`Hi {{ first_name }} <a href="javascript:alert(1)" onclick="steal()">trap</a> `+
-			`<a href="https://example.com/ok">fine</a>`) + `<script>alert(1)</script><iframe src="https://evil.example/"></iframe>`,
+		Body: HTML(`Hi {{ first_name }} <a href="https://example.com/ok" class="cta" onclick="track()">fine</a>`) +
+			`<form action="https://example.com/survey"></form>`,
 	})
 	msg := w.Inbox.Wait(Match{To: to})
 
 	assert.Equal(t, `Hello <img src=x onerror=alert(1)>Eve`, msg.Subject, "the subject is plain text")
 	assert.Contains(t, msg.HTML, "Hi &lt;img src=x onerror=alert(1)&gt;Eve", "markup in a name is shown as text")
 	assert.NotContains(t, msg.HTML, "<img src=x")
-	assert.NotContains(t, msg.HTML, "<script")
-	assert.NotContains(t, msg.HTML, "<iframe")
-	assert.NotContains(t, msg.HTML, "javascript:")
-	assert.NotContains(t, msg.HTML, "onclick")
-	assert.NotContains(t, msg.HTML, "evil.example")
-	assert.Contains(t, msg.HTML, "fine</a>", "legitimate links stay")
+	assert.Contains(t, msg.HTML, `onclick="track()"`, "the author's markup is kept")
+	assert.Contains(t, msg.HTML, `<form action="https://example.com/survey">`)
+	assert.Contains(t, msg.HTML, "fine</a>")
 }
 
 // A Broadcast written in the editor arrives as the message the server built from its document:

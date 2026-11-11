@@ -35,7 +35,6 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 			got, err := emailrender.FromDocument(t.Context(), testhelper.RealRenderer(), &subject, s.Doc)
 			require.NoError(t, err)
 
-			assert.Equal(t, emailrender.SanitizeHTML(got.Body), got.Body, "the stored body survives the sanitizer")
 			kit := brandedKit()
 			kit.Saved = true
 			report := emailrender.Lint(subject, got.Body, kit.Brand())

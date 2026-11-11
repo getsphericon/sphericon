@@ -20,7 +20,6 @@ const lintBody = `<table><tbody><tr><td>` +
 	`<p style="color:#cc0000;font-family:Georgia, serif">Sale</p>` +
 	`<p style="color:#eeeeee;background-color:#ffffff">Faint print</p>` +
 	`<p style="color:#202124">Brand text</p>` +
-	`<marquee>Scroll</marquee>` +
 	`</td></tr></tbody></table>`
 
 func findings(list []siteapi.LintFinding) map[siteapi.LintCode][]string {
@@ -54,13 +53,10 @@ func TestSiteTemplateSaveReturnsWarningsAndStoresTheContent(t *testing.T) {
 	assert.Contains(t, got[siteapi.LintCodeOffBrandColor][1], "#eeeeee")
 	require.Len(t, got[siteapi.LintCodeOffBrandFont], 1)
 	assert.Contains(t, got[siteapi.LintCodeOffBrandFont][0], "Sale")
-	require.Len(t, got[siteapi.LintCodeUnknownConstruct], 1)
-	assert.Contains(t, got[siteapi.LintCodeUnknownConstruct][0], "marquee")
 
-	// Warnings never block: the template is stored as written (sanitized only).
+	// Warnings never block: the template is stored as written.
 	row := env.DB.EmailTemplate.GetX(ctx, int64(res.ID))
-	assert.Contains(t, row.Body, "Faint print")
-	assert.Contains(t, row.Body, "hero.png")
+	assert.Equal(t, lintBody, row.Body)
 }
 
 func TestSiteTemplateSaveWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
@@ -76,7 +72,6 @@ func TestSiteTemplateSaveWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
 	got := findings(res.Warnings)
 	assert.Len(t, got[siteapi.LintCodeMissingAlt], 1)
 	assert.Len(t, got[siteapi.LintCodeLowContrast], 1)
-	assert.Len(t, got[siteapi.LintCodeUnknownConstruct], 1)
 	assert.Empty(t, got[siteapi.LintCodeOffBrandColor], "no Brand kit saved: nothing to compare to")
 	assert.Empty(t, got[siteapi.LintCodeOffBrandFont])
 }

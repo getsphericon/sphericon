@@ -4,6 +4,10 @@ status: accepted
 
 # Email content is authored in an embedded editor; the server builds the HTML
 
+> **Amended by [[0118-email-html-is-stored-and-sent-as-written]]:** point 8 is replaced. A body is
+> stored and sent as written; the sanitizer and the lint's `unknown_construct` are gone, and any view
+> of a message's HTML in the app is a sandboxed iframe.
+
 Message content is a subject plus an MJML body today (ADR 0003, ADR 0005, the glossary). The body field
 is a plain `Textarea`, an agent that drafts through MCP gets an MJML string and nothing else (no brand,
 no vocabulary, no feedback), and a malformed body fails only when a send is planned. A survey of the

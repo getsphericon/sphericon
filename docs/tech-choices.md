@@ -8,7 +8,7 @@ Re-verify before adopting — these numbers age.
 Already in use (don't re-introduce; `go.mod` and `package.json` are the full list): ent, ogen,
 goverter, chi, pgx, goose, river, samber/do, samber/lo, caarlos0/env,
 go-playground/validator, qmuntal/stateless, go-pkgz/auth, go-webauthn, golang-jwt, tink-go,
-go-crypt/crypt, osteele/liquid, bluemonday, k3a/html2text, wneessen/go-mail, nicksnyder/go-i18n,
+go-crypt/crypt, osteele/liquid, k3a/html2text, wneessen/go-mail, nicksnyder/go-i18n,
 goja, gojq, otter, golang.org/x/net, ariga.io/atlas (the diff library in cmd/db); frontend: React 19,
 Mantine (+ mantine-datatable), TanStack Router/Query, zod, i18next, react-querybuilder +
 @react-querybuilder/mantine, @xyflow/react, @react-email/editor on @tiptap/react (the
@@ -31,7 +31,7 @@ library-grade and extractable).
 | Need                              | Pick                | Status              | Note                                                                                    |
 | --------------------------------- | ------------------- | ------------------- | --------------------------------------------------------------------------------------- |
 | Email body                        | **HTML** (ADR 0040) | accepted            | Liquid merge tags over email-ready HTML; parsed with `golang.org/x/net/html`            |
-| CSS inlining (required for email) | **none**            | rejected (ADR 0040) | the editor writes inline styles and the sanitizer allowlist keeps them; no inliner runs |
+| CSS inlining (required for email) | **none**            | rejected (ADR 0040) | the editor writes inline styles, stored and sent as written (ADR 0118); no inliner runs |
 
 ## Phase 4 — automations / workflows
 

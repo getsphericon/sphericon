@@ -65,17 +65,13 @@ func (v *Views) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f 
 }
 
 // Create makes a draft Broadcast (Module.Create) and returns its view, with the lint warnings of
-// the content as written.
+// its content.
 func (v *Views) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (View, error) {
 	b, err := v.m.Create(ctx, s, f)
 	if err != nil {
 		return View{}, err
 	}
-	var written *string
-	if c, ok := f.Content.(EmailContentInput); ok {
-		written = c.Body
-	}
-	return v.saved(ctx, s, b, written)
+	return v.saved(ctx, s, b)
 }
 
 // Update applies a patch to a draft (Module.Update) and returns its view, with the lint warnings of
@@ -85,11 +81,7 @@ func (v *Views) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInp
 	if err != nil {
 		return View{}, err
 	}
-	var written *string
-	if c, ok := f.Content.(EmailContentPatch); ok {
-		written = c.Body.Ptr()
-	}
-	return v.saved(ctx, s, b, written)
+	return v.saved(ctx, s, b)
 }
 
 // Send moves a draft or scheduled Broadcast to sending (Module.Send) and returns its view, its
@@ -150,11 +142,9 @@ func (v *Views) detailed(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (
 }
 
 // saved builds the view of a Broadcast a save stored, with its figures and the lint warnings of its
-// content against the Workspace's Brand kit. Only email is linted: the body as the write gave it,
-// before the sanitizer, so a construct the save removed is still named; otherwise the stored body
-// (a document's rendered HTML, or a write of the subject alone). A message that cannot render was
-// refused by the save.
-func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, written *string) (View, error) {
+// content against the Workspace's Brand kit. Only email is linted, its stored body: as it was
+// written, or a document's rendered HTML. A message that cannot render was refused by the save.
+func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
 	view, err := v.figured(ctx, s, b)
 	if err != nil || b.Channel != channels.Email {
 		return view, err
@@ -163,10 +153,6 @@ func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, writ
 	if err != nil {
 		return View{}, err
 	}
-	body := lo.FromPtr(b.Body)
-	if written != nil {
-		body = *written
-	}
-	view.Warnings = emailrender.Lint(lo.FromPtr(b.Subject), body, brand).Warnings
+	view.Warnings = emailrender.Lint(lo.FromPtr(b.Subject), lo.FromPtr(b.Body), brand).Warnings
 	return view, nil
 }

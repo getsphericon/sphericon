@@ -1257,8 +1257,6 @@ func (s LintCode) Validate() error {
 		return nil
 	case "off_brand_font":
 		return nil
-	case "unknown_construct":
-		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

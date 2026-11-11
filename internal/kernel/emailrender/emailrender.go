@@ -65,9 +65,8 @@ type Email struct {
 
 // RenderEmail renders subject + HTML body for one recipient: Liquid merge tags
 // first (so a {% if %} can change the markup per recipient; the subject is plain text
-// and unescaped, body values are HTML-escaped), then the whole rendered body is
-// sanitized again (a variable can carry markup or a URL the save-time pass never saw),
-// then the text part is derived from that HTML (before any tracking is layered on). A non-nil error means
+// and unescaped, body values are HTML-escaped), then the text part is derived from that
+// HTML (before any tracking is layered on). A non-nil error means
 // the Liquid merge tags failed to render — the caller must not send that message
 // (sending the raw template to a recipient is worse than not sending).
 func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
@@ -75,12 +74,10 @@ func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
 	if err != nil {
 		return Email{}, err
 	}
-	clean := sanitizeRendered(rendered)
-	return Email{Subject: renderedSubject, HTML: clean, Text: HTMLToText(clean)}, nil
+	return Email{Subject: renderedSubject, HTML: rendered, Text: HTMLToText(rendered)}, nil
 }
 
-// renderBoth runs Liquid over the subject (plain text) and the body (HTML-escaped values),
-// before any sanitizing.
+// renderBoth runs Liquid over the subject (plain text) and the body (HTML-escaped values).
 func renderBoth(subject, body string, bindings map[string]any) (renderedSubject, renderedBody string, err error) {
 	renderedSubject, err = Render(subject, bindings)
 	if err != nil {
@@ -232,11 +229,10 @@ func dropHidden(n *html.Node) {
 	}
 }
 
-// PrepareFields is what every save path calls (site API, external API and MCP all reach
-// it through the broadcasts and templates modules): it refuses content that cannot render
-// (Lint) and returns the body to store, sanitized (SanitizeHTML). A nil field is not
-// provided, so it is not checked; a nil body is returned as nil.
-func PrepareFields(subject, body *string) (*string, error) {
+// CheckFields is what every save path calls (site API, external API and MCP all reach it through
+// the broadcasts and templates modules): it refuses content that cannot render (Lint). The body is
+// stored as it was written (ADR 0118). A nil field is not provided, so it is not checked.
+func CheckFields(subject, body *string) error {
 	var s, b string
 	if subject != nil {
 		s = *subject
@@ -244,12 +240,5 @@ func PrepareFields(subject, body *string) (*string, error) {
 	if body != nil {
 		b = *body
 	}
-	if err := Lint(s, b, nil).Error; err != nil {
-		return nil, err
-	}
-	if body == nil {
-		return nil, nil
-	}
-	clean := SanitizeHTML(b)
-	return &clean, nil
+	return Lint(s, b, nil).Error
 }

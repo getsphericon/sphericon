@@ -29,8 +29,6 @@ const (
 	CodeOffBrandColor Code = "off_brand_color"
 	// CodeOffBrandFont: a font is not one of the Brand kit's.
 	CodeOffBrandFont Code = "off_brand_font"
-	// CodeUnknownConstruct: an element the sanitizer removes on save.
-	CodeUnknownConstruct Code = "unknown_construct"
 )
 
 // Finding is one result of Lint. Message is fixed text of the server; Element and Detail quote
@@ -72,10 +70,8 @@ const maxWarnings = 50
 // Lint is the one lint of a message (ADR 0040), over its rendered HTML: the save paths and
 // the send planner use its Error, the editor's responses and the MCP tool email_lint return its
 // Warnings too. Error is a Liquid syntax error or HTML that does not parse; the warnings are a
-// missing image description, low contrast, a color or font outside the Brand kit, and an
-// element the sanitizer removes. It runs on the message as the author wrote it, before
-// SanitizeHTML (sanitizing would repair what it should refuse and hide what it should name),
-// and with no recipient data: unbound merge tags render empty.
+// missing image description, low contrast, and a color or font outside the Brand kit. It runs on
+// the message as the author wrote it, with no recipient data: unbound merge tags render empty.
 //
 // Message weight is deliberately not checked: no first-party source gives a size at which a mail
 // client clips or penalizes a message (the only figure found is Beefree's own 80 KB setting).
@@ -115,14 +111,6 @@ func (l *linter) add(f Finding) {
 	l.found = append(l.found, f)
 }
 
-var knownElements = func() map[string]bool {
-	m := map[string]bool{"style": true}
-	for _, name := range slices.Concat(emailElements, vmlElements) {
-		m[name] = true
-	}
-	return m
-}()
-
 func (l *linter) walk(n *html.Node) {
 	if n.Type == html.ElementNode {
 		l.element(n)
@@ -134,9 +122,6 @@ func (l *linter) walk(n *html.Node) {
 
 func (l *linter) element(n *html.Node) {
 	el := describe(n)
-	if !knownElements[n.Data] {
-		l.add(Finding{Code: CodeUnknownConstruct, Message: "this element is removed when the message is saved", Element: el})
-	}
 	if n.Data == "img" && !hasAttr(n, "alt") {
 		l.add(Finding{Code: CodeMissingAlt, Message: "this image has no alt attribute", Element: el})
 	}

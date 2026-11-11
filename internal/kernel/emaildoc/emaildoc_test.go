@@ -236,11 +236,6 @@ func TestValidationGivesReasons(t *testing.T) {
 			[]string{"src", "absolute URL"},
 		},
 		{
-			"hostile style",
-			doc(node{"type": "paragraph", "attrs": node{"style": "background:url(javascript:alert(1))"}, "content": []any{text("x")}}),
-			[]string{"style"},
-		},
-		{
 			"text straight in a list item",
 			doc(node{"type": "bulletList", "content": []any{node{"type": "listItem", "content": []any{text("x")}}}}),
 			[]string{"does not fit the editor's schema"},

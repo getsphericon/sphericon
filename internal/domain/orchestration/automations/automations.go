@@ -81,7 +81,7 @@ var (
 )
 
 // Encode serializes steps into the stored definition, dropping the fields that do
-// not belong to each step's type, trimming tag names and sanitizing an email step's body.
+// not belong to each step's type and trimming tag names.
 func Encode(steps []automationstep.Step) (string, error) {
 	stored := make([]automationstep.Step, 0, len(steps))
 	for i := range steps {
@@ -106,7 +106,7 @@ func Encode(steps []automationstep.Step) (string, error) {
 			}
 			stored = append(stored, sms)
 		default:
-			email := automationstep.Step{Type: automationstep.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
+			email := automationstep.Step{Type: automationstep.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: s.Body}
 			if len(s.Doc) > 0 {
 				email.Doc, email.EditorVersion = s.Doc, s.EditorVersion
 			}

@@ -32,7 +32,7 @@ func (v *Views) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Save
 	if err != nil {
 		return Saved{}, err
 	}
-	return v.saved(ctx, s, tpl, in.Body)
+	return v.saved(ctx, s, tpl)
 }
 
 // Update applies the given fields (Module.Update) and returns the Template with the lint warnings
@@ -42,18 +42,13 @@ func (v *Views) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateIn
 	if err != nil {
 		return Saved{}, err
 	}
-	return v.saved(ctx, s, tpl, in.Body.Ptr())
+	return v.saved(ctx, s, tpl)
 }
 
-// saved lints what a save stored: the body as the write gave it, before the sanitizer, so a
-// construct the save removed is still named; otherwise the stored body (a document's rendered HTML,
-// or a write of the subject alone). A message that cannot render was refused by the save.
-func (v *Views) saved(ctx context.Context, s *ent.Scoped, tpl *ent.EmailTemplate, written *string) (Saved, error) {
-	body := tpl.Body
-	if written != nil {
-		body = *written
-	}
-	report, err := v.m.lint(ctx, s, tpl.Subject, body)
+// saved lints what a save stored: the body as it was written, or a document's rendered HTML. A
+// message that cannot render was refused by the save.
+func (v *Views) saved(ctx context.Context, s *ent.Scoped, tpl *ent.EmailTemplate) (Saved, error) {
+	report, err := v.m.lint(ctx, s, tpl.Subject, tpl.Body)
 	if err != nil {
 		return Saved{}, err
 	}

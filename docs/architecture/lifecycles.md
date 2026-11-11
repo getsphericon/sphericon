@@ -49,7 +49,7 @@ decoding and whether a definition sends email. Publish, Needs attention and live
 share that interpretation: an empty stored string means no Steps; damaged JSON returns an error,
 so a removal cannot treat an unreadable definition as unused. The reader chooses the version:
 dependencies use live, an Enrollment uses its pinned version. `internal/domain/orchestration/automations` keeps
-preparation for writing (normalization, HTML sanitization, validation and secret sealing), masked
+preparation for writing (normalization, validation and secret sealing), masked
 API views and the version lifecycle. The shared reader neither queries nor executes Steps.
 
 ## Workspace lock
