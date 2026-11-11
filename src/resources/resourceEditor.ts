@@ -1,7 +1,7 @@
 import type { EditorAdapter, EditorOperation, EditorReceipt } from '../editing/editorSession.ts'
 import type { ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
 
-export interface ResourcePath {
+interface ResourcePath {
   workspaceId: string
   id: string
 }
