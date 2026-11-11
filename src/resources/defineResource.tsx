@@ -265,6 +265,7 @@ export function defineResource<
       subject: { path, resource: loaded },
       editor: {
         read: () => form.getValues(),
+        // A changed field's error goes with its old value (clearInputErrorOnChange).
         write: (content) => {
           form.setValues(content)
         },

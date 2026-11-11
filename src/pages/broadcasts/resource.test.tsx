@@ -396,6 +396,23 @@ test('saving a broadcast written in the editor sends its document and no body', 
     ])
 })
 
+test('a broadcast written in the editor opens clean: Send now is offered, and again after a Save', async () => {
+  const written = broadcast('draft', { body: '<p>Hello there</p>', doc: DOC })
+  serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() => HttpResponse.json(written)),
+    handleSiteBroadcastsUpdate(() => HttpResponse.json(written)),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
+  await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeEnabled()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('Broadcast updated')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeEnabled()
+})
+
 test('a broadcast with no document opens as editable source', async () => {
   serve('draft')
   worker.use(

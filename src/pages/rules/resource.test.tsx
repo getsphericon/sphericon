@@ -397,6 +397,28 @@ test('Publish and Revert wait while Save is pending', async () => {
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
 })
 
+test('Revert clears the field errors of the content it replaces', async () => {
+  serveCatalogue()
+  worker.use(
+    handleSiteRulesGet({ body: EDITED }),
+    handleSiteRulesRevert(() => HttpResponse.json({ ...EDITED, draft: null })),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  await screen.getByLabelText('Name', { exact: false }).fill('')
+  await screen.getByLabelText('Tag').click()
+  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Revert' }).click()
+  await screen
+    .getByRole('dialog', { name: 'Revert without saving?' })
+    .getByRole('button', { name: 'Revert' })
+    .click()
+
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('live')
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Tag signups')
+  await expect.element(screen.getByText('This field is required')).not.toBeInTheDocument()
+})
+
 test('Revert over unsaved edits asks first, and keeps them when the person stays', async () => {
   const reverted: string[] = []
   serveCatalogue()

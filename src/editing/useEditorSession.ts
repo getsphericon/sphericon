@@ -107,10 +107,11 @@ export function useEditorSession<
   // one is pending, or its guard refuses), else as `save` does.
   const run = useCallback(
     async (type: TOperation, input?: EditorOperationInput): Promise<EditorOutcome> => {
-      actor.send(operationEvent(type, input))
-      if (!actor.getSnapshot().matches('operating')) {
+      const event = operationEvent(type, input)
+      if (!actor.getSnapshot().can(event)) {
         return 'busy'
       }
+      actor.send(event)
       return settle()
     },
     [actor, operationEvent, settle],
