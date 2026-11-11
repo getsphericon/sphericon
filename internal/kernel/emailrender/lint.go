@@ -226,29 +226,9 @@ func inherited(n *html.Node, prop string, legacy func(*html.Node) string) (strin
 	return "", true
 }
 
-// declared parses the element's inline style into property -> value (lower-case property), with
-// tdewolff/parse's CSS parser, which keeps a value that holds commas or parentheses whole.
+// declared is the element's inline style as property -> value (see parseStyle).
 func declared(n *html.Node) map[string]string {
-	out := map[string]string{}
-	style := attr(n, "style")
-	if style == "" {
-		return out
-	}
-	p := css.NewParser(parse.NewInputString(style), true)
-	for {
-		gt, _, data := p.Next()
-		switch gt {
-		case css.ErrorGrammar:
-			return out
-		case css.DeclarationGrammar:
-			var value strings.Builder
-			for _, t := range p.Values() {
-				value.Write(t.Data)
-			}
-			out[strings.ToLower(string(data))] = strings.TrimSpace(value.String())
-		default:
-		}
-	}
+	return parseStyle(attr(n, "style"))
 }
 
 // neutral colors are allowed in any message: white and black belong to no brand.
