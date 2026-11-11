@@ -1196,7 +1196,7 @@ A User's own immediate and irreversible removal of themself: their Memberships, 
 identities, Second factor, Recovery codes and Passkeys go, every session ends, and the address can sign up
 again as a new User. Refused while the User is the only Owner of any Workspace. Invitations the
 User sent stay valid without a sender; Audit entries that name the User keep the id and the name
-snapshot. It never touches a Contact or a Staff member (a Contact has its own Erasure).
+snapshot, and no entry or accepted Invitation keeps their address. It never touches a Contact or a Staff member (a Contact has its own Erasure).
 _Avoid_: Account deletion, closing an account, deactivation, Erasure (that is a Contact's)
 
 **Verified email**:

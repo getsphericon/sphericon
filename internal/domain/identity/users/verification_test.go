@@ -102,3 +102,26 @@ func TestAnInvitationLinkIsAcceptedByItsToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, joined)
 }
+
+// An accepted Invitation keeps no address, and no Audit entry of the offer names one: what is kept
+// of the invitee is the name they gave (ADR 0050).
+func TestAnAcceptedInvitationKeepsNoAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
+	require.NoError(t, err)
+
+	require.NoError(t, acc.AcceptInvitation(t.Context(), inv, users.InvitationAcceptance{SessionEmail: fixtures.OutsiderOscarEmail}))
+
+	accepted := env.DB.Invitation.GetX(t.Context(), inv.ID)
+	assert.NotNil(t, accepted.AcceptedAt)
+	assert.Nil(t, accepted.Email)
+	entries := env.QueuedEvents(t, events.NameAuditEntry)
+	require.NotEmpty(t, entries, "the offer and its acceptance are audited")
+	for _, e := range entries {
+		entry, ok := e.(*events.AuditEntry)
+		require.True(t, ok)
+		assert.NotContains(t, entry.TargetName, "@", entry.Action)
+	}
+}

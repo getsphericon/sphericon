@@ -66,6 +66,12 @@ func (_u *InvitationUpdate) SetNillableEmail(v *string) *InvitationUpdate {
 	return _u
 }
 
+// ClearEmail clears the value of the "email" field.
+func (_u *InvitationUpdate) ClearEmail() *InvitationUpdate {
+	_u.mutation.ClearEmail()
+	return _u
+}
+
 // SetRole sets the "role" field.
 func (_u *InvitationUpdate) SetRole(v invitation.Role) *InvitationUpdate {
 	_u.mutation.SetRole(v)
@@ -308,6 +314,9 @@ func (_u *InvitationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(invitation.FieldEmail, field.TypeString, value)
 	}
+	if _u.mutation.EmailCleared() {
+		_spec.ClearField(invitation.FieldEmail, field.TypeString)
+	}
 	if value, ok := _u.mutation.Role(); ok {
 		_spec.SetField(invitation.FieldRole, field.TypeEnum, value)
 	}
@@ -479,6 +488,12 @@ func (_u *InvitationUpdateOne) SetNillableEmail(v *string) *InvitationUpdateOne 
 	if v != nil {
 		_u.SetEmail(*v)
 	}
+	return _u
+}
+
+// ClearEmail clears the value of the "email" field.
+func (_u *InvitationUpdateOne) ClearEmail() *InvitationUpdateOne {
+	_u.mutation.ClearEmail()
 	return _u
 }
 
@@ -753,6 +768,9 @@ func (_u *InvitationUpdateOne) sqlSave(ctx context.Context) (_node *Invitation, 
 	}
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(invitation.FieldEmail, field.TypeString, value)
+	}
+	if _u.mutation.EmailCleared() {
+		_spec.ClearField(invitation.FieldEmail, field.TypeString)
 	}
 	if value, ok := _u.mutation.Role(); ok {
 		_spec.SetField(invitation.FieldRole, field.TypeEnum, value)

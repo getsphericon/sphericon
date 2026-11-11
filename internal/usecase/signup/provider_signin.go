@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
@@ -198,7 +200,7 @@ func (u *UseCase) signInWithIdentity(ctx context.Context, in users.ProviderLogin
 	// links nothing, before the decision can. A provider whose proof of the email is not
 	// accepted is left to the decision (a Linked identity may still sign in, then is held to
 	// the address below).
-	if in.TrustFailure == "" && !strings.EqualFold(strings.TrimSpace(in.Email), in.Invitation.Email) {
+	if in.TrustFailure == "" && !strings.EqualFold(strings.TrimSpace(in.Email), lo.FromPtr(in.Invitation.Email)) {
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvitationEmailMismatch}
 	}
 	in.SurveyDue = false
@@ -210,7 +212,7 @@ func (u *UseCase) signInWithIdentity(ctx context.Context, in users.ProviderLogin
 		// The pending sign-up keeps the Invitation, which its completion accepts.
 		return signedIn, nil
 	}
-	if !strings.EqualFold(signedIn.User.Email, in.Invitation.Email) {
+	if !strings.EqualFold(signedIn.User.Email, lo.FromPtr(in.Invitation.Email)) {
 		// A Linked identity of an account with another address: nothing was created.
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvitationEmailMismatch}
 	}

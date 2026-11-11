@@ -1358,7 +1358,7 @@ func (c *ConverterImpl) InvitationToLookupResult(source *ent.Invitation) *site.S
 		if pString != nil {
 			siteapiSiteInvitationLookupResult.WorkspaceName = *pString
 		}
-		siteapiSiteInvitationLookupResult.Email = site.EmailAddress((*source).Email)
+		siteapiSiteInvitationLookupResult.Email = pendingEmail((*source).Email)
 		pSiteapiSiteInvitationLookupResult = &siteapiSiteInvitationLookupResult
 	}
 	return pSiteapiSiteInvitationLookupResult
@@ -1367,7 +1367,7 @@ func (c *ConverterImpl) InvitationToResource(source *ent.Invitation) site.SiteIn
 	var siteapiSiteInvitationResource site.SiteInvitationResource
 	if source != nil {
 		siteapiSiteInvitationResource.ID = site.EntityId((*source).ID)
-		siteapiSiteInvitationResource.Email = site.EmailAddress((*source).Email)
+		siteapiSiteInvitationResource.Email = pendingEmail((*source).Email)
 		siteapiSiteInvitationResource.Role = c.InvitableRoleToResource((*source).Role)
 		siteapiSiteInvitationResource.ExpiresAt = timestamp((*source).ExpiresAt)
 		siteapiSiteInvitationResource.InvitedByEmail = inviterEmail((*source))

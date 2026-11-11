@@ -1382,7 +1382,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.Invitation().Create()
-				b.SetEmail(src.Email)
+				if src.Email != nil {
+					b.SetEmail(*src.Email)
+				}
 				b.SetRole(src.Role)
 				b.SetTokenHash(src.TokenHash)
 				if src.InvitedBy != nil {

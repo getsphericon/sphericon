@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/auditlogretention"
+	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -82,4 +83,23 @@ func TestPruneSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 	require.NoError(t, err)
 	assert.Zero(t, n)
 	assert.Equal(t, before, countEntries(t, env, fixtures.BluthID))
+}
+
+// An entry older than the client window loses the client's address and user agent and keeps the
+// rest; a younger one keeps them. It needs no license: the entries were written under one.
+func TestForgetClientsClearsTheAddressOfEntriesOlderThanTheWindow(t *testing.T) {
+	env := testhelper.Setup(t)
+	// 2026-06-01 less 90 days is 2026-03-03: the February and March entries are older.
+	now := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+
+	n, err := auditlogretention.New(env.DB, nil, func() time.Time { return now }).ForgetClients(t.Context())
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, n)
+	log := env.DB.Scoped(fixtures.GlobexID).AuditEntry()
+	old := log.Query().Where(auditentry.ID(fixtures.GlobexAuditIntegrationUpdateID)).OnlyX(t.Context())
+	assert.Nil(t, old.IP)
+	assert.Equal(t, "req-a", *old.RequestID, "the rest of the entry stays")
+	young := log.Query().Where(auditentry.ID(fixtures.GlobexAuditIntegrationDeleteID)).OnlyX(t.Context())
+	assert.Equal(t, "10.0.0.1", *young.IP)
 }

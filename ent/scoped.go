@@ -2052,6 +2052,42 @@ func (u *AuditEntryScopedUpsert) UpdateUpdatedAt() *AuditEntryScopedUpsert {
 	return u
 }
 
+// SetIP sets the "ip" field.
+func (u *AuditEntryScopedUpsert) SetIP(v string) *AuditEntryScopedUpsert {
+	u.u.Set(auditentry.FieldIP, v)
+	return u
+}
+
+// UpdateIP sets the "ip" field to the value that was provided on create.
+func (u *AuditEntryScopedUpsert) UpdateIP() *AuditEntryScopedUpsert {
+	u.u.SetExcluded(auditentry.FieldIP)
+	return u
+}
+
+// ClearIP clears the value of the "ip" field.
+func (u *AuditEntryScopedUpsert) ClearIP() *AuditEntryScopedUpsert {
+	u.u.SetNull(auditentry.FieldIP)
+	return u
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (u *AuditEntryScopedUpsert) SetUserAgent(v string) *AuditEntryScopedUpsert {
+	u.u.Set(auditentry.FieldUserAgent, v)
+	return u
+}
+
+// UpdateUserAgent sets the "user_agent" field to the value that was provided on create.
+func (u *AuditEntryScopedUpsert) UpdateUserAgent() *AuditEntryScopedUpsert {
+	u.u.SetExcluded(auditentry.FieldUserAgent)
+	return u
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (u *AuditEntryScopedUpsert) ClearUserAgent() *AuditEntryScopedUpsert {
+	u.u.SetNull(auditentry.FieldUserAgent)
+	return u
+}
+
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
 func (t *AuditEntryScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
@@ -2204,6 +2240,42 @@ func (x *AuditEntryScopedUpdateOne) SetUpdatedAt(v time.Time) *AuditEntryScopedU
 	return x
 }
 
+// SetIP sets the "ip" field.
+func (x *AuditEntryScopedUpdateOne) SetIP(v string) *AuditEntryScopedUpdateOne {
+	x.b.SetIP(v)
+	return x
+}
+
+// SetNillableIP sets the "ip" field if the given value is not nil.
+func (x *AuditEntryScopedUpdateOne) SetNillableIP(v *string) *AuditEntryScopedUpdateOne {
+	x.b.SetNillableIP(v)
+	return x
+}
+
+// ClearIP clears the value of the "ip" field.
+func (x *AuditEntryScopedUpdateOne) ClearIP() *AuditEntryScopedUpdateOne {
+	x.b.ClearIP()
+	return x
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (x *AuditEntryScopedUpdateOne) SetUserAgent(v string) *AuditEntryScopedUpdateOne {
+	x.b.SetUserAgent(v)
+	return x
+}
+
+// SetNillableUserAgent sets the "user_agent" field if the given value is not nil.
+func (x *AuditEntryScopedUpdateOne) SetNillableUserAgent(v *string) *AuditEntryScopedUpdateOne {
+	x.b.SetNillableUserAgent(v)
+	return x
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (x *AuditEntryScopedUpdateOne) ClearUserAgent() *AuditEntryScopedUpdateOne {
+	x.b.ClearUserAgent()
+	return x
+}
+
 func (x *AuditEntryScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -2263,6 +2335,42 @@ func (x *AuditEntryScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Aud
 // SetUpdatedAt sets the "updated_at" field.
 func (x *AuditEntryScopedUpdate) SetUpdatedAt(v time.Time) *AuditEntryScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetIP sets the "ip" field.
+func (x *AuditEntryScopedUpdate) SetIP(v string) *AuditEntryScopedUpdate {
+	x.b.SetIP(v)
+	return x
+}
+
+// SetNillableIP sets the "ip" field if the given value is not nil.
+func (x *AuditEntryScopedUpdate) SetNillableIP(v *string) *AuditEntryScopedUpdate {
+	x.b.SetNillableIP(v)
+	return x
+}
+
+// ClearIP clears the value of the "ip" field.
+func (x *AuditEntryScopedUpdate) ClearIP() *AuditEntryScopedUpdate {
+	x.b.ClearIP()
+	return x
+}
+
+// SetUserAgent sets the "user_agent" field.
+func (x *AuditEntryScopedUpdate) SetUserAgent(v string) *AuditEntryScopedUpdate {
+	x.b.SetUserAgent(v)
+	return x
+}
+
+// SetNillableUserAgent sets the "user_agent" field if the given value is not nil.
+func (x *AuditEntryScopedUpdate) SetNillableUserAgent(v *string) *AuditEntryScopedUpdate {
+	x.b.SetNillableUserAgent(v)
+	return x
+}
+
+// ClearUserAgent clears the value of the "user_agent" field.
+func (x *AuditEntryScopedUpdate) ClearUserAgent() *AuditEntryScopedUpdate {
+	x.b.ClearUserAgent()
 	return x
 }
 
@@ -20606,6 +20714,12 @@ func (x *InvitationScopedCreate) SetEmail(v string) *InvitationScopedCreate {
 	return x
 }
 
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (x *InvitationScopedCreate) SetNillableEmail(v *string) *InvitationScopedCreate {
+	x.b.SetNillableEmail(v)
+	return x
+}
+
 // SetRole sets the "role" field.
 func (x *InvitationScopedCreate) SetRole(v invitation.Role) *InvitationScopedCreate {
 	x.b.SetRole(v)
@@ -20773,6 +20887,12 @@ func (u *InvitationScopedUpsert) SetEmail(v string) *InvitationScopedUpsert {
 // UpdateEmail sets the "email" field to the value that was provided on create.
 func (u *InvitationScopedUpsert) UpdateEmail() *InvitationScopedUpsert {
 	u.u.SetExcluded(invitation.FieldEmail)
+	return u
+}
+
+// ClearEmail clears the value of the "email" field.
+func (u *InvitationScopedUpsert) ClearEmail() *InvitationScopedUpsert {
+	u.u.SetNull(invitation.FieldEmail)
 	return u
 }
 
@@ -21012,6 +21132,12 @@ func (x *InvitationScopedUpdateOne) SetNillableEmail(v *string) *InvitationScope
 	return x
 }
 
+// ClearEmail clears the value of the "email" field.
+func (x *InvitationScopedUpdateOne) ClearEmail() *InvitationScopedUpdateOne {
+	x.b.ClearEmail()
+	return x
+}
+
 // SetRole sets the "role" field.
 func (x *InvitationScopedUpdateOne) SetRole(v invitation.Role) *InvitationScopedUpdateOne {
 	x.b.SetRole(v)
@@ -21209,6 +21335,12 @@ func (x *InvitationScopedUpdate) SetEmail(v string) *InvitationScopedUpdate {
 // SetNillableEmail sets the "email" field if the given value is not nil.
 func (x *InvitationScopedUpdate) SetNillableEmail(v *string) *InvitationScopedUpdate {
 	x.b.SetNillableEmail(v)
+	return x
+}
+
+// ClearEmail clears the value of the "email" field.
+func (x *InvitationScopedUpdate) ClearEmail() *InvitationScopedUpdate {
+	x.b.ClearEmail()
 	return x
 }
 

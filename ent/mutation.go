@@ -29067,7 +29067,7 @@ func (m *InvitationMutation) Email() (r string, exists bool) {
 // OldEmail returns the old "email" field's value of the Invitation entity.
 // If the Invitation object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InvitationMutation) OldEmail(ctx context.Context) (v string, err error) {
+func (m *InvitationMutation) OldEmail(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldEmail is only allowed on UpdateOne operations")
 	}
@@ -29081,9 +29081,22 @@ func (m *InvitationMutation) OldEmail(ctx context.Context) (v string, err error)
 	return oldValue.Email, nil
 }
 
+// ClearEmail clears the value of the "email" field.
+func (m *InvitationMutation) ClearEmail() {
+	m.email = nil
+	m.clearedFields[invitation.FieldEmail] = struct{}{}
+}
+
+// EmailCleared returns if the "email" field was cleared in this mutation.
+func (m *InvitationMutation) EmailCleared() bool {
+	_, ok := m.clearedFields[invitation.FieldEmail]
+	return ok
+}
+
 // ResetEmail resets all changes to the "email" field.
 func (m *InvitationMutation) ResetEmail() {
 	m.email = nil
+	delete(m.clearedFields, invitation.FieldEmail)
 }
 
 // SetRole sets the "role" field.
@@ -29633,6 +29646,9 @@ func (m *InvitationMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *InvitationMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(invitation.FieldEmail) {
+		fields = append(fields, invitation.FieldEmail)
+	}
 	if m.FieldCleared(invitation.FieldInvitedBy) {
 		fields = append(fields, invitation.FieldInvitedBy)
 	}
@@ -29653,6 +29669,9 @@ func (m *InvitationMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *InvitationMutation) ClearField(name string) error {
 	switch name {
+	case invitation.FieldEmail:
+		m.ClearEmail()
+		return nil
 	case invitation.FieldInvitedBy:
 		m.ClearInvitedBy()
 		return nil
