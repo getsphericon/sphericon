@@ -99,8 +99,11 @@ run = '''
 set -euo pipefail
 # A server answering at PGHOST:PGPORT is used as is: that is the no-op case, an external
 # Postgres (SPHERICON_PG_*), and what makes concurrent callers safe. Otherwise the primary
-# checkout's daemon is started (pitchfork treats a start of a running or starting daemon as
-# done), and we wait for the port.
+# checkout's daemon is started, and we wait for the port ourselves. A pitchfork 2.34 supervisor
+# makes a start that finds the daemon still in its ready check (the preset's pg_isready) wait for
+# that check and return its result (jdx/pitchfork#1108); an older one answers "already running"
+# at once. The supervisor is shared by every project and outlives an upgrade of the CLI, so an
+# older one may still be serving: the loop stays until no such supervisor can be running.
 if ! nc -z "$PGHOST" "$PGPORT" 2>/dev/null; then
   case "$PGHOST" in
     127.0.0.1|localhost) ;;
@@ -815,9 +818,29 @@ for f in openapi/*.openapi.json; do
 done
 '''
 
+# osv-scanner is given the files git lists (tracked, and untracked but not ignored), not
+# `--recursive .`: it applies every .gitignore from / down, past the repository's boundary
+# (google/osv-scalibr#902), so in a linked worktree the primary checkout's `.claude/worktrees/`
+# ignores the whole tree and it finds no package sources. git already left the ignored files out,
+# hence --no-ignore. osv-scanner picks the lockfiles from the list itself, so a new one (another
+# go.mod, a package-lock.json) is scanned without a change here. Back to `--recursive .` once
+# that issue is fixed.
 ["check:osv"]
-description = "osv-scanner over go.mod and pnpm-lock.yaml (nightly, like govulncheck: its answer changes with the advisory database, not with the diff); the advisories that stand are in osv-scanner.toml"
-run = "osv-scanner scan source --recursive --config osv-scanner.toml ."
+description = "osv-scanner over the lockfiles among the files git lists, today go.mod, tools/analyzers/go.mod and pnpm-lock.yaml (nightly, like govulncheck: its answer changes with the advisory database, not with the diff); the advisories that stand are in osv-scanner.toml"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+files=()
+n=0
+while IFS= read -r -d '' f; do
+  # A tracked file deleted in the working tree is still listed, and osv-scanner fails on it.
+  if [ -e "$f" ]; then files+=("$f"); n=$((n + 1)); fi
+done < <(git ls-files -z --cached --others --exclude-standard)
+# The count, not the array: bash 3.2 (macOS) fails on an empty "${files[@]}" under set -u.
+[ "$n" -gt 0 ] || { echo "check:osv: git listed no files" >&2; exit 1; }
+# It prints a "Scanning dir" line for each path it is given; pipefail keeps its exit status.
+osv-scanner scan source --no-ignore --config osv-scanner.toml "${files[@]}" | grep -v '^Scanning dir '
+'''
 
 ["check:contract"]
 description = "Schemathesis fuzzes the external API against openapi/external.openapi.json: rebuilds the dedicated e2e DB (never the dev one: the fuzzer writes and deletes), seeds it, boots the server on it as the `contract` daemon (nightly: a minute or two)"
