@@ -19,6 +19,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -332,6 +333,10 @@ func (t *Tracker) Rewrite(body string, messageID int64, unsub linktarget.Unsubsc
 	return instrumented + footer, nil
 }
 
+// rewriteLinks routes the href of every <a> start tag through the click tracker. Only a tag whose
+// href it changes is serialized again; every other token goes out as its raw bytes, so the body
+// stays as it was written (ADR 0118): a token serialized again would escape the raw text of
+// <style> and <script> ('Arial' to &#39;Arial&#39;) and turn entities into characters.
 func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 	z := html.NewTokenizer(strings.NewReader(body))
 	var sb strings.Builder
@@ -343,8 +348,14 @@ func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 			}
 			return "", z.Err()
 		}
+		if tt != html.StartTagToken {
+			sb.Write(z.Raw())
+			continue
+		}
+		raw := string(z.Raw())
 		tok := z.Token()
-		if tt == html.StartTagToken && tok.Data == "a" {
+		tracked := false
+		if tok.DataAtom == atom.A {
 			for i, a := range tok.Attr {
 				if a.Key == "href" && Trackable(a.Val) {
 					link, err := t.ClickURL(messageID, a.Val)
@@ -352,10 +363,15 @@ func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 						return "", err
 					}
 					tok.Attr[i].Val = link
+					tracked = true
 				}
 			}
 		}
-		sb.WriteString(tok.String())
+		if tracked {
+			sb.WriteString(tok.String())
+		} else {
+			sb.WriteString(raw)
+		}
 	}
 }
 

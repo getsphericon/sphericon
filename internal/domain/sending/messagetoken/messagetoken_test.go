@@ -127,6 +127,35 @@ func TestRewriteWrapsLinksAndAddsPixelAndFooter(t *testing.T) {
 	assert.Contains(t, out, "Acme Inc, 123 Main St, Springfield")
 }
 
+// The click tracker changes the href of a tracked link and nothing else: every other byte of the
+// body goes out as it was written (ADR 0118). Re-serializing the markup would escape the raw text
+// of <style> and <script> ('Arial' to &#39;Arial&#39;, a>b to a&gt;b) and turn entities into
+// characters.
+func TestInstrumentKeepsTheBodyAsWrittenAroundATrackedLink(t *testing.T) {
+	tr := messagetoken.New("secret", "https://app.test", time.Now)
+	before := `<!DOCTYPE html><HTML><head><style>body{font-family:'Arial',sans-serif} td>p{margin:0}</style>` +
+		`<script>if (a<b && c) {}</script></head><body><!--[if mso]><table><tr><td><![endif]-->` +
+		`<p class='x'>Hi&nbsp;there &amp; &#169; &#39;q&#39;<br/></p>`
+	link := `<A HREF="https://dest.test/p?a=1&amp;b=2" style="color:red">click</A>`
+	after := `<a href="mailto:a@b.test">mail</a><!--[if mso]></td></tr></table><![endif]--></body></HTML>`
+
+	out, err := tr.Instrument(before+link+after, 7)
+	require.NoError(t, err)
+
+	require.True(t, strings.HasPrefix(out, before), out)
+	rest := strings.TrimPrefix(out, before)
+	tag, rest, found := strings.Cut(rest, ">")
+	require.True(t, found, out)
+	assert.True(t, strings.HasPrefix(rest, `click</A>`+after+`<img src="https://app.test/e/o/`), out)
+	assert.Contains(t, tag, `style="color:red"`)
+	_, clickToken, found := strings.Cut(tag, "https://app.test/e/c/")
+	require.True(t, found, tag)
+	clickToken, _, _ = strings.Cut(clickToken, `"`)
+	_, dest, err := tr.DecodeClick(clickToken)
+	require.NoError(t, err)
+	assert.Equal(t, "https://dest.test/p?a=1&b=2", dest)
+}
+
 func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
 	tr := messagetoken.New("secret", "https://app.test", time.Now)
 
