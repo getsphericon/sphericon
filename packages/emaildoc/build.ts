@@ -128,11 +128,20 @@ const resolveImageChunk: Plugin = {
   },
 }
 
-// The shims run before any module of the bundle, so they go in as a classic script before it.
-const shims = transformSync(readFileSync(join(import.meta.dirname, 'src/shims.ts'), 'utf8'), {
-  loader: 'ts',
+// The shims run before any module of the bundle, so they go in as a classic script before it,
+// with the polyfills they take from npm.
+const shimsBuild = await build({
+  entryPoints: [join(import.meta.dirname, 'src/shims.ts')],
+  bundle: true,
+  write: false,
   format: 'iife',
-}).code
+  platform: 'browser',
+  target: 'es2020',
+  minify: true,
+  legalComments: 'none',
+  logLevel: 'warning',
+})
+const shims = shimsBuild.outputFiles[0]?.text ?? ''
 
 const outdir = join(import.meta.dirname, 'dist')
 mkdirSync(outdir, { recursive: true })
