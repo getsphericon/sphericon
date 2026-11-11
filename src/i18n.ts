@@ -21,12 +21,12 @@ export function resolveLocale(): Locale {
   return isLocale(injected) ? injected : 'en'
 }
 
-// The app runs on a DEDICATED i18next instance rather than the global default.
-// @workflowbuilder/sdk calls i18next.init() on the global default at import time,
-// which rebuilds the resource store and wipes our `translation` namespace. Owning
-// our own instance keeps the app's strings independent of the SDK. Components must
-// reach it through the <I18nextProvider> in main.tsx (the SDK subtree is wrapped in
-// its own provider bound back to the global instance it initialises).
+// The app runs on an i18next instance of its own, which components reach through the
+// <I18nextProvider> in App.tsx, the automation builder's subtree included. @workflowbuilder/sdk
+// depends on i18next and react-i18next of its own majors (not as peers), so it initialises and
+// reads its own copies at import time and never this instance. Were the SDK ever to share the
+// app's copies, its strings would be looked up here and miss: the builder test that expects the
+// SDK's "Nodes Library" catches it.
 const i18n = createInstance()
 
 const REGIONAL_FORMAT_CHANGED = 'regionalFormatChanged'

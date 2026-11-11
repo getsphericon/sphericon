@@ -14,10 +14,8 @@ import type {
   WorkflowBuilderPlugin,
   WorkflowBuilderIsValidConnection,
 } from '@workflowbuilder/sdk'
-// easement:disable-next-line symbol -- the builder subtree runs on the SDK's global instance (src/i18n.ts)
-import i18next from 'i18next'
 import { useCallback, useEffect, useMemo } from 'react'
-import { I18nextProvider, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import type { SnapshotFrom } from 'xstate'
 
 import { DraftActions } from '../../components/DraftControls.tsx'
@@ -33,7 +31,6 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
-import { i18n } from '../../i18n.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { stepsToGraph } from './definition.ts'
 import { automationAdapter, editorSession } from './editorSession.ts'
@@ -160,8 +157,7 @@ function EditorReadOnly({ readOnly }: { readOnly: boolean }) {
 // The bar floating over the canvas replaces the SDK's own top bar: the way back, the
 // automation's name, the failed Enrollments, the Save that persists the canvas to the draft, and
 // Publish and Revert (ADR 0065), serialized by the editor session. It sits inside
-// <WorkflowBuilder.Root> to reach the canvas, and under the SDK's i18next
-// instance, which does not hold the app's strings, so it is bound back to the app's instance.
+// <WorkflowBuilder.Root> to reach the canvas.
 function BuilderBar({
   form,
   workspaceId,
@@ -373,58 +369,50 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
         trapFocus={false}
         transitionProps={{ duration: 0 }}
       >
-        {/* The SDK initialises and reads the global i18next instance for its own
-          strings. The app tree runs on a private instance (see main.tsx), so the
-          builder subtree is bound back to the global one here. */}
-        {/* easement:disable-next-line symbol -- the SDK subtree is bound to the global instance on purpose */}
-        <I18nextProvider i18n={i18next}>
-          {/* Children replace the SDK's default layout: its top bar (logo, folder name,
+        {/* Children replace the SDK's default layout: its top bar (logo, folder name,
             language, theme and read-only toggles) is swapped for <BuilderBar />, and
             ThemeSync keeps the canvas theme in step with Mantine's color scheme. */}
-          <WorkflowBuilder.Root
-            key={session.context.content.revision}
-            name={session.context.resource.name}
-            layoutDirection="DOWN"
-            nodeTypes={nodeTypes}
-            initialNodes={session.context.content.value.graph.nodes}
-            initialEdges={session.context.content.value.graph.edges}
-            integration={integration}
-            isValidConnection={isValidConnection}
-            jsonForm={jsonForm}
-            plugins={plugins}
-          >
-            <ThemeSync />
-            <EditorReadOnly readOnly={session.hasTag('readOnly')} />
-            <QuietRestore />
-            <LeaveGuard name={form.values.name} dirty={dirty} />
-            <Box pos="relative" w="100%" h="100dvh">
-              <WorkflowBuilder.Canvas />
-              <I18nextProvider i18n={i18n}>
-                <BuilderBar
-                  form={form}
-                  workspaceId={workspaceId}
-                  session={session}
-                  dirty={dirty}
-                  can={can}
-                  run={run}
-                  onSave={saveCanvas}
-                />
-              </I18nextProvider>
-              <Box pos="absolute" top={88} left={16}>
-                <WorkflowBuilder.Palette />
-              </Box>
-              <Box
-                pos="absolute"
-                top={{ base: 'auto', sm: 88 }}
-                bottom={{ base: 16, sm: 'auto' }}
-                right={16}
-                maw="calc(100% - 32px)"
-              >
-                <WorkflowBuilder.PropertiesPanel />
-              </Box>
+        <WorkflowBuilder.Root
+          key={session.context.content.revision}
+          name={session.context.resource.name}
+          layoutDirection="DOWN"
+          nodeTypes={nodeTypes}
+          initialNodes={session.context.content.value.graph.nodes}
+          initialEdges={session.context.content.value.graph.edges}
+          integration={integration}
+          isValidConnection={isValidConnection}
+          jsonForm={jsonForm}
+          plugins={plugins}
+        >
+          <ThemeSync />
+          <EditorReadOnly readOnly={session.hasTag('readOnly')} />
+          <QuietRestore />
+          <LeaveGuard name={form.values.name} dirty={dirty} />
+          <Box pos="relative" w="100%" h="100dvh">
+            <WorkflowBuilder.Canvas />
+            <BuilderBar
+              form={form}
+              workspaceId={workspaceId}
+              session={session}
+              dirty={dirty}
+              can={can}
+              run={run}
+              onSave={saveCanvas}
+            />
+            <Box pos="absolute" top={88} left={16}>
+              <WorkflowBuilder.Palette />
             </Box>
-          </WorkflowBuilder.Root>
-        </I18nextProvider>
+            <Box
+              pos="absolute"
+              top={{ base: 'auto', sm: 88 }}
+              bottom={{ base: 16, sm: 'auto' }}
+              right={16}
+              maw="calc(100% - 32px)"
+            >
+              <WorkflowBuilder.PropertiesPanel />
+            </Box>
+          </Box>
+        </WorkflowBuilder.Root>
       </Modal>
     </>
   )
