@@ -1,6 +1,10 @@
 package webhook
 
-import "time"
+import (
+	"time"
+
+	"github.com/jpillora/backoff"
+)
 
 // The retry schedule of an outbound call to a third-party hook (ADR 0039): a Webhook delivery,
 // an HTTP step and a Rule's HTTP Action. A receiver that is down for a weekend still gets the
@@ -20,13 +24,15 @@ const (
 	HookSnoozeMax     = 6 * time.Hour
 )
 
+// hookBackoff is the doubling wait between hook attempts. Jitter is off: the library draws it
+// from [Min, d], which would roughly halve the average wait, and HookMaxAttempts counts on the
+// full waits to reach HookRetryHorizon. Only ForAttempt is called, which is pure and safe for
+// concurrent use; the stateful Duration would share one counter between every job.
+var hookBackoff = backoff.Backoff{Min: HookRetryFirstDelay, Max: HookRetryMaxDelay, Factor: 2}
+
 // HookRetryDelay is the wait after the attempt-th failed attempt (1-based).
 func HookRetryDelay(attempt int) time.Duration {
-	delay := HookRetryFirstDelay
-	for i := 1; i < attempt && delay < HookRetryMaxDelay; i++ {
-		delay *= 2
-	}
-	return min(delay, HookRetryMaxDelay)
+	return hookBackoff.ForAttempt(float64(attempt - 1))
 }
 
 // HookMaxAttempts is the MaxAttempts to insert a hook job with: the fewest attempts whose

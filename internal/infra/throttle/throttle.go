@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/jpillora/backoff"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
@@ -51,12 +52,26 @@ const (
 // Rule is the throttle of one Kind (ADR 0025): after Threshold failures within
 // Window the next attempt must wait Base, doubling with every further failure up to
 // Cap, measured from the last failure. A Threshold of 0 disables the Kind: nothing
-// is counted and nothing waits.
+// is counted and nothing waits. A Rule without a Base (a budget) never makes an attempt
+// wait, and one whose Cap is below its Base waits the Base.
 type Rule struct {
 	Threshold int
 	Window    time.Duration
 	Base      time.Duration
 	Cap       time.Duration
+}
+
+// Wait is how long the next attempt must wait, counted from the last failure, when the
+// Window holds the given number of failures.
+func (r Rule) Wait(failures int) time.Duration {
+	// The library substitutes 100 ms for a Min of zero and 10 s for a Max of zero, where
+	// a Rule means no wait and no room to grow.
+	if r.Threshold <= 0 || failures < r.Threshold || r.Base <= 0 {
+		return 0
+	}
+	// No jitter: the wait is the ADR 0025 schedule, the same for every attempt.
+	b := backoff.Backoff{Min: r.Base, Max: max(r.Cap, r.Base), Factor: 2}
+	return b.ForAttempt(float64(failures - r.Threshold))
 }
 
 // ResetRule is the password-reset budget: at most threshold mails per address per
@@ -199,18 +214,10 @@ func (a *Attempts) Delay(ctx context.Context, kind Kind, email string) (time.Dur
 		return 0, err
 	}
 	now := a.now()
-	if row.Failures < rule.Threshold || now.Sub(row.LastAttemptAt) > rule.Window {
+	if now.Sub(row.LastAttemptAt) > rule.Window {
 		return 0, nil
 	}
-	wait := rule.Base
-	for range row.Failures - rule.Threshold {
-		wait *= 2
-		if wait >= rule.Cap {
-			wait = rule.Cap
-			break
-		}
-	}
-	return max(row.LastAttemptAt.Add(wait).Sub(now), 0), nil
+	return max(row.LastAttemptAt.Add(rule.Wait(row.Failures)).Sub(now), 0), nil
 }
 
 // Take grants one slot of a budget Kind (password reset: at most Threshold slots per
