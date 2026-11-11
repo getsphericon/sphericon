@@ -32,8 +32,10 @@ export interface RaceRig<TEvent extends { type: string }> {
 
 // The races every editor session must settle the same way, whatever its adapter. An adapter's test
 // calls this with a rig over its own resource; `start` installs the msw handlers it needs.
+// `operations` is false for an editor with no operation besides Save (a Template's): nothing waits.
 export function editorSessionRaces<TEvent extends { type: string }>(
   start: (options: { refuse: boolean }) => RaceRig<TEvent>,
+  { operations: withOperations = true }: { operations?: boolean } = {},
 ) {
   test('an edit during Save stays current and unsaved after the acknowledgement', async () => {
     const rig = start({ refuse: false })
@@ -75,7 +77,7 @@ export function editorSessionRaces<TEvent extends { type: string }>(
     expect(rig.page.toasts).toEqual(['failed SAVE', 'failed SAVE'])
   })
 
-  test('the other operations wait while Save is pending', async () => {
+  test.runIf(withOperations)('the other operations wait while Save is pending', async () => {
     const rig = start({ refuse: false })
     const allowedBefore = new Set(rig.operations.map((operation) => rig.can(operation)))
     rig.save()

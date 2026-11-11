@@ -1514,6 +1514,8 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "acceptance_pending":
 		return nil
+	case "revision_changed":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -1689,6 +1691,24 @@ func (s RetentionDays) Validate() error {
 		Min:           1,
 		MaxSet:        true,
 		Max:           3650,
+		MinExclusive:  false,
+		MaxExclusive:  false,
+		MultipleOfSet: false,
+		MultipleOf:    0,
+		Pattern:       nil,
+	}).Validate(int64(alias)); err != nil {
+		return errors.Wrap(err, "int")
+	}
+	return nil
+}
+
+func (s Revision) Validate() error {
+	alias := (int)(s)
+	if err := (validate.Int{
+		MinSet:        true,
+		Min:           1,
+		MaxSet:        false,
+		Max:           0,
 		MinExclusive:  false,
 		MaxExclusive:  false,
 		MultipleOfSet: false,
@@ -5410,6 +5430,17 @@ func (s *SiteEmailTemplateResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "warnings",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
 			Error: err,
 		})
 	}
@@ -10924,6 +10955,17 @@ func (s *UpdateTemplateInput) Validate() error {
 	}
 
 	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
 	if err := func() error {
 		if value, ok := s.Name.Get(); ok {
 			if err := func() error {

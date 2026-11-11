@@ -846,6 +846,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "subject", Type: field.TypeString, Default: ""},
 		{Name: "body", Type: field.TypeString, Default: ""},
@@ -861,7 +862,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "email_templates_workspaces_email_templates",
-				Columns:    []*schema.Column{EmailTemplatesColumns[8]},
+				Columns:    []*schema.Column{EmailTemplatesColumns[9]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

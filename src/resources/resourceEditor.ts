@@ -20,12 +20,38 @@ export type ResourceOperation<TResource, TValues> = EditorOperation<
   TValues
 >
 
-// The generated client call that saves an edit of a resource.
+// The generated client call that saves an edit of a resource. A resource with a revision (ADR 0119)
+// is handed the base revision as `revision`, and wraps its call with withRevision, which names it
+// in the body.
 export type ResourceUpdate<TPayload, TResource> = (options: {
   path: ResourcePath
   body: TPayload
+  revision?: number
   throwOnError: true
 }) => Promise<{ data: TResource }>
+
+// The update of a resource with a revision: its body names the revision the edit was made on.
+export function withRevision<TPayload, TResource>(
+  update: (options: {
+    path: ResourcePath
+    body: TPayload & { revision: number }
+    throwOnError: true
+  }) => Promise<{ data: TResource }>,
+): ResourceUpdate<TPayload, TResource> {
+  return async ({ revision, body, ...options }) => {
+    if (revision === undefined) {
+      throw new Error('A resource with a revision is saved with the revision it was read with')
+    }
+    return update({ ...options, body: { ...body, revision } })
+  }
+}
+
+// The revision of a resource that has one (ADR 0119).
+function revisionOf(resource: object): number | undefined {
+  return 'revision' in resource && typeof resource.revision === 'number'
+    ? resource.revision
+    : undefined
+}
 
 export interface ResourceSubmission<TPayload> {
   body: TPayload
@@ -82,11 +108,13 @@ export function resourceEditorAdapter<
       const parsed = schema.update.safeParse(current)
       return parsed.success ? { body: parsed.data, fingerprint: valuesFingerprint(current) } : null
     },
-    save: async ({ subject, submission }) => {
+    revision: revisionOf,
+    save: async ({ subject, submission, revision }) => {
       const { data } = await update({
         path: subject.path,
         body: submission.body,
         throwOnError: true,
+        ...(revision !== undefined && { revision }),
       })
       return data
     },

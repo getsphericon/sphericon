@@ -14871,6 +14871,18 @@ func (x *EmailTemplateScopedCreate) SetNillableUpdatedAt(v *time.Time) *EmailTem
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *EmailTemplateScopedCreate) SetRevision(v int64) *EmailTemplateScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *EmailTemplateScopedCreate) SetNillableRevision(v *int64) *EmailTemplateScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *EmailTemplateScopedCreate) SetName(v string) *EmailTemplateScopedCreate {
 	x.b.SetName(v)
@@ -15031,6 +15043,24 @@ func (u *EmailTemplateScopedUpsert) SetUpdatedAt(v time.Time) *EmailTemplateScop
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *EmailTemplateScopedUpsert) UpdateUpdatedAt() *EmailTemplateScopedUpsert {
 	u.u.SetExcluded(emailtemplate.FieldUpdatedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *EmailTemplateScopedUpsert) SetRevision(v int64) *EmailTemplateScopedUpsert {
+	u.u.Set(emailtemplate.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *EmailTemplateScopedUpsert) AddRevision(v int64) *EmailTemplateScopedUpsert {
+	u.u.Add(emailtemplate.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *EmailTemplateScopedUpsert) UpdateRevision() *EmailTemplateScopedUpsert {
+	u.u.SetExcluded(emailtemplate.FieldRevision)
 	return u
 }
 
@@ -15290,6 +15320,24 @@ func (x *EmailTemplateScopedUpdateOne) SetUpdatedAt(v time.Time) *EmailTemplateS
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *EmailTemplateScopedUpdateOne) SetRevision(v int64) *EmailTemplateScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *EmailTemplateScopedUpdateOne) SetNillableRevision(v *int64) *EmailTemplateScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *EmailTemplateScopedUpdateOne) AddRevision(v int64) *EmailTemplateScopedUpdateOne {
+	x.b.AddRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *EmailTemplateScopedUpdateOne) SetName(v string) *EmailTemplateScopedUpdateOne {
 	x.b.SetName(v)
@@ -15437,6 +15485,24 @@ func (x *EmailTemplateScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *
 // SetUpdatedAt sets the "updated_at" field.
 func (x *EmailTemplateScopedUpdate) SetUpdatedAt(v time.Time) *EmailTemplateScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *EmailTemplateScopedUpdate) SetRevision(v int64) *EmailTemplateScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *EmailTemplateScopedUpdate) SetNillableRevision(v *int64) *EmailTemplateScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *EmailTemplateScopedUpdate) AddRevision(v int64) *EmailTemplateScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 

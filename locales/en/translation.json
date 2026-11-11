@@ -632,6 +632,13 @@
     },
     "title": "Captured messages"
   },
+  "changed": {
+    "load": "Load the saved version",
+    "loadUnsavedTitle": "Load the saved version?",
+    "message": "Someone saved this since you opened it. Your edits are still here and not saved.",
+    "overwrite": "Save mine over it",
+    "title": "Changed since you opened it"
+  },
   "confirmations": {
     "deleteRule": "The rule stops firing and is deleted for good. What it has already done to contacts stays.",
     "deleteTag": "The tag is removed from the catalogue. A tag that a segment rule or an automation step uses cannot be deleted: change those first.",

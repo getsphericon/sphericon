@@ -13,6 +13,14 @@ scalar Name extends string;
 @format("date-time")
 scalar Timestamp extends string;
 
+/**
+ * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The resource carries the one of the state it shows, and an update names the one it was made on:
+ * a stale one is a 409 with code `revision_changed`, and nothing is written.
+ */
+@minValue(1)
+scalar Revision extends integer;
+
 scalar TimeZoneName extends string;
 
 /** A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and

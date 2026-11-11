@@ -48,20 +48,21 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 
 	// Saving another document rebuilds the body.
 	upd, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
-		Doc: siteapi.NewOptEditorDocument(paragraphDoc("Second")),
+		Revision: res.Revision,
+		Doc:      siteapi.NewOptEditorDocument(paragraphDoc("Second")),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.Contains(t, upd.Body, "Second")
 	assert.NotContains(t, upd.Body, "Hello")
 
 	// A subject-only write leaves the document alone.
-	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Subject: siteapi.NewOptString("New subject")},
+	sub, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Revision: upd.Revision, Subject: siteapi.NewOptString("New subject")},
 		siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.NotEmpty(t, env.DB.EmailTemplate.GetX(ctx, int64(res.ID)).Doc)
 
 	// A body-only write clears the document and its editor version.
-	clr, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Body: siteapi.NewOptString("<p>Plain</p>")},
+	clr, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Revision: sub.Revision, Body: siteapi.NewOptString("<p>Plain</p>")},
 		siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.False(t, clr.Doc.Set && !clr.Doc.Null, "the response carries no document")
@@ -107,7 +108,8 @@ func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 
 	notADoc := map[string]jx.Raw{"type": jx.Raw(`"nope"`)}
 	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
-		Name: siteapi.NewOptName("Renamed"), Doc: siteapi.NewOptEditorDocument(notADoc),
+		Revision: siteapi.Revision(welcome.Revision),
+		Name:     siteapi.NewOptName("Renamed"), Doc: siteapi.NewOptEditorDocument(notADoc),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.TemplateWelcomeID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	after := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)

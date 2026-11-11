@@ -336,6 +336,7 @@ var (
 	ErrorsTelegramStartNotTelegram              = ID{key: "errors.telegram_start_not_telegram"}
 	ErrorsTelemetryLocked                       = ID{key: "errors.telemetry_locked"}
 	ErrorsTemplateNotFound                      = ID{key: "errors.template_not_found"}
+	ErrorsTemplateRevisionChanged               = ID{key: "errors.template_revision_changed"}
 	ErrorsTestSendEmailRequired                 = ID{key: "errors.test_send_email_required"}
 	ErrorsTestSendRefused                       = ID{key: "errors.test_send_refused"}
 	ErrorsTimezoneUnknown                       = ID{key: "errors.timezone_unknown"}

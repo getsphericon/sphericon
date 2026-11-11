@@ -53,6 +53,7 @@ import (
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend stringPatch
+// goverter:extend revisionIn
 // goverter:extend namePatch
 // goverter:extend nameIn
 // goverter:extend namePtrIn
@@ -534,4 +535,9 @@ func segmentConditionPatch(o siteapi.OptSiteConditionGroup) (patch.Field[string]
 		return patch.Field[string]{}, err
 	}
 	return patch.FromPtr(def), nil
+}
+
+// revisionIn is the revision an edit names (ADR 0119), as the module takes it.
+func revisionIn(v siteapi.Revision) int64 {
+	return int64(v)
 }

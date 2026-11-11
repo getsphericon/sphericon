@@ -30,8 +30,12 @@ overwrite a person, and a person overwrites them, the same way.
 ## Decision
 
 - **A resource a person edits carries a `revision`**: an integer column of its row, starting at 1,
-  that every write of the row moves by one. It is declared once, by a schema mixin whose ent hook
-  adds the increment to every update of the type, so no writer can forget it. A versioned
+  that every write of the row moves by one. It is declared once, by a schema mixin (`RevisionMixin`), and moved by one ent hook that
+  every application client carries (`entclient.Revision`, on `UpdateOne` and `Update` of any type
+  that has the column), so no writer can forget it. A schema hook would have moved ent's runtime
+  into a package every binary must import for its defaults to run. The hook does not see an
+  upsert's `ON CONFLICT DO UPDATE`, which ent runs as a create, nor a client built without
+  `entclient`: a writer of either kind moves the revision itself. A versioned
   definition (Automation, Rule) keeps it on the definition row, because its name is written there
   and a draft rewritten in place keeps its number and id. It replaces the `updated_at` comparison of
   `scoped_versioned.go`: one token per row.

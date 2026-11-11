@@ -26,6 +26,8 @@ type EmailTemplate struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
+	// Revision holds the value of the "revision" field.
+	Revision int64 `json:"revision,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Subject holds the value of the "subject" field.
@@ -69,7 +71,7 @@ func (*EmailTemplate) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case emailtemplate.FieldDoc:
 			values[i] = new([]byte)
-		case emailtemplate.FieldID, emailtemplate.FieldWorkspaceID:
+		case emailtemplate.FieldID, emailtemplate.FieldWorkspaceID, emailtemplate.FieldRevision:
 			values[i] = new(sql.NullInt64)
 		case emailtemplate.FieldName, emailtemplate.FieldSubject, emailtemplate.FieldBody, emailtemplate.FieldEditorVersion:
 			values[i] = new(sql.NullString)
@@ -113,6 +115,12 @@ func (_m *EmailTemplate) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
+			}
+		case emailtemplate.FieldRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field revision", values[i])
+			} else if value.Valid {
+				_m.Revision = value.Int64
 			}
 		case emailtemplate.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -196,6 +204,9 @@ func (_m *EmailTemplate) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
+	builder.WriteString(", ")
+	builder.WriteString("revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Revision))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

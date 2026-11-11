@@ -489,7 +489,8 @@ export const zProblemCode = z.enum([
   'email_verification_required',
   'permission_required',
   'migrations_pending',
-  'acceptance_pending'
+  'acceptance_pending',
+  'revision_changed'
 ]);
 
 /**
@@ -514,6 +515,13 @@ export const zRegionalFormat = z.string().max(35);
  * A number of days an Audit log is kept: 1 to 3650
  */
 export const zRetentionDays = z.int().gte(1).lte(3650);
+
+/**
+ * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The resource carries the one of the state it shows, and an update names the one it was made on:
+ * a stale one is a 409 with code `revision_changed`, and nothing is written.
+ */
+export const zRevision = z.int().gte(1);
 
 /**
  * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
@@ -3156,6 +3164,7 @@ export const zSiteEmailTemplateResource = z.object({
   doc: z.exactOptional(zEditorDocument.nullable()),
   editorVersion: z.exactOptional(z.string().nullable()),
   warnings: z.exactOptional(z.array(zLintFinding)),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3645,6 +3654,7 @@ export const zUpdateIntegrationInput = z.object({
  * Request body for updating a template
  */
 export const zUpdateTemplateInput = z.object({
+  revision: zRevision,
   name: z.exactOptional(zName),
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),

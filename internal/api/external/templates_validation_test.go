@@ -23,7 +23,7 @@ func TestExternalTemplatesUpdateMapsABlankNameTo422(t *testing.T) {
 	c := env.ExternalScoped(t, "templates:read", "templates:write")
 	tmpl := variablesTemplate(env.DB)
 
-	_, err := c.TemplatesUpdate(context.Background(), &externalapi.UpdateTemplateInput{Name: externalapi.NewOptName("")},
+	_, err := c.TemplatesUpdate(context.Background(), &externalapi.UpdateTemplateInput{Revision: externalapi.Revision(tmpl.Revision), Name: externalapi.NewOptName("")},
 		externalapi.TemplatesUpdateParams{ID: templateID(tmpl)})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

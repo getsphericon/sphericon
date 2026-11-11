@@ -13,8 +13,22 @@ import { TemplatesListPage } from './list.tsx'
 const WORKSPACE_ID = { workspaceId: 'TestWs01' }
 const LIST_ROUTE = routeMount(templatesRoute, WORKSPACE_ID)
 
-const WELCOME = { id: '1', name: 'Welcome', subject: 'Hello there', body: '', ...TIMESTAMPS }
-const RECEIPT = { id: '2', name: 'Receipt', subject: 'Your receipt', body: '', ...TIMESTAMPS }
+const WELCOME = {
+  id: '1',
+  name: 'Welcome',
+  subject: 'Hello there',
+  body: '',
+  revision: 1,
+  ...TIMESTAMPS,
+}
+const RECEIPT = {
+  id: '2',
+  name: 'Receipt',
+  subject: 'Your receipt',
+  body: '',
+  revision: 1,
+  ...TIMESTAMPS,
+}
 
 test('lists the workspace templates', async () => {
   worker.use(handleSiteTemplatesList({ body: page([WELCOME, RECEIPT], 2) }))

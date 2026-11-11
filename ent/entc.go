@@ -129,7 +129,7 @@ func scopedFuncs() template.FuncMap {
 			var out []*gen.Field
 			for _, f := range n.Fields {
 				switch f.Name {
-				case "workspace_id", "created_at", "updated_at", "health_generation":
+				case "workspace_id", "created_at", "updated_at", "health_generation", "revision":
 					continue
 				}
 				out = append(out, f)

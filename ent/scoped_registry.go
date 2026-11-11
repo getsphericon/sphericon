@@ -1017,6 +1017,7 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.EmailTemplate().Create()
+				b.SetRevision(src.Revision)
 				b.SetName(src.Name)
 				b.SetSubject(src.Subject)
 				b.SetBody(src.Body)

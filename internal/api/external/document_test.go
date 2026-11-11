@@ -65,7 +65,8 @@ func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 
 	// Saving another document rebuilds the body.
 	upd, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{
-		Doc: externalapi.NewOptEditorDocument(paragraphDoc("Second")),
+		Revision: read.Revision,
+		Doc:      externalapi.NewOptEditorDocument(paragraphDoc("Second")),
 	}, externalapi.TemplatesUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.Contains(t, upd.Body, "Second")
@@ -88,7 +89,8 @@ func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 
 	// A body written over a document clears it.
 	id := entityIDString(fixtures.TemplateAuthoredID)
-	clr, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Body: externalapi.NewOptString("<p>Plain</p>")},
+	authored := env.DB.EmailTemplate.GetX(ctx, int64(id))
+	clr, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Revision: externalapi.Revision(authored.Revision), Body: externalapi.NewOptString("<p>Plain</p>")},
 		externalapi.TemplatesUpdateParams{ID: id})
 	require.NoError(t, err)
 	assert.False(t, clr.Doc.Set && !clr.Doc.Null)

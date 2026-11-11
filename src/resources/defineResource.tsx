@@ -1,5 +1,5 @@
 import { Fieldset, Modal, Stack, Title } from '@mantine/core'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { Navigate, useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { LeaveDialog } from '../components/LeaveDialog.tsx'
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../components/Skeletons.tsx'
+import { ChangedNotice } from '../editing/ChangedNotice.tsx'
 import { defineEditorSession } from '../editing/editorSession.ts'
 import { useEditorEffects } from '../editing/useEditorEffects.ts'
 import type { EditorOutcomeTexts } from '../editing/useEditorEffects.ts'
@@ -263,6 +264,8 @@ export function defineResource<
       can,
       run,
       save,
+      reload,
+      overwrite,
     } = useEditorSession(adapter, editorSession, {
       subject: { path, resource: loaded },
       editor: {
@@ -274,6 +277,17 @@ export function defineResource<
       },
       effects,
     })
+
+    // The resource as stored now, read again for the changed notice's two actions.
+    const queryClient = useQueryClient()
+    const stored = async (then: (resource: TResource) => unknown) => {
+      const { queryKey } = resource.getOptions({ path })
+      await queryClient.refetchQueries({ queryKey, exact: true }, { throwOnError: true })
+      const fresh = queryClient.getQueryData<TResource>(queryKey)
+      if (fresh !== undefined) {
+        await then(fresh)
+      }
+    }
 
     // Subscribed: the page re-renders on every edit.
     const current = form.values
@@ -288,6 +302,18 @@ export function defineResource<
     return (
       <Stack>
         <Title order={4}>{texts.editTitle}</Title>
+        {session.context.changed && (
+          <ChangedNotice
+            dirty={dirty(current)}
+            busy={!session.matches('idle')}
+            onLoad={() => {
+              void stored(reload)
+            }}
+            onOverwrite={() => {
+              void stored(overwrite)
+            }}
+          />
+        )}
         {/* Fields stay enabled during Save; the other operations act on the stored resource. */}
         <Fieldset variant="unstyled" disabled={session.hasTag('readOnly')}>
           <resource.Form

@@ -42,7 +42,7 @@ func TestExternalTemplatesCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "We miss you", res.Subject)
 
-	updated, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Name: externalapi.NewOptName("Win-back v2")},
+	updated, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Revision: res.Revision, Name: externalapi.NewOptName("Win-back v2")},
 		externalapi.TemplatesUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "Win-back v2", updated.Name)
@@ -74,7 +74,7 @@ func TestExternalTemplatesScopes(t *testing.T) {
 
 	_, err = ro.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{Name: "x"})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
-	_, err = ro.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{}, externalapi.TemplatesUpdateParams{ID: entityIDString(fixtures.TemplateWelcomeID)})
+	_, err = ro.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Revision: 1}, externalapi.TemplatesUpdateParams{ID: entityIDString(fixtures.TemplateWelcomeID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	err = ro.TemplatesDelete(ctx, externalapi.TemplatesDeleteParams{ID: entityIDString(fixtures.TemplateWelcomeID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -95,7 +95,7 @@ func TestExternalTemplatesAreWorkspaceScoped(t *testing.T) {
 	}
 	_, err = c.TemplatesGet(ctx, externalapi.TemplatesGetParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	_, err = c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Name: externalapi.NewOptName("hijack")}, externalapi.TemplatesUpdateParams{ID: id})
+	_, err = c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Revision: 1, Name: externalapi.NewOptName("hijack")}, externalapi.TemplatesUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	err = c.TemplatesDelete(ctx, externalapi.TemplatesDeleteParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)

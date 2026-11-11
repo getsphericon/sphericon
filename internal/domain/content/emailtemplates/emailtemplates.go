@@ -23,6 +23,9 @@ import (
 var (
 	// ErrNotFound: no such Template in this Workspace.
 	ErrNotFound = validation.NotFound("templates: template not found", i18n.ErrorsTemplateNotFound)
+	// ErrRevisionChanged is an update made on a revision the Template has moved past (ADR 0119):
+	// someone wrote it since the client read it. Nothing is written.
+	ErrRevisionChanged = validation.RevisionChanged("templates: template changed since it was read", i18n.ErrorsTemplateRevisionChanged)
 
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
@@ -101,10 +104,12 @@ type CreateInput struct {
 // rendered to the body in the same save and stored with it; a Body alone clears the stored
 // document, so the two never disagree. None of the fields can be cleared.
 type UpdateInput struct {
-	Name    patch.Field[string]
-	Subject patch.Field[string]
-	Body    patch.Field[string]
-	Doc     patch.Field[json.RawMessage]
+	// Revision is the Template's revision the edit was made on (ADR 0119).
+	Revision int64
+	Name     patch.Field[string]
+	Subject  patch.Field[string]
+	Body     patch.Field[string]
+	Doc      patch.Field[json.RawMessage]
 }
 
 // List returns a page of the Workspace's Templates, ascending by id (a catalogue).
@@ -160,8 +165,9 @@ func create(ctx context.Context, s *ent.Scoped, name string, subject *string, c 
 	return tpl, err
 }
 
-// Update applies the given fields and returns the Template. A new name is held to the name rule
-// (validation.Name).
+// Update applies the given fields and returns the Template, conditional on the revision the edit
+// was made on (ADR 0119): ErrRevisionChanged when the Template has moved past it. A new name is
+// held to the name rule (validation.Name).
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
 	name, err := validation.NamePatch(in.Name)
 	if err != nil {
@@ -174,6 +180,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return nil, err
 	}
 	update := s.EmailTemplate().UpdateOneID(id).
+		Where(emailtemplate.Revision(in.Revision)).
 		SetNillableName(in.Name.Ptr()).
 		SetNillableSubject(in.Subject.Ptr()).
 		SetNillableBody(c.Body)
@@ -185,9 +192,22 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	tpl, err := update.Save(ctx)
 	if ent.IsNotFound(err) {
-		return nil, ErrNotFound
+		return nil, missOn(ctx, s, id)
 	}
 	return tpl, err
+}
+
+// missOn tells why an update conditional on its revision found no row: the Template is gone, or
+// it is there at another revision.
+func missOn(ctx context.Context, s *ent.Scoped, id int64) error {
+	exists, err := s.EmailTemplate().Query().Where(emailtemplate.ID(id)).Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return ErrRevisionChanged
+	}
+	return ErrNotFound
 }
 
 // Delete removes a Template.

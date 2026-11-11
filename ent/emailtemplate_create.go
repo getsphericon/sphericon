@@ -58,6 +58,20 @@ func (_c *EmailTemplateCreate) SetWorkspaceID(v int64) *EmailTemplateCreate {
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *EmailTemplateCreate) SetRevision(v int64) *EmailTemplateCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *EmailTemplateCreate) SetNillableRevision(v *int64) *EmailTemplateCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *EmailTemplateCreate) SetName(v string) *EmailTemplateCreate {
 	_c.mutation.SetName(v)
@@ -166,6 +180,10 @@ func (_c *EmailTemplateCreate) defaults() {
 		v := emailtemplate.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := emailtemplate.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 	if _, ok := _c.mutation.Subject(); !ok {
 		v := emailtemplate.DefaultSubject
 		_c.mutation.SetSubject(v)
@@ -186,6 +204,14 @@ func (_c *EmailTemplateCreate) check() error {
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "EmailTemplate.workspace_id"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "EmailTemplate.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := emailtemplate.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "EmailTemplate.revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "EmailTemplate.name"`)}
@@ -244,6 +270,10 @@ func (_c *EmailTemplateCreate) createSpec() (*EmailTemplate, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(emailtemplate.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(emailtemplate.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(emailtemplate.FieldName, field.TypeString, value)
@@ -355,6 +385,24 @@ func (u *EmailTemplateUpsert) SetWorkspaceID(v int64) *EmailTemplateUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *EmailTemplateUpsert) UpdateWorkspaceID() *EmailTemplateUpsert {
 	u.SetExcluded(emailtemplate.FieldWorkspaceID)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *EmailTemplateUpsert) SetRevision(v int64) *EmailTemplateUpsert {
+	u.Set(emailtemplate.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *EmailTemplateUpsert) UpdateRevision() *EmailTemplateUpsert {
+	u.SetExcluded(emailtemplate.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *EmailTemplateUpsert) AddRevision(v int64) *EmailTemplateUpsert {
+	u.Add(emailtemplate.FieldRevision, v)
 	return u
 }
 
@@ -506,6 +554,27 @@ func (u *EmailTemplateUpsertOne) SetWorkspaceID(v int64) *EmailTemplateUpsertOne
 func (u *EmailTemplateUpsertOne) UpdateWorkspaceID() *EmailTemplateUpsertOne {
 	return u.Update(func(s *EmailTemplateUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *EmailTemplateUpsertOne) SetRevision(v int64) *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *EmailTemplateUpsertOne) AddRevision(v int64) *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *EmailTemplateUpsertOne) UpdateRevision() *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -835,6 +904,27 @@ func (u *EmailTemplateUpsertBulk) SetWorkspaceID(v int64) *EmailTemplateUpsertBu
 func (u *EmailTemplateUpsertBulk) UpdateWorkspaceID() *EmailTemplateUpsertBulk {
 	return u.Update(func(s *EmailTemplateUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *EmailTemplateUpsertBulk) SetRevision(v int64) *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *EmailTemplateUpsertBulk) AddRevision(v int64) *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *EmailTemplateUpsertBulk) UpdateRevision() *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.UpdateRevision()
 	})
 }
 

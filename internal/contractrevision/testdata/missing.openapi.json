@@ -1,0 +1,60 @@
+{
+  "paths": {
+    "/things/{id}": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateThing" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Thing" } }
+            }
+          }
+        }
+      }
+    },
+    "/kept/{id}": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateKept" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Thing" } }
+            }
+          }
+        }
+      }
+    },
+    "/plain/{id}": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateThing" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Plain" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Thing": { "properties": { "id": {}, "revision": {} } },
+      "Plain": { "properties": { "id": {} } },
+      "UpdateThing": { "properties": { "revision": {}, "name": {} } },
+      "UpdateKept": { "properties": { "revision": {}, "name": {} }, "required": ["revision"] }
+    }
+  }
+}

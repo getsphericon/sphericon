@@ -52,6 +52,27 @@ func (_u *EmailTemplateUpdate) SetNillableWorkspaceID(v *int64) *EmailTemplateUp
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *EmailTemplateUpdate) SetRevision(v int64) *EmailTemplateUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *EmailTemplateUpdate) SetNillableRevision(v *int64) *EmailTemplateUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *EmailTemplateUpdate) AddRevision(v int64) *EmailTemplateUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *EmailTemplateUpdate) SetName(v string) *EmailTemplateUpdate {
 	_u.mutation.SetName(v)
@@ -186,6 +207,11 @@ func (_u *EmailTemplateUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *EmailTemplateUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := emailtemplate.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "EmailTemplate.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := emailtemplate.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "EmailTemplate.name": %w`, err)}
@@ -217,6 +243,12 @@ func (_u *EmailTemplateUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(emailtemplate.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(emailtemplate.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(emailtemplate.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(emailtemplate.FieldName, field.TypeString, value)
@@ -312,6 +344,27 @@ func (_u *EmailTemplateUpdateOne) SetNillableWorkspaceID(v *int64) *EmailTemplat
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetRevision sets the "revision" field.
+func (_u *EmailTemplateUpdateOne) SetRevision(v int64) *EmailTemplateUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *EmailTemplateUpdateOne) SetNillableRevision(v *int64) *EmailTemplateUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *EmailTemplateUpdateOne) AddRevision(v int64) *EmailTemplateUpdateOne {
+	_u.mutation.AddRevision(v)
 	return _u
 }
 
@@ -462,6 +515,11 @@ func (_u *EmailTemplateUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *EmailTemplateUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := emailtemplate.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "EmailTemplate.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := emailtemplate.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "EmailTemplate.name": %w`, err)}
@@ -510,6 +568,12 @@ func (_u *EmailTemplateUpdateOne) sqlSave(ctx context.Context) (_node *EmailTemp
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(emailtemplate.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(emailtemplate.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(emailtemplate.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(emailtemplate.FieldName, field.TypeString, value)

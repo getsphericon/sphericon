@@ -864,6 +864,7 @@ func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) emailtempl
 func (c *InputsImpl) TemplateUpdate(source *site.UpdateTemplateInput) emailtemplates.UpdateInput {
 	var emailtemplatesUpdateInput emailtemplates.UpdateInput
 	if source != nil {
+		emailtemplatesUpdateInput.Revision = revisionIn((*source).Revision)
 		emailtemplatesUpdateInput.Name = namePatch((*source).Name)
 		emailtemplatesUpdateInput.Subject = stringPatch((*source).Subject)
 		emailtemplatesUpdateInput.Body = stringPatch((*source).Body)

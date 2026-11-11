@@ -14106,6 +14106,7 @@ const (
 	ProblemCodePermissionRequired        ProblemCode = "permission_required"
 	ProblemCodeMigrationsPending         ProblemCode = "migrations_pending"
 	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
+	ProblemCodeRevisionChanged           ProblemCode = "revision_changed"
 )
 
 // AllValues returns all ProblemCode values.
@@ -14116,6 +14117,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 		ProblemCodePermissionRequired,
 		ProblemCodeMigrationsPending,
 		ProblemCodeAcceptancePending,
+		ProblemCodeRevisionChanged,
 	}
 }
 
@@ -14131,6 +14133,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeMigrationsPending:
 		return []byte(s), nil
 	case ProblemCodeAcceptancePending:
+		return []byte(s), nil
+	case ProblemCodeRevisionChanged:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -14154,6 +14158,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodeAcceptancePending:
 		*s = ProblemCodeAcceptancePending
+		return nil
+	case ProblemCodeRevisionChanged:
+		*s = ProblemCodeRevisionChanged
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -14734,6 +14741,8 @@ func (s *RecordEventsInput) GetEvents() []EventInput {
 func (s *RecordEventsInput) SetEvents(val []EventInput) {
 	s.Events = val
 }
+
+type Revision int
 
 // One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
 // name, http actions the call.
@@ -17907,6 +17916,8 @@ type TemplateResource struct {
 	Doc OptNilEditorDocument `json:"doc"`
 	// Version of the editor that rendered the document; null with it.
 	EditorVersion OptNilString `json:"editorVersion"`
+	// The revision of the state this answer shows (ADR 0119): an update names it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -17941,6 +17952,11 @@ func (s *TemplateResource) GetDoc() OptNilEditorDocument {
 // GetEditorVersion returns the value of EditorVersion.
 func (s *TemplateResource) GetEditorVersion() OptNilString {
 	return s.EditorVersion
+}
+
+// GetRevision returns the value of Revision.
+func (s *TemplateResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -17981,6 +17997,11 @@ func (s *TemplateResource) SetDoc(val OptNilEditorDocument) {
 // SetEditorVersion sets the value of EditorVersion.
 func (s *TemplateResource) SetEditorVersion(val OptNilString) {
 	s.EditorVersion = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *TemplateResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -19238,6 +19259,8 @@ func (s *UpdateSendingDomainInput) SetDkimSelector(val OptString) {
 // Request body for updating a template.
 // Ref: #/components/schemas/UpdateTemplateInput
 type UpdateTemplateInput struct {
+	// The template's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// Template name.
 	Name OptName `json:"name"`
 	// Default subject line.
@@ -19248,6 +19271,11 @@ type UpdateTemplateInput struct {
 	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
 	// a 422 with the reason and nothing is stored.
 	Doc OptEditorDocument `json:"doc"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateTemplateInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -19268,6 +19296,11 @@ func (s *UpdateTemplateInput) GetBody() OptString {
 // GetDoc returns the value of Doc.
 func (s *UpdateTemplateInput) GetDoc() OptEditorDocument {
 	return s.Doc
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateTemplateInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.

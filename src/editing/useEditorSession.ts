@@ -136,5 +136,31 @@ export function useEditorSession<
     [actor, adapter, latest, settle],
   )
 
-  return { snapshot, dirty, wouldLose, can, run, save }
+  // Loads the saved version, read again by the page, over the content (ADR 0119): the page asks
+  // first when the content is unsaved.
+  const reload = useCallback(
+    (stored: TResource) => {
+      actor.send({ type: 'RELOAD', resource: stored })
+    },
+    [actor],
+  )
+
+  // Saves the current content over a change the editor had not seen, on the revision of the
+  // resource read again by the page, resolving as `save` does.
+  const overwrite = useCallback(
+    async (stored: TResource): Promise<EditorOutcome> => {
+      if (!actor.getSnapshot().matches('idle')) {
+        return 'busy'
+      }
+      const submission = adapter.submit(latest.current.editor.read())
+      if (!submission) {
+        return 'error'
+      }
+      actor.send({ type: 'OVERWRITE', submission, resource: stored })
+      return settle()
+    },
+    [actor, adapter, latest, settle],
+  )
+
+  return { snapshot, dirty, wouldLose, can, run, save, reload, overwrite }
 }

@@ -9471,6 +9471,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeMigrationsPending
 	case ProblemCodeAcceptancePending:
 		*s = ProblemCodeAcceptancePending
+	case ProblemCodeRevisionChanged:
+		*s = ProblemCodeRevisionChanged
 	default:
 		*s = ProblemCode(v)
 	}
@@ -10144,6 +10146,46 @@ func (s RetentionDays) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *RetentionDays) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes Revision as json.
+func (s Revision) Encode(e *jx.Encoder) {
+	unwrapped := int(s)
+
+	e.Int(unwrapped)
+}
+
+// Decode decodes Revision from json.
+func (s *Revision) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode Revision to nil")
+	}
+	var unwrapped int
+	if err := func() error {
+		v, err := d.Int()
+		unwrapped = int(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = Revision(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s Revision) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *Revision) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -26918,6 +26960,10 @@ func (s *SiteEmailTemplateResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -26927,7 +26973,7 @@ func (s *SiteEmailTemplateResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteEmailTemplateResource = [9]string{
+var jsonFieldsNameOfSiteEmailTemplateResource = [10]string{
 	0: "id",
 	1: "name",
 	2: "subject",
@@ -26935,8 +26981,9 @@ var jsonFieldsNameOfSiteEmailTemplateResource = [9]string{
 	4: "doc",
 	5: "editorVersion",
 	6: "warnings",
-	7: "createdAt",
-	8: "updatedAt",
+	7: "revision",
+	8: "createdAt",
+	9: "updatedAt",
 }
 
 // Decode decodes SiteEmailTemplateResource from json.
@@ -27031,8 +27078,18 @@ func (s *SiteEmailTemplateResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"warnings\"")
 			}
-		case "createdAt":
+		case "revision":
 			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -27042,7 +27099,7 @@ func (s *SiteEmailTemplateResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -27062,7 +27119,7 @@ func (s *SiteEmailTemplateResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b10001111,
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -51379,6 +51436,10 @@ func (s *UpdateTemplateInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *UpdateTemplateInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		if s.Name.Set {
 			e.FieldStart("name")
 			s.Name.Encode(e)
@@ -51404,11 +51465,12 @@ func (s *UpdateTemplateInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUpdateTemplateInput = [4]string{
-	0: "name",
-	1: "subject",
-	2: "body",
-	3: "doc",
+var jsonFieldsNameOfUpdateTemplateInput = [5]string{
+	0: "revision",
+	1: "name",
+	2: "subject",
+	3: "body",
+	4: "doc",
 }
 
 // Decode decodes UpdateTemplateInput from json.
@@ -51416,9 +51478,20 @@ func (s *UpdateTemplateInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode UpdateTemplateInput to nil")
 	}
+	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		case "name":
 			if err := func() error {
 				s.Name.Reset()
@@ -51465,6 +51538,38 @@ func (s *UpdateTemplateInput) Decode(d *jx.Decoder) error {
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode UpdateTemplateInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfUpdateTemplateInput) {
+					name = jsonFieldsNameOfUpdateTemplateInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 
 	return nil

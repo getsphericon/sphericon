@@ -1,10 +1,12 @@
 import { assign, enqueueActions, fromPromise, setup } from 'xstate'
 
 import { draftState } from '../components/draftState.ts'
+import { isRevisionChangedError } from '../utils/apiErrors.ts'
 
 // The editor session of a saved resource; its rules are docs/standards/ui.md, "Editor sessions".
 // The session keeps the acknowledged content's fingerprint as `saved`, and the content it placed
-// itself in `content`, whose revision is what stateful field editors re-read.
+// itself in `content`, whose revision is what stateful field editors re-read. A resource with a
+// revision (ADR 0119) keeps a base: the revision of what the editor shows, which every write names.
 
 export interface EditorSubmission {
   // The fingerprint of the content the submission captured.
@@ -23,7 +25,11 @@ export interface EditorReceipt<TResource> {
 export interface EditorOperation<TSubject, TResource, TContent> {
   // `input` is what the operation's event carried (the time Schedule sends at), unchecked: an
   // operation that takes one reads it with its request's schema.
-  request: (call: { subject: TSubject; input: unknown }) => Promise<TResource>
+  request: (call: {
+    subject: TSubject
+    input: unknown
+    revision: number | undefined
+  }) => Promise<TResource>
   // Whether the operation may start. `dirty` is false only when the event carried the current
   // fingerprint and it equals the acknowledged one.
   available: (state: { resource: TResource; dirty: boolean }) => boolean
@@ -47,7 +53,14 @@ export interface EditorAdapter<
   fingerprint: (content: TContent) => string
   // The submission Save sends, captured before any asynchronous work; null refuses invalid content.
   submit: (content: TContent) => TSubmission | null
-  save: (call: { subject: TSubject; submission: TSubmission }) => Promise<TResource>
+  // `revision` is the base the edit was made on, for a resource that has one.
+  save: (call: {
+    subject: TSubject
+    submission: TSubmission
+    revision: number | undefined
+  }) => Promise<TResource>
+  // The resource's revision (ADR 0119), or undefined for a resource without one.
+  revision?: (resource: TResource) => number | undefined
   acknowledge: (submission: TSubmission, resource: TResource) => TReceipt
   // Folds an acknowledgement into the current content, which may have moved on since the
   // submission. `replaces` is set when stateful field editors must re-read the result: the content
@@ -105,6 +118,12 @@ export interface EditorSessionContext<TSubject, TResource, TContent, TOperation 
   saved: string
   submitted: string | null
   content: { value: TContent; revision: number }
+  // The revision of the stored state the editor shows, which a write names (ADR 0119): moved only
+  // when an acknowledgement is folded in or the session replaces the content, never by a refresh.
+  base: number | undefined
+  // Whether the resource changed since the editor showed it: a write was refused with
+  // revision_changed, or a refresh brought a newer revision than the base.
+  changed: boolean
   operation: TOperation | null
   input: unknown
   result: 'success' | 'error'
@@ -125,6 +144,10 @@ interface EditorOperationEvent {
 export type EditorSessionEvent<TResource, TSubmission> =
   | { type: 'SAVE'; submission: TSubmission }
   | { type: 'REFRESH'; resource: TResource }
+  // Load the saved version: the content becomes the resource's, read again by the page.
+  | { type: 'RELOAD'; resource: TResource }
+  // Save mine over it: the submission is saved on the revision of the resource read again.
+  | { type: 'OVERWRITE'; submission: TSubmission; resource: TResource }
   | EditorOperationEvent
 
 export type EditorNotice<TResource, TReceipt, TOperation extends string> =
@@ -150,6 +173,7 @@ export function defineEditorSession<
   }
 
   const isOperation = (type: string): type is TOperation => Object.hasOwn(adapter.operations, type)
+  const revisionOf = (resource: TResource) => adapter.revision?.(resource)
   const operationOf = (event: Event): TOperation | null =>
     'submission' in event || 'resource' in event || !isOperation(event.type) ? null : event.type
 
@@ -162,15 +186,16 @@ export function defineEditorSession<
       // session has stopped and its outcome is ignored.
       save: fromPromise(
         async ({
-          input: { subject, submission, effects },
+          input: { subject, submission, revision, effects },
         }: {
           input: {
             subject: TSubject
             submission: TSubmission
+            revision: number | undefined
             effects: EditorEffects<TResource, TOperation> | undefined
           }
         }) => {
-          const resource = await adapter.save({ subject, submission })
+          const resource = await adapter.save({ subject, submission, revision })
           effects?.store(resource)
           effects?.invalidate()
           return adapter.acknowledge(submission, resource)
@@ -178,16 +203,21 @@ export function defineEditorSession<
       ),
       operation: fromPromise(
         async ({
-          input: { subject, operation, input, effects },
+          input: { subject, operation, input, revision, effects },
         }: {
           input: {
             subject: TSubject
             operation: TOperation
             input: unknown
+            revision: number | undefined
             effects: EditorEffects<TResource, TOperation> | undefined
           }
         }) => {
-          const resource = await adapter.operations[operation].request({ subject, input })
+          const resource = await adapter.operations[operation].request({
+            subject,
+            input,
+            revision,
+          })
           effects?.store(resource)
           effects?.invalidate()
           return resource
@@ -211,6 +241,12 @@ export function defineEditorSession<
         const operation = context.operation ?? 'SAVE'
         const error = 'error' in event ? event.error : undefined
         enqueue.assign({ result: 'error', operation: null, input: undefined, submitted: null })
+        // A write over a change the editor has not seen: the content stays, unsaved, and the page
+        // offers to load the saved version or save over it instead of a failure.
+        if (isRevisionChangedError(error)) {
+          enqueue.assign({ changed: true })
+          return
+        }
         enqueue(() => context.effects?.failed(operation, error))
         enqueue.emit({ type: 'failed', operation, error } as Notice)
       }),
@@ -226,6 +262,8 @@ export function defineEditorSession<
         saved: adapter.fingerprint(value),
         submitted: null,
         content: { value, revision: 0 },
+        base: revisionOf(input.resource),
+        changed: false,
         operation: null,
         input: undefined,
         result: 'error',
@@ -233,10 +271,19 @@ export function defineEditorSession<
         effects: input.effects,
       }
     },
-    // A query refresh updates the resource's metadata, never the content or its receipt.
+    // A query refresh updates the resource's metadata, never the content, its receipt or the base;
+    // a newer revision than the base says the resource changed since the editor showed it.
     on: {
       REFRESH: {
-        actions: assign(({ event }) => ('resource' in event ? { resource: event.resource } : {})),
+        actions: assign(({ context, event }) => {
+          if (!('resource' in event)) {
+            return {}
+          }
+          const refreshed = revisionOf(event.resource)
+          const newer =
+            refreshed !== undefined && context.base !== undefined && refreshed > context.base
+          return { resource: event.resource, ...(newer && { changed: true }) }
+        }),
       },
     },
     states: {
@@ -246,6 +293,37 @@ export function defineEditorSession<
             target: 'saving',
             actions: assign(({ event }) =>
               'submission' in event ? { submitted: event.submission.fingerprint } : {},
+            ),
+          },
+          // The saved version replaces the content, which becomes the acknowledged one.
+          RELOAD: {
+            actions: enqueueActions(({ context, event, enqueue }) => {
+              if (!('resource' in event)) {
+                return
+              }
+              const value = adapter.open({ ...context.subject, resource: event.resource })
+              enqueue.assign({
+                resource: event.resource,
+                base: revisionOf(event.resource),
+                changed: false,
+                saved: adapter.fingerprint(value),
+                content: { value, revision: context.content.revision + 1 },
+              })
+              enqueue(() => context.editor?.write(value))
+            }),
+          },
+          // The submission is saved on the revision of the resource read again.
+          OVERWRITE: {
+            target: 'saving',
+            actions: assign(({ event }) =>
+              'submission' in event && 'resource' in event
+                ? {
+                    resource: event.resource,
+                    base: revisionOf(event.resource),
+                    changed: false,
+                    submitted: event.submission.fingerprint,
+                  }
+                : {},
             ),
           },
           '*': {
@@ -269,6 +347,7 @@ export function defineEditorSession<
             return {
               subject: context.subject,
               submission: event.submission,
+              revision: context.base,
               effects: context.effects,
             }
           },
@@ -281,6 +360,8 @@ export function defineEditorSession<
               const folded = current === undefined ? null : adapter.fold(current, receipt)
               enqueue.assign({
                 resource: receipt.resource,
+                base: revisionOf(receipt.resource),
+                changed: false,
                 saved: receipt.fingerprint,
                 submitted: null,
                 result: 'success',
@@ -313,6 +394,7 @@ export function defineEditorSession<
               subject: context.subject,
               operation: context.operation,
               input: context.input,
+              revision: context.base,
               effects: context.effects,
             }
           },
@@ -327,6 +409,7 @@ export function defineEditorSession<
               const value = adapter.operations[operation].replaces?.(resource, context.subject)
               enqueue.assign({
                 resource,
+                base: revisionOf(resource),
                 result: 'success',
                 operation: null,
                 input: undefined,

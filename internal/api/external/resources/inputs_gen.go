@@ -569,6 +569,7 @@ func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) emailt
 func (c *InputsImpl) TemplateUpdate(source *external.UpdateTemplateInput) emailtemplates.UpdateInput {
 	var emailtemplatesUpdateInput emailtemplates.UpdateInput
 	if source != nil {
+		emailtemplatesUpdateInput.Revision = revisionIn((*source).Revision)
 		emailtemplatesUpdateInput.Name = namePatch((*source).Name)
 		emailtemplatesUpdateInput.Subject = stringPatch((*source).Subject)
 		emailtemplatesUpdateInput.Body = stringPatch((*source).Body)

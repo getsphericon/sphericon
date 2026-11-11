@@ -31,6 +31,9 @@ model SiteEmailTemplateResource {
   /** Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it */
   warnings?: LintFinding[];
 
+  /** The revision of the state this answer shows (ADR 0119): an update names it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 

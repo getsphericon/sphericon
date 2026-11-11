@@ -167,7 +167,8 @@ export const ProblemCode = {
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
   PERMISSION_REQUIRED: 'permission_required',
   MIGRATIONS_PENDING: 'migrations_pending',
-  ACCEPTANCE_PENDING: 'acceptance_pending'
+  ACCEPTANCE_PENDING: 'acceptance_pending',
+  REVISION_CHANGED: 'revision_changed'
 } as const;
 
 /**
@@ -271,6 +272,13 @@ export type ProblemDetails = {
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
 export type RegionalFormat = string;
+
+/**
+ * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The resource carries the one of the state it shows, and an update names the one it was made on:
+ * a stale one is a 409 with code `revision_changed`, and nothing is written.
+ */
+export type Revision = number;
 
 /**
  * A Workspace the User is the only Owner of, which blocks User deletion

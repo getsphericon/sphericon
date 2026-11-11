@@ -571,3 +571,23 @@ func TestMCPDevTokenReadsAndWritesBrightpath(t *testing.T) {
 	require.False(t, write.IsError, text(t, write))
 	assert.Contains(t, text(t, write), created)
 }
+
+// The template update tool requires the revision and says it is the one the Template was read with
+// (ADR 0119): an agent reads before it writes, as the console does.
+func TestMCPTemplateUpdateAsksForTheRevisionItWasReadWith(t *testing.T) {
+	env := testhelper.Setup(t)
+	tools := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "templates:read", "templates:write")))
+
+	raw, err := json.Marshal(tools["templates_update"].InputSchema)
+	require.NoError(t, err)
+	var in struct {
+		Properties map[string]struct {
+			Description string `json:"description"`
+		} `json:"properties"`
+		Required []string `json:"required"`
+	}
+	require.NoError(t, json.Unmarshal(raw, &in))
+
+	assert.Contains(t, in.Required, "revision")
+	assert.Contains(t, in.Properties["revision"].Description, "read with")
+}
