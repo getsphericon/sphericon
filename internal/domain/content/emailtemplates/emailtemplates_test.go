@@ -137,8 +137,8 @@ func TestUpdateRefusesAWhitespaceName(t *testing.T) {
 }
 
 // warnedBody breaks two warning rules against Acme's saved Brand kit (Arial): a font outside it and
-// an element the sanitizer removes, so only the body as written still shows the second.
-const warnedBody = `<p style="font-family:Georgia, serif">Sale</p><marquee>Scroll</marquee>`
+// an image with no alt attribute.
+const warnedBody = `<p style="font-family:Georgia, serif">Sale</p><img src="https://cdn.example.com/a.png">`
 
 func codes(fs []emailrender.Finding) []emailrender.Code {
 	out := make([]emailrender.Code, len(fs))
@@ -176,8 +176,8 @@ func TestASaveOutsideTheViewsIsNotLinted(t *testing.T) {
 	require.ErrorContains(t, err, "brand kit read")
 }
 
-// A save returns the lint of the body as written, before the sanitizer, against the Workspace's
-// Brand kit (ADR 0040); the warnings never block it.
+// A save stores the body as written and returns its lint against the Workspace's Brand kit
+// (ADR 0040); the warnings never block it.
 func TestCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -185,8 +185,8 @@ func TestCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	saved, err := views().Create(ctx, env.DB.Scoped(fixtures.AcmeID),
 		emailtemplates.CreateInput{Name: "Warned", Subject: new("Hi"), Body: new(warnedBody)})
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeUnknownConstruct}, codes(saved.Warnings))
-	assert.NotContains(t, saved.Template.Body, "marquee", "stored sanitized")
+	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeMissingAlt}, codes(saved.Warnings))
+	assert.Equal(t, warnedBody, saved.Template.Body)
 }
 
 // A Workspace with no Brand kit saved has nothing to compare a message to.
@@ -197,7 +197,7 @@ func TestCreateWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
 	saved, err := views().Create(ctx, env.DB.Scoped(fixtures.VandelayID),
 		emailtemplates.CreateInput{Name: "Warned", Body: new(warnedBody)})
 	require.NoError(t, err)
-	assert.Equal(t, []emailrender.Code{emailrender.CodeUnknownConstruct}, codes(saved.Warnings))
+	assert.Equal(t, []emailrender.Code{emailrender.CodeMissingAlt}, codes(saved.Warnings))
 }
 
 // A write that leaves the body lints the body stored.
@@ -225,7 +225,7 @@ func TestLintWithoutASave(t *testing.T) {
 	report, err := m.Lint(ctx, s, "Hi", new(warnedBody), nil)
 	require.NoError(t, err)
 	require.NoError(t, report.Error)
-	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeUnknownConstruct}, codes(report.Warnings))
+	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeMissingAlt}, codes(report.Warnings))
 
 	report, err = m.Lint(ctx, s, "Hi", new("<div><span>unclosed</div>"), nil)
 	require.NoError(t, err)

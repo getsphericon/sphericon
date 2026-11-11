@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
-	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -54,7 +53,6 @@ func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	row := env.DB.EmailTemplate.GetX(ctx, int64(res.ID))
 	assert.Equal(t, res.Body, row.Body)
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(row.Doc))
-	assert.Equal(t, emailrender.SanitizeHTML(row.Body), row.Body, "the stored body survives the sanitizer")
 
 	// A read returns the document: an agent copies a Template by reading it and writing a new one.
 	read, err := c.TemplatesGet(ctx, externalapi.TemplatesGetParams{ID: res.ID})

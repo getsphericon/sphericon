@@ -16,7 +16,7 @@ import (
 // document always has its HTML and they never disagree (ADR 0040).
 type Authored struct {
 	// Body is the stored HTML: the editor's export, with its React markers removed and its merge
-	// tags unescaped, validated as content and sanitized.
+	// tags unescaped, validated as content.
 	Body string
 	// EditorVersion is the version of the editor whose export code rendered the document.
 	EditorVersion string
@@ -27,8 +27,7 @@ type Authored struct {
 // the document renderer r (the only caller on the write path: the send path never renders a
 // document), then makes the export storable: the render's own markers are dropped, the quotes
 // the editor HTML-escapes inside {{ }} and {% %} are restored so Liquid can read them, and the
-// result goes through PrepareFields like any body, so the stored HTML survives SanitizeHTML
-// unchanged.
+// result is checked by CheckFields like any body.
 //
 // A document that is invalid or too large for the editor is ErrInvalidContent with the reason;
 // subject, when not nil, is checked with the body. A render that could not run (the request
@@ -47,11 +46,10 @@ func FromDocument(ctx context.Context, r *emaildoc.Renderer, subject *string, do
 		return Authored{}, err
 	}
 	exported := storable(out.HTML)
-	body, err := PrepareFields(subject, &exported)
-	if err != nil {
+	if err := CheckFields(subject, &exported); err != nil {
 		return Authored{}, err
 	}
-	return Authored{Body: *body, EditorVersion: emaildoc.EditorVersion()}, nil
+	return Authored{Body: exported, EditorVersion: emaildoc.EditorVersion()}, nil
 }
 
 // ErrRenderUnavailable is a document render that could not run to its end for a reason that is not
@@ -69,12 +67,14 @@ type Content struct {
 
 // ResolveContent resolves the body of a write: the one place Templates, Broadcasts and Automation
 // steps decide it. A document is rendered to it (the one render of the save, never on the send
-// path); a body is validated and sanitized; neither leaves the content alone; both is errBoth,
+// path); a body is checked and stored as written; neither leaves the content alone; both is errBoth,
 // the caller's own refusal.
 func ResolveContent(ctx context.Context, r *emaildoc.Renderer, subject, body *string, doc []byte, errBoth error) (Content, error) {
 	if len(doc) == 0 {
-		b, err := PrepareFields(subject, body)
-		return Content{Body: b}, err
+		if err := CheckFields(subject, body); err != nil {
+			return Content{}, err
+		}
+		return Content{Body: body}, nil
 	}
 	if body != nil {
 		return Content{}, errBoth

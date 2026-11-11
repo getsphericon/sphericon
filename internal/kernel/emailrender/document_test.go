@@ -24,7 +24,6 @@ func TestFromDocumentBuildsAStorableBody(t *testing.T) {
 	got, err := emailrender.FromDocument(t.Context(), renderer, nil, doc)
 	require.NoError(t, err)
 
-	assert.Equal(t, emailrender.SanitizeHTML(got.Body), got.Body, "the stored body survives the sanitizer")
 	assert.NotEmpty(t, got.EditorVersion)
 	assert.NotContains(t, got.Body, "<!--$-->")
 	for _, tag := range []string{"{{ first_name }}", "{{ contact.id }}", "{{ token | url_encode }}", "{{ cta_url }}"} {

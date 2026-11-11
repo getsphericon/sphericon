@@ -41,14 +41,14 @@ func TestMCPEmailLintReturnsWarningsAndSavesNothing(t *testing.T) {
 
 	got := lint(t, env, map[string]any{
 		"subject": "Hi {{ first_name }}",
-		"body":    `<p style="color:#cc0000;font-family:Georgia, serif">Sale</p><img src="https://cdn.example.com/a.png"><marquee>x</marquee>`,
+		"body":    `<p style="color:#cc0000;font-family:Georgia, serif">Sale</p><img src="https://cdn.example.com/a.png">`,
 	}, "templates:read")
 
 	assert.Empty(t, got.Errors)
 	// Acme's saved Brand kit is Arial with #1a73e8, #202124, white.
 	assert.ElementsMatch(t, []string{
 		string(emailrender.CodeMissingAlt), string(emailrender.CodeOffBrandColor),
-		string(emailrender.CodeOffBrandFont), string(emailrender.CodeUnknownConstruct),
+		string(emailrender.CodeOffBrandFont),
 	}, codes(got.Warnings))
 	assert.Equal(t, before, env.DB.EmailTemplate.Query().CountX(t.Context()), "linting stores nothing")
 }

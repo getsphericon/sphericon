@@ -41,12 +41,13 @@ func TestEncodeKeepsOnlyTheFieldsOfEachStepType(t *testing.T) {
 	assert.Equal(t, "[]", empty)
 }
 
-func TestEncodeSanitizesAnEmailStepBody(t *testing.T) {
+// An email step's body is stored as it was written (ADR 0118).
+func TestEncodeStoresAnEmailStepBodyAsWritten(t *testing.T) {
 	def, err := automations.Encode([]automationstep.Step{
-		{Type: automationstep.Email, Subject: "Hi", Body: `<p onclick="x()">Hi {{ first_name }}</p><script>alert(1)</script>`},
+		{Type: automationstep.Email, Subject: "Hi", Body: `<p onclick="track()">Hi {{ first_name }}</p><form action="https://example.com/s"></form>`},
 	})
 	require.NoError(t, err)
-	assert.JSONEq(t, `[{"type":"email","subject":"Hi","body":"<p>Hi {{ first_name }}</p>"}]`, def)
+	assert.JSONEq(t, `[{"type":"email","subject":"Hi","body":"<p onclick=\"track()\">Hi {{ first_name }}</p><form action=\"https://example.com/s\"></form>"}]`, def)
 }
 
 func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {

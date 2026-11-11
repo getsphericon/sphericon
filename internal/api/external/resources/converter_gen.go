@@ -989,8 +989,6 @@ func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) external.Lin
 		externalapiLintCode = external.LintCodeOffBrandColor
 	case emailrender.CodeOffBrandFont:
 		externalapiLintCode = external.LintCodeOffBrandFont
-	case emailrender.CodeUnknownConstruct:
-		externalapiLintCode = external.LintCodeUnknownConstruct
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}

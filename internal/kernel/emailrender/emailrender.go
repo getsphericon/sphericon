@@ -12,6 +12,7 @@ package emailrender
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/k3a/html2text"
@@ -64,9 +65,8 @@ type Email struct {
 
 // RenderEmail renders subject + HTML body for one recipient: Liquid merge tags
 // first (so a {% if %} can change the markup per recipient; the subject is plain text
-// and unescaped, body values are HTML-escaped), then the whole rendered body is
-// sanitized again (a variable can carry markup or a URL the save-time pass never saw),
-// then the text part is derived from that HTML (before any tracking is layered on). A non-nil error means
+// and unescaped, body values are HTML-escaped), then the text part is derived from that
+// HTML (before any tracking is layered on). A non-nil error means
 // the Liquid merge tags failed to render — the caller must not send that message
 // (sending the raw template to a recipient is worse than not sending).
 func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
@@ -74,12 +74,10 @@ func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
 	if err != nil {
 		return Email{}, err
 	}
-	clean := sanitizeRendered(rendered)
-	return Email{Subject: renderedSubject, HTML: clean, Text: HTMLToText(clean)}, nil
+	return Email{Subject: renderedSubject, HTML: rendered, Text: HTMLToText(rendered)}, nil
 }
 
-// renderBoth runs Liquid over the subject (plain text) and the body (HTML-escaped values),
-// before any sanitizing.
+// renderBoth runs Liquid over the subject (plain text) and the body (HTML-escaped values).
 func renderBoth(subject, body string, bindings map[string]any) (renderedSubject, renderedBody string, err error) {
 	renderedSubject, err = Render(subject, bindings)
 	if err != nil {
@@ -186,11 +184,55 @@ func separateBlocks(n *html.Node) {
 	}
 }
 
-// PrepareFields is what every save path calls (site API, external API and MCP all reach
-// it through the broadcasts and templates modules): it refuses content that cannot render
-// (Lint) and returns the body to store, sanitized (SanitizeHTML). A nil field is not
-// provided, so it is not checked; a nil body is returned as nil.
-func PrepareFields(subject, body *string) (*string, error) {
+// hidingDeclarations are the inline style declarations (property, value) mail authors use to
+// hide an element from the reader while keeping it in the HTML. Only inline styles are read:
+// hiding through a class or a <style> rule is not detected. A zero font size is not one of
+// them: it is how a layout table removes the gaps between its columns, and the text inside
+// sets its own size.
+var hidingDeclarations = map[string][]string{
+	"display":    {"none"},
+	"visibility": {"hidden"},
+	"mso-hide":   {"all"},
+	"opacity":    {"0"},
+}
+
+// zeroLengths are the values of a zero max-height.
+var zeroLengths = []string{"0", "0px", "0pt", "0em"}
+
+// hidesElement reports whether an inline style hides its element: one of the hiding
+// declarations, or a zero max-height that clips its content (overflow:hidden), the shape of a
+// preheader. A zero max-height alone clips nothing. The values are compared lower-case.
+func hidesElement(style string) bool {
+	parsed := parseStyle(style)
+	for prop, hiding := range hidingDeclarations {
+		value := strings.ToLower(parsed[prop])
+		if slices.Contains(hiding, value) {
+			return true
+		}
+	}
+	maxHeight, overflow := strings.ToLower(parsed["max-height"]), strings.ToLower(parsed["overflow"])
+	return slices.Contains(zeroLengths, maxHeight) && overflow == "hidden"
+}
+
+// dropHidden removes, in place, every element whose inline style hides it.
+func dropHidden(n *html.Node) {
+	for c := n.FirstChild; c != nil; {
+		next := c.NextSibling
+		if c.Type == html.ElementNode && slices.ContainsFunc(c.Attr, func(a html.Attribute) bool {
+			return a.Key == "style" && hidesElement(a.Val)
+		}) {
+			n.RemoveChild(c)
+		} else {
+			dropHidden(c)
+		}
+		c = next
+	}
+}
+
+// CheckFields is what every save path calls (site API, external API and MCP all reach it through
+// the broadcasts and templates modules): it refuses content that cannot render (Lint). The body is
+// stored as it was written (ADR 0118). A nil field is not provided, so it is not checked.
+func CheckFields(subject, body *string) error {
 	var s, b string
 	if subject != nil {
 		s = *subject
@@ -198,12 +240,5 @@ func PrepareFields(subject, body *string) (*string, error) {
 	if body != nil {
 		b = *body
 	}
-	if err := Lint(s, b, nil).Error; err != nil {
-		return nil, err
-	}
-	if body == nil {
-		return nil, nil
-	}
-	clean := SanitizeHTML(b)
-	return &clean, nil
+	return Lint(s, b, nil).Error
 }

@@ -44,7 +44,6 @@ require (
 	github.com/lmittmann/tint v1.2.1
 	github.com/maypok86/otter/v2 v2.4.0
 	github.com/mazznoer/csscolorparser v0.2.0
-	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/miekg/dns v1.1.73
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/mokevnin/dbcleaner v1.0.0
@@ -117,7 +116,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.20.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.10 // indirect
-	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/boombuler/barcode v1.1.0 // indirect
@@ -156,7 +154,6 @@ require (
 	github.com/google/pprof v0.0.0-20261110164715-8bb1ee682bd8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
-	github.com/gorilla/css v1.0.1 // indirect
 	github.com/grbit/go-json v0.11.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.25.0 // indirect

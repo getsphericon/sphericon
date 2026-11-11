@@ -13,7 +13,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
-	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -46,7 +45,6 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(row.Doc))
 	require.NotNil(t, row.EditorVersion)
 	assert.Equal(t, emaildoc.EditorVersion(), *row.EditorVersion)
-	assert.Equal(t, emailrender.SanitizeHTML(row.Body), row.Body, "the stored body survives the sanitizer")
 
 	// Saving another document rebuilds the body.
 	upd, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{

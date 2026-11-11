@@ -12,7 +12,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
-	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -36,7 +35,6 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	assert.Equal(t, testhelper.SiteEmailOf(res).Body, *row.Body)
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(row.Doc))
 	require.NotNil(t, row.EditorVersion)
-	assert.Equal(t, emailrender.SanitizeHTML(*row.Body), *row.Body, "the stored body survives the sanitizer")
 
 	// Saving another document rebuilds the body.
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
@@ -125,7 +123,7 @@ func TestSiteBroadcastsWithoutADocumentStayHTMLOnly(t *testing.T) {
 }
 
 // A Broadcast written in the editor is previewed from the body the server built: the test send
-// delivers it with sample merge data, sanitized.
+// delivers it with sample merge data.
 func TestSiteBroadcastsTestSendDeliversTheMessageBuiltFromADocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

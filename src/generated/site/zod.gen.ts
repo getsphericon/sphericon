@@ -343,8 +343,7 @@ export const zLintCode = z.enum([
   'missing_alt',
   'low_contrast',
   'off_brand_color',
-  'off_brand_font',
-  'unknown_construct'
+  'off_brand_font'
 ]);
 
 /**

@@ -10,11 +10,10 @@ import (
 // parseStyle parses an inline style into property -> value (lower-case property), with
 // tdewolff/parse's CSS parser, which keeps a value that holds a ";", a comma or parentheses
 // (a url(), a quoted string, a function) whole. A malformed declaration is skipped and the
-// parse goes on with the next one, and so is a declaration whose value takes refuses, as a
-// browser drops a value its property does not take. A property declared twice keeps the
-// declaration that applies: the later one, unless only the earlier one is !important. The value
-// is returned without its "!important".
-func parseStyle(style string, takes func(prop, value string) bool) map[string]string {
+// parse goes on with the next one. A property declared twice keeps the declaration that
+// applies: the later one, unless only the earlier one is !important. The value is returned
+// without its "!important".
+func parseStyle(style string) map[string]string {
 	out := map[string]string{}
 	important := map[string]bool{}
 	for _, decl := range declarations(style) {
@@ -29,22 +28,18 @@ func parseStyle(style string, takes func(prop, value string) bool) map[string]st
 			}
 			prop := strings.ToLower(string(data))
 			values, isImportant := withoutImportant(p.Values())
-			var joined strings.Builder
-			for _, t := range values {
-				joined.Write(t.Data)
-			}
-			value := strings.TrimSpace(joined.String())
-			if !takes(prop, value) || (important[prop] && !isImportant) {
+			if important[prop] && !isImportant {
 				continue
 			}
-			out[prop], important[prop] = value, isImportant
+			var value strings.Builder
+			for _, t := range values {
+				value.Write(t.Data)
+			}
+			out[prop], important[prop] = strings.TrimSpace(value.String()), isImportant
 		}
 	}
 	return out
 }
-
-// anyValue is the takes of parseStyle's reader that takes every value.
-func anyValue(string, string) bool { return true }
 
 // declarations splits an inline style at each ";" outside parentheses, brackets and braces,
 // with the parser's own lexer, so a ";" inside a url() or a quoted string stays in its value.

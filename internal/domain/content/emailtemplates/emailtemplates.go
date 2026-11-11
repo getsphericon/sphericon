@@ -123,7 +123,7 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.EmailTe
 
 // Create stores a Template and returns it. The name is held to the name rule (validation.Name); a
 // subject, body or document that cannot render is emailrender.ErrInvalidContent; the body is
-// stored sanitized.
+// stored as written.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.EmailTemplate, error) {
 	name, err := validation.Name(in.Name)
 	if err != nil {

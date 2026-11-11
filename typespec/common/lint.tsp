@@ -20,9 +20,6 @@ enum LintCode {
 
   /** A font is not one of the Workspace's Brand kit fonts */
   off_brand_font,
-
-  /** An element the sanitizer removes when the message is saved */
-  unknown_construct,
 }
 
 /**

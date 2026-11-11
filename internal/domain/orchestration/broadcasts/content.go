@@ -54,7 +54,7 @@ type EmailContentInput struct {
 // Channel is email.
 func (EmailContentInput) Channel() channels.Channel { return channels.Email }
 
-// create resolves the body (from the document when one is written), stores it sanitized and
+// create resolves the body (from the document when one is written), stores it and
 // refuses a From that is not on a verified Sending domain.
 func (c EmailContentInput) create(ctx context.Context, m *Module, s *ent.Scoped, q *ent.BroadcastScopedCreate) error {
 	resolved, err := emailrender.ResolveContent(ctx, m.renderer, c.Subject, c.Body, c.Doc, ErrBodyAndDoc)
