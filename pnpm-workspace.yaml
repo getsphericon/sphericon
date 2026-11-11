@@ -28,7 +28,7 @@ minimumReleaseAgeExclude:
   - '@tanstack/query-core@5.101.1 || 5.101.2 || 5.104.4 || 5.104.5 || 5.105.3'
   - '@tanstack/react-query@5.101.1 || 5.101.2 || 5.104.4 || 5.104.5 || 5.105.3'
   - '@vitejs/plugin-react@6.0.3'
-  - i18next@26.3.2 || 26.5.2 || 26.5.3 || 26.5.4 || 26.5.6 || 26.5.12
+  - i18next@26.3.2 || 26.5.2 || 26.5.3 || 26.5.4 || 26.5.6 || 26.5.12 || 27.1.1
   - playwright-core@1.61.1
   - playwright@1.61.1
   - vite@8.1.0 || 8.3.4 || 8.3.5
@@ -42,7 +42,7 @@ minimumReleaseAgeExclude:
   - '@typespec/rest@0.87.0'
   - '@typespec/versioning@0.87.0'
   - i18next-cli@1.75.1 || 1.75.2 || 1.77.0 || 1.79.1 || 1.80.7 || 1.82.4
-  - knip@6.41.0 || 6.42.1
+  - knip@6.41.0 || 6.42.1 || 6.45.0
   # Mantine is taken as soon as it is released, without the release-age wait.
   - '@mantine/*'
   - react-i18next@17.1.0 || 17.1.4 || 17.1.12
@@ -100,10 +100,20 @@ minimumReleaseAgeExclude:
   - '@tanstack/router-plugin@1.168.48'
   - oxlint-tsgolint@7.0.2005
   - size-limit@14.3.0
-  - '@react-email/editor@1.7.18 || 1.7.19'
+  - '@react-email/editor@1.7.18 || 1.7.19 || 1.8.4'
   - '@tanstack/query-devtools@5.105.3'
   - '@tanstack/react-query-devtools@5.105.3'
   - xstate@5.33.4
+  - '@react-email/render@2.3.1'
+  - '@sentry/browser-utils@11.12.0'
+  - '@sentry/browser@11.12.0'
+  - '@sentry/core@11.12.0'
+  - '@sentry/feedback@11.12.0'
+  - '@sentry/react@11.12.0'
+  - '@sentry/replay-canvas@11.12.0'
+  - '@sentry/replay@11.12.0'
+  - libphonenumber-js@1.13.16
+  - react-email@6.11.11
 # Transitive dependencies of the build tooling that an advisory has fixed; pnpm picks the fixed
 # release whichever package asks for them.
 overrides:
