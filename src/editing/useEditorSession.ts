@@ -13,6 +13,9 @@ import type {
   EditorSubmission,
 } from './editorSession.ts'
 
+// How a write the page started ended: `busy` when it could not start.
+export type EditorOutcome = 'success' | 'error' | 'busy'
+
 type EditorSessionMachine<
   TSubject extends { resource: TResource },
   TResource,
@@ -103,10 +106,7 @@ export function useEditorSession<
   // Starts the operation and resolves with its outcome: `busy` when it may not start now (another
   // one is pending, or its guard refuses), else as `save` does.
   const run = useCallback(
-    async (
-      type: TOperation,
-      input?: EditorOperationInput,
-    ): Promise<'success' | 'error' | 'busy'> => {
+    async (type: TOperation, input?: EditorOperationInput): Promise<EditorOutcome> => {
       actor.send(operationEvent(type, input))
       if (!actor.getSnapshot().matches('operating')) {
         return 'busy'
@@ -121,9 +121,7 @@ export function useEditorSession<
   // submission, or when the session stopped before the acknowledgement.
   // `review` shows the page's own refusals (validation, a warning) and may hold the Save back.
   const save = useCallback(
-    async (
-      review: (submission: TSubmission | null) => boolean,
-    ): Promise<'success' | 'error' | 'busy'> => {
+    async (review: (submission: TSubmission | null) => boolean): Promise<EditorOutcome> => {
       if (!actor.getSnapshot().matches('idle')) {
         return 'busy'
       }

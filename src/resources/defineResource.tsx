@@ -12,13 +12,14 @@ import { PageSkeleton } from '../components/Skeletons.tsx'
 import { defineEditorSession } from '../editing/editorSession.ts'
 import type { EditorOperationInput } from '../editing/editorSession.ts'
 import { useEditorSession } from '../editing/useEditorSession.ts'
+import type { EditorOutcome } from '../editing/useEditorSession.ts'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../hooks/useNotify.ts'
-import { tagsOf, useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { invalidateOwn, useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import { resourceEditorAdapter } from './resourceEditor.ts'
-import type { ResourceOperation, ResourcePath } from './resourceEditor.ts'
+import type { ResourceOperation, ResourceUpdate } from './resourceEditor.ts'
 import type { ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
 import { useSchemaForm } from './schemaForm.ts'
 import type { SchemaForm } from './schemaForm.ts'
@@ -65,10 +66,7 @@ export interface ResourceEditor<TOperation extends string> {
   operation: TOperation | null
   can: (operation: TOperation) => boolean
   // Starts the operation and resolves with its outcome (`busy` when it may not start now).
-  run: (
-    operation: TOperation,
-    input?: EditorOperationInput,
-  ) => Promise<'success' | 'error' | 'busy'>
+  run: (operation: TOperation, input?: EditorOperationInput) => Promise<EditorOutcome>
 }
 
 // The whole interface of the resource form lifecycle module: describe a resource once and
@@ -101,12 +99,7 @@ export interface ResourceDescription<
     { path: { workspaceId: string }; body: TPayload }
   >
   // The generated client call that saves an edit.
-  update: (options: {
-    path: ResourcePath
-    body: TPayload
-    signal: AbortSignal
-    throwOnError: true
-  }) => Promise<{ data: TResource }>
+  update: ResourceUpdate<TPayload, TResource>
   // The edit page's operations besides Save, named by their event (PUBLISH, SEND, …); `{}` for a
   // resource that has none.
   operations: Record<TOperation, ResourceEditOperation<TResource, TValues>>
@@ -284,10 +277,7 @@ export function defineResource<
         },
         // The queries of the resource's own tags (its list, its detail) refresh in the background.
         invalidate: () => {
-          const own = new Set(tagsOf(getKey))
-          void queryClient.invalidateQueries({
-            predicate: (query) => tagsOf(query.queryKey).some((tag) => own.has(tag)),
-          })
+          void invalidateOwn(queryClient, getKey)
         },
         accepted: (operation) => {
           notify({
@@ -373,5 +363,5 @@ export function defineResource<
     )
   }
 
-  return { CreatePage, CreateModal, EditPage, editor: { adapter, session: editorSession } }
+  return { CreatePage, CreateModal, EditPage }
 }

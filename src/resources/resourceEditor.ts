@@ -20,6 +20,14 @@ export type ResourceOperation<TResource, TValues> = EditorOperation<
   TValues
 >
 
+// The generated client call that saves an edit of a resource.
+export type ResourceUpdate<TPayload, TResource> = (options: {
+  path: ResourcePath
+  body: TPayload
+  signal: AbortSignal
+  throwOnError: true
+}) => Promise<{ data: TResource }>
+
 export interface ResourceSubmission<TPayload> {
   body: TPayload
   fingerprint: string
@@ -56,12 +64,7 @@ export function resourceEditorAdapter<
   // The edited values of a resource whose fields are not at its top level.
   editedValues?: ((resource: TResource) => ResourceValues<TPayload>) | undefined
   // The generated client call that saves an edit.
-  update: (options: {
-    path: ResourcePath
-    body: TPayload
-    signal: AbortSignal
-    throwOnError: true
-  }) => Promise<{ data: TResource }>
+  update: ResourceUpdate<TPayload, TResource>
   operations: Record<TOperation, ResourceOperation<TResource, TValues>>
 }): EditorAdapter<
   ResourceEditorSubject<TResource>,

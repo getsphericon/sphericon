@@ -260,6 +260,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
   const {
     snapshot: session,
     dirty,
+    wouldLose,
     can,
     run,
     save,
@@ -391,7 +392,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
           <ThemeSync />
           <EditorReadOnly readOnly={session.hasTag('readOnly')} />
           <QuietRestore />
-          <LeaveGuard name={form.values.name} dirty={dirty} />
+          <LeaveGuard name={form.values.name} wouldLose={wouldLose} />
           <Box pos="relative" w="100%" h="100dvh">
             <WorkflowBuilder.Canvas />
             <BuilderBar
