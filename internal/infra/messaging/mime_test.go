@@ -49,6 +49,20 @@ func TestBuildMIMEHTMLOnly(t *testing.T) {
 	require.NotContains(t, raw, "multipart/alternative")
 }
 
+// The editor's export is unformatted: a whole email can be one line of HTML. The parts are
+// quoted-printable, so no line on the wire exceeds the 998 octets of RFC 5322.
+func TestBuildMIMEKeepsEveryLineWithinTheLimitForOneLineHTML(t *testing.T) {
+	html := "<table><tr><td>" + strings.Repeat(`<p style="margin:0">word</p>`, 200) + "</td></tr></table>"
+	raw := render(t, messaging.EmailMessage{
+		From: "sender@example.com", To: "rcpt@example.com", Subject: "s", HTML: html, Text: "word",
+	})
+
+	require.Contains(t, raw, "Content-Transfer-Encoding: quoted-printable")
+	for line := range strings.SplitSeq(raw, "\r\n") {
+		require.LessOrEqual(t, len(line), 998, "a line on the wire is over RFC 5322's limit")
+	}
+}
+
 func TestBuildMIMETextOnly(t *testing.T) {
 	raw := render(t, messaging.EmailMessage{
 		From: "sender@example.com", To: "rcpt@example.com", Subject: "s", Text: "hi",

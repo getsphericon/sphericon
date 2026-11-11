@@ -90,7 +90,8 @@ func DefaultLimits() Limits {
 
 // Rendered is the editor's export of a document.
 type Rendered struct {
-	// HTML is the full email document, formatted.
+	// HTML is the full email document, unformatted: no whitespace the editor's markup does not
+	// hold itself, so a whole email can be one line.
 	HTML string
 	// Text is the plain-text part derived from it.
 	Text string

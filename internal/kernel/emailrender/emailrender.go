@@ -19,6 +19,7 @@ import (
 	"github.com/osteele/liquid"
 	"github.com/osteele/liquid/render"
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 // ErrInvalidContent is what Lint fails with: the subject or body cannot render, so
@@ -112,7 +113,7 @@ func Render(tmpl string, bindings map[string]any) (string, error) {
 // HTMLToText derives a plain-text representation of an HTML body for the
 // text/plain MIME part.
 func HTMLToText(markup string) string {
-	return html2text.HTML2Text(markup)
+	return toText(markup, false)
 }
 
 // FinalHTMLToText derives the text/plain part of a send from its final per-recipient HTML
@@ -121,16 +122,69 @@ func HTMLToText(markup string) string {
 // appear as they do in the HTML. The style, script and head content is left out, and so is any
 // element whose inline style hides it (the open pixel, a preheader; see hidingDeclarations).
 func FinalHTMLToText(finalHTML string) string {
-	doc, err := html.Parse(strings.NewReader(finalHTML))
-	if err != nil {
-		return html2text.HTML2Text(finalHTML)
+	return toText(finalHTML, true)
+}
+
+// toText is the derivation both text parts share; final drops the hidden elements and writes a
+// link as its text and URL. html2text separates words only where the markup has whitespace or a
+// paragraph, heading, list or line break, so the blocks of a body are first set apart in the
+// parsed tree (separateBlocks): the editor's export has no whitespace between them. The spaces
+// that leaves at the ends of a line are trimmed.
+func toText(markup string, final bool) string {
+	lines := strings.Split(rawText(markup, final), "\r\n")
+	for i, line := range lines {
+		lines[i] = strings.Trim(line, " ")
 	}
-	dropHidden(doc)
+	return strings.Join(lines, "\r\n")
+}
+
+// rawText is html2text's reading of the markup once its tree is prepared; markup that does not
+// parse is read as it is.
+func rawText(markup string, final bool) string {
+	var opts []html2text.Option
+	if final {
+		opts = append(opts, html2text.WithLinksInnerText())
+	}
+	doc, err := html.Parse(strings.NewReader(markup))
+	if err != nil {
+		return html2text.HTML2TextWithOptions(markup, opts...)
+	}
+	if final {
+		dropHidden(doc)
+	}
+	separateBlocks(doc)
 	var sb strings.Builder
 	if err := html.Render(&sb, doc); err != nil {
-		return html2text.HTML2Text(finalHTML)
+		return html2text.HTML2TextWithOptions(markup, opts...)
 	}
-	return html2text.HTML2TextWithOptions(sb.String(), html2text.WithLinksInnerText())
+	return html2text.HTML2TextWithOptions(sb.String(), opts...)
+}
+
+// blockElements are the elements that stand apart from the text around them: their content is
+// never read as one word with their neighbour's.
+var blockElements = map[atom.Atom]bool{
+	atom.Address: true, atom.Article: true, atom.Aside: true, atom.Blockquote: true,
+	atom.Caption: true, atom.Center: true, atom.Dd: true, atom.Div: true, atom.Dl: true,
+	atom.Dt: true, atom.Figcaption: true, atom.Figure: true, atom.Footer: true, atom.H1: true,
+	atom.H2: true, atom.H3: true, atom.H4: true, atom.H5: true, atom.H6: true, atom.Header: true,
+	atom.Hr: true, atom.Li: true, atom.Main: true, atom.Nav: true, atom.Ol: true, atom.P: true,
+	atom.Pre: true, atom.Section: true, atom.Table: true, atom.Tbody: true, atom.Td: true,
+	atom.Tfoot: true, atom.Th: true, atom.Thead: true, atom.Tr: true, atom.Ul: true,
+}
+
+// separateBlocks puts a space, in place, before and after every block element, as the
+// indentation of formatted markup would.
+func separateBlocks(n *html.Node) {
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type == html.ElementNode && blockElements[c.DataAtom] {
+			n.InsertBefore(&html.Node{Type: html.TextNode, Data: " "}, c)
+			n.InsertBefore(&html.Node{Type: html.TextNode, Data: " "}, c.NextSibling)
+			separateBlocks(c)
+			c = c.NextSibling
+			continue
+		}
+		separateBlocks(c)
+	}
 }
 
 // hidingDeclarations are the inline style declarations (property, value) mail authors use to

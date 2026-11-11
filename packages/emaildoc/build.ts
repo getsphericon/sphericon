@@ -40,6 +40,9 @@ interface Rewrite {
 //
 // - goja has no dynamic import(). The only one in the render path is the code block's lazy Prism
 //   language loader, which a server render never reaches: it becomes a rejected promise.
+// - @react-email/render loads Prettier with import() for its `pretty` pass, which esbuild inlines:
+//   250 KB of the bundle that the render never runs (src/entry.ts passes `pretty: false`).
+//   The load becomes a rejected promise, so Prettier leaves the bundle.
 // - goja bug: `split` with a lookahead regex returns extra empty strings, which breaks
 //   prosemirror-model's content-expression tokenizer (`"(tableCell | tableHeader)+"`). The
 //   equivalent match over word and punctuation tokens does not.
@@ -57,6 +60,13 @@ const rewrites: Rewrite[] = [
     file: /@react-email[\\/]editor[\\/]dist[\\/].*\.mjs$/,
     pattern: /import\(\s*(?:\/\*[\s\S]*?\*\/\s*)?`[^`]*`\s*\)/g,
     replacement: "Promise.reject(new Error('dynamic import is not available'))",
+  },
+  {
+    file: /@react-email[\\/]render[\\/]dist[\\/]browser[\\/]index\.mjs$/,
+    pattern:
+      /Promise\.all\(\[import\("prettier\/standalone"\), import\("prettier\/plugins\/html"\)\]\)/g,
+    replacement:
+      "Promise.reject(new Error('Prettier is not bundled: the render passes pretty: false'))",
   },
   {
     file: /prosemirror-model[\\/]dist[\\/]index\.js$/,

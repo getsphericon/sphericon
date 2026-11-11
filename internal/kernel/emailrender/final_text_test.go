@@ -1,6 +1,7 @@
 package emailrender_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,6 +65,49 @@ func TestFinalHTMLToTextRendersALinkAsItsTextAndURL(t *testing.T) {
 
 	assert.Contains(t, text, "Click")
 	assert.Contains(t, text, "https://example.com/x")
+}
+
+// The editor's export carries no whitespace between its blocks, and a hand-written body need not
+// either: a text part reads the same words whether the markup is indented or compact, and a link's
+// URL never runs into what follows it.
+func TestTextPartSeparatesBlocksWithoutWhitespaceInTheMarkup(t *testing.T) {
+	compact := `<table><tr><td><a href="https://a.example">Get started</a></td></tr></table>` +
+		`<table><tr><td><a href="https://b.example">Read more</a></td></tr></table>` +
+		`<table><tr><td>Left</td><td>Right</td></tr></table><div>Above</div><div>Below</div><hr><p>tail</p>`
+	indented := `<table>
+  <tr><td><a href="https://a.example">Get started</a></td></tr>
+</table>
+<table>
+  <tr><td><a href="https://b.example">Read more</a></td></tr>
+</table>
+<table>
+  <tr>
+    <td>Left</td>
+    <td>Right</td>
+  </tr>
+</table>
+<div>Above</div>
+<div>Below</div>
+<hr>
+<p>tail</p>`
+
+	for _, tc := range []struct {
+		name   string
+		derive func(string) string
+		links  []string
+	}{
+		{"HTMLToText", emailrender.HTMLToText, []string{"https://a.example", "https://b.example"}},
+		{"FinalHTMLToText", emailrender.FinalHTMLToText, []string{"<https://a.example>", "<https://b.example>"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := strings.Fields(tc.derive(compact))
+
+			assert.Equal(t, strings.Fields(tc.derive(indented)), got)
+			for _, word := range append(tc.links, "Left", "Right", "Above", "Below", "tail") {
+				assert.Contains(t, got, word)
+			}
+		})
+	}
 }
 
 func TestFinalHTMLToTextNeverShowsHiddenText(t *testing.T) {
