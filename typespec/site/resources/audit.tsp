@@ -124,6 +124,9 @@ scalar RetentionDays extends int32;
 model SiteAuditRetention {
   /** Entries older than this many days are pruned; null keeps them forever */
   retentionDays: RetentionDays | null;
+
+  /** The Workspace's revision (ADR 0119): what a read answers and a change names, the one it was read with */
+  revision: Revision;
 }
 
 @route("/workspaces/{workspaceId}/audit-entries")

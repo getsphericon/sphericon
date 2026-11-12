@@ -27,6 +27,13 @@ func revenueSettings(t *testing.T, c *siteapi.Client) *siteapi.SiteRevenueSettin
 
 func updateRevenueSettings(t *testing.T, c *siteapi.Client, in siteapi.SiteUpdateRevenueSettingsInput) (*siteapi.SiteRevenueSettingsResource, error) {
 	t.Helper()
+	// A change names the revision it was made on (ADR 0119), so the client reads the settings first;
+	// one that may not read them is refused the change for that, whatever revision it names.
+	in.Revision = 1
+	if read, err := c.SiteWorkspacesGetRevenueSettings(context.Background(),
+		siteapi.SiteWorkspacesGetRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID}); err == nil {
+		in.Revision = read.Revision
+	}
 	return c.SiteWorkspacesUpdateRevenueSettings(context.Background(), &in,
 		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
 }
@@ -104,7 +111,7 @@ func TestAWindowOutsideItsBoundsIsRefused(t *testing.T) {
 	for _, days := range []siteapi.AttributionWindowDays{0, 91} {
 		t.Run(fmt.Sprintf("days=%d", days), func(t *testing.T) {
 			_, err := owner.SiteWorkspacesUpdateRevenueSettings(context.Background(),
-				&siteapi.SiteUpdateRevenueSettingsInput{AttributionWindowDays: siteapi.NewOptAttributionWindowDays(days)},
+				&siteapi.SiteUpdateRevenueSettingsInput{Revision: siteapi.Revision(env.WorkspaceRevision(context.Background(), t, string(fixtures.AcmePublicID))), AttributionWindowDays: siteapi.NewOptAttributionWindowDays(days)},
 				siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
 			testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 		})

@@ -83,8 +83,23 @@ type Caller struct {
 // UpdateInput renames the Workspace and, when PostalAddress is set, sets its postal address (""
 // clears it).
 type UpdateInput struct {
+	// Revision is the Workspace's revision the edit was made on (ADR 0119).
+	Revision      int64
 	Name          string
 	PostalAddress *string
+}
+
+// SetTimezoneInput is a change of the Workspace time zone: the IANA zone, made on Revision (ADR 0119).
+type SetTimezoneInput struct {
+	Revision int64
+	Zone     string
+}
+
+// SetSecondFactorRequirementInput switches the Two-factor requirement on (Required) or off. Switching
+// it on is made on Revision (ADR 0119); lifting it names none (nil).
+type SetSecondFactorRequirementInput struct {
+	Revision *int64
+	Required bool
 }
 
 // UseCase reads the Workspace view, and makes the changes of a Workspace that answer with it.
@@ -155,10 +170,19 @@ func (u *UseCase) OfMembers(ctx context.Context, userID int64, strongSession boo
 	return views, nil
 }
 
+// One is the View of the Workspace of s for the caller, as OfMembers answers it for each.
+func (u *UseCase) One(ctx context.Context, s *ent.Scoped, c Caller) (View, error) {
+	ws, err := u.workspaces.Get(ctx, s)
+	if err != nil {
+		return View{}, err
+	}
+	return u.view(ctx, s, c, ws)
+}
+
 // Update renames the Workspace of s and sets its postal address (workspaces.Module.Update) and
 // answers its View for the caller.
 func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in UpdateInput) (View, error) {
-	ws, err := u.workspaces.Update(ctx, s, c.Actor, in.Name, in.PostalAddress)
+	ws, err := u.workspaces.Update(ctx, s, c.Actor, in.Revision, in.Name, in.PostalAddress)
 	if err != nil {
 		return View{}, err
 	}
@@ -167,8 +191,8 @@ func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in Update
 
 // SetTimezone sets the time zone of the Workspace of s (workspaces.Module.SetTimezone, ADR 0057)
 // and answers its View for the caller.
-func (u *UseCase) SetTimezone(ctx context.Context, s *ent.Scoped, c Caller, zone string) (View, error) {
-	ws, err := u.workspaces.SetTimezone(ctx, s, c.Actor, zone)
+func (u *UseCase) SetTimezone(ctx context.Context, s *ent.Scoped, c Caller, in SetTimezoneInput) (View, error) {
+	ws, err := u.workspaces.SetTimezone(ctx, s, c.Actor, in.Revision, in.Zone)
 	if err != nil {
 		return View{}, err
 	}
@@ -178,8 +202,8 @@ func (u *UseCase) SetTimezone(ctx context.Context, s *ent.Scoped, c Caller, zone
 // SetSecondFactorRequirement switches the Two-factor requirement of the Workspace of s on, from
 // now, or off (workspaces.Module.SetSecondFactorRequirement, which tells the Users without a
 // Second factor when it goes on) and answers its View for the caller, whose grace starts with it.
-func (u *UseCase) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, c Caller, required bool) (View, error) {
-	ws, err := u.workspaces.SetSecondFactorRequirement(ctx, s, c.Actor, required, u.now())
+func (u *UseCase) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, c Caller, in SetSecondFactorRequirementInput) (View, error) {
+	ws, err := u.workspaces.SetSecondFactorRequirement(ctx, s, c.Actor, in.Revision, in.Required, u.now())
 	if err != nil {
 		return View{}, err
 	}

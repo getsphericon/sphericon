@@ -21,8 +21,14 @@ import (
 const joinerPassword = "joiner-password-1"
 
 // setDomainJoin switches Acme's domain join as c and returns the answer.
+// The switch names the revision it was made on (ADR 0119), so the client reads it first; a caller
+// refused the read is refused the switch alike.
 func setDomainJoin(c *siteapi.Client, enabled bool) (*siteapi.SiteDomainJoinResource, error) {
-	return c.SiteDomainJoinSet(context.Background(), &siteapi.SiteSetDomainJoinInput{Enabled: enabled},
+	read, err := c.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
+	if err != nil {
+		return nil, err
+	}
+	return c.SiteDomainJoinSet(context.Background(), &siteapi.SiteSetDomainJoinInput{Revision: read.Revision, Enabled: enabled},
 		siteapi.SiteDomainJoinSetParams{WorkspaceId: fixtures.AcmePublicID})
 }
 
@@ -206,7 +212,9 @@ func TestADomainHandedOverJoinsItsNewHolderOnly(t *testing.T) {
 
 func setGlobexJoin(t *testing.T, c *siteapi.Client) *siteapi.SiteDomainJoinResource {
 	t.Helper()
-	res, err := c.SiteDomainJoinSet(context.Background(), &siteapi.SiteSetDomainJoinInput{Enabled: true},
+	read, err := c.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.GlobexPublicID})
+	require.NoError(t, err)
+	res, err := c.SiteDomainJoinSet(context.Background(), &siteapi.SiteSetDomainJoinInput{Revision: read.Revision, Enabled: true},
 		siteapi.SiteDomainJoinSetParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
 	return res
@@ -294,10 +302,10 @@ func TestAnAdminReadsAndSwitchesDomainJoin(t *testing.T) {
 
 	set, err := setDomainJoin(admin, true)
 	require.NoError(t, err)
-	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: true}, set)
+	assert.True(t, set.Enabled)
 	read, err := admin.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: true}, read)
+	assert.True(t, read.Enabled)
 }
 
 func TestAMemberCannotReadOrSwitchDomainJoin(t *testing.T) {
@@ -316,7 +324,7 @@ func TestAnOwnerReadsDomainJoin(t *testing.T) {
 	read, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
 
 	require.NoError(t, err)
-	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: false}, read)
+	assert.False(t, read.Enabled)
 }
 
 func TestTheSwitchIsReadBackAsSet(t *testing.T) {
@@ -327,5 +335,5 @@ func TestTheSwitchIsReadBackAsSet(t *testing.T) {
 	read, err := owner.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
 
 	require.NoError(t, err)
-	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: true}, read)
+	assert.True(t, read.Enabled)
 }

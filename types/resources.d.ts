@@ -2047,7 +2047,6 @@ export default interface Resources {
         "currencyLabel": "Reporting currency",
         "currencyPlaceholder": "Set by the first order",
         "errorTitle": "Could not save the revenue settings",
-        "forbidden": "Only owners and admins can change the revenue settings.",
         "loadError": "Failed to load the revenue settings",
         "title": "Revenue",
         "windowDescription": "An order is credited to the message whose link its contact last clicked within this many days (1 to 90). A change applies only to orders that arrive afterwards.",

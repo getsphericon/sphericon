@@ -93,25 +93,37 @@ func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (
 	return l.reader.Export(ctx, s, f)
 }
 
-// Retention is the scoped Workspace's retention window in days, nil while its entries are kept.
-func (l *Log) Retention(ctx context.Context, s *ent.Scoped) (*int, error) {
+// RetentionWindow is the scoped Workspace's retention window: its days, nil while its entries are
+// kept, and the Workspace's revision (ADR 0119), which a change names.
+type RetentionWindow struct {
+	Days     *int
+	Revision int64
+}
+
+// Retention is the scoped Workspace's retention window.
+func (l *Log) Retention(ctx context.Context, s *ent.Scoped) (RetentionWindow, error) {
 	if !l.retentionLicensed() {
-		return nil, ErrRetentionUnlicensed
+		return RetentionWindow{}, ErrRetentionUnlicensed
 	}
 	ws, err := l.workspaces.Get(ctx, s)
 	if err != nil {
-		return nil, err
+		return RetentionWindow{}, err
 	}
-	return ws.RetentionDays, nil
+	return RetentionWindow{Days: ws.RetentionDays, Revision: ws.Revision}, nil
 }
 
 // SetRetention sets the scoped Workspace's retention window, or clears it with nil, as the scope's
-// actor: a change is recorded as a `workspace.update` Audit entry.
-func (l *Log) SetRetention(ctx context.Context, s *ent.Scoped, days *int) error {
+// actor, on the Workspace's revision the change was made on: a change is recorded as a
+// `workspace.update` Audit entry.
+func (l *Log) SetRetention(ctx context.Context, s *ent.Scoped, revision int64, days *int) (RetentionWindow, error) {
 	if !l.retentionLicensed() {
-		return ErrRetentionUnlicensed
+		return RetentionWindow{}, ErrRetentionUnlicensed
 	}
-	return l.workspaces.SetAuditRetention(ctx, s, s.Actor(), days)
+	ws, err := l.workspaces.SetAuditRetention(ctx, s, s.Actor(), revision, days)
+	if err != nil {
+		return RetentionWindow{}, err
+	}
+	return RetentionWindow{Days: ws.RetentionDays, Revision: ws.Revision}, nil
 }
 
 // Licensed reports whether the Instance's License includes the Audit log.

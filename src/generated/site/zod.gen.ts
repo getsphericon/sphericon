@@ -852,7 +852,8 @@ export const zSiteAuditFacets = z.object({
  * How long the Audit log is kept; the Enterprise advanced-retention control
  */
 export const zSiteAuditRetention = z.object({
-  retentionDays: zRetentionDays.nullable()
+  retentionDays: zRetentionDays.nullable(),
+  revision: zRevision
 });
 
 /**
@@ -1171,7 +1172,8 @@ export const zSiteDnsRecord = z.object({
  * Whether the Workspace admits Users by Join domain
  */
 export const zSiteDomainJoinResource = z.object({
-  enabled: z.boolean()
+  enabled: z.boolean(),
+  revision: zRevision
 });
 
 /**
@@ -1832,7 +1834,8 @@ export const zSiteRevenuePoint = z.object({
  */
 export const zSiteRevenueSettingsResource = z.object({
   reportingCurrency: zCurrencyCode.nullable(),
-  attributionWindowDays: zAttributionWindowDays
+  attributionWindowDays: zAttributionWindowDays,
+  revision: zRevision
 });
 
 /**
@@ -2036,6 +2039,7 @@ export const zSiteSesConfig = z.object({
  * Switch domain join on or off
  */
 export const zSiteSetDomainJoinInput = z.object({
+  revision: zRevision,
   enabled: z.boolean()
 });
 
@@ -2326,6 +2330,7 @@ export const zSiteUpdateMembershipInput = z.object({
  * Change the revenue settings; a field left out stays as it is
  */
 export const zSiteUpdateRevenueSettingsInput = z.object({
+  revision: zRevision,
   reportingCurrency: z.exactOptional(zCurrencyCode),
   attributionWindowDays: z.exactOptional(zAttributionWindowDays)
 });
@@ -2341,6 +2346,7 @@ export const zSiteUpdateTokenInput = z.object({
  * Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change.
  */
 export const zSiteUpdateWorkspaceInput = z.object({
+  revision: zRevision,
   name: zName,
   postalAddress: z.exactOptional(z.string())
 });
@@ -2673,6 +2679,7 @@ export const zSiteUpdateContactInput = z.object({
  * Set the Workspace time zone
  */
 export const zSiteWorkspaceTimezoneInput = z.object({
+  revision: zRevision,
   timezone: zTimeZoneName
 });
 
@@ -3827,7 +3834,8 @@ export const zSiteWorkspaceResource = z.object({
   secondFactorRequirementGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
   sendCap: z.exactOptional(zSiteSendCap.nullable()),
   accountLinkAvailable: z.boolean(),
-  createdAt: zTimestamp
+  createdAt: zTimestamp,
+  revision: zRevision
 });
 
 /**
@@ -4789,6 +4797,15 @@ export const zSiteWorkspacesRestorePath = z.object({
  * The request has succeeded.
  */
 export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
+
+export const zSiteWorkspacesGetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesGetResponse = zSiteWorkspaceResource;
 
 export const zSiteWorkspacesUpdateBody = zSiteUpdateWorkspaceInput;
 
@@ -5983,6 +6000,8 @@ export const zSiteWorkspacesLiftSecondFactorRequirementPath = z.object({
  * The request has succeeded.
  */
 export const zSiteWorkspacesLiftSecondFactorRequirementResponse = zSiteWorkspaceResource;
+
+export const zSiteWorkspacesRequireSecondFactorBody = zRevisionInput;
 
 export const zSiteWorkspacesRequireSecondFactorPath = z.object({
   workspaceId: zWorkspaceId

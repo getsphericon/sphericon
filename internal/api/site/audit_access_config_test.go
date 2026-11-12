@@ -81,7 +81,7 @@ func TestWorkspaceSettingsChangeIsAudited(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	_, err := c.SiteWorkspacesUpdate(context.Background(),
-		&siteapi.SiteUpdateWorkspaceInput{Name: "Acme Renamed", PostalAddress: siteapi.NewOptString("1 Main St")},
+		&siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(context.Background(), t, string(fixtures.AcmePublicID))), Name: "Acme Renamed", PostalAddress: siteapi.NewOptString("1 Main St")},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 

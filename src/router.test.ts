@@ -27,6 +27,7 @@ const workspace = (workspaceId: string) => ({
   name: workspaceId,
   workspaceId,
   collectKey: 'omck',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,

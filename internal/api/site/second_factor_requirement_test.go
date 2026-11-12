@@ -40,7 +40,10 @@ func requirementEnv(t *testing.T, at time.Time) *testhelper.TestEnv {
 // requireSecondFactor switches the Workspace's Two-factor requirement on as c.
 func requireSecondFactor(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.SiteWorkspaceResource {
 	t.Helper()
-	res, err := c.SiteWorkspacesRequireSecondFactor(t.Context(), siteapi.SiteWorkspacesRequireSecondFactorParams{WorkspaceId: workspaceID})
+	// The switch names the revision it was made on (ADR 0119), so the client reads the Workspace first.
+	read, err := c.SiteWorkspacesGet(t.Context(), siteapi.SiteWorkspacesGetParams{WorkspaceId: workspaceID})
+	require.NoError(t, err)
+	res, err := c.SiteWorkspacesRequireSecondFactor(t.Context(), &siteapi.RevisionInput{Revision: read.Revision}, siteapi.SiteWorkspacesRequireSecondFactorParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
 }
@@ -222,7 +225,7 @@ func TestAWithheldOwnerCanStillTurnTheRequirementOff(t *testing.T) {
 // The exemption is for turning the requirement off only.
 func TestAWithheldOwnerCannotSwitchTheRequirementOn(t *testing.T) {
 	env := requirementEnv(t, ritaGraceEnds.Add(time.Hour))
-	_, err := env.SiteActor(t, fixtures.UmbrellaOwnerRitaEmail).SiteWorkspacesRequireSecondFactor(t.Context(), siteapi.SiteWorkspacesRequireSecondFactorParams{WorkspaceId: fixtures.UmbrellaPublicID})
+	_, err := env.SiteActor(t, fixtures.UmbrellaOwnerRitaEmail).SiteWorkspacesRequireSecondFactor(t.Context(), &siteapi.RevisionInput{Revision: 1}, siteapi.SiteWorkspacesRequireSecondFactorParams{WorkspaceId: fixtures.UmbrellaPublicID})
 	problem := testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, siteapi.ProblemCodeSecondFactorRequired, problem.Code.Value)
 }

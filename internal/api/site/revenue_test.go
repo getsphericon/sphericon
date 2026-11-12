@@ -70,8 +70,10 @@ func revenueOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, rng site
 
 func chooseCurrency(t *testing.T, c *siteapi.Client, code string) {
 	t.Helper()
-	_, err := c.SiteWorkspacesUpdateRevenueSettings(t.Context(),
-		&siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode(siteapi.CurrencyCode(code))},
+	read, err := c.SiteWorkspacesGetRevenueSettings(t.Context(), siteapi.SiteWorkspacesGetRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	_, err = c.SiteWorkspacesUpdateRevenueSettings(t.Context(),
+		&siteapi.SiteUpdateRevenueSettingsInput{Revision: read.Revision, ReportingCurrency: siteapi.NewOptCurrencyCode(siteapi.CurrencyCode(code))},
 		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 }
@@ -177,7 +179,7 @@ func TestACurrencyChosenBeforeAnyOrderLeavesFirstOrderAtNull(t *testing.T) {
 	env := testhelper.Setup(t)
 	art := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 	_, err := art.SiteWorkspacesUpdateRevenueSettings(t.Context(),
-		&siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("EUR")},
+		&siteapi.SiteUpdateRevenueSettingsInput{Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string(fixtures.VandelayPublicID))), ReportingCurrency: siteapi.NewOptCurrencyCode("EUR")},
 		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
 

@@ -26,6 +26,7 @@ const WORKSPACE = {
   id: 'TestWs01',
   name: 'Test',
   collectKey: 'omck_test_key',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,

@@ -90,7 +90,9 @@ func TestSwitchingTheRequirementOnStartsTheCallersGrace(t *testing.T) {
 	s, m, err := memberships.New(env.DB, env.Bus).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.InitechPublicID)
 	require.NoError(t, err)
 
-	v, err := env.WorkspaceView.SetSecondFactorRequirement(t.Context(), s, workspaceview.Caller{Membership: m}, true)
+	revision := env.DB.Workspace.GetX(t.Context(), fixtures.InitechID).Revision
+	v, err := env.WorkspaceView.SetSecondFactorRequirement(t.Context(), s, workspaceview.Caller{Membership: m},
+		workspaceview.SetSecondFactorRequirementInput{Revision: &revision, Required: true})
 
 	require.NoError(t, err)
 	require.NotNil(t, v.Summary.Workspace.SecondFactorRequiredAt)

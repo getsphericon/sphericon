@@ -23,6 +23,8 @@ type Workspace struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// DiscardedAt holds the value of the "discarded_at" field.
 	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
+	// Revision holds the value of the "revision" field.
+	Revision int64 `json:"revision,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// PublicID holds the value of the "public_id" field.
@@ -573,7 +575,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case workspace.FieldRequireConfirmedOptIn, workspace.FieldDomainJoinEnabled, workspace.FieldAbuseExempt:
 			values[i] = new(sql.NullBool)
-		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldAttributionWindowDays, workspace.FieldSendCap, workspace.FieldFeedPosition:
+		case workspace.FieldID, workspace.FieldRevision, workspace.FieldRetentionDays, workspace.FieldAttributionWindowDays, workspace.FieldSendCap, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
 		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
@@ -618,6 +620,12 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DiscardedAt = new(time.Time)
 				*_m.DiscardedAt = value.Time
+			}
+		case workspace.FieldRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field revision", values[i])
+			} else if value.Valid {
+				_m.Revision = value.Int64
 			}
 		case workspace.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -1037,6 +1045,9 @@ func (_m *Workspace) String() string {
 		builder.WriteString("discarded_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Revision))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

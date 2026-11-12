@@ -20,6 +20,7 @@ const existing: SiteWorkspaceResource = {
   id: 'TestWs01',
   name: 'Acme',
   collectKey: 'omck_test_key',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,

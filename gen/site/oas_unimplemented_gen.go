@@ -2027,6 +2027,16 @@ func (UnimplementedHandler) SiteWorkspacesDelete(ctx context.Context, req *SiteD
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesGet implements SiteWorkspaces_get operation.
+//
+// Read one Workspace the caller is a member of, as the list shows it: what its settings pages edit,
+// with its revision (ADR 0119).
+//
+// GET /workspaces/{workspaceId}
+func (UnimplementedHandler) SiteWorkspacesGet(ctx context.Context, params SiteWorkspacesGetParams) (r *SiteWorkspaceResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesGetRevenueSettings implements SiteWorkspaces_getRevenueSettings operation.
 //
 // Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
@@ -2086,7 +2096,7 @@ func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []
 // grace restarts. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/second-factor-requirement
-func (UnimplementedHandler) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (r *SiteWorkspaceResource, _ error) {
+func (UnimplementedHandler) SiteWorkspacesRequireSecondFactor(ctx context.Context, req *RevisionInput, params SiteWorkspacesRequireSecondFactorParams) (r *SiteWorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

@@ -259,7 +259,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "Acme Three"}) // workspace.create
 	require.NoError(t, err)
-	_, err = owner.SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Acme Two"}, // workspace.update
+	_, err = owner.SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(ctx, t, string(fixtures.AcmePublicID))), Name: "Acme Two"}, // workspace.update
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesDelete(ctx, &siteapi.SiteDeleteWorkspaceInput{Name: "Acme Two"}, // workspace.delete

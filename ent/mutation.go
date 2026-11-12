@@ -68925,6 +68925,8 @@ type WorkspaceMutation struct {
 	created_at                   *time.Time
 	updated_at                   *time.Time
 	discarded_at                 *time.Time
+	revision                     *int64
+	addrevision                  *int64
 	name                         *string
 	public_id                    *string
 	collect_key                  *string
@@ -69310,6 +69312,62 @@ func (m *WorkspaceMutation) DiscardedAtCleared() bool {
 func (m *WorkspaceMutation) ResetDiscardedAt() {
 	m.discarded_at = nil
 	delete(m.clearedFields, workspace.FieldDiscardedAt)
+}
+
+// SetRevision sets the "revision" field.
+func (m *WorkspaceMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *WorkspaceMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *WorkspaceMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *WorkspaceMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *WorkspaceMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
 }
 
 // SetName sets the "name" field.
@@ -72773,7 +72831,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -72782,6 +72840,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.discarded_at != nil {
 		fields = append(fields, workspace.FieldDiscardedAt)
+	}
+	if m.revision != nil {
+		fields = append(fields, workspace.FieldRevision)
 	}
 	if m.name != nil {
 		fields = append(fields, workspace.FieldName)
@@ -72866,6 +72927,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case workspace.FieldDiscardedAt:
 		return m.DiscardedAt()
+	case workspace.FieldRevision:
+		return m.Revision()
 	case workspace.FieldName:
 		return m.Name()
 	case workspace.FieldPublicID:
@@ -72927,6 +72990,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldUpdatedAt(ctx)
 	case workspace.FieldDiscardedAt:
 		return m.OldDiscardedAt(ctx)
+	case workspace.FieldRevision:
+		return m.OldRevision(ctx)
 	case workspace.FieldName:
 		return m.OldName(ctx)
 	case workspace.FieldPublicID:
@@ -73002,6 +73067,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDiscardedAt(v)
+		return nil
+	case workspace.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
 		return nil
 	case workspace.FieldName:
 		v, ok := value.(string)
@@ -73172,6 +73244,9 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *WorkspaceMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, workspace.FieldRevision)
+	}
 	if m.addretention_days != nil {
 		fields = append(fields, workspace.FieldRetentionDays)
 	}
@@ -73192,6 +73267,8 @@ func (m *WorkspaceMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *WorkspaceMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case workspace.FieldRevision:
+		return m.AddedRevision()
 	case workspace.FieldRetentionDays:
 		return m.AddedRetentionDays()
 	case workspace.FieldAttributionWindowDays:
@@ -73209,6 +73286,13 @@ func (m *WorkspaceMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *WorkspaceMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case workspace.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	case workspace.FieldRetentionDays:
 		v, ok := value.(int)
 		if !ok {
@@ -73371,6 +73455,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldDiscardedAt:
 		m.ResetDiscardedAt()
+		return nil
+	case workspace.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case workspace.FieldName:
 		m.ResetName()

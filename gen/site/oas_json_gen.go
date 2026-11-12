@@ -15898,10 +15898,15 @@ func (s *SiteAuditRetention) encodeFields(e *jx.Encoder) {
 		e.FieldStart("retentionDays")
 		s.RetentionDays.Encode(e)
 	}
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfSiteAuditRetention = [1]string{
+var jsonFieldsNameOfSiteAuditRetention = [2]string{
 	0: "retentionDays",
+	1: "revision",
 }
 
 // Decode decodes SiteAuditRetention from json.
@@ -15923,6 +15928,16 @@ func (s *SiteAuditRetention) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"retentionDays\"")
 			}
+		case "revision":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -15933,7 +15948,7 @@ func (s *SiteAuditRetention) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -26601,10 +26616,15 @@ func (s *SiteDomainJoinResource) encodeFields(e *jx.Encoder) {
 		e.FieldStart("enabled")
 		e.Bool(s.Enabled)
 	}
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfSiteDomainJoinResource = [1]string{
+var jsonFieldsNameOfSiteDomainJoinResource = [2]string{
 	0: "enabled",
+	1: "revision",
 }
 
 // Decode decodes SiteDomainJoinResource from json.
@@ -26628,6 +26648,16 @@ func (s *SiteDomainJoinResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"enabled\"")
 			}
+		case "revision":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -26638,7 +26668,7 @@ func (s *SiteDomainJoinResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -36946,11 +36976,16 @@ func (s *SiteRevenueSettingsResource) encodeFields(e *jx.Encoder) {
 		e.FieldStart("attributionWindowDays")
 		s.AttributionWindowDays.Encode(e)
 	}
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfSiteRevenueSettingsResource = [2]string{
+var jsonFieldsNameOfSiteRevenueSettingsResource = [3]string{
 	0: "reportingCurrency",
 	1: "attributionWindowDays",
+	2: "revision",
 }
 
 // Decode decodes SiteRevenueSettingsResource from json.
@@ -36982,6 +37017,16 @@ func (s *SiteRevenueSettingsResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"attributionWindowDays\"")
 			}
+		case "revision":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -36992,7 +37037,7 @@ func (s *SiteRevenueSettingsResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -41176,13 +41221,18 @@ func (s *SiteSetDomainJoinInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteSetDomainJoinInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("enabled")
 		e.Bool(s.Enabled)
 	}
 }
 
-var jsonFieldsNameOfSiteSetDomainJoinInput = [1]string{
-	0: "enabled",
+var jsonFieldsNameOfSiteSetDomainJoinInput = [2]string{
+	0: "revision",
+	1: "enabled",
 }
 
 // Decode decodes SiteSetDomainJoinInput from json.
@@ -41194,8 +41244,18 @@ func (s *SiteSetDomainJoinInput) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "enabled":
+		case "revision":
 			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "enabled":
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Bool()
 				s.Enabled = bool(v)
@@ -41216,7 +41276,7 @@ func (s *SiteSetDomainJoinInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -46678,6 +46738,10 @@ func (s *SiteUpdateRevenueSettingsInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteUpdateRevenueSettingsInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		if s.ReportingCurrency.Set {
 			e.FieldStart("reportingCurrency")
 			s.ReportingCurrency.Encode(e)
@@ -46691,9 +46755,10 @@ func (s *SiteUpdateRevenueSettingsInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateRevenueSettingsInput = [2]string{
-	0: "reportingCurrency",
-	1: "attributionWindowDays",
+var jsonFieldsNameOfSiteUpdateRevenueSettingsInput = [3]string{
+	0: "revision",
+	1: "reportingCurrency",
+	2: "attributionWindowDays",
 }
 
 // Decode decodes SiteUpdateRevenueSettingsInput from json.
@@ -46701,9 +46766,20 @@ func (s *SiteUpdateRevenueSettingsInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteUpdateRevenueSettingsInput to nil")
 	}
+	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		case "reportingCurrency":
 			if err := func() error {
 				s.ReportingCurrency.Reset()
@@ -46730,6 +46806,38 @@ func (s *SiteUpdateRevenueSettingsInput) Decode(d *jx.Decoder) error {
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode SiteUpdateRevenueSettingsInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteUpdateRevenueSettingsInput) {
+					name = jsonFieldsNameOfSiteUpdateRevenueSettingsInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 
 	return nil
@@ -47166,6 +47274,10 @@ func (s *SiteUpdateWorkspaceInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteUpdateWorkspaceInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("name")
 		s.Name.Encode(e)
 	}
@@ -47177,9 +47289,10 @@ func (s *SiteUpdateWorkspaceInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateWorkspaceInput = [2]string{
-	0: "name",
-	1: "postalAddress",
+var jsonFieldsNameOfSiteUpdateWorkspaceInput = [3]string{
+	0: "revision",
+	1: "name",
+	2: "postalAddress",
 }
 
 // Decode decodes SiteUpdateWorkspaceInput from json.
@@ -47191,8 +47304,18 @@ func (s *SiteUpdateWorkspaceInput) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "name":
+		case "revision":
 			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				if err := s.Name.Decode(d); err != nil {
 					return err
@@ -47221,7 +47344,7 @@ func (s *SiteUpdateWorkspaceInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -48809,9 +48932,13 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [22]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [23]string{
 	0:  "id",
 	1:  "name",
 	2:  "collectKey",
@@ -48834,6 +48961,7 @@ var jsonFieldsNameOfSiteWorkspaceResource = [22]string{
 	19: "sendCap",
 	20: "accountLinkAvailable",
 	21: "createdAt",
+	22: "revision",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -49095,6 +49223,16 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
+		case "revision":
+			requiredBitSet[2] |= 1 << 6
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -49107,7 +49245,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	for i, mask := range [3]uint8{
 		0b01111111,
 		0b11101100,
-		0b00110000,
+		0b01110000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -49163,13 +49301,18 @@ func (s *SiteWorkspaceTimezoneInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteWorkspaceTimezoneInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("timezone")
 		s.Timezone.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceTimezoneInput = [1]string{
-	0: "timezone",
+var jsonFieldsNameOfSiteWorkspaceTimezoneInput = [2]string{
+	0: "revision",
+	1: "timezone",
 }
 
 // Decode decodes SiteWorkspaceTimezoneInput from json.
@@ -49181,8 +49324,18 @@ func (s *SiteWorkspaceTimezoneInput) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "timezone":
+		case "revision":
 			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "timezone":
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				if err := s.Timezone.Decode(d); err != nil {
 					return err
@@ -49201,7 +49354,7 @@ func (s *SiteWorkspaceTimezoneInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

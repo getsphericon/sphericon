@@ -47,9 +47,9 @@ func TestUpdateTrimsThePostalAddress(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	padded, blank := "  1 Main St  ", "   "
 
-	set, err := m.Update(t.Context(), s, events.Actor{Kind: events.ActorUser}, "Acme", &padded)
+	set, err := m.Update(t.Context(), s, events.Actor{Kind: events.ActorUser}, env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).Revision, "Acme", &padded)
 	require.NoError(t, err)
-	cleared, err := m.Update(t.Context(), s, events.Actor{Kind: events.ActorUser}, "Acme", &blank)
+	cleared, err := m.Update(t.Context(), s, events.Actor{Kind: events.ActorUser}, set.Revision, "Acme", &blank)
 	require.NoError(t, err)
 
 	assert.Equal(t, "1 Main St", set.PostalAddress)

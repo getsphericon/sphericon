@@ -1,120 +1,64 @@
-import { Box, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
-import { useForm } from '@mantine/form'
+import { Fieldset, Stack } from '@mantine/core'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-  siteWorkspacesSetTimezoneMutation,
-  siteWorkspacesUpdateMutation,
-} from '../../../generated/site/@tanstack/react-query.gen.ts'
-import type {
-  SiteUpdateWorkspaceInput,
-  SiteWorkspaceResource,
-} from '../../../generated/site/types.gen.ts'
-import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
+import { QueryBoundary } from '../../../components/QueryBoundary.tsx'
+import { BlockSkeleton } from '../../../components/Skeletons.tsx'
+import { siteWorkspacesGetOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
-import { TIME_ZONES } from '../../../utils/datetime.ts'
 import { can } from '../../../utils/permissions.ts'
 import { DangerZoneSection } from './DangerZoneSection.tsx'
 import { RevenueSettingsSection } from './RevenueSettingsSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
+import { GeneralEditForm, TimezoneEditForm } from './workspaceSettingsEditors.ts'
+import { CanEdit } from './workspaceSettingsForm.ts'
 
-// GeneralSection is split out so the rename form seeds its initial value from the
-// loaded workspace without an effect.
-function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
-  const { t } = useTranslation()
-  const form = useForm<Required<Pick<SiteUpdateWorkspaceInput, 'name' | 'postalAddress'>>>({
-    initialValues: { name: workspace.name, postalAddress: workspace.postalAddress },
-  })
-
-  // Renaming needs workspace:update (ADR 0043); anyone else sees the values read-only.
-  const canEdit = can(workspace, 'workspace:update')
-
-  const updateMutation = useResourceMutation({
-    mutation: siteWorkspacesUpdateMutation(),
-    successMessage: t(($) => $.settings.saved),
-    errorTitle: t(($) => $.settings.errorTitle),
-  })
-
+// The General and Time zone sections are each an editor session over the Workspace as stored
+// (ADR 0119), read on its own; anyone without the Permission sees the values read-only.
+function SettingsSection({
+  workspace,
+  permission,
+  children,
+}: {
+  workspace: SiteWorkspaceResource
+  permission: 'workspace:update' | 'workspace:timezone'
+  children: (stored: SiteWorkspaceResource) => ReactNode
+}) {
+  const { data } = useSuspenseQuery(
+    siteWorkspacesGetOptions({ path: { workspaceId: workspace.id } }),
+  )
+  const canEdit = can(workspace, permission)
   return (
-    <Box>
-      <form
-        onSubmit={form.onSubmit((values) =>
-          updateMutation.mutate({
-            path: { workspaceId: workspace.id },
-            body: { name: values.name.trim(), postalAddress: values.postalAddress.trim() },
-          }),
-        )}
-      >
-        <Stack maw={420}>
-          <TextInput
-            label={t(($) => $.settings.nameLabel)}
-            required
-            disabled={!canEdit}
-            {...form.getInputProps('name')}
-          />
-          <Textarea
-            label={t(($) => $.settings.postalAddressLabel)}
-            description={t(($) => $.settings.postalAddressDescription)}
-            placeholder={t(($) => $.settings.postalAddressPlaceholder)}
-            autosize
-            minRows={2}
-            disabled={!canEdit}
-            {...form.getInputProps('postalAddress')}
-          />
-          {canEdit ? (
-            <Group justify="flex-end">
-              <Button type="submit" loading={updateMutation.isPending}>
-                {t(($) => $.actions.save)}
-              </Button>
-            </Group>
-          ) : null}
-        </Stack>
-      </form>
-    </Box>
+    <CanEdit value={canEdit}>
+      <Fieldset variant="unstyled" disabled={!canEdit}>
+        {children(data)}
+      </Fieldset>
+    </CanEdit>
+  )
+}
+
+function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+  // Renaming needs workspace:update (ADR 0043).
+  return (
+    <SettingsSection workspace={workspace} permission="workspace:update">
+      {(stored) => (
+        <GeneralEditForm workspaceId={workspace.id} id="general" loaded={stored} titled={false} />
+      )}
+    </SettingsSection>
   )
 }
 
 // TimezoneSection sets the Workspace time zone (ADR 0057): the zone every report counts its days
-// in. Changing it needs workspace:timezone; anyone else sees it read-only.
+// in. Changing it needs workspace:timezone.
 function TimezoneSection({ workspace }: { workspace: SiteWorkspaceResource }) {
-  const { t } = useTranslation()
-  const form = useForm<{ timezone: string }>({ initialValues: { timezone: workspace.timezone } })
-  const canEdit = can(workspace, 'workspace:timezone')
-
-  const mutation = useResourceMutation({
-    mutation: siteWorkspacesSetTimezoneMutation(),
-    successMessage: t(($) => $.settings.saved),
-    errorTitle: t(($) => $.settings.errorTitle),
-  })
-
   return (
-    <form
-      onSubmit={form.onSubmit((values) =>
-        mutation.mutate({
-          path: { workspaceId: workspace.id },
-          body: { timezone: values.timezone },
-        }),
+    <SettingsSection workspace={workspace} permission="workspace:timezone">
+      {(stored) => (
+        <TimezoneEditForm workspaceId={workspace.id} id="timezone" loaded={stored} titled={false} />
       )}
-    >
-      <Stack maw={420}>
-        <Select
-          label={t(($) => $.settings.timezoneLabel)}
-          description={t(($) => $.settings.timezoneDescription)}
-          data={TIME_ZONES}
-          searchable
-          allowDeselect={false}
-          disabled={!canEdit}
-          {...form.getInputProps('timezone')}
-        />
-        {canEdit ? (
-          <Group justify="flex-end">
-            <Button type="submit" loading={mutation.isPending}>
-              {t(($) => $.actions.save)}
-            </Button>
-          </Group>
-        ) : null}
-      </Stack>
-    </form>
+    </SettingsSection>
   )
 }
 
@@ -126,8 +70,10 @@ export function GeneralPage() {
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.general)}>
       {(workspace) => (
         <Stack gap="xl">
-          <GeneralSection workspace={workspace} />
-          <TimezoneSection workspace={workspace} />
+          <QueryBoundary fallback={<BlockSkeleton />} errorTitle={t(($) => $.settings.errorTitle)}>
+            <GeneralSection workspace={workspace} />
+            <TimezoneSection workspace={workspace} />
+          </QueryBoundary>
           <RevenueSettingsSection workspace={workspace} />
           <DangerZoneSection workspace={workspace} />
         </Stack>

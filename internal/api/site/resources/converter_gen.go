@@ -1067,6 +1067,7 @@ func (c *ConverterImpl) DomainJoinToResource(source *ent.Workspace) *site.SiteDo
 	if source != nil {
 		var siteapiSiteDomainJoinResource site.SiteDomainJoinResource
 		siteapiSiteDomainJoinResource.Enabled = (*source).DomainJoinEnabled
+		siteapiSiteDomainJoinResource.Revision = revision((*source).Revision)
 		pSiteapiSiteDomainJoinResource = &siteapiSiteDomainJoinResource
 	}
 	return pSiteapiSiteDomainJoinResource
@@ -1910,6 +1911,7 @@ func (c *ConverterImpl) RevenueSettingsToResource(source *ent.Workspace) site.Si
 	if source != nil {
 		siteapiSiteRevenueSettingsResource.ReportingCurrency = nilCurrencyCode((*source).ReportingCurrency)
 		siteapiSiteRevenueSettingsResource.AttributionWindowDays = attributionWindowDays((*source).AttributionWindowDays)
+		siteapiSiteRevenueSettingsResource.Revision = revision((*source).Revision)
 	}
 	return siteapiSiteRevenueSettingsResource
 }
@@ -2709,6 +2711,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		// siteapiSiteWorkspaceResource.SendCap: ignore
 		// siteapiSiteWorkspaceResource.AccountLinkAvailable: ignore
 		siteapiSiteWorkspaceResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSiteWorkspaceResource.Revision = revision((*source).Revision)
 	}
 	return siteapiSiteWorkspaceResource
 }

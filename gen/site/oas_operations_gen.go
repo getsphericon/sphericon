@@ -203,6 +203,7 @@ const (
 	SiteWorkspacesAccountLinkOperation                 OperationName = "SiteWorkspacesAccountLink"
 	SiteWorkspacesCreateOperation                      OperationName = "SiteWorkspacesCreate"
 	SiteWorkspacesDeleteOperation                      OperationName = "SiteWorkspacesDelete"
+	SiteWorkspacesGetOperation                         OperationName = "SiteWorkspacesGet"
 	SiteWorkspacesGetRevenueSettingsOperation          OperationName = "SiteWorkspacesGetRevenueSettings"
 	SiteWorkspacesLeaveOperation                       OperationName = "SiteWorkspacesLeave"
 	SiteWorkspacesLiftSecondFactorRequirementOperation OperationName = "SiteWorkspacesLiftSecondFactorRequirement"

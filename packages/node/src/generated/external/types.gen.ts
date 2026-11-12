@@ -5545,6 +5545,10 @@ export type WorkspaceResource = {
    * when no Send cap applies
    */
   sendCap?: SendCap | null;
+  /**
+   * The revision of the Workspace this answer shows (ADR 0119)
+   */
+  revision: Revision;
 };
 
 /**

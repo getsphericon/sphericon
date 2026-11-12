@@ -1,4 +1,5 @@
 - id: 1 # fixture: Acme
+  revision: 1
   name: Acme
   public_id: AcmeWs01
   collect_key: omck_test_acme_collect_key
@@ -10,6 +11,7 @@
 # isolation tests assert are never visible to, or mutable by, workspace 1. It has
 # its own owner (OwnerJane, see memberships.yml), one non-default integration and one contact.
 - id: 2 # fixture: Globex
+  revision: 1
   name: Globex
   public_id: GlobxWs2
   collect_key: omck_test_globex_collect_key
@@ -19,6 +21,7 @@
 # (ContactErasable, ids 300+ in the other fixture files). A tenant of its own keeps the
 # system Events it carries out of Acme's deliverability and analytics fixtures.
 - id: 3 # fixture: Initech
+  revision: 1
   name: Initech
   public_id: InitcWs3
   collect_key: omck_test_initech_collect_key
@@ -28,6 +31,7 @@
 # (ADR 0020). Rita (owner, Membership before the requirement), Nina (member, joined
 # after it) and Sam (admin, with a Second factor) cover the grace cases.
 - id: 4 # fixture: Umbrella
+  revision: 1
   name: Umbrella
   public_id: UmbrlWs4
   collect_key: omck_test_umbrella_collect_key
@@ -40,6 +44,7 @@
 # Fifth tenant (Hooli) - already suspended by a Staff member (op-fixture) since 2026-02-01, the
 # state Workspace suspension tests start from (ADR 0007, ADR 0026). It has no members; its only rows are the audit log the export test pages through and a stale unverified member.
 - id: 5 # fixture: Hooli
+  revision: 1
   name: Hooli
   public_id: HooliWs5
   collect_key: omck_test_hooli_collect_key
@@ -55,6 +60,7 @@
 # SendingDomainSoylent (traffic) and SendingDomainSoylentIdle (none), and its Events
 # (ids 400+ in events.yml) never touch Acme's rate fixtures.
 - id: 6 # fixture: Soylent
+  revision: 1
   name: Soylent
   public_id: SoylnWs6
   collect_key: omck_test_soylent_collect_key
@@ -63,6 +69,7 @@
 # Seventh tenant (Vandelay) - the abuse detector's subject (ADR 0026): two owners and two
 # verified Sending domains, with no traffic of its own; tests lay the Events down through ent.
 - id: 7 # fixture: Vandelay
+  revision: 1
   name: Vandelay
   public_id: VandlWs7
   collect_key: omck_test_vandelay_collect_key
@@ -70,6 +77,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Eighth tenant (Kramerica) - exempt from the abuse detector by a Staff member (ADR 0026).
 - id: 8 # fixture: Kramerica
+  revision: 1
   name: Kramerica
   public_id: KramrWs8
   collect_key: omck_test_kramerica_collect_key
@@ -79,6 +87,7 @@
 # Ninth tenant (Wayne) - holds a pending claim on a Tracking domain that Umbrella already
 # serves (ADR 0038, ADR 0071): a host two Workspaces claim, one of them verified.
 - id: 9 # fixture: Wayne
+  revision: 1
   name: Wayne
   public_id: WayneWs9
   collect_key: omck_test_wayne_collect_key
@@ -87,12 +96,14 @@
 # Tenth and eleventh tenants (PiedPiper, Aviato) - Dora is the only Owner of both, so User
 # deletion (ADR 0050) is refused and lists them.
 - id: 10 # fixture: PiedPiper
+  revision: 1
   name: Pied Piper
   public_id: PiperW10
   collect_key: omck_test_piedpiper_collect_key
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 11 # fixture: Aviato
+  revision: 1
   name: Aviato
   public_id: AviatW11
   collect_key: omck_test_aviato_collect_key
@@ -102,6 +113,7 @@
 # its only Owner, which does not block his own User deletion. Its Sending domain has traffic over
 # the freeze limit (day 2 in events.yml) that the abuse detector never judges.
 - id: 12 # fixture: Bluth
+  revision: 1
   name: Bluth
   public_id: BluthW12
   collect_key: omck_test_bluth_collect_key
@@ -111,6 +123,7 @@
 # Thirteenth tenant (Cyberdyne) - live; Pru is its only Owner and signs in only through a
 # Sign-in provider, so her User deletion is refused as any sole Owner's is (ADR 0050).
 - id: 13 # fixture: Cyberdyne
+  revision: 1
   name: Cyberdyne
   public_id: CyberW13
   collect_key: omck_test_cyberdyne_collect_key
@@ -119,6 +132,7 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20
+  revision: 1
   name: 'Brightpath'
   public_id: 'BrghtW20'
   collect_key: 'omck_test_brightpath_collect_key'
@@ -127,6 +141,7 @@
 # --- Eligibility and segment scenarios (#555). Each scenario owns a Workspace, so its rows never move another suite's counts. ---
 # Requires confirmed opt-in (ADR 0013): the eligibility matrix with the confirmation gate on.
 - id: 55 # fixture: Lumon
+  revision: 1
   name: Lumon
   public_id: LumonW55
   collect_key: omck_test_lumon_collect_key
@@ -135,6 +150,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Eligibility matrix with the confirmation gate off (the default policy).
 - id: 56 # fixture: Tyrell
+  revision: 1
   name: Tyrell
   public_id: TyrelW56
   collect_key: omck_test_tyrell_collect_key
@@ -142,6 +158,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Segment operator matrix over plain Contact columns.
 - id: 57 # fixture: Oscorp
+  revision: 1
   name: Oscorp
   public_id: OscorW57
   collect_key: omck_test_oscorp_collect_key
@@ -149,6 +166,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Segment rule groups and Event conditions over a small audience.
 - id: 58 # fixture: Massive
+  revision: 1
   name: Massive
   public_id: MassvW58
   collect_key: omck_test_massive_collect_key
@@ -156,6 +174,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Segment operators over Custom fields and the Custom field catalogue.
 - id: 59 # fixture: Initrode
+  revision: 1
   name: Initrode
   public_id: InitrW59
   collect_key: omck_test_initrode_collect_key
@@ -163,6 +182,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Segment preview through the site API; Dwight (DunderOwnerDwight) owns it.
 - id: 60 # fixture: Dunder
+  revision: 1
   name: Dunder
   public_id: DundrW60
   collect_key: omck_test_dunder_collect_key
@@ -171,6 +191,7 @@
 
 # Meter: created before the earliest month of its usage scenarios (outbound_messages.yml).
 - id: 5800 # fixture: Meter
+  revision: 1
   name: Meter
   public_id: MeterW80
   collect_key: omck_test_meter_collect_key
@@ -181,6 +202,7 @@
 # daylight-saving changes of 2026 (8 March, 1 November) rather than relative dates, so the Report-day
 # tests do not drift near midnight.
 - id: 61 # fixture: Gotham
+  revision: 1
   name: Gotham
   public_id: GothmW61
   collect_key: omck_test_gotham_collect_key
@@ -190,6 +212,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Number and date leaves over typed Custom fields, with values of every other JSON type (#750).
 - id: 62 # fixture: Wonka
+  revision: 1
   name: Wonka
   public_id: WonkaW62
   collect_key: omck_test_wonka_collect_key
@@ -198,6 +221,7 @@
 # Capton: two Broadcasts scheduled within the next day to one Segment of three Contacts, for the Send
 # cap item of Needs attention (#939). It has no Send cap until a test sets one, and its bucket is full.
 - id: 63 # fixture: Capton
+  revision: 1
   name: Capton
   public_id: CaptnW63
   collect_key: omck_test_capton_collect_key
@@ -206,6 +230,7 @@
 # Stark: the Contacts the contacts and visitors module tests change (every attribute set, a phone
 # alone, an email with a phone, a source), kept off Acme so its audiences and counts stay as they are.
 - id: 87 # fixture: Stark
+  revision: 1
   name: Stark
   public_id: StarkW87
   collect_key: omck_test_stark_collect_key
@@ -214,6 +239,7 @@
 # Sabre: its one Integration is a Telegram bot (IntegrationSabreTelegram), so its Setup checklist
 # still asks for an email provider.
 - id: 79 # fixture: Sabre
+  revision: 1
   name: Sabre
   public_id: SabreW79
   collect_key: omck_test_sabre_collect_key
@@ -224,6 +250,7 @@
 # Automations and one Enrollment), each the user of one Integration or From domain, so a test moves
 # the one row it is about instead of every row.
 - id: 83 # fixture: Meridian
+  revision: 1
   name: Meridian
   public_id: MonrcW83
   collect_key: omck_test_meridian_collect_key
@@ -232,6 +259,7 @@
 # Babel: Contacts whose own text is hostile (ADR 0016): an instruction to an agent, and quotes that
 # would break out of the JSON an HTTP step builds. No other Contact sits beside them.
 - id: 84 # fixture: Babel
+  revision: 1
   name: Babel
   public_id: BabelW84
   collect_key: omck_test_babel_collect_key
@@ -239,6 +267,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Pinewood: sends its marketing through its default, a Test inbox (ADR 0058), to its one Contact.
 - id: 85 # fixture: Pinewood
+  revision: 1
   name: Pinewood
   public_id: PinewW85
   collect_key: omck_test_pinewood_collect_key
@@ -248,6 +277,7 @@
 # workspace-wide figures hold only its own Orders (orders.yml, order_movements.yml). Bazaar: a
 # Broadcast's Orders, one refunded later.
 - id: 75 # fixture: Bazaar
+  revision: 1
   name: Bazaar
   public_id: BazarW75
   collect_key: omck_test_bazaar_collect_key
@@ -257,6 +287,7 @@
 # Emporium: an Automation's Orders, one cancelled; and the click histories of the attribution
 # tests (events.yml), on a Broadcast and an Automation of their own.
 - id: 76 # fixture: Emporium
+  revision: 1
   name: Emporium
   public_id: EmporW76
   collect_key: omck_test_emporium_collect_key
@@ -265,6 +296,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Mercado: an Order credited to a Broadcast and one credited to no message, for the overview.
 - id: 77 # fixture: Mercado
+  revision: 1
   name: Mercado
   public_id: MercdW77
   collect_key: omck_test_mercado_collect_key
@@ -273,6 +305,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Souk: no Order and no Reporting currency yet; its Contact clicked its Broadcast four days ago.
 - id: 78 # fixture: Souk
+  revision: 1
   name: Souk
   public_id: SoukWs78
   collect_key: omck_test_souk_collect_key
@@ -283,6 +316,7 @@
 # both for "complaint rate". Monarch was suspended by a Staff member for a chargeback and has
 # traffic over the freeze limit (day 2 in events.yml), which the abuse detector must still skip.
 - id: 71 # fixture: Nakatomi
+  revision: 1
   name: Nakatomi
   public_id: NakatW71
   collect_key: omck_test_nakatomi_collect_key
@@ -292,6 +326,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 72 # fixture: Sirius
+  revision: 1
   name: Sirius
   public_id: SiriuW72
   collect_key: omck_test_sirius_collect_key
@@ -301,6 +336,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 73 # fixture: Monarch
+  revision: 1
   name: Monarch
   public_id: MonarW73
   collect_key: omck_test_monarch_collect_key
@@ -312,6 +348,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Virtucon: two Owners who have not verified their email yet (Workspace feed tests).
 - id: 74 # fixture: Virtucon
+  revision: 1
   name: Virtucon
   public_id: VirtcW74
   collect_key: omck_test_virtucon_collect_key
@@ -321,6 +358,7 @@
 # Contacts with countries and Tags, an Automation in each state, the Contacts whose custom fields
 # made its Custom fields (two Segments test them), and a Telegram bot with two bound Contacts.
 - id: 94 # fixture: Duff
+  revision: 1
   name: Duff
   public_id: DuffWs94
   collect_key: omck_test_duff_collect_key
@@ -329,6 +367,7 @@
 # Krusty: SMS through a Twilio account of its own, kept off Acme's SMS audiences: a phone with no
 # consent, a confirmed one and one opted out, and a Segment of numbers, one of them confirmed.
 - id: 95 # fixture: Krusty
+  revision: 1
   name: Krusty
   public_id: KrstyW95
   collect_key: omck_test_krusty_collect_key
@@ -337,6 +376,7 @@
 # Vehement: the Personal tokens and the Connections (ADR 0061) the token and OAuth tests use, of
 # its owner, admin and member, kept off Acme so its token lists and Connections stay as they are.
 - id: 91 # fixture: Vehement
+  revision: 1
   name: Vehement
   public_id: VhmntW91
   collect_key: omck_test_vehement_collect_key
@@ -345,6 +385,7 @@
 # Quahog: the receiver tests of the HTTP Actions and steps (internal/jobs). Its Rule and
 # Automations call http://hooks.quahog.test/notify, a host the tests route to their receiver.
 - id: 92 # fixture: Quahog
+  revision: 1
   name: Quahog
   public_id: QuahgW92
   collect_key: omck_test_quahog_collect_key
@@ -355,6 +396,7 @@
 # one without a Confirmation and one suppressed; a Telegram bot with a Contact in two chats, three
 # in one (one of them through a Visitor) and one who stopped; a second bot with one chat.
 - id: 96 # fixture: Lacuna
+  revision: 1
   name: Lacuna
   public_id: LacnaW96
   collect_key: omck_test_lacuna_collect_key

@@ -209,6 +209,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteWorkspacesAccountLinkOperation:                 {workspace: true, permissions: []memberships.Permission{memberships.PermAccountLinkOpen}},
 	siteapi.SiteWorkspacesCreateOperation:                      {},
 	siteapi.SiteWorkspacesDeleteOperation:                      {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceDelete}, whileAcceptancePending: true},
+	siteapi.SiteWorkspacesGetOperation:                         {workspace: true},
 	siteapi.SiteWorkspacesGetRevenueSettingsOperation:          {workspace: true},
 	siteapi.SiteWorkspacesLeaveOperation:                       {workspace: true},
 	siteapi.SiteWorkspacesLiftSecondFactorRequirementOperation: {workspace: true, permissions: []memberships.Permission{memberships.PermSecondFactorManage}, whileWithheld: true},

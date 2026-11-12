@@ -1806,6 +1806,8 @@ func init() {
 	workspaceMixin := schema.Workspace{}.Mixin()
 	workspaceMixinFields0 := workspaceMixin[0].Fields()
 	_ = workspaceMixinFields0
+	workspaceMixinFields2 := workspaceMixin[2].Fields()
+	_ = workspaceMixinFields2
 	workspaceFields := schema.Workspace{}.Fields()
 	_ = workspaceFields
 	// workspaceDescCreatedAt is the schema descriptor for created_at field.
@@ -1818,6 +1820,12 @@ func init() {
 	workspace.DefaultUpdatedAt = workspaceDescUpdatedAt.Default.(func() time.Time)
 	// workspace.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	workspace.UpdateDefaultUpdatedAt = workspaceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// workspaceDescRevision is the schema descriptor for revision field.
+	workspaceDescRevision := workspaceMixinFields2[0].Descriptor()
+	// workspace.DefaultRevision holds the default value on creation for the revision field.
+	workspace.DefaultRevision = workspaceDescRevision.Default.(func() int64)
+	// workspace.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	workspace.RevisionValidator = workspaceDescRevision.Validators[0].(func(int64) error)
 	// workspaceDescPublicID is the schema descriptor for public_id field.
 	workspaceDescPublicID := workspaceFields[2].Descriptor()
 	// workspace.PublicIDValidator is a validator for the "public_id" field. It is called by the builders before save.

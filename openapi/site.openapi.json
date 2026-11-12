@@ -2561,6 +2561,44 @@
       }
     },
     "/workspaces/{workspaceId}": {
+      "get": {
+        "operationId": "SiteWorkspaces_get",
+        "description": "Read one Workspace the caller is a member of, as the list shows it: what its settings pages\nedit, with its revision (ADR 0119).",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": []
+      },
       "put": {
         "operationId": "SiteWorkspaces_update",
         "description": "Rename a workspace or change its postal address (Owner and Admin only). The id\nnever changes.",
@@ -7676,6 +7714,16 @@
           }
         },
         "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionInput"
+              }
+            }
+          }
+        },
         "x-required-permissions": ["second_factor:manage"]
       },
       "delete": {
@@ -13362,7 +13410,7 @@
       },
       "SiteAuditRetention": {
         "type": "object",
-        "required": ["retentionDays"],
+        "required": ["retentionDays", "revision"],
         "properties": {
           "retentionDays": {
             "type": "integer",
@@ -13373,6 +13421,14 @@
             ],
             "nullable": true,
             "description": "Entries older than this many days are pruned; null keeps them forever"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's revision (ADR 0119): what a read answers and a change names, the one it was read with"
           }
         },
         "description": "How long the Audit log is kept; the Enterprise advanced-retention control"
@@ -15753,11 +15809,19 @@
       },
       "SiteDomainJoinResource": {
         "type": "object",
-        "required": ["enabled"],
+        "required": ["enabled", "revision"],
         "properties": {
           "enabled": {
             "type": "boolean",
             "description": "On: a User who proves an address on one of the Workspace's verified Join domains\nbecomes a member. Off by default."
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's revision this answer shows (ADR 0119): a change of the switch names it"
           }
         },
         "description": "Whether the Workspace admits Users by Join domain"
@@ -17657,7 +17721,7 @@
       },
       "SiteRevenueSettingsResource": {
         "type": "object",
-        "required": ["reportingCurrency", "attributionWindowDays"],
+        "required": ["reportingCurrency", "attributionWindowDays", "revision"],
         "properties": {
           "reportingCurrency": {
             "type": "string",
@@ -17676,6 +17740,14 @@
               }
             ],
             "description": "The Attribution window in whole days: 5 until set. A change affects only Orders that\narrive afterwards."
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's revision this answer shows (ADR 0119): a change of the revenue settings names it"
           }
         },
         "description": "The Workspace's revenue settings (ADR 0064): the Reporting currency every revenue figure is\nin, and the Attribution window an Order may follow a click by. Every member reads them."
@@ -18487,8 +18559,16 @@
       },
       "SiteSetDomainJoinInput": {
         "type": "object",
-        "required": ["enabled"],
+        "required": ["revision", "enabled"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
           "enabled": {
             "type": "boolean",
             "description": "Whether to admit Users by Join domain from now on"
@@ -19462,7 +19542,16 @@
       },
       "SiteUpdateRevenueSettingsInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
           "reportingCurrency": {
             "allOf": [
               {
@@ -19561,8 +19650,16 @@
       },
       "SiteUpdateWorkspaceInput": {
         "type": "object",
-        "required": ["name"],
+        "required": ["revision", "name"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
           "name": {
             "allOf": [
               {
@@ -19901,7 +19998,8 @@
           "smsMaxLength",
           "holds",
           "accountLinkAvailable",
-          "createdAt"
+          "createdAt",
+          "revision"
         ],
         "properties": {
           "id": {
@@ -20050,14 +20148,30 @@
               }
             ],
             "description": "Creation timestamp"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. Its bookkeeping (the service feed's position, the abuse detector's notices, the Setup checklist's completion) does not move it"
           }
         },
         "description": "Workspace the current user belongs to"
       },
       "SiteWorkspaceTimezoneInput": {
         "type": "object",
-        "required": ["timezone"],
+        "required": ["revision", "timezone"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
           "timezone": {
             "allOf": [
               {

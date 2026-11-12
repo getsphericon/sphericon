@@ -79,6 +79,7 @@
   "errors.oauth_grant_invalid": "invalid grant",
   "errors.oauth_scope_exceeds_grant": "the requested scope exceeds the original grant",
   "errors.workspace_not_found": "workspace not found",
+  "errors.workspace_revision_changed": "the workspace changed since it was opened",
   "errors.signup_survey_response_not_found": "no sign-up survey answers for this user",
   "errors.suspension_reason_required": "a reason is required to suspend a workspace",
   "errors.hold_expiry_in_past": "a hold's expiry must be in the future",

@@ -83,10 +83,16 @@ model SiteDomainJoinResource {
   /** On: a User who proves an address on one of the Workspace's verified Join domains
    * becomes a member. Off by default. */
   enabled: boolean;
+
+  /** The Workspace's revision this answer shows (ADR 0119): a change of the switch names it */
+  revision: Revision;
 }
 
 /** Switch domain join on or off */
 model SiteSetDomainJoinInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** Whether to admit Users by Join domain from now on */
   enabled: boolean;
 }

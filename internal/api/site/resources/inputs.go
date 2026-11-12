@@ -123,6 +123,12 @@ type Inputs interface {
 	WorkspaceCreate(source *siteapi.SiteCreateWorkspaceInput) workspaceview.CreateInput
 	// An absent postal address leaves it unchanged; a present one, empty included, sets it.
 	WorkspaceUpdate(source *siteapi.SiteUpdateWorkspaceInput) workspaceview.UpdateInput
+	// goverter:map Timezone Zone
+	TimezoneSet(source *siteapi.SiteWorkspaceTimezoneInput) workspaceview.SetTimezoneInput
+	// Switching the requirement on: the caller sets Required.
+	// goverter:map Revision | revisionPtrIn
+	// goverter:ignore Required
+	SecondFactorRequire(source *siteapi.RevisionInput) workspaceview.SetSecondFactorRequirementInput
 	// The Sign-up browser is the request's cookie, a parameter the handler assigns.
 	// goverter:ignore Browser
 	VerifyEmailLink(source *siteapi.SiteVerifyEmailInput) signup.VerifyEmailLinkInput
@@ -540,4 +546,10 @@ func segmentConditionPatch(o siteapi.OptSiteConditionGroup) (patch.Field[string]
 // revisionIn is the revision an edit names (ADR 0119), as the module takes it.
 func revisionIn(v siteapi.Revision) int64 {
 	return int64(v)
+}
+
+// revisionPtrIn is the revision an optional-revision input names (ADR 0119).
+func revisionPtrIn(v siteapi.Revision) *int64 {
+	r := int64(v)
+	return &r
 }

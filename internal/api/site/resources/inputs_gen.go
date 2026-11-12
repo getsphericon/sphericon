@@ -634,6 +634,14 @@ func (c *InputsImpl) SecondFactorConfirm(source *site.SiteSecondFactorConfirmInp
 	}
 	return secondfactorsConfirmInput
 }
+func (c *InputsImpl) SecondFactorRequire(source *site.RevisionInput) workspaceview.SetSecondFactorRequirementInput {
+	var workspaceviewSetSecondFactorRequirementInput workspaceview.SetSecondFactorRequirementInput
+	if source != nil {
+		workspaceviewSetSecondFactorRequirementInput.Revision = revisionPtrIn((*source).Revision)
+		// workspaceviewSetSecondFactorRequirementInput.Required: ignore
+	}
+	return workspaceviewSetSecondFactorRequirementInput
+}
 func (c *InputsImpl) SegmentCreate(source *site.SiteCreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput
 	if source != nil {
@@ -888,6 +896,14 @@ func (c *InputsImpl) TestAddress(source *site.TestSendBroadcastInput) outboundme
 	}
 	return outboundmessagesTestAddress
 }
+func (c *InputsImpl) TimezoneSet(source *site.SiteWorkspaceTimezoneInput) workspaceview.SetTimezoneInput {
+	var workspaceviewSetTimezoneInput workspaceview.SetTimezoneInput
+	if source != nil {
+		workspaceviewSetTimezoneInput.Revision = revisionIn((*source).Revision)
+		workspaceviewSetTimezoneInput.Zone = string((*source).Timezone)
+	}
+	return workspaceviewSetTimezoneInput
+}
 func (c *InputsImpl) TokenCreate(source *site.SiteCreateTokenInput) apitokens.Input {
 	var apitokensInput apitokens.Input
 	if source != nil {
@@ -955,6 +971,7 @@ func (c *InputsImpl) WorkspaceRestore(source site.SiteWorkspacesRestoreParams) w
 func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) workspaceview.UpdateInput {
 	var workspaceviewUpdateInput workspaceview.UpdateInput
 	if source != nil {
+		workspaceviewUpdateInput.Revision = revisionIn((*source).Revision)
 		workspaceviewUpdateInput.Name = nameIn((*source).Name)
 		workspaceviewUpdateInput.PostalAddress = stringPtrIn((*source).PostalAddress)
 	}

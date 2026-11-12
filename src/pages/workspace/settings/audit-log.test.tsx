@@ -18,6 +18,7 @@ const workspace = {
   id: 'TestWs01',
   name: 'Acme',
   collectKey: 'omck_test_key',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
@@ -48,7 +49,7 @@ function serveTheLog() {
       },
     }),
     handleSiteAuditFacets({ body: { actors: [], actions: [], targetTypes: [] } }),
-    handleSiteAuditGetRetention({ body: { retentionDays: 90 } }),
+    handleSiteAuditGetRetention({ body: { retentionDays: 90, revision: 1 } }),
   )
 }
 

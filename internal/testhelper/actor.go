@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -389,6 +390,29 @@ func (env *TestEnv) IntegrationRevision(ctx context.Context, tb testing.TB, id i
 	}
 	require.NoError(tb, err)
 	return v.Revision
+}
+
+// WorkspaceRevision is the stored revision of the Workspace of publicID (ADR 0119): what a settings
+// form that read it now names in a change.
+func (env *TestEnv) WorkspaceRevision(ctx context.Context, tb testing.TB, publicID string) int64 {
+	tb.Helper()
+	w, err := env.DB.Workspace.Query().Where(workspace.PublicID(publicID)).Only(ctx)
+	if ent.IsNotFound(err) {
+		// A Workspace the call is refused for (another's, none at all): any revision does.
+		return 1
+	}
+	require.NoError(tb, err)
+	return w.Revision
+}
+
+// SiteWorkspaceRevision is the revision of the Workspace as c reads it, for a test helper with no
+// TestEnv at hand: 1 when c may not read it, a call the test expects refused for its own reason.
+func SiteWorkspaceRevision(ctx context.Context, c *siteapi.Client, workspaceID siteapi.WorkspaceId) siteapi.Revision {
+	read, err := c.SiteWorkspacesGet(ctx, siteapi.SiteWorkspacesGetParams{WorkspaceId: workspaceID})
+	if err != nil {
+		return 1
+	}
+	return read.Revision
 }
 
 // AutomationRevisionIn is AutomationRevision read through the scope s, for a test with no TestEnv

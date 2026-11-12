@@ -130,6 +130,9 @@ model SiteWorkspaceResource {
 
   /** Creation timestamp */
   createdAt: Timestamp;
+
+  /** The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. Its bookkeeping (the service feed's position, the abuse detector's notices, the Setup checklist's completion) does not move it */
+  revision: Revision;
 }
 
 /** A short-lived signed token that proves who the Owner is to the external account
@@ -149,6 +152,9 @@ model SiteAccountLinkResource {
 
 /** Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change. */
 model SiteUpdateWorkspaceInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** New display name */
   name: Name;
 
@@ -191,6 +197,9 @@ model SiteDeletedWorkspaceResource {
 
 /** Set the Workspace time zone */
 model SiteWorkspaceTimezoneInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid */
   timezone: TimeZoneName;
 }
@@ -210,10 +219,16 @@ model SiteRevenueSettingsResource {
   /** The Attribution window in whole days: 5 until set. A change affects only Orders that
    * arrive afterwards. */
   attributionWindowDays: AttributionWindowDays;
+
+  /** The Workspace's revision this answer shows (ADR 0119): a change of the revenue settings names it */
+  revision: Revision;
 }
 
 /** Change the revenue settings; a field left out stays as it is */
 model SiteUpdateRevenueSettingsInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** The Reporting currency, an ISO 4217 code */
   reportingCurrency?: CurrencyCode;
 
@@ -291,6 +306,13 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[])
   op leave(@path workspaceId: WorkspaceId): NoContentResponse | Problem;
 
+  /** Read one Workspace the caller is a member of, as the list shows it: what its settings pages
+   * edit, with its revision (ADR 0119). */
+  @get
+  @route("/{workspaceId}")
+  @requiresPermissions(#[])
+  op get(@path workspaceId: WorkspaceId): SiteWorkspaceResource | Problem;
+
   /** Rename a workspace or change its postal address (Owner and Admin only). The id
    * never changes. */
   @put
@@ -307,9 +329,10 @@ namespace SiteWorkspaces {
   @put
   @route("/{workspaceId}/second-factor-requirement")
   @requiresPermissions(#[Permission.secondFactorManage])
-  op requireSecondFactor(@path workspaceId: WorkspaceId):
-    | SiteWorkspaceResource
-    | Problem;
+  op requireSecondFactor(
+    @path workspaceId: WorkspaceId,
+    @body body: RevisionInput,
+  ): SiteWorkspaceResource | Problem;
 
   /** Switch the Two-factor requirement off (owner and admin only). It is the one operation a
    * User withheld by the requirement may still perform in the Workspace, so an Owner or Admin

@@ -72,23 +72,29 @@ func (m *Module) LinkScope(workspaceID int64) *ent.Scoped {
 // sets (or clears, with "") its postal address, trimmed so whitespace alone clears it. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is
 // the tenant root and has no scoped wrapper, so this is an explicit path.
-// The name is held to the name rule (validation.Name).
-func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, name string, postalAddress *string) (*ent.Workspace, error) {
+// The name is held to the name rule (validation.Name). revision is the Workspace's the edit was made
+// on (ADR 0119): ErrRevisionChanged when it has moved past it, and an edit that changes nothing
+// writes nothing.
+func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, revision int64, name string, postalAddress *string) (*ent.Workspace, error) {
 	name, err := validation.Name(name)
 	if err != nil {
 		return nil, err
 	}
 	var updated *ent.Workspace
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		before, err := editedAt(ctx, tx, s.WorkspaceID(), revision)
 		if err != nil {
 			return err
 		}
-		upd := tx.Workspace.UpdateOneID(s.WorkspaceID()).SetName(name)
+		address := before.PostalAddress
 		if postalAddress != nil {
-			upd = upd.SetPostalAddress(strings.TrimSpace(*postalAddress))
+			address = strings.TrimSpace(*postalAddress)
 		}
-		updated, err = upd.Save(ctx)
+		updated = before
+		if name == before.Name && address == before.PostalAddress {
+			return nil
+		}
+		updated, err = saveAt(ctx, tx.Workspace.UpdateOneID(s.WorkspaceID()).SetName(name).SetPostalAddress(address), revision)
 		if err != nil {
 			return err
 		}
@@ -118,17 +124,23 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 // SetAuditRetention sets (or, with nil, clears) the number of days the Audit log is
 // kept (the EE advanced-retention window, ADR 0014) and records the change as a
 // `workspace.update` Audit entry in the same transaction. A number of days outside the contract's
-// bounds (bounds.RetentionDays) is refused. The caller has checked the license and the role.
-func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor events.Actor, days *int) error {
+// bounds (bounds.RetentionDays) is refused. The caller has checked the license and the role. It is
+// made on revision, as Update is.
+func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor events.Actor, revision int64, days *int) (*ent.Workspace, error) {
 	if days != nil {
 		if err := validation.Range("retentionDays", *days, bounds.RetentionDaysMin, bounds.RetentionDaysMax); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+	var updated *ent.Workspace
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		before, err := editedAt(ctx, tx, s.WorkspaceID(), revision)
 		if err != nil {
 			return err
+		}
+		updated = before
+		if ptrEqual(before.RetentionDays, days) {
+			return nil
 		}
 		upd := tx.Workspace.UpdateOneID(s.WorkspaceID())
 		if days == nil {
@@ -136,11 +148,8 @@ func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor eve
 		} else {
 			upd = upd.SetRetentionDays(*days)
 		}
-		if _, err := upd.Save(ctx); err != nil {
+		if updated, err = saveAt(ctx, upd, revision); err != nil {
 			return err
-		}
-		if ptrEqual(before.RetentionDays, days) {
-			return nil
 		}
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: s.WorkspaceID(),
@@ -152,22 +161,28 @@ func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor eve
 			Diff:        map[string]any{"retention_days": events.Change(before.RetentionDays, days)},
 		})
 	})
+	return updated, err
 }
 
 // SetTimezone sets the Workspace time zone (ADR 0057) and records the change as a
 // `workspace.update` Audit entry in the same transaction. A name the zone database does not
-// know is refused with ErrUnknownZone. The caller has checked the role.
-func (m *Module) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.Actor, name string) (*ent.Workspace, error) {
+// know is refused with ErrUnknownZone. The caller has checked the role. It is made on revision, as
+// Update is.
+func (m *Module) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.Actor, revision int64, name string) (*ent.Workspace, error) {
 	if err := CheckZone(name); err != nil {
 		return nil, err
 	}
 	var updated *ent.Workspace
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		before, err := editedAt(ctx, tx, s.WorkspaceID(), revision)
 		if err != nil {
 			return err
 		}
-		updated, err = tx.Workspace.UpdateOneID(s.WorkspaceID()).SetTimezone(name).Save(ctx)
+		updated = before
+		if before.Timezone != nil && *before.Timezone == name {
+			return nil
+		}
+		updated, err = saveAt(ctx, tx.Workspace.UpdateOneID(s.WorkspaceID()).SetTimezone(name), revision)
 		if err != nil {
 			return err
 		}
@@ -210,7 +225,8 @@ func CheckZone(name string) error {
 // as it is) and records each real change in one `workspace.update` Audit entry in the same
 // transaction (ADR 0064). A code outside ISO 4217 is refused with ErrUnknownCurrency, and a window
 // outside the contract's bounds (bounds.AttributionWindowDays) too. The caller has checked the role.
-func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor events.Actor, code *string, windowDays *int) (*ent.Workspace, error) {
+// It is made on revision, as Update is.
+func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor events.Actor, revision int64, code *string, windowDays *int) (*ent.Workspace, error) {
 	if windowDays != nil {
 		if err := validation.Range("attributionWindowDays", *windowDays,
 			bounds.AttributionWindowDaysMin, bounds.AttributionWindowDaysMax); err != nil {
@@ -227,7 +243,7 @@ func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor ev
 	}
 	var updated *ent.Workspace
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		before, err := editedAt(ctx, tx, s.WorkspaceID(), revision)
 		if err != nil {
 			return err
 		}
@@ -245,7 +261,7 @@ func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor ev
 			updated = before
 			return nil
 		}
-		updated, err = upd.Save(ctx)
+		updated, err = saveAt(ctx, upd, revision)
 		if err != nil {
 			return err
 		}
@@ -313,12 +329,17 @@ func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.
 // original start, so no member's grace restarts. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction, and switching it on publishes
 // events.SecondFactorRequired there too, which tells the members without a Second factor
-// (ADR 0105). The caller has checked the role.
-func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, actor events.Actor, required bool, now time.Time) (updated *ent.Workspace, err error) {
+// (ADR 0105). The caller has checked the role. Switching it on is made on revision, as Update is;
+// lifting it names none (nil): it is the one operation a member withheld by the requirement may
+// still perform, and it takes away a demand rather than writing over anything an editor shows.
+func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, actor events.Actor, revision *int64, required bool, now time.Time) (updated *ent.Workspace, err error) {
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
 		if err != nil {
 			return err
+		}
+		if revision != nil && before.Revision != *revision {
+			return ErrRevisionChanged
 		}
 		updated = before
 		if (before.SecondFactorRequiredAt != nil) == required {
@@ -330,7 +351,13 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 		} else {
 			upd = upd.ClearSecondFactorRequiredAt()
 		}
+		if revision != nil {
+			upd = upd.Where(workspace.Revision(*revision))
+		}
 		if updated, err = upd.Save(ctx); err != nil {
+			if ent.IsNotFound(err) {
+				return ErrRevisionChanged
+			}
 			return err
 		}
 		if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
@@ -347,6 +374,35 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 		return pub.Publish(ctx, &events.SecondFactorRequired{WorkspaceID: s.WorkspaceID()})
 	})
 	return updated, err
+}
+
+// ErrRevisionChanged means a settings edit was made on a revision the Workspace has moved past (ADR
+// 0119): someone changed its settings since the client read them. Its bookkeeping (schema.Bookkeeping:
+// the service feed's position, the notices of the abuse detector, the Setup checklist's completion)
+// does not move it. Nothing is written.
+var ErrRevisionChanged = validation.RevisionChanged("workspaces: workspace changed since it was read", i18n.ErrorsWorkspaceRevisionChanged)
+
+// editedAt reads the Workspace a settings edit was made on, in the edit's transaction:
+// ErrRevisionChanged when it has moved past revision.
+func editedAt(ctx context.Context, tx *ent.Client, id, revision int64) (*ent.Workspace, error) {
+	before, err := tx.Workspace.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if before.Revision != revision {
+		return nil, ErrRevisionChanged
+	}
+	return before, nil
+}
+
+// saveAt writes upd conditional on revision, so a write committed since editedAt read it refuses
+// this one rather than being overwritten.
+func saveAt(ctx context.Context, upd *ent.WorkspaceUpdateOne, revision int64) (*ent.Workspace, error) {
+	saved, err := upd.Where(workspace.Revision(revision)).Save(ctx)
+	if ent.IsNotFound(err) {
+		return nil, ErrRevisionChanged
+	}
+	return saved, err
 }
 
 func ptrEqual(a, b *int) bool {
@@ -422,11 +478,11 @@ func Deleted() predicate.Workspace { return workspace.DiscardedAtNotNil() }
 // it on adds nobody: only an address proven afterwards joins. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction; the Workspace is not an Audited
 // entity, so this is an explicit path like SetSecondFactorRequirement. The caller has
-// checked the role.
-func (m *Module) SetDomainJoin(ctx context.Context, s *ent.Scoped, actor events.Actor, enabled bool) (*ent.Workspace, error) {
+// checked the role. It is made on revision, as Update is.
+func (m *Module) SetDomainJoin(ctx context.Context, s *ent.Scoped, actor events.Actor, revision int64, enabled bool) (*ent.Workspace, error) {
 	var updated *ent.Workspace
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		before, err := editedAt(ctx, tx, s.WorkspaceID(), revision)
 		if err != nil {
 			return err
 		}
@@ -434,7 +490,7 @@ func (m *Module) SetDomainJoin(ctx context.Context, s *ent.Scoped, actor events.
 		if before.DomainJoinEnabled == enabled {
 			return nil
 		}
-		if updated, err = tx.Workspace.UpdateOneID(before.ID).SetDomainJoinEnabled(enabled).Save(ctx); err != nil {
+		if updated, err = saveAt(ctx, tx.Workspace.UpdateOneID(before.ID).SetDomainJoinEnabled(enabled), revision); err != nil {
 			return err
 		}
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
@@ -448,13 +504,4 @@ func (m *Module) SetDomainJoin(ctx context.Context, s *ent.Scoped, actor events.
 		})
 	})
 	return updated, err
-}
-
-// DomainJoinEnabled reports whether the scoped Workspace admits Users by Join domain.
-func (m *Module) DomainJoinEnabled(ctx context.Context, s *ent.Scoped) (bool, error) {
-	w, err := m.client.Workspace.Get(ctx, s.WorkspaceID())
-	if err != nil {
-		return false, err
-	}
-	return w.DomainJoinEnabled, nil
 }

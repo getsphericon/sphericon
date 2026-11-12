@@ -1431,6 +1431,13 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/delete
 	SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (*SiteDeletedWorkspaceResource, error)
+	// SiteWorkspacesGet implements SiteWorkspaces_get operation.
+	//
+	// Read one Workspace the caller is a member of, as the list shows it: what its settings pages edit,
+	// with its revision (ADR 0119).
+	//
+	// GET /workspaces/{workspaceId}
+	SiteWorkspacesGet(ctx context.Context, params SiteWorkspacesGetParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesGetRevenueSettings implements SiteWorkspaces_getRevenueSettings operation.
 	//
 	// Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
@@ -1475,7 +1482,7 @@ type Handler interface {
 	// grace restarts. A change is recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/second-factor-requirement
-	SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (*SiteWorkspaceResource, error)
+	SiteWorkspacesRequireSecondFactor(ctx context.Context, req *RevisionInput, params SiteWorkspacesRequireSecondFactorParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesRestore implements SiteWorkspaces_restore operation.
 	//
 	// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
