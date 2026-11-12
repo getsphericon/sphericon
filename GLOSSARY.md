@@ -1675,6 +1675,13 @@ accept-or-sign-out screen and refuses their Connections until they accept; the W
 tokens keep working.
 _Avoid_: Policy page, terms URL
 
+**Consent history**:
+The time-ordered consent facts of one Destination, read from its evidentiary Events and kept rows
+(Confirmations with their evidence, Unsubscribes, returns, Suppressions, Engagement tracking consent)
+with its state on each Channel now; shown on the Contact's page for every Destination whose rows
+name it, past ones included, and, for what still stands, by the Privacy request lookup by address.
+_Avoid_: Consent log, consent ledger, Consent record (that is a User's legal acceptance)
+
 **Consent record**:
 One decision of a User on one version of a Sign-up item's Legal document (accepted, declined or
 withdrawn, or shown for a notice), with when and where it was made (the sign-up form, the provider

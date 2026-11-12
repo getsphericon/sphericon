@@ -4,6 +4,10 @@ status: superseded in part by ADR 0101 (queued work is River jobs: the outbox ro
 
 # GDPR erasure and subject-access export: delete is erasure, Events are the one append-only exception
 
+> **Amended by [[0141-a-destinations-consent-history-is-read-from-its-evidentiary-events]]:**
+> the lookup by address also lists the opt-outs, Suppressions and tracking denials that outlive an
+> Erasure, matching a phone number by its hash.
+
 Workspaces sending to the EU need Art. 17 erasure and Art. 15/20 export. Competitors split (Mailchimp
 anonymizes reports, Klaviyo keeps a contact-info record, Customer.io suppresses hashed identifiers,
 Segment propagates asynchronously); we pick the smallest mechanism consistent with ADR 0001 and the
