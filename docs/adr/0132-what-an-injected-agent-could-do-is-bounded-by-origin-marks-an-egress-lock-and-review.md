@@ -4,6 +4,9 @@ status: accepted
 
 # What an injected agent could do is bounded by origin marks, an egress lock and review
 
+> **Amended by [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]:**
+> an Event written through a Connection without `mcp:send` satisfies no Wait for event either.
+
 > **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
 > a feed's content is untrusted; a series' Publish shows its authors and the feed's hosts, which
 > it approves for the issues that follow.

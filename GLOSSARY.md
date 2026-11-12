@@ -241,7 +241,8 @@ on whether the Enrollment's own messages were opened or clicked. A test of engag
 click) is unknown for a Destination that is not tracked; a Segment or a Rule reads an unknown result
 as no match, and a Branch routes it. Evaluated live against current data, never materialized. One
 shared grammar: a Segment is a named Condition, a Rule holds one, each path of a Branch one, a
-Wait for event may hold one, and an **Event matcher**'s filter is one made of property tests only.
+Wait for event may hold one, and an **Event matcher**'s filter is one made of property tests only. A
+Branch alone may also test the Event a Wait for event arrived on (`awaited:<name>.<key>`).
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 
 **Score**:
@@ -758,7 +759,8 @@ in an Automation at most once. A date Trigger's Enrollment begins at the occurre
 Rule fired on; when an **Enroll** step does, the moment it runs, with a copy of its own Enrollment's
 `event`). It keeps a copy of that Event's action and properties, taken
 when it begins and never changed, which every email and HTTP step renders as `event` (the
-shape a Rule's HTTP action binds); an Enrollment no Event began has an empty `event`. Stands on one
+shape a Rule's HTTP action binds); an Enrollment no Event began has an empty `event`. It also keeps
+the Event each **Wait for event** it passed arrived on, as `awaited.<name>`. Stands on one
 **Automation version** (the one live when it was made) and holds the current step in it, and a
 terminal state:
 `completed`, `failed`, **`exited`** (left early) or **`goal_reached`** (its goal event was recorded).
@@ -820,7 +822,8 @@ A Step that holds the Enrollment until an Event arrives or a timeout passes, the
 optional Condition on the Event), counted from when the Enrollment reached it, or for an open or
 click of the message an earlier send Step sent to this Enrollment, counted whenever it happened.
 Waiting for an open or click has an _unknown_ path of its own, taken when that message went out
-untracked or was never sent to this Enrollment.
+untracked or was never sent to this Enrollment. It has a name, and an Event that arrived is kept on the
+Enrollment for later Steps and Branches to read as `awaited.<name>`.
 _Avoid_: Wait until (a calendar wait), wait with condition, delay
 
 **Wait until**:

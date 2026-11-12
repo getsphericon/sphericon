@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation branches into nested paths that rejoin
 
+> **Amended by [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]:**
+> a Branch may also test the Event an earlier Wait for event arrived on, as a folded property.
+
 > **Amended by [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]]:**
 > the Trigger, exit and goal events filter on their Event's properties; entry conditions on the
 > Contact stay a Rule's.

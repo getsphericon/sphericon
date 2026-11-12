@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation chooses a path by Condition, by weight or by an awaited Event
 
+> **Amended by [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]:**
+> a Wait for event has a name and keeps the Event it arrived on, for later Steps and Branches.
+
 > **Amended by [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]]:**
 > a Wait for event is refused only when it awaits an action an exit or goal matches with no filter.
 

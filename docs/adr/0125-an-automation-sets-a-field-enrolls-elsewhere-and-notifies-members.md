@@ -4,6 +4,10 @@ status: accepted
 
 # An Automation sets a field, enrolls elsewhere and notifies Members
 
+> **Amended by [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]:**
+> a Set field may take a property of `awaited.<name>`, and a Notify's text may name it; an Enroll
+> carries only `event`.
+
 > **Amended by [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]]:**
 > a goal or exit on a given Tag is expressible: `contact.tagged` with a filter on `tag`.
 
