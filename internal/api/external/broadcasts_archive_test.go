@@ -62,11 +62,11 @@ func TestExternalAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 	_, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: draftBroadcast})
 	require.NoError(t, err)
 
-	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("Renamed")},
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), Name: externalapi.NewOptName("Renamed")},
 		externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
 	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 
-	_, err = c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
+	_, err = c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), SegmentId: externalapi.NilEntityId{Null: true}},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 }

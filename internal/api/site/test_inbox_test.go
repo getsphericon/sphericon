@@ -203,7 +203,7 @@ func TestABroadcastThroughTheTestInboxWithoutAVerifiedDomainIsCaptured(t *testin
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
 	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
 
-	_, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
+	_, err := jane.SiteBroadcastsSend(t.Context(), &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(t.Context(), t, int64(idStr(fixtures.BroadcastGlobexID))))}, siteapi.SiteBroadcastsSendParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID),
 	})
 	require.NoError(t, err)
@@ -226,7 +226,7 @@ func TestABroadcastThroughSMTPWithoutAVerifiedDomainIsHeldAndNothingIsCaptured(t
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexID)
 	before := env.DB.CapturedMessage.Query().CountX(t.Context())
 
-	_, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
+	_, err := jane.SiteBroadcastsSend(t.Context(), &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(t.Context(), t, int64(idStr(fixtures.BroadcastGlobexID))))}, siteapi.SiteBroadcastsSendParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID),
 	})
 	require.NoError(t, err)

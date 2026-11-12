@@ -9257,13 +9257,26 @@ func (s *RevisionInput) SetRevision(val Revision) {
 // Request body for scheduling a broadcast.
 // Ref: #/components/schemas/ScheduleBroadcastInput
 type ScheduleBroadcastInput struct {
+	// The broadcast's `revision` the schedule was made on (ADR 0119): the one of what the person
+	// scheduling was shown, so a broadcast changed since is a 409 revision_changed and is not scheduled.
+	Revision Revision `json:"revision"`
 	// When the broadcast should be sent.
 	ScheduledAt Timestamp `json:"scheduledAt"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *ScheduleBroadcastInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetScheduledAt returns the value of ScheduledAt.
 func (s *ScheduleBroadcastInput) GetScheduledAt() Timestamp {
 	return s.ScheduledAt
+}
+
+// SetRevision sets the value of Revision.
+func (s *ScheduleBroadcastInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetScheduledAt sets the value of ScheduledAt.
@@ -13579,6 +13592,8 @@ type SiteBroadcastResource struct {
 	// When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it
 	// is unarchived.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// The revision of the state this answer shows (ADR 0119): an update, Send now and Schedule name it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -13658,6 +13673,11 @@ func (s *SiteBroadcastResource) GetProgress() OptNilSiteBroadcastProgress {
 // GetArchivedAt returns the value of ArchivedAt.
 func (s *SiteBroadcastResource) GetArchivedAt() OptNilTimestamp {
 	return s.ArchivedAt
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteBroadcastResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -13743,6 +13763,11 @@ func (s *SiteBroadcastResource) SetProgress(val OptNilSiteBroadcastProgress) {
 // SetArchivedAt sets the value of ArchivedAt.
 func (s *SiteBroadcastResource) SetArchivedAt(val OptNilTimestamp) {
 	s.ArchivedAt = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteBroadcastResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -28542,6 +28567,8 @@ func (s *TwilioConfigInputKind) UnmarshalText(data []byte) error {
 // Request body for updating a draft broadcast: an omitted field keeps its value, null clears it.
 // Ref: #/components/schemas/UpdateBroadcastInput
 type UpdateBroadcastInput struct {
+	// The broadcast's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// Internal broadcast name.
 	Name OptName `json:"name"`
 	// What the broadcast says; its `channel` must be the broadcast's own (422 otherwise). Omitted keeps
@@ -28552,6 +28579,11 @@ type UpdateBroadcastInput struct {
 	// Sending integration, of the broadcast's Channel; null means the Channel's default. An archived
 	// integration, or one of another Channel, is refused with 422.
 	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateBroadcastInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -28572,6 +28604,11 @@ func (s *UpdateBroadcastInput) GetSegmentId() OptNilEntityId {
 // GetIntegrationId returns the value of IntegrationId.
 func (s *UpdateBroadcastInput) GetIntegrationId() OptNilEntityId {
 	return s.IntegrationId
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateBroadcastInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.

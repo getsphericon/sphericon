@@ -56,7 +56,7 @@ func TestExternalSegmentOnlyADraftNamesIsArchivedAndTheDraftIsNotScheduled(t *te
 
 	archived, err := c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentProPlanID)})
 	require.NoError(t, err)
-	_, err = c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(entityIDString(fixtures.BroadcastProSegmentID)))), ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 		externalapi.BroadcastsScheduleParams{ID: entityIDString(fixtures.BroadcastProSegmentID)})
 
 	assert.True(t, archived.ArchivedAt.IsSet())

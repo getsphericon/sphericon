@@ -98,17 +98,20 @@ func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Mod
 }
 
 // Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
-// its send job in the same transaction: either both happen or neither does.
-func (m *Module) Send(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
-	return m.claim(ctx, s, id, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, nil)
+// its send job in the same transaction: either both happen or neither does. revision is the one of
+// what the sender was shown (ADR 0119): a Broadcast that moved past it is ErrRevisionChanged and
+// nothing is sent, so a send never carries content the person has not seen.
+func (m *Module) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (*ent.Broadcast, error) {
+	return m.claim(ctx, s, id, revision, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, nil)
 }
 
 // Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
 // job in the same transaction. Scheduling arms the send, so a Broadcast whose Send route cannot
 // send (its Integration is disabled or archived, or the Workspace has no default) is refused with
 // outboundmessages.ErrRouteHeld and stays as it was; a route that stops sending after it holds the plan.
-func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (*ent.Broadcast, error) {
-	return m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
+// revision is the one of what the person scheduling was shown, as for Send.
+func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64, when time.Time) (*ent.Broadcast, error) {
+	return m.claim(ctx, s, id, revision, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
 }
 
 // armable refuses a claimed Broadcast that cannot go out as written: its Send route cannot send, or
@@ -170,13 +173,14 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 // compare-and-swap on the status, so two racing requests cannot both win, and a job that
 // cannot be queued rolls the claim back with it. check, when given, may refuse the claimed
 // Broadcast after the move, which rolls the move back. An archived Broadcast is read-only and is
-// ErrArchived. A claimed Broadcast is Live use, so the claim
+// ErrArchived, and one that moved past revision is ErrRevisionChanged (ADR 0119). A claimed
+// Broadcast is Live use, so the claim
 // holds the Workspace's lock (ADR 0099): a removal that checks for Live use waits for it, or it for
 // the removal, and the one that waits reads what the other committed.
-func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
+func (m *Module) claim(ctx context.Context, s *ent.Scoped, id, revision int64, t trigger, set update, at *time.Time, check func(context.Context, *ent.Scoped, *ent.Broadcast) error) (*ent.Broadcast, error) {
 	var claimed *ent.Broadcast
 	err := m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
-		if err := m.arm(ctx, wl, id, t, set); err != nil {
+		if err := m.arm(ctx, wl, id, revision, t, set); err != nil {
 			return err
 		}
 		ts := wl.Scope()
@@ -203,23 +207,35 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 
 // arm moves the Broadcast out of draft or scheduled by t, the move that makes it Live use, so it
 // takes the Workspace's lock (ADR 0108). The move lands only on a Broadcast that is not archived
-// (ADR 0109); a refused one that is archived is ErrArchived.
-func (m *Module) arm(ctx context.Context, wl *ent.WorkspaceLocked, id int64, t trigger, set update) error {
+// (ADR 0109) and still at revision (ADR 0119). A refused one that is archived is ErrArchived; one
+// whose status permits no claim is ErrNotSendable whatever its revision, since reading it again
+// changes nothing; one that could be claimed but is at another revision is ErrRevisionChanged.
+func (m *Module) arm(ctx context.Context, wl *ent.WorkspaceLocked, id, revision int64, t trigger, set update) error {
 	unarchived := func(u *ent.BroadcastScopedUpdate) {
-		u.Where(broadcast.ArchivedAtIsNil())
+		u.Where(broadcast.ArchivedAtIsNil(), broadcast.Revision(revision))
 		if set != nil {
 			set(u)
 		}
 	}
 	ts := wl.Scope()
 	if err := fire(ctx, ts, id, t, unarchived); err != nil {
-		if refusal := m.notArchived(ctx, ts, id); refusal != nil {
+		b, getErr := m.Get(ctx, ts, id)
+		if getErr != nil {
+			return getErr
+		}
+		if refusal := refuseArchived(b); refusal != nil {
 			return refusal
+		}
+		if lo.Contains(claimable, b.Status) && b.Revision != revision {
+			return ErrRevisionChanged
 		}
 		return notSendable(err)
 	}
 	return nil
 }
+
+// claimable is the statuses Send and Schedule move a Broadcast out of.
+var claimable = []broadcast.Status{broadcast.StatusDraft, broadcast.StatusScheduled}
 
 // --- Authoring (ADR 0016): drafts, Segment, report ---
 
@@ -227,6 +243,9 @@ var (
 	// ErrNotDraft: the Broadcast is past draft (scheduled, sending, sent, failed) and
 	// can no longer be edited or re-targeted through the authoring surface.
 	ErrNotDraft = validation.Conflict("broadcasts: broadcast is not a draft", i18n.ErrorsBroadcastNotDraft)
+	// ErrRevisionChanged: the edit, Send or Schedule was made on a revision the Broadcast has moved
+	// past (ADR 0119): someone wrote it since the client read it. Nothing is written or sent.
+	ErrRevisionChanged = validation.RevisionChanged("broadcasts: broadcast changed since it was read", i18n.ErrorsBroadcastRevisionChanged)
 	// ErrSegmentNotFound: the Segment does not exist in this Workspace.
 	ErrSegmentNotFound = validation.Refuse("broadcasts: segment not found", i18n.ErrorsBroadcastSegmentNotFound)
 	// ErrSegmentArchived: a draft leaving draft, or a write that sets the Segment, names an archived
@@ -277,6 +296,8 @@ type CreateInput struct {
 // drops it. Name cannot be cleared; SegmentID clears to all contacts and IntegrationID to the
 // Channel's default. A nil Content keeps the content; one of another Channel is ErrChannelFixed.
 type UpdateInput struct {
+	// Revision is the Broadcast's revision the edit was made on (ADR 0119).
+	Revision      int64
 	Name          patch.Field[string]
 	Content       ContentPatch
 	SegmentID     patch.Field[int64]
@@ -463,6 +484,8 @@ func (o Order) terms() []broadcast.OrderOption {
 // Broadcast that was claimed for sending in the meantime is never edited. A new name is held to
 // the name rule (validation.Name); a Segment or Integration set here is checked as on Create; content of another
 // Channel than the Broadcast's is ErrChannelFixed, since a Broadcast is never converted (ADR 0080).
+// The UPDATE also matches only the revision the edit was made on (ADR 0119): a Broadcast that moved
+// past it is ErrRevisionChanged and nothing is written.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInput) (*ent.Broadcast, error) {
 	name, err := validation.NamePatch(f.Name)
 	if err != nil {
@@ -483,7 +506,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 	if err := m.checkRefs(ctx, s, channel, f.SegmentID.Ptr(), f.IntegrationID.Ptr()); err != nil {
 		return nil, err
 	}
-	u := s.Broadcast().Update().Where(draftOf(id))
+	u := s.Broadcast().Update().Where(draftOf(id, f.Revision))
 	if f.Content != nil {
 		if err := f.Content.update(ctx, m, s, cur, u); err != nil {
 			return nil, err
@@ -496,8 +519,8 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 }
 
 // SetSegment points a draft at a Segment, or at all contacts when segmentID
-// is nil. It never schedules or sends.
-func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmentID *int64) (*ent.Broadcast, error) {
+// is nil. It never schedules or sends. revision is the one the change was made on, as for Update.
+func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id, revision int64, segmentID *int64) (*ent.Broadcast, error) {
 	if segmentID != nil {
 		if _, err := keptSegment(ctx, s, *segmentID); err != nil {
 			// A foreign or unknown broadcast is still reported as such first.
@@ -507,7 +530,7 @@ func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmen
 			return nil, err
 		}
 	}
-	u := s.Broadcast().Update().Where(draftOf(id)).SetNillableSegmentID(segmentID)
+	u := s.Broadcast().Update().Where(draftOf(id, revision)).SetNillableSegmentID(segmentID)
 	if segmentID == nil {
 		u.ClearSegmentID()
 	}
@@ -582,9 +605,10 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 	return Report{Status: b.Status, HoldReason: b.HoldReason, Figures: figures[id].Figures()}, nil
 }
 
-// draftOf matches the Broadcast while it is a draft its owner may edit: not archived.
-func draftOf(id int64) predicate.Broadcast {
-	return broadcast.And(broadcast.ID(id), broadcast.StatusEQ(broadcast.StatusDraft), broadcast.ArchivedAtIsNil())
+// draftOf matches the Broadcast while it is a draft its owner may edit, not archived, at the
+// revision the edit was made on (ADR 0119).
+func draftOf(id, revision int64) predicate.Broadcast {
+	return broadcast.And(broadcast.ID(id), broadcast.StatusEQ(broadcast.StatusDraft), broadcast.ArchivedAtIsNil(), broadcast.Revision(revision))
 }
 
 func (m *Module) editDraft(ctx context.Context, s *ent.Scoped, id int64, u *ent.BroadcastScopedUpdate) (*ent.Broadcast, error) {
@@ -598,21 +622,21 @@ func (m *Module) editDraft(ctx context.Context, s *ent.Scoped, id int64, u *ent.
 	return m.Get(ctx, s, id)
 }
 
+// notDraftOrNotFound tells why an edit of a draft matched no row: the Broadcast is not the
+// Workspace's (ErrNotFound), archived, past draft (ErrNotDraft, whatever its revision: reading it
+// again changes nothing), or a draft someone wrote since (ErrRevisionChanged).
 func (m *Module) notDraftOrNotFound(ctx context.Context, s *ent.Scoped, id int64) error {
-	if err := m.notArchived(ctx, s, id); err != nil {
-		return err
-	}
-	return ErrNotDraft
-}
-
-// notArchived is ErrArchived for an archived Broadcast and ErrNotFound for one the Workspace does
-// not have.
-func (m *Module) notArchived(ctx context.Context, s *ent.Scoped, id int64) error {
 	b, err := m.Get(ctx, s, id)
 	if err != nil {
 		return err
 	}
-	return refuseArchived(b)
+	if err := refuseArchived(b); err != nil {
+		return err
+	}
+	if b.Status != broadcast.StatusDraft {
+		return ErrNotDraft
+	}
+	return ErrRevisionChanged
 }
 
 // refuseArchived is ErrArchived for an archived Broadcast: it is read-only to its owner until it

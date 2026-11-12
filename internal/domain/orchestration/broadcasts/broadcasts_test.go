@@ -49,7 +49,7 @@ func TestSendMovesDraftToSendingAndQueuesTheJobImmediately(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
-	b, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
+	b, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID))
 	require.NoError(t, err)
 
 	assert.Equal(t, broadcast.StatusSending, b.Status)
@@ -63,7 +63,7 @@ func TestSendClearsTheScheduleOfAScheduledBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
-	b, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID)
+	b, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID))
 	require.NoError(t, err)
 
 	assert.Equal(t, broadcast.StatusSending, b.Status)
@@ -75,7 +75,7 @@ func TestSendLeavesTheBroadcastADraftWhenTheJobCannotBeQueued(t *testing.T) {
 	boom := errors.New("queue down")
 	env.Bus.UseJobs(failingQueue{err: boom})
 
-	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
+	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID))
 
 	require.ErrorIs(t, err, boom)
 	assert.Equal(t, broadcast.StatusDraft, env.DB.Broadcast.GetX(context.Background(), fixtures.BroadcastDraftID).Status)
@@ -89,7 +89,7 @@ func TestSendLeavesTheBroadcastADraftWhenTheQueueAndTheRequestFailTogether(t *te
 	t.Cleanup(cancel)
 	env.Bus.UseJobs(failingQueue{err: errors.New("queue is down"), onInsert: cancel})
 
-	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Send(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
+	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Send(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID))
 
 	require.Error(t, err)
 	got := env.DB.Broadcast.GetX(context.Background(), fixtures.BroadcastDraftID)
@@ -101,7 +101,7 @@ func TestScheduleSetsTimeAndQueuesTheJobForThen(t *testing.T) {
 	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 	when := time.Now().Add(24 * time.Hour).Truncate(time.Second)
 
-	b, err := m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, when)
+	b, err := m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), when)
 	require.NoError(t, err)
 
 	assert.Equal(t, broadcast.StatusScheduled, b.Status)
@@ -120,7 +120,7 @@ func TestScheduleLeavesTheBroadcastADraftWithNoTimeWhenTheJobCannotBeQueued(t *t
 	boom := errors.New("queue down")
 	env.Bus.UseJobs(failingQueue{err: boom})
 
-	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, time.Now().Add(time.Hour))
+	_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), time.Now().Add(time.Hour))
 
 	require.ErrorIs(t, err, boom)
 	got := env.DB.Broadcast.GetX(context.Background(), fixtures.BroadcastDraftID)
@@ -132,9 +132,9 @@ func TestTransitionsOutOfSendingAreRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
-	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID)
+	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID))
 	require.ErrorIs(t, err, broadcasts.ErrNotSendable)
-	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID, time.Now().Add(time.Hour))
+	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID), time.Now().Add(time.Hour))
 	require.ErrorIs(t, err, broadcasts.ErrNotSendable)
 	assert.Empty(t, env.JobsOf(t, sendKind), "a refused claim queues nothing")
 }
@@ -171,8 +171,8 @@ func TestUnknownOrForeignBroadcastIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
 
-	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID+1000), fixtures.BroadcastDraftID)
+	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID+1000), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID+1000), fixtures.BroadcastDraftID))
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
-	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, time.Now().Add(time.Hour))
+	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), 999999), time.Now().Add(time.Hour))
 	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
 }

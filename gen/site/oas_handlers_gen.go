@@ -9773,7 +9773,8 @@ func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped
 // handleSiteBroadcastsSendRequest handles SiteBroadcasts_send operation.
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-// resolved from; an archived segment is refused. An archived broadcast is a 409.
+// resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed
+// since the `revision` it names (revision_changed): nothing is sent.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
 func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -9905,6 +9906,21 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeSiteBroadcastsSendRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
 	var response *SiteBroadcastResource
 	if m := s.cfg.Middleware; m != nil {
@@ -9913,7 +9929,7 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 			OperationName:    SiteBroadcastsSendOperation,
 			OperationSummary: "",
 			OperationID:      "SiteBroadcasts_send",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -9929,7 +9945,7 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 		}
 
 		type (
-			Request  = struct{}
+			Request  = *RevisionInput
 			Params   = SiteBroadcastsSendParams
 			Response = *SiteBroadcastResource
 		)
@@ -9942,12 +9958,12 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 			mreq,
 			unpackSiteBroadcastsSendParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteBroadcastsSend(ctx, params)
+				response, err = s.h.SiteBroadcastsSend(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteBroadcastsSend(ctx, params)
+		response, err = s.h.SiteBroadcastsSend(ctx, request, params)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {

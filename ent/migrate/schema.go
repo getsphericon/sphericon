@@ -433,6 +433,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "archived_at", Type: field.TypeTime, Nullable: true},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "subject", Type: field.TypeString, Nullable: true},
@@ -466,19 +467,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_segments_segment",
-				Columns:    []*schema.Column{BroadcastsColumns[25]},
+				Columns:    []*schema.Column{BroadcastsColumns[26]},
 				RefColumns: []*schema.Column{SegmentsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_integrations_integration",
-				Columns:    []*schema.Column{BroadcastsColumns[26]},
+				Columns:    []*schema.Column{BroadcastsColumns[27]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[27]},
+				Columns:    []*schema.Column{BroadcastsColumns[28]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -487,12 +488,12 @@ var (
 			{
 				Name:    "broadcast_workspace_id_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[27], BroadcastsColumns[25]},
+				Columns: []*schema.Column{BroadcastsColumns[28], BroadcastsColumns[26]},
 			},
 			{
 				Name:    "broadcast_workspace_id_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[27], BroadcastsColumns[26]},
+				Columns: []*schema.Column{BroadcastsColumns[28], BroadcastsColumns[27]},
 			},
 		},
 	}

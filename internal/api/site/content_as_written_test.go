@@ -45,7 +45,7 @@ func TestSiteStoresBodiesAsWritten(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, writtenBody, testhelper.SiteEmailOf(bc).Body)
 
-	bu, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	bu, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(fixtures.BroadcastDraftID))),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(writtenBody)}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)

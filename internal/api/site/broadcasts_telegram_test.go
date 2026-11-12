@@ -66,7 +66,7 @@ func TestSiteTelegramBroadcastRefusesAnEmailIntegrationAndAContentOfTheOtherChan
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
 	}, params)
 	require.NoError(t, err)
-	_, asEmail := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, asEmail := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(b.ID))),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Elsewhere")}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
 
@@ -90,7 +90,7 @@ func TestSiteTelegramBroadcastScheduleChecksTheRouteAndTheWrittenLengthAndHasNoT
 		return b.ID
 	}
 	schedule := func(id siteapi.EntityId) error {
-		_, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+		_, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(id))), ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 			siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 		return err
 	}
@@ -137,7 +137,7 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 		return testhelper.SiteTelegramOf(b)
 	}
 	edit := func(in siteapi.TelegramBroadcastContentInput) error {
-		_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteTelegramContentEdit(in)},
+		_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(made.ID))), Content: testhelper.SiteTelegramContentEdit(in)},
 			siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: made.ID})
 		return err
 	}
@@ -188,7 +188,7 @@ func TestSiteTelegramBroadcastScheduleKnowsTheCaptionLimit(t *testing.T) {
 			Content: testhelper.SiteTelegramContent(in),
 		}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
-		_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+		_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(b.ID))), ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 			siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
 		return err
 	}

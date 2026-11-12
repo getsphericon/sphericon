@@ -40,7 +40,10 @@ func recipientEmails(t *testing.T, env *testhelper.TestEnv, broadcastID int64) [
 
 func scheduleBroadcast(t *testing.T, c *externalapi.Client, id externalapi.EntityId) {
 	t.Helper()
-	_, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+	// A Schedule names the revision it was made on (ADR 0119), so the client reads the Broadcast first.
+	read, err := c.BroadcastsGet(t.Context(), externalapi.BroadcastsGetParams{ID: id})
+	require.NoError(t, err)
+	_, err = c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{Revision: read.Revision, ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 		externalapi.BroadcastsScheduleParams{ID: id})
 	require.NoError(t, err)
 }
@@ -110,7 +113,7 @@ func TestExternalBroadcastOfAnArchivedSegmentIsNotScheduledAgain(t *testing.T) {
 	_, err = c.BroadcastsUnschedule(t.Context(), externalapi.BroadcastsUnscheduleParams{ID: id})
 	require.NoError(t, err)
 
-	_, err = c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(t.Context(), t, int64(id))), ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 		externalapi.BroadcastsScheduleParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

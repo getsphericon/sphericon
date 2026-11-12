@@ -78,6 +78,20 @@ func (_c *BroadcastCreate) SetNillableArchivedAt(v *time.Time) *BroadcastCreate 
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *BroadcastCreate) SetRevision(v int64) *BroadcastCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableRevision(v *int64) *BroadcastCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *BroadcastCreate) SetName(v string) *BroadcastCreate {
 	_c.mutation.SetName(v)
@@ -447,6 +461,10 @@ func (_c *BroadcastCreate) defaults() {
 		v := broadcast.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := broadcast.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 	if _, ok := _c.mutation.LinkPreview(); !ok {
 		v := broadcast.DefaultLinkPreview
 		_c.mutation.SetLinkPreview(v)
@@ -471,6 +489,14 @@ func (_c *BroadcastCreate) check() error {
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "Broadcast.workspace_id"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "Broadcast.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := broadcast.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Broadcast.revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Broadcast.name"`)}
@@ -554,6 +580,10 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ArchivedAt(); ok {
 		_spec.SetField(broadcast.FieldArchivedAt, field.TypeTime, value)
 		_node.ArchivedAt = &value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(broadcast.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)
@@ -797,6 +827,24 @@ func (u *BroadcastUpsert) UpdateArchivedAt() *BroadcastUpsert {
 // ClearArchivedAt clears the value of the "archived_at" field.
 func (u *BroadcastUpsert) ClearArchivedAt() *BroadcastUpsert {
 	u.SetNull(broadcast.FieldArchivedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *BroadcastUpsert) SetRevision(v int64) *BroadcastUpsert {
+	u.Set(broadcast.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateRevision() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *BroadcastUpsert) AddRevision(v int64) *BroadcastUpsert {
+	u.Add(broadcast.FieldRevision, v)
 	return u
 }
 
@@ -1272,6 +1320,27 @@ func (u *BroadcastUpsertOne) UpdateArchivedAt() *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) ClearArchivedAt() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearArchivedAt()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *BroadcastUpsertOne) SetRevision(v int64) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *BroadcastUpsertOne) AddRevision(v int64) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateRevision() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -1975,6 +2044,27 @@ func (u *BroadcastUpsertBulk) UpdateArchivedAt() *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) ClearArchivedAt() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearArchivedAt()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *BroadcastUpsertBulk) SetRevision(v int64) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *BroadcastUpsertBulk) AddRevision(v int64) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateRevision() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateRevision()
 	})
 }
 

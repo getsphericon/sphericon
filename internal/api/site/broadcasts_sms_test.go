@@ -54,7 +54,7 @@ func TestSiteSMSBroadcastToASegmentTextsTheConfirmedNumbersAndReportsItsFigures(
 	segment := idStr(fixtures.SegmentKrustyBayAreaID)
 	made := createSMSBroadcastIn(t, c, fixtures.KrustyPublicID, account, "Hi {{ first_name }}, 20% off today", &segment)
 
-	_, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.KrustyPublicID, ID: made.ID})
+	_, err := c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(made.ID)))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.KrustyPublicID, ID: made.ID})
 	require.NoError(t, err)
 
 	env.DeliverQueuedBroadcasts(t)
@@ -164,7 +164,7 @@ func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *tes
 	deadNumber := testSend()
 	env.Twilio.RefuseNextSend(twiliotest.AccountNotActive)
 	refusedAccount := testSend()
-	_, scheduled := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+	_, scheduled := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft))), ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: draft})
 
 	refused := testhelper.SiteRefusal(t, deadNumber, http.StatusUnprocessableEntity)
@@ -185,8 +185,8 @@ func TestSiteSMSBroadcastSaveRefusesATextOverTheLengthLimit(t *testing.T) {
 
 	_, created := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "Long", Content: testhelper.SiteSMS(strings.Repeat("a", 1601))},
 		siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	_, fits := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 700))}, draft)
-	_, edited := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 701))}, draft)
+	_, fits := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft.ID))), Content: testhelper.SiteSMSEdit(strings.Repeat("я", 700))}, draft)
+	_, edited := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft.ID))), Content: testhelper.SiteSMSEdit(strings.Repeat("я", 701))}, draft)
 
 	refused := testhelper.SiteRefusal(t, created, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Value, "1601 characters in GSM-7")
@@ -212,7 +212,7 @@ func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
 	b := createSMSBroadcast(t, c, account, text)
 	untracked := testhelper.SiteSMS(text)
 	untracked.OneOf.SmsBroadcastContentInput.LinkTracking = siteapi.NewOptBool(false)
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: siteapi.NewOptBroadcastContentInput(untracked)},
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(b.ID))), Content: siteapi.NewOptBroadcastContentInput(untracked)},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
 
 	acme, found := lo.Find(spaces, func(w siteapi.SiteWorkspaceResource) bool { return w.ID == fixtures.AcmePublicID })
@@ -231,7 +231,7 @@ func TestSiteSMSBroadcastScheduleRefusesABlankText(t *testing.T) {
 	env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	schedule := func(id int64) error {
-		_, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+		_, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(t.Context(), t, int64(idStr(id)))), ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 			siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
 		return err
 	}

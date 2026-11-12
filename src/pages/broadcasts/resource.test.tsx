@@ -61,6 +61,7 @@ function broadcast(status: string, content: Record<string, unknown> = {}) {
       ...content,
     },
     status,
+    revision: 1,
   }
 }
 
@@ -221,6 +222,7 @@ test('editing a draft; a cleared sender name is sent as null and the Segment is 
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         name: 'Launch',
         segmentId: null,
         integrationId: null,
@@ -247,6 +249,7 @@ test('editing a Telegram draft loads its message content and clears what is empt
         name: 'News',
         channel: 'telegram',
         status: 'draft',
+        revision: 1,
         content: {
           channel: 'telegram',
           text: 'Hi',
@@ -275,6 +278,7 @@ test('editing a Telegram draft loads its message content and clears what is empt
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         name: 'News',
         segmentId: null,
         integrationId: null,
@@ -383,6 +387,7 @@ test('saving a broadcast written in the editor sends its document and no body', 
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         name: 'Launch',
         segmentId: null,
         integrationId: null,
@@ -653,7 +658,7 @@ test('scheduling a draft posts the chosen time as an ISO timestamp and opens the
   await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
 
   await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
-  expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
+  expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString(), revision: 1 }])
   await expect.poll(() => navigate.mock.calls).toContainEqual([REPORT])
 })
 
@@ -668,6 +673,29 @@ test('a refused Send now shows the error toast and stays on the page', async () 
 
   await expect.element(screen.getByText(SEND_FAILED)).toBeInTheDocument()
   await expect.element(screen.getByText('Already sending')).toBeInTheDocument()
+  expect(navigate).not.toHaveBeenCalled()
+})
+
+// Send now names the revision the editor shows (ADR 0119). A draft changed since (its segment set
+// through the API, say) is refused: nothing is sent, the page stays, and it says the broadcast
+// changed and offers the saved version.
+test('Send now names the revision it shows, and a draft changed since is refused and said so', async () => {
+  const bodies: unknown[] = []
+  serveDraft()
+  worker.use(
+    handleSiteBroadcastsSend(async ({ request }) => {
+      bodies.push(await request.json())
+      return problem(409, { title: 'Changed', code: 'revision_changed' })
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByRole('button', { name: 'Send now' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ revision: 1 }])
+  await expect
+    .element(screen.getByRole('button', { name: 'Load the saved version' }))
+    .toBeInTheDocument()
   expect(navigate).not.toHaveBeenCalled()
 })
 
@@ -738,7 +766,7 @@ test('a Telegram broadcast offers no test send and can be scheduled', async () =
   await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
 
   await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
-  expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
+  expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString(), revision: 1 }])
   expect(screen.getByLabelText('Send a test to').elements()).toHaveLength(0)
   expect(screen.getByRole('button', { name: 'Send test' }).elements()).toHaveLength(0)
 })
@@ -772,5 +800,7 @@ test('an SMS broadcast is test-sent to the typed number, then scheduled', async 
   await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
 
   await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
-  expect(schedules).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
+  expect(schedules).toEqual([
+    { scheduledAt: new Date('2030-05-06T07:08').toISOString(), revision: 1 },
+  ])
 })

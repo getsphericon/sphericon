@@ -106,12 +106,12 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 
 // SiteBroadcastsSend sends a draft or scheduled broadcast immediately. The state
 // machine lives in the broadcasts module; this is the HTTP adapter.
-func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBroadcastsSendParams) (*siteapi.SiteBroadcastResource, error) {
+func (h *Handlers) SiteBroadcastsSend(ctx context.Context, req *siteapi.RevisionInput, params siteapi.SiteBroadcastsSendParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
-	v, err := h.broadcastViews.Send(ctx, ws, id)
+	v, err := h.broadcastViews.Send(ctx, ws, id, int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 
 	id := int64(params.ID)
 
-	v, err := h.broadcastViews.Schedule(ctx, ws, id, time.Time(req.ScheduledAt))
+	v, err := h.broadcastViews.Schedule(ctx, ws, id, int64(req.Revision), time.Time(req.ScheduledAt))
 	if err != nil {
 		return nil, err
 	}

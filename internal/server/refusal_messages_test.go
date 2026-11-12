@@ -46,12 +46,12 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "not a draft", want: "only draft broadcasts can be changed",
 			site: func(c *siteapi.Client) error {
-				_, err := c.SiteBroadcastsUpdate(t.Context(), &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName("x")},
+				_, err := c.SiteBroadcastsUpdate(t.Context(), &siteapi.UpdateBroadcastInput{Revision: 1, Name: siteapi.NewOptName("x")},
 					siteapi.SiteBroadcastsUpdateParams{WorkspaceId: ws, ID: site(fixtures.BroadcastSentID)})
 				return err
 			},
 			ext: func(c *externalapi.Client) error {
-				_, err := c.BroadcastsUpdate(t.Context(), &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("x")},
+				_, err := c.BroadcastsUpdate(t.Context(), &externalapi.UpdateBroadcastInput{Revision: 1, Name: externalapi.NewOptName("x")},
 					externalapi.BroadcastsUpdateParams{ID: ext(fixtures.BroadcastSentID)})
 				return err
 			},
@@ -59,12 +59,12 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "not sendable", want: "only draft or scheduled broadcasts can be sent or scheduled",
 			site: func(c *siteapi.Client) error {
-				_, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(at)},
+				_, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{Revision: 1, ScheduledAt: siteapi.Timestamp(at)},
 					siteapi.SiteBroadcastsScheduleParams{WorkspaceId: ws, ID: site(fixtures.BroadcastSentID)})
 				return err
 			},
 			ext: func(c *externalapi.Client) error {
-				_, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(at)},
+				_, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{Revision: 1, ScheduledAt: externalapi.Timestamp(at)},
 					externalapi.BroadcastsScheduleParams{ID: ext(fixtures.BroadcastSentID)})
 				return err
 			},
@@ -120,7 +120,7 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 				return err
 			},
 			ext: func(c *externalapi.Client) error {
-				_, err := c.BroadcastsSetSegment(t.Context(), &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(missing)},
+				_, err := c.BroadcastsSetSegment(t.Context(), &externalapi.SetBroadcastSegmentInput{Revision: 1, SegmentId: externalapi.NewNilEntityId(missing)},
 					externalapi.BroadcastsSetSegmentParams{ID: ext(fixtures.BroadcastDraftID)})
 				return err
 			},

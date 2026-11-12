@@ -183,6 +183,7 @@ func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) (bro
 func (c *InputsImpl) BroadcastUpdate(source *external.UpdateBroadcastInput) (broadcasts.UpdateInput, error) {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
+		broadcastsUpdateInput.Revision = revisionIn((*source).Revision)
 		broadcastsUpdateInput.Name = namePatch((*source).Name)
 		broadcastsContentPatch, err := broadcastContentPatch(c, (*source).Content)
 		if err != nil {

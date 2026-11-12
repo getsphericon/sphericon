@@ -2276,7 +2276,7 @@ export const siteBroadcastsScheduleMutation = (options?: Partial<Options<SiteBro
 export const siteBroadcastsSendMutationKey = (options?: Partial<Options<SiteBroadcastsSendData>>) => createMutationKey('siteBroadcastsSend', options, ['Site Broadcasts']);
 
 /**
- * Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409.
+ * Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed since the `revision` it names (revision_changed): nothing is sent.
  */
 export const siteBroadcastsSendMutation = (options?: Partial<Options<SiteBroadcastsSendData>>): UseMutationOptions<SiteBroadcastsSendResponse, SiteBroadcastsSendError, Options<SiteBroadcastsSendData>> => {
   const mutationOptions: UseMutationOptions<SiteBroadcastsSendResponse, SiteBroadcastsSendError, Options<SiteBroadcastsSendData>> = {

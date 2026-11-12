@@ -2830,6 +2830,7 @@ export const zContactExportDocument = z.object({
  * Request body for scheduling a broadcast
  */
 export const zScheduleBroadcastInput = z.object({
+  revision: zRevision,
   scheduledAt: zTimestamp
 });
 
@@ -3014,6 +3015,7 @@ export const zSiteBroadcastResource = z.object({
   stats: zSiteBroadcastStats,
   progress: z.exactOptional(zSiteBroadcastProgress.nullable()),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3621,6 +3623,7 @@ export const zCreateIntegrationInput = z.object({
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
  */
 export const zUpdateBroadcastInput = z.object({
+  revision: zRevision,
   name: z.exactOptional(zName),
   content: z.exactOptional(zBroadcastContentInput),
   segmentId: z.exactOptional(zEntityId.nullable()),
@@ -5267,6 +5270,8 @@ export const zSiteBroadcastsSchedulePath = z.object({
  * The request has succeeded.
  */
 export const zSiteBroadcastsScheduleResponse = zSiteBroadcastResource;
+
+export const zSiteBroadcastsSendBody = zRevisionInput;
 
 export const zSiteBroadcastsSendPath = z.object({
   workspaceId: zWorkspaceId,

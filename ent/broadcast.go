@@ -33,6 +33,8 @@ type Broadcast struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// ArchivedAt holds the value of the "archived_at" field.
 	ArchivedAt *time.Time `json:"archived_at,omitempty"`
+	// Revision holds the value of the "revision" field.
+	Revision int64 `json:"revision,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Channel holds the value of the "channel" field.
@@ -151,7 +153,7 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case broadcast.FieldLinkPreview, broadcast.FieldLinkTracking:
 			values[i] = new(sql.NullBool)
-		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldSegmentID, broadcast.FieldIntegrationID:
+		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldRevision, broadcast.FieldSegmentID, broadcast.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
 		case broadcast.FieldName, broadcast.FieldChannel, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldText, broadcast.FieldImageURL, broadcast.FieldUnsubscribeButton, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
@@ -202,6 +204,12 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ArchivedAt = new(time.Time)
 				*_m.ArchivedAt = value.Time
+			}
+		case broadcast.FieldRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field revision", values[i])
+			} else if value.Valid {
+				_m.Revision = value.Int64
 			}
 		case broadcast.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -430,6 +438,9 @@ func (_m *Broadcast) String() string {
 		builder.WriteString("archived_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Revision))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

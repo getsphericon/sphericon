@@ -80,16 +80,16 @@ func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 	subject := "New subject"
 
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
-	b, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
+	b, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
 	require.NoError(t, err)
 	assert.Equal(t, "New subject", *b.Subject)
 	assert.Equal(t, before.Name, b.Name, "unset fields keep the stored value")
 
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, broadcasts.UpdateInput{Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID), Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
 	require.ErrorIs(t, err, broadcasts.ErrNotDraft)
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID), Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
-	_, err = m.Update(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
+	_, err = m.Update(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), Content: broadcasts.EmailContentPatch{Subject: patch.Set(subject)}})
 	assert.Error(t, err)
 }
 
@@ -99,28 +99,28 @@ func TestSetSegment(t *testing.T) {
 	ctx := context.Background()
 	seg := int64(fixtures.SegmentProPlanID)
 
-	b, err := m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &seg)
+	b, err := m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), &seg)
 	require.NoError(t, err)
 	require.NotNil(t, b.SegmentID)
 	assert.Equal(t, seg, *b.SegmentID)
 
-	b, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, nil)
+	b, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), nil)
 	require.NoError(t, err)
 	assert.Nil(t, b.SegmentID, "nil Segment means all contacts")
 
 	globexSeg := int64(fixtures.SegmentGlobexID)
-	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &globexSeg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), &globexSeg)
 	require.ErrorIs(t, err, broadcasts.ErrSegmentNotFound, "another workspace's segment is not usable")
 
-	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), 987654, &globexSeg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), 987654, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), 987654), &globexSeg)
 	require.ErrorIs(t, err, broadcasts.ErrNotFound, "an unknown broadcast is reported before the segment")
 
-	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, &seg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID), &seg)
 	require.ErrorIs(t, err, broadcasts.ErrNotDraft)
 
-	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &seg)
+	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), &seg)
 	require.Error(t, err, "segment lookup failure")
-	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, nil)
+	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), nil)
 	assert.Error(t, err, "update failure")
 }
 
@@ -168,7 +168,7 @@ func TestTransitionStoreErrors(t *testing.T) {
 
 	t.Run("claim update fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Send(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
+		_, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Send(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID))
 		assert.Error(t, err)
 	})
 
@@ -196,10 +196,10 @@ func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 
 	_, err := m.Get(ctx, acme, fixtures.BroadcastGlobexID)
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
-	_, err = m.Send(ctx, acme, fixtures.BroadcastGlobexID)
+	_, err = m.Send(ctx, acme, fixtures.BroadcastGlobexID, testhelper.BroadcastRevisionIn(ctx, t, acme, fixtures.BroadcastGlobexID))
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 
-	_, err = m.SetSegment(ctx, acme, fixtures.BroadcastDraftID, new(int64(fixtures.SegmentGlobexID)))
+	_, err = m.SetSegment(ctx, acme, fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, acme, fixtures.BroadcastDraftID), new(int64(fixtures.SegmentGlobexID)))
 	assert.ErrorIs(t, err, broadcasts.ErrSegmentNotFound)
 }
 
@@ -248,12 +248,12 @@ func TestUpdatePatchClearsANullAndKeepsAnAbsentField(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	seg := int64(fixtures.SegmentProPlanID)
-	_, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{
+	_, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID),
 		Content: broadcasts.EmailContentPatch{FromName: patch.Set("Acme")}, SegmentID: patch.Set(seg),
 	})
 	require.NoError(t, err)
 
-	b, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{
+	b, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID),
 		Content: broadcasts.EmailContentPatch{FromName: patch.Clear[string](), Subject: patch.Set("Only the subject")},
 	})
 	require.NoError(t, err)
@@ -261,7 +261,7 @@ func TestUpdatePatchClearsANullAndKeepsAnAbsentField(t *testing.T) {
 	require.NotNil(t, b.SegmentID, "an absent field keeps the stored value")
 	assert.Equal(t, seg, *b.SegmentID)
 
-	cleared, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{SegmentID: patch.Clear[int64]()})
+	cleared, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), SegmentID: patch.Clear[int64]()})
 	require.NoError(t, err)
 	assert.Nil(t, cleared.SegmentID, "a cleared Segment means all contacts")
 }
@@ -276,7 +276,7 @@ func TestCreateAndUpdateRefuseABlankName(t *testing.T) {
 		_, err := m.Create(ctx, s, broadcasts.CreateInput{Name: &name})
 		require.ErrorIs(t, err, validation.ErrNameBlank)
 
-		_, err = m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Name: patch.Set(name)})
+		_, err = m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), Name: patch.Set(name)})
 		require.ErrorIs(t, err, validation.ErrNameBlank)
 		assert.Equal(t, fixtures.BroadcastDraftName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Name)
 	}

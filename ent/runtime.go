@@ -298,6 +298,8 @@ func init() {
 	broadcastMixin := schema.Broadcast{}.Mixin()
 	broadcastMixinFields0 := broadcastMixin[0].Fields()
 	_ = broadcastMixinFields0
+	broadcastMixinFields3 := broadcastMixin[3].Fields()
+	_ = broadcastMixinFields3
 	broadcastFields := schema.Broadcast{}.Fields()
 	_ = broadcastFields
 	// broadcastDescCreatedAt is the schema descriptor for created_at field.
@@ -310,6 +312,12 @@ func init() {
 	broadcast.DefaultUpdatedAt = broadcastDescUpdatedAt.Default.(func() time.Time)
 	// broadcast.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	broadcast.UpdateDefaultUpdatedAt = broadcastDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// broadcastDescRevision is the schema descriptor for revision field.
+	broadcastDescRevision := broadcastMixinFields3[0].Descriptor()
+	// broadcast.DefaultRevision holds the default value on creation for the revision field.
+	broadcast.DefaultRevision = broadcastDescRevision.Default.(int64)
+	// broadcast.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	broadcast.RevisionValidator = broadcastDescRevision.Validators[0].(func(int64) error)
 	// broadcastDescName is the schema descriptor for name field.
 	broadcastDescName := broadcastFields[1].Descriptor()
 	// broadcast.NameValidator is a validator for the "name" field. It is called by the builders before save.

@@ -48,10 +48,10 @@ func TestAScheduleQueuedFirstRefusesTheDeleteOfTheDomainItSendsFrom(t *testing.T
 	domains := sendingdomains.New(bus, cipher, nil, time.Now)
 	deletion := sendingdomaindeletion.New(bus, domains, removalcheck.New(messaging.NewResolver(cipher, registry.Default())), time.Now)
 	from := broadcasts.EmailContentPatch{FromEmail: patch.Set("news@" + fixtures.SendingDomainVerifiedDomain)}
-	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Content: from})
+	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), Content: from})
 	require.NoError(t, err)
 	schedule := testhelper.Writer{Name: "schedule", Run: func() error {
-		_, err := sends.Schedule(ctx, s, fixtures.BroadcastDraftID, time.Now().Add(time.Hour))
+		_, err := sends.Schedule(ctx, s, fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), time.Now().Add(time.Hour))
 		return err
 	}}
 	remove := testhelper.Writer{Name: "delete", Run: func() error { return deletion.Delete(ctx, s, fixtures.SendingDomainVerifiedID) }}

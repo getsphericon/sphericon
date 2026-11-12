@@ -45,12 +45,12 @@ func TestSiteBroadcastsUpdateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(params.ID))),
 		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentArchivedID)),
 	}, params)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(params.ID))),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeArchivedID)),
 	}, params)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)

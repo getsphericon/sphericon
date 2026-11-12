@@ -167,6 +167,9 @@ model CreateBroadcastInput {
 
 /** Request body for updating a draft broadcast: an omitted field keeps its value, null clears it */
 model UpdateBroadcastInput {
+  /** The broadcast's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** Internal broadcast name */
   name?: Name;
 
@@ -182,6 +185,9 @@ model UpdateBroadcastInput {
 
 /** Request body for scheduling a broadcast */
 model ScheduleBroadcastInput {
+  /** The broadcast's `revision` the schedule was made on (ADR 0119): the one of what the person scheduling was shown, so a broadcast changed since is a 409 revision_changed and is not scheduled */
+  revision: Revision;
+
   /** When the broadcast should be sent */
   scheduledAt: Timestamp;
 }

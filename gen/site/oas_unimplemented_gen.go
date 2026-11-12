@@ -553,10 +553,11 @@ func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *Sch
 // SiteBroadcastsSend implements SiteBroadcasts_send operation.
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-// resolved from; an archived segment is refused. An archived broadcast is a 409.
+// resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed
+// since the `revision` it names (revision_changed): nothing is sent.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
-func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (r *SiteBroadcastResource, _ error) {
+func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, req *RevisionInput, params SiteBroadcastsSendParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

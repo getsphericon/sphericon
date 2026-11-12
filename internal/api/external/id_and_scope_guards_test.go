@@ -47,15 +47,15 @@ func idGuardCases() []guardCase {
 			return err
 		}},
 		{"BroadcastsUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: id})
+			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: 1}, externalapi.BroadcastsUpdateParams{ID: id})
 			return err
 		}},
 		{"BroadcastsSetSegment", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: id})
+			_, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{Revision: 1, SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: id})
 			return err
 		}},
 		{"BroadcastsSchedule", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))}, externalapi.BroadcastsScheduleParams{ID: id})
+			_, err := c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{Revision: 1, ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))}, externalapi.BroadcastsScheduleParams{ID: id})
 			return err
 		}},
 		{"BroadcastsUnschedule", func(c *externalapi.Client, id externalapi.EntityId) error {

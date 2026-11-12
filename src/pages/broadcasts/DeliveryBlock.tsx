@@ -36,8 +36,11 @@ export function DeliveryBlock({
   const [testTo, setTestTo] = useState('')
 
   const path = { workspaceId, id: broadcast.id }
-  // A delivered Broadcast is followed on its report.
-  const deliver = async (operation: BroadcastDelivery, input?: ScheduleBroadcastInput) => {
+  // A delivered Broadcast is followed on its report. The session adds the revision it shows.
+  const deliver = async (
+    operation: BroadcastDelivery,
+    input?: Omit<ScheduleBroadcastInput, 'revision'>,
+  ) => {
     if ((await editor.run(operation, input)) === 'success') {
       await navigate({
         to: broadcastsReportRoute.to,

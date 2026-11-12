@@ -83,7 +83,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	check := removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default()))
 	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, "", time.Now), check, time.Now)
 
-	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeGenericAID)})
+	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)
 	return integrationRace{
 		WorkspaceRace: race,
@@ -92,7 +92,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 			return deletion.Delete(ctx, s, fixtures.IntegrationAcmeGenericAID)
 		}},
 		schedule: testhelper.Writer{Name: "schedule", Run: func() error {
-			_, err := sends.Schedule(ctx, s, fixtures.BroadcastDraftID, time.Now().Add(time.Hour))
+			_, err := sends.Schedule(ctx, s, fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), time.Now().Add(time.Hour))
 			return err
 		}},
 	}

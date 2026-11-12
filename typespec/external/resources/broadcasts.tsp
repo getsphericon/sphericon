@@ -49,6 +49,9 @@ model BroadcastResource {
   /** When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived. */
   archivedAt?: Timestamp | null;
 
+  /** The revision of the state this answer shows (ADR 0119): an update, a change of its segment and Schedule name it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -58,6 +61,9 @@ model BroadcastResource {
 
 /** Request body for setting a broadcast's Segment */
 model SetBroadcastSegmentInput {
+  /** The broadcast's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** The Segment to send to; null means all contacts */
   segmentId: EntityId | null;
 }

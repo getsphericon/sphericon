@@ -918,6 +918,10 @@ export type BroadcastResource = {
    */
   archivedAt?: Timestamp | null;
   /**
+   * The revision of the state this answer shows (ADR 0119): an update, a change of its segment and Schedule name it
+   */
+  revision: Revision;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -4064,6 +4068,10 @@ export type RuleVersion = {
  */
 export type ScheduleBroadcastInput = {
   /**
+   * The broadcast's `revision` the schedule was made on (ADR 0119): the one of what the person scheduling was shown, so a broadcast changed since is a 409 revision_changed and is not scheduled
+   */
+  revision: Revision;
+  /**
    * When the broadcast should be sent
    */
   scheduledAt: Timestamp;
@@ -4319,6 +4327,10 @@ export type SesConfigInput = {
  * Request body for setting a broadcast's Segment
  */
 export type SetBroadcastSegmentInput = {
+  /**
+   * The broadcast's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * The Segment to send to; null means all contacts
    */
@@ -4989,6 +5001,10 @@ export type UpdateAutomationInput = {
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
  */
 export type UpdateBroadcastInput = {
+  /**
+   * The broadcast's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * Internal broadcast name
    */

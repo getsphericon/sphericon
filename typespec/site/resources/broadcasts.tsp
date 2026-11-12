@@ -186,6 +186,9 @@ model SiteBroadcastResource {
   /** When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived. */
   archivedAt?: Timestamp | null;
 
+  /** The revision of the state this answer shows (ADR 0119): an update, Send now and Schedule name it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -268,13 +271,14 @@ interface SiteBroadcasts
     | SiteBroadcastResource
     | Problem;
 
-  /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409. */
+  /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed since the `revision` it names (revision_changed): nothing is sent. */
   @action("send")
   @autoRoute
   @requiresPermissions(#[])
-  send(...ResourceParameters<SiteBroadcastResource>):
-    | SiteBroadcastResource
-    | Problem;
+  send(
+    ...ResourceParameters<SiteBroadcastResource>,
+    @body body: RevisionInput,
+  ): SiteBroadcastResource | Problem;
 
   /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too. */
   @action("schedule")

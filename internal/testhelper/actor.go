@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/user"
@@ -324,6 +325,19 @@ func (env *TestEnv) SegmentRevision(ctx context.Context, tb testing.TB, id int64
 	return sg.Revision
 }
 
+// BroadcastRevision is the stored revision of the Broadcast id (ADR 0119): what an editor that read
+// it now names in an edit, a Send or a Schedule.
+func (env *TestEnv) BroadcastRevision(ctx context.Context, tb testing.TB, id int64) int64 {
+	tb.Helper()
+	b, err := env.DB.Broadcast.Get(ctx, id)
+	if ent.IsNotFound(err) {
+		// An id the call is refused for (another Workspace's, none at all): any revision does.
+		return 1
+	}
+	require.NoError(tb, err)
+	return b.Revision
+}
+
 // AutomationRevisionIn is AutomationRevision read through the scope s, for a test with no TestEnv
 // at hand.
 func AutomationRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
@@ -356,4 +370,16 @@ func SegmentRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int
 	}
 	require.NoError(tb, err)
 	return sg.Revision
+}
+
+// BroadcastRevisionIn is BroadcastRevision read through the scope s, for a test with no TestEnv at
+// hand.
+func BroadcastRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
+	tb.Helper()
+	b, err := s.Broadcast().QueryWithArchived().Where(broadcast.ID(id)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return 1
+	}
+	require.NoError(tb, err)
+	return b.Revision
 }
