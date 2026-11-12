@@ -189,6 +189,20 @@ func TestDispatchFansOutToMatchingEnabledEndpoints(t *testing.T) {
 	assert.Len(t, e.queued(t), 2)
 }
 
+// A dispatch retried after it failed midway queues no delivery twice: a delivery is unique on its
+// endpoint and event, while another event still reaches the same endpoint.
+func TestDispatchRetriedQueuesEachDeliveryOnce(t *testing.T) {
+	e := newRiverEnv(t)
+	initech := e.DB.Scoped(fixtures.InitechID)
+
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameAuditEntry, "d-1", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameAuditEntry, "d-1", []byte(`{}`)))
+	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
+
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameAuditEntry, "d-2", []byte(`{}`)))
+	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID, fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
+}
+
 // queuedEndpoints returns the endpoints of the queued webhook deliveries, oldest first.
 func (e *riverEnv) queuedEndpoints(t *testing.T) []int64 {
 	t.Helper()
