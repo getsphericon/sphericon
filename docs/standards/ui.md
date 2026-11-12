@@ -233,7 +233,9 @@ reads the list again.
   badges and what the operations allow, never the content.
 - **A write names the revision it was made on** (ADR 0119). The session keeps a base revision: the
   one of the content it loaded, moved only when an acknowledgement is folded in or the session
-  replaces the content, never by a refresh. Every write sends it. When a write is refused with
+  replaces the content, never by a refresh, unless the refresh would open exactly the content last
+  saved: another form of the same row saved, and this one is not stale (the adapter's `reopen`; a
+  schema form has one, a canvas does not). Every write sends it. When a write is refused with
   `revision_changed`, or a refresh brings a newer revision than the base, the editor keeps its
   content as it is, still unsaved, and says the resource changed since it was opened
   (`src/editing/ChangedNotice.tsx`). It offers **Load the saved version**, which replaces the

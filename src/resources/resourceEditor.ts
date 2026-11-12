@@ -108,6 +108,8 @@ export function resourceEditorAdapter<
   return {
     id,
     open: ({ resource }) => values(resource),
+    // Its content is the form's values, made from the resource alone.
+    reopen: values,
     fingerprint: valuesFingerprint,
     submit: (current) => {
       const parsed = schema.update.safeParse(current)
