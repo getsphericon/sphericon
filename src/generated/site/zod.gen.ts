@@ -1918,6 +1918,7 @@ export const zSiteRuleStatus = z.enum(['active', 'inactive']);
  * its values.
  */
 export const zSiteSaveBrandKitInput = z.object({
+  revision: zRevision,
   accentColor: z.string(),
   textColor: z.string(),
   backgroundColor: z.string(),
@@ -2984,7 +2985,8 @@ export const zSiteBrandKitResource = z.object({
   buttonTextColor: z.string(),
   buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   footerText: z.string(),
-  updatedAt: z.exactOptional(zTimestamp.nullable())
+  updatedAt: z.exactOptional(zTimestamp.nullable()),
+  revision: zRevision
 });
 
 /**

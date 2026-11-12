@@ -215,6 +215,7 @@ func (c *InputsImpl) AutomationsSort(source site.SiteAutomationsSort) automation
 func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkits.Input {
 	var brandkitsInput brandkits.Input
 	if source != nil {
+		brandkitsInput.Revision = revisionIn((*source).Revision)
 		brandkitsInput.AccentColor = (*source).AccentColor
 		brandkitsInput.TextColor = (*source).TextColor
 		brandkitsInput.BackgroundColor = (*source).BackgroundColor

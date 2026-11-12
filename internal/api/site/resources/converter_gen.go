@@ -633,6 +633,7 @@ func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) site.SiteBrandK
 	siteapiSiteBrandKitResource.ButtonRadius = count(source.ButtonRadius)
 	siteapiSiteBrandKitResource.FooterText = source.FooterText
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
+	siteapiSiteBrandKitResource.Revision = revision(source.Revision)
 	return siteapiSiteBrandKitResource
 }
 func (c *ConverterImpl) BroadcastChannelToResource(source channels.Channel) site.BroadcastChannel {

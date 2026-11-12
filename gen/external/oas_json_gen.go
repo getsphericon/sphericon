@@ -3715,9 +3715,13 @@ func (s *BrandKitResource) encodeFields(e *jx.Encoder) {
 			s.UpdatedAt.Encode(e)
 		}
 	}
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfBrandKitResource = [11]string{
+var jsonFieldsNameOfBrandKitResource = [12]string{
 	0:  "saved",
 	1:  "accentColor",
 	2:  "textColor",
@@ -3729,6 +3733,7 @@ var jsonFieldsNameOfBrandKitResource = [11]string{
 	8:  "buttonRadius",
 	9:  "footerText",
 	10: "updatedAt",
+	11: "revision",
 }
 
 // Decode decodes BrandKitResource from json.
@@ -3870,6 +3875,16 @@ func (s *BrandKitResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"updatedAt\"")
 			}
+		case "revision":
+			requiredBitSet[1] |= 1 << 3
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -3881,7 +3896,7 @@ func (s *BrandKitResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11111111,
-		0b00000011,
+		0b00001011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

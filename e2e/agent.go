@@ -24,7 +24,11 @@ import (
 // starter Templates in its brand (ADR 0040).
 func (w *Workspace) SaveBrandKit() {
 	w.t.Helper()
-	_, err := w.env.brandKit.Save(w.t.Context(), w.scoped, brandkits.Input{
+	// A save names the revision it was made on (ADR 0119), so the person's app read the kit first.
+	read, err := w.env.brandKit.Get(w.t.Context(), w.scoped)
+	require.NoError(w.t, err, "read the Brand kit")
+	_, err = w.env.brandKit.Save(w.t.Context(), w.scoped, brandkits.Input{
+		Revision:        read.Revision,
 		AccentColor:     "#0a7d5a",
 		TextColor:       "#1d1d1f",
 		BackgroundColor: "#fafafa",

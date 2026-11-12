@@ -309,6 +309,7 @@
   "errors.brandkit_logo": "the logo must be an http or https address",
   "errors.brandkit_footer": "the footer must be plain text without control characters or template markup",
   "errors.brandkit_not_saved": "save the Brand kit first: the starter Templates are made from it",
+  "errors.brandkit_revision_changed": "the brand kit changed since it was opened",
   "errors.signup_item_not_found": "no such sign-up item",
   "errors.signup_item_key_taken": "another sign-up item has this key",
   "errors.signup_item_title_blank": "the title must not be blank",

@@ -2636,6 +2636,9 @@ type BrandKitResource struct {
 	FooterText string `json:"footerText"`
 	// When the Brand kit was last saved; absent while it is not saved.
 	UpdatedAt OptNilTimestamp `json:"updatedAt"`
+	// The revision of the state this answer shows (ADR 0119): a save names it. A Brand kit not saved yet
+	// is revision 1.
+	Revision Revision `json:"revision"`
 }
 
 // GetSaved returns the value of Saved.
@@ -2693,6 +2696,11 @@ func (s *BrandKitResource) GetUpdatedAt() OptNilTimestamp {
 	return s.UpdatedAt
 }
 
+// GetRevision returns the value of Revision.
+func (s *BrandKitResource) GetRevision() Revision {
+	return s.Revision
+}
+
 // SetSaved sets the value of Saved.
 func (s *BrandKitResource) SetSaved(val bool) {
 	s.Saved = val
@@ -2746,6 +2754,11 @@ func (s *BrandKitResource) SetFooterText(val string) {
 // SetUpdatedAt sets the value of UpdatedAt.
 func (s *BrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
 	s.UpdatedAt = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *BrandKitResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // The Channel a Broadcast sends on, fixed when it is created (ADR 0080).

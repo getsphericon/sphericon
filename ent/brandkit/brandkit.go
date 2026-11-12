@@ -20,6 +20,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
 	FieldWorkspaceID = "workspace_id"
+	// FieldRevision holds the string denoting the revision field in the database.
+	FieldRevision = "revision"
 	// FieldAccentColor holds the string denoting the accent_color field in the database.
 	FieldAccentColor = "accent_color"
 	// FieldTextColor holds the string denoting the text_color field in the database.
@@ -57,6 +59,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldWorkspaceID,
+	FieldRevision,
 	FieldAccentColor,
 	FieldTextColor,
 	FieldBackgroundColor,
@@ -85,6 +88,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultRevision holds the default value on creation for the "revision" field.
+	DefaultRevision int64
+	// RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	RevisionValidator func(int64) error
 	// DefaultLogoURL holds the default value on creation for the "logo_url" field.
 	DefaultLogoURL string
 	// DefaultFooterText holds the default value on creation for the "footer_text" field.
@@ -112,6 +119,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByWorkspaceID orders the results by the workspace_id field.
 func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
+}
+
+// ByRevision orders the results by the revision field.
+func ByRevision(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRevision, opts...).ToFunc()
 }
 
 // ByAccentColor orders the results by the accent_color field.

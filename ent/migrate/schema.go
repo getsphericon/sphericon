@@ -395,6 +395,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "accent_color", Type: field.TypeString},
 		{Name: "text_color", Type: field.TypeString},
 		{Name: "background_color", Type: field.TypeString},
@@ -414,7 +415,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "brand_kits_workspaces_brand_kits",
-				Columns:    []*schema.Column{BrandKitsColumns[12]},
+				Columns:    []*schema.Column{BrandKitsColumns[13]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -423,7 +424,7 @@ var (
 			{
 				Name:    "brandkit_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{BrandKitsColumns[12]},
+				Columns: []*schema.Column{BrandKitsColumns[13]},
 			},
 		},
 	}

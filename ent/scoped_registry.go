@@ -525,6 +525,7 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.BrandKit().Create()
+				b.SetRevision(src.Revision)
 				b.SetAccentColor(src.AccentColor)
 				b.SetTextColor(src.TextColor)
 				b.SetBackgroundColor(src.BackgroundColor)

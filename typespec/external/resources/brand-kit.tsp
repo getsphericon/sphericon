@@ -42,6 +42,9 @@ model BrandKitResource {
 
   /** When the Brand kit was last saved; absent while it is not saved */
   updatedAt?: Timestamp | null;
+
+  /** The revision of the state this answer shows (ADR 0119): a save names it. A Brand kit not saved yet is revision 1 */
+  revision: Revision;
 }
 
 @route("/brand-kit")

@@ -23,7 +23,7 @@ func (BrandKit) Annotations() []schema.Annotation {
 }
 
 func (BrandKit) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "brand_kits"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "brand_kits"}, RevisionMixin{}}
 }
 
 func (BrandKit) Fields() []ent.Field {

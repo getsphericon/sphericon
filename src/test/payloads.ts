@@ -26,6 +26,7 @@ export const UNSAVED_BRAND_KIT: SiteBrandKitResource = {
   buttonRadius: 4,
   footerText: '',
   updatedAt: null,
+  revision: 1,
 }
 
 // An enabled SMTP Integration of the email Channel, not the default, as the API returns it.

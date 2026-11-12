@@ -6611,6 +6611,18 @@ func (x *BrandKitScopedCreate) SetNillableUpdatedAt(v *time.Time) *BrandKitScope
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *BrandKitScopedCreate) SetRevision(v int64) *BrandKitScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *BrandKitScopedCreate) SetNillableRevision(v *int64) *BrandKitScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetAccentColor sets the "accent_color" field.
 func (x *BrandKitScopedCreate) SetAccentColor(v string) *BrandKitScopedCreate {
 	x.b.SetAccentColor(v)
@@ -6789,6 +6801,24 @@ func (u *BrandKitScopedUpsert) SetUpdatedAt(v time.Time) *BrandKitScopedUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *BrandKitScopedUpsert) UpdateUpdatedAt() *BrandKitScopedUpsert {
 	u.u.SetExcluded(brandkit.FieldUpdatedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *BrandKitScopedUpsert) SetRevision(v int64) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *BrandKitScopedUpsert) AddRevision(v int64) *BrandKitScopedUpsert {
+	u.u.Add(brandkit.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateRevision() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldRevision)
 	return u
 }
 
@@ -7090,6 +7120,24 @@ func (x *BrandKitScopedUpdateOne) SetUpdatedAt(v time.Time) *BrandKitScopedUpdat
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *BrandKitScopedUpdateOne) SetRevision(v int64) *BrandKitScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableRevision(v *int64) *BrandKitScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *BrandKitScopedUpdateOne) AddRevision(v int64) *BrandKitScopedUpdateOne {
+	x.b.AddRevision(v)
+	return x
+}
+
 // SetAccentColor sets the "accent_color" field.
 func (x *BrandKitScopedUpdateOne) SetAccentColor(v string) *BrandKitScopedUpdateOne {
 	x.b.SetAccentColor(v)
@@ -7279,6 +7327,24 @@ func (x *BrandKitScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Brand
 // SetUpdatedAt sets the "updated_at" field.
 func (x *BrandKitScopedUpdate) SetUpdatedAt(v time.Time) *BrandKitScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *BrandKitScopedUpdate) SetRevision(v int64) *BrandKitScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableRevision(v *int64) *BrandKitScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *BrandKitScopedUpdate) AddRevision(v int64) *BrandKitScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 
