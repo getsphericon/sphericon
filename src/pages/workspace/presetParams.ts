@@ -42,6 +42,15 @@ export function savedSecrets(preset: SitePresetResource, params: PresetParams): 
   )
 }
 
+// How a read shows a secret param, which a save may send back to keep it (integrations.tsp).
+const SECRET_MASK = '********'
+
+// unmasked is the stored params without their masked secrets: what a save sends when nothing was
+// typed, so a kept secret is left out rather than echoed.
+export function unmasked(params: PresetParams): PresetParams {
+  return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== SECRET_MASK))
+}
+
 // The form's starting values: the stored params without the secrets, which are never filled in.
 export function formValues(preset: SitePresetResource, params: PresetParams): PresetParams {
   const secrets = secretsOf(preset)
