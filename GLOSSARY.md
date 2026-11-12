@@ -649,7 +649,7 @@ by copy (see Template).
 _Avoid_: Notification, system email, trigger (that is the Automation term), API send
 
 **Automation**:
-A workspace-scoped, event-triggered sequence: when its Trigger fires for a Contact, the
+A workspace-scoped sequence started by an Event or a date: when its Trigger fires for a Contact, the
 Contact is enrolled and walks the Automation's ordered steps (send on a Channel, wait, …), the one
 surface where every Channel meets. Each
 Automation is its own unsubscribe Sending source. What it does is its **live version**: an edit
@@ -693,9 +693,11 @@ the latest. It changes nothing that sends or shows.
 _Avoid_: Discard (that is a delete that keeps the row), reset, undo
 
 **Trigger**:
-The single Event action that enrolls a Contact into an Automation (e.g. "contact.created", a
-custom event). Not a separate entity — one Trigger per Automation version. Matched by the Event's
-resolved identity, not by email.
+What enrolls a Contact into an Automation: an Event action (e.g. "contact.created", a custom
+event), matched by the Event's resolved identity, not by email; or a **date**, a field of the Contact
+(`birthday` or a datetime Custom field) with a recurrence (every year, or once), an offset in days
+and a local time, reached in the Contact's time zone or else the Workspace's. Not a separate
+entity — one Trigger per Automation version.
 _Avoid_: Hook, entry condition
 
 **Exit event** / **Goal event**:
@@ -709,8 +711,10 @@ Neither may be the Trigger, nor the goal an exit event.
 _Avoid_: Stop condition, exit criteria, conversion
 
 **Enrollment**:
-One Contact's membership-and-progress in one Automation — enrolled at most once ever
-(re-enrollment is deliberately out of scope). It begins when its triggering Event occurred (when a
+One Contact's membership-and-progress in one Automation — enrolled at most once ever, or, for a
+date Trigger, once per occurrence (once a year for a yearly date); re-enrollment on Events is
+deliberately out of scope. A date Trigger's Enrollment begins at the occurrence, with an empty
+`event`. Any other begins when its triggering Event occurred (when a
 Rule enrolls, the Event the Rule fired on; when an **Enroll** step does, the moment it runs, with a
 copy of its own Enrollment's `event`). It keeps a copy of that Event's action and properties, taken
 when it begins and never changed, which every email and HTTP step renders as `event` (the
@@ -737,7 +741,7 @@ Message content, per the marketing copy-at-author-time rule, except on WhatsApp,
 a WhatsApp template), **wait** (a delay before the next
 Step), **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
 nothing and move straight on), **Set field**, **Enroll**, **Notify**, **HTTP step**, **Branch**,
-**Split** and **Wait for event** (below) and **end** (it finishes the path and ends the Enrollment
+**Split**, **Wait for event** and **Wait until** (below) and **end** (it finishes the path and ends the Enrollment
 as `completed`). There are no parallel paths: an Enrollment is at one
 Step at a time.
 _Avoid_: Action, node, block, stage
@@ -756,8 +760,8 @@ _Avoid_: Split (that one chooses by weight), decision node, if/else node, filter
 
 **Split**:
 A Step with two or more weighted paths, its weights summing to 100, which rejoin right after it; the
-Contact's path is fixed by the Contact and the Step, so the same Contact always lands on the same
-one, and it is kept on the Enrollment. An empty path is a holdout group. Used to test one path
+Contact's path is fixed by the Contact and the Step (and, in a date-triggered Automation, the
+year), so the same Contact lands on the same one, and it is kept on the Enrollment. An empty path is a holdout group. Used to test one path
 against another; no winner is picked for the author.
 _Avoid_: A/B test step, experiment, variant, random branch
 
@@ -769,6 +773,13 @@ click of the message an earlier send Step sent to this Enrollment, counted whene
 Waiting for an open or click has an _unknown_ path of its own, taken when that message went out
 untracked or was never sent to this Enrollment.
 _Avoid_: Wait until (a calendar wait), wait with condition, delay
+
+**Wait until**:
+A Step that holds the Enrollment until a calendar moment: the next local time of day, optionally on
+chosen weekdays, or a date the Contact holds with an offset and a local time. The moment is fixed
+when the Enrollment reaches it, in the Contact's time zone or else the Workspace's; one already past,
+or a date the Contact lacks, moves the Enrollment on at once.
+_Avoid_: Wait for event (that one waits for an Event), schedule, delay, send window
 
 **Set field**:
 A Step kind, and a Rule Action, that gives one **Custom field** of the Contact a value, a literal or

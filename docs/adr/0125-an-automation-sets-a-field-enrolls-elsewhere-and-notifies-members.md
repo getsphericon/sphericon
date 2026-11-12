@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation sets a field, enrolls elsewhere and notifies Members
 
+> **Amended by [[0126-an-automation-starts-on-a-date-and-waits-until-a-local-time]]:** an Enroll,
+> Step or Rule Action, cannot target an Automation with a date Trigger.
+
 An Automation's Steps send, wait, change Tags, call HTTP, branch and end. A Rule's Actions change
 Tags, call HTTP and enroll in an Automation. Three things marketers ask an Automation to do have no
 Step: write what it learned onto the Contact ("plan = pro"), hand the Contact to another Automation

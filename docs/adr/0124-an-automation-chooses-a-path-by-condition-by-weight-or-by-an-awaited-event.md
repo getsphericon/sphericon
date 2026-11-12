@@ -4,6 +4,10 @@ status: accepted
 
 # An Automation chooses a path by Condition, by weight or by an awaited Event
 
+> **Amended by [[0126-an-automation-starts-on-a-date-and-waits-until-a-local-time]]:** in a
+> date-triggered Automation a Split's hash also takes the anniversary year, so it draws again each
+> year.
+
 ADR 0122 gave an Automation one way to fork: a Branch with a Condition and two paths, `yes` and
 `no`, that rejoin. Three more forks are common in marketing automation and were left out of it. One
 is a choice among more than two paths: new, active and lapsed customers each get their own path. One

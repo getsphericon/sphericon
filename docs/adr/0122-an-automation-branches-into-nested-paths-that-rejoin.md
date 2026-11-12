@@ -13,6 +13,9 @@ status: accepted
 > `no` are the two-path case; paths have ids. The unknown path is a path of its own, with its own
 > Steps. A Split and a Wait for event fork too.
 
+> **Amended by [[0126-an-automation-starts-on-a-date-and-waits-until-a-local-time]]:** the one
+> Trigger is an Event action or a date; a date Trigger has no entry Condition either.
+
 An Automation version holds a linear array of Steps, and an Enrollment points at one of them. The
 canvas draws a graph, but saving flattens it into a chain and drops whatever is off it. A marketer
 cannot send people down different paths by their data or behaviour, which is what ROADMAP R12 asks

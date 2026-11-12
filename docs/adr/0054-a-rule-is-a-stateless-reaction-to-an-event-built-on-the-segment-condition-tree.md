@@ -12,6 +12,9 @@ status: accepted
 > below means no message to a Contact: a Notify mails Members, and it outlives the Actions job as an
 > HTTP call does, without being awaited.
 
+> **Amended by [[0126-an-automation-starts-on-a-date-and-waits-until-a-local-time]]:** the enroll
+> Action cannot target an Automation with a date Trigger.
+
 > Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: a Rule is versioned, an edit
 > writes a draft, Publish makes it live, and the lifecycle is `active` and `inactive`.
 

@@ -57,9 +57,10 @@ missing implementations of an already accepted spec.
   it is not built.
 - **Repeat Enrollment.** Example: run a post-purchase sequence after each order. Define repeat
   entry after completion or failure, concurrent Enrollment, cooldown and Event deduplication.
-- **Calendar and date-based entry and waits.** Birthdays, anniversaries, recurring schedules and
-  the Contact's local sending window. Define time zones, daylight-saving changes, absent dates
-  and the relationship to repeat Enrollment.
+- **Calendar and date-based entry and waits.** Birthdays, anniversaries and dates such as a
+  trial's end as a Trigger, and waits until a local time. The model is decided
+  ([ADR 0126](docs/adr/0126-an-automation-starts-on-a-date-and-waits-until-a-local-time.md)); it is
+  not built. Scheduled sends (a Broadcast series) and quiet hours for SMS are not part of it.
 - **Additional Actions.** Set or clear a Custom field, enroll in another Automation and notify
   Members, as Steps and as Rule Actions. The model is decided
   ([ADR 0125](docs/adr/0125-an-automation-sets-a-field-enrolls-elsewhere-and-notifies-members.md));
