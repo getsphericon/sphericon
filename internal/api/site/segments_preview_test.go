@@ -219,7 +219,7 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Condition: siteapi.NewOptSiteConditionGroup(bad)},
+	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: siteapi.Revision(env.SegmentRevision(ctx, t, fixtures.SegmentActiveID)), Condition: siteapi.NewOptSiteConditionGroup(bad)},
 		siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -250,14 +250,14 @@ func TestSiteSegmentsUpdateContractRejectsNullCondition(t *testing.T) {
 	require.NoError(t, err)
 
 	raw := env.SiteActorVia(t, fixtures.OwnerJohnEmail, func(inner ht.Client) ht.Client {
-		return rawBody{inner: inner, body: `{"condition": null}`}
+		return rawBody{inner: inner, body: `{"revision": 1, "condition": null}`}
 	})
 	_, err = raw.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{}, params)
 	bad := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusBadRequest), bad.Status)
 
 	// Absent condition still updates the name and keeps the Condition.
-	updated, err := reader.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptName("Renamed")}, params)
+	updated, err := reader.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: stored.Revision, Name: siteapi.NewOptName("Renamed")}, params)
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", updated.Name)
 	assert.Equal(t, stored.Condition, updated.Condition)

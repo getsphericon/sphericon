@@ -26,6 +26,8 @@ type Segment struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// ArchivedAt holds the value of the "archived_at" field.
 	ArchivedAt *time.Time `json:"archived_at,omitempty"`
+	// Revision holds the value of the "revision" field.
+	Revision int64 `json:"revision,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Condition holds the value of the "condition" field.
@@ -61,7 +63,7 @@ func (*Segment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case segment.FieldID, segment.FieldWorkspaceID:
+		case segment.FieldID, segment.FieldWorkspaceID, segment.FieldRevision:
 			values[i] = new(sql.NullInt64)
 		case segment.FieldName, segment.FieldCondition:
 			values[i] = new(sql.NullString)
@@ -112,6 +114,12 @@ func (_m *Segment) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ArchivedAt = new(time.Time)
 				*_m.ArchivedAt = value.Time
+			}
+		case segment.FieldRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field revision", values[i])
+			} else if value.Valid {
+				_m.Revision = value.Int64
 			}
 		case segment.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -180,6 +188,9 @@ func (_m *Segment) String() string {
 		builder.WriteString("archived_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Revision))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

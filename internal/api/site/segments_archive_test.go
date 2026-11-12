@@ -62,7 +62,7 @@ func TestSiteArchivedSegmentIsReadOnlyUntilUnarchived(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	rename := func() (*siteapi.SiteSegmentResource, error) {
-		return c.SiteSegmentsUpdate(t.Context(), &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptName("Renamed")},
+		return c.SiteSegmentsUpdate(t.Context(), &siteapi.SiteUpdateSegmentInput{Revision: siteapi.Revision(env.SegmentRevision(t.Context(), t, fixtures.SegmentArchivedID)), Name: siteapi.NewOptName("Renamed")},
 			siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentArchivedID)})
 	}
 

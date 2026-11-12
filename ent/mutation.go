@@ -50582,6 +50582,8 @@ type SegmentMutation struct {
 	created_at       *time.Time
 	updated_at       *time.Time
 	archived_at      *time.Time
+	revision         *int64
+	addrevision      *int64
 	name             *string
 	condition        *string
 	clearedFields    map[string]struct{}
@@ -50853,6 +50855,62 @@ func (m *SegmentMutation) ResetArchivedAt() {
 	delete(m.clearedFields, segment.FieldArchivedAt)
 }
 
+// SetRevision sets the "revision" field.
+func (m *SegmentMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *SegmentMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the Segment entity.
+// If the Segment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SegmentMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *SegmentMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *SegmentMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *SegmentMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
+}
+
 // SetName sets the "name" field.
 func (m *SegmentMutation) SetName(s string) {
 	m.name = &s
@@ -50999,7 +51057,7 @@ func (m *SegmentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SegmentMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, segment.FieldCreatedAt)
 	}
@@ -51011,6 +51069,9 @@ func (m *SegmentMutation) Fields() []string {
 	}
 	if m.archived_at != nil {
 		fields = append(fields, segment.FieldArchivedAt)
+	}
+	if m.revision != nil {
+		fields = append(fields, segment.FieldRevision)
 	}
 	if m.name != nil {
 		fields = append(fields, segment.FieldName)
@@ -51034,6 +51095,8 @@ func (m *SegmentMutation) Field(name string) (ent.Value, bool) {
 		return m.WorkspaceID()
 	case segment.FieldArchivedAt:
 		return m.ArchivedAt()
+	case segment.FieldRevision:
+		return m.Revision()
 	case segment.FieldName:
 		return m.Name()
 	case segment.FieldCondition:
@@ -51055,6 +51118,8 @@ func (m *SegmentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldWorkspaceID(ctx)
 	case segment.FieldArchivedAt:
 		return m.OldArchivedAt(ctx)
+	case segment.FieldRevision:
+		return m.OldRevision(ctx)
 	case segment.FieldName:
 		return m.OldName(ctx)
 	case segment.FieldCondition:
@@ -51096,6 +51161,13 @@ func (m *SegmentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetArchivedAt(v)
 		return nil
+	case segment.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
+		return nil
 	case segment.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -51118,6 +51190,9 @@ func (m *SegmentMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *SegmentMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, segment.FieldRevision)
+	}
 	return fields
 }
 
@@ -51126,6 +51201,8 @@ func (m *SegmentMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *SegmentMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case segment.FieldRevision:
+		return m.AddedRevision()
 	}
 	return nil, false
 }
@@ -51135,6 +51212,13 @@ func (m *SegmentMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *SegmentMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case segment.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Segment numeric field %s", name)
 }
@@ -51188,6 +51272,9 @@ func (m *SegmentMutation) ResetField(name string) error {
 		return nil
 	case segment.FieldArchivedAt:
 		m.ResetArchivedAt()
+		return nil
+	case segment.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case segment.FieldName:
 		m.ResetName()

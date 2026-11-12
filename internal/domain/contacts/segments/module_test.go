@@ -57,17 +57,17 @@ func TestUpdateValidatesLikeCreate(t *testing.T) {
 	m := segments.New(env.Bus, time.Now)
 	ctx := context.Background()
 
-	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Condition: patch.Set(badCondition)})
+	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(badCondition)})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 
 	// An invalid definition is rejected and leaves the row untouched.
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Condition: patch.Set(badCondition)})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(badCondition)})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 	s, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
 	assert.NotEqual(t, badCondition, *s.Condition)
 
-	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: patch.Set("Renamed")})
+	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Name: patch.Set("Renamed")})
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", got.Name)
 }
@@ -76,7 +76,7 @@ func TestUpdateIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := segments.New(env.Bus, time.Now)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: patch.Set("x")})
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: 1, Name: patch.Set("x")})
 	require.ErrorIs(t, err, segments.ErrNotFound)
 }
 

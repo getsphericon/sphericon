@@ -53,7 +53,8 @@ func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 
 	// Update changes mutable fields.
 	updRes, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{
-		Name: siteapi.NewOptName("VIP renamed"),
+		Revision: res.Revision,
+		Name:     siteapi.NewOptName("VIP renamed"),
 	}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "VIP renamed", updRes.Name)

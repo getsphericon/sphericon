@@ -15,7 +15,7 @@ const MOUNT = routeMount(segmentsDetailRoute, { workspaceId: 'TestWs01', segment
 
 test('shows the segment name and the contacts it matches', async () => {
   worker.use(
-    handleSiteSegmentsGet({ body: { id: '1', name: 'VIP customers', ...TIMESTAMPS } }),
+    handleSiteSegmentsGet({ body: { id: '1', name: 'VIP customers', revision: 1, ...TIMESTAMPS } }),
     handleSiteSegmentContactsList({
       body: page([{ id: '7', email: 'vip@example.com', tags: [], ...TIMESTAMPS }], 1),
     }),

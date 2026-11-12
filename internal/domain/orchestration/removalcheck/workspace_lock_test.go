@@ -54,7 +54,7 @@ func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
 		{"archive a Segment", func() error { _, err := segs.Archive(ctx, s, fixtures.SegmentRetiredID); return err }},
 		{"create a Segment", func() error { _, err := segs.Create(ctx, s, segments.CreateInput{Name: "New"}); return err }},
 		{"update a Segment", func() error {
-			_, err := segs.Update(ctx, s, fixtures.SegmentActiveID, segments.UpdateInput{Name: patch.Set("Renamed")})
+			_, err := segs.Update(ctx, s, fixtures.SegmentActiveID, segments.UpdateInput{Revision: testhelper.SegmentRevisionIn(ctx, t, s, fixtures.SegmentActiveID), Name: patch.Set("Renamed")})
 			return err
 		}},
 		{"schedule a Broadcast", func() error {

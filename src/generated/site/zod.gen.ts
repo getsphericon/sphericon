@@ -3926,6 +3926,7 @@ export const zSiteSegmentResource = z.object({
   name: z.string(),
   condition: z.exactOptional(zSiteConditionGroup),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3945,6 +3946,7 @@ export const zSiteUpdateRuleInput = z.object({
  * Site request body for updating a segment
  */
 export const zSiteUpdateSegmentInput = z.object({
+  revision: zRevision,
   name: z.exactOptional(zName),
   condition: z.exactOptional(zSiteConditionGroup)
 });

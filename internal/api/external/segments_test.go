@@ -57,12 +57,12 @@ func TestExternalSegmentsWrite(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Pros", seg.Name)
 
-	upd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptName("Pros 2")},
+	upd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: seg.Revision, Name: externalapi.NewOptName("Pros 2")},
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "Pros 2", upd.Name)
 
-	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))},
+	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: upd.Revision, Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))},
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -183,7 +183,7 @@ func TestExternalSegmentsScopes(t *testing.T) {
 		Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
-	_, err = ro.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentActiveID)})
+	_, err = ro.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: 1}, externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	_, err = ro.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -210,7 +210,7 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 	}
 	_, err = c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptName("pwned")},
+	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: 1, Name: externalapi.NewOptName("pwned")},
 		externalapi.SegmentsUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	_, err = c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: id})

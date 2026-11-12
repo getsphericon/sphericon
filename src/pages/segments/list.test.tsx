@@ -18,8 +18,8 @@ const WORKSPACE_ID = { workspaceId: 'TestWs01' }
 const LIST_ROUTE = routeMount(segmentsRoute, WORKSPACE_ID)
 const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 
-const VIPS = { id: '1', name: 'VIP customers', ...TIMESTAMPS }
-const TRIAL = { id: '2', name: 'Trial users', ...TIMESTAMPS }
+const VIPS = { id: '1', name: 'VIP customers', revision: 1, ...TIMESTAMPS }
+const TRIAL = { id: '2', name: 'Trial users', revision: 1, ...TIMESTAMPS }
 
 test('lists the workspace segments', async () => {
   worker.use(handleSiteSegmentsList({ body: page([VIPS, TRIAL], 2) }))

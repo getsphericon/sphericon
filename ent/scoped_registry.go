@@ -2102,6 +2102,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.ArchivedAt != nil {
 					b.SetArchivedAt(*src.ArchivedAt)
 				}
+				b.SetRevision(src.Revision)
 				b.SetName(src.Name)
 				if src.Condition != nil {
 					b.SetCondition(*src.Condition)

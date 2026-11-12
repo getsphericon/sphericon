@@ -71,6 +71,20 @@ func (_c *SegmentCreate) SetNillableArchivedAt(v *time.Time) *SegmentCreate {
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *SegmentCreate) SetRevision(v int64) *SegmentCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *SegmentCreate) SetNillableRevision(v *int64) *SegmentCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *SegmentCreate) SetName(v string) *SegmentCreate {
 	_c.mutation.SetName(v)
@@ -145,6 +159,10 @@ func (_c *SegmentCreate) defaults() {
 		v := segment.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := segment.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -157,6 +175,14 @@ func (_c *SegmentCreate) check() error {
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "Segment.workspace_id"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "Segment.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := segment.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Segment.revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Segment.name"`)}
@@ -213,6 +239,10 @@ func (_c *SegmentCreate) createSpec() (*Segment, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ArchivedAt(); ok {
 		_spec.SetField(segment.FieldArchivedAt, field.TypeTime, value)
 		_node.ArchivedAt = &value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(segment.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(segment.FieldName, field.TypeString, value)
@@ -330,6 +360,24 @@ func (u *SegmentUpsert) UpdateArchivedAt() *SegmentUpsert {
 // ClearArchivedAt clears the value of the "archived_at" field.
 func (u *SegmentUpsert) ClearArchivedAt() *SegmentUpsert {
 	u.SetNull(segment.FieldArchivedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *SegmentUpsert) SetRevision(v int64) *SegmentUpsert {
+	u.Set(segment.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *SegmentUpsert) UpdateRevision() *SegmentUpsert {
+	u.SetExcluded(segment.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *SegmentUpsert) AddRevision(v int64) *SegmentUpsert {
+	u.Add(segment.FieldRevision, v)
 	return u
 }
 
@@ -460,6 +508,27 @@ func (u *SegmentUpsertOne) UpdateArchivedAt() *SegmentUpsertOne {
 func (u *SegmentUpsertOne) ClearArchivedAt() *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
 		s.ClearArchivedAt()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *SegmentUpsertOne) SetRevision(v int64) *SegmentUpsertOne {
+	return u.Update(func(s *SegmentUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *SegmentUpsertOne) AddRevision(v int64) *SegmentUpsertOne {
+	return u.Update(func(s *SegmentUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *SegmentUpsertOne) UpdateRevision() *SegmentUpsertOne {
+	return u.Update(func(s *SegmentUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -761,6 +830,27 @@ func (u *SegmentUpsertBulk) UpdateArchivedAt() *SegmentUpsertBulk {
 func (u *SegmentUpsertBulk) ClearArchivedAt() *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
 		s.ClearArchivedAt()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *SegmentUpsertBulk) SetRevision(v int64) *SegmentUpsertBulk {
+	return u.Update(func(s *SegmentUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *SegmentUpsertBulk) AddRevision(v int64) *SegmentUpsertBulk {
+	return u.Update(func(s *SegmentUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *SegmentUpsertBulk) UpdateRevision() *SegmentUpsertBulk {
+	return u.Update(func(s *SegmentUpsert) {
+		s.UpdateRevision()
 	})
 }
 

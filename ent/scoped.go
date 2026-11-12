@@ -31386,6 +31386,18 @@ func (x *SegmentScopedCreate) SetNillableArchivedAt(v *time.Time) *SegmentScoped
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *SegmentScopedCreate) SetRevision(v int64) *SegmentScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *SegmentScopedCreate) SetNillableRevision(v *int64) *SegmentScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *SegmentScopedCreate) SetName(v string) *SegmentScopedCreate {
 	x.b.SetName(v)
@@ -31534,6 +31546,24 @@ func (u *SegmentScopedUpsert) UpdateArchivedAt() *SegmentScopedUpsert {
 // ClearArchivedAt clears the value of the "archived_at" field.
 func (u *SegmentScopedUpsert) ClearArchivedAt() *SegmentScopedUpsert {
 	u.u.SetNull(segment.FieldArchivedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *SegmentScopedUpsert) SetRevision(v int64) *SegmentScopedUpsert {
+	u.u.Set(segment.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *SegmentScopedUpsert) AddRevision(v int64) *SegmentScopedUpsert {
+	u.u.Add(segment.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *SegmentScopedUpsert) UpdateRevision() *SegmentScopedUpsert {
+	u.u.SetExcluded(segment.FieldRevision)
 	return u
 }
 
@@ -31769,6 +31799,24 @@ func (x *SegmentScopedUpdateOne) ClearArchivedAt() *SegmentScopedUpdateOne {
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *SegmentScopedUpdateOne) SetRevision(v int64) *SegmentScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *SegmentScopedUpdateOne) SetNillableRevision(v *int64) *SegmentScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *SegmentScopedUpdateOne) AddRevision(v int64) *SegmentScopedUpdateOne {
+	x.b.AddRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *SegmentScopedUpdateOne) SetName(v string) *SegmentScopedUpdateOne {
 	x.b.SetName(v)
@@ -31892,6 +31940,24 @@ func (x *SegmentScopedUpdate) SetNillableArchivedAt(v *time.Time) *SegmentScoped
 // ClearArchivedAt clears the value of the "archived_at" field.
 func (x *SegmentScopedUpdate) ClearArchivedAt() *SegmentScopedUpdate {
 	x.b.ClearArchivedAt()
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *SegmentScopedUpdate) SetRevision(v int64) *SegmentScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *SegmentScopedUpdate) SetNillableRevision(v *int64) *SegmentScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *SegmentScopedUpdate) AddRevision(v int64) *SegmentScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 

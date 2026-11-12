@@ -11228,7 +11228,7 @@
       },
       "SegmentResource": {
         "type": "object",
-        "required": ["id", "name", "createdAt", "updatedAt"],
+        "required": ["id", "name", "revision", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -11259,6 +11259,14 @@
             ],
             "nullable": true,
             "description": "When the segment was archived; null while it is kept"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the state this answer shows (ADR 0119): an update names it"
           },
           "createdAt": {
             "allOf": [
@@ -12739,7 +12747,16 @@
       },
       "UpdateSegmentInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The segment's `revision` the edit was made on (ADR 0119): the one it was read with"
+          },
           "name": {
             "allOf": [
               {

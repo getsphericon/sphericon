@@ -1252,6 +1252,8 @@ func init() {
 	segmentMixin := schema.Segment{}.Mixin()
 	segmentMixinFields0 := segmentMixin[0].Fields()
 	_ = segmentMixinFields0
+	segmentMixinFields3 := segmentMixin[3].Fields()
+	_ = segmentMixinFields3
 	segmentFields := schema.Segment{}.Fields()
 	_ = segmentFields
 	// segmentDescCreatedAt is the schema descriptor for created_at field.
@@ -1264,6 +1266,12 @@ func init() {
 	segment.DefaultUpdatedAt = segmentDescUpdatedAt.Default.(func() time.Time)
 	// segment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	segment.UpdateDefaultUpdatedAt = segmentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// segmentDescRevision is the schema descriptor for revision field.
+	segmentDescRevision := segmentMixinFields3[0].Descriptor()
+	// segment.DefaultRevision holds the default value on creation for the revision field.
+	segment.DefaultRevision = segmentDescRevision.Default.(int64)
+	// segment.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	segment.RevisionValidator = segmentDescRevision.Validators[0].(func(int64) error)
 	// segmentDescName is the schema descriptor for name field.
 	segmentDescName := segmentFields[1].Descriptor()
 	// segment.NameValidator is a validator for the "name" field. It is called by the builders before save.

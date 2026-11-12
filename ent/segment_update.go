@@ -70,6 +70,27 @@ func (_u *SegmentUpdate) ClearArchivedAt() *SegmentUpdate {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *SegmentUpdate) SetRevision(v int64) *SegmentUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *SegmentUpdate) SetNillableRevision(v *int64) *SegmentUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *SegmentUpdate) AddRevision(v int64) *SegmentUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *SegmentUpdate) SetName(v string) *SegmentUpdate {
 	_u.mutation.SetName(v)
@@ -158,6 +179,11 @@ func (_u *SegmentUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *SegmentUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := segment.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Segment.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := segment.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Segment.name": %w`, err)}
@@ -195,6 +221,12 @@ func (_u *SegmentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ArchivedAtCleared() {
 		_spec.ClearField(segment.FieldArchivedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(segment.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(segment.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(segment.FieldName, field.TypeString, value)
@@ -293,6 +325,27 @@ func (_u *SegmentUpdateOne) SetNillableArchivedAt(v *time.Time) *SegmentUpdateOn
 // ClearArchivedAt clears the value of the "archived_at" field.
 func (_u *SegmentUpdateOne) ClearArchivedAt() *SegmentUpdateOne {
 	_u.mutation.ClearArchivedAt()
+	return _u
+}
+
+// SetRevision sets the "revision" field.
+func (_u *SegmentUpdateOne) SetRevision(v int64) *SegmentUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *SegmentUpdateOne) SetNillableRevision(v *int64) *SegmentUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *SegmentUpdateOne) AddRevision(v int64) *SegmentUpdateOne {
+	_u.mutation.AddRevision(v)
 	return _u
 }
 
@@ -397,6 +450,11 @@ func (_u *SegmentUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *SegmentUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := segment.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Segment.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := segment.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Segment.name": %w`, err)}
@@ -451,6 +509,12 @@ func (_u *SegmentUpdateOne) sqlSave(ctx context.Context) (_node *Segment, err er
 	}
 	if _u.mutation.ArchivedAtCleared() {
 		_spec.ClearField(segment.FieldArchivedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(segment.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(segment.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(segment.FieldName, field.TypeString, value)

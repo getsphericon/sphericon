@@ -5785,6 +5785,10 @@ export type SiteSegmentResource = {
    */
   archivedAt?: Timestamp | null;
   /**
+   * The revision of the state this answer shows (ADR 0119): an update names it
+   */
+  revision: Revision;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -6727,6 +6731,10 @@ export type SiteUpdateRuleInput = {
  * Site request body for updating a segment
  */
 export type SiteUpdateSegmentInput = {
+  /**
+   * The segment's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * Segment name
    */
