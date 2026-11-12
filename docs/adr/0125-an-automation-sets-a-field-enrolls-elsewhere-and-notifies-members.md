@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation sets a field, enrolls elsewhere and notifies Members
 
+> **Amended by [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]]:**
+> a goal or exit on a given Tag is expressible: `contact.tagged` with a filter on `tag`.
+
 > **Amended by [[0129-a-score-is-computed-from-events-and-attributes-never-kept-as-a-counter]]:** no
 > increment is added to Set field: a Score is computed from Events and Conditions, never counted.
 

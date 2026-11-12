@@ -240,8 +240,8 @@ the Event that triggered the Rule or the Enrollment, or that the wait awaits; an
 on whether the Enrollment's own messages were opened or clicked. A test of engagement (an open, a
 click) is unknown for a Destination that is not tracked; a Segment or a Rule reads an unknown result
 as no match, and a Branch routes it. Evaluated live against current data, never materialized. One
-shared grammar: a Segment is a named Condition, a Rule holds one, each path of a Branch one, and a
-Wait for event may hold one.
+shared grammar: a Segment is a named Condition, a Rule holds one, each path of a Branch one, a
+Wait for event may hold one, and an **Event matcher**'s filter is one made of property tests only.
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 
 **Score**:
@@ -719,22 +719,30 @@ the latest. It changes nothing that sends or shows.
 _Avoid_: Discard (that is a delete that keeps the row), reset, undo
 
 **Trigger**:
-What enrolls a Contact into an Automation: an Event action (e.g. "contact.created", a custom
-event), matched by the Event's resolved identity, not by email; or a **date**, a field of the Contact
+What enrolls a Contact into an Automation: an **Event matcher** (e.g. "contact.created", a custom
+event, `contact.tagged` where `tag` is `vip`), matched by the Event's resolved identity, not by email;
+or a **date**, a field of the Contact
 (`birthday` or a datetime Custom field) with a recurrence (every year, or once), an offset in days
 and a local time, reached in the Contact's time zone or else the Workspace's. Not a separate
 entity — one Trigger per Automation version.
 _Avoid_: Hook, entry condition
 
 **Exit event** / **Goal event**:
-Event actions an **Automation version** names beside its Trigger: an Event with one of its exit
-events ends the Contact's active Enrollment on that version as `exited`, its one goal event as
+**Event matchers** an **Automation version** names beside its Trigger: an Event matching one of its
+exit events ends the Contact's active Enrollment on that version as `exited`, its one goal event as
 `goal_reached`. Matched by Contact alone, and only an Event that occurred once the Enrollment began
 (when its triggering Event occurred, not when the Enrollment was written); a machine open or click
 and loaded history never count. One handled before the Enrollment was made ends it as it is made,
 by the first such Event since the trigger; one handled while it is being made waits for it.
-Neither may be the Trigger, nor the goal an exit event.
+The Enrollment's own triggering Event never ends it, so they may share the Trigger's action; the
+goal and an exit event may share one too, and an Event matching both reaches the goal.
 _Avoid_: Stop condition, exit criteria, conversion
+
+**Event matcher**:
+An Event action with an optional filter on that Event's own properties (`contact.tagged` where `tag`
+is `qualified`): how a Trigger, an exit event and a goal event name the Events they react to. The
+filter says which Event, never which Contact; a test of the Contact is a Rule's.
+_Avoid_: Entry condition, event filter (unqualified), trigger condition
 
 **Enrollment**:
 One Contact's membership-and-progress in one Automation. A Contact has at most one active Enrollment

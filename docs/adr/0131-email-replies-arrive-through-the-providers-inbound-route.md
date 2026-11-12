@@ -4,6 +4,10 @@ status: accepted
 
 # Email replies arrive through the provider's inbound route
 
+> **Amended by [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]]:**
+> exit events now filter on properties; exit on a reply stays an option because no filter can name
+> the Enrollment that sent the email.
+
 sphericon receives no email. Four things wait for it: an Automation that stops when the person
 replies (left out of ADR 0124), an Event a Rule can react to when a Contact writes back, the
 feedback loop reports Yahoo sends by mail (moved here by ADR 0130), and a `mailto:` in

@@ -4,6 +4,10 @@ status: accepted
 
 # An Automation branches into nested paths that rejoin
 
+> **Amended by [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]]:**
+> the Trigger, exit and goal events filter on their Event's properties; entry conditions on the
+> Contact stay a Rule's.
+
 > **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
 > exit on a reply is decided, as an option of the Automation version.
 

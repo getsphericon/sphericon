@@ -4,6 +4,10 @@ status: accepted
 
 # A Score is computed from Events and attributes, never kept as a counter
 
+> **Amended by [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]]:**
+> a Trigger on `contact.score_reached` filters on `score`; the Rule that enrolls on one Score is
+> no longer needed.
+
 Lead scoring ranks Contacts by how close they are to buying: points for a pricing page visit, a
 demo request, a plan, minus points for an unsubscribe. The app has none. The common shape is a
 number on the contact that actions add to; ADR 0125 left out an increment on Set field for this
