@@ -835,8 +835,8 @@ _Avoid_: Wait for event (that one waits for an Event), schedule, delay, send win
 
 **Set field**:
 A Step kind, and a Rule Action, that gives one **Custom field** of the Contact a value, a literal or
-a property of the Event the Enrollment began with (for a Rule, the Event it fired on), or clears
-it. When that Event lacks the property or holds a value the field's type does not read, it is
+a property of the Event the Enrollment began with or of one a Wait for event arrived on (for a Rule,
+the Event it fired on), or clears it. When that Event lacks the property or holds a value the field's type does not read, it is
 skipped and the Enrollment moves on. It never creates a field and never writes a core field.
 _Avoid_: Update contact, set attribute, set property
 
