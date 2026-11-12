@@ -219,8 +219,9 @@ _Avoid_: TTL, expiry, purge, archive
 **Condition**:
 A tree of tests (a combinator over nested groups) on a Contact's fields, custom fields, Tags and
 past Events; when a Rule or a **Branch** evaluates it, on the triggering Event's own properties; and
-in a Branch alone, on whether the Enrollment's own messages were opened or clicked, which can be
-unknown. Evaluated live against current data, never materialized. One shared grammar: a Segment is
+in a Branch alone, on whether the Enrollment's own messages were opened or clicked. A test of
+engagement (an open, a click) is unknown for a Destination that is not tracked; a Segment or a Rule
+reads an unknown result as no match, and a Branch routes it. Evaluated live against current data, never materialized. One shared grammar: a Segment is
 a named Condition, and a Rule and a Branch each hold one.
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 

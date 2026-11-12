@@ -4,6 +4,10 @@ status: accepted
 
 # Engagement tracking is consented per Destination, and an untracked message leaves the rates
 
+> **Amended by [[0123-engagement-history-is-unknown-for-an-untracked-destination]]:** a Condition's
+> count of engagement is unknown for a Destination that is not tracked, so refusing tracking never
+> reads as never opening.
+>
 > **Amended by [[0122-an-automation-branches-into-nested-paths-that-rejoin]]:** a Branch's test of an
 > untracked message is unknown, and the Branch must name the path unknown takes.
 >
