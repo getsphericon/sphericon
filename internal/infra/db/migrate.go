@@ -33,7 +33,9 @@ type SchemaStatus struct {
 //
 // It takes a database lock, so two migrations started together run one after the other and
 // the second finds nothing to do. It has no time limit of its own: the wait for the lock and
-// the run end when ctx does, so the caller chooses (`migrate` passes none).
+// the run end when ctx does, so the caller chooses (`migrate` passes none). A migration that runs
+// in a transaction waits for a table's lock only briefly and is retried (lockTimeout), so a
+// long transaction delays the migration rather than the queries of the table.
 func Migrate(ctx context.Context, sqlDB *sql.DB) (int, error) {
 	files, err := embeddedMigrations()
 	if err != nil {
@@ -92,12 +94,11 @@ func migrateFS(ctx context.Context, sqlDB *sql.DB, files fs.FS, gos []*goose.Mig
 	if err != nil {
 		return 0, err
 	}
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, files, goose.WithSessionLocker(locker), goose.WithGoMigrations(gos...))
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, lockBoundedFS{files}, goose.WithSessionLocker(locker), goose.WithGoMigrations(gos...))
 	if err != nil {
 		return 0, err
 	}
-	results, err := provider.Up(ctx)
-	return len(results), err
+	return upWithLockRetries(ctx, provider)
 }
 
 // StatusFS is Status over any migrations directory of SQL files.

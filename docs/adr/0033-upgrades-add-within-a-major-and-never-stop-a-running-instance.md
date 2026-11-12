@@ -37,6 +37,13 @@ rules below make a jump safe without asking the Self-hoster to step through ever
   start migrates under a Postgres session advisory lock, so replicas take turns, for at most
   `SPHERICON_DB_MIGRATE_TIMEOUT` (default ten minutes, `0` for no limit). `sphericon migrate`
   itself has no time limit.
+- **A migration never queues a table's queries behind a long transaction.** One that runs in a
+  transaction waits at most two seconds for a lock (the runner sets `lock_timeout` in it); Postgres
+  then rolls it back whole, and the runner retries it after a pause that doubles up to thirty
+  seconds, until its time limit ends. A long transaction delays the migration, not the queries.
+  A `NO TRANSACTION` migration's wait stays unbounded: Postgres cannot roll it back, so a rerun
+  would start a half-applied file over, and its `CONCURRENTLY` statements wait for older
+  transactions by design, a wait that blocks no query.
 - **The database records its Major and a floor**, one row (`schema_state`) holding the schema's
   Major (a counter, 1 for the first, plus one per destructive migration) and the **floor**: the
   oldest release that still runs on it, which is the last release of the previous Major. Only a

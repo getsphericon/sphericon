@@ -1,7 +1,9 @@
 package testhelper
 
 import (
+	"context"
 	"database/sql"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -76,4 +78,39 @@ func UniqueIndexes(t *testing.T, sqlDB *sql.DB) map[string]string {
 	require.NoError(t, rows.Err())
 	require.NotEmpty(t, out)
 	return out
+}
+
+// IndexIsValid reports whether the index is valid: one built CONCURRENTLY that failed midway
+// stays behind invalid.
+func IndexIsValid(t *testing.T, sqlDB *sql.DB, index string) bool {
+	t.Helper()
+	var valid bool
+	// raw sql: reads pg_index, which is not an ent entity.
+	require.NoError(t, sqlDB.QueryRowContext(t.Context(),
+		`SELECT indisvalid FROM pg_index WHERE indexrelid = $1::regclass`, index).Scan(&valid))
+	return valid
+}
+
+// HoldInTransaction runs statement in a transaction of its own on sqlDB and keeps the transaction
+// open, with the locks the statement took, until the returned release is called (or the test ends).
+func HoldInTransaction(t *testing.T, sqlDB *sql.DB, statement string) (release func()) {
+	t.Helper()
+	ctx := context.WithoutCancel(t.Context()) // the release may run in the cleanup, after the test's context ends
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	// raw sql: the statement is the lock a test of the schema's runner holds, on a table of its own.
+	_, err = tx.ExecContext(ctx, statement)
+	require.NoError(t, err)
+	release = sync.OnceFunc(func() { require.NoError(t, tx.Commit()) })
+	t.Cleanup(release)
+	return release
+}
+
+// CountRows counts the rows of table, within ctx's limit: a probe of whether a query of the table
+// waits behind a lock.
+func CountRows(ctx context.Context, sqlDB *sql.DB, table string) (int, error) {
+	var n int
+	// raw sql: the table is one a test of the schema's runner creates, which ent does not know.
+	err := sqlDB.QueryRowContext(ctx, "SELECT count(*) FROM "+table).Scan(&n)
+	return n, err
 }
