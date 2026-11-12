@@ -485,11 +485,8 @@ func Triggers(v *ent.RuleVersion) []string {
 // byAction orders a version's Trigger events so a read is stable.
 func byAction(q *ent.RuleVersionTriggerQuery) { q.Order(ent.Asc(ruleversiontrigger.FieldID)) }
 
-// DecodeActions parses a stored Actions array.
+// DecodeActions parses a stored Actions array, JSON (rule_versions_actions_check).
 func DecodeActions(stored string) ([]Action, error) {
-	if stored == "" {
-		return nil, nil
-	}
 	var actions []Action
 	if err := json.Unmarshal([]byte(stored), &actions); err != nil {
 		return nil, err
