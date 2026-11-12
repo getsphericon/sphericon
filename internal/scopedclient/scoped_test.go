@@ -32,7 +32,7 @@ func TestScopedOverTransaction(t *testing.T) {
 		require.NoError(t, err)
 		// test writes: the scoped wrapper is the subject
 		created, err := tx.Client().Scoped(acme).Tag().Create().
-			SetName("via-tx").
+			SetName("via-tx").SetNameKey("via-tx").
 			Save(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, acme, created.WorkspaceID)
@@ -59,7 +59,7 @@ func TestScopedOverTransaction(t *testing.T) {
 		tx, err := env.DB.Tx(ctx)
 		require.NoError(t, err)
 		// test writes: the scoped wrapper is the subject
-		_, err = tx.Client().Scoped(acme).Tag().Create().SetName("via-tx-rolled-back").Save(ctx)
+		_, err = tx.Client().Scoped(acme).Tag().Create().SetName("via-tx-rolled-back").SetNameKey("via-tx-rolled-back").Save(ctx)
 		require.NoError(t, err)
 		require.NoError(t, tx.Rollback())
 
@@ -76,7 +76,7 @@ func TestScopedOverEventsBusTx(t *testing.T) {
 	err := env.Bus.WithinTx(ctx, func(c *ent.Client, _ events.Publisher) error {
 		// test writes: the scoped wrapper is the subject
 		_, err := c.Scoped(acme).Tag().Create().
-			SetName("via-bus").
+			SetName("via-bus").SetNameKey("via-bus").
 			Save(ctx)
 		return err
 	})
@@ -175,8 +175,8 @@ func TestScopedUpsert(t *testing.T) {
 	t.Run("ignore converges on one row", func(t *testing.T) {
 		for range 2 {
 			// test writes: the scoped wrapper is the subject
-			require.NoError(t, acmeScope.Tag().Create().SetName("upserted").
-				OnConflictColumns(tag.FieldName, tag.FieldWorkspaceID).Ignore().Exec(ctx))
+			require.NoError(t, acmeScope.Tag().Create().SetName("upserted").SetNameKey("upserted").
+				OnConflictColumns(tag.FieldNameKey, tag.FieldWorkspaceID).Ignore().Exec(ctx))
 		}
 		n, err := acmeScope.Tag().Query().Where(tag.Name("upserted")).Count(ctx)
 		require.NoError(t, err)

@@ -59100,6 +59100,7 @@ type TagMutation struct {
 	created_at       *time.Time
 	updated_at       *time.Time
 	name             *string
+	name_key         *string
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -59359,6 +59360,42 @@ func (m *TagMutation) ResetName() {
 	m.name = nil
 }
 
+// SetNameKey sets the "name_key" field.
+func (m *TagMutation) SetNameKey(s string) {
+	m.name_key = &s
+}
+
+// NameKey returns the value of the "name_key" field in the mutation.
+func (m *TagMutation) NameKey() (r string, exists bool) {
+	v := m.name_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNameKey returns the old "name_key" field's value of the Tag entity.
+// If the Tag object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TagMutation) OldNameKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNameKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNameKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNameKey: %w", err)
+	}
+	return oldValue.NameKey, nil
+}
+
+// ResetNameKey resets all changes to the "name_key" field.
+func (m *TagMutation) ResetNameKey() {
+	m.name_key = nil
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *TagMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -59474,7 +59511,7 @@ func (m *TagMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TagMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, tag.FieldCreatedAt)
 	}
@@ -59486,6 +59523,9 @@ func (m *TagMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, tag.FieldName)
+	}
+	if m.name_key != nil {
+		fields = append(fields, tag.FieldNameKey)
 	}
 	return fields
 }
@@ -59503,6 +59543,8 @@ func (m *TagMutation) Field(name string) (ent.Value, bool) {
 		return m.WorkspaceID()
 	case tag.FieldName:
 		return m.Name()
+	case tag.FieldNameKey:
+		return m.NameKey()
 	}
 	return nil, false
 }
@@ -59520,6 +59562,8 @@ func (m *TagMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldWorkspaceID(ctx)
 	case tag.FieldName:
 		return m.OldName(ctx)
+	case tag.FieldNameKey:
+		return m.OldNameKey(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tag field %s", name)
 }
@@ -59556,6 +59600,13 @@ func (m *TagMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case tag.FieldNameKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNameKey(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Tag field %s", name)
@@ -59620,6 +59671,9 @@ func (m *TagMutation) ResetField(name string) error {
 		return nil
 	case tag.FieldName:
 		m.ResetName()
+		return nil
+	case tag.FieldNameKey:
+		m.ResetNameKey()
 		return nil
 	}
 	return fmt.Errorf("unknown Tag field %s", name)

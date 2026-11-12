@@ -2362,6 +2362,7 @@ func ScopedEntities() []ScopedEntity {
 				_ = remap
 				b := s.Tag().Create()
 				b.SetName(src.Name)
+				b.SetNameKey(src.NameKey)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

@@ -3,63 +3,76 @@
 # vip -> contacts 1, 3; newsletter -> contact 1; unused -> nobody (still listed).
 - id: 1 # fixture: TagVip
   name: vip
+  name_key: vip
   workspace_id: 1
   created_at: '2026-01-01 00:00:00'
 - id: 2 # fixture: TagNewsletter
   name: newsletter
+  name_key: newsletter
   workspace_id: 1
   created_at: '2026-01-01 00:00:00'
 - id: 3 # fixture: TagUnused
   name: unused
+  name_key: unused
   workspace_id: 1
   created_at: '2026-01-01 00:00:00'
 # Named only by the Condition the scheduled Broadcast 109 copied from its Segment (ADR 0065), so
 # deleting it is refused while that Broadcast is armed.
 - id: 4 # fixture: TagRenewalDue
   name: renewal-due
+  name_key: renewal-due
   workspace_id: 1
   created_at: '2026-01-01 00:00:00'
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: TagGlobex
   name: globex-only
+  name_key: globex-only
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
 
 # Initech (workspace 3): shared by ContactErasable and ContactBystander.
 - id: 300 # fixture: TagInitech
   name: initech-shared
+  name_key: initech-shared
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
   name: 'trial'
+  name_key: trial
   workspace_id: 20
   created_at: '{{daysAgo 118}}'
 - id: 20002
   name: 'vip'
+  name_key: vip
   workspace_id: 20
   created_at: '{{daysAgo 118}}'
 - id: 20003
   name: 'webinar-attendee'
+  name_key: webinar-attendee
   workspace_id: 20
   created_at: '{{daysAgo 118}}'
 - id: 20004
   name: 'churn-risk'
+  name_key: churn-risk
   workspace_id: 20
   created_at: '{{daysAgo 118}}'
 - id: 20005
   name: 'newsletter'
+  name_key: newsletter
   workspace_id: 20
   created_at: '{{daysAgo 118}}'
 
 # Duff (workspace 94): the Tags its Contact list filters by.
 - id: 7700
   name: filter-vip
+  name_key: filter-vip
   workspace_id: 94
   created_at: '2026-01-01 00:00:00'
 - id: 7701
   name: filter-beta
+  name_key: filter-beta
   workspace_id: 94
   created_at: '2026-01-01 00:00:00'

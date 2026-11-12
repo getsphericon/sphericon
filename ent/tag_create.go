@@ -64,6 +64,12 @@ func (_c *TagCreate) SetName(v string) *TagCreate {
 	return _c
 }
 
+// SetNameKey sets the "name_key" field.
+func (_c *TagCreate) SetNameKey(v string) *TagCreate {
+	_c.mutation.SetNameKey(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *TagCreate) SetID(v int64) *TagCreate {
 	_c.mutation.SetID(v)
@@ -154,6 +160,14 @@ func (_c *TagCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tag.name": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.NameKey(); !ok {
+		return &ValidationError{Name: "name_key", err: errors.New(`ent: missing required field "Tag.name_key"`)}
+	}
+	if v, ok := _c.mutation.NameKey(); ok {
+		if err := tag.NameKeyValidator(v); err != nil {
+			return &ValidationError{Name: "name_key", err: fmt.Errorf(`ent: validator failed for field "Tag.name_key": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Tag.workspace"`)}
 	}
@@ -201,6 +215,10 @@ func (_c *TagCreate) createSpec() (*Tag, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(tag.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := _c.mutation.NameKey(); ok {
+		_spec.SetField(tag.FieldNameKey, field.TypeString, value)
+		_node.NameKey = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -342,6 +360,9 @@ func (u *TagUpsertOne) UpdateNewValues() *TagUpsertOne {
 		}
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(tag.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.NameKey(); exists {
+			s.SetIgnore(tag.FieldNameKey)
 		}
 	}))
 	return u
@@ -600,6 +621,9 @@ func (u *TagUpsertBulk) UpdateNewValues() *TagUpsertBulk {
 			}
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(tag.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.NameKey(); exists {
+				s.SetIgnore(tag.FieldNameKey)
 			}
 		}
 	}))

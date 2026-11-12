@@ -75,6 +75,11 @@ func Name(v string) predicate.Tag {
 	return predicate.Tag(sql.FieldEQ(FieldName, v))
 }
 
+// NameKey applies equality check predicate on the "name_key" field. It's identical to NameKeyEQ.
+func NameKey(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldEQ(FieldNameKey, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Tag {
 	return predicate.Tag(sql.FieldEQ(FieldCreatedAt, v))
@@ -238,6 +243,71 @@ func NameEqualFold(v string) predicate.Tag {
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Tag {
 	return predicate.Tag(sql.FieldContainsFold(FieldName, v))
+}
+
+// NameKeyEQ applies the EQ predicate on the "name_key" field.
+func NameKeyEQ(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldEQ(FieldNameKey, v))
+}
+
+// NameKeyNEQ applies the NEQ predicate on the "name_key" field.
+func NameKeyNEQ(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldNEQ(FieldNameKey, v))
+}
+
+// NameKeyIn applies the In predicate on the "name_key" field.
+func NameKeyIn(vs ...string) predicate.Tag {
+	return predicate.Tag(sql.FieldIn(FieldNameKey, vs...))
+}
+
+// NameKeyNotIn applies the NotIn predicate on the "name_key" field.
+func NameKeyNotIn(vs ...string) predicate.Tag {
+	return predicate.Tag(sql.FieldNotIn(FieldNameKey, vs...))
+}
+
+// NameKeyGT applies the GT predicate on the "name_key" field.
+func NameKeyGT(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldGT(FieldNameKey, v))
+}
+
+// NameKeyGTE applies the GTE predicate on the "name_key" field.
+func NameKeyGTE(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldGTE(FieldNameKey, v))
+}
+
+// NameKeyLT applies the LT predicate on the "name_key" field.
+func NameKeyLT(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldLT(FieldNameKey, v))
+}
+
+// NameKeyLTE applies the LTE predicate on the "name_key" field.
+func NameKeyLTE(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldLTE(FieldNameKey, v))
+}
+
+// NameKeyContains applies the Contains predicate on the "name_key" field.
+func NameKeyContains(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldContains(FieldNameKey, v))
+}
+
+// NameKeyHasPrefix applies the HasPrefix predicate on the "name_key" field.
+func NameKeyHasPrefix(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldHasPrefix(FieldNameKey, v))
+}
+
+// NameKeyHasSuffix applies the HasSuffix predicate on the "name_key" field.
+func NameKeyHasSuffix(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldHasSuffix(FieldNameKey, v))
+}
+
+// NameKeyEqualFold applies the EqualFold predicate on the "name_key" field.
+func NameKeyEqualFold(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldEqualFold(FieldNameKey, v))
+}
+
+// NameKeyContainsFold applies the ContainsFold predicate on the "name_key" field.
+func NameKeyContainsFold(v string) predicate.Tag {
+	return predicate.Tag(sql.FieldContainsFold(FieldNameKey, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

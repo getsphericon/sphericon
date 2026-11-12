@@ -21,7 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-const tagName = "tags_workspace_id_name"
+const tagName = "tags_workspace_id_name_key"
 
 var errTagTaken = errors.New("tag taken")
 
@@ -40,7 +40,7 @@ func addTag(t *testing.T, c *ent.Client, name string) func() error {
 	t.Helper()
 	return func() error {
 		// test writes: a Tag whose name the constraint under test refuses or lets through.
-		return c.Tag.Create().SetWorkspaceID(fixtures.AcmeID).SetName(name).Exec(t.Context())
+		return c.Tag.Create().SetWorkspaceID(fixtures.AcmeID).SetName(name).SetNameKey(name).Exec(t.Context())
 	}
 }
 
@@ -100,7 +100,7 @@ func TestWriteReturnsAnyOtherViolationUnchanged(t *testing.T) {
 		}},
 		"a foreign key violation": {tags, pgerrcode.ForeignKeyViolation, func(tx *ent.Client) error {
 			// test writes: a Tag of a Workspace that does not exist, which the foreign key refuses.
-			return tx.Tag.Create().SetWorkspaceID(999999).SetName("orphan").Exec(t.Context())
+			return tx.Tag.Create().SetWorkspaceID(999999).SetName("orphan").SetNameKey("orphan").Exec(t.Context())
 		}},
 		"a check violation": {tags, pgerrcode.CheckViolation, func(tx *ent.Client) error {
 			// test writes: a Contact whose address the lowercase CHECK refuses.
@@ -128,8 +128,8 @@ func TestInsertedTellsAWrittenRowFromASkippedOne(t *testing.T) {
 	c := poolClient(testhelper.RealDB(t))
 	insert := func(name string) error {
 		// test writes: a Tag inserted ON CONFLICT DO NOTHING, written or skipped as the case says.
-		_, err := c.Tag.Create().SetWorkspaceID(fixtures.AcmeID).SetName(name).
-			OnConflict(entsql.ConflictColumns(tag.FieldWorkspaceID, tag.FieldName)).DoNothing().ID(t.Context())
+		_, err := c.Tag.Create().SetWorkspaceID(fixtures.AcmeID).SetName(name).SetNameKey(name).
+			OnConflict(entsql.ConflictColumns(tag.FieldWorkspaceID, tag.FieldNameKey)).DoNothing().ID(t.Context())
 		return err
 	}
 	failure := errors.New("the insert failed")

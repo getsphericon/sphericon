@@ -2620,6 +2620,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "name", Type: field.TypeString},
+		{Name: "name_key", Type: field.TypeString},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// TagsTable holds the schema information for the "tags" table.
@@ -2630,16 +2631,16 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tags_workspaces_tags",
-				Columns:    []*schema.Column{TagsColumns[4]},
+				Columns:    []*schema.Column{TagsColumns[5]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "tags_workspace_id_name",
+				Name:    "tags_workspace_id_name_key",
 				Unique:  true,
-				Columns: []*schema.Column{TagsColumns[4], TagsColumns[3]},
+				Columns: []*schema.Column{TagsColumns[5], TagsColumns[4]},
 			},
 		},
 	}

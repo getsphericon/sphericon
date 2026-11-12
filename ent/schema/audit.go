@@ -39,6 +39,14 @@ func (Sensitive) Name() string { return "Sensitive" }
 
 var _ schema.Annotation = Sensitive{}
 
+// Derived marks a field of an Audited entity computed from another field of it (a Tag's name_key
+// from its name): the entry records the source, so the derived value adds nothing to it.
+type Derived struct{}
+
+func (Derived) Name() string { return "Derived" }
+
+var _ schema.Annotation = Derived{}
+
 // nameField is the column of the `name` that named entities declare and that Audited.NameField
 // snapshots.
 const nameField = "name"

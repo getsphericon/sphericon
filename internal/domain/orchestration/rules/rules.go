@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/tagname"
+
 	"github.com/oklog/ulid/v2"
 	"github.com/riverqueue/river"
 	"github.com/samber/lo"
@@ -110,7 +112,7 @@ type Action struct {
 
 // NamesTag reports whether the Action applies or removes the Tag.
 func (a Action) NamesTag(name string) bool {
-	return (a.Type == ActionApplyTag || a.Type == ActionRemoveTag) && a.Tag == name
+	return (a.Type == ActionApplyTag || a.Type == ActionRemoveTag) && tagname.Same(a.Tag, name)
 }
 
 // EnrollsInto reports whether the Action enrolls Contacts in the Automation.

@@ -76,7 +76,7 @@ func RemoveTagIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, conta
 	if err != nil {
 		return err
 	}
-	t, err := s.Tag().Query().Where(tag.Name(strings.TrimSpace(name))).Only(ctx)
+	t, err := s.Tag().Query().Where(tags.Named(name)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil
 	}
