@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"math"
 	"regexp"
 	"sync"
 	"unicode/utf8"
@@ -43,6 +44,10 @@ func Length(field, value string, lo, hi int) error {
 
 // MaxLength is Length with no lower bound.
 func MaxLength(field, value string, hi int) error { return Length(field, value, 0, hi) }
+
+// MinLength is Length with no upper bound: a value the owner normalizes before it judges the rest,
+// whose raw length says nothing about the stored one.
+func MinLength(field, value string, lo int) error { return Length(field, value, lo, math.MaxInt) }
 
 // Range refuses value on field when it is below lo or above hi.
 func Range(field string, value, lo, hi int) error {

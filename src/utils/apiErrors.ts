@@ -129,12 +129,6 @@ export function getFieldErrors(error: unknown) {
   return asProblem(error)?.errors
 }
 
-// The first message a problem lists under one field (its `errors` member), or undefined when the
-// error names no such field.
-export function getFieldError(error: unknown, field: string) {
-  return asProblem(error)?.errors?.[field]?.[0]
-}
-
 // A 409 problem with code revision_changed: the edit named a revision of the resource someone has
 // changed since it was read (ADR 0119). Nothing was written; the editor says so and lets the person
 // load the saved version or save theirs over it.

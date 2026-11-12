@@ -6,5 +6,6 @@ namespace Sphericon;
 model SetTrackingDomainInput {
   /** A host below a domain of your own, e.g. "t.example.com": never the apex (a CNAME cannot sit
    * there) nor one of the Instance's own hosts. Stored lower case, IDN as punycode. */
+  @minLength(1)
   host: string;
 }

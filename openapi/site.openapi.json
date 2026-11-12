@@ -12349,6 +12349,7 @@
         "properties": {
           "host": {
             "type": "string",
+            "minLength": 1,
             "description": "A host below a domain of your own, e.g. \"t.example.com\": never the apex (a CNAME cannot sit\nthere) nor one of the Instance's own hosts. Stored lower case, IDN as punycode."
           }
         },

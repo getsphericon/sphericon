@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,6 +64,19 @@ func TestSiteTrackingDomainsSetReplacesAHostThatDoesNotServe(t *testing.T) {
 	list := listTrackingDomains(t, c, fixtures.AcmePublicID)
 	require.Len(t, list, 1)
 	assert.Equal(t, "links.acme.com", list[0].Host)
+}
+
+// A host at the DNS limit of 253 characters is taken with its root dot and the spaces around it:
+// the contract bounds the host as typed from below only, the length that counts is the one stored.
+func TestSiteTrackingDomainsSetTakesAHostAtTheDNSLimitAsTyped(t *testing.T) {
+	env := testhelper.Setup(t)
+	host := strings.Repeat("a", 63) + "." + strings.Repeat("b", 63) + "." + strings.Repeat("c", 63) + "." +
+		strings.Repeat("d", 57) + ".com"
+	require.Len(t, host, 253)
+
+	got, err := setTrackingDomain(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID, "  "+host+".  ")
+	require.NoError(t, err)
+	assert.Equal(t, host, got.Host)
 }
 
 func TestSiteTrackingDomainsSetRefusesAnApexHost(t *testing.T) {
