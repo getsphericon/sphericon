@@ -99,7 +99,7 @@ func statements(up string) []statement {
 // literal is an escaped one: the scan leaves the literal and enters it again.
 func scanLine(line string, quote rune, text *strings.Builder, flush func()) rune {
 	runes := []rune(line)
-	for i := 0; i < len(runes); i++ {
+	for i := range runes {
 		r := runes[i]
 		switch {
 		case quote != 0:
@@ -109,7 +109,7 @@ func scanLine(line string, quote rune, text *strings.Builder, flush func()) rune
 		case r == '\'' || r == '"':
 			quote = r
 		case r == '-' && i+1 < len(runes) && runes[i+1] == '-':
-			text.WriteRune('\n')
+			text.WriteByte('\n')
 			return quote
 		case r == ';':
 			flush()
