@@ -657,6 +657,7 @@ func (c *InputsImpl) SegmentPreview(source *site.SitePreviewSegmentInput) (segme
 func (c *InputsImpl) SegmentUpdate(source *site.SiteUpdateSegmentInput) (segments.UpdateInput, error) {
 	var segmentsUpdateInput segments.UpdateInput
 	if source != nil {
+		segmentsUpdateInput.Revision = revisionIn((*source).Revision)
 		segmentsUpdateInput.Name = namePatch((*source).Name)
 		patchField, err := segmentConditionPatch((*source).Condition)
 		if err != nil {

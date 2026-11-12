@@ -124,12 +124,12 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	got := g4
 	assert.Equal(t, fixtures.SegmentProPlanName, got.Name)
 
-	rename := &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptName("Renamed")}
+	rename := &siteapi.SiteUpdateSegmentInput{Revision: g4.Revision, Name: siteapi.NewOptName("Renamed")}
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: foreign, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: missing})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
-	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
+	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: g4.Revision, Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
 	require.NoError(t, err)

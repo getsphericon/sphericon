@@ -15672,6 +15672,8 @@ type SegmentResource struct {
 	Condition OptConditionGroup `json:"condition"`
 	// When the segment was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// The revision of the state this answer shows (ADR 0119): an update names it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -15696,6 +15698,11 @@ func (s *SegmentResource) GetCondition() OptConditionGroup {
 // GetArchivedAt returns the value of ArchivedAt.
 func (s *SegmentResource) GetArchivedAt() OptNilTimestamp {
 	return s.ArchivedAt
+}
+
+// GetRevision returns the value of Revision.
+func (s *SegmentResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -15726,6 +15733,11 @@ func (s *SegmentResource) SetCondition(val OptConditionGroup) {
 // SetArchivedAt sets the value of ArchivedAt.
 func (s *SegmentResource) SetArchivedAt(val OptNilTimestamp) {
 	s.ArchivedAt = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SegmentResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -19277,10 +19289,17 @@ func (s *UpdateRuleInput) SetActions(val []RuleAction) {
 // Request body for updating a segment.
 // Ref: #/components/schemas/UpdateSegmentInput
 type UpdateSegmentInput struct {
+	// The segment's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// Segment name.
 	Name OptName `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
 	Condition OptConditionGroup `json:"condition"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateSegmentInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -19291,6 +19310,11 @@ func (s *UpdateSegmentInput) GetName() OptName {
 // GetCondition returns the value of Condition.
 func (s *UpdateSegmentInput) GetCondition() OptConditionGroup {
 	return s.Condition
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateSegmentInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.

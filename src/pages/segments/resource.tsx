@@ -1,33 +1,21 @@
-import { emptyGroup } from '../../components/conditions/condition.ts'
 import {
   siteSegmentsCreateMutation,
   siteSegmentsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteSegmentsUpdate } from '../../generated/site/sdk.gen.ts'
-import { zSiteCreateSegmentInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
-import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
+import { withRevision } from '../../resources/resourceEditor.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { SegmentForm } from './SegmentForm.tsx'
-import type { SegmentValues } from './SegmentForm.tsx'
-
-// A Segment is always a Condition: a stored segment without a condition loads as the empty
-// Condition (matches all contacts); the contract has no null condition.
-
-const blankSegment: SegmentValues = {
-  name: '',
-  condition: emptyGroup,
-}
-
-const segmentSchema = resourceFormSchema(zSiteCreateSegmentInput, blankSegment)
+import { segmentSchema } from './segmentSchema.ts'
 
 const segmentResource = defineResource({
   schema: segmentSchema,
   Form: SegmentForm,
   getOptions: siteSegmentsGetOptions,
   createMutation: siteSegmentsCreateMutation,
-  update: siteSegmentsUpdate,
+  update: withRevision(siteSegmentsUpdate),
   operations: {},
   editRoute: segmentsEditRoute,
   idParam: 'segmentId',

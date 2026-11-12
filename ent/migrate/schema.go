@@ -2256,6 +2256,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "archived_at", Type: field.TypeTime, Nullable: true},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "condition", Type: field.TypeString, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -2268,7 +2269,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "segments_workspaces_segments",
-				Columns:    []*schema.Column{SegmentsColumns[6]},
+				Columns:    []*schema.Column{SegmentsColumns[7]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

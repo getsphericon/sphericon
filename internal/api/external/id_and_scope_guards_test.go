@@ -85,7 +85,7 @@ func idGuardCases() []guardCase {
 			return err
 		}},
 		{"SegmentsUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: id})
+			_, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: 1}, externalapi.SegmentsUpdateParams{ID: id})
 			return err
 		}},
 		{"SegmentsArchive", func(c *externalapi.Client, id externalapi.EntityId) error {

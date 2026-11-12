@@ -31,6 +31,9 @@ var (
 	ErrNotFound = validation.NotFound("segments: segment not found", i18n.ErrorsSegmentNotFound)
 	// ErrArchived: the Segment is archived, so it is read-only until it is unarchived (ADR 0100).
 	ErrArchived = validation.Conflict("segments: segment is archived", i18n.ErrorsSegmentArchived)
+	// ErrRevisionChanged: the update was made on a revision the Segment has moved past (ADR 0119):
+	// someone wrote it since the client read it. Nothing is written.
+	ErrRevisionChanged = validation.RevisionChanged("segments: segment changed since it was read", i18n.ErrorsSegmentRevisionChanged)
 )
 
 // Module is the one place a Segment is written, validated, previewed and counted
@@ -57,6 +60,8 @@ type CreateInput struct {
 // UpdateInput is a patch of a Segment: a field that keeps leaves the stored value. Neither field
 // can be cleared; an empty Condition matches all contacts.
 type UpdateInput struct {
+	// Revision is the Segment's revision the edit was made on (ADR 0119).
+	Revision  int64
 	Name      patch.Field[string]
 	Condition patch.Field[string]
 }
@@ -116,7 +121,8 @@ func (s *Module) Get(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segmen
 // Update validates a changed condition exactly as Create does, then applies the change, under the
 // Workspace's lock as Create, for the references the condition names. An archived Segment is
 // ErrArchived: it is read-only until it is unarchived (ADR 0100), so the change is an update
-// conditioned on its not being archived (ADR 0109).
+// conditioned on its not being archived (ADR 0109) and on the revision it was made on (ADR 0119):
+// ErrRevisionChanged when the Segment has moved past it.
 func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
 	name, err := validation.NamePatch(in.Name)
 	if err != nil {
@@ -135,25 +141,31 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 }
 
 // updateIn validates a changed condition and applies the change under the Workspace's lock (ADR
-// 0108), conditioned on the Segment's not being archived (ErrArchived).
+// 0108), conditioned on the Segment's not being archived (ErrArchived) and on its revision
+// (ErrRevisionChanged).
 func (s *Module) updateIn(ctx context.Context, wl *ent.WorkspaceLocked, id int64, in UpdateInput) (*ent.Segment, error) {
 	if cond, ok := in.Condition.Get(); ok {
 		if err := s.Validate(ctx, wl.Scope(), cond); err != nil {
 			return nil, err
 		}
 	}
-	q := wl.Segment().UpdateOneID(id).Where(segment.ArchivedAtIsNil())
+	q := wl.Segment().UpdateOneID(id).Where(segment.ArchivedAtIsNil(), segment.Revision(in.Revision))
 	patch.ApplySet(in.Name, q.SetName)
 	patch.ApplySet(in.Condition, q.SetCondition)
 	seg, err := q.Save(ctx)
 	if !ent.IsNotFound(err) {
 		return seg, err
 	}
-	// The update missed: the Segment is archived, or the Workspace has none of this id.
-	if _, err := wl.Segment().Get(ctx, id); err != nil {
+	// The update missed: the Segment is archived, at another revision, or the Workspace has none
+	// of this id.
+	stored, err := wl.Segment().Get(ctx, id)
+	if err != nil {
 		return nil, err
 	}
-	return nil, ErrArchived
+	if stored.ArchivedAt != nil {
+		return nil, ErrArchived
+	}
+	return nil, ErrRevisionChanged
 }
 
 // PreviewInput is an unsaved Condition to preview, nil for every Contact, and the Channel of a

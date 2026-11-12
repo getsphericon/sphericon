@@ -124,7 +124,7 @@ test('editing shows the stored rule untouched, saves a renamed segment and refre
   worker.use(
     handleSiteSegmentsUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '7', name: 'Renamed', condition: RULE })
+      return HttpResponse.json({ id: '7', name: 'Renamed', condition: RULE, revision: 2 })
     }),
     handleSiteSegmentsList(() => {
       listFetches++
@@ -132,7 +132,7 @@ test('editing shows the stored rule untouched, saves a renamed segment and refre
     }),
     handleSiteSegmentsGet(() => {
       detailFetches++
-      return HttpResponse.json({ id: '7', name: 'Mail users', condition: RULE })
+      return HttpResponse.json({ id: '7', name: 'Mail users', condition: RULE, revision: 1 })
     }),
   )
 
@@ -151,7 +151,7 @@ test('editing shows the stored rule untouched, saves a renamed segment and refre
   await screen.getByLabelText('Name', { exact: false }).fill('Renamed')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Renamed', condition: RULE }])
+  await expect.poll(() => bodies).toEqual([{ revision: 1, name: 'Renamed', condition: RULE }])
   await expect.element(screen.getByText('Segment updated')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => detailFetches).toBeGreaterThan(1)
@@ -173,13 +173,14 @@ test('a successful save reloads the Condition editor from the saved definition',
   serveCatalogue()
   worker.use(
     handleSiteSegmentsGet({
-      body: { id: '7', name: 'Mail users', condition: RULE, ...TIMESTAMPS },
+      body: { id: '7', name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS },
     }),
     handleSiteSegmentsUpdate({
       body: {
         id: '7',
         name: 'Everyone',
         condition: { kind: 'group', combinator: 'and', rules: [] },
+        revision: 1,
         ...TIMESTAMPS,
       },
     }),
@@ -204,11 +205,13 @@ test('an unfinished Condition is refused, then saves its completed structured ed
   serveCatalogue()
   worker.use(
     handleSiteEventsActions({ body: { actions: ['purchased'] } }),
-    handleSiteSegmentsGet({ body: { id: '7', name: 'Buyers', condition, ...TIMESTAMPS } }),
+    handleSiteSegmentsGet({
+      body: { id: '7', name: 'Buyers', condition, revision: 1, ...TIMESTAMPS },
+    }),
     handleSiteSegmentsUpdate(async ({ request }) => {
       const body: unknown = await request.json()
       bodies.push(body)
-      return HttpResponse.json({ id: '7', name: 'Buyers', condition, ...TIMESTAMPS })
+      return HttpResponse.json({ id: '7', name: 'Buyers', condition, revision: 2, ...TIMESTAMPS })
     }),
   )
 
@@ -225,6 +228,7 @@ test('an unfinished Condition is refused, then saves its completed structured ed
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         name: 'Buyers',
         condition: {
           kind: 'group',
@@ -243,7 +247,7 @@ test('editing shows no form while the segment loads, then the loaded values', as
   worker.use(
     handleSiteSegmentsGet(async () => {
       await gate.promise
-      return HttpResponse.json({ id: '7', name: 'Mail users', condition: RULE })
+      return HttpResponse.json({ id: '7', name: 'Mail users', condition: RULE, revision: 1 })
     }),
   )
 
@@ -257,14 +261,14 @@ test('editing shows no form while the segment loads, then the loaded values', as
 
 test('an edit made while Save is pending stays after the acknowledgement, and leaving asks first', async () => {
   const gate = requestGate()
-  let stored = { id: '7', name: 'Mail users', condition: RULE, ...TIMESTAMPS }
+  let stored = { id: '7', name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS }
   serveCatalogue()
   worker.use(
     handleSiteSegmentsGet(() => HttpResponse.json(stored)),
     handleSiteSegmentsUpdate(async ({ request }) => {
       const body = zSiteSegmentsUpdateBody.parse(await request.json())
       await gate.hold()
-      stored = { ...stored, name: body.name ?? stored.name }
+      stored = { ...stored, name: body.name ?? stored.name, revision: stored.revision + 1 }
       return HttpResponse.json(stored)
     }),
   )
@@ -287,7 +291,7 @@ test('leaving while Save is pending does not ask when nothing was edited since',
   serveCatalogue()
   worker.use(
     handleSiteSegmentsGet({
-      body: { id: '7', name: 'Mail users', condition: RULE, ...TIMESTAMPS },
+      body: { id: '7', name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS },
     }),
     handleSiteSegmentsUpdate(async () => {
       received.resolve(undefined)

@@ -1285,6 +1285,7 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentR
 		externalapiSegmentResource.Name = (*source).Name
 		externalapiSegmentResource.Condition = segmentCondition((*source).Condition)
 		externalapiSegmentResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
+		externalapiSegmentResource.Revision = revision((*source).Revision)
 		externalapiSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

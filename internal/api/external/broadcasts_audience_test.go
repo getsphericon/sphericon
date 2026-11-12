@@ -24,7 +24,7 @@ const (
 )
 
 var audienceScopes = []string{
-	"broadcasts:read", "broadcasts:write", "broadcasts:send", "segments:write", "contacts:write",
+	"broadcasts:read", "broadcasts:write", "broadcasts:send", "segments:read", "segments:write", "contacts:write",
 }
 
 // recipientEmails is the addresses of the Broadcast's Recipients.
@@ -47,7 +47,10 @@ func scheduleBroadcast(t *testing.T, c *externalapi.Client, id externalapi.Entit
 
 func setSegmentCondition(t *testing.T, c *externalapi.Client, id externalapi.EntityId, def string) {
 	t.Helper()
-	_, err := c.SegmentsUpdate(t.Context(), &externalapi.UpdateSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))},
+	// An edit names the revision it was made on (ADR 0119), so the client reads the Segment first.
+	seg, err := c.SegmentsGet(t.Context(), externalapi.SegmentsGetParams{ID: id})
+	require.NoError(t, err)
+	_, err = c.SegmentsUpdate(t.Context(), &externalapi.UpdateSegmentInput{Revision: seg.Revision, Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))},
 		externalapi.SegmentsUpdateParams{ID: id})
 	require.NoError(t, err)
 }

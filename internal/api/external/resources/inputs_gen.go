@@ -484,6 +484,7 @@ func (c *InputsImpl) SegmentPreview(source *external.PreviewSegmentInput) (segme
 func (c *InputsImpl) SegmentUpdate(source *external.UpdateSegmentInput) (segments.UpdateInput, error) {
 	var segmentsUpdateInput segments.UpdateInput
 	if source != nil {
+		segmentsUpdateInput.Revision = revisionIn((*source).Revision)
 		segmentsUpdateInput.Name = namePatch((*source).Name)
 		patchField, err := segmentConditionPatch((*source).Condition)
 		if err != nil {
