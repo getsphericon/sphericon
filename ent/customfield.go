@@ -24,6 +24,8 @@ type CustomField struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
+	// Revision holds the value of the "revision" field.
+	Revision int64 `json:"revision,omitempty"`
 	// Key holds the value of the "key" field.
 	Key string `json:"key,omitempty"`
 	// Name holds the value of the "name" field.
@@ -61,7 +63,7 @@ func (*CustomField) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case customfield.FieldID, customfield.FieldWorkspaceID:
+		case customfield.FieldID, customfield.FieldWorkspaceID, customfield.FieldRevision:
 			values[i] = new(sql.NullInt64)
 		case customfield.FieldKey, customfield.FieldName, customfield.FieldType:
 			values[i] = new(sql.NullString)
@@ -105,6 +107,12 @@ func (_m *CustomField) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
+			}
+		case customfield.FieldRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field revision", values[i])
+			} else if value.Valid {
+				_m.Revision = value.Int64
 			}
 		case customfield.FieldKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -173,6 +181,9 @@ func (_m *CustomField) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
+	builder.WriteString(", ")
+	builder.WriteString("revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Revision))
 	builder.WriteString(", ")
 	builder.WriteString("key=")
 	builder.WriteString(_m.Key)

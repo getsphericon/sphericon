@@ -42,6 +42,10 @@ var (
 	ErrAuditNeedsLicense = validation.RefuseField("eventTypes", "webhooks: audit.entry needs an Enterprise license", i18n.ErrorsWebhookAuditNeedsLicense)
 	// ErrNotFound: no such endpoint in this Workspace.
 	ErrNotFound = validation.NotFound("webhooks: webhook not found", i18n.ErrorsWebhookNotFound)
+	// ErrRevisionChanged: the update was made on a revision the endpoint has moved past (ADR 0119):
+	// someone wrote it since the client read it, or the delivery worker turned it off. Nothing is
+	// written.
+	ErrRevisionChanged = validation.RevisionChanged("webhooks: webhook changed since it was read", i18n.ErrorsWebhookRevisionChanged)
 )
 
 // Licensing reports whether the Enterprise license is active. A nil Licensing
@@ -65,6 +69,8 @@ type CreateInput struct {
 // UpdateInput is a patch of an endpoint: a field that keeps is left alone. None of the fields can
 // be cleared; an empty EventTypes receives every event.
 type UpdateInput struct {
+	// Revision is the endpoint's revision the edit was made on (ADR 0119).
+	Revision   int64
 	URL        patch.Field[string]
 	EventTypes patch.Field[[]string]
 	Enabled    patch.Field[bool]
@@ -256,7 +262,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (End
 	return m.open(e)
 }
 
-// Update applies the set fields. An unknown id is ErrNotFound.
+// Update applies the set fields, conditional on the revision the edit was made on (ADR 0119): an
+// endpoint that moved past it is ErrRevisionChanged. An unknown id is ErrNotFound.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (Endpoint, error) {
 	if u, ok := in.URL.Get(); ok && !validURL(u) {
 		return Endpoint{}, ErrInvalidURL
@@ -266,7 +273,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return Endpoint{}, err
 	}
 	build := func() *ent.WebhookEndpointScopedUpdateOne {
-		upd := s.WebhookEndpoint().UpdateOneID(id)
+		upd := s.WebhookEndpoint().UpdateOneID(id).Where(webhookendpoint.Revision(in.Revision))
 		patch.ApplySet(in.URL, upd.SetURL)
 		patch.ApplySet(in.EventTypes, upd.SetEventTypes)
 		return upd
@@ -274,8 +281,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	enabled, toggles := in.Enabled.Get()
 	if !toggles {
 		e, err := build().Save(ctx)
+		if ent.IsNotFound(err) {
+			return Endpoint{}, m.missOn(ctx, s, id)
+		}
 		if err != nil {
-			return Endpoint{}, missing(err)
+			return Endpoint{}, err
 		}
 		return m.open(e)
 	}
@@ -285,6 +295,19 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // Delete removes the endpoint. An unknown id is ErrNotFound.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return missing(s.WebhookEndpoint().DeleteOneID(id).Exec(ctx))
+}
+
+// missOn tells why an update conditional on its revision found no row: the endpoint is gone, or it
+// is there at another revision.
+func (m *Module) missOn(ctx context.Context, s *ent.Scoped, id int64) error {
+	exists, err := s.WebhookEndpoint().Query().Where(webhookendpoint.ID(id)).Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return ErrRevisionChanged
+	}
+	return ErrNotFound
 }
 
 // missing turns the store's miss into ErrNotFound.

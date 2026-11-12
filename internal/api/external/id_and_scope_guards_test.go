@@ -123,7 +123,7 @@ func idGuardCases() []guardCase {
 			return err
 		}},
 		{"WebhooksUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{}, externalapi.WebhooksUpdateParams{ID: id})
+			_, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Revision: 1}, externalapi.WebhooksUpdateParams{ID: id})
 			return err
 		}},
 		{"WebhooksDelete", func(c *externalapi.Client, id externalapi.EntityId) error {

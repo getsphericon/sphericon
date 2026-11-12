@@ -52,6 +52,27 @@ func (_u *WebhookEndpointUpdate) SetNillableWorkspaceID(v *int64) *WebhookEndpoi
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *WebhookEndpointUpdate) SetRevision(v int64) *WebhookEndpointUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableRevision(v *int64) *WebhookEndpointUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *WebhookEndpointUpdate) AddRevision(v int64) *WebhookEndpointUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetURL sets the "url" field.
 func (_u *WebhookEndpointUpdate) SetURL(v string) *WebhookEndpointUpdate {
 	_u.mutation.SetURL(v)
@@ -333,6 +354,11 @@ func (_u *WebhookEndpointUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *WebhookEndpointUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := webhookendpoint.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.URL(); ok {
 		if err := webhookendpoint.URLValidator(v); err != nil {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.url": %w`, err)}
@@ -379,6 +405,12 @@ func (_u *WebhookEndpointUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(webhookendpoint.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(webhookendpoint.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(webhookendpoint.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.URL(); ok {
 		_spec.SetField(webhookendpoint.FieldURL, field.TypeString, value)
@@ -522,6 +554,27 @@ func (_u *WebhookEndpointUpdateOne) SetNillableWorkspaceID(v *int64) *WebhookEnd
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetRevision sets the "revision" field.
+func (_u *WebhookEndpointUpdateOne) SetRevision(v int64) *WebhookEndpointUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableRevision(v *int64) *WebhookEndpointUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *WebhookEndpointUpdateOne) AddRevision(v int64) *WebhookEndpointUpdateOne {
+	_u.mutation.AddRevision(v)
 	return _u
 }
 
@@ -819,6 +872,11 @@ func (_u *WebhookEndpointUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *WebhookEndpointUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := webhookendpoint.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.URL(); ok {
 		if err := webhookendpoint.URLValidator(v); err != nil {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.url": %w`, err)}
@@ -882,6 +940,12 @@ func (_u *WebhookEndpointUpdateOne) sqlSave(ctx context.Context) (_node *Webhook
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(webhookendpoint.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(webhookendpoint.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(webhookendpoint.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.URL(); ok {
 		_spec.SetField(webhookendpoint.FieldURL, field.TypeString, value)

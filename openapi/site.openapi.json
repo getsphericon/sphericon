@@ -5829,6 +5829,42 @@
       }
     },
     "/workspaces/{workspaceId}/custom-fields/{id}": {
+      "get": {
+        "operationId": "SiteCustomFields_get",
+        "description": "Get one custom field definition: what its editor opens with and reloads",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteCustomFieldResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteCustomFieldResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteCustomFieldResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Custom Fields"],
+        "x-required-permissions": []
+      },
       "put": {
         "operationId": "SiteCustomFields_update",
         "description": "Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled broadcast tests the field with an operator the new type does not take (`usedBy` names them). Owners and admins only.",
@@ -12159,7 +12195,7 @@
       "Revision": {
         "type": "integer",
         "minimum": 1,
-        "description": "The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.\nThe resource carries the one of the state it shows, and an update names the one it was made on:\na stale one is a 409 with code `revision_changed`, and nothing is written."
+        "description": "The revision of a resource a person edits (ADR 0119), starting at 1: every write of what it\nshows moves it, a background job's record of its own (a delivery failure, a provider's reading)\ndoes not.\nThe resource carries the one of the state it shows, and an update names the one it was made on:\na stale one is a 409 with code `revision_changed`, and nothing is written."
       },
       "RevisionInput": {
         "type": "object",
@@ -15520,7 +15556,16 @@
       },
       "SiteCustomFieldResource": {
         "type": "object",
-        "required": ["id", "key", "name", "type", "ruleOperators", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "key",
+          "name",
+          "type",
+          "ruleOperators",
+          "revision",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -15552,6 +15597,14 @@
               "$ref": "#/components/schemas/SiteConditionOperator"
             },
             "description": "The operators a rule leaf on this field takes, by its type"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the state this answer shows (ADR 0119): an update names it"
           },
           "createdAt": {
             "allOf": [
@@ -19299,7 +19352,16 @@
       },
       "SiteUpdateCustomFieldInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The custom field's `revision` the edit was made on (ADR 0119): the one it was read with"
+          },
           "name": {
             "allOf": [
               {
@@ -19605,7 +19667,16 @@
       },
       "SiteWebhookEndpointResource": {
         "type": "object",
-        "required": ["id", "url", "secret", "eventTypes", "enabled", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "url",
+          "secret",
+          "eventTypes",
+          "enabled",
+          "revision",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -19657,6 +19728,14 @@
               }
             ],
             "description": "Present while deliveries are failing; cleared by the next 2xx"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the state this answer shows (ADR 0119): an update names it"
           },
           "createdAt": {
             "allOf": [
@@ -20611,7 +20690,16 @@
       },
       "UpdateWebhookInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The webhook's `revision` the edit was made on (ADR 0119): the one it was read with"
+          },
           "url": {
             "type": "string",
             "description": "Destination URL (absolute http or https)"

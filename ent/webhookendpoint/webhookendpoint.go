@@ -22,6 +22,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
 	FieldWorkspaceID = "workspace_id"
+	// FieldRevision holds the string denoting the revision field in the database.
+	FieldRevision = "revision"
 	// FieldURL holds the string denoting the url field in the database.
 	FieldURL = "url"
 	// FieldSecretEncrypted holds the string denoting the secret_encrypted field in the database.
@@ -63,6 +65,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldWorkspaceID,
+	FieldRevision,
 	FieldURL,
 	FieldSecretEncrypted,
 	FieldEventTypes,
@@ -93,6 +96,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultRevision holds the default value on creation for the "revision" field.
+	DefaultRevision int64
+	// RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	RevisionValidator func(int64) error
 	// URLValidator is a validator for the "url" field. It is called by the builders before save.
 	URLValidator func(string) error
 	// HealthGenerationValidator is a validator for the "health_generation" field. It is called by the builders before save.
@@ -154,6 +161,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByWorkspaceID orders the results by the workspace_id field.
 func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
+}
+
+// ByRevision orders the results by the revision field.
+func ByRevision(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRevision, opts...).ToFunc()
 }
 
 // ByURL orders the results by the url field.

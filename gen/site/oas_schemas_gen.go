@@ -16843,6 +16843,8 @@ type SiteCustomFieldResource struct {
 	Type SiteCustomFieldType `json:"type"`
 	// The operators a rule leaf on this field takes, by its type.
 	RuleOperators []SiteConditionOperator `json:"ruleOperators"`
+	// The revision of the state this answer shows (ADR 0119): an update names it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -16872,6 +16874,11 @@ func (s *SiteCustomFieldResource) GetType() SiteCustomFieldType {
 // GetRuleOperators returns the value of RuleOperators.
 func (s *SiteCustomFieldResource) GetRuleOperators() []SiteConditionOperator {
 	return s.RuleOperators
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteCustomFieldResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -16907,6 +16914,11 @@ func (s *SiteCustomFieldResource) SetType(val SiteCustomFieldType) {
 // SetRuleOperators sets the value of RuleOperators.
 func (s *SiteCustomFieldResource) SetRuleOperators(val []SiteConditionOperator) {
 	s.RuleOperators = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteCustomFieldResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -26207,10 +26219,17 @@ func (s *SiteUpdateContactInput) SetTags(val []string) {
 // Request body for updating a custom field: its key never changes.
 // Ref: #/components/schemas/SiteUpdateCustomFieldInput
 type SiteUpdateCustomFieldInput struct {
+	// The custom field's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// Display name.
 	Name OptName `json:"name"`
 	// Value type. Stored values are not rewritten: the leaves of the new type read them as they are.
 	Type OptSiteCustomFieldType `json:"type"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteUpdateCustomFieldInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -26221,6 +26240,11 @@ func (s *SiteUpdateCustomFieldInput) GetName() OptName {
 // GetType returns the value of Type.
 func (s *SiteUpdateCustomFieldInput) GetType() OptSiteCustomFieldType {
 	return s.Type
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteUpdateCustomFieldInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.
@@ -26828,6 +26852,8 @@ type SiteWebhookEndpointResource struct {
 	DisabledReason OptSiteWebhookDisabledReason `json:"disabledReason"`
 	// Present while deliveries are failing; cleared by the next 2xx.
 	Failure OptSiteWebhookFailure `json:"failure"`
+	// The revision of the state this answer shows (ADR 0119): an update names it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -26872,6 +26898,11 @@ func (s *SiteWebhookEndpointResource) GetDisabledReason() OptSiteWebhookDisabled
 // GetFailure returns the value of Failure.
 func (s *SiteWebhookEndpointResource) GetFailure() OptSiteWebhookFailure {
 	return s.Failure
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteWebhookEndpointResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -26922,6 +26953,11 @@ func (s *SiteWebhookEndpointResource) SetDisabledReason(val OptSiteWebhookDisabl
 // SetFailure sets the value of Failure.
 func (s *SiteWebhookEndpointResource) SetFailure(val OptSiteWebhookFailure) {
 	s.Failure = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteWebhookEndpointResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -28841,12 +28877,19 @@ func (s *UpdateTemplateInput) SetDoc(val OptEditorDocument) {
 // Request body for updating a webhook endpoint.
 // Ref: #/components/schemas/UpdateWebhookInput
 type UpdateWebhookInput struct {
+	// The webhook's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// Destination URL (absolute http or https).
 	URL OptString `json:"url"`
 	// Event names to receive; empty means all events.
 	EventTypes []string `json:"eventTypes"`
 	// Whether the endpoint receives deliveries.
 	Enabled OptBool `json:"enabled"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateWebhookInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetURL returns the value of URL.
@@ -28862,6 +28905,11 @@ func (s *UpdateWebhookInput) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *UpdateWebhookInput) GetEnabled() OptBool {
 	return s.Enabled
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateWebhookInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetURL sets the value of URL.

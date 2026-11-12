@@ -517,7 +517,9 @@ export const zRegionalFormat = z.string().max(35);
 export const zRetentionDays = z.int().gte(1).lte(3650);
 
 /**
- * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The revision of a resource a person edits (ADR 0119), starting at 1: every write of what it
+ * shows moves it, a background job's record of its own (a delivery failure, a provider's reading)
+ * does not.
  * The resource carries the one of the state it shows, and an update names the one it was made on:
  * a stale one is a 409 with code `revision_changed`, and nothing is written.
  */
@@ -2307,6 +2309,7 @@ export const zSiteTransactionalEmailStatus = z.enum([
  * Request body for updating a custom field: its key never changes
  */
 export const zSiteUpdateCustomFieldInput = z.object({
+  revision: zRevision,
   name: z.exactOptional(zName),
   type: z.exactOptional(zSiteCustomFieldType)
 });
@@ -3163,6 +3166,7 @@ export const zSiteCustomFieldResource = z.object({
   name: z.string(),
   type: zSiteCustomFieldType,
   ruleOperators: z.array(zSiteConditionOperator),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3519,6 +3523,7 @@ export const zSiteWebhookEndpointResource = z.object({
   disabledAt: z.exactOptional(zTimestamp),
   disabledReason: z.exactOptional(zSiteWebhookDisabledReason),
   failure: z.exactOptional(zSiteWebhookFailure),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3681,6 +3686,7 @@ export const zUpdateTemplateInput = z.object({
  * Request body for updating a webhook endpoint
  */
 export const zUpdateWebhookInput = z.object({
+  revision: zRevision,
   url: z.exactOptional(z.string()),
   eventTypes: z.exactOptional(z.array(z.string())),
   enabled: z.exactOptional(z.boolean())
@@ -5594,6 +5600,16 @@ export const zSiteCustomFieldsListResponse = z.object({
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
+
+export const zSiteCustomFieldsGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteCustomFieldsGetResponse = zSiteCustomFieldResource;
 
 export const zSiteCustomFieldsUpdateBody = zSiteUpdateCustomFieldInput;
 

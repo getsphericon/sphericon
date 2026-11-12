@@ -153,7 +153,7 @@ var (
 	rn203AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn93AllowedHeaders = map[string]string{
+	rn92AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn234AllowedHeaders = map[string]string{
@@ -3904,6 +3904,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									if len(elem) == 0 {
 										// Leaf node.
 										switch r.Method {
+										case "GET":
+											s.handleSiteCustomFieldsGetRequest([2]string{
+												args[0],
+												args[1],
+											}, elemIsEscaped, w, r)
 										case "PUT":
 											s.handleSiteCustomFieldsUpdateRequest([2]string{
 												args[0],
@@ -3911,8 +3916,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}, elemIsEscaped, w, r)
 										default:
 											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "PUT",
-												allowedHeaders: rn93AllowedHeaders,
+												allowedMethods: "GET,PUT",
+												allowedHeaders: rn92AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -9521,6 +9526,15 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									if len(elem) == 0 {
 										// Leaf node.
 										switch method {
+										case "GET":
+											r.name = SiteCustomFieldsGetOperation
+											r.summary = ""
+											r.operationID = "SiteCustomFields_get"
+											r.operationGroup = ""
+											r.pathPattern = "/workspaces/{workspaceId}/custom-fields/{id}"
+											r.args = args
+											r.count = 2
+											return r, true
 										case "PUT":
 											r.name = SiteCustomFieldsUpdateOperation
 											r.summary = ""

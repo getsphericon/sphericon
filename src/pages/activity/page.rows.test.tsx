@@ -39,7 +39,15 @@ function serve(...items: ReturnType<typeof event>[]) {
     handleSiteTagsList({ body: page([{ id: '1', name: 'vip', ...TIMESTAMPS }]) }),
     handleSiteCustomFieldsList({
       body: page([
-        { id: '1', key: 'plan', name: 'Plan', type: 'string', ruleOperators: [], ...TIMESTAMPS },
+        {
+          id: '1',
+          key: 'plan',
+          name: 'Plan',
+          type: 'string',
+          ruleOperators: [],
+          revision: 1,
+          ...TIMESTAMPS,
+        },
       ]),
     }),
     handleSiteAutomationsGet(({ params }) =>

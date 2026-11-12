@@ -1338,7 +1338,9 @@ export type RegionalFormat = string;
 export type RetentionDays = number;
 
 /**
- * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The revision of a resource a person edits (ADR 0119), starting at 1: every write of what it
+ * shows moves it, a background job's record of its own (a delivery failure, a provider's reading)
+ * does not.
  * The resource carries the one of the state it shows, and an update names the one it was made on:
  * a stale one is a 409 with code `revision_changed`, and nothing is written.
  */
@@ -3842,6 +3844,10 @@ export type SiteCustomFieldResource = {
    * The operators a rule leaf on this field takes, by its type
    */
   ruleOperators: Array<SiteConditionOperator>;
+  /**
+   * The revision of the state this answer shows (ADR 0119): an update names it
+   */
+  revision: Revision;
   /**
    * Creation timestamp
    */
@@ -6664,6 +6670,10 @@ export type SiteUpdateContactInput = {
  */
 export type SiteUpdateCustomFieldInput = {
   /**
+   * The custom field's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
    * Display name
    */
   name?: Name;
@@ -6912,6 +6922,10 @@ export type SiteWebhookEndpointResource = {
    * Present while deliveries are failing; cleared by the next 2xx
    */
   failure?: SiteWebhookFailure;
+  /**
+   * The revision of the state this answer shows (ADR 0119): an update names it
+   */
+  revision: Revision;
   /**
    * Creation timestamp
    */
@@ -7613,6 +7627,10 @@ export type UpdateTemplateInput = {
  * Request body for updating a webhook endpoint
  */
 export type UpdateWebhookInput = {
+  /**
+   * The webhook's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * Destination URL (absolute http or https)
    */
@@ -12616,6 +12634,46 @@ export type SiteCustomFieldsListResponses = {
 };
 
 export type SiteCustomFieldsListResponse = SiteCustomFieldsListResponses[keyof SiteCustomFieldsListResponses];
+
+export type SiteCustomFieldsGetData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/custom-fields/{id}';
+};
+
+export type SiteCustomFieldsGetErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteCustomFieldsGetError = SiteCustomFieldsGetErrors[keyof SiteCustomFieldsGetErrors];
+
+export type SiteCustomFieldsGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteCustomFieldResource;
+};
+
+export type SiteCustomFieldsGetResponse = SiteCustomFieldsGetResponses[keyof SiteCustomFieldsGetResponses];
 
 export type SiteCustomFieldsUpdateData = {
   body: SiteUpdateCustomFieldInput;

@@ -432,6 +432,8 @@ func init() {
 	customfieldMixin := schema.CustomField{}.Mixin()
 	customfieldMixinFields0 := customfieldMixin[0].Fields()
 	_ = customfieldMixinFields0
+	customfieldMixinFields2 := customfieldMixin[2].Fields()
+	_ = customfieldMixinFields2
 	customfieldFields := schema.CustomField{}.Fields()
 	_ = customfieldFields
 	// customfieldDescCreatedAt is the schema descriptor for created_at field.
@@ -444,6 +446,12 @@ func init() {
 	customfield.DefaultUpdatedAt = customfieldDescUpdatedAt.Default.(func() time.Time)
 	// customfield.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	customfield.UpdateDefaultUpdatedAt = customfieldDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// customfieldDescRevision is the schema descriptor for revision field.
+	customfieldDescRevision := customfieldMixinFields2[0].Descriptor()
+	// customfield.DefaultRevision holds the default value on creation for the revision field.
+	customfield.DefaultRevision = customfieldDescRevision.Default.(int64)
+	// customfield.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	customfield.RevisionValidator = customfieldDescRevision.Validators[0].(func(int64) error)
 	// customfieldDescKey is the schema descriptor for key field.
 	customfieldDescKey := customfieldFields[1].Descriptor()
 	// customfield.KeyValidator is a validator for the "key" field. It is called by the builders before save.
@@ -1751,6 +1759,8 @@ func init() {
 	webhookendpointMixin := schema.WebhookEndpoint{}.Mixin()
 	webhookendpointMixinFields0 := webhookendpointMixin[0].Fields()
 	_ = webhookendpointMixinFields0
+	webhookendpointMixinFields2 := webhookendpointMixin[2].Fields()
+	_ = webhookendpointMixinFields2
 	webhookendpointFields := schema.WebhookEndpoint{}.Fields()
 	_ = webhookendpointFields
 	// webhookendpointDescCreatedAt is the schema descriptor for created_at field.
@@ -1763,6 +1773,12 @@ func init() {
 	webhookendpoint.DefaultUpdatedAt = webhookendpointDescUpdatedAt.Default.(func() time.Time)
 	// webhookendpoint.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	webhookendpoint.UpdateDefaultUpdatedAt = webhookendpointDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// webhookendpointDescRevision is the schema descriptor for revision field.
+	webhookendpointDescRevision := webhookendpointMixinFields2[0].Descriptor()
+	// webhookendpoint.DefaultRevision holds the default value on creation for the revision field.
+	webhookendpoint.DefaultRevision = webhookendpointDescRevision.Default.(int64)
+	// webhookendpoint.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	webhookendpoint.RevisionValidator = webhookendpointDescRevision.Validators[0].(func(int64) error)
 	// webhookendpointDescURL is the schema descriptor for url field.
 	webhookendpointDescURL := webhookendpointFields[1].Descriptor()
 	// webhookendpoint.URLValidator is a validator for the "url" field. It is called by the builders before save.

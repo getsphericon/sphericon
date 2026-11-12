@@ -166,6 +166,16 @@ func scopedFuncs() template.FuncMap {
 			_, ok := f.Annotations["Sensitive"]
 			return ok
 		},
+		// bookkeeping lists the columns of n that schema.Bookkeeping marks (ADR 0119).
+		"bookkeeping": func(n *gen.Type) []string {
+			var out []string
+			for _, f := range n.Fields {
+				if _, ok := f.Annotations["Bookkeeping"]; ok {
+					out = append(out, f.StorageKey())
+				}
+			}
+			return out
+		},
 		// scopedFieldRefs lists the annotated plain fields of n that hold a reference.
 		"scopedFieldRefs": func(g *gen.Graph, n *gen.Type) []scopedRef {
 			var out []scopedRef

@@ -35,6 +35,9 @@ model SiteCustomFieldResource {
   /** The operators a rule leaf on this field takes, by its type */
   ruleOperators: SiteConditionOperator[];
 
+  /** The revision of the state this answer shows (ADR 0119): an update names it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -44,6 +47,9 @@ model SiteCustomFieldResource {
 
 /** Request body for updating a custom field: its key never changes */
 model SiteUpdateCustomFieldInput {
+  /** The custom field's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** Display name */
   name?: Name;
 
@@ -61,6 +67,15 @@ namespace SiteCustomFields {
   @requiresPermissions(#[])
   op list(...ResourceCollectionParameters<SiteCustomFieldResource>):
     | Page<SiteCustomFieldResource>
+    | Problem;
+
+  /** Get one custom field definition: what its editor opens with and reloads */
+  @readsResource(SiteCustomFieldResource)
+  @get
+  @autoRoute
+  @requiresPermissions(#[])
+  op get(...ResourceParameters<SiteCustomFieldResource>):
+    | SiteCustomFieldResource
     | Problem;
 
   /** Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled broadcast tests the field with an operator the new type does not take (`usedBy` names them). Owners and admins only. */

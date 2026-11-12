@@ -1,0 +1,22 @@
+{{/*
+The columns of every type with a revision that schema.Bookkeeping marks (ADR 0119): the system keeps
+them for itself and no editor shows them, so internal/app/entclient's Revision hook leaves the
+revision as it was on an update that writes them alone.
+*/}}
+{{ define "revision" }}
+{{ template "header" $ }}
+
+// Bookkeeping is, per type, the columns schema.Bookkeeping marks (ADR 0119): an update that writes
+// only these, updated_at aside, leaves the row's revision as it was.
+var Bookkeeping = map[string]map[string]bool{
+{{- range $n := $.Nodes }}
+	{{- with bookkeeping $n }}
+	"{{ $n.Name }}": {
+		{{- range . }}
+		"{{ . }}": true,
+		{{- end }}
+	},
+	{{- end }}
+{{- end }}
+}
+{{ end }}

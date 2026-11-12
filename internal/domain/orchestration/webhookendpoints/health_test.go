@@ -27,7 +27,7 @@ import (
 func TestAResponseFromBeforeAnOwnerResetCannotDisableTheEndpoint(t *testing.T) {
 	r := newRecording(t)
 	inFlight := r.endpoint()
-	_, err := r.mod.Update(t.Context(), r.scope(), inFlight.ID, webhookendpoints.UpdateInput{Enabled: patch.Set(true)})
+	_, err := r.mod.Update(t.Context(), r.scope(), inFlight.ID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(t.Context(), t, r.scope(), inFlight.ID), Enabled: patch.Set(true)})
 	require.NoError(t, err)
 
 	err = r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, status(http.StatusGone), r.now)
@@ -43,7 +43,7 @@ func TestAnOldSuccessCannotClearFailuresAfterAnOwnerReset(t *testing.T) {
 	r := newRecording(t)
 	r.record(status(http.StatusServiceUnavailable))
 	inFlight := r.endpoint()
-	_, err := r.mod.Update(t.Context(), r.scope(), inFlight.ID, webhookendpoints.UpdateInput{Enabled: patch.Set(true)})
+	_, err := r.mod.Update(t.Context(), r.scope(), inFlight.ID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(t.Context(), t, r.scope(), inFlight.ID), Enabled: patch.Set(true)})
 	require.NoError(t, err)
 	r.record(status(http.StatusBadGateway))
 
@@ -187,7 +187,7 @@ func TestAnOwnerResetRollsBackItsGenerationWithItsHealthWrite(t *testing.T) {
 	fault := errors.New("owner update unavailable")
 	r.env.Bus.Use(refuseEnable(fault))
 
-	_, err := r.mod.Update(t.Context(), r.scope(), before.ID, webhookendpoints.UpdateInput{Enabled: patch.Set(true)})
+	_, err := r.mod.Update(t.Context(), r.scope(), before.ID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(t.Context(), t, r.scope(), before.ID), Enabled: patch.Set(true)})
 
 	require.ErrorIs(t, err, fault)
 	stored := r.endpoint()
@@ -206,7 +206,7 @@ func TestResetGenerationStaysOutOfTheConfigurationAudit(t *testing.T) {
 	before := r.endpoint()
 	sys := r.env.Bus.Act(r.scope(), events.Actor{Kind: events.ActorSystem})
 
-	_, err := r.mod.Update(t.Context(), sys, before.ID, webhookendpoints.UpdateInput{Enabled: patch.Set(true)})
+	_, err := r.mod.Update(t.Context(), sys, before.ID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(t.Context(), t, sys, before.ID), Enabled: patch.Set(true)})
 
 	require.NoError(t, err)
 	entries := r.env.QueuedEvents(t, events.NameAuditEntry)

@@ -107,7 +107,7 @@ func TestChangingATypeToDatetimeMakesEarlierISOStringsMatch(t *testing.T) {
 	field := fieldByKey(t, c, fixtures.DuffPublicID, "renewal")
 	require.Equal(t, siteapi.SiteCustomFieldTypeString, field.Type)
 
-	updated, err := updateField(c, fixtures.DuffPublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeDatetime)})
+	updated, err := updateField(c, fixtures.DuffPublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeDatetime)})
 
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, updated.Type)
@@ -122,11 +122,16 @@ func TestChangingATypeToDatetimeMakesEarlierISOStringsMatch(t *testing.T) {
 func TestChangingATypeIsRefusedWhileASegmentUsesTheField(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
-	toString := &siteapi.SiteUpdateCustomFieldInput{Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeString)}
+	toString := func(key string) (siteapi.EntityId, *siteapi.SiteUpdateCustomFieldInput) {
+		field := fieldByKey(t, c, fixtures.DuffPublicID, key)
+		return field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeString)}
+	}
 
-	_, err := updateField(c, fixtures.DuffPublicID, fieldByKey(t, c, fixtures.DuffPublicID, "ends_on").ID, toString)
+	endsOn, in := toString("ends_on")
+	_, err := updateField(c, fixtures.DuffPublicID, endsOn, in)
 	problem := testhelper.SiteRefusal(t, err, http.StatusConflict)
-	_, err = updateField(c, fixtures.DuffPublicID, fieldByKey(t, c, fixtures.DuffPublicID, "has_it").ID, toString)
+	hasIt, in := toString("has_it")
+	_, err = updateField(c, fixtures.DuffPublicID, hasIt, in)
 	require.NoError(t, err)
 
 	assert.Equal(t, []string{"Ends soon"}, lo.Map(problem.UsedBy, func(u siteapi.UsedBy, _ int) string { return u.Name }))
@@ -143,11 +148,11 @@ func TestOnlyOwnersAndAdminsUpdateACustomField(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	field := fieldByKey(t, owner, fixtures.AcmePublicID, "plan")
 
-	_, err := updateField(member, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptName("Alias")})
+	_, err := updateField(member, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("Alias")})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
-	renamed, err := updateField(admin, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptName("Alias")})
+	renamed, err := updateField(admin, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("Alias")})
 	require.NoError(t, err)
-	final, err := updateField(owner, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptName("Nick")})
+	final, err := updateField(owner, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: renamed.Revision, Name: siteapi.NewOptName("Nick")})
 	require.NoError(t, err)
 
 	assert.Equal(t, "Alias", renamed.Name)
@@ -158,4 +163,19 @@ func TestOnlyOwnersAndAdminsUpdateACustomField(t *testing.T) {
 		return e, e.Action == "custom_field.update"
 	})
 	assert.Len(t, updates, 2)
+}
+
+// One Custom field reads back as the list shows it, with the revision its editor opens with; another
+// Workspace's is a 404.
+func TestSiteCustomFieldGetReadsOneField(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	field := fieldByKey(t, c, fixtures.AcmePublicID, "plan")
+
+	got, err := c.SiteCustomFieldsGet(context.Background(), siteapi.SiteCustomFieldsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: field.ID})
+	require.NoError(t, err)
+	assert.Equal(t, field, *got)
+
+	_, err = c.SiteCustomFieldsGet(context.Background(), siteapi.SiteCustomFieldsGetParams{WorkspaceId: fixtures.GlobexPublicID, ID: field.ID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

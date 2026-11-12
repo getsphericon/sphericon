@@ -818,6 +818,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "key", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"string", "number", "bool", "datetime"}, Default: "string"},
@@ -831,7 +832,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "custom_fields_workspaces_custom_fields",
-				Columns:    []*schema.Column{CustomFieldsColumns[6]},
+				Columns:    []*schema.Column{CustomFieldsColumns[7]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -840,7 +841,7 @@ var (
 			{
 				Name:    "custom_fields_workspace_id_key",
 				Unique:  true,
-				Columns: []*schema.Column{CustomFieldsColumns[6], CustomFieldsColumns[3]},
+				Columns: []*schema.Column{CustomFieldsColumns[7], CustomFieldsColumns[4]},
 			},
 		},
 	}
@@ -2929,6 +2930,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "url", Type: field.TypeString},
 		{Name: "secret_encrypted", Type: field.TypeString},
 		{Name: "event_types", Type: field.TypeJSON, Nullable: true},
@@ -2950,7 +2952,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "webhook_endpoints_workspaces_webhook_endpoints",
-				Columns:    []*schema.Column{WebhookEndpointsColumns[14]},
+				Columns:    []*schema.Column{WebhookEndpointsColumns[15]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2959,7 +2961,7 @@ var (
 			{
 				Name:    "webhookendpoint_workspace_id_disabled_at",
 				Unique:  false,
-				Columns: []*schema.Column{WebhookEndpointsColumns[14], WebhookEndpointsColumns[6]},
+				Columns: []*schema.Column{WebhookEndpointsColumns[15], WebhookEndpointsColumns[7]},
 			},
 		},
 	}

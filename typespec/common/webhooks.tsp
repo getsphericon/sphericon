@@ -16,6 +16,9 @@ model CreateWebhookInput {
 
 /** Request body for updating a webhook endpoint */
 model UpdateWebhookInput {
+  /** The webhook's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** Destination URL (absolute http or https) */
   url?: string;
 

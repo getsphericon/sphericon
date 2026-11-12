@@ -25,6 +25,7 @@ function endpoint(over: Partial<SiteWebhookEndpointResource> = {}): SiteWebhookE
     secret: 'whsec_1',
     eventTypes: [],
     enabled: true,
+    revision: 1,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     ...over,
@@ -167,9 +168,7 @@ test('toggles an endpoint off', async () => {
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Disable' }).click()
 
-  await expect
-    .poll(() => bodies)
-    .toEqual([{ url: 'https://example.com/hook', eventTypes: ['email.opened'], enabled: false }])
+  await expect.poll(() => bodies).toEqual([{ revision: 1, enabled: false }])
 })
 
 test('regenerates the secret after confirmation', async () => {

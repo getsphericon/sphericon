@@ -94,7 +94,7 @@ func TestDisablingAnEndpointThatIsOffKeepsItsMomentAndReason(t *testing.T) {
 	require.NoError(t, err)
 
 	off := false
-	got, err := m.Update(context.Background(), acme, fixtures.WebhookCodebasicsGoneID, webhookendpoints.UpdateInput{Enabled: patch.Set(off)})
+	got, err := m.Update(context.Background(), acme, fixtures.WebhookCodebasicsGoneID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(context.Background(), t, acme, fixtures.WebhookCodebasicsGoneID), Enabled: patch.Set(off)})
 
 	require.NoError(t, err)
 	assert.Equal(t, before.DisabledAt, got.DisabledAt)
@@ -112,11 +112,11 @@ func TestInvalidURLIsRefusedOnCreateAndUpdate(t *testing.T) {
 		require.ErrorIs(t, err, webhookendpoints.ErrInvalidURL, url)
 
 		bad := url
-		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{URL: patch.Set(bad)})
+		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), URL: patch.Set(bad)})
 		require.ErrorIs(t, err, webhookendpoints.ErrInvalidURL, url)
 	}
 	ok := "http://example.com:8080/x"
-	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{URL: patch.Set(ok)})
+	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), URL: patch.Set(ok)})
 	require.NoError(t, err)
 	assert.Equal(t, ok, got.URL)
 }
@@ -132,14 +132,14 @@ func TestUpdateChangesOnlyTheGivenFieldsAndKeepsTheSecret(t *testing.T) {
 	assert.Equal(t, "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", before.Secret)
 
 	off := false
-	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Enabled: patch.Set(off)})
+	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), Enabled: patch.Set(off)})
 	require.NoError(t, err)
 	assert.NotNil(t, got.DisabledAt)
 	assert.Equal(t, before.URL, got.URL)
 	assert.Equal(t, before.EventTypes, got.EventTypes, "nil event types leave the filter alone")
 	assert.Equal(t, before.Secret, got.Secret)
 
-	got, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{EventTypes: patch.Set([]string{"email.opened"})})
+	got, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), EventTypes: patch.Set([]string{"email.opened"})})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"email.opened"}, got.EventTypes)
 }
@@ -154,14 +154,14 @@ func TestAuditEntryNeedsALicenseOnCreateAndUpdate(t *testing.T) {
 		m := module(env, lic)
 		_, err := m.Create(ctx, acme, webhookendpoints.CreateInput{URL: "https://example.com/a", EventTypes: audit})
 		require.ErrorIs(t, err, webhookendpoints.ErrAuditNeedsLicense, name)
-		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{EventTypes: patch.Set(audit)})
+		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), EventTypes: patch.Set(audit)})
 		require.ErrorIs(t, err, webhookendpoints.ErrAuditNeedsLicense, name)
 	}
 
 	m := module(env, license(true))
 	_, err := m.Create(ctx, acme, webhookendpoints.CreateInput{URL: "https://example.com/a", EventTypes: audit})
 	require.NoError(t, err)
-	_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{EventTypes: patch.Set(audit)})
+	_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), EventTypes: patch.Set(audit)})
 	require.NoError(t, err)
 }
 
@@ -194,7 +194,7 @@ func TestDeleteAndWorkspaceIsolation(t *testing.T) {
 
 	_, err := m.Get(ctx, acme, fixtures.WebhookGlobexID)
 	require.ErrorIs(t, err, webhookendpoints.ErrNotFound)
-	_, err = m.Update(ctx, acme, fixtures.WebhookGlobexID, webhookendpoints.UpdateInput{})
+	_, err = m.Update(ctx, acme, fixtures.WebhookGlobexID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookGlobexID)})
 	require.ErrorIs(t, err, webhookendpoints.ErrNotFound)
 	require.ErrorIs(t, m.Delete(ctx, acme, fixtures.WebhookGlobexID), webhookendpoints.ErrNotFound)
 
@@ -389,7 +389,7 @@ func TestEnablingClearsTheFailureStateAndTheDisabledReason(t *testing.T) {
 	require.NotNil(t, before.DisabledReason)
 	require.NotNil(t, before.ConsecutiveFailures)
 
-	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsGoneID, webhookendpoints.UpdateInput{Enabled: patch.Set(on)})
+	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsGoneID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsGoneID), Enabled: patch.Set(on)})
 	require.NoError(t, err)
 	assert.Nil(t, got.DisabledAt)
 	assert.Nil(t, got.DisabledReason)

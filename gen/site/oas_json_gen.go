@@ -25515,6 +25515,10 @@ func (s *SiteCustomFieldResource) encodeFields(e *jx.Encoder) {
 		e.ArrEnd()
 	}
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -25524,14 +25528,15 @@ func (s *SiteCustomFieldResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteCustomFieldResource = [7]string{
+var jsonFieldsNameOfSiteCustomFieldResource = [8]string{
 	0: "id",
 	1: "key",
 	2: "name",
 	3: "type",
 	4: "ruleOperators",
-	5: "createdAt",
-	6: "updatedAt",
+	5: "revision",
+	6: "createdAt",
+	7: "updatedAt",
 }
 
 // Decode decodes SiteCustomFieldResource from json.
@@ -25605,8 +25610,18 @@ func (s *SiteCustomFieldResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"ruleOperators\"")
 			}
-		case "createdAt":
+		case "revision":
 			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "createdAt":
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -25616,7 +25631,7 @@ func (s *SiteCustomFieldResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -25635,7 +25650,7 @@ func (s *SiteCustomFieldResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01111111,
+		0b11111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -46265,6 +46280,10 @@ func (s *SiteUpdateCustomFieldInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteUpdateCustomFieldInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		if s.Name.Set {
 			e.FieldStart("name")
 			s.Name.Encode(e)
@@ -46278,9 +46297,10 @@ func (s *SiteUpdateCustomFieldInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateCustomFieldInput = [2]string{
-	0: "name",
-	1: "type",
+var jsonFieldsNameOfSiteUpdateCustomFieldInput = [3]string{
+	0: "revision",
+	1: "name",
+	2: "type",
 }
 
 // Decode decodes SiteUpdateCustomFieldInput from json.
@@ -46288,9 +46308,20 @@ func (s *SiteUpdateCustomFieldInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteUpdateCustomFieldInput to nil")
 	}
+	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		case "name":
 			if err := func() error {
 				s.Name.Reset()
@@ -46317,6 +46348,38 @@ func (s *SiteUpdateCustomFieldInput) Decode(d *jx.Decoder) error {
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode SiteUpdateCustomFieldInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteUpdateCustomFieldInput) {
+					name = jsonFieldsNameOfSiteUpdateCustomFieldInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 
 	return nil
@@ -47693,6 +47756,10 @@ func (s *SiteWebhookEndpointResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -47702,17 +47769,18 @@ func (s *SiteWebhookEndpointResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWebhookEndpointResource = [10]string{
-	0: "id",
-	1: "url",
-	2: "secret",
-	3: "eventTypes",
-	4: "enabled",
-	5: "disabledAt",
-	6: "disabledReason",
-	7: "failure",
-	8: "createdAt",
-	9: "updatedAt",
+var jsonFieldsNameOfSiteWebhookEndpointResource = [11]string{
+	0:  "id",
+	1:  "url",
+	2:  "secret",
+	3:  "eventTypes",
+	4:  "enabled",
+	5:  "disabledAt",
+	6:  "disabledReason",
+	7:  "failure",
+	8:  "revision",
+	9:  "createdAt",
+	10: "updatedAt",
 }
 
 // Decode decodes SiteWebhookEndpointResource from json.
@@ -47820,8 +47888,18 @@ func (s *SiteWebhookEndpointResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
-		case "createdAt":
+		case "revision":
 			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -47831,7 +47909,7 @@ func (s *SiteWebhookEndpointResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -47851,7 +47929,7 @@ func (s *SiteWebhookEndpointResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00011111,
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -52024,6 +52102,10 @@ func (s *UpdateWebhookInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *UpdateWebhookInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		if s.URL.Set {
 			e.FieldStart("url")
 			s.URL.Encode(e)
@@ -52047,10 +52129,11 @@ func (s *UpdateWebhookInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUpdateWebhookInput = [3]string{
-	0: "url",
-	1: "eventTypes",
-	2: "enabled",
+var jsonFieldsNameOfUpdateWebhookInput = [4]string{
+	0: "revision",
+	1: "url",
+	2: "eventTypes",
+	3: "enabled",
 }
 
 // Decode decodes UpdateWebhookInput from json.
@@ -52058,9 +52141,20 @@ func (s *UpdateWebhookInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode UpdateWebhookInput to nil")
 	}
+	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		case "url":
 			if err := func() error {
 				s.URL.Reset()
@@ -52106,6 +52200,38 @@ func (s *UpdateWebhookInput) Decode(d *jx.Decoder) error {
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode UpdateWebhookInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfUpdateWebhookInput) {
+					name = jsonFieldsNameOfUpdateWebhookInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 
 	return nil

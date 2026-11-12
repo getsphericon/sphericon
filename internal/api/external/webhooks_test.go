@@ -43,7 +43,7 @@ func TestExternalWebhooksCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, row.SecretEncrypted)
 
-	updated, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{
+	updated, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Revision: externalapi.Revision(env.WebhookRevision(ctx, t, int64(res.ID))),
 		Enabled: externalapi.NewOptBool(false), EventTypes: []string{},
 	}, externalapi.WebhooksUpdateParams{ID: res.ID})
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestExternalWebhooksCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, row.SecretEncrypted, after.SecretEncrypted, "update keeps the secret")
 
-	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{URL: externalapi.NewOptString("ftp://x")},
+	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Revision: externalapi.Revision(env.WebhookRevision(ctx, t, int64(res.ID))), URL: externalapi.NewOptString("ftp://x")},
 		externalapi.WebhooksUpdateParams{ID: res.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
@@ -74,7 +74,7 @@ func TestExternalWebhooksNeverReturnSecrets(t *testing.T) {
 		{"list", http.MethodGet, "/api/webhooks", ""},
 		{"get", http.MethodGet, fmt.Sprintf("/api/webhooks/%d", fixtures.WebhookCodebasicsID), ""},
 		{"create", http.MethodPost, "/api/webhooks", `{"url":"https://example.com/h"}`},
-		{"update", http.MethodPut, fmt.Sprintf("/api/webhooks/%d", fixtures.WebhookCodebasicsID), `{"enabled":false}`},
+		{"update", http.MethodPut, fmt.Sprintf("/api/webhooks/%d", fixtures.WebhookCodebasicsID), `{"revision":1,"enabled":false}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -111,7 +111,7 @@ func TestExternalWebhooksScopes(t *testing.T) {
 
 	_, err = ro.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://example.com/x"})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
-	_, err = ro.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{}, externalapi.WebhooksUpdateParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
+	_, err = ro.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Revision: externalapi.Revision(env.WebhookRevision(ctx, t, int64(entityIDString(fixtures.WebhookCodebasicsID))))}, externalapi.WebhooksUpdateParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	err = ro.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -131,7 +131,7 @@ func TestExternalWebhooksAreWorkspaceScoped(t *testing.T) {
 	}
 	_, err = c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Enabled: externalapi.NewOptBool(false)}, externalapi.WebhooksUpdateParams{ID: id})
+	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Revision: externalapi.Revision(env.WebhookRevision(ctx, t, int64(id))), Enabled: externalapi.NewOptBool(false)}, externalapi.WebhooksUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	err = c.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
@@ -152,7 +152,7 @@ func TestExternalWebhookSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
 	_, err = c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: auditTypes})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{EventTypes: auditTypes},
+	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Revision: externalapi.Revision(env.WebhookRevision(ctx, t, int64(entityIDString(fixtures.WebhookCodebasicsID)))), EventTypes: auditTypes},
 		externalapi.WebhooksUpdateParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

@@ -58,6 +58,20 @@ func (_c *WebhookEndpointCreate) SetWorkspaceID(v int64) *WebhookEndpointCreate 
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *WebhookEndpointCreate) SetRevision(v int64) *WebhookEndpointCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableRevision(v *int64) *WebhookEndpointCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetURL sets the "url" field.
 func (_c *WebhookEndpointCreate) SetURL(v string) *WebhookEndpointCreate {
 	_c.mutation.SetURL(v)
@@ -242,6 +256,10 @@ func (_c *WebhookEndpointCreate) defaults() {
 		v := webhookendpoint.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := webhookendpoint.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -254,6 +272,14 @@ func (_c *WebhookEndpointCreate) check() error {
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "WebhookEndpoint.workspace_id"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "WebhookEndpoint.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := webhookendpoint.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.URL(); !ok {
 		return &ValidationError{Name: "url", err: errors.New(`ent: missing required field "WebhookEndpoint.url"`)}
@@ -324,6 +350,10 @@ func (_c *WebhookEndpointCreate) createSpec() (*WebhookEndpoint, *sqlgraph.Creat
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(webhookendpoint.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(webhookendpoint.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.URL(); ok {
 		_spec.SetField(webhookendpoint.FieldURL, field.TypeString, value)
@@ -459,6 +489,24 @@ func (u *WebhookEndpointUpsert) SetWorkspaceID(v int64) *WebhookEndpointUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *WebhookEndpointUpsert) UpdateWorkspaceID() *WebhookEndpointUpsert {
 	u.SetExcluded(webhookendpoint.FieldWorkspaceID)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *WebhookEndpointUpsert) SetRevision(v int64) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateRevision() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *WebhookEndpointUpsert) AddRevision(v int64) *WebhookEndpointUpsert {
+	u.Add(webhookendpoint.FieldRevision, v)
 	return u
 }
 
@@ -742,6 +790,27 @@ func (u *WebhookEndpointUpsertOne) SetWorkspaceID(v int64) *WebhookEndpointUpser
 func (u *WebhookEndpointUpsertOne) UpdateWorkspaceID() *WebhookEndpointUpsertOne {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *WebhookEndpointUpsertOne) SetRevision(v int64) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *WebhookEndpointUpsertOne) AddRevision(v int64) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateRevision() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -1225,6 +1294,27 @@ func (u *WebhookEndpointUpsertBulk) SetWorkspaceID(v int64) *WebhookEndpointUpse
 func (u *WebhookEndpointUpsertBulk) UpdateWorkspaceID() *WebhookEndpointUpsertBulk {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *WebhookEndpointUpsertBulk) SetRevision(v int64) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *WebhookEndpointUpsertBulk) AddRevision(v int64) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateRevision() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateRevision()
 	})
 }
 

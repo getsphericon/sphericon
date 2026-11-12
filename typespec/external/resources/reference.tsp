@@ -31,6 +31,9 @@ model CustomFieldResource {
   /** The operators a rule leaf on this field takes, by its type */
   ruleOperators: ConditionOperator[];
 
+  /** The revision of the state this answer shows (ADR 0119): an update names it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -40,6 +43,9 @@ model CustomFieldResource {
 
 /** Request body for updating a custom field: its key never changes */
 model UpdateCustomFieldInput {
+  /** The custom field's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** Display name */
   name?: Name;
 

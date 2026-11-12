@@ -30,7 +30,7 @@ overwrite a person, and a person overwrites them, the same way.
 ## Decision
 
 - **A resource a person edits carries a `revision`**: an integer column of its row, starting at 1,
-  that every write of the row moves by one. It is declared once, by a schema mixin (`RevisionMixin`), and moved by one ent hook that
+  that every write of the row moves by one, except a write of its bookkeeping alone (below). It is declared once, by a schema mixin (`RevisionMixin`), and moved by one ent hook that
   every application client carries (`entclient.Revision`, on `UpdateOne` and `Update` of any type
   that has the column), so no writer can forget it. A schema hook would have moved ent's runtime
   into a package every binary must import for its defaults to run. The hook does not see an
@@ -44,6 +44,16 @@ overwrite a person, and a person overwrites them, the same way.
   endpoints of both surfaces, `PUT /broadcasts/{id}/segment`. Each of these changes what an editor of the row shows, so a save made
   over it is a real conflict. A write that changes nothing writes nothing: it moves neither
   `revision` nor `updated_at`.
+- **Bookkeeping does not move it.** A column the system keeps for itself, which no editor shows or
+  sends, is marked `schema.Bookkeeping`: a webhook endpoint's failure record (its consecutive
+  failures, when they began, the last error), a provider's reading of an Integration, a notice's
+  moment. An update that writes such columns alone leaves the revision, so a job that writes them on
+  every delivery or every check does not refuse the save of a person who has the resource open; an
+  update that also writes any other column moves it, and one that writes no column (a touch of
+  `updated_at`, as a Contact's Tag change does) moves it too. A column a person also writes, or that
+  an editor shows and could save over, is not bookkeeping: a delivery worker that turns an endpoint
+  off moves the revision, since the editor's form sends whether it is on. The hook reads the
+  generated set (`ent.Bookkeeping`), so a writer cannot opt out at a call site.
 - **The resource returns it, and its update takes it back.** The resource's `revision` is the one
   of the state it shows; an update's body names the `revision` the edit was made on, and the write
   is conditional on it (`UPDATE … WHERE id = ? AND revision = ?`, or the comparison inside the

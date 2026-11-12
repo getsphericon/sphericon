@@ -77,6 +77,9 @@ model SiteWebhookEndpointResource {
   /** Present while deliveries are failing; cleared by the next 2xx */
   failure?: SiteWebhookFailure;
 
+  /** The revision of the state this answer shows (ADR 0119): an update names it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 

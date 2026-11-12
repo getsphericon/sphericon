@@ -2,6 +2,7 @@ import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 
 import {
+  handleSiteCustomFieldsGet,
   handleSiteCustomFieldsList,
   handleSiteCustomFieldsUpdate,
   handleSiteWorkspacesList,
@@ -23,6 +24,7 @@ const PLAN = {
   name: 'Plan',
   type: 'string' as const,
   ruleOperators: [],
+  revision: 1,
   ...TIMESTAMPS,
 }
 const SEATS = {
@@ -31,6 +33,7 @@ const SEATS = {
   name: 'Seats',
   type: 'number' as const,
   ruleOperators: [],
+  revision: 1,
   ...TIMESTAMPS,
 }
 
@@ -92,9 +95,11 @@ test('changes a field name and type when the member may manage custom fields', a
   worker.use(
     workspace(['custom_fields:manage']),
     handleSiteCustomFieldsList({ body: page([PLAN], 1) }),
+    // The edit modal opens on the field as stored.
+    handleSiteCustomFieldsGet({ body: PLAN }),
     handleSiteCustomFieldsUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ ...PLAN, name: 'Renewal', type: 'datetime' })
+      return HttpResponse.json({ ...PLAN, name: 'Renewal', type: 'datetime', revision: 2 })
     }),
   )
   const { screen } = await renderWithRouter(<CustomFieldsListPage />, LIST_ROUTE)
@@ -107,7 +112,32 @@ test('changes a field name and type when the member may manage custom fields', a
   await screen.getByRole('option', { name: 'Date and time' }).click()
   await dialog.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Renewal', type: 'datetime' }])
+  await expect.poll(() => bodies).toEqual([{ revision: 1, name: 'Renewal', type: 'datetime' }])
+})
+
+// A rename made on a revision someone moved past (ADR 0119): the modal stays open with the edit
+// kept and says the field changed, offering the saved version.
+test('a rename on a field changed since the modal opened is refused and said so', async () => {
+  worker.use(
+    workspace(['custom_fields:manage']),
+    handleSiteCustomFieldsList({ body: page([PLAN], 1) }),
+    handleSiteCustomFieldsGet({ body: PLAN }),
+    handleSiteCustomFieldsUpdate(() =>
+      problem(409, { title: 'Changed', code: 'revision_changed' }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<CustomFieldsListPage />, LIST_ROUTE)
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Edit' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Name/).fill('Renewal')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .element(dialog.getByRole('button', { name: 'Load the saved version' }))
+    .toBeInTheDocument()
+  await expect.element(dialog.getByLabelText(/^Name/)).toHaveValue('Renewal')
 })
 
 test('offers no edit without the permission to manage custom fields', async () => {

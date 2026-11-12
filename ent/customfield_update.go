@@ -50,6 +50,27 @@ func (_u *CustomFieldUpdate) SetNillableWorkspaceID(v *int64) *CustomFieldUpdate
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *CustomFieldUpdate) SetRevision(v int64) *CustomFieldUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *CustomFieldUpdate) SetNillableRevision(v *int64) *CustomFieldUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *CustomFieldUpdate) AddRevision(v int64) *CustomFieldUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *CustomFieldUpdate) SetName(v string) *CustomFieldUpdate {
 	_u.mutation.SetName(v)
@@ -132,6 +153,11 @@ func (_u *CustomFieldUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CustomFieldUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := customfield.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "CustomField.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := customfield.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "CustomField.name": %w`, err)}
@@ -168,6 +194,12 @@ func (_u *CustomFieldUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(customfield.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(customfield.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(customfield.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(customfield.FieldName, field.TypeString, value)
@@ -243,6 +275,27 @@ func (_u *CustomFieldUpdateOne) SetNillableWorkspaceID(v *int64) *CustomFieldUpd
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetRevision sets the "revision" field.
+func (_u *CustomFieldUpdateOne) SetRevision(v int64) *CustomFieldUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *CustomFieldUpdateOne) SetNillableRevision(v *int64) *CustomFieldUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *CustomFieldUpdateOne) AddRevision(v int64) *CustomFieldUpdateOne {
+	_u.mutation.AddRevision(v)
 	return _u
 }
 
@@ -341,6 +394,11 @@ func (_u *CustomFieldUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CustomFieldUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := customfield.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "CustomField.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := customfield.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "CustomField.name": %w`, err)}
@@ -394,6 +452,12 @@ func (_u *CustomFieldUpdateOne) sqlSave(ctx context.Context) (_node *CustomField
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(customfield.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(customfield.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(customfield.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(customfield.FieldName, field.TypeString, value)

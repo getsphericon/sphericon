@@ -17,7 +17,15 @@ const names = (operators: Operator[] | null) => operators?.map((operator) => ope
 const field = (
   type: SiteCustomFieldType,
   ruleOperators: SiteConditionOperator[],
-): SiteCustomFieldResource => ({ id: '1', key: 'k', name: 'K', type, ruleOperators, ...TIMESTAMPS })
+): SiteCustomFieldResource => ({
+  id: '1',
+  key: 'k',
+  name: 'K',
+  type,
+  ruleOperators,
+  revision: 1,
+  ...TIMESTAMPS,
+})
 
 const seats = field(SiteCustomFieldType.NUMBER, [
   SiteConditionOperator.EQ,

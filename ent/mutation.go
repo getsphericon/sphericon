@@ -18351,6 +18351,8 @@ type CustomFieldMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
+	revision         *int64
+	addrevision      *int64
 	key              *string
 	name             *string
 	_type            *customfield.Type
@@ -18574,6 +18576,62 @@ func (m *CustomFieldMutation) ResetWorkspaceID() {
 	m.workspace = nil
 }
 
+// SetRevision sets the "revision" field.
+func (m *CustomFieldMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *CustomFieldMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the CustomField entity.
+// If the CustomField object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CustomFieldMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *CustomFieldMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *CustomFieldMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *CustomFieldMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
+}
+
 // SetKey sets the "key" field.
 func (m *CustomFieldMutation) SetKey(s string) {
 	m.key = &s
@@ -18743,7 +18801,7 @@ func (m *CustomFieldMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CustomFieldMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, customfield.FieldCreatedAt)
 	}
@@ -18752,6 +18810,9 @@ func (m *CustomFieldMutation) Fields() []string {
 	}
 	if m.workspace != nil {
 		fields = append(fields, customfield.FieldWorkspaceID)
+	}
+	if m.revision != nil {
+		fields = append(fields, customfield.FieldRevision)
 	}
 	if m.key != nil {
 		fields = append(fields, customfield.FieldKey)
@@ -18776,6 +18837,8 @@ func (m *CustomFieldMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case customfield.FieldWorkspaceID:
 		return m.WorkspaceID()
+	case customfield.FieldRevision:
+		return m.Revision()
 	case customfield.FieldKey:
 		return m.Key()
 	case customfield.FieldName:
@@ -18797,6 +18860,8 @@ func (m *CustomFieldMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldUpdatedAt(ctx)
 	case customfield.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
+	case customfield.FieldRevision:
+		return m.OldRevision(ctx)
 	case customfield.FieldKey:
 		return m.OldKey(ctx)
 	case customfield.FieldName:
@@ -18833,6 +18898,13 @@ func (m *CustomFieldMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetWorkspaceID(v)
 		return nil
+	case customfield.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
+		return nil
 	case customfield.FieldKey:
 		v, ok := value.(string)
 		if !ok {
@@ -18862,6 +18934,9 @@ func (m *CustomFieldMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *CustomFieldMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, customfield.FieldRevision)
+	}
 	return fields
 }
 
@@ -18870,6 +18945,8 @@ func (m *CustomFieldMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *CustomFieldMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case customfield.FieldRevision:
+		return m.AddedRevision()
 	}
 	return nil, false
 }
@@ -18879,6 +18956,13 @@ func (m *CustomFieldMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *CustomFieldMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case customfield.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	}
 	return fmt.Errorf("unknown CustomField numeric field %s", name)
 }
@@ -18914,6 +18998,9 @@ func (m *CustomFieldMutation) ResetField(name string) error {
 		return nil
 	case customfield.FieldWorkspaceID:
 		m.ResetWorkspaceID()
+		return nil
+	case customfield.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case customfield.FieldKey:
 		m.ResetKey()
@@ -67192,6 +67279,8 @@ type WebhookEndpointMutation struct {
 	id                      *int64
 	created_at              *time.Time
 	updated_at              *time.Time
+	revision                *int64
+	addrevision             *int64
 	url                     *string
 	secret_encrypted        *string
 	event_types             *[]string
@@ -67425,6 +67514,62 @@ func (m *WebhookEndpointMutation) OldWorkspaceID(ctx context.Context) (v int64, 
 // ResetWorkspaceID resets all changes to the "workspace_id" field.
 func (m *WebhookEndpointMutation) ResetWorkspaceID() {
 	m.workspace = nil
+}
+
+// SetRevision sets the "revision" field.
+func (m *WebhookEndpointMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *WebhookEndpointMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *WebhookEndpointMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *WebhookEndpointMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *WebhookEndpointMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
 }
 
 // SetURL sets the "url" field.
@@ -68080,7 +68225,7 @@ func (m *WebhookEndpointMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WebhookEndpointMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, webhookendpoint.FieldCreatedAt)
 	}
@@ -68089,6 +68234,9 @@ func (m *WebhookEndpointMutation) Fields() []string {
 	}
 	if m.workspace != nil {
 		fields = append(fields, webhookendpoint.FieldWorkspaceID)
+	}
+	if m.revision != nil {
+		fields = append(fields, webhookendpoint.FieldRevision)
 	}
 	if m.url != nil {
 		fields = append(fields, webhookendpoint.FieldURL)
@@ -68137,6 +68285,8 @@ func (m *WebhookEndpointMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case webhookendpoint.FieldWorkspaceID:
 		return m.WorkspaceID()
+	case webhookendpoint.FieldRevision:
+		return m.Revision()
 	case webhookendpoint.FieldURL:
 		return m.URL()
 	case webhookendpoint.FieldSecretEncrypted:
@@ -68174,6 +68324,8 @@ func (m *WebhookEndpointMutation) OldField(ctx context.Context, name string) (en
 		return m.OldUpdatedAt(ctx)
 	case webhookendpoint.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
+	case webhookendpoint.FieldRevision:
+		return m.OldRevision(ctx)
 	case webhookendpoint.FieldURL:
 		return m.OldURL(ctx)
 	case webhookendpoint.FieldSecretEncrypted:
@@ -68225,6 +68377,13 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWorkspaceID(v)
+		return nil
+	case webhookendpoint.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
 		return nil
 	case webhookendpoint.FieldURL:
 		v, ok := value.(string)
@@ -68311,6 +68470,9 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *WebhookEndpointMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, webhookendpoint.FieldRevision)
+	}
 	if m.addhealth_generation != nil {
 		fields = append(fields, webhookendpoint.FieldHealthGeneration)
 	}
@@ -68328,6 +68490,8 @@ func (m *WebhookEndpointMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *WebhookEndpointMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case webhookendpoint.FieldRevision:
+		return m.AddedRevision()
 	case webhookendpoint.FieldHealthGeneration:
 		return m.AddedHealthGeneration()
 	case webhookendpoint.FieldConsecutiveFailures:
@@ -68343,6 +68507,13 @@ func (m *WebhookEndpointMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *WebhookEndpointMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case webhookendpoint.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	case webhookendpoint.FieldHealthGeneration:
 		v, ok := value.(int64)
 		if !ok {
@@ -68456,6 +68627,9 @@ func (m *WebhookEndpointMutation) ResetField(name string) error {
 		return nil
 	case webhookendpoint.FieldWorkspaceID:
 		m.ResetWorkspaceID()
+		return nil
+	case webhookendpoint.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case webhookendpoint.FieldURL:
 		m.ResetURL()

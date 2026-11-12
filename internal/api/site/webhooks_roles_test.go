@@ -34,7 +34,7 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	_, err = member.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{URL: siteapi.NewOptString("https://attacker.example/hook")},
+	_, err = member.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{Revision: siteapi.Revision(env.WebhookRevision(ctx, t, int64(id))), URL: siteapi.NewOptString("https://attacker.example/hook")},
 		siteapi.SiteWebhooksUpdateParams{WorkspaceId: workspaceID, ID: id})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 

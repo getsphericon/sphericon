@@ -236,14 +236,14 @@ func TestSiteWebhooksErrorBranches(t *testing.T) {
 	got := g4
 	assert.Equal(t, fixtures.WebhookCodebasicsURL, got.URL)
 
-	off := &siteapi.UpdateWebhookInput{Enabled: siteapi.NewOptBool(false)}
+	off := &siteapi.UpdateWebhookInput{Revision: g4.Revision, Enabled: siteapi.NewOptBool(false)}
 	_, err = c.SiteWebhooksUpdate(ctx, off, siteapi.SiteWebhooksUpdateParams{WorkspaceId: foreign, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = c.SiteWebhooksUpdate(ctx, off, siteapi.SiteWebhooksUpdateParams{WorkspaceId: acme, ID: missing})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
-	_, err = c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{URL: siteapi.NewOptString("nope")}, siteapi.SiteWebhooksUpdateParams{WorkspaceId: acme, ID: known})
+	_, err = c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{Revision: siteapi.Revision(env.WebhookRevision(ctx, t, int64(known))), URL: siteapi.NewOptString("nope")}, siteapi.SiteWebhooksUpdateParams{WorkspaceId: acme, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-	_, err = c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{
+	_, err = c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{Revision: siteapi.Revision(env.WebhookRevision(ctx, t, int64(known))),
 		URL: siteapi.NewOptString("https://new.test/h"), Enabled: siteapi.NewOptBool(false), EventTypes: events,
 	}, siteapi.SiteWebhooksUpdateParams{WorkspaceId: acme, ID: known})
 	require.NoError(t, err)

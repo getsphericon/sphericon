@@ -24,8 +24,12 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 			if err != nil {
 				return err
 			}
+			// Refused here, not retried: a stale revision stays stale (ADR 0119).
+			if before.Revision != in.Revision {
+				return ErrRevisionChanged
+			}
 			machine := HealthMachine(before, change, lifecycle.Storage[HealthState]{Write: func(ctx context.Context, _, _ HealthState) (bool, error) {
-				u := ts.WebhookEndpoint().UpdateOneID(id).Where(atHealth(before)...)
+				u := ts.WebhookEndpoint().UpdateOneID(id).Where(append(atHealth(before), webhookendpoint.Revision(before.Revision))...)
 				patch.ApplySet(in.URL, u.SetURL)
 				patch.ApplySet(in.EventTypes, u.SetEventTypes)
 				if enabled {

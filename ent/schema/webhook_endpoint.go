@@ -25,7 +25,7 @@ func (WebhookEndpoint) Annotations() []schema.Annotation {
 }
 
 func (WebhookEndpoint) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "webhook_endpoints"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "webhook_endpoints"}, RevisionMixin{}}
 }
 
 func (WebhookEndpoint) Fields() []ent.Field {
@@ -63,22 +63,26 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		// is not audited. All nil while the endpoint is healthy; a 2xx clears them.
 		// Failed deliveries in a row.
 		field.Int("consecutive_failures").
+			Annotations(Bookkeeping{}).
 			Optional().
 			Nillable(),
 		// When the current run of failures began.
 		field.Time("failing_since").
+			Annotations(Bookkeeping{}).
 			Optional().
 			Nillable(),
 		// Closed kind of the latest failure; http_status carries last_error_status.
 		field.Enum("last_error_kind").
+			Annotations(Bookkeeping{}).
 			GoType(webhook.ErrorKind("")).
 			Optional().
 			Nillable(),
 		field.Int("last_error_status").
+			Annotations(Bookkeeping{}).
 			Optional().
 			Nillable(),
 		field.Time("last_failure_at").
-			Annotations(Attribute(reasonLatest)).
+			Annotations(Bookkeeping{}, Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// Why the endpoint is off (ADR 0039): an owner turned it off, the receiver answered 410,
