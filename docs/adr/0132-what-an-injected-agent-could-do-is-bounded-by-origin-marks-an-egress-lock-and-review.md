@@ -4,6 +4,10 @@ status: accepted
 
 # What an injected agent could do is bounded by origin marks, an egress lock and review
 
+> **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
+> a feed's content is untrusted; a series' Publish shows its authors and the feed's hosts, which
+> it approves for the issues that follow.
+
 An agent operates a Workspace through MCP, a projection of the external API (ADR 0016). Much of what
 it reads was written by strangers: a Contact's name, its Custom fields, the properties of its
 Events, the text of a message it sent in. A string such as "ignore your instructions and..." in a

@@ -356,7 +356,8 @@ _Avoid_: Blacklist, denylist, do-not-mail
 **Sending source** (the unsubscribe scope):
 The unit a Contact unsubscribes from — and it is automatic, never hand-authored: the source
 _is_ the sender. Each Automation is its own scope (unsubscribing from one drip leaves the
-others untouched); all Broadcasts share one scope ("broadcasts"); and a reserved _everything_
+others untouched); all Broadcasts share one scope ("broadcasts"), inside which each **Broadcast
+series** is a narrower one of its own, so leaving "broadcasts" leaves every series too; and a reserved _everything_
 scope is the deliberate "leave entirely" opt-out (kept separate so a per-source unsubscribe
 never silently loses the whole contact). A source only ever _subtracts_ opt-outs from a send
 — it is never a target set ("send to everyone subscribed to source X" is the rejected List
@@ -492,8 +493,9 @@ _Avoid_: Tracking mode, privacy mode
 ### Sending
 
 **Broadcast**:
-A one-off send to an audience on one Channel, fixed when it is created, authored and sent once
-(draft → scheduled → sending → sent / failed). Its Message content takes that Channel's shape, and
+A send to an audience on one Channel, fixed when it is created, sent once (draft → scheduled →
+sending → sent / failed): authored and scheduled by hand, or made as an issue of a **Broadcast
+series**, which it then cannot be edited apart from. Its Message content takes that Channel's shape, and
 exactly that Channel's content is stored; its lifecycle, audience, Integration, Recipients and
 figures are the same on every Channel, and its Integration is one of its Channel (or that Channel's
 default). It is never converted to another Channel, nor copied into one. A new Broadcast asks for
@@ -504,7 +506,7 @@ Recipient. An SMS Broadcast needs an SMS Integration in the Workspace to be crea
 Segment's Condition**, so a later edit of the Segment does not change who the Broadcast reaches;
 the copy is resolved and **frozen into Recipients at send time**, then filtered per-recipient by
 Send-eligibility. Sends under the
-shared "broadcasts" unsubscribe scope, which, like every Unsubscribe, is separate per Channel. There is no "active contacts" audience — eligibility is
+shared "broadcasts" unsubscribe scope, or its series' scope inside it, which, like every Unsubscribe, is separate per Channel. There is no "active contacts" audience — eligibility is
 derived, not a contact status. "Audience" is prose for whoever a Broadcast reaches; the thing
 that picks them is always a Segment, and names say Segment.
 _Avoid_: Campaign, newsletter blast, mailshot, email blast
@@ -704,22 +706,21 @@ _Avoid_: Revision, snapshot
 
 **Versioned definition**:
 An object whose definition is kept in versions, a **live version** and a **draft**, and changes only
-by **Publish**; its name, status and archiving (a Rule is deleted instead) stay on the object. Today the Automation, the Rule
-and the On-site form. They share one lifecycle: an edit writes the draft, Publish makes it live,
+by **Publish**; its name, status and archiving (a Rule is deleted instead) stay on the object. Today the Automation, the Rule,
+the On-site form and the **Broadcast series**. They share one lifecycle: an edit writes the draft, Publish makes it live,
 **Revert** drops it, Deactivate stops the object, and Archive makes it inactive too, so restoring it
 never re-arms a send or brings a form back onto a site.
 A Broadcast is not one: a scheduled Broadcast holds a copy of its Condition instead.
 _Avoid_: Versioned entity, revisioned object, publishable
 
 **Publish**:
-The send-class act that makes the draft of an Automation, a Rule or an On-site form its live
-version and makes it active; with no draft, it makes the live version active again. The only way
-the definition of a live Automation, Rule or On-site form changes.
+The send-class act that makes the draft of a Versioned definition (an Automation, a Rule, an
+On-site form, a Broadcast series) its live version and makes it active; with no draft, it makes the
+live version active again. The only way the definition of a live one changes.
 _Avoid_: Activate, launch, go live, deploy
 
 **Revert**:
-Dropping the draft of an Automation, a Rule or an On-site form, so that its live version is again
-the latest. It changes nothing that sends or shows.
+Dropping the draft of a Versioned definition, so that its live version is again the latest. It changes nothing that sends or shows.
 _Avoid_: Discard (that is a delete that keeps the row), reset, undo
 
 **Trigger**:
@@ -859,6 +860,14 @@ error and the first 1 KiB of the response, never skipping the step. Distinct fro
 endpoint: that one is subscribed to events, this one runs when an Enrollment reaches it.
 _Avoid_: Webhook step, action
 
+**Broadcast series**:
+A Versioned definition that makes an ordinary Broadcast, an **issue**, at each occurrence of its
+weekly or monthly schedule in the Workspace time zone, from the content and the copy of its Segment's
+Condition its live version took at Publish. It is its own Sending source. With a feed, an issue carries the items new since the
+last one, and an occurrence with none, or with an unreadable feed, is skipped; so is one while the
+previous issue is still sending.
+_Avoid_: Recurring campaign, newsletter, RSS campaign, drip (that is an Automation)
+
 **Template** (email template):
 A workspace-scoped, named, reusable piece of email content — a **starting point copied at
 author time**. Email only: on the other Channels a message is written where it is sent, and
@@ -946,7 +955,7 @@ _Avoid_: Dependency, reference, in use
 
 **Definition use**:
 A definition that names a row: a Segment's Condition, the live version or the draft of a kept
-Automation or Rule, the Condition an armed Broadcast copied from its Segment, or a **Score**. A row in Definition
+Automation, Rule or Broadcast series, the Condition an armed Broadcast copied from its Segment, or a **Score**. A row in Definition
 use is not deleted, nor changed in a way the definition would stop reading (a Custom field's type).
 _Avoid_: Dependency, reference, in use
 
@@ -1585,7 +1594,7 @@ holds an item: what stops its mail (a Sending domain that lost its DKIM record, 
 provider stopped the account, a Broadcast held by a check of its own, an active Automation whose
 email steps a send would hold now), what slows it or puts it at
 risk (the abuse detector's warning tier, a `NEEDS_WORK` in **Postmaster data** or a lost Postmaster grant, a spent Send cap or Provider limit, a Broadcast scheduled
-within a day that the Send cap will slow, a provider's probation or sandbox), and what failed without a retry this week (Automation runs, a Broadcast, a Webhook
+within a day that the Send cap will slow, a provider's probation or sandbox), a Broadcast series whose feed cannot be read, and what failed without a retry this week (Automation runs, a Broadcast, a Webhook
 endpoint that disabled itself). Every item is read live from the rows that hold the fact; none is
 stored. A Workspace suspension and a Staff hold are banners of their own, not items.
 _Avoid_: Alerts, notifications, issues, health

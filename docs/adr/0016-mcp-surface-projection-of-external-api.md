@@ -4,6 +4,9 @@ status: accepted
 
 # MCP surface: a projection of the external `/api`, not a second implementation
 
+> **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
+> a Broadcast series' Publish and the cancelling of one of its occurrences are send-class.
+
 > **Amended by [[0132-what-an-injected-agent-could-do-is-bounded-by-origin-marks-an-egress-lock-and-review]]:**
 > `webhooks:write` joins the setup scopes behind the third box; a write through a Connection
 > without `mcp:send` starts nothing that sends; editing a Template in Transactional use and a Test

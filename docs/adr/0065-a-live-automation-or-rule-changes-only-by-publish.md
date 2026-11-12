@@ -4,6 +4,9 @@ status: accepted
 
 # A live Automation or Rule changes only by Publish, and a scheduled Broadcast holds a copy of its Condition
 
+> **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
+> a Broadcast series is a Versioned definition too, and its Publish is send-class.
+
 ADR 0016 makes sending a second lock: an API token authors drafts, and only a send scope
 (`automations:publish`, `broadcasts:send`, `emails:send`, plus `mcp:send` over MCP) lets it send.
 Three edits got past that lock (#748). Saving Steps on an active Automation wrote a new version that

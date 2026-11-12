@@ -62,7 +62,10 @@ missing implementations of an already accepted spec.
 - **Calendar and date-based entry and waits.** Birthdays, anniversaries and dates such as a
   trial's end as a Trigger, and waits until a local time. The model is decided
   ([ADR 0126](docs/adr/0126-an-automation-starts-on-a-date-and-waits-until-a-local-time.md)); it is
-  not built. Scheduled sends (a Broadcast series) and quiet hours for SMS are not part of it.
+  not built. Scheduled sends are decided as a Broadcast series
+  ([ADR 0135](docs/adr/0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence.md)) and
+  quiet hours for SMS as a sending window
+  ([ADR 0134](docs/adr/0134-marketing-sms-waits-for-the-workspaces-sending-window-in-the-recipients-time.md)).
 - **Additional Actions.** Set or clear a Custom field, enroll in another Automation and notify
   Members, as Steps and as Rule Actions. The model is decided
   ([ADR 0125](docs/adr/0125-an-automation-sets-a-field-enrolls-elsewhere-and-notifies-members.md));

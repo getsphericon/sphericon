@@ -4,6 +4,10 @@ status: accepted
 
 # Bulk-sender compliance: RFC 8058 one-click unsubscribe & DMARC readiness
 
+> **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
+> an issue of a Broadcast series carries the source-scoped token of `series:<id>`, a scope inside
+> `broadcasts`.
+
 > **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
 > a `mailto:` is added under Reply handling, beside the https URI and in the same `h=` list: the
 > inbound mail it needs now exists.

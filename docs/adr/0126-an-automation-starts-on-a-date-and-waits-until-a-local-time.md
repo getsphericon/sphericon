@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation starts on a date and waits until a local time
 
+> **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
+> scheduled sends are decided as a Broadcast series.
+
 > **Amended by [[0134-marketing-sms-waits-for-the-workspaces-sending-window-in-the-recipients-time]]:**
 > quiet hours for SMS are decided, as the Workspace's sending window in Outbound send.
 

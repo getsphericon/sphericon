@@ -4,6 +4,10 @@ status: accepted
 
 # A Preference page per Destination, and only the person lifts a refusal
 
+> **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
+> the page lists each Broadcast series a person receives by name, beside all Broadcasts, which
+> covers them.
+
 A person who receives mail from a Workspace can do one thing from it today: confirm an opt-out of
 the source the link names, then follow a second link to leave everything (ADR 0012). ADR 0120 added
 a second page for the Engagement tracking consent. Nothing lets the person see what they are opted
