@@ -10,14 +10,17 @@ import {
 import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
 import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as templatesCreateRoute } from '../../routes/workspaces/$workspaceId/templates/new.tsx'
-import { hex, TIMESTAMPS, UNSAVED_BRAND_KIT } from '../../test/payloads.ts'
+import { hex, TIMESTAMPS, UNSAVED_BRAND_KIT, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { TemplateCreatePage, TemplateEditPage } from './resource.tsx'
 
-const EDIT_ROUTE = routeMount(templatesEditRoute, { workspaceId: 'TestWs01', templateId: '7' })
+const EDIT_ROUTE = routeMount(templatesEditRoute, {
+  workspaceId: 'TestWs01',
+  templateId: testId(7),
+})
 
 const DOC = {
   type: 'doc',
@@ -25,7 +28,7 @@ const DOC = {
 }
 
 const WITH_DOC = {
-  id: '7',
+  id: testId(7),
   name: 'Welcome',
   subject: 'Hi',
   body: '<p>Hello there</p>',
@@ -36,7 +39,7 @@ const WITH_DOC = {
 }
 
 const AS_HTML = {
-  id: '7',
+  id: testId(7),
   name: 'Imported',
   subject: 'Hi',
   body: '<table><tr><td>Hello</td></tr></table>',

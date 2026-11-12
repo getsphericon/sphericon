@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
+
 	"github.com/samber/lo"
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
@@ -901,7 +903,8 @@ func countryName(code string) string {
 // empty action and nil properties still bind `event`, so every `event.*` tag renders empty and a
 // Contact's custom field named `event` never stands in for it.
 func EventVariables(action string, properties map[string]any) map[string]any {
-	return map[string]any{"event": map[string]any{"action": action, "properties": properties}}
+	// A System event's keys bind by their public form, as a client sees them (ADR 0142).
+	return map[string]any{"event": map[string]any{"action": action, "properties": systemevent.PublicProperties(action, properties)}}
 }
 
 // EnrollmentVariables are the merge tags an Automation's steps bind besides the Contact's: `event`,

@@ -99,6 +99,11 @@ func DefaultSendCap(v int) predicate.InstanceState {
 	return predicate.InstanceState(sql.FieldEQ(FieldDefaultSendCap, v))
 }
 
+// IDKey applies equality check predicate on the "id_key" field. It's identical to IDKeyEQ.
+func IDKey(v []byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldEQ(FieldIDKey, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.InstanceState {
 	return predicate.InstanceState(sql.FieldEQ(FieldCreatedAt, v))
@@ -527,6 +532,46 @@ func DefaultSendCapIsNil() predicate.InstanceState {
 // DefaultSendCapNotNil applies the NotNil predicate on the "default_send_cap" field.
 func DefaultSendCapNotNil() predicate.InstanceState {
 	return predicate.InstanceState(sql.FieldNotNull(FieldDefaultSendCap))
+}
+
+// IDKeyEQ applies the EQ predicate on the "id_key" field.
+func IDKeyEQ(v []byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldEQ(FieldIDKey, v))
+}
+
+// IDKeyNEQ applies the NEQ predicate on the "id_key" field.
+func IDKeyNEQ(v []byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldNEQ(FieldIDKey, v))
+}
+
+// IDKeyIn applies the In predicate on the "id_key" field.
+func IDKeyIn(vs ...[]byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldIn(FieldIDKey, vs...))
+}
+
+// IDKeyNotIn applies the NotIn predicate on the "id_key" field.
+func IDKeyNotIn(vs ...[]byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldNotIn(FieldIDKey, vs...))
+}
+
+// IDKeyGT applies the GT predicate on the "id_key" field.
+func IDKeyGT(v []byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldGT(FieldIDKey, v))
+}
+
+// IDKeyGTE applies the GTE predicate on the "id_key" field.
+func IDKeyGTE(v []byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldGTE(FieldIDKey, v))
+}
+
+// IDKeyLT applies the LT predicate on the "id_key" field.
+func IDKeyLT(v []byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldLT(FieldIDKey, v))
+}
+
+// IDKeyLTE applies the LTE predicate on the "id_key" field.
+func IDKeyLTE(v []byte) predicate.InstanceState {
+	return predicate.InstanceState(sql.FieldLTE(FieldIDKey, v))
 }
 
 // And groups predicates with the AND operator between them.

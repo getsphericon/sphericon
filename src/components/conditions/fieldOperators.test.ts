@@ -8,7 +8,7 @@ import {
   SiteCustomFieldType,
 } from '../../generated/site/types.gen.ts'
 import type { SiteCustomFieldResource } from '../../generated/site/types.gen.ts'
-import { TIMESTAMPS } from '../../test/payloads.ts'
+import { TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { dateWithinOperator } from './condition.ts'
 import { inputTypeOf, inputTypeOfField, operatorsOf, triggerOperatorsOf } from './fieldOperators.ts'
 
@@ -18,7 +18,7 @@ const field = (
   type: SiteCustomFieldType,
   ruleOperators: SiteConditionOperator[],
 ): SiteCustomFieldResource => ({
-  id: '1',
+  id: testId(1),
   key: 'k',
   name: 'K',
   type,

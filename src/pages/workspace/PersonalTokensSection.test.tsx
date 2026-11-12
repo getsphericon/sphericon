@@ -11,6 +11,7 @@ import type {
   SitePersonalTokenResource,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { PersonalTokensSection } from './PersonalTokensSection.tsx'
@@ -34,11 +35,11 @@ const workspace: SiteWorkspaceResource = {
 }
 
 const token: SitePersonalTokenResource = {
-  id: '9',
+  id: testId(9),
   name: 'Import script',
   prefix: 'omk_pt12',
   scopes: ['contacts:read'],
-  userId: '3',
+  userId: testId(3),
   userName: 'Mary',
   userEmail: 'mary@acme.test',
   createdAt: '2026-06-01T00:00:00Z',

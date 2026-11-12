@@ -4,10 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
+
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // EventsSchema is the TypeSpec row schema (openapi component) an EventRow encodes to.
@@ -16,10 +19,10 @@ const EventsSchema = "ExportEventRow"
 // EventRow is one line of the Events stream, the contract's ExportEventRow: every key is
 // always present, an absent value is null, ids are decimal strings like everywhere in /api.
 type EventRow struct {
-	ID         int64          `json:"id,string"`
+	ID         publicid.ID    `json:"id"`
 	Action     string         `json:"action"`
 	Properties map[string]any `json:"properties"`
-	ContactID  *int64         `json:"contact_id,string"`
+	ContactID  *publicid.ID   `json:"contact_id"`
 	VisitorID  *string        `json:"visitor_id"`
 	SubjectID  string         `json:"subject_id"`
 	Email      *string        `json:"email"`
@@ -30,14 +33,14 @@ type EventRow struct {
 }
 
 // Position is the row's (updated_at, id).
-func (r EventRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: r.ID} }
+func (r EventRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: int64(r.ID)} }
 
 func eventRow(e *ent.Event) EventRow {
 	return EventRow{
-		ID:         e.ID,
+		ID:         publicid.ID(e.ID),
 		Action:     e.Action,
-		Properties: lo.Ternary(e.Properties == nil, map[string]any{}, e.Properties),
-		ContactID:  e.ContactID,
+		Properties: lo.Ternary(e.Properties == nil, map[string]any{}, systemevent.PublicProperties(e.Action, e.Properties)),
+		ContactID:  publicid.Ptr(e.ContactID),
 		VisitorID:  e.VisitorID,
 		SubjectID:  e.SubjectID,
 		Email:      e.Email,

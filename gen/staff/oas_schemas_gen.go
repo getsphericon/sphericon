@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
@@ -41,7 +42,7 @@ func (s *ApiKeyAuth) SetRoles(val []string) {
 
 type EmailAddress string
 
-type EntityId int64
+type EntityId publicid.ID
 
 // What an entry of the Instance audit log says was changed, as `instance.<what>_<verb>`.
 // Ref: #/components/schemas/InstanceAuditAction

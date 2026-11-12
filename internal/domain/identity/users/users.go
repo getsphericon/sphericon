@@ -18,9 +18,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"golang.org/x/text/language"
 
@@ -470,7 +471,7 @@ func (a *Module) RecordLogin(ctx context.Context, u *ent.User, method string) er
 // RecordUserAction publishes one Audit entry per Workspace the User holds a
 // Membership in, and none anywhere else. The User is the actor and the target.
 func RecordUserAction(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, action string, diff map[string]any) error {
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
+	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(u.ID), Name: u.Name}
 	return RecordActionOnUser(ctx, tx, pub, actor, u, action, diff)
 }
 
@@ -493,7 +494,7 @@ func RecordActionOnUser(ctx context.Context, tx *ent.Client, pub events.Publishe
 // given Workspaces only: an Owner or Admin acting on a member is recorded where they
 // hold that authority, not in the member's other Workspaces.
 func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor events.Actor, u *ent.User, action string, diff map[string]any, workspaceIDs ...int64) error {
-	id := strconv.FormatInt(u.ID, 10)
+	id := publicid.Encode(u.ID)
 	for _, ws := range workspaceIDs {
 		if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: ws,

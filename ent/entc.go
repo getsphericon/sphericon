@@ -139,6 +139,11 @@ func scopedFuncs() template.FuncMap {
 			}
 			return out
 		},
+		// auditIsKey reports whether an audited field is a reference to another row (an edge
+		// field of int64), which the Audit log records by its public form (ADR 0142).
+		"auditIsKey": func(f *gen.Field) bool {
+			return f.IsEdgeField() && f.Type.String() == "int64"
+		},
 		// stateForm returns the form schema.State declares for a machine or latch field (ADR 0109),
 		// and "" for an attribute or an unannotated field.
 		"stateForm": func(f *gen.Field) string {

@@ -8,6 +8,7 @@ import {
   handleSiteContactsList,
 } from '../../generated/site/msw.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -16,7 +17,10 @@ import { headersOf } from './definition.ts'
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
 import { httpBodyRenderer, httpHeadersRenderer } from './httpRenderer.ts'
 
-const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
+const EDIT_ROUTE = routeMount(automationsEditRoute, {
+  workspaceId: 'TestWs01',
+  automationId: testId(5),
+})
 
 const schema = {
   type: 'object',
@@ -99,7 +103,7 @@ const contacts = handleSiteContactsList({
   body: {
     items: [
       {
-        id: '11',
+        id: testId(11),
         email: 'alice@example.com',
         tags: [],
         revision: 1,
@@ -136,7 +140,7 @@ test('a dry run renders the body being edited for a contact, sending nothing', a
   await screen.getByRole('button', { name: 'Dry run' }).click()
 
   await expect.element(screen.getByText('{"email":"alice@example.com"}')).toBeInTheDocument()
-  expect(asked).toEqual([{ body: '{"email":"{{ email }}"}', contactId: '11' }])
+  expect(asked).toEqual([{ body: '{"email":"{{ email }}"}', contactId: testId(11) }])
 })
 
 test('a dry run shows why the body is refused', async () => {
@@ -184,7 +188,7 @@ test('a contact without an email is offered by its id, and a failed dry run says
       body: {
         items: [
           {
-            id: '12',
+            id: testId(12),
             tags: [],
             revision: 1,
             createdAt: '2026-01-01T00:00:00Z',
@@ -205,7 +209,7 @@ test('a contact without an email is offered by its id, and a failed dry run says
   )
 
   await screen.getByRole('combobox', { name: 'Render for contact' }).click()
-  await screen.getByRole('option', { name: '12' }).click()
+  await screen.getByRole('option', { name: testId(12) }).click()
   await screen.getByRole('button', { name: 'Dry run' }).click()
 
   await expect.element(screen.getByText('Dry run failed')).toBeInTheDocument()

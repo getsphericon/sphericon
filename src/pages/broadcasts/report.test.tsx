@@ -7,6 +7,7 @@ import {
   handleSiteSegmentsGet,
 } from '../../generated/site/msw.gen.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -15,7 +16,7 @@ import { BroadcastReportPage } from './report.tsx'
 
 const REPORT_ROUTE = routeMount(broadcastsReportRoute, {
   workspaceId: 'TestWs01',
-  broadcastId: '5',
+  broadcastId: testId(5),
 })
 
 const STATS = {
@@ -44,7 +45,7 @@ const STATS = {
 const DAY_MS = 86_400_000
 
 const BROADCAST = {
-  id: '5',
+  id: testId(5),
   name: 'Big news',
   channel: 'email',
   content: { channel: 'email', subject: 'Read this', body: '<p></p>' },
@@ -222,11 +223,11 @@ test('shows no orders or revenue until the first order sets the reporting curren
 test('names the segment a scheduled broadcast took its audience from, archived since', async () => {
   worker.use(
     handleSiteBroadcastsGet(() =>
-      HttpResponse.json({ ...BROADCAST, status: 'scheduled', segmentId: '7' }),
+      HttpResponse.json({ ...BROADCAST, status: 'scheduled', segmentId: testId(7) }),
     ),
     handleSiteSegmentsGet(() =>
       HttpResponse.json({
-        id: '7',
+        id: testId(7),
         name: 'Renewal audience',
         archivedAt: '2026-10-01T00:00:00Z',
         createdAt: '2026-09-01T00:00:00Z',

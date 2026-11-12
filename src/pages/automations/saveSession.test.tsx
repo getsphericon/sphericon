@@ -15,13 +15,14 @@ import type {
   SiteAutomationVersion,
 } from '../../generated/site/types.gen.ts'
 import { Route } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { AutomationEditPage } from './edit.tsx'
 
-const EDIT_ROUTE = routeMount(Route, { workspaceId: 'TestWs01', automationId: '5' })
+const EDIT_ROUTE = routeMount(Route, { workspaceId: 'TestWs01', automationId: testId(5) })
 const LIVE: SiteAutomationVersion = {
   number: 1,
   triggerEvent: 'email.clicked',
@@ -32,7 +33,7 @@ const LIVE: SiteAutomationVersion = {
 const DRAFT: SiteAutomationVersion = { ...LIVE, number: 2 }
 const STORED: SiteAutomationResource = {
   revision: 1,
-  id: '5',
+  id: testId(5),
   name: 'Welcome flow',
   status: 'active',
   draft: null,

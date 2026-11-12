@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"{{ $.Config.Package }}/auditentry"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // Actor kinds of an Audit entry: the values of its actor_kind enum, which the database checks. A
@@ -147,7 +148,16 @@ func AuditDiff(before, after map[string]any, sensitive map[string]bool) map[stri
 
 var _ = fmt.Sprint
 
-func auditID(id int64) string { return strconv.FormatInt(id, 10) }
+func auditID(id int64) string { return publicid.Encode(id) }
+
+// auditKeyPtr is an optional reference as the log records it: by its public form (ADR 0142), nil
+// for none.
+func auditKeyPtr(id *int64) any {
+	if id == nil {
+		return nil
+	}
+	return publicid.ID(*id)
+}
 
 {{ range $n := scopedNodes $ }}
 {{- $A := auditOf $n }}
@@ -167,7 +177,11 @@ var {{ $N }}AuditSensitive = map[string]bool{
 func (e *{{ $N }}) auditFields() map[string]any {
 	return map[string]any{
 		{{- range $f := auditFields $n }}
-		{{- if $f.NillableValue }}
+		{{- if and (auditIsKey $f) $f.NillableValue }}
+		"{{ $f.Name }}": auditKeyPtr(e.{{ $f.StructField }}),
+		{{- else if auditIsKey $f }}
+		"{{ $f.Name }}": publicid.ID(e.{{ $f.StructField }}),
+		{{- else if $f.NillableValue }}
 		"{{ $f.Name }}": derefAudit(e.{{ $f.StructField }}),
 		{{- else }}
 		"{{ $f.Name }}": e.{{ $f.StructField }},

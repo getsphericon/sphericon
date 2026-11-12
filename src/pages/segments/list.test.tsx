@@ -7,7 +7,7 @@ import {
   handleSiteSegmentsUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -18,8 +18,8 @@ const WORKSPACE_ID = { workspaceId: 'TestWs01' }
 const LIST_ROUTE = routeMount(segmentsRoute, WORKSPACE_ID)
 const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 
-const VIPS = { id: '1', name: 'VIP customers', revision: 1, ...TIMESTAMPS }
-const TRIAL = { id: '2', name: 'Trial users', revision: 1, ...TIMESTAMPS }
+const VIPS = { id: testId(1), name: 'VIP customers', revision: 1, ...TIMESTAMPS }
+const TRIAL = { id: testId(2), name: 'Trial users', revision: 1, ...TIMESTAMPS }
 
 test('lists the workspace segments', async () => {
   worker.use(handleSiteSegmentsList({ body: page([VIPS, TRIAL], 2) }))
@@ -67,7 +67,7 @@ test('Edit links to the segment edit page', async () => {
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
     .element(screen.getByRole('menuitem', { name: 'Edit' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/segments/1/edit')
+    .toHaveAttribute('href', `/workspaces/TestWs01/segments/${testId(1)}/edit`)
 })
 
 test('archiving a segment calls archive and refreshes the list', async () => {
@@ -93,7 +93,7 @@ test('archiving a segment calls archive and refreshes the list', async () => {
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
-  await expect.poll(() => archived).toEqual(['1'])
+  await expect.poll(() => archived).toEqual([testId(1)])
   await expect.element(screen.getByText('Segment archived')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('VIP customers')).not.toBeInTheDocument()
@@ -106,7 +106,7 @@ test('an archive the server refuses names what uses the segment and keeps it', a
     handleSiteSegmentsList({ body: page([VIPS], 1) }),
     handleSiteSegmentsArchive(() =>
       problem(409, {
-        usedBy: [{ kind: 'broadcast', id: '7', name: 'Summer sale teaser' }],
+        usedBy: [{ kind: 'broadcast', id: testId(7), name: 'Summer sale teaser' }],
       }),
     ),
   )
@@ -159,6 +159,6 @@ test('the archived view lists archived segments and restores one', async () => {
   await expect.element(screen.getByRole('menuitem', { name: 'Edit' })).not.toBeInTheDocument()
   await screen.getByRole('menuitem', { name: 'Restore' }).click()
 
-  await expect.poll(() => restored).toEqual(['1'])
+  await expect.poll(() => restored).toEqual([testId(1)])
   await expect.element(screen.getByText('Segment restored')).toBeInTheDocument()
 })

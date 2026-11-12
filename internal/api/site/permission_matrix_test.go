@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -50,18 +49,18 @@ func acmePath(rest string) string {
 // permissionMatrix holds one operation per Permission, so every cell of the access table of
 // ADR 0061 is a request.
 var permissionMatrix = []guarded{
-	{siteapi.PermissionMembersManage, http.MethodDelete, acmePath("/invitations/999999"), "", noRecord, noRecord, refused},
+	{siteapi.PermissionMembersManage, http.MethodDelete, acmePath("/invitations/" + testhelper.ID(999999)), "", noRecord, noRecord, refused},
 	{siteapi.PermissionAuditRead, http.MethodGet, acmePath("/audit-entries"), "", ok, ok, refused},
 	{siteapi.PermissionAuditConfigure, http.MethodGet, acmePath("/audit-entries/retention"), "", ok, ok, refused},
-	{siteapi.PermissionTokensManage, http.MethodDelete, acmePath("/tokens/999999"), "", noRecord, noRecord, refused},
-	{siteapi.PermissionIntegrationsManage, http.MethodDelete, acmePath("/integrations/999999"), "", noRecord, noRecord, refused},
+	{siteapi.PermissionTokensManage, http.MethodDelete, acmePath("/tokens/" + testhelper.ID(999999)), "", noRecord, noRecord, refused},
+	{siteapi.PermissionIntegrationsManage, http.MethodDelete, acmePath("/integrations/" + testhelper.ID(999999)), "", noRecord, noRecord, refused},
 	{siteapi.PermissionWebhooksManage, http.MethodGet, acmePath("/webhooks"), "", ok, ok, refused},
-	{siteapi.PermissionSendingDomainsManage, http.MethodPost, acmePath("/sending-domains/999999/verify"), "", noRecord, noRecord, refused},
+	{siteapi.PermissionSendingDomainsManage, http.MethodPost, acmePath("/sending-domains/" + testhelper.ID(999999) + "/verify"), "", noRecord, noRecord, refused},
 	{siteapi.PermissionContactsErase, http.MethodGet, acmePath("/contacts/lookup?email=nobody@example.com"), "", ok, ok, refused},
-	{siteapi.PermissionContactsExport, http.MethodPost, acmePath("/contacts/export?id=999999"), "", noRecord, noRecord, refused},
-	{siteapi.PermissionCustomFieldsManage, http.MethodPut, acmePath("/custom-fields/999999"), `{"revision":1,"name":"x"}`, noRecord, noRecord, refused},
-	{siteapi.PermissionSuppressionsManage, http.MethodDelete, acmePath("/suppressions/999999"), "", noRecord, noRecord, refused},
-	{siteapi.PermissionSecondFactorManage, http.MethodPost, acmePath("/memberships/999999/reset-second-factor"), "", noRecord, noRecord, refused},
+	{siteapi.PermissionContactsExport, http.MethodPost, acmePath("/contacts/export?id=" + testhelper.ID(999999)), "", noRecord, noRecord, refused},
+	{siteapi.PermissionCustomFieldsManage, http.MethodPut, acmePath("/custom-fields/" + testhelper.ID(999999)), `{"revision":1,"name":"x"}`, noRecord, noRecord, refused},
+	{siteapi.PermissionSuppressionsManage, http.MethodDelete, acmePath("/suppressions/" + testhelper.ID(999999)), "", noRecord, noRecord, refused},
+	{siteapi.PermissionSecondFactorManage, http.MethodPost, acmePath("/memberships/" + testhelper.ID(999999) + "/reset-second-factor"), "", noRecord, noRecord, refused},
 	{siteapi.PermissionWorkspaceUpdate, http.MethodPut, acmePath(""), `{"revision":1,"name":"   "}`, rejected, rejected, refused},
 	{siteapi.PermissionWorkspaceTimezone, http.MethodPut, acmePath("/timezone"), `{"revision":1,"timezone":"Mars/Olympus_Mons"}`, rejected, rejected, refused},
 	{siteapi.PermissionRevenueConfigure, http.MethodPut, acmePath("/revenue-settings"), `{"revision":1,"reportingCurrency":"XXQ"}`, rejected, rejected, refused},
@@ -72,7 +71,7 @@ var permissionMatrix = []guarded{
 	{siteapi.PermissionWorkspaceDelete, http.MethodPost, acmePath("/delete"), `{"name":"not the name"}`, rejected, refused, refused},
 	// owners:manage is asked by the operation for an owner's Membership (John, Acme's owner, stays
 	// one); a member is refused earlier, by the members:manage the operation declares.
-	{siteapi.PermissionOwnersManage, http.MethodPut, acmePath("/memberships/" + strconv.Itoa(fixtures.AcmeOwnerMembershipID)), `{"role":"owner"}`, ok, refused, refused},
+	{siteapi.PermissionOwnersManage, http.MethodPut, acmePath("/memberships/" + testhelper.ID(fixtures.AcmeOwnerMembershipID)), `{"role":"owner"}`, ok, refused, refused},
 	// release:read is asked of the caller's Memberships in every Workspace; Acme's admin and member
 	// own no Workspace anywhere (ADR 0032).
 	{siteapi.PermissionReleaseRead, http.MethodGet, "/site/instance/release", "", ok, refused, refused},

@@ -2,7 +2,7 @@ import { expect, test } from 'vitest'
 
 import { handleSiteTransactionalEmailsList } from '../../generated/site/msw.gen.ts'
 import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
-import { page } from '../../test/payloads.ts'
+import { page, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -13,18 +13,18 @@ import { TransactionalEmailsListPage } from './list.tsx'
 const LIST_ROUTE = routeMount(transactionalEmailsRoute, { workspaceId: 'TestWs01' })
 
 const SENT = {
-  id: '1',
+  id: testId(1),
   channel: 'email' as const,
-  templateId: '1',
+  templateId: testId(1),
   destination: 'alice@example.com',
   status: 'sent' as const,
   captured: false,
   createdAt: '2026-03-04T10:15:00Z',
 }
 const FAILED = {
-  id: '2',
+  id: testId(2),
   channel: 'email' as const,
-  templateId: '1',
+  templateId: testId(1),
   destination: 'bob@example.com',
   status: 'failed' as const,
   captured: false,
@@ -52,7 +52,7 @@ test('says a message sent through a Test inbox was captured, not delivered', asy
       body: page(
         [
           { ...SENT, captured: true },
-          { ...FAILED, id: '3', captured: false },
+          { ...FAILED, id: testId(3), captured: false },
         ],
         2,
       ),

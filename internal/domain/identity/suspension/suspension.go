@@ -7,9 +7,10 @@ package suspension
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -241,7 +242,7 @@ func recordWorkspaceAudit(ctx context.Context, tx *ent.Client, pub events.Publis
 		Actor:       by.auditActor(),
 		Action:      action,
 		TargetType:  workspace.Label,
-		TargetID:    strconv.FormatInt(workspaceID, 10),
+		TargetID:    publicid.Encode(workspaceID),
 		TargetName:  ws.Name,
 		Diff:        diff,
 	})

@@ -3,7 +3,6 @@ package site_test
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -216,7 +215,7 @@ func TestIdentitiesUnlinkingAnotherUsersIdentityIsNotFound(t *testing.T) {
 	sams, err := env.DB.UserIdentity.Query().Where(useridentity.Subject(fixtures.SamGoogleIdentitySubject)).Only(t.Context())
 	require.NoError(t, err)
 
-	resp := b.Delete(t, identitiesPath+"/"+strconv.FormatInt(sams.ID, 10))
+	resp := b.Delete(t, identitiesPath+"/"+testhelper.ID(sams.ID))
 
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	still, err := env.DB.UserIdentity.Query().Where(useridentity.Subject(fixtures.SamGoogleIdentitySubject)).Exist(t.Context())

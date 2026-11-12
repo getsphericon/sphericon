@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // MessagesSchema is the TypeSpec row schema (openapi component) a MessageRow encodes to.
@@ -17,54 +18,54 @@ const MessagesSchema = "ExportMessageRow"
 // delivery provenance and outcome, never a subject or a body. Every key is always present,
 // an absent value is null, ids are decimal strings like everywhere in /api.
 type MessageRow struct {
-	ID                int64      `json:"id,string"`
-	Kind              string     `json:"kind"`
-	Channel           string     `json:"channel"`
-	Destination       *string    `json:"destination"`
-	Status            string     `json:"status"`
-	Reason            *string    `json:"reason"`
-	ContactID         *int64     `json:"contact_id,string"`
-	BroadcastID       *int64     `json:"broadcast_id,string"`
-	AutomationID      *int64     `json:"automation_id,string"`
-	AutomationRunID   *int64     `json:"automation_run_id,string"`
-	AutomationStep    *int       `json:"automation_step"`
-	IntegrationID     *int64     `json:"integration_id,string"`
-	TemplateID        *int64     `json:"template_id,string"`
-	SendingSource     *string    `json:"sending_source"`
-	SendingDomain     *string    `json:"sending_domain"`
-	ProviderMessageID *string    `json:"provider_message_id"`
-	ClaimedAt         time.Time  `json:"claimed_at"`
-	SentAt            *time.Time `json:"sent_at"`
-	DeliveredAt       *time.Time `json:"delivered_at"`
-	BouncedAt         *time.Time `json:"bounced_at"`
-	UndeliveredAt     *time.Time `json:"undelivered_at"`
-	UndeliveredCode   *string    `json:"undelivered_code"`
-	ComplainedAt      *time.Time `json:"complained_at"`
-	OpenedAt          *time.Time `json:"opened_at"`
-	ClickedAt         *time.Time `json:"clicked_at"`
-	Captured          bool       `json:"captured"`
-	CreatedAt         time.Time  `json:"created_at"`
-	UpdatedAt         time.Time  `json:"updated_at"`
+	ID                publicid.ID  `json:"id"`
+	Kind              string       `json:"kind"`
+	Channel           string       `json:"channel"`
+	Destination       *string      `json:"destination"`
+	Status            string       `json:"status"`
+	Reason            *string      `json:"reason"`
+	ContactID         *publicid.ID `json:"contact_id"`
+	BroadcastID       *publicid.ID `json:"broadcast_id"`
+	AutomationID      *publicid.ID `json:"automation_id"`
+	AutomationRunID   *publicid.ID `json:"automation_run_id"`
+	AutomationStep    *int         `json:"automation_step"`
+	IntegrationID     *publicid.ID `json:"integration_id"`
+	TemplateID        *publicid.ID `json:"template_id"`
+	SendingSource     *string      `json:"sending_source"`
+	SendingDomain     *string      `json:"sending_domain"`
+	ProviderMessageID *string      `json:"provider_message_id"`
+	ClaimedAt         time.Time    `json:"claimed_at"`
+	SentAt            *time.Time   `json:"sent_at"`
+	DeliveredAt       *time.Time   `json:"delivered_at"`
+	BouncedAt         *time.Time   `json:"bounced_at"`
+	UndeliveredAt     *time.Time   `json:"undelivered_at"`
+	UndeliveredCode   *string      `json:"undelivered_code"`
+	ComplainedAt      *time.Time   `json:"complained_at"`
+	OpenedAt          *time.Time   `json:"opened_at"`
+	ClickedAt         *time.Time   `json:"clicked_at"`
+	Captured          bool         `json:"captured"`
+	CreatedAt         time.Time    `json:"created_at"`
+	UpdatedAt         time.Time    `json:"updated_at"`
 }
 
 // Position is the row's (updated_at, id).
-func (r MessageRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: r.ID} }
+func (r MessageRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: int64(r.ID)} }
 
 func messageRow(m *ent.OutboundMessage) MessageRow {
 	return MessageRow{
-		ID:                m.ID,
+		ID:                publicid.ID(m.ID),
 		Kind:              m.Kind.String(),
 		Channel:           string(m.Channel),
 		Destination:       lo.EmptyableToPtr(m.Destination),
 		Status:            m.Status.String(),
 		Reason:            m.Reason,
-		ContactID:         m.ContactID,
-		BroadcastID:       m.BroadcastID,
-		AutomationID:      m.AutomationID,
-		AutomationRunID:   m.AutomationRunID,
+		ContactID:         publicid.Ptr(m.ContactID),
+		BroadcastID:       publicid.Ptr(m.BroadcastID),
+		AutomationID:      publicid.Ptr(m.AutomationID),
+		AutomationRunID:   publicid.Ptr(m.AutomationRunID),
 		AutomationStep:    m.AutomationStep,
-		IntegrationID:     m.IntegrationID,
-		TemplateID:        m.TemplateID,
+		IntegrationID:     publicid.Ptr(m.IntegrationID),
+		TemplateID:        publicid.Ptr(m.TemplateID),
 		SendingSource:     m.SendingSource,
 		SendingDomain:     m.SendingDomain,
 		ProviderMessageID: m.ProviderMessageID,

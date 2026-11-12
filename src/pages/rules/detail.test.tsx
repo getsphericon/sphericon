@@ -9,17 +9,17 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteRuleFiringResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { RuleDetailPage } from './detail.tsx'
 
-const DETAIL_ROUTE = routeMount(rulesDetailRoute, { workspaceId: 'TestWs01', ruleId: '7' })
+const DETAIL_ROUTE = routeMount(rulesDetailRoute, { workspaceId: 'TestWs01', ruleId: testId(7) })
 
 const RULE: SiteRuleResource = {
-  id: '7',
+  id: testId(7),
   name: 'Tag signups',
   status: 'inactive',
   live: null,
@@ -41,9 +41,9 @@ const EDITED: SiteRuleResource = {
 }
 
 const RUNNING: SiteRuleFiringResource = {
-  id: '70',
-  ruleId: '7',
-  contactId: '33',
+  id: testId(70),
+  ruleId: testId(7),
+  contactId: testId(33),
   action: 'signed_up',
   eventSourceId: 'evt-1',
   results: [
@@ -66,8 +66,8 @@ test('shows the rule and each Firing with its Event, Contact and every Action re
   await expect.element(screen.getByRole('heading', { name: 'Tag signups' })).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'signed_up' })).toBeInTheDocument()
   await expect
-    .element(screen.getByRole('link', { name: '33' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/contacts/33')
+    .element(screen.getByRole('link', { name: testId(33) }))
+    .toHaveAttribute('href', `/workspaces/TestWs01/contacts/${testId(33)}`)
   await expect.element(screen.getByText('Succeeded')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Skipped' }).click()
   await expect.element(screen.getByText('the contact has no such tag')).toBeInTheDocument()
@@ -110,7 +110,7 @@ test('publishing the rule calls publish and shows it active', async () => {
   const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
   await screen.getByRole('button', { name: 'Publish' }).click()
 
-  await expect.poll(() => published).toEqual(['7'])
+  await expect.poll(() => published).toEqual([testId(7)])
   await expect.element(screen.getByText('Rule published')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Deactivate' })).toBeInTheDocument()
 })
@@ -169,7 +169,7 @@ test('a live rule with a draft shows the live version and the pending changes, a
   await expect.element(screen.getByText('Unpublished changes')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Publish' }).click()
 
-  await expect.poll(() => published).toEqual(['7'])
+  await expect.poll(() => published).toEqual([testId(7)])
   await expect.element(screen.getByText('Live version 2')).toBeInTheDocument()
   await expect.element(screen.getByText('Unpublished changes')).not.toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
@@ -190,7 +190,7 @@ test('reverting drops the draft', async () => {
   const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
   await screen.getByRole('button', { name: 'Revert' }).click()
 
-  await expect.poll(() => reverted).toEqual(['7'])
+  await expect.poll(() => reverted).toEqual([testId(7)])
   await expect.element(screen.getByText('Unpublished changes dropped')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
 })

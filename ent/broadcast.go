@@ -4,7 +4,6 @@ package ent
 
 import (
 	"encoding/json"
-	"encoding/json/jsontext"
 	"fmt"
 	"strings"
 	"time"
@@ -60,7 +59,7 @@ type Broadcast struct {
 	// Body holds the value of the "body" field.
 	Body *string `json:"body,omitempty"`
 	// Doc holds the value of the "doc" field.
-	Doc jsontext.Value `json:"doc,omitempty"`
+	Doc json.RawMessage `json:"doc,omitempty"`
 	// EditorVersion holds the value of the "editor_version" field.
 	EditorVersion *string `json:"editor_version,omitempty"`
 	// SegmentID holds the value of the "segment_id" field.

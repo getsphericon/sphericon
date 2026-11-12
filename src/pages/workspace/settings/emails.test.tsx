@@ -9,6 +9,7 @@ import {
 } from '../../../generated/site/msw.gen.ts'
 import type { SiteIntegrationResource } from '../../../generated/site/types.gen.ts'
 import { Route as emailsRoute } from '../../../routes/workspaces/$workspaceId/settings/emails.tsx'
+import { testId } from '../../../test/payloads.ts'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
@@ -94,7 +95,7 @@ test('shows no Send cap when none applies', async () => {
 })
 
 const telegramBot: SiteIntegrationResource = {
-  id: '8',
+  id: testId(8),
   name: 'News bot',
   channel: 'telegram',
   provider: 'telegram',
@@ -133,7 +134,7 @@ test('a link to an Integration opens the form that saves its credentials', async
 
   const { screen, navigate } = await renderWithRouter(<EmailsPage />, {
     ...mount,
-    initialPath: `${mount.initialPath}?integration=%228%22`,
+    initialPath: `${mount.initialPath}?integration=${testId(8)}`,
   })
 
   const dialog = screen.getByRole('dialog', { name: 'Credentials: News bot' })

@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest'
 
 import { handleSiteAutomationsCreate } from '../../generated/site/msw.gen.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -21,7 +22,7 @@ test('creating an automation sends the trimmed name and the default trigger, the
       bodies.push(await request.json())
       return HttpResponse.json(
         {
-          id: '7',
+          id: testId(7),
           name: 'Welcome',
           status: 'inactive',
           triggerEvent: 'contact.created',
@@ -47,7 +48,7 @@ test('creating an automation sends the trimmed name and the default trigger, the
   await expect.element(screen.getByText('Automation created')).toBeInTheDocument()
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { workspaceId: 'TestWs01', automationId: '7' },
+    params: { workspaceId: 'TestWs01', automationId: testId(7) },
   })
 })
 

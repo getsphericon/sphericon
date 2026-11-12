@@ -17,6 +17,7 @@ import type {
   SiteMembershipResource,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -44,8 +45,8 @@ const workspaceWith = (permissions: Permission[]): SiteWorkspaceResource => ({
 const workspace = workspaceWith(['members:manage'])
 
 const member: SiteMembershipResource = {
-  id: '1',
-  userId: '10',
+  id: testId(1),
+  userId: testId(10),
   email: 'ann@example.com',
   name: 'Ann',
   role: 'member',
@@ -53,7 +54,7 @@ const member: SiteMembershipResource = {
 }
 
 const invitation: SiteInvitationResource = {
-  id: '5',
+  id: testId(5),
   email: 'new@example.com',
   role: 'admin',
   expiresAt: '2026-02-01T00:00:00Z',
@@ -62,7 +63,7 @@ const invitation: SiteInvitationResource = {
 
 // The signed-in User: Ann, the member above (nobody resets their own Second factor here).
 const ME = {
-  id: '10',
+  id: testId(10),
   name: 'Ann',
   email: 'ann@example.com',
   emailVerified: true,
@@ -88,8 +89,8 @@ test('lists members and pending invitations', async () => {
 test('labels how each member got in and leaves a member from before it unlabelled', async () => {
   const joined: SiteMembershipResource = {
     ...member,
-    id: '2',
-    userId: '11',
+    id: testId(2),
+    userId: testId(11),
     email: 'dan@example.com',
     name: 'Dan',
     source: 'domain',
@@ -226,8 +227,8 @@ test('shows an error alert when members fail to load', async () => {
 function teamWithSam() {
   const sam: SiteMembershipResource = {
     ...member,
-    id: '2',
-    userId: '11',
+    id: testId(2),
+    userId: testId(11),
     email: 'sam@example.com',
     name: 'Sam',
   }
@@ -239,7 +240,7 @@ test('a member with second_factor:manage resets another member Second factor', a
   worker.use(
     ...teamWithSam(),
     handleSiteMembershipsResetSecondFactor(({ params }) => {
-      reset = params.id === '2'
+      reset = params.id === testId(2)
       return new HttpResponse(null, { status: 204 })
     }),
   )

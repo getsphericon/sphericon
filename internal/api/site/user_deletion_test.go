@@ -245,7 +245,7 @@ func TestAuditEntriesOfTheDeletedUserKeepTheirIdAndName(t *testing.T) {
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, fixtures.MemberMaryName, got[0].Actor.Name.Value)
-	assert.Equal(t, "3", got[0].Actor.ID.Value)
+	assert.Equal(t, testhelper.ID(fixtures.MemberMaryID), got[0].Actor.ID.Value)
 	globex := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionMembershipDelete)
 	assert.Len(t, globex, 1, "every Workspace the User belonged to records its own removal")
 }

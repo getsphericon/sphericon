@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 
 import { handleSiteContactsList, handleSiteTagsList } from '../../generated/site/msw.gen.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -26,7 +26,7 @@ const searches = (navigate: Navigate, from: Record<string, unknown>) =>
   )
 
 const ALICE = {
-  id: '1',
+  id: testId(1),
   email: 'alice@example.com',
   firstName: 'Alice',
   lastName: 'Smith',
@@ -34,7 +34,7 @@ const ALICE = {
   revision: 1,
   ...TIMESTAMPS,
 }
-const BOB = { id: '2', email: 'bob@example.com', tags: [], revision: 1, ...TIMESTAMPS }
+const BOB = { id: testId(2), email: 'bob@example.com', tags: [], revision: 1, ...TIMESTAMPS }
 
 test('lists the workspace contacts', async () => {
   worker.use(handleSiteContactsList({ body: page([ALICE, BOB], 2) }))
@@ -258,7 +258,7 @@ test('the tag and the country in the URL search filter the request and fill the 
     }),
     // The Tag of the link is past the Tags the filter fetched: it still shows.
     handleSiteTagsList({
-      body: page([{ id: '1', name: 'beta', createdAt: TIMESTAMPS.createdAt }], 1),
+      body: page([{ id: testId(1), name: 'beta', createdAt: TIMESTAMPS.createdAt }], 1),
     }),
   )
 
@@ -292,7 +292,7 @@ test('picking a tag puts it in the URL search and keeps the email search', async
   worker.use(
     handleSiteContactsList({ body: page([ALICE], 1) }),
     handleSiteTagsList({
-      body: page([{ id: '1', name: 'vip', createdAt: TIMESTAMPS.createdAt }], 1),
+      body: page([{ id: testId(1), name: 'vip', createdAt: TIMESTAMPS.createdAt }], 1),
     }),
   )
 

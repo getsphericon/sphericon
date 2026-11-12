@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -65,7 +67,7 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 	}
 	id := ""
 	if contactID != 0 {
-		id = strconv.FormatInt(contactID, 10)
+		id = publicid.Encode(contactID) // the body names the Contact by its public id (ADR 0142)
 	}
 	// DeliverWebhookArgs.Body is []byte, so river stores it as a base64 JSON string; it is the
 	// JSON event payload, naming the Contact at contactId / data.contactId, the address at
@@ -86,7 +88,7 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
 	id := ""
 	if contactID != 0 {
-		id = strconv.FormatInt(contactID, 10)
+		id = strconv.FormatInt(contactID, 10) // an event job keeps the envelope, which holds the key
 	}
 	// An event job's args are its envelope (EventJob): the Workspace at workspaceId, the event at
 	// data, which names the Contact as contactId, the address as email and the phone as phone.

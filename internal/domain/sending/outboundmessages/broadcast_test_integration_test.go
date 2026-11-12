@@ -2,7 +2,6 @@ package outboundmessages_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -64,7 +63,7 @@ func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string
 // asJane is the scope of the Workspace acting as Jane, its owner: a Test send she asks for may go
 // from the System sender to her own address (ADR 0041).
 func asJane(env *testhelper.TestEnv, workspaceID int64) *ent.Scoped {
-	return env.Bus.Act(env.DB.Scoped(workspaceID), events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(fixtures.OwnerJaneID, 10)})
+	return env.Bus.Act(env.DB.Scoped(workspaceID), events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.OwnerJaneID)})
 }
 
 // missingIntegrationID names no Integration of any Workspace.

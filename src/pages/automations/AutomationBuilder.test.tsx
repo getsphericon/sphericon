@@ -12,6 +12,7 @@ import type {
   SiteAutomationVersion,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -27,7 +28,10 @@ vi.mock(import('./definition.ts'), async (importOriginal) => {
   }
 })
 
-const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
+const EDIT_ROUTE = routeMount(automationsEditRoute, {
+  workspaceId: 'TestWs01',
+  automationId: testId(5),
+})
 const NOW = '2026-01-01T00:00:00Z'
 const DRAFT: SiteAutomationVersion = {
   number: 1,
@@ -38,7 +42,7 @@ const DRAFT: SiteAutomationVersion = {
 }
 const STORED: SiteAutomationResource = {
   revision: 1,
-  id: '5',
+  id: testId(5),
   name: 'Welcome flow',
   status: 'inactive',
   live: null,

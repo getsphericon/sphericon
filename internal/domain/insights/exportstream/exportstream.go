@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 
 	"entgo.io/ent/dialect/sql"
@@ -84,7 +86,8 @@ func (c Cursor) String() string {
 	if c.IsZero() {
 		return ""
 	}
-	raw := strconv.FormatInt(c.At.UnixMicro(), 10) + ":" + strconv.FormatInt(c.ID, 10)
+	// The id is sealed as the APIs show one (publicid), so a token says nothing a row's id does not.
+	raw := strconv.FormatInt(c.At.UnixMicro(), 10) + ":" + publicid.Encode(c.ID)
 	return base64.RawURLEncoding.EncodeToString([]byte(raw))
 }
 
@@ -106,7 +109,7 @@ func ParseCursor(token string) (Cursor, error) {
 	if err != nil {
 		return Cursor{}, ErrBadCursor
 	}
-	n, err := strconv.ParseInt(id, 10, 64)
+	n, err := publicid.Decode(id)
 	if err != nil || n < 1 {
 		return Cursor{}, ErrBadCursor
 	}

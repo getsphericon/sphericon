@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -119,7 +118,7 @@ func TestMCPSendToolsAreListedOnlyWithMCPSend(t *testing.T) {
 func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	// Schedule names the revision the caller read (ADR 0119).
-	args := map[string]any{"id": strconv.Itoa(fixtures.BroadcastDraftID), "scheduledAt": "2099-01-01T00:00:00Z", "revision": env.BroadcastRevision(t.Context(), t, fixtures.BroadcastDraftID)}
+	args := map[string]any{"id": testhelper.ID(fixtures.BroadcastDraftID), "scheduledAt": "2099-01-01T00:00:00Z", "revision": env.BroadcastRevision(t.Context(), t, fixtures.BroadcastDraftID)}
 
 	// Direct call, though the token has the /api scope: refused by the MCP lock.
 	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeBroadcastsSend))
@@ -145,7 +144,7 @@ func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusScheduled, b.Status)
 
-	res = call(t, s, "broadcasts_unschedule", map[string]any{"id": strconv.Itoa(fixtures.BroadcastDraftID)})
+	res = call(t, s, "broadcasts_unschedule", map[string]any{"id": testhelper.ID(fixtures.BroadcastDraftID)})
 	require.False(t, res.IsError, text(t, res))
 	b, err = env.DB.Broadcast.Get(context.Background(), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
@@ -156,8 +155,8 @@ func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 // by the MCP lock, and with mcp:send it runs. Deactivating is authoring: the write scope is enough.
 func TestMCPPublishNeedsMCPSendAndDeactivateDoesNot(t *testing.T) {
 	env := testhelper.Setup(t)
-	automationID := map[string]any{"id": strconv.Itoa(fixtures.AutomationWinBackID)}
-	ruleID := map[string]any{"id": strconv.Itoa(fixtures.RuleInactiveID)}
+	automationID := map[string]any{"id": testhelper.ID(fixtures.AutomationWinBackID)}
+	ruleID := map[string]any{"id": testhelper.ID(fixtures.RuleInactiveID)}
 	// Publish names the revision the caller read (ADR 0119).
 	publishAutomation := map[string]any{"id": automationID["id"], "revision": env.AutomationRevision(t.Context(), t, fixtures.AutomationWinBackID)}
 	publishRule := map[string]any{"id": ruleID["id"], "revision": env.RuleRevision(t.Context(), t, fixtures.RuleInactiveID)}
@@ -269,7 +268,7 @@ func TestMCPToolCallReturnsTheAPIResult(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite, apitokens.ScopeContactsErase))
 
-	res := call(t, s, "contacts_get", map[string]any{"id": strconv.Itoa(fixtures.ContactAliceID)})
+	res := call(t, s, "contacts_get", map[string]any{"id": testhelper.ID(fixtures.ContactAliceID)})
 	require.False(t, res.IsError, text(t, res))
 	var contact map[string]any
 	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &contact))
@@ -368,7 +367,7 @@ func TestMCPContactDeleteNeedsTheEraseScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite))
 
-	id := strconv.Itoa(fixtures.ContactAliceID)
+	id := testhelper.ID(fixtures.ContactAliceID)
 	res := call(t, s, "contacts_delete", map[string]any{"id": id})
 	assert.True(t, res.IsError, "contacts:write is not contacts:erase")
 	res = call(t, s, "contacts_erase_by", map[string]any{"email": fixtures.ContactAliceEmail})
@@ -384,18 +383,18 @@ func TestMCPTagToolsApplyAndRemove(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite))
 
-	res := call(t, s, "tags_apply", map[string]any{"contactId": "2", "name": "plan / pro"})
+	res := call(t, s, "tags_apply", map[string]any{"contactId": testhelper.ID(2), "name": "plan / pro"})
 	require.False(t, res.IsError, text(t, res))
 	assert.Contains(t, text(t, res), "plan / pro")
 
-	res = call(t, s, "tags_list_for_contact", map[string]any{"contactId": "2"})
+	res = call(t, s, "tags_list_for_contact", map[string]any{"contactId": testhelper.ID(2)})
 	require.False(t, res.IsError, text(t, res))
 	assert.Contains(t, text(t, res), "plan / pro")
 
-	res = call(t, s, "tags_remove", map[string]any{"contactId": "2", "name": "plan / pro"})
+	res = call(t, s, "tags_remove", map[string]any{"contactId": testhelper.ID(2), "name": "plan / pro"})
 	require.False(t, res.IsError, text(t, res))
 
-	res = call(t, s, "tags_list_for_contact", map[string]any{"contactId": "2"})
+	res = call(t, s, "tags_list_for_contact", map[string]any{"contactId": testhelper.ID(2)})
 	require.False(t, res.IsError, text(t, res))
 	assert.NotContains(t, text(t, res), "plan / pro")
 }
@@ -411,7 +410,7 @@ func TestMCPToolCallReturnsTheAPIError(t *testing.T) {
 	assert.Contains(t, text(t, res), "the API token lacks the scope contacts:write")
 
 	// Not found.
-	res = call(t, ro, "contacts_get", map[string]any{"id": "999999"})
+	res = call(t, ro, "contacts_get", map[string]any{"id": testhelper.ID(999999)})
 	require.True(t, res.IsError)
 	assert.Contains(t, text(t, res), "404")
 }
@@ -420,7 +419,7 @@ func TestMCPCallsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeContactsRead))
 
-	res := call(t, s, "contacts_get", map[string]any{"id": strconv.Itoa(fixtures.ContactAliceID)})
+	res := call(t, s, "contacts_get", map[string]any{"id": testhelper.ID(fixtures.ContactAliceID)})
 	require.True(t, res.IsError, "the contact belongs to workspace acme")
 
 	res = call(t, s, "contacts_list", nil)
@@ -547,7 +546,7 @@ func TestMCPEmailsSendAcceptsTrack(t *testing.T) {
 	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeMcpSend, apitokens.ScopeEmailsSend))
 
 	res := call(t, s, "emails_send", map[string]any{
-		"templateId":  strconv.Itoa(fixtures.TemplateWithLinkID),
+		"templateId":  testhelper.ID(fixtures.TemplateWithLinkID),
 		"destination": fixtures.ContactAliceEmail,
 		"track":       true,
 	})

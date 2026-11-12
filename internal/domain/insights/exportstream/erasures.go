@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // ErasuresSchema is the TypeSpec row schema (openapi component) an ErasureRow encodes to.
@@ -17,19 +18,19 @@ const ErasuresSchema = "ExportErasureRow"
 // strings like everywhere in /api. The hashes are SHA-256 as lowercase hex; the address and the
 // phone themselves are never stored, so they cannot be here.
 type ErasureRow struct {
-	ID         int64     `json:"id,string"`
-	ContactID  *int64    `json:"contact_id,string"`
-	SubjectID  string    `json:"subject_id"`
-	VisitorIDs []string  `json:"visitor_ids"`
-	EmailHash  *string   `json:"email_hash"`
-	PhoneHash  *string   `json:"phone_hash"`
-	ErasedAt   time.Time `json:"erased_at"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID         publicid.ID  `json:"id"`
+	ContactID  *publicid.ID `json:"contact_id"`
+	SubjectID  string       `json:"subject_id"`
+	VisitorIDs []string     `json:"visitor_ids"`
+	EmailHash  *string      `json:"email_hash"`
+	PhoneHash  *string      `json:"phone_hash"`
+	ErasedAt   time.Time    `json:"erased_at"`
+	CreatedAt  time.Time    `json:"created_at"`
+	UpdatedAt  time.Time    `json:"updated_at"`
 }
 
 // Position is the row's (updated_at, id).
-func (r ErasureRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: r.ID} }
+func (r ErasureRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: int64(r.ID)} }
 
 // erasureRow is the stream's row of an Erasure, its hashes opened with the cipher: a hash that does
 // not open fails the page rather than leave the row out or hand out ciphertext.
@@ -43,8 +44,8 @@ func (st *Streams) erasureRow(e *ent.Erasure) (ErasureRow, error) {
 		return ErasureRow{}, err
 	}
 	return ErasureRow{
-		ID:         e.ID,
-		ContactID:  e.ContactID,
+		ID:         publicid.ID(e.ID),
+		ContactID:  publicid.Ptr(e.ContactID),
 		SubjectID:  e.SubjectID,
 		VisitorIDs: e.VisitorIds,
 		EmailHash:  email,

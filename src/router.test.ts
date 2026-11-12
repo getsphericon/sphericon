@@ -15,6 +15,7 @@ import { Route as oauthConsentRoute } from './routes/oauth/consent.tsx'
 import { Route as signupSurveyRoute } from './routes/signup-survey.tsx'
 import { Route as workspaceRoute } from './routes/workspaces/$workspaceId/route.tsx'
 import { Route as newWorkspaceRoute } from './routes/workspaces/new.tsx'
+import { testId } from './test/payloads.ts'
 import { problem } from './test/problem.ts'
 import { worker } from './test/worker.ts'
 
@@ -122,7 +123,7 @@ test('the console leads to the login on an Instance without the Staff sign-in, w
   expect(router.state.location.pathname).toBe(consoleLoginRoute.fullPath)
 })
 
-const signedInStaff = () => handleStaffMeGet({ body: { id: '1', email: 'ops@example.com' } })
+const signedInStaff = () => handleStaffMeGet({ body: { id: testId(1), email: 'ops@example.com' } })
 
 test('the console opens for a signed-in staff member without the license', async () => {
   const router = newRouter()

@@ -2,7 +2,6 @@ package mcpserver_test
 
 import (
 	"encoding/json"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -79,7 +78,7 @@ func TestMCPAgentCopiesAStarterTemplateAndEditsItsDocument(t *testing.T) {
 	starter := starters[0]
 	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite))
 
-	read := call(t, s, "templates_get", map[string]any{"id": strconv.FormatInt(starter.ID, 10)})
+	read := call(t, s, "templates_get", map[string]any{"id": testhelper.ID(starter.ID)})
 	require.False(t, read.IsError, text(t, read))
 	got := decode(t, text(t, read))
 	require.NotNil(t, got["doc"], "a read returns the document")

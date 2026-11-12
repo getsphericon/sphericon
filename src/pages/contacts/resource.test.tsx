@@ -16,7 +16,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -25,7 +25,7 @@ import { ContactCreateModal, ContactEditPage } from './resource.tsx'
 
 // The form's tags field suggests the workspace's existing tags.
 beforeEach(() => {
-  worker.use(handleSiteTagsList({ body: page([{ id: '1', name: 'vip', ...TIMESTAMPS }], 1) }))
+  worker.use(handleSiteTagsList({ body: page([{ id: testId(1), name: 'vip', ...TIMESTAMPS }], 1) }))
 })
 
 const CREATE_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
@@ -44,7 +44,7 @@ test('creating a contact sends the filled keys and its tags, refreshes the list 
     handleSiteContactsCreate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json(
-        { id: '42', email: 'ada@example.com', firstName: 'Ada' },
+        { id: testId(42), email: 'ada@example.com', firstName: 'Ada' },
         { status: 201 },
       )
     }),
@@ -82,7 +82,7 @@ test('picking a country sends its code', async () => {
   worker.use(
     handleSiteContactsCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '42', email: 'ada@example.com' }, { status: 201 })
+      return HttpResponse.json({ id: testId(42), email: 'ada@example.com' }, { status: 201 })
     }),
   )
 
@@ -104,7 +104,7 @@ test('the city, the locale and the photo are sent as typed', async () => {
   worker.use(
     handleSiteContactsCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '42', email: 'ada@example.com' }, { status: 201 })
+      return HttpResponse.json({ id: testId(42), email: 'ada@example.com' }, { status: 201 })
     }),
   )
 
@@ -137,7 +137,7 @@ test('a malformed email is rejected before anything is sent', async () => {
   worker.use(
     handleSiteContactsCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '1' }, { status: 201 })
+      return HttpResponse.json({ id: testId(1) }, { status: 201 })
     }),
   )
 
@@ -153,10 +153,10 @@ test('a malformed email is rejected before anything is sent', async () => {
   expect(bodies).toEqual([])
 })
 
-const EDIT_ROUTE = routeMount(contactsEditRoute, { workspaceId: 'TestWs01', contactId: '7' })
+const EDIT_ROUTE = routeMount(contactsEditRoute, { workspaceId: 'TestWs01', contactId: testId(7) })
 
 const LOADED_CONTACT = {
-  id: '7',
+  id: testId(7),
   email: 'ada@example.com',
   phone: null,
   firstName: 'Ada',
@@ -167,7 +167,7 @@ const LOADED_CONTACT = {
 
 // Active detail query next to the edit page, so its invalidation is observable.
 function DetailProbe() {
-  useQuery(siteContactsGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
+  useQuery(siteContactsGetOptions({ path: { workspaceId: 'TestWs01', id: testId(7) } }))
   return null
 }
 
@@ -178,7 +178,7 @@ test('editing shows existing values with nulls as blanks; a cleared field is sen
   worker.use(
     handleSiteContactsUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '7', email: 'ada@example.com', revision: 2 })
+      return HttpResponse.json({ id: testId(7), email: 'ada@example.com', revision: 2 })
     }),
     handleSiteContactsList(() => {
       listFetches++

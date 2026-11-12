@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 
 import { handleSiteEventsActions, handleSiteEventsList } from '../../generated/site/msw.gen.ts'
 import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
+import { testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -16,7 +17,7 @@ const eventsPage = () =>
     body: {
       items: [
         {
-          id: '2',
+          id: testId(2),
           subjectId: 'user:bob@example.com',
           email: 'bob@example.com',
           action: 'purchase',
@@ -62,7 +63,7 @@ test('says an email event of a send through a Test inbox was captured, not deliv
       body: {
         items: [
           {
-            id: '3',
+            id: testId(3),
             subjectId: 'user:cy@example.com',
             email: 'cy@example.com',
             action: 'email.delivered',

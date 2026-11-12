@@ -28,6 +28,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithProviders } from '../../test/renderWithProviders.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -43,11 +44,14 @@ vi.mock('file-saver', () => ({
   },
 }))
 
-const DETAIL_ROUTE = routeMount(contactsDetailRoute, { workspaceId: 'TestWs01', contactId: '9' })
+const DETAIL_ROUTE = routeMount(contactsDetailRoute, {
+  workspaceId: 'TestWs01',
+  contactId: testId(9),
+})
 const NOW = '2026-01-01T00:00:00Z'
 
 const ADA: SiteContactResource = {
-  id: '9',
+  id: testId(9),
   revision: 1,
   email: 'ada@example.com',
   firstName: 'Ada',
@@ -99,7 +103,7 @@ test('lists the contact events and filters them by contact id', async () => {
   const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
 
   await expect.element(screen.getByText('page.viewed')).toBeInTheDocument()
-  expect(requestedContactId).toBe('9')
+  expect(requestedContactId).toBe(testId(9))
 })
 
 const eventsBySwitch = (requested: (string | null)[]) =>
@@ -212,7 +216,14 @@ test('a contact with no country has no flag', async () => {
 test('falls back to the subject id as the title when there is no email', async () => {
   worker.use(
     handleSiteContactsGet({
-      body: { id: '9', subjectId: 'anon-1', tags: [], revision: 1, createdAt: NOW, updatedAt: NOW },
+      body: {
+        id: testId(9),
+        subjectId: 'anon-1',
+        tags: [],
+        revision: 1,
+        createdAt: NOW,
+        updatedAt: NOW,
+      },
     }),
     NO_EVENTS,
   )
@@ -249,7 +260,7 @@ test('moving to another contact resets the events page to the first', async () =
   worker.use(
     handleSiteContactsGet(({ params }) =>
       HttpResponse.json(
-        params.id === '10' ? { ...ADA, id: '10', email: 'grace@example.com' } : ADA,
+        params.id === testId(10) ? { ...ADA, id: testId(10), email: 'grace@example.com' } : ADA,
       ),
     ),
     handleSiteEventsList(({ request }) => {
@@ -281,17 +292,17 @@ test('moving to another contact resets the events page to the first', async () =
 
   await expect.element(screen.getByRole('heading', { name: 'ada@example.com' })).toBeInTheDocument()
   await screen.getByRole('button', { name: '2', exact: true }).click()
-  await expect.poll(() => eventRequests.at(-1)).toEqual({ contactId: '9', page: '2' })
+  await expect.poll(() => eventRequests.at(-1)).toEqual({ contactId: testId(9), page: '2' })
 
   await router.navigate({
     to: contactsDetailRoute.to,
-    params: { workspaceId: 'TestWs01', contactId: '10' },
+    params: { workspaceId: 'TestWs01', contactId: testId(10) },
   })
 
   await expect
     .element(screen.getByRole('heading', { name: 'grace@example.com' }))
     .toBeInTheDocument()
-  await expect.poll(() => eventRequests.at(-1)).toEqual({ contactId: '10', page: '1' })
+  await expect.poll(() => eventRequests.at(-1)).toEqual({ contactId: testId(10), page: '1' })
 })
 
 // The Workspace as the signed-in User sees it, holding the given Permissions.
@@ -348,7 +359,7 @@ test('contacts:erase erases a contact only after confirming the irreversible act
 
   await screen.getByRole('dialog').getByRole('button', { name: 'Erase' }).click()
 
-  await expect.poll(() => erased).toEqual(['9'])
+  await expect.poll(() => erased).toEqual([testId(9)])
   await expect
     .poll(() => navigate.mock.calls.at(-1)?.[0])
     .toMatchObject({ to: contactsRoute.to, params: { workspaceId: 'TestWs01' } })
@@ -361,7 +372,7 @@ test('exporting a contact saves the document under the filename the server sugge
     holding(['contacts:export']),
     handleSiteContactsExport(() =>
       HttpResponse.json(
-        { id: '9' },
+        { id: testId(9) },
         {
           headers: {
             'Content-Disposition':
@@ -412,7 +423,7 @@ test('lists the tags of the contact', async () => {
 })
 
 const BOT: SiteIntegrationResource = {
-  id: '9',
+  id: testId(9),
   name: 'Acme bot',
   channel: 'telegram',
   provider: 'telegram',
@@ -445,8 +456,8 @@ test('lists the Telegram chats of the contact and copies a start link', async ()
     handleSiteTelegramListBindings({
       body: [
         {
-          id: '1',
-          integrationId: '9',
+          id: testId(1),
+          integrationId: testId(9),
           integrationName: 'Acme bot',
           botUsername: 'acme_bot',
           boundAt: NOW,
@@ -464,7 +475,7 @@ test('lists the Telegram chats of the contact and copies a start link', async ()
   await screen.getByRole('button', { name: 'Copy Telegram link' }).click()
 
   await expect.element(screen.getByText(/Start link copied/)).toBeInTheDocument()
-  expect(bodies).toEqual([{ integrationId: '9' }])
+  expect(bodies).toEqual([{ integrationId: testId(9) }])
 })
 
 const TEXTER: SiteContactResource = { ...ADA, phone: '+14155550810' }

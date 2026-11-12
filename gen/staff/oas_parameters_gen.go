@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/ogen-go/ogen/conv"
 	"github.com/ogen-go/ogen/middleware"
@@ -197,14 +198,14 @@ func decodeStaffSignupItemsDeleteParams(args [1]string, argsEscaped bool, r *htt
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -269,14 +270,14 @@ func decodeStaffSignupItemsGetParams(args [1]string, argsEscaped bool, r *http.R
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -341,14 +342,14 @@ func decodeStaffSignupItemsListVersionsParams(args [1]string, argsEscaped bool, 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -413,14 +414,14 @@ func decodeStaffSignupItemsPublishParams(args [1]string, argsEscaped bool, r *ht
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -485,14 +486,14 @@ func decodeStaffSignupItemsSaveDraftParams(args [1]string, argsEscaped bool, r *
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -557,14 +558,14 @@ func decodeStaffSignupItemsUpdateParams(args [1]string, argsEscaped bool, r *htt
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}

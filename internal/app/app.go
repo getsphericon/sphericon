@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	"github.com/samber/do/v2"
 
 	"github.com/getsphericon/sphericon/config"
@@ -251,7 +253,12 @@ func (a *App) start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if _, err := inst.Ensure(ctx); err != nil {
+	row, err := inst.Ensure(ctx)
+	if err != nil {
+		return err
+	}
+	// The APIs show every primary key sealed under the Instance's id key (ADR 0142).
+	if err := publicid.Use(row.IDKey); err != nil {
 		return err
 	}
 	if err := inst.AnnounceRelease(ctx); err != nil {

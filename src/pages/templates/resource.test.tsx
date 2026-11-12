@@ -14,6 +14,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
 import { Route as templatesCreateRoute } from '../../routes/workspaces/$workspaceId/templates/new.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -22,7 +23,10 @@ import { TemplateCreatePage, TemplateEditPage } from './resource.tsx'
 
 const CREATE_ROUTE = routeMount(templatesCreateRoute, { workspaceId: 'TestWs01' })
 
-const EDIT_ROUTE = routeMount(templatesEditRoute, { workspaceId: 'TestWs01', templateId: '7' })
+const EDIT_ROUTE = routeMount(templatesEditRoute, {
+  workspaceId: 'TestWs01',
+  templateId: testId(7),
+})
 
 function ListProbe() {
   useQuery(siteTemplatesListOptions({ path: { workspaceId: 'TestWs01' } }))
@@ -30,7 +34,7 @@ function ListProbe() {
 }
 
 function DetailProbe() {
-  useQuery(siteTemplatesGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
+  useQuery(siteTemplatesGetOptions({ path: { workspaceId: 'TestWs01', id: testId(7) } }))
   return null
 }
 
@@ -40,7 +44,7 @@ test('creating a template sends the filled keys, refreshes the list and opens th
   worker.use(
     handleSiteTemplatesCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '42', name: 'Welcome' }, { status: 201 })
+      return HttpResponse.json({ id: testId(42), name: 'Welcome' }, { status: 201 })
     }),
     handleSiteTemplatesList(() => {
       listFetches++
@@ -66,7 +70,7 @@ test('creating a template sends the filled keys, refreshes the list and opens th
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { workspaceId: 'TestWs01', templateId: '42' },
+    params: { workspaceId: 'TestWs01', templateId: testId(42) },
   })
 })
 
@@ -75,7 +79,7 @@ test('a blank required name is rejected with a readable message before anything 
   worker.use(
     handleSiteTemplatesCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '1' }, { status: 201 })
+      return HttpResponse.json({ id: testId(1) }, { status: 201 })
     }),
   )
 
@@ -94,7 +98,7 @@ test('editing shows a loader, then existing values; cleared fields are sent as e
   worker.use(
     handleSiteTemplatesUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '7', name: 'Welcome', revision: 2 })
+      return HttpResponse.json({ id: testId(7), name: 'Welcome', revision: 2 })
     }),
     handleSiteTemplatesList(() => {
       listFetches++
@@ -106,7 +110,7 @@ test('editing shows a loader, then existing values; cleared fields are sent as e
         await detailGate.promise
       }
       return HttpResponse.json({
-        id: '7',
+        id: testId(7),
         name: 'Welcome',
         subject: 'Hi',
         body: '<p>x</p>',

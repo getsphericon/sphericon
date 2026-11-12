@@ -10,7 +10,7 @@ import {
   handleSiteTagsList,
 } from '../../generated/site/msw.gen.ts'
 import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -36,11 +36,11 @@ function serve(...items: ReturnType<typeof event>[]) {
   worker.use(
     handleSiteEventsActions({ body: { actions: [] } }),
     handleSiteEventsList({ body: page(items) }),
-    handleSiteTagsList({ body: page([{ id: '1', name: 'vip', ...TIMESTAMPS }]) }),
+    handleSiteTagsList({ body: page([{ id: testId(1), name: 'vip', ...TIMESTAMPS }]) }),
     handleSiteCustomFieldsList({
       body: page([
         {
-          id: '1',
+          id: testId(1),
           key: 'plan',
           name: 'Plan',
           type: 'string',
@@ -51,9 +51,9 @@ function serve(...items: ReturnType<typeof event>[]) {
       ]),
     }),
     handleSiteAutomationsGet(({ params }) =>
-      params.id === '7'
+      params.id === testId(7)
         ? HttpResponse.json({
-            id: '7',
+            id: testId(7),
             name: 'Onboarding',
             status: 'active',
             live: null,
@@ -67,8 +67,8 @@ function serve(...items: ReturnType<typeof event>[]) {
 
 test('a Tag change names the Tag, linked while it exists', async () => {
   serve(
-    event('1', 'contact.tagged', { tag: 'vip' }),
-    event('2', 'contact.untagged', { tag: 'gone' }),
+    event(testId(1), 'contact.tagged', { tag: 'vip' }),
+    event(testId(2), 'contact.untagged', { tag: 'gone' }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -79,8 +79,8 @@ test('a Tag change names the Tag, linked while it exists', async () => {
 
 test('a Custom field change names the field by its name, and a clear says so', async () => {
   serve(
-    event('1', 'contact.field_changed', { key: 'plan', value: 'pro' }),
-    event('2', 'contact.field_changed', { key: 'plan' }),
+    event(testId(1), 'contact.field_changed', { key: 'plan', value: 'pro' }),
+    event(testId(2), 'contact.field_changed', { key: 'plan' }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -89,7 +89,7 @@ test('a Custom field change names the field by its name, and a clear says so', a
 })
 
 test('a Custom field no longer defined is named by its key, its value as JSON', async () => {
-  serve(event('1', 'contact.field_changed', { key: 'seats', value: 4 }))
+  serve(event(testId(1), 'contact.field_changed', { key: 'seats', value: 4 }))
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('Set seats to "4"')).toBeVisible()
@@ -97,10 +97,10 @@ test('a Custom field no longer defined is named by its key, its value as JSON', 
 
 test('an Enrollment names its Automation, and one that is gone by the words of its action', async () => {
   serve(
-    event('1', 'automation.goal_reached', { automationId: 7 }),
-    event('2', 'automation.exited', { automationId: 8 }),
-    event('3', 'automation.enrolled', { automationId: 7 }),
-    event('4', 'automation.completed', { automationId: 7 }),
+    event(testId(1), 'automation.goal_reached', { automationId: testId(7) }),
+    event(testId(2), 'automation.exited', { automationId: testId(8) }),
+    event(testId(3), 'automation.enrolled', { automationId: testId(7) }),
+    event(testId(4), 'automation.completed', { automationId: testId(7) }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -114,8 +114,12 @@ test('an Enrollment names its Automation, and one that is gone by the words of i
 
 test('a page view names the page by its title, the path when it has none', async () => {
   serve(
-    event('1', 'page.view', { title: 'Pricing', path: '/pricing', url: 'https://x.test/pricing' }),
-    event('2', 'page.view', { path: '/docs' }),
+    event(testId(1), 'page.view', {
+      title: 'Pricing',
+      path: '/pricing',
+      url: 'https://x.test/pricing',
+    }),
+    event(testId(2), 'page.view', { path: '/docs' }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -143,9 +147,9 @@ function serveEmails(...items: EmailEvent[]) {
   serve(...items)
   worker.use(
     handleSiteBroadcastsGet(({ params }) =>
-      params.id === '5'
+      params.id === testId(5)
         ? HttpResponse.json({
-            id: '5',
+            id: testId(5),
             name: 'Launch',
             channel: 'email',
             content: { channel: 'email', subject: 'Welcome {{name}}', body: '<p></p>' },
@@ -159,11 +163,11 @@ function serveEmails(...items: EmailEvent[]) {
 
 test('an email Event names the email by its subject, linked to the Broadcast while it exists', async () => {
   serveEmails(
-    emailEvent('1', 'email.opened', { broadcastId: 5 }),
-    emailEvent('2', 'email.delivered', { broadcastId: 6 }),
-    emailEvent('3', 'email.sent', { automationId: 7 }),
-    emailEvent('4', 'email.unsubscribed', { broadcastId: 5 }),
-    emailEvent('5', 'email.complained', { broadcastId: 5 }),
+    emailEvent(testId(1), 'email.opened', { broadcastId: testId(5) }),
+    emailEvent(testId(2), 'email.delivered', { broadcastId: testId(6) }),
+    emailEvent(testId(3), 'email.sent', { automationId: testId(7) }),
+    emailEvent(testId(4), 'email.unsubscribed', { broadcastId: testId(5) }),
+    emailEvent(testId(5), 'email.complained', { broadcastId: testId(5) }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -196,9 +200,12 @@ test('an email Event names the email by its subject, linked to the Broadcast whi
 
 test('a click names its link without the scheme, the whole one on hover, and the email', async () => {
   serveEmails(
-    emailEvent('1', 'email.clicked', { broadcastId: 5, url: 'https://hexlet.io/courses' }),
-    emailEvent('2', 'email.clicked', {
-      broadcastId: 5,
+    emailEvent(testId(1), 'email.clicked', {
+      broadcastId: testId(5),
+      url: 'https://hexlet.io/courses',
+    }),
+    emailEvent(testId(2), 'email.clicked', {
+      broadcastId: testId(5),
       url: 'https://hexlet.io/courses/python/lessons/loops-and-conditions?utm=mail',
     }),
   )
@@ -221,9 +228,9 @@ test('a click names its link without the scheme, the whole one on hover, and the
 
 test('a bounce says whether it was hard or soft, and one of no known kind only that it bounced', async () => {
   serveEmails(
-    emailEvent('1', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }),
-    emailEvent('2', 'email.bounced', { broadcastId: 5, bounceKind: 'soft' }),
-    emailEvent('3', 'email.bounced', { broadcastId: 5 }),
+    emailEvent(testId(1), 'email.bounced', { broadcastId: testId(5), bounceKind: 'hard' }),
+    emailEvent(testId(2), 'email.bounced', { broadcastId: testId(5), bounceKind: 'soft' }),
+    emailEvent(testId(3), 'email.bounced', { broadcastId: testId(5) }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -240,8 +247,8 @@ test('a bounce says whether it was hard or soft, and one of no known kind only t
 
 test('a delayed and a dropped email say so', async () => {
   serveEmails(
-    emailEvent('1', 'email.delayed', { broadcastId: 5 }),
-    emailEvent('2', 'email.dropped', { broadcastId: 5 }),
+    emailEvent(testId(1), 'email.delayed', { broadcastId: testId(5) }),
+    emailEvent(testId(2), 'email.dropped', { broadcastId: testId(5) }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -255,9 +262,9 @@ test('a delayed and a dropped email say so', async () => {
 
 test('an email Event whose message kept no subject shows the words of its action', async () => {
   serveEmails(
-    subjectless('1', 'email.opened', { broadcastId: 5 }),
-    subjectless('2', 'email.clicked', { broadcastId: 5, url: 'https://hexlet.io/courses' }),
-    subjectless('3', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }),
+    subjectless('1', 'email.opened', { broadcastId: testId(5) }),
+    subjectless('2', 'email.clicked', { broadcastId: testId(5), url: 'https://hexlet.io/courses' }),
+    subjectless('3', 'email.bounced', { broadcastId: testId(5), bounceKind: 'hard' }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -268,10 +275,10 @@ test('an email Event whose message kept no subject shows the words of its action
 
 test('an Event without what its row names shows the words of its action', async () => {
   serve(
-    event('1', 'contact.tagged', {}),
-    event('2', 'contact.field_changed', { key: '' }),
-    event('3', 'automation.enrolled', {}),
-    event('4', 'page.view', { title: null }),
+    event(testId(1), 'contact.tagged', {}),
+    event(testId(2), 'contact.field_changed', { key: '' }),
+    event(testId(3), 'automation.enrolled', {}),
+    event(testId(4), 'page.view', { title: null }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -283,10 +290,10 @@ test('an Event without what its row names shows the words of its action', async 
 
 test("an SMS message's delivery state shows, an undelivered one with the provider's error code", async () => {
   serve(
-    event('1', 'sms.sent', { destination: '+14155550177' }),
-    event('2', 'sms.delivered', { destination: '+14155550177' }),
-    event('3', 'sms.undelivered', { destination: '+14155550177', errorCode: '30003' }),
-    event('4', 'sms.undelivered', { destination: '+14155550177' }),
+    event(testId(1), 'sms.sent', { destination: '+14155550177' }),
+    event(testId(2), 'sms.delivered', { destination: '+14155550177' }),
+    event(testId(3), 'sms.undelivered', { destination: '+14155550177', errorCode: '30003' }),
+    event(testId(4), 'sms.undelivered', { destination: '+14155550177' }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 

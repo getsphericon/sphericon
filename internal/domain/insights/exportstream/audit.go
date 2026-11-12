@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // AuditSchema is the TypeSpec row schema (openapi component) an AuditRow encodes to.
@@ -19,7 +20,7 @@ const AuditSchema = "ExportAuditRow"
 // always present, an absent value is null, ids are decimal strings like everywhere in /api.
 // Entries are append-only, so a row is delivered once.
 type AuditRow struct {
-	ID         int64                      `json:"id,string"`
+	ID         publicid.ID                `json:"id"`
 	OccurredAt time.Time                  `json:"occurred_at"`
 	ActorKind  string                     `json:"actor_kind"`
 	ActorID    *string                    `json:"actor_id"`
@@ -37,7 +38,7 @@ type AuditRow struct {
 }
 
 // Position is the row's (updated_at, id).
-func (r AuditRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: r.ID} }
+func (r AuditRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: int64(r.ID)} }
 
 // auditRow reads an entry through the customer-facing view, so a Staff member is
 // "Sphericon staff" with no id and unchanged "Always" fields are left out, as on every
@@ -49,7 +50,7 @@ func auditRow(e *ent.AuditEntry) AuditRow {
 		diff[k] = json.RawMessage(raw)
 	}
 	return AuditRow{
-		ID:         v.ID,
+		ID:         publicid.ID(v.ID),
 		OccurredAt: v.OccurredAt.UTC(),
 		ActorKind:  v.ActorKind,
 		ActorID:    v.ActorID,

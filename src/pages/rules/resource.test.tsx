@@ -23,7 +23,7 @@ import type {
 import { zSiteUpdateRuleInput } from '../../generated/site/zod.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { requestGate } from '../../test/requestGate.ts'
 import { routeMount } from '../../test/routeMount.ts'
@@ -39,7 +39,7 @@ const CONDITION: SiteConditionGroup = {
 }
 
 const STORED: SiteRuleResource = {
-  id: '7',
+  id: testId(7),
   name: 'Tag signups',
   status: 'inactive',
   live: null,
@@ -66,7 +66,7 @@ const EDITED: SiteRuleResource = {
 }
 
 const CREATE_ROUTE = routeMount(rulesCreateRoute, { workspaceId: 'TestWs01' })
-const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId: '7' })
+const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId: testId(7) })
 
 // Everything the rule form reads besides the rule itself: the known events (trigger picker and
 // condition builder) and the custom fields (condition builder).
@@ -79,7 +79,7 @@ function serveCatalogue() {
 }
 
 function RefetchRule() {
-  const query = useQuery(siteRulesGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
+  const query = useQuery(siteRulesGetOptions({ path: { workspaceId: 'TestWs01', id: testId(7) } }))
   return (
     <>
       <button
@@ -101,7 +101,7 @@ test('creating a rule sends its name, trigger events, empty condition and action
   worker.use(
     handleSiteRulesCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ ...STORED, id: '42' }, { status: 201 })
+      return HttpResponse.json({ ...STORED, id: testId(42) }, { status: 201 })
     }),
   )
 
@@ -127,7 +127,7 @@ test('creating a rule sends its name, trigger events, empty condition and action
   await expect.element(screen.getByText('Rule created')).toBeInTheDocument()
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { workspaceId: 'TestWs01', ruleId: '42' },
+    params: { workspaceId: 'TestWs01', ruleId: testId(42) },
   })
 })
 
@@ -204,7 +204,7 @@ test('an enroll action picks one of the automations and saves it', async () => {
   serveCatalogue()
   worker.use(
     handleSiteAutomationsList({
-      body: page([automation('5', 'Welcome flow'), automation('6', 'Nurture flow')], 2),
+      body: page([automation(testId(5), 'Welcome flow'), automation(testId(6), 'Nurture flow')], 2),
     }),
     handleSiteRulesGet({
       body: {
@@ -213,7 +213,7 @@ test('an enroll action picks one of the automations and saves it', async () => {
           number: 1,
           triggerEvents: ['signed_up'],
           condition: CONDITION,
-          actions: [{ type: 'enroll_automation', automationId: '5' }],
+          actions: [{ type: 'enroll_automation', automationId: testId(5) }],
         },
       },
     }),
@@ -240,7 +240,7 @@ test('an enroll action picks one of the automations and saves it', async () => {
         name: 'Tag signups',
         triggerEvents: ['signed_up'],
         condition: CONDITION,
-        actions: [{ type: 'enroll_automation', automationId: '6' }],
+        actions: [{ type: 'enroll_automation', automationId: testId(6) }],
       },
     ])
 })
@@ -254,7 +254,7 @@ test('trying the rule on a recorded event shows whether it would fire and which 
       body: page(
         [
           {
-            id: '55',
+            id: testId(55),
             subjectId: 's',
             action: 'signed_up',
             occurredAt: '2026-01-02T00:00:00Z',
@@ -278,7 +278,7 @@ test('trying the rule on a recorded event shows whether it would fire and which 
   await screen.getByRole('option', { name: /signed_up/ }).click()
   await screen.getByRole('button', { name: 'Try the rule' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ eventId: '55' }])
+  await expect.poll(() => bodies).toEqual([{ eventId: testId(55) }])
   await expect.element(screen.getByText('Would fire. These actions would run:')).toBeInTheDocument()
   await expect.element(screen.getByText('Apply tag "new"')).toBeInTheDocument()
 })
@@ -312,7 +312,7 @@ test('after a revert the editor shows the live version', async () => {
   await expect.element(screen.getByLabelText('Tag')).toHaveValue('drafted')
   await screen.getByRole('button', { name: 'Revert' }).click()
 
-  await expect.poll(() => reverted).toEqual(['7'])
+  await expect.poll(() => reverted).toEqual([testId(7)])
   await expect.element(screen.getByLabelText('Tag')).toHaveValue('live')
 })
 
@@ -455,6 +455,6 @@ test('Revert over unsaved edits asks first, and keeps them when the person stays
     .getByRole('dialog', { name: 'Revert without saving?' })
     .getByRole('button', { name: 'Revert' })
     .click()
-  await expect.poll(() => reverted).toEqual(['7'])
+  await expect.poll(() => reverted).toEqual([testId(7)])
   await expect.element(screen.getByLabelText('Tag')).toHaveValue('live')
 })

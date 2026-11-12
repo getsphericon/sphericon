@@ -148,6 +148,12 @@ func (_c *InstanceStateCreate) SetNillableDefaultSendCap(v *int) *InstanceStateC
 	return _c
 }
 
+// SetIDKey sets the "id_key" field.
+func (_c *InstanceStateCreate) SetIDKey(v []byte) *InstanceStateCreate {
+	_c.mutation.SetIDKey(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *InstanceStateCreate) SetID(v int64) *InstanceStateCreate {
 	_c.mutation.SetID(v)
@@ -205,6 +211,10 @@ func (_c *InstanceStateCreate) defaults() {
 		v := instancestate.DefaultTelemetryEnabled
 		_c.mutation.SetTelemetryEnabled(v)
 	}
+	if _, ok := _c.mutation.IDKey(); !ok {
+		v := instancestate.DefaultIDKey()
+		_c.mutation.SetIDKey(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -225,6 +235,9 @@ func (_c *InstanceStateCreate) check() error {
 		if err := instancestate.DefaultSendCapValidator(v); err != nil {
 			return &ValidationError{Name: "default_send_cap", err: fmt.Errorf(`ent: validator failed for field "InstanceState.default_send_cap": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.IDKey(); !ok {
+		return &ValidationError{Name: "id_key", err: errors.New(`ent: missing required field "InstanceState.id_key"`)}
 	}
 	return nil
 }
@@ -294,6 +307,10 @@ func (_c *InstanceStateCreate) createSpec() (*InstanceState, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.DefaultSendCap(); ok {
 		_spec.SetField(instancestate.FieldDefaultSendCap, field.TypeInt, value)
 		_node.DefaultSendCap = &value
+	}
+	if value, ok := _c.mutation.IDKey(); ok {
+		_spec.SetField(instancestate.FieldIDKey, field.TypeBytes, value)
+		_node.IDKey = value
 	}
 	return _node, _spec
 }
@@ -489,6 +506,9 @@ func (u *InstanceStateUpsertOne) UpdateNewValues() *InstanceStateUpsertOne {
 		}
 		if _, exists := u.create.mutation.InstanceID(); exists {
 			s.SetIgnore(instancestate.FieldInstanceID)
+		}
+		if _, exists := u.create.mutation.IDKey(); exists {
+			s.SetIgnore(instancestate.FieldIDKey)
 		}
 	}))
 	return u
@@ -848,6 +868,9 @@ func (u *InstanceStateUpsertBulk) UpdateNewValues() *InstanceStateUpsertBulk {
 			}
 			if _, exists := b.mutation.InstanceID(); exists {
 				s.SetIgnore(instancestate.FieldInstanceID)
+			}
+			if _, exists := b.mutation.IDKey(); exists {
+				s.SetIgnore(instancestate.FieldIDKey)
 			}
 		}
 	}))

@@ -4,7 +4,7 @@ package ent
 
 import (
 	"context"
-	"encoding/json/jsontext"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -97,7 +97,7 @@ func (_c *EventJournalEntryCreate) SetRecordedAt(v time.Time) *EventJournalEntry
 }
 
 // SetInputs sets the "inputs" field.
-func (_c *EventJournalEntryCreate) SetInputs(v jsontext.Value) *EventJournalEntryCreate {
+func (_c *EventJournalEntryCreate) SetInputs(v json.RawMessage) *EventJournalEntryCreate {
 	_c.mutation.SetInputs(v)
 	return _c
 }

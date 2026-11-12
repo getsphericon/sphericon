@@ -10,6 +10,7 @@ import {
   handleSiteAuditSetRetention,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -20,11 +21,11 @@ const WORKSPACE_ID = 'TestWs01'
 
 function entry(over: Partial<SiteAuditEntryResource> = {}): SiteAuditEntryResource {
   return {
-    id: '2',
+    id: testId(2),
     occurredAt: '2026-01-02T03:04:05Z',
-    actor: { kind: 'user', id: '1', name: 'John' },
+    actor: { kind: 'user', id: testId(1), name: 'John' },
     action: 'membership.update',
-    target: { type: 'membership', id: '3', name: 'Mary' },
+    target: { type: 'membership', id: testId(3), name: 'Mary' },
     diff: { role: { from: 'member', to: 'admin' } },
     ...over,
   }
@@ -37,8 +38,8 @@ beforeEach(() => {
     handleSiteAuditFacets({
       body: {
         actors: [
-          { kind: 'api_token', id: '77' },
-          { kind: 'user', id: '2', name: 'Jane' },
+          { kind: 'api_token', id: testId(77) },
+          { kind: 'user', id: testId(2), name: 'Jane' },
         ],
         actions: ['integration.update', 'membership.update'],
         targetTypes: ['integration', 'membership'],
@@ -121,8 +122,8 @@ test('an actor known by neither name nor id is named by its kind', async () => {
     handleSiteAuditList({
       body: {
         items: [
-          entry({ id: '6', actor: { kind: 'api_token' } }),
-          entry({ id: '7', actor: { kind: 'user' } }),
+          entry({ id: testId(6), actor: { kind: 'api_token' } }),
+          entry({ id: testId(7), actor: { kind: 'user' } }),
         ],
       },
     }),
@@ -144,13 +145,13 @@ test('an applied actor the log no longer holds stays selectable', async () => {
   const { screen } = await renderWithRouter(
     <AuditLogSection
       workspaceId={WORKSPACE_ID}
-      filter={{ actorKind: 'user', actorId: '99' }}
+      filter={{ actorKind: 'user', actorId: testId(99) }}
       onFilterChange={vi.fn<() => void>()}
       canConfigureRetention
     />,
   )
 
-  await expect.element(screen.getByRole('combobox', { name: 'Actor' })).toHaveValue('99')
+  await expect.element(screen.getByRole('combobox', { name: 'Actor' })).toHaveValue(testId(99))
 })
 
 test('sends the applied filter to the list and to the export', async () => {
@@ -166,7 +167,7 @@ test('sends the applied filter to the list and to the export', async () => {
       return new HttpResponse('id\n', { headers: { 'content-type': 'text/csv' } })
     }),
   )
-  const filter = { targetType: 'integration', targetId: '5', ip: '10.0.0.1' }
+  const filter = { targetType: 'integration', targetId: testId(5), ip: '10.0.0.1' }
   const { screen } = await renderWithRouter(
     <>
       <AuditExportButton workspaceId={WORKSPACE_ID} filter={filter} />
@@ -181,7 +182,9 @@ test('sends the applied filter to the list and to the export', async () => {
 
   await expect
     .poll(() =>
-      queries.some((q) => q.includes('targetType=integration') && q.includes('targetId=5')),
+      queries.some(
+        (q) => q.includes('targetType=integration') && q.includes(`targetId=${testId(5)}`),
+      ),
     )
     .toBe(true)
   expect(queries.some((q) => q.includes('ip=10.0.0.1'))).toBe(true)
@@ -191,7 +194,7 @@ test('sends the applied filter to the list and to the export', async () => {
 
   await screen.getByRole('button', { name: 'Export CSV' }).click()
   await expect.poll(() => exported).toContain('targetType=integration')
-  expect(exported).toContain('targetId=5')
+  expect(exported).toContain(`targetId=${testId(5)}`)
 })
 
 test('choosing an actor or an action among those of the log applies it at once', async () => {
@@ -211,7 +214,7 @@ test('choosing an actor or an action among those of the log applies it at once',
   expect(onFilterChange).toHaveBeenLastCalledWith({
     ip: '10.0.0.1',
     actorKind: 'user',
-    actorId: '2',
+    actorId: testId(2),
   })
 
   await screen.getByRole('combobox', { name: 'Action' }).click()
@@ -224,18 +227,20 @@ test('a filter the log no longer holds stays selected', async () => {
   const { screen } = await renderWithRouter(
     <AuditLogSection
       workspaceId={WORKSPACE_ID}
-      filter={{ actorKind: 'user', actorId: '9', action: 'contact.delete' }}
+      filter={{ actorKind: 'user', actorId: testId(9), action: 'contact.delete' }}
       onFilterChange={vi.fn<() => void>()}
       canConfigureRetention
     />,
   )
 
-  await expect.element(screen.getByRole('combobox', { name: 'Actor' })).toHaveValue('9')
+  await expect.element(screen.getByRole('combobox', { name: 'Actor' })).toHaveValue(testId(9))
   await expect
     .element(screen.getByRole('combobox', { name: 'Action' }))
     .toHaveValue('Deleted a contact')
   await screen.getByRole('combobox', { name: 'Actor' }).click()
-  await expect.element(screen.getByRole('option', { name: 'API token #77' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('option', { name: `API token #${testId(77)}` }))
+    .toBeInTheDocument()
 })
 
 test('the system as the actor filter is named, though it has no id', async () => {
@@ -279,13 +284,13 @@ test('a chip removes its filter, and reset clears every filter', async () => {
   const { screen } = await renderWithRouter(
     <AuditLogSection
       workspaceId={WORKSPACE_ID}
-      filter={{ targetType: 'integration', targetId: '5' }}
+      filter={{ targetType: 'integration', targetId: testId(5) }}
       onFilterChange={onFilterChange}
       canConfigureRetention
     />,
   )
 
-  await screen.getByRole('button', { name: 'Remove the filter Target #5' }).click()
+  await screen.getByRole('button', { name: `Remove the filter Target #${testId(5)}` }).click()
   expect(onFilterChange).toHaveBeenLastCalledWith({ targetType: 'integration' })
 
   await screen.getByRole('button', { name: 'Reset filters' }).click()
@@ -310,7 +315,7 @@ test('a value of an entry narrows the log to the entries sharing it', async () =
   expect(onFilterChange).toHaveBeenLastCalledWith({
     action: 'membership.update',
     targetType: 'membership',
-    targetId: '3',
+    targetId: testId(3),
   })
 
   await screen.getByRole('button', { name: 'Show details' }).click()
@@ -369,7 +374,7 @@ test('loading more appends the next page below the first', async () => {
       cursors.push(cursor)
       return HttpResponse.json(
         cursor
-          ? { items: [entry({ id: '3', action: 'membership.delete' })] }
+          ? { items: [entry({ id: testId(3), action: 'membership.delete' })] }
           : { items: [entry()], nextCursor: '2' },
       )
     }),
@@ -555,7 +560,7 @@ test('a hold change is attributed to Sphericon staff', async () => {
       body: {
         items: [
           entry({
-            id: '8',
+            id: testId(8),
             actor: { kind: 'staff', name: 'Sphericon staff' },
             action: 'hold.create',
             target: { type: 'hold', name: 'review' },
@@ -582,15 +587,15 @@ test('an entry without a diff or a name falls back gracefully', async () => {
       body: {
         items: [
           entry({
-            id: '3',
-            actor: { kind: 'api_token', id: '7' },
-            target: { type: 'tag', id: '9' },
+            id: testId(3),
+            actor: { kind: 'api_token', id: testId(7) },
+            target: { type: 'tag', id: testId(9) },
             diff: null,
           }),
-          entry({ id: '4', actor: { kind: 'system' }, target: { type: 'webhook_endpoint' } }),
+          entry({ id: testId(4), actor: { kind: 'system' }, target: { type: 'webhook_endpoint' } }),
           entry({
-            id: '5',
-            actor: { kind: 'user', id: '2' },
+            id: testId(5),
+            actor: { kind: 'user', id: testId(2) },
             diff: { a: { from: null, to: '' }, b: { from: { x: 1 }, to: 2 } },
           }),
         ],
@@ -605,15 +610,15 @@ test('an entry without a diff or a name falls back gracefully', async () => {
     />,
   )
 
-  await expect.element(screen.getByText('API token #7')).toBeInTheDocument()
+  await expect.element(screen.getByText(`API token #${testId(7)}`)).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'System' })).toBeInTheDocument()
-  await expect.element(screen.getByText('tag #9')).toBeInTheDocument()
+  await expect.element(screen.getByText(`tag #${testId(9)}`)).toBeInTheDocument()
 })
 
 test('names an API token actor by its name when it has one', async () => {
   worker.use(
     handleSiteAuditList({
-      body: { items: [entry({ actor: { kind: 'api_token', id: '12', name: 'CI deploy' } })] },
+      body: { items: [entry({ actor: { kind: 'api_token', id: testId(12), name: 'CI deploy' } })] },
     }),
   )
   const { screen } = await renderWithRouter(

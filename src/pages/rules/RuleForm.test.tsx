@@ -12,17 +12,17 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteEventResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { RuleEditPage } from './resource.tsx'
 
-const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId: '7' })
+const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId: testId(7) })
 
 const STORED: SiteRuleResource = {
-  id: '7',
+  id: testId(7),
   name: 'Tag signups',
   status: 'inactive',
   live: null,
@@ -32,7 +32,7 @@ const STORED: SiteRuleResource = {
 }
 
 const SIGNED_UP: SiteEventResource = {
-  id: '55',
+  id: testId(55),
   subjectId: 's',
   action: 'signed_up',
   occurredAt: '2026-01-02T00:00:00Z',

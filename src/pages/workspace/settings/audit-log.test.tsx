@@ -7,6 +7,7 @@ import {
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
 import { Route as auditLogRoute } from '../../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
+import { testId } from '../../../test/payloads.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
@@ -38,11 +39,11 @@ function serveTheLog() {
       body: {
         items: [
           {
-            id: '2',
+            id: testId(2),
             occurredAt: '2026-01-02T03:04:05Z',
-            actor: { kind: 'user', id: '1', name: 'John' },
+            actor: { kind: 'user', id: testId(1), name: 'John' },
             action: 'membership.update',
-            target: { type: 'membership', id: '3', name: 'Mary' },
+            target: { type: 'membership', id: testId(3), name: 'Mary' },
             diff: { role: { from: 'member', to: 'admin' } },
           },
         ],

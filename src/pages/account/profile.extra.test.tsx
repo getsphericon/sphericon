@@ -11,13 +11,14 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteUserResource } from '../../generated/site/types.gen.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { ProfilePage } from './profile.tsx'
 
 const user: SiteUserResource = {
-  id: '1',
+  id: testId(1),
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: false,

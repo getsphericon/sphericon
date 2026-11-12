@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // ContactsSchema is the TypeSpec row schema (openapi component) a ContactRow encodes to.
@@ -18,7 +19,7 @@ const ContactsSchema = "ExportContactRow"
 // key is always present, an absent value is null, Custom fields are one JSON column and
 // the Tags are their names.
 type ContactRow struct {
-	ID           int64          `json:"id,string"`
+	ID           publicid.ID    `json:"id"`
 	SubjectID    *string        `json:"subject_id"`
 	Email        *string        `json:"email"`
 	Phone        *string        `json:"phone"`
@@ -45,13 +46,13 @@ func dateOnly(t *time.Time) *string {
 }
 
 // Position is the row's (updated_at, id).
-func (r ContactRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: r.ID} }
+func (r ContactRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: int64(r.ID)} }
 
 func contactRow(c *ent.Contact) ContactRow {
 	names := lo.Map(c.Edges.Tags, func(t *ent.Tag, _ int) string { return t.Name })
 	slices.Sort(names)
 	return ContactRow{
-		ID:           c.ID,
+		ID:           publicid.ID(c.ID),
 		SubjectID:    c.SubjectID,
 		Email:        c.Email,
 		Phone:        c.Phone,

@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,7 +27,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	require.Len(t, got, 1)
 	e := got[0].(*events.AuditEntry)
 	assert.Equal(t, "tag.create", e.Action)
-	assert.Equal(t, events.Actor{Kind: events.ActorAPIToken, ID: strconv.Itoa(fixtures.AnchorTokenID), Name: fixtures.AnchorTokenName}, e.Actor)
+	assert.Equal(t, events.Actor{Kind: events.ActorAPIToken, ID: testhelper.ID(fixtures.AnchorTokenID), Name: fixtures.AnchorTokenName}, e.Actor)
 	assert.Equal(t, "api-tag", e.TargetName)
 
 	// The owner reads it on /site, attributed to the token.
@@ -40,5 +39,5 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	listed := page.Items[0]
 	assert.Equal(t, siteapi.AuditActionTagCreate, listed.Action)
 	assert.Equal(t, siteapi.SiteAuditActorKindAPIToken, listed.Actor.Kind)
-	assert.Equal(t, strconv.Itoa(fixtures.AnchorTokenID), listed.Actor.ID.Value)
+	assert.Equal(t, testhelper.ID(fixtures.AnchorTokenID), listed.Actor.ID.Value)
 }

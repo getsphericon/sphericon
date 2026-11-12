@@ -12,9 +12,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"golang.org/x/text/currency"
 
@@ -114,7 +115,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 			Actor:       actor,
 			Action:      events.ActionWorkspaceUpdate,
 			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(updated.ID, 10),
+			TargetID:    publicid.Encode(updated.ID),
 			TargetName:  updated.Name,
 			Diff:        diff,
 		})
@@ -157,7 +158,7 @@ func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor eve
 			Actor:       actor,
 			Action:      events.ActionWorkspaceUpdate,
 			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
+			TargetID:    publicid.Encode(before.ID),
 			TargetName:  before.Name,
 			Diff:        map[string]any{workspace.FieldRetentionDays: events.Change(before.RetentionDays, days)},
 		})
@@ -196,7 +197,7 @@ func (m *Module) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.Ac
 			Actor:       actor,
 			Action:      events.ActionWorkspaceUpdate,
 			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
+			TargetID:    publicid.Encode(before.ID),
 			TargetName:  before.Name,
 			Diff:        map[string]any{workspace.FieldTimezone: events.Change(from, to)},
 		})
@@ -271,7 +272,7 @@ func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor ev
 			Actor:       actor,
 			Action:      events.ActionWorkspaceUpdate,
 			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
+			TargetID:    publicid.Encode(before.ID),
 			TargetName:  before.Name,
 			Diff:        diff,
 		})
@@ -366,7 +367,7 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 			Actor:       actor,
 			Action:      events.ActionWorkspaceUpdate,
 			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
+			TargetID:    publicid.Encode(before.ID),
 			TargetName:  before.Name,
 			Diff:        map[string]any{workspace.FieldSecondFactorRequiredAt: events.Change(before.SecondFactorRequiredAt, updated.SecondFactorRequiredAt)},
 		}); err != nil || !required {
@@ -499,7 +500,7 @@ func (m *Module) SetDomainJoin(ctx context.Context, s *ent.Scoped, actor events.
 			Actor:       actor,
 			Action:      events.ActionWorkspaceUpdate,
 			TargetType:  workspace.Label,
-			TargetID:    strconv.FormatInt(before.ID, 10),
+			TargetID:    publicid.Encode(before.ID),
 			TargetName:  before.Name,
 			Diff:        map[string]any{workspace.FieldDomainJoinEnabled: events.Change(before.DomainJoinEnabled, enabled)},
 		})

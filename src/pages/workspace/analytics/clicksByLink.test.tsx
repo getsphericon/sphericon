@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import { handleSiteAnalyticsClicksByLink } from '../../../generated/site/msw.gen.ts'
 import type { SiteAnalyticsClicksByLink } from '../../../generated/site/types.gen.ts'
 import { Route as clicksByLinkRoute } from '../../../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
+import { testId } from '../../../test/payloads.ts'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
@@ -21,8 +22,8 @@ const report: SiteAnalyticsClicksByLink = {
       url: 'https://shop.test/pricing',
       clicks: 3,
       owners: [
-        { kind: 'broadcast', id: '200', name: 'Spring sale', clicks: 2 },
-        { kind: 'automation', id: '100', name: 'Welcome series', clicks: 1 },
+        { kind: 'broadcast', id: testId(200), name: 'Spring sale', clicks: 2 },
+        { kind: 'automation', id: testId(100), name: 'Welcome series', clicks: 1 },
       ],
     },
   ],
@@ -36,10 +37,10 @@ test('lists each link with its clicks and the Broadcast or Automation that carri
   await expect.element(screen.getByText('https://shop.test/pricing')).toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Spring sale' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/200/report')
+    .toHaveAttribute('href', `/workspaces/TestWs01/broadcasts/${testId(200)}/report`)
   await expect
     .element(screen.getByRole('link', { name: 'Welcome series' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/automations/100')
+    .toHaveAttribute('href', `/workspaces/TestWs01/automations/${testId(100)}`)
 })
 
 test('reads the section window from the URL', async () => {

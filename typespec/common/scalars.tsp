@@ -1,3 +1,7 @@
+import "@typespec/openapi";
+
+using TypeSpec.OpenAPI;
+
 namespace Sphericon;
 
 @format("email")
@@ -58,8 +62,11 @@ scalar ImageUrl extends string;
  * tell a malformed id from a valid one without trying it. Eighteen digits is the most a key
 reaches, so every id the schema admits fits an int64.
  */
-@format("int64")
-@pattern("^[0-9]{1,18}$")
+@pattern("^[0-9A-Za-z]{22}$")
+@extension(
+  "x-ogen-type",
+  "github.com/getsphericon/sphericon/internal/kernel/publicid.ID"
+)
 scalar EntityId extends string;
 
 /**

@@ -707,6 +707,10 @@ func init() {
 	instancestateDescDefaultSendCap := instancestateFields[7].Descriptor()
 	// instancestate.DefaultSendCapValidator is a validator for the "default_send_cap" field. It is called by the builders before save.
 	instancestate.DefaultSendCapValidator = instancestateDescDefaultSendCap.Validators[0].(func(int) error)
+	// instancestateDescIDKey is the schema descriptor for id_key field.
+	instancestateDescIDKey := instancestateFields[8].Descriptor()
+	// instancestate.DefaultIDKey holds the default value on creation for the id_key field.
+	instancestate.DefaultIDKey = instancestateDescIDKey.Default.(func() []byte)
 	integrationMixin := schema.Integration{}.Mixin()
 	integrationMixinFields0 := integrationMixin[0].Fields()
 	_ = integrationMixinFields0

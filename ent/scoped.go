@@ -4,7 +4,7 @@ package ent
 
 import (
 	"context"
-	"encoding/json/jsontext"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -7855,7 +7855,7 @@ func (x *BroadcastScopedCreate) SetNillableBody(v *string) *BroadcastScopedCreat
 }
 
 // SetDoc sets the "doc" field.
-func (x *BroadcastScopedCreate) SetDoc(v jsontext.Value) *BroadcastScopedCreate {
+func (x *BroadcastScopedCreate) SetDoc(v json.RawMessage) *BroadcastScopedCreate {
 	x.b.SetDoc(v)
 	return x
 }
@@ -8372,7 +8372,7 @@ func (u *BroadcastScopedUpsert) ClearBody() *BroadcastScopedUpsert {
 }
 
 // SetDoc sets the "doc" field.
-func (u *BroadcastScopedUpsert) SetDoc(v jsontext.Value) *BroadcastScopedUpsert {
+func (u *BroadcastScopedUpsert) SetDoc(v json.RawMessage) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldDoc, v)
 	return u
 }
@@ -8952,13 +8952,13 @@ func (x *BroadcastScopedUpdateOne) ClearBody() *BroadcastScopedUpdateOne {
 }
 
 // SetDoc sets the "doc" field.
-func (x *BroadcastScopedUpdateOne) SetDoc(v jsontext.Value) *BroadcastScopedUpdateOne {
+func (x *BroadcastScopedUpdateOne) SetDoc(v json.RawMessage) *BroadcastScopedUpdateOne {
 	x.b.SetDoc(v)
 	return x
 }
 
 // AppendDoc appends value to the "doc" field.
-func (x *BroadcastScopedUpdateOne) AppendDoc(v jsontext.Value) *BroadcastScopedUpdateOne {
+func (x *BroadcastScopedUpdateOne) AppendDoc(v json.RawMessage) *BroadcastScopedUpdateOne {
 	x.b.AppendDoc(v)
 	return x
 }
@@ -9501,13 +9501,13 @@ func (x *BroadcastScopedUpdate) ClearBody() *BroadcastScopedUpdate {
 }
 
 // SetDoc sets the "doc" field.
-func (x *BroadcastScopedUpdate) SetDoc(v jsontext.Value) *BroadcastScopedUpdate {
+func (x *BroadcastScopedUpdate) SetDoc(v json.RawMessage) *BroadcastScopedUpdate {
 	x.b.SetDoc(v)
 	return x
 }
 
 // AppendDoc appends value to the "doc" field.
-func (x *BroadcastScopedUpdate) AppendDoc(v jsontext.Value) *BroadcastScopedUpdate {
+func (x *BroadcastScopedUpdate) AppendDoc(v json.RawMessage) *BroadcastScopedUpdate {
 	x.b.AppendDoc(v)
 	return x
 }
@@ -15244,7 +15244,7 @@ func (x *EmailTemplateScopedCreate) SetNillableBody(v *string) *EmailTemplateSco
 }
 
 // SetDoc sets the "doc" field.
-func (x *EmailTemplateScopedCreate) SetDoc(v jsontext.Value) *EmailTemplateScopedCreate {
+func (x *EmailTemplateScopedCreate) SetDoc(v json.RawMessage) *EmailTemplateScopedCreate {
 	x.b.SetDoc(v)
 	return x
 }
@@ -15431,7 +15431,7 @@ func (u *EmailTemplateScopedUpsert) UpdateBody() *EmailTemplateScopedUpsert {
 }
 
 // SetDoc sets the "doc" field.
-func (u *EmailTemplateScopedUpsert) SetDoc(v jsontext.Value) *EmailTemplateScopedUpsert {
+func (u *EmailTemplateScopedUpsert) SetDoc(v json.RawMessage) *EmailTemplateScopedUpsert {
 	u.u.Set(emailtemplate.FieldDoc, v)
 	return u
 }
@@ -15705,13 +15705,13 @@ func (x *EmailTemplateScopedUpdateOne) SetNillableBody(v *string) *EmailTemplate
 }
 
 // SetDoc sets the "doc" field.
-func (x *EmailTemplateScopedUpdateOne) SetDoc(v jsontext.Value) *EmailTemplateScopedUpdateOne {
+func (x *EmailTemplateScopedUpdateOne) SetDoc(v json.RawMessage) *EmailTemplateScopedUpdateOne {
 	x.b.SetDoc(v)
 	return x
 }
 
 // AppendDoc appends value to the "doc" field.
-func (x *EmailTemplateScopedUpdateOne) AppendDoc(v jsontext.Value) *EmailTemplateScopedUpdateOne {
+func (x *EmailTemplateScopedUpdateOne) AppendDoc(v json.RawMessage) *EmailTemplateScopedUpdateOne {
 	x.b.AppendDoc(v)
 	return x
 }
@@ -15873,13 +15873,13 @@ func (x *EmailTemplateScopedUpdate) SetNillableBody(v *string) *EmailTemplateSco
 }
 
 // SetDoc sets the "doc" field.
-func (x *EmailTemplateScopedUpdate) SetDoc(v jsontext.Value) *EmailTemplateScopedUpdate {
+func (x *EmailTemplateScopedUpdate) SetDoc(v json.RawMessage) *EmailTemplateScopedUpdate {
 	x.b.SetDoc(v)
 	return x
 }
 
 // AppendDoc appends value to the "doc" field.
-func (x *EmailTemplateScopedUpdate) AppendDoc(v jsontext.Value) *EmailTemplateScopedUpdate {
+func (x *EmailTemplateScopedUpdate) AppendDoc(v json.RawMessage) *EmailTemplateScopedUpdate {
 	x.b.AppendDoc(v)
 	return x
 }

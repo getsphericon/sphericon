@@ -4,7 +4,7 @@ package ent
 
 import (
 	"context"
-	"encoding/json/jsontext"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -9398,8 +9398,8 @@ type BroadcastMutation struct {
 	unsubscribe_button *string
 	link_tracking      *bool
 	body               *string
-	doc                *jsontext.Value
-	appenddoc          jsontext.Value
+	doc                *json.RawMessage
+	appenddoc          json.RawMessage
 	editor_version     *string
 	condition          *string
 	status             *broadcast.Status
@@ -10293,13 +10293,13 @@ func (m *BroadcastMutation) ResetBody() {
 }
 
 // SetDoc sets the "doc" field.
-func (m *BroadcastMutation) SetDoc(j jsontext.Value) {
-	m.doc = &j
+func (m *BroadcastMutation) SetDoc(jm json.RawMessage) {
+	m.doc = &jm
 	m.appenddoc = nil
 }
 
 // Doc returns the value of the "doc" field in the mutation.
-func (m *BroadcastMutation) Doc() (r jsontext.Value, exists bool) {
+func (m *BroadcastMutation) Doc() (r json.RawMessage, exists bool) {
 	v := m.doc
 	if v == nil {
 		return
@@ -10310,7 +10310,7 @@ func (m *BroadcastMutation) Doc() (r jsontext.Value, exists bool) {
 // OldDoc returns the old "doc" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldDoc(ctx context.Context) (v jsontext.Value, err error) {
+func (m *BroadcastMutation) OldDoc(ctx context.Context) (v json.RawMessage, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldDoc is only allowed on UpdateOne operations")
 	}
@@ -10324,13 +10324,13 @@ func (m *BroadcastMutation) OldDoc(ctx context.Context) (v jsontext.Value, err e
 	return oldValue.Doc, nil
 }
 
-// AppendDoc adds j to the "doc" field.
-func (m *BroadcastMutation) AppendDoc(j jsontext.Value) {
-	m.appenddoc = append(m.appenddoc, j...)
+// AppendDoc adds jm to the "doc" field.
+func (m *BroadcastMutation) AppendDoc(jm json.RawMessage) {
+	m.appenddoc = append(m.appenddoc, jm...)
 }
 
 // AppendedDoc returns the list of values that were appended to the "doc" field in this mutation.
-func (m *BroadcastMutation) AppendedDoc() (jsontext.Value, bool) {
+func (m *BroadcastMutation) AppendedDoc() (json.RawMessage, bool) {
 	if len(m.appenddoc) == 0 {
 		return nil, false
 	}
@@ -11346,7 +11346,7 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		m.SetBody(v)
 		return nil
 	case broadcast.FieldDoc:
-		v, ok := value.(jsontext.Value)
+		v, ok := value.(json.RawMessage)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -19189,8 +19189,8 @@ type EmailTemplateMutation struct {
 	name             *string
 	subject          *string
 	body             *string
-	doc              *jsontext.Value
-	appenddoc        jsontext.Value
+	doc              *json.RawMessage
+	appenddoc        json.RawMessage
 	editor_version   *string
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -19577,13 +19577,13 @@ func (m *EmailTemplateMutation) ResetBody() {
 }
 
 // SetDoc sets the "doc" field.
-func (m *EmailTemplateMutation) SetDoc(j jsontext.Value) {
-	m.doc = &j
+func (m *EmailTemplateMutation) SetDoc(jm json.RawMessage) {
+	m.doc = &jm
 	m.appenddoc = nil
 }
 
 // Doc returns the value of the "doc" field in the mutation.
-func (m *EmailTemplateMutation) Doc() (r jsontext.Value, exists bool) {
+func (m *EmailTemplateMutation) Doc() (r json.RawMessage, exists bool) {
 	v := m.doc
 	if v == nil {
 		return
@@ -19594,7 +19594,7 @@ func (m *EmailTemplateMutation) Doc() (r jsontext.Value, exists bool) {
 // OldDoc returns the old "doc" field's value of the EmailTemplate entity.
 // If the EmailTemplate object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EmailTemplateMutation) OldDoc(ctx context.Context) (v jsontext.Value, err error) {
+func (m *EmailTemplateMutation) OldDoc(ctx context.Context) (v json.RawMessage, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldDoc is only allowed on UpdateOne operations")
 	}
@@ -19608,13 +19608,13 @@ func (m *EmailTemplateMutation) OldDoc(ctx context.Context) (v jsontext.Value, e
 	return oldValue.Doc, nil
 }
 
-// AppendDoc adds j to the "doc" field.
-func (m *EmailTemplateMutation) AppendDoc(j jsontext.Value) {
-	m.appenddoc = append(m.appenddoc, j...)
+// AppendDoc adds jm to the "doc" field.
+func (m *EmailTemplateMutation) AppendDoc(jm json.RawMessage) {
+	m.appenddoc = append(m.appenddoc, jm...)
 }
 
 // AppendedDoc returns the list of values that were appended to the "doc" field in this mutation.
-func (m *EmailTemplateMutation) AppendedDoc() (jsontext.Value, bool) {
+func (m *EmailTemplateMutation) AppendedDoc() (json.RawMessage, bool) {
 	if len(m.appenddoc) == 0 {
 		return nil, false
 	}
@@ -19891,7 +19891,7 @@ func (m *EmailTemplateMutation) SetField(name string, value ent.Value) error {
 		m.SetBody(v)
 		return nil
 	case emailtemplate.FieldDoc:
-		v, ok := value.(jsontext.Value)
+		v, ok := value.(json.RawMessage)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -22725,8 +22725,8 @@ type EventJournalEntryMutation struct {
 	addversion       *int
 	occurred_at      *time.Time
 	recorded_at      *time.Time
-	inputs           *jsontext.Value
-	appendinputs     jsontext.Value
+	inputs           *json.RawMessage
+	appendinputs     json.RawMessage
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -23161,13 +23161,13 @@ func (m *EventJournalEntryMutation) ResetRecordedAt() {
 }
 
 // SetInputs sets the "inputs" field.
-func (m *EventJournalEntryMutation) SetInputs(j jsontext.Value) {
-	m.inputs = &j
+func (m *EventJournalEntryMutation) SetInputs(jm json.RawMessage) {
+	m.inputs = &jm
 	m.appendinputs = nil
 }
 
 // Inputs returns the value of the "inputs" field in the mutation.
-func (m *EventJournalEntryMutation) Inputs() (r jsontext.Value, exists bool) {
+func (m *EventJournalEntryMutation) Inputs() (r json.RawMessage, exists bool) {
 	v := m.inputs
 	if v == nil {
 		return
@@ -23178,7 +23178,7 @@ func (m *EventJournalEntryMutation) Inputs() (r jsontext.Value, exists bool) {
 // OldInputs returns the old "inputs" field's value of the EventJournalEntry entity.
 // If the EventJournalEntry object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EventJournalEntryMutation) OldInputs(ctx context.Context) (v jsontext.Value, err error) {
+func (m *EventJournalEntryMutation) OldInputs(ctx context.Context) (v json.RawMessage, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldInputs is only allowed on UpdateOne operations")
 	}
@@ -23192,13 +23192,13 @@ func (m *EventJournalEntryMutation) OldInputs(ctx context.Context) (v jsontext.V
 	return oldValue.Inputs, nil
 }
 
-// AppendInputs adds j to the "inputs" field.
-func (m *EventJournalEntryMutation) AppendInputs(j jsontext.Value) {
-	m.appendinputs = append(m.appendinputs, j...)
+// AppendInputs adds jm to the "inputs" field.
+func (m *EventJournalEntryMutation) AppendInputs(jm json.RawMessage) {
+	m.appendinputs = append(m.appendinputs, jm...)
 }
 
 // AppendedInputs returns the list of values that were appended to the "inputs" field in this mutation.
-func (m *EventJournalEntryMutation) AppendedInputs() (jsontext.Value, bool) {
+func (m *EventJournalEntryMutation) AppendedInputs() (json.RawMessage, bool) {
 	if len(m.appendinputs) == 0 {
 		return nil, false
 	}
@@ -23433,7 +23433,7 @@ func (m *EventJournalEntryMutation) SetField(name string, value ent.Value) error
 		m.SetRecordedAt(v)
 		return nil
 	case eventjournalentry.FieldInputs:
-		v, ok := value.(jsontext.Value)
+		v, ok := value.(json.RawMessage)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -26294,6 +26294,7 @@ type InstanceStateMutation struct {
 	latest_release_checked_at *time.Time
 	default_send_cap          *int
 	adddefault_send_cap       *int
+	id_key                    *[]byte
 	clearedFields             map[string]struct{}
 	done                      bool
 	oldValue                  func(context.Context) (*InstanceState, error)
@@ -26814,6 +26815,42 @@ func (m *InstanceStateMutation) ResetDefaultSendCap() {
 	delete(m.clearedFields, instancestate.FieldDefaultSendCap)
 }
 
+// SetIDKey sets the "id_key" field.
+func (m *InstanceStateMutation) SetIDKey(b []byte) {
+	m.id_key = &b
+}
+
+// IDKey returns the value of the "id_key" field in the mutation.
+func (m *InstanceStateMutation) IDKey() (r []byte, exists bool) {
+	v := m.id_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIDKey returns the old "id_key" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldIDKey(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIDKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIDKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIDKey: %w", err)
+	}
+	return oldValue.IDKey, nil
+}
+
+// ResetIDKey resets all changes to the "id_key" field.
+func (m *InstanceStateMutation) ResetIDKey() {
+	m.id_key = nil
+}
+
 // Where appends a list predicates to the InstanceStateMutation builder.
 func (m *InstanceStateMutation) Where(ps ...predicate.InstanceState) {
 	m.predicates = append(m.predicates, ps...)
@@ -26848,7 +26885,7 @@ func (m *InstanceStateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InstanceStateMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, instancestate.FieldCreatedAt)
 	}
@@ -26876,6 +26913,9 @@ func (m *InstanceStateMutation) Fields() []string {
 	if m.default_send_cap != nil {
 		fields = append(fields, instancestate.FieldDefaultSendCap)
 	}
+	if m.id_key != nil {
+		fields = append(fields, instancestate.FieldIDKey)
+	}
 	return fields
 }
 
@@ -26902,6 +26942,8 @@ func (m *InstanceStateMutation) Field(name string) (ent.Value, bool) {
 		return m.LatestReleaseCheckedAt()
 	case instancestate.FieldDefaultSendCap:
 		return m.DefaultSendCap()
+	case instancestate.FieldIDKey:
+		return m.IDKey()
 	}
 	return nil, false
 }
@@ -26929,6 +26971,8 @@ func (m *InstanceStateMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldLatestReleaseCheckedAt(ctx)
 	case instancestate.FieldDefaultSendCap:
 		return m.OldDefaultSendCap(ctx)
+	case instancestate.FieldIDKey:
+		return m.OldIDKey(ctx)
 	}
 	return nil, fmt.Errorf("unknown InstanceState field %s", name)
 }
@@ -27000,6 +27044,13 @@ func (m *InstanceStateMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDefaultSendCap(v)
+		return nil
+	case instancestate.FieldIDKey:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIDKey(v)
 		return nil
 	}
 	return fmt.Errorf("unknown InstanceState field %s", name)
@@ -27124,6 +27175,9 @@ func (m *InstanceStateMutation) ResetField(name string) error {
 		return nil
 	case instancestate.FieldDefaultSendCap:
 		m.ResetDefaultSendCap()
+		return nil
+	case instancestate.FieldIDKey:
+		m.ResetIDKey()
 		return nil
 	}
 	return fmt.Errorf("unknown InstanceState field %s", name)

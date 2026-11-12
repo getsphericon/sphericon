@@ -4,7 +4,7 @@ package ent
 
 import (
 	"context"
-	"encoding/json/jsontext"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -299,13 +299,13 @@ func (_u *BroadcastUpdate) ClearBody() *BroadcastUpdate {
 }
 
 // SetDoc sets the "doc" field.
-func (_u *BroadcastUpdate) SetDoc(v jsontext.Value) *BroadcastUpdate {
+func (_u *BroadcastUpdate) SetDoc(v json.RawMessage) *BroadcastUpdate {
 	_u.mutation.SetDoc(v)
 	return _u
 }
 
 // AppendDoc appends value to the "doc" field.
-func (_u *BroadcastUpdate) AppendDoc(v jsontext.Value) *BroadcastUpdate {
+func (_u *BroadcastUpdate) AppendDoc(v json.RawMessage) *BroadcastUpdate {
 	_u.mutation.AppendDoc(v)
 	return _u
 }
@@ -1215,13 +1215,13 @@ func (_u *BroadcastUpdateOne) ClearBody() *BroadcastUpdateOne {
 }
 
 // SetDoc sets the "doc" field.
-func (_u *BroadcastUpdateOne) SetDoc(v jsontext.Value) *BroadcastUpdateOne {
+func (_u *BroadcastUpdateOne) SetDoc(v json.RawMessage) *BroadcastUpdateOne {
 	_u.mutation.SetDoc(v)
 	return _u
 }
 
 // AppendDoc appends value to the "doc" field.
-func (_u *BroadcastUpdateOne) AppendDoc(v jsontext.Value) *BroadcastUpdateOne {
+func (_u *BroadcastUpdateOne) AppendDoc(v json.RawMessage) *BroadcastUpdateOne {
 	_u.mutation.AppendDoc(v)
 	return _u
 }

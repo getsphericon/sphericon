@@ -27,8 +27,7 @@ func TestOwnerResetsAMembersSecondFactorAndEndsTheirSessions(t *testing.T) {
 	sam := env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 	jane := env.SiteToken(t, fixtures.OwnerJaneEmail, nil)
 
-	res := sendWithSession(t, env, http.MethodPost, fmt.Sprintf("/site/workspaces/%s/memberships/%d/reset-second-factor",
-		fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID), jane, "")
+	res := sendWithSession(t, env, http.MethodPost, fmt.Sprintf("/site/workspaces/%s/memberships/%s/reset-second-factor", fixtures.GlobexPublicID, testhelper.ID(fixtures.GlobexSamMembershipID)), jane, "")
 	require.Equal(t, http.StatusNoContent, res.Code)
 
 	assert.Empty(t, reissued(t, res), "the acting session belongs to someone else: nothing to reissue")

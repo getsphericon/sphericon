@@ -3,7 +3,6 @@ package external_test
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,7 +61,7 @@ func TestExternalContactEditIsAuditedWithNamesOnly(t *testing.T) {
 	for _, ev := range got {
 		e := ev.(*events.AuditEntry)
 		assert.Equal(t, events.ActorAPIToken, e.Actor.Kind)
-		assert.Equal(t, strconv.Itoa(fixtures.ContactBobID), e.TargetID)
+		assert.Equal(t, testhelper.ID(fixtures.ContactBobID), e.TargetID)
 		assert.Empty(t, e.TargetName)
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)

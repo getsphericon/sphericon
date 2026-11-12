@@ -8,6 +8,7 @@ import {
   handleSiteSecondFactorGetStatus,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteLinkedIdentity } from '../../generated/site/types.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -16,7 +17,7 @@ import { SecurityPage } from './security.tsx'
 const GOOGLE = { items: [{ name: 'google', displayName: 'Google' }] }
 const LINKED = {
   items: [
-    { id: '7', provider: 'google', displayName: 'Google', createdAt: '2026-01-01T00:00:00Z' },
+    { id: testId(7), provider: 'google', displayName: 'Google', createdAt: '2026-01-01T00:00:00Z' },
   ],
 }
 
@@ -57,7 +58,12 @@ test('a provider not linked yet offers only Connect', async () => {
 test('an identity of a provider the Instance no longer offers can still be disconnected', async () => {
   serve({
     items: [
-      { id: '8', provider: 'github', displayName: 'github', createdAt: '2026-01-01T00:00:00Z' },
+      {
+        id: testId(8),
+        provider: 'github',
+        displayName: 'github',
+        createdAt: '2026-01-01T00:00:00Z',
+      },
     ],
   })
   const { screen } = await renderWithRouter(<SecurityPage />)
@@ -80,7 +86,7 @@ test('unlinking a provider calls the unlink operation of that identity', async (
 
   await screen.getByRole('button', { name: 'Disconnect' }).click()
 
-  await expect.poll(() => called).toEqual(['7'])
+  await expect.poll(() => called).toEqual([testId(7)])
 })
 
 test('an unlink the server refuses is reported', async () => {

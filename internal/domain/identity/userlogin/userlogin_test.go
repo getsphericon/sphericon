@@ -1,7 +1,6 @@
 package userlogin_test
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -51,7 +50,7 @@ func (r rig) logins(t *testing.T, userID int64) map[int64]any {
 	t.Helper()
 	r.env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	entries := r.env.DB.AuditEntry.Query().
-		Where(auditentry.Action(events.ActionUserLogin), auditentry.TargetID(strconv.FormatInt(userID, 10))).
+		Where(auditentry.Action(events.ActionUserLogin), auditentry.TargetID(testhelper.ID(userID))).
 		AllX(t.Context())
 	out := map[int64]any{}
 	for _, e := range entries {

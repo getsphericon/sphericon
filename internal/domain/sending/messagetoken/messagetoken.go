@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	"github.com/golang-jwt/jwt/v5"
 
 	"golang.org/x/net/html"
@@ -64,12 +66,12 @@ func (t *Tracker) OnHost(host string) *Tracker {
 	return &Tracker{secret: t.secret, verifyWith: t.verifyWith, baseURL: "https://" + host}
 }
 
-// The tokens' claims are typed: int64 ids travel as JSON strings (`,string`) so
-// they never pass through float64 and lose precision above 2^53.
+// The tokens' claims are typed: an id travels as its public form (publicid), since a token is
+// signed, not encrypted, and every recipient of a link can read it.
 type messageClaims struct {
 	jwt.RegisteredClaims
 
-	MessageID int64 `json:"mid,string"`
+	MessageID publicid.ID `json:"mid"`
 }
 
 // clickClaims bind one link of one Outbound message: the destination is signed, so a click URL
@@ -77,29 +79,29 @@ type messageClaims struct {
 type clickClaims struct {
 	jwt.RegisteredClaims
 
-	MessageID   int64  `json:"mid,string"`
-	Destination string `json:"dest"`
+	MessageID   publicid.ID `json:"mid"`
+	Destination string      `json:"dest"`
 }
 
 type unsubClaims struct {
 	jwt.RegisteredClaims
 
-	Channel     string `json:"ch"`
-	Source      string `json:"src"`
-	Destination string `json:"dest"`
-	WorkspaceID int64  `json:"ws,string"`
-	ContactID   int64  `json:"cid,string"`
-	BroadcastID int64  `json:"bid,string"`
+	Channel     string      `json:"ch"`
+	Source      string      `json:"src"`
+	Destination string      `json:"dest"`
+	WorkspaceID publicid.ID `json:"ws"`
+	ContactID   publicid.ID `json:"cid"`
+	BroadcastID publicid.ID `json:"bid"`
 	// MessageID is absent when the opt-out names no received message.
-	MessageID int64 `json:"mid,string,omitempty"`
+	MessageID publicid.ID `json:"mid,omitempty"`
 }
 
 type confirmClaims struct {
 	jwt.RegisteredClaims
 
-	Destination string `json:"dest"`
-	WorkspaceID int64  `json:"ws,string"`
-	ContactID   int64  `json:"cid,string"`
+	Destination string      `json:"dest"`
+	WorkspaceID publicid.ID `json:"ws"`
+	ContactID   publicid.ID `json:"cid"`
 }
 
 func (t *Tracker) sign(claims jwt.Claims) (string, error) {
@@ -119,7 +121,7 @@ func (t *Tracker) parse(token string, claims jwt.Claims, opts ...jwt.ParserOptio
 
 // Token mints a signed token naming an Outbound message (open pixel).
 func (t *Tracker) Token(messageID int64) (string, error) {
-	return t.sign(&messageClaims{MessageID: messageID})
+	return t.sign(&messageClaims{MessageID: publicid.ID(messageID)})
 }
 
 // Decode validates an open token and returns the Outbound message id it carries. A click token
@@ -135,12 +137,12 @@ func (t *Tracker) Decode(token string) (int64, error) {
 	if c.Destination != "" {
 		return 0, errors.New("tracking: a click token is not an open token")
 	}
-	return c.MessageID, nil
+	return int64(c.MessageID), nil
 }
 
 // clickToken mints a signed token for one link of an Outbound message.
 func (t *Tracker) clickToken(messageID int64, dest string) (string, error) {
-	return t.sign(&clickClaims{MessageID: messageID, Destination: dest})
+	return t.sign(&clickClaims{MessageID: publicid.ID(messageID), Destination: dest})
 }
 
 // DecodeClick validates a click token and returns the Outbound message id and the destination
@@ -157,7 +159,7 @@ func (t *Tracker) DecodeClick(token string) (messageID int64, destination string
 	if !Trackable(c.Destination) {
 		return 0, "", errors.New("tracking: missing or invalid dest claim")
 	}
-	return c.MessageID, c.Destination, nil
+	return int64(c.MessageID), c.Destination, nil
 }
 
 // unsubToken mints a signed scoped-unsubscribe token.
@@ -166,10 +168,10 @@ func (t *Tracker) unsubToken(target linktarget.Unsubscribe) (string, error) {
 		Channel:     string(target.Channel),
 		Source:      target.Source,
 		Destination: target.Destination,
-		WorkspaceID: target.WorkspaceID,
-		ContactID:   target.ContactID,
-		BroadcastID: target.BroadcastID,
-		MessageID:   target.OutboundMessageID,
+		WorkspaceID: publicid.ID(target.WorkspaceID),
+		ContactID:   publicid.ID(target.ContactID),
+		BroadcastID: publicid.ID(target.BroadcastID),
+		MessageID:   publicid.ID(target.OutboundMessageID),
 	})
 }
 
@@ -198,8 +200,8 @@ func (t *Tracker) DecodeUnsub(token string) (linktarget.Unsubscribe, error) {
 	}
 	return linktarget.Unsubscribe{
 		Channel: channels.Channel(c.Channel), Source: c.Source, Destination: c.Destination,
-		WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID,
-		OutboundMessageID: c.MessageID,
+		WorkspaceID: int64(c.WorkspaceID), ContactID: int64(c.ContactID), BroadcastID: int64(c.BroadcastID),
+		OutboundMessageID: int64(c.MessageID),
 	}, nil
 }
 
@@ -209,8 +211,8 @@ func (t *Tracker) confirmToken(target linktarget.Confirmation) (string, error) {
 	return t.sign(&confirmClaims{
 		ExpiresAt:   jwt.NewNumericDate(t.now().Add(confirmTTL)),
 		Destination: target.Destination,
-		WorkspaceID: target.WorkspaceID,
-		ContactID:   target.ContactID,
+		WorkspaceID: publicid.ID(target.WorkspaceID),
+		ContactID:   publicid.ID(target.ContactID),
 	})
 }
 
@@ -236,7 +238,7 @@ func (t *Tracker) DecodeConfirm(token string) (linktarget.Confirmation, error) {
 	if c.WorkspaceID == 0 {
 		return linktarget.Confirmation{}, ErrLinkInvalid.With("missing ws claim")
 	}
-	return linktarget.Confirmation{Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID}, nil
+	return linktarget.Confirmation{Destination: c.Destination, WorkspaceID: int64(c.WorkspaceID), ContactID: int64(c.ContactID)}, nil
 }
 
 // OpenURL is the 1x1 pixel URL that records an open.

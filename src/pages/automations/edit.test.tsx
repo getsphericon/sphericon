@@ -15,13 +15,17 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { AutomationEditPage } from './edit.tsx'
 
-const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
+const EDIT_ROUTE = routeMount(automationsEditRoute, {
+  workspaceId: 'TestWs01',
+  automationId: testId(5),
+})
 const NOW = '2026-01-01T00:00:00Z'
 
 // The page also asks for the failed Enrollments and the Integrations to pick from: none unless a
@@ -40,7 +44,7 @@ test('loads the automation into the builder', async () => {
     handleSiteAutomationsGet({
       body: {
         revision: 1,
-        id: '5',
+        id: testId(5),
         name: 'Welcome flow',
         status: 'inactive',
         live: null,
@@ -78,7 +82,7 @@ test('shows an error alert when the automation fails to load', async () => {
 
 const STORED: SiteAutomationResource = {
   revision: 1,
-  id: '5',
+  id: testId(5),
   name: 'Welcome flow',
   status: 'inactive',
   live: null,
@@ -216,9 +220,9 @@ test('shows no failed enrollments when none has a recorded reason', async () => 
       body: {
         items: [
           {
-            id: '9',
-            automationId: '5',
-            contactId: '107',
+            id: testId(9),
+            automationId: testId(5),
+            contactId: testId(107),
             status: 'failed',
             currentStep: 0,
             createdAt: NOW,
@@ -258,9 +262,9 @@ test('lists the enrollments an HTTP step failed, with the reason and the respons
       body: {
         items: [
           {
-            id: '9',
-            automationId: '5',
-            contactId: '107',
+            id: testId(9),
+            automationId: testId(5),
+            contactId: testId(107),
             status: 'failed',
             currentStep: 0,
             failure: { kind: 'http_status', status: 503, excerpt: 'upstream unavailable' },
@@ -391,7 +395,7 @@ test('Publish from the builder publishes the saved draft', async () => {
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
   await screen.getByRole('button', { name: 'Publish' }).click()
 
-  await expect.poll(() => published).toEqual(['5'])
+  await expect.poll(() => published).toEqual([testId(5)])
   await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
 })
 
@@ -406,7 +410,7 @@ test('an archived automation opens its page instead of the builder', async () =>
     .poll(() => navigate)
     .toHaveBeenCalledWith({
       to: automationsDetailRoute.to,
-      params: { workspaceId: 'TestWs01', automationId: '5' },
+      params: { workspaceId: 'TestWs01', automationId: testId(5) },
       replace: true,
     })
   await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()

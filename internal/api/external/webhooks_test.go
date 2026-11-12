@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -74,9 +73,9 @@ func TestExternalWebhooksNeverReturnSecrets(t *testing.T) {
 
 	cases := []struct{ name, method, path, body string }{
 		{"list", http.MethodGet, "/api/webhooks", ""},
-		{"get", http.MethodGet, fmt.Sprintf("/api/webhooks/%d", fixtures.WebhookCodebasicsID), ""},
+		{"get", http.MethodGet, "/api/webhooks/" + testhelper.ID(fixtures.WebhookCodebasicsID), ""},
 		{"create", http.MethodPost, "/api/webhooks", `{"url":"https://example.com/h"}`},
-		{"update", http.MethodPut, fmt.Sprintf("/api/webhooks/%d", fixtures.WebhookCodebasicsID), `{"revision":1,"enabled":false}`},
+		{"update", http.MethodPut, "/api/webhooks/" + testhelper.ID(fixtures.WebhookCodebasicsID), `{"revision":1,"enabled":false}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

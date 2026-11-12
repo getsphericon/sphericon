@@ -49,7 +49,7 @@ func TestExportErasuresAnnouncesAnErasureByContact(t *testing.T) {
 
 	row := rowWithEmailHash(page, "erin@initech.test")
 	require.NotNil(t, row, "the Erasure left a row")
-	assert.Equal(t, "300", row["contact_id"])
+	assert.Equal(t, testhelper.ID(300), row["contact_id"])
 	assert.Equal(t, "user-erin-300", row["subject_id"])
 	assert.Equal(t, []any{"vis-erasable-laptop"}, row["visitor_ids"])
 	assert.Equal(t, hexSHA256("+14155550300"), row["phone_hash"])
@@ -180,6 +180,6 @@ func TestExportErasuresNeverReadAnotherWorkspace(t *testing.T) {
 	globex := readExportErasures(t, exportClient(t, env, fixtures.GlobexID), "")
 
 	require.Len(t, globex.rows, 1)
-	assert.Equal(t, "900", globex.rows[0]["id"])
+	assert.Equal(t, testhelper.ID(900), globex.rows[0]["id"])
 	assert.Nil(t, acme.row(900), "Acme never sees Globex's row")
 }

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -57,7 +56,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
 	assert.Equal(t, "John", e.Actor.Name.Value)
 	assert.Equal(t, "invitation", e.Target.Type)
-	assert.Equal(t, strconv.FormatInt(int64(created.Resource.ID), 10), e.Target.ID.Value)
+	assert.Equal(t, testhelper.ID(created.Resource.ID), e.Target.ID.Value)
 	assert.False(t, e.Target.Name.Set, "an Invitation is named by nothing: its only name is the address (ADR 0050)")
 	diff, err := json.Marshal(e.Diff.Value)
 	require.NoError(t, err)
@@ -70,7 +69,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	revoked := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationRevoke)
 	require.Len(t, revoked, 1)
 	assert.False(t, revoked[0].Target.Name.Set)
-	assert.Equal(t, strconv.FormatInt(int64(created.Resource.ID), 10), revoked[0].Target.ID.Value)
+	assert.Equal(t, testhelper.ID(created.Resource.ID), revoked[0].Target.ID.Value)
 }
 
 func TestAuditInvitationAcceptIsAttributedToTheNewMember(t *testing.T) {
@@ -172,7 +171,7 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 		assert.NotContains(t, string(diff), "op-42")
 		assert.NotContains(t, got[0].Target.Name.Value, "op-42")
 		assert.Equal(t, "workspace", got[0].Target.Type)
-		assert.Equal(t, strconv.Itoa(fixtures.AcmeID), got[0].Target.ID.Value)
+		assert.Equal(t, testhelper.ID(fixtures.AcmeID), got[0].Target.ID.Value)
 	}
 }
 

@@ -9,8 +9,9 @@ package auditlog
 import (
 	"encoding/json"
 	"reflect"
-	"strconv"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/go-faster/jx"
 
@@ -29,7 +30,7 @@ func Cursor(cursor string) (int64, error) {
 	if cursor == "" {
 		return 0, nil
 	}
-	after, err := strconv.ParseInt(cursor, 10, 64)
+	after, err := publicid.Decode(cursor)
 	if err != nil || after < 1 {
 		return 0, ErrBadCursor
 	}
@@ -37,7 +38,7 @@ func Cursor(cursor string) (int64, error) {
 }
 
 // NextCursor renders the cursor of the next page.
-func NextCursor(next int64) string { return strconv.FormatInt(next, 10) }
+func NextCursor(next int64) string { return publicid.Encode(next) }
 
 // View is an Audit entry as a customer sees it. A Staff member appears only as
 // events.StaffLabel, with no id.

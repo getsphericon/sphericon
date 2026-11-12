@@ -9,7 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { Route as customFieldsRoute } from '../../routes/workspaces/$workspaceId/custom-fields/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -19,7 +19,7 @@ import { CustomFieldsListPage } from './list.tsx'
 const LIST_ROUTE = routeMount(customFieldsRoute, { workspaceId: 'TestWs01' })
 
 const PLAN = {
-  id: '1',
+  id: testId(1),
   key: 'plan',
   name: 'Plan',
   type: 'string' as const,
@@ -28,7 +28,7 @@ const PLAN = {
   ...TIMESTAMPS,
 }
 const SEATS = {
-  id: '2',
+  id: testId(2),
   key: 'seats',
   name: 'Seats',
   type: 'number' as const,

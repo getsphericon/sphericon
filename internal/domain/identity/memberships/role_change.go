@@ -3,7 +3,8 @@ package memberships
 import (
 	"context"
 	"errors"
-	"strconv"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -63,7 +64,7 @@ func (ms *Module) ChangeRole(ctx context.Context, s *ent.Scoped, actor events.Ac
 			Actor:       actor,
 			Action:      events.ActionMembershipUpdate,
 			TargetType:  membership.Label,
-			TargetID:    strconv.FormatInt(target.ID, 10),
+			TargetID:    publicid.Encode(target.ID),
 			TargetName:  target.Edges.User.Name,
 			Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), string(desired))},
 		})
@@ -126,7 +127,7 @@ func LockSelfIn(ctx context.Context, ts *ent.Scoped, userID int64) (target *ent.
 	if err != nil {
 		return nil, 0, events.Actor{}, err
 	}
-	actor = events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10), Name: target.Edges.User.Name}
+	actor = events.Actor{Kind: events.ActorUser, ID: publicid.Encode(userID), Name: target.Edges.User.Name}
 	return target, owners, actor, nil
 }
 
@@ -157,7 +158,7 @@ func RemovalAudit(workspaceID int64, actor events.Actor, target *ent.Membership)
 		Actor:       actor,
 		Action:      events.ActionMembershipDelete,
 		TargetType:  membership.Label,
-		TargetID:    strconv.FormatInt(target.ID, 10),
+		TargetID:    publicid.Encode(target.ID),
 		TargetName:  target.Edges.User.Name,
 		Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), nil)},
 	}

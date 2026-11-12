@@ -10,6 +10,7 @@ import {
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import { handleSiteUserGetMe } from '../generated/site/msw.gen.ts'
 import type { SiteUserResource } from '../generated/site/types.gen.ts'
+import { testId } from '../test/payloads.ts'
 import { trackQueryClient } from '../test/queryClients.ts'
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
 import { worker } from '../test/worker.ts'
@@ -23,7 +24,7 @@ const NOON = '2026-03-08T12:00:00'
 const FIVE_MINUTES_AGO = Date.now() - 5 * 60_000
 
 const me: SiteUserResource = {
-  id: '1',
+  id: testId(1),
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: true,

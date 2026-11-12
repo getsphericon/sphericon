@@ -253,7 +253,7 @@ func TestARuleHasNoCapOnTheirNumber(t *testing.T) {
 func TestRuleChangesAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.OwnerJohnID), Name: "John"}
+	actor := events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.OwnerJohnID), Name: "John"}
 	s := env.Bus.Act(acme(env), actor)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
@@ -270,7 +270,7 @@ func TestRuleChangesAreAudited(t *testing.T) {
 
 	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e, ok := ev.(*events.AuditEntry)
-		return e, ok && e.TargetType == "rule" && e.TargetID == strconv.FormatInt(r.ID, 10)
+		return e, ok && e.TargetType == "rule" && e.TargetID == testhelper.ID(r.ID)
 	})
 	seen := lo.Map(entries, func(e *events.AuditEntry, _ int) string { return e.Action })
 	for _, e := range entries {

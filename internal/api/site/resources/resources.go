@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
@@ -275,6 +277,7 @@ type Converter interface {
 
 	// The email's subject is not on the Event: the handler reads it from the Outbound message.
 	// goverter:ignore EmailSubject
+	// goverter:map . Properties | eventProperties
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	// goverter:useEmptyOnNil:slice
 	EventsToResources(source []*ent.Event) []siteapi.SiteEventResource
@@ -594,6 +597,7 @@ type Converter interface {
 	ContactToExport(source *ent.Contact) siteapi.ContactExportContact
 	TagToExport(source *ent.Tag) siteapi.ContactExportTag
 	VisitorToExport(source *ent.Visitor) siteapi.ContactExportVisitor
+	// goverter:map . Properties | eventProperties
 	EventToExport(source *ent.Event) siteapi.ContactExportEvent
 	UnsubscribeToExport(source *ent.Unsubscribe) siteapi.ContactExportUnsubscribe
 	SuppressionToExport(source *ent.Suppression) siteapi.ContactExportSuppression
@@ -882,6 +886,12 @@ func emailContentChannel(channels.Channel) siteapi.EmailBroadcastContentChannel 
 
 // jsonObject renders a stored JSON object (custom fields, event properties): absent when it has
 // no keys.
+// eventProperties is an Event's properties as a client sees them, a System event's keys by their
+// public form (systemevent.PublicProperties).
+func eventProperties(e *ent.Event) siteapi.OptNilJsonObject {
+	return jsonObject(systemevent.PublicProperties(e.Action, e.Properties))
+}
+
 func jsonObject(m map[string]any) siteapi.OptNilJsonObject {
 	return convert.OptObject[siteapi.OptNilJsonObject](convert.RawObject[siteapi.JsonObject](m))
 }

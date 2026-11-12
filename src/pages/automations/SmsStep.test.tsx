@@ -11,15 +11,22 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, SiteAutomationStep } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { emailIntegration, TIMESTAMPS } from '../../test/payloads.ts'
+import { emailIntegration, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { AutomationEditPage } from './edit.tsx'
 
-const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
+const EDIT_ROUTE = routeMount(automationsEditRoute, {
+  workspaceId: 'TestWs01',
+  automationId: testId(5),
+})
 
-const STEP: SiteAutomationStep = { type: 'sms', text: 'Hi {{ first_name }}', integrationId: '41' }
+const STEP: SiteAutomationStep = {
+  type: 'sms',
+  text: 'Hi {{ first_name }}',
+  integrationId: testId(41),
+}
 
 // The editor's counter reads the Workspace's short-link length.
 const WORKSPACE = {
@@ -41,13 +48,13 @@ const WORKSPACE = {
 }
 
 const INTEGRATIONS = [
-  emailIntegration('1', 'Primary SMTP', { isDefault: true }),
-  emailIntegration('31', 'Acme bot', {
+  emailIntegration(testId(1), 'Primary SMTP', { isDefault: true }),
+  emailIntegration(testId(31), 'Acme bot', {
     channel: 'telegram',
     provider: 'telegram',
     config: { kind: 'telegram', botId: 7001, username: 'acme_bot' },
   }),
-  emailIntegration('41', 'Acme Twilio', {
+  emailIntegration(testId(41), 'Acme Twilio', {
     channel: 'sms',
     provider: 'twilio',
     config: {
@@ -63,7 +70,7 @@ const INTEGRATIONS = [
 
 function stored(steps: SiteAutomationStep[]): SiteAutomationResource {
   return {
-    id: '5',
+    id: testId(5),
     name: 'Cart reminder',
     status: 'inactive',
     live: null,

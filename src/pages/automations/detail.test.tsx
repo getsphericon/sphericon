@@ -14,14 +14,17 @@ import type {
   SiteAutomationResults,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
-import { emailIntegration, page, TIMESTAMPS } from '../../test/payloads.ts'
+import { emailIntegration, page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { AutomationDetailPage } from './detail.tsx'
 
-const MOUNT = routeMount(automationsDetailRoute, { workspaceId: 'TestWs01', automationId: '1' })
+const MOUNT = routeMount(automationsDetailRoute, {
+  workspaceId: 'TestWs01',
+  automationId: testId(1),
+})
 
 const NO_REVENUE = { reportingCurrency: 'USD', orders: 0, amount: 0 }
 
@@ -57,7 +60,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
   worker.use(
     handleSiteAutomationsGet({
       body: {
-        id: '1',
+        id: testId(1),
         name: 'Welcome series',
         status: 'active',
         live: {
@@ -90,9 +93,9 @@ test('shows the automation and the contacts enrolled in it', async () => {
       body: page(
         [
           {
-            id: '5',
-            automationId: '1',
-            contactId: '42',
+            id: testId(5),
+            automationId: testId(1),
+            contactId: testId(42),
             status: 'completed',
             currentStep: 1,
             ...TIMESTAMPS,
@@ -106,7 +109,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
   const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
 
   await expect.element(screen.getByText('Welcome series')).toBeInTheDocument()
-  await expect.element(screen.getByText('42')).toBeInTheDocument()
+  await expect.element(screen.getByText(testId(42))).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'Completed' })).toBeInTheDocument()
 })
 
@@ -114,7 +117,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
   worker.use(
     handleSiteAutomationsGet({
       body: {
-        id: '1',
+        id: testId(1),
         name: 'Welcome series',
         status: 'active',
         live: {
@@ -169,7 +172,7 @@ test('marks an inactive automation as inactive', async () => {
   worker.use(
     handleSiteAutomationsGet({
       body: {
-        id: '1',
+        id: testId(1),
         name: 'Unfinished flow',
         status: 'inactive',
         live: {
@@ -219,7 +222,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
   worker.use(
     handleSiteAutomationsGet({
       body: {
-        id: '1',
+        id: testId(1),
         name: 'Welcome series',
         status: 'active',
         live: {
@@ -262,7 +265,7 @@ test('shows no orders or revenue on the automation until the first order sets th
   worker.use(
     handleSiteAutomationsGet({
       body: {
-        id: '1',
+        id: testId(1),
         name: 'Welcome series',
         status: 'active',
         live: {
@@ -303,7 +306,7 @@ test('shows no orders or revenue on the automation until the first order sets th
 
 // An active Automation with a draft above its live version (ADR 0065).
 const PENDING: SiteAutomationResource = {
-  id: '1',
+  id: testId(1),
   name: 'Welcome series',
   status: 'active',
   live: { number: 1, triggerEvent: 'signup', exitEvents: [], goalEvent: null, steps: [] },
@@ -345,7 +348,7 @@ test('shows what the live version does, its exit and goal events included, not t
           goalEvent: 'course_started',
           steps: [
             { type: 'email', subject: 'Welcome aboard' },
-            { type: 'email', subject: 'Second look', integrationId: '21' },
+            { type: 'email', subject: 'Second look', integrationId: testId(21) },
             { type: 'apply_tag', tag: 'onboarded' },
           ],
         },
@@ -360,7 +363,7 @@ test('shows what the live version does, its exit and goal events included, not t
     }),
     handleSiteAutomationReportsGet({ body: NO_FIGURES }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
-    handleSiteIntegrationsGet({ body: emailIntegration('21', 'Mailgun relay') }),
+    handleSiteIntegrationsGet({ body: emailIntegration(testId(21), 'Mailgun relay') }),
   )
 
   const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
@@ -388,14 +391,14 @@ test('a send step through a deleted Integration names it as deleted', async () =
           triggerEvent: 'signup',
           exitEvents: [],
           goalEvent: null,
-          steps: [{ type: 'email', subject: 'Second look', integrationId: '21' }],
+          steps: [{ type: 'email', subject: 'Second look', integrationId: testId(21) }],
         },
       },
     }),
     handleSiteAutomationReportsGet({ body: NO_FIGURES }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
     handleSiteIntegrationsGet({
-      body: emailIntegration('21', 'Mailgun relay', { discardedAt: '2026-02-01T00:00:00Z' }),
+      body: emailIntegration(testId(21), 'Mailgun relay', { discardedAt: '2026-02-01T00:00:00Z' }),
     }),
   )
 
@@ -422,7 +425,7 @@ test('a draft above the live version is marked pending, and Publish makes it liv
   await expect.element(screen.getByText('Unpublished changes')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Publish' }).click()
 
-  await expect.poll(() => published).toEqual(['1'])
+  await expect.poll(() => published).toEqual([testId(1)])
   await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
   await expect.element(screen.getByText('Unpublished changes')).not.toBeInTheDocument()
 })
@@ -443,7 +446,7 @@ test('Revert drops the draft', async () => {
   const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
   await screen.getByRole('button', { name: 'Revert' }).click()
 
-  await expect.poll(() => reverted).toEqual(['1'])
+  await expect.poll(() => reverted).toEqual([testId(1)])
   await expect.element(screen.getByText('Unpublished changes reverted')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
 })
@@ -583,7 +586,7 @@ test('an archived automation is read-only: it offers no edit and no publish', as
   worker.use(
     handleSiteAutomationsGet({
       body: {
-        id: '1',
+        id: testId(1),
         name: 'Old referral nudge',
         status: 'inactive',
         live: null,

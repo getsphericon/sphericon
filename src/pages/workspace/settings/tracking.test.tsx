@@ -16,6 +16,7 @@ import type {
 } from '../../../generated/site/types.gen.ts'
 import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
+import { testId } from '../../../test/payloads.ts'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
@@ -76,7 +77,7 @@ function trackingDomain(
 ): SiteTrackingDomainResource {
   const host = over.host ?? 't.acme.test'
   return {
-    id: '1',
+    id: testId(1),
     host,
     role: 'current',
     state: 'pending',
@@ -223,8 +224,13 @@ test('a blank host is refused on the field without asking the API', async () => 
 test('shows the CNAME, a pending replacement and the retired hosts', async () => {
   serveTrackingDomains([
     trackingDomain({ state: 'serving', servedAt: '2026-01-02T00:00:00Z' }),
-    trackingDomain({ id: '2', host: 'links.acme.test', role: 'replacement', reason: 'host_taken' }),
-    trackingDomain({ id: '3', host: 'old.acme.test', role: 'retired', state: 'serving' }),
+    trackingDomain({
+      id: testId(2),
+      host: 'links.acme.test',
+      role: 'replacement',
+      reason: 'host_taken',
+    }),
+    trackingDomain({ id: testId(3), host: 'old.acme.test', role: 'retired', state: 'serving' }),
   ])
 
   const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
@@ -267,13 +273,13 @@ test('removing a host that served retires it after saying sent links keep workin
   expect(removed).toEqual([])
   await screen.getByRole('dialog').getByRole('button', { name: 'Remove' }).click()
 
-  await expect.poll(() => removed).toEqual(['1'])
+  await expect.poll(() => removed).toEqual([testId(1)])
 })
 
 test('forgetting a retired host warns that its links stop working', async () => {
   const removed: string[] = []
   serveTrackingDomains([
-    trackingDomain({ id: '3', host: 'old.acme.test', role: 'retired', state: 'serving' }),
+    trackingDomain({ id: testId(3), host: 'old.acme.test', role: 'retired', state: 'serving' }),
   ])
   worker.use(
     handleSiteTrackingDomainsRemove(({ params }) => {
@@ -290,7 +296,7 @@ test('forgetting a retired host warns that its links stop working', async () => 
     .toBeInTheDocument()
   await screen.getByRole('dialog').getByRole('button', { name: 'Forget' }).click()
 
-  await expect.poll(() => removed).toEqual(['3'])
+  await expect.poll(() => removed).toEqual([testId(3)])
 })
 
 test('a member without tracking_domains:manage sees the hosts but cannot change them', async () => {

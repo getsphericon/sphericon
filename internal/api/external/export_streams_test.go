@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 	"testing"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ func pageThrough(read func(cursor string, limit int32) exportPage, limit int32, 
 
 func (p exportPage) ids() []int64 {
 	return lo.Map(p.rows, func(r map[string]any, _ int) int64 {
-		id, err := strconv.ParseInt(r["id"].(string), 10, 64)
+		id, err := publicid.Decode(r["id"].(string))
 		if err != nil {
 			panic(err)
 		}
@@ -55,7 +56,7 @@ func (p exportPage) ids() []int64 {
 
 func (p exportPage) row(id int64) map[string]any {
 	for _, r := range p.rows {
-		if r["id"] == strconv.FormatInt(id, 10) {
+		if r["id"] == publicid.Encode(id) {
 			return r
 		}
 	}

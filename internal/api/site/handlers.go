@@ -4,8 +4,9 @@ package site
 
 import (
 	"context"
-	"strconv"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -292,5 +293,5 @@ func (*Handlers) actor(ctx context.Context) events.Actor {
 	if a == nil {
 		return events.Actor{}
 	}
-	return events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(a.User.ID, 10), Name: a.User.Name}
+	return events.Actor{Kind: events.ActorUser, ID: publicid.Encode(a.User.ID), Name: a.User.Name}
 }

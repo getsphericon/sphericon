@@ -557,6 +557,10 @@ run = "pnpm run i18n:types"
 
 ["generate:backend"]
 description = "OpenAPI/ent -> Go (ent, ogen, goverter)"
+# ogen v1.24 loads an `x-ogen-type` (EntityId's publicid.ID) by looking up encoding/json's Marshaler
+# as a named type, which Go 1.27's json v2 experiment makes an alias, and it panics: ogen loads the
+# types with that experiment off. The generated code is the same either way.
+env = { GOEXPERIMENT = "nojsonv2" }
 run = [
   "cd ent && heavy -- go run -mod=mod entc.go",
   "heavy -- go tool ogen --config ogen.yml --target gen/site --package siteapi --clean openapi/site.openapi.json",

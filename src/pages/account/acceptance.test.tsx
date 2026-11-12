@@ -15,6 +15,7 @@ import type { SiteUserResource } from '../../generated/site/types.gen.ts'
 import { Route as acceptanceRoute } from '../../routes/acceptance.tsx'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -25,7 +26,7 @@ const mount = routeMount(acceptanceRoute)
 
 // A User the new version of the terms stops (ADR 0062).
 const gated: SiteUserResource = {
-  id: '1',
+  id: testId(1),
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: true,

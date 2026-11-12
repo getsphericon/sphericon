@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,7 +26,7 @@ func TestSiteTagCreateIsAuditedUnderTheUser(t *testing.T) {
 	require.Len(t, got, 1)
 	e := got[0].(*events.AuditEntry)
 	assert.Equal(t, "tag.create", e.Action)
-	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.OwnerJohnID), Name: "John"}, e.Actor)
+	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.OwnerJohnID), Name: "John"}, e.Actor)
 	assert.Equal(t, "audited-tag", e.TargetName)
 	assert.Equal(t, map[string]any{"name": map[string]any{"to": "audited-tag"}}, e.Diff)
 

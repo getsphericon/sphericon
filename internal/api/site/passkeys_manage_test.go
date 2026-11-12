@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func passkeyPath(id int64) string { return passkeysPath + "/" + strconv.FormatInt(id, 10) }
+func passkeyPath(id int64) string { return passkeysPath + "/" + testhelper.ID(id) }
 
 func removeBody(password string) string {
 	if password == "" {
@@ -131,7 +133,7 @@ func TestAUserWithALinkedIdentityAndNoPasswordMayRemoveTheirLastPasskey(t *testi
 	added := passkeyCall(t, r.env, http.MethodPost, passkeyFinishPath, session, ceremony, finishBody(t, "", "Nina's laptop", credential))
 	require.Equal(t, http.StatusOK, added.Code, added.Body.String())
 	id := listPasskeys(t, r.env, session).Items[0].ID
-	numeric, err := strconv.ParseInt(id, 10, 64)
+	numeric, err := publicid.Decode(id)
 	require.NoError(t, err)
 	session = r.signIn(t, newcomer)
 
