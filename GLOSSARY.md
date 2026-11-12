@@ -1196,6 +1196,19 @@ User's Role, can do no more than the Role allows at the moment of each request, 
 Membership.
 _Avoid_: PAT, personal API key, API token (that is the Workspace's)
 
+**Skill**:
+A named Markdown playbook a Workspace writes for agents (its brand voice, how it runs a win-back),
+served to every MCP client of the Workspace as a prompt (`skill_<name>`) beside the shipped ones. Written only in the
+app, by `skills:manage`, never through the API or MCP.
+_Avoid_: Prompt (the MCP word for how it is served), playbook file, Template (that is email content)
+
+**Inline intent**:
+Help inside one of the app's editors from the model the Instance configures (a Segment from a
+description, a draft from a brief, an explanation of a report), on a Workspace whose owner accepted
+the named provider and model. The model sees definitions and figures, never a Contact; the app keeps
+no prompt or answer; what it makes is a draft a Member saves, and nothing it writes loads before then.
+_Avoid_: Chat, copilot, AI assistant (unqualified)
+
 **Untrusted field**:
 A field anyone other than a Member can write (a door of ingest, Identify, an Inbound message, a
 form, an Import, a third party's answer): a Contact's `subject_id`, names, Identify's core

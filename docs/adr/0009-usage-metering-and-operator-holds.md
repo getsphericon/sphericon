@@ -4,6 +4,9 @@ status: accepted
 
 # Usage metering and staff holds: measured in the core, managed from outside
 
+> **Amended by [[0139-workspace-skills-and-inline-intents-on-an-instance-configured-model]]:**
+> the Usage snapshot gains a metric of the tokens a Workspace's inline intents use.
+
 The core **measures** what each Workspace does and lets a Staff member **hold** a Workspace's sending
 from outside. It knows nothing of why a Workspace is allowed or held: whoever manages a
 Workspace's allowance does so in a separate service that is not part of this repository, through

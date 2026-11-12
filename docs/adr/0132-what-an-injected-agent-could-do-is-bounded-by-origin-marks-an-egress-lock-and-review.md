@@ -4,6 +4,11 @@ status: accepted
 
 # What an injected agent could do is bounded by origin marks, an egress lock and review
 
+> **Amended by [[0139-workspace-skills-and-inline-intents-on-an-instance-configured-model]]:**
+> the app now runs a model for inline intents: its inputs are wrapped by origin as here, its output is
+> reviewed by host and author as here, and it gets no Contact; an author may be that assistant; a
+> Skill is an instruction and is not wrapped as data.
+
 > **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:**
 > a CSV import's Events carry an import cause that, like a Backfill, starts nothing and reaches no
 > Webhook endpoint unless the Member asks.

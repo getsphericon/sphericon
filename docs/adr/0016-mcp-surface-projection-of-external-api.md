@@ -4,6 +4,10 @@ status: accepted
 
 # MCP surface: a projection of the external `/api`, not a second implementation
 
+> **Amended by [[0139-workspace-skills-and-inline-intents-on-an-instance-configured-model]]:**
+> a Workspace's own Skills are served as MCP prompts beside the shipped ones; they are written only
+> in the app.
+
 > **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:**
 > the bulk CSV export of Contacts is in the app only; a Connection's `contacts:export` reaches the
 > one-Contact export.
