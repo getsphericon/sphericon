@@ -308,7 +308,7 @@ func TestHTTPExecutionCancelsADamagedStoredDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHTTPExecutionVersionID).SetSteps("[").Exec(t.Context())
+	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHTTPExecutionVersionID).SetSteps(`[{"type":7}]`).Exec(t.Context()) // JSON, as the database requires, but no Step
 	require.NoError(t, err)
 
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})

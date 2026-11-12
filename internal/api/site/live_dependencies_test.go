@@ -155,7 +155,7 @@ func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ctx := t.Context()
 	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
-		SetSteps(`[{"type":"wait"},`).Exec(ctx)
+		SetSteps(`[{"type":"wait","seconds":"soon"}]`).Exec(ctx) // JSON, as the database requires, but no Step
 	require.NoError(t, err)
 
 	err = integrationdeletion.New(env.Bus, env.Integrations, env.RemovalCheck, time.Now).Delete(ctx, s, fixtures.IntegrationAcmeMailgunID)
@@ -174,7 +174,7 @@ func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
 	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
-		SetSteps(`[{"type":"email"},`).Exec(ctx)
+		SetSteps(`[{"type":"email","subject":7}]`).Exec(ctx) // JSON, as the database requires, but no Step
 	require.NoError(t, err)
 
 	err = c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{

@@ -191,6 +191,7 @@ func broadcastTable() entsql.Annotation {
 	a.Checks["broadcasts_scheduled_at_check"] = "status <> 'scheduled' OR scheduled_at IS NOT NULL"
 	a.Checks["broadcasts_sent_at_check"] = "status <> 'sent' OR sent_at IS NOT NULL"
 	a.Checks["broadcasts_failed_at_check"] = "status <> 'failed' OR failed_at IS NOT NULL"
+	a.Checks["broadcasts_condition_check"] = conditionCheck("condition")
 	return a
 }
 

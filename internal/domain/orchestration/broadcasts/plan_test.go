@@ -185,7 +185,8 @@ func TestPlanFailsOnABrokenSegment(t *testing.T) {
 
 	t.Run("segment with an undecodable definition", func(t *testing.T) {
 		d := newDelivery(t, time.Now)
-		d.env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition("{not json").ExecX(d.t.Context())
+		// JSON, as the database requires (segments_condition_check), but no Condition.
+		d.env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition(`{"kind":"group","rules":"none"}`).ExecX(d.t.Context())
 		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentProPlanID).ExecX(d.t.Context())
 
 		_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)

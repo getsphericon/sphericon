@@ -21,7 +21,9 @@ type AutomationVersion struct {
 
 func (AutomationVersion) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "automation_versions"},
+		entsql.Annotation{Table: "automation_versions", Checks: map[string]string{
+			"automation_versions_steps_check": jsonCheck("steps", "ARRAY"),
+		}},
 	}
 }
 

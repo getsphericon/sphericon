@@ -90,11 +90,8 @@ type Step struct {
 // step turned it off.
 func (s *Step) TracksLinks() bool { return s.LinkTracking == nil || *s.LinkTracking }
 
-// Decode parses a stored definition. An empty definition has no steps.
+// Decode parses a stored definition, a JSON array (automation_versions_steps_check).
 func Decode(definition string) ([]Step, error) {
-	if definition == "" {
-		return nil, nil
-	}
 	var steps []Step
 	if err := json.Unmarshal([]byte(definition), &steps); err != nil {
 		return nil, err
