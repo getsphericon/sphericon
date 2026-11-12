@@ -118,6 +118,8 @@ or `AGENTS.md`.
     what was called, how often or with which arguments. An outside boundary (mail, a provider's HTTP)
     may be replaced by a stub, as long as the test looks at what was left behind and not at the calls.
     The facts asserted are business facts, not accidents: no row counts of a whole table or raw ids.
+    An expected value is not computed by the code under test, and a test does not assert against the
+    constant it protects; what the app sends out is tested as delivered (ADR 0024).
     A test is black-box: it sits in the package's `_test` package and goes through what the package
     exports, and no `export_test.go` opens the package's insides to it. A command (`cmd/*`) is a
     handler like an HTTP one: its logic lives in an internal package, which is tested, and the
@@ -128,7 +130,8 @@ or `AGENTS.md`.
     test with only a library or component as its subject is deleted and none is added. No load,
     stress or soak test is written: no test repeats an action to provoke a race or a leak, or
     measures throughput. A UI test (a page rendered and clicked in a browser) is written only for a
-    critical path; the logic behind a page is tested as logic, in a `*.test.ts` file.
+    critical path; the logic behind a page is tested as logic, in a `*.test.ts` file. A migration
+    that touches rows is our logic and is tested over rows (ADR 0047).
 
 ## Process
 
