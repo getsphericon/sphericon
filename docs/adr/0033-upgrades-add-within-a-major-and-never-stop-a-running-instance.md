@@ -43,7 +43,11 @@ rules below make a jump safe without asking the Self-hoster to step through ever
   seconds, until its time limit ends. A long transaction delays the migration, not the queries.
   A `NO TRANSACTION` migration's wait stays unbounded: Postgres cannot roll it back, so a rerun
   would start a half-applied file over, and its `CONCURRENTLY` statements wait for older
-  transactions by design, a wait that blocks no query.
+  transactions by design. It therefore holds only statements whose wait blocks no query: an index
+  built, dropped or rebuilt `CONCURRENTLY`, `VALIDATE CONSTRAINT` and data changes. CI fails any
+  other statement in a new one (`unbounded-lock-wait`, which a checked statement on a table no
+  query reads yet escapes with `-- squawk-ignore`), so a constraint is added `NOT VALID` in a
+  migration that runs in a transaction and validated in a `NO TRANSACTION` migration after it.
 - **The database records its Major and a floor**, one row (`schema_state`) holding the schema's
   Major (a counter, 1 for the first, plus one per destructive migration) and the **floor**: the
   oldest release that still runs on it, which is the last release of the previous Major. Only a

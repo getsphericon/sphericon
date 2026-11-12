@@ -17,7 +17,8 @@ import (
 // DROP COLUMN for an added column), and a Down is never applied in production.
 // goose wraps a migration in a transaction unless it says `-- +goose NO TRANSACTION`, so squawk
 // is told to assume one for the others: an index or constraint on a table that the same migration
-// creates is then not a lock on a live table.
+// creates is then not a lock on a live table. A `NO TRANSACTION` migration is also held to the
+// statements whose lock wait blocks no query (UnboundedWaitRule).
 func LintFiles(ctx context.Context, paths []string) ([]Finding, error) {
 	dir, err := os.MkdirTemp("", "upgradecheck-")
 	if err != nil {
@@ -25,6 +26,7 @@ func LintFiles(ctx context.Context, paths []string) ([]Finding, error) {
 	}
 	defer func() { cleanup.Report("remove the scratch directory", os.RemoveAll(dir)) }()
 	var inTx, noTx []string
+	var findings []Finding
 	for _, p := range paths {
 		if isRiver(filepath.Base(p)) {
 			continue
@@ -40,11 +42,11 @@ func LintFiles(ctx context.Context, paths []string) ([]Finding, error) {
 		}
 		if hasNoTransaction(up) {
 			noTx = append(noTx, dst)
+			findings = append(findings, unboundedWaits(filepath.Base(p), up)...)
 		} else {
 			inTx = append(inTx, dst)
 		}
 	}
-	var findings []Finding
 	for _, run := range []struct {
 		flag  string
 		files []string

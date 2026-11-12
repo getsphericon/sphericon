@@ -167,3 +167,60 @@ func TestFindingsKeepTheMigrationFileName(t *testing.T) {
 	require.Len(t, findings, 1)
 	assert.Equal(t, "20260108000000_drop.sql", findings[0].File)
 }
+
+func codesOf(findings []upgradecheck.Finding) []string {
+	codes := make([]string, 0, len(findings))
+	for _, f := range findings {
+		codes = append(codes, f.Code)
+	}
+	return codes
+}
+
+// A NO TRANSACTION migration may hold the statements whose lock wait blocks no query.
+func TestStatementsWhoseWaitBlocksNoQueryPassWithoutATransaction(t *testing.T) {
+	findings := lint(t, map[string]string{"20260114000000_no_tx.sql": `-- +goose NO TRANSACTION
+-- Builds the index the clearing reads.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS t_a ON t (a);
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS t_b ON t (b);
+DROP INDEX CONCURRENTLY IF EXISTS t_c;
+REINDEX INDEX CONCURRENTLY t_a;
+ALTER TABLE "t" VALIDATE CONSTRAINT "t_check";
+UPDATE t SET a = NULL
+  WHERE b IS NULL;
+DELETE FROM t WHERE a IS NULL;
+INSERT INTO t (a) VALUES (1);`})
+
+	assert.NotContains(t, codesOf(findings), upgradecheck.UnboundedWaitRule)
+}
+
+// A statement whose lock wait queues the table's queries fails in a NO TRANSACTION migration,
+// under any title, and passes in one that runs in a transaction, where the runner bounds the wait.
+func TestALockWaitThatQueuesQueriesFailsWithoutATransaction(t *testing.T) {
+	for name, sql := range map[string]string{
+		"constraint": "ALTER TABLE t ADD CONSTRAINT t_c CHECK (a > 0) NOT VALID;",
+		"nullable":   "ALTER TABLE t ALTER COLUMN a DROP NOT NULL;",
+		"column":     "ALTER TABLE t ADD COLUMN IF NOT EXISTS b bigint NULL;",
+		"block":      "-- +goose StatementBegin\nDO $$ BEGIN PERFORM 1; END $$;\n-- +goose StatementEnd",
+	} {
+		t.Run(name, func(t *testing.T) {
+			findings := lint(t, map[string]string{"20260115000000_no_tx.sql": "-- +goose NO TRANSACTION\n" + sql})
+
+			assert.Contains(t, codesOf(findings), upgradecheck.UnboundedWaitRule)
+			require.ErrorContains(t, upgradecheck.CheckMigrations("feat!: a", findings), "20260115000000_no_tx.sql")
+			assert.NotContains(t, codesOf(lint(t, map[string]string{"20260115000000_tx.sql": sql})), upgradecheck.UnboundedWaitRule)
+		})
+	}
+}
+
+// A checked statement (on a table no query reads yet) carries the rule's squawk-ignore; the next
+// statement is still held to the rule.
+func TestSquawkIgnoreAllowsOneStatementWithAnUnboundedWait(t *testing.T) {
+	findings := lint(t, map[string]string{"20260116000000_no_tx.sql": `-- +goose NO TRANSACTION
+-- squawk-ignore unbounded-lock-wait
+ALTER TABLE fresh ADD COLUMN IF NOT EXISTS a bigint NULL;
+ALTER TABLE t ADD COLUMN IF NOT EXISTS a bigint NULL;`})
+
+	require.Len(t, findings, 1)
+	assert.Equal(t, upgradecheck.UnboundedWaitRule, findings[0].Code)
+	assert.Contains(t, findings[0].Text, "ALTER TABLE t ADD COLUMN")
+}

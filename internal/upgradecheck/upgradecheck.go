@@ -161,8 +161,9 @@ func CheckMigrations(title string, findings []Finding) error {
 	var b strings.Builder
 	if len(blocking) > 0 {
 		b.WriteString("a migration must not lock a live table: build indexes `CONCURRENTLY` under `-- +goose NO TRANSACTION`, " +
-			"add constraints `NOT VALID` and validate them in a later statement, or put `-- squawk-ignore <rule>` " +
-			"on the line before a statement you have checked (a table that is empty or created in this migration needs none):\n")
+			"add constraints `NOT VALID` in a migration that runs in a transaction and validate them in a `NO TRANSACTION` " +
+			"migration after it, or put `-- squawk-ignore <rule>` on the line before a statement you have checked " +
+			"(a table that is empty or created in this migration needs none):\n")
 		writeFindings(&b, blocking)
 	}
 	if len(destructive) > 0 {
