@@ -236,10 +236,11 @@ _Avoid_: List, group, filter, snapshot, and "audience" as a name (it stays prose
 **Rule**:
 A workspace-scoped, stateless reaction: when any of its **Trigger events** is recorded for a
 Contact and the Rule's Condition holds for that Contact and Event, its Actions run at once, in
-order. No delay, no Enrollment and no email step; those belong to an Automation. Fires on every
+order. No delay, no Enrollment and no message to a Contact; those belong to an Automation. Fires on every
 matching Event, only going forward, and at most once per Event (a **Firing** records what ran).
 An Event with no Contact, a machine Event, and an Event caused by a Rule's own Action trigger no
-Rule. Actions today: apply Tag, remove Tag, HTTP call, enroll in an Automation. What it does is
+Rule. Actions: apply Tag, remove Tag, **Set field**, HTTP call, **Enroll** in an Automation and
+**Notify**, the same as an Automation's Steps of those kinds. What it does is
 its live **Rule version**; an edit writes a draft, and only **Publish** makes it live.
 _Avoid_: Workflow, flow, hook, automation (an Automation is sequential and stateful)
 
@@ -543,12 +544,13 @@ Sending domain. It belongs to no Workspace and is absent on an Instance with no 
 _Avoid_: No-reply sender, platform mailer
 
 **Notice**:
-A message sphericon sends on its own behalf, through the System sender, to a person who must know
-that something happened: a User their account's links and notices (a verification link, a password
-reset, a removed Passkey), a Member their Invitation or Second factor deadline, the Owners of a
-Workspace what happened to its standing or its configuration (a suspension, a lost domain, a
-disabled Webhook endpoint). Every Notice is a reaction to a domain event, never a step of the change
-itself. Not a Workspace's mail to its Contacts, which goes through Outbound send.
+A message sphericon sends through the System sender, on its own behalf (or, for a **Notify**, in a
+fixed frame around its Workspace's short text), to a person who must know that something happened:
+a User their account's links and notices (a verification link, a password reset, a removed Passkey),
+a Member their Invitation or Second factor deadline, the Owners of a Workspace what happened to its
+standing or its configuration (a suspension, a lost domain, a disabled Webhook endpoint), and Members
+what a Notify of their Workspace tells them. Every Notice is a reaction to a domain event, never a
+step of the change itself. Not a Workspace's mail to its Contacts, which goes through Outbound send.
 _Avoid_: Notification, platform mail, system email
 
 **Notice delivery**:
@@ -709,8 +711,9 @@ _Avoid_: Stop condition, exit criteria, conversion
 **Enrollment**:
 One Contact's membership-and-progress in one Automation — enrolled at most once ever
 (re-enrollment is deliberately out of scope). It begins when its triggering Event occurred (when a
-Rule enrolls, the Event the Rule fired on). It keeps a copy of that Event's action and properties,
-taken when it begins and never changed, which every email and HTTP step renders as `event` (the
+Rule enrolls, the Event the Rule fired on; when an **Enroll** step does, the moment it runs, with a
+copy of its own Enrollment's `event`). It keeps a copy of that Event's action and properties, taken
+when it begins and never changed, which every email and HTTP step renders as `event` (the
 shape a Rule's HTTP action binds); an Enrollment no Event began has an empty `event`. Stands on one
 **Automation version** (the one live when it was made) and holds the current step in it, and a
 terminal state:
@@ -733,8 +736,9 @@ through the Integration the step names or that Channel's default; it holds its _
 Message content, per the marketing copy-at-author-time rule, except on WhatsApp, where it references
 a WhatsApp template), **wait** (a delay before the next
 Step), **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
-nothing and move straight on), **HTTP step**, **Branch**, **Split** and **Wait for event**
-(below) and **end** (it finishes the path and ends the Enrollment as `completed`). There are no parallel paths: an Enrollment is at one
+nothing and move straight on), **Set field**, **Enroll**, **Notify**, **HTTP step**, **Branch**,
+**Split** and **Wait for event** (below) and **end** (it finishes the path and ends the Enrollment
+as `completed`). There are no parallel paths: an Enrollment is at one
 Step at a time.
 _Avoid_: Action, node, block, stage
 
@@ -765,6 +769,27 @@ click of the message an earlier send Step sent to this Enrollment, counted whene
 Waiting for an open or click has an _unknown_ path of its own, taken when that message went out
 untracked or was never sent to this Enrollment.
 _Avoid_: Wait until (a calendar wait), wait with condition, delay
+
+**Set field**:
+A Step kind, and a Rule Action, that gives one **Custom field** of the Contact a value, a literal or
+a property of the Event the Enrollment began with (for a Rule, the Event it fired on), or clears
+it. When that Event lacks the property or holds a value the field's type does not read, it is
+skipped and the Enrollment moves on. It never creates a field and never writes a core field.
+_Avoid_: Update contact, set attribute, set property
+
+**Enroll**:
+A Step kind, and a Rule Action, that enrolls the Contact in another Automation's live version. As a
+Step, the Enrollment that ran it goes on, and the new one begins when it runs, carrying the same
+`event`; as a Rule Action, the new one begins when the Event the Rule fired on occurred. An inactive
+Automation or a Contact already enrolled in it is a skip.
+_Avoid_: Start automation, go to automation, jump
+
+**Notify**:
+A Step kind, and a Rule Action, that sends chosen Members of the Workspace a **Notice** about the
+Contact: a fixed frame (what sent it, which Contact, a link to it) and a short plain text from its
+author, in which what the Contact supplied is inert text. Its recipients are Memberships, never
+addresses, and a Workspace's Notify Notices are capped per hour.
+_Avoid_: Alert, team email, internal email, notification
 
 **HTTP step**:
 A Step kind that **sphericon calls** a third party's URL (a Slack, Zapier or CRM hook) for the

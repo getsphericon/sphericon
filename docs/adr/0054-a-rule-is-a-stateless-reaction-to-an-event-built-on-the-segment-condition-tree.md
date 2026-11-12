@@ -7,6 +7,11 @@ status: accepted
 > Amended by [[0098-a-rule-is-deleted-not-archived]]: a Rule has no Archive; Delete discards one
 > with Firings and purges one without.
 
+> **Amended by [[0125-an-automation-sets-a-field-enrolls-elsewhere-and-notifies-members]]:** a Rule
+> gains the Set field and Notify Actions, which an Automation has as Steps too. "No email Action"
+> below means no message to a Contact: a Notify mails Members, and it outlives the Actions job as an
+> HTTP call does, without being awaited.
+
 > Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: a Rule is versioned, an edit
 > writes a draft, Publish makes it live, and the lifecycle is `active` and `inactive`.
 

@@ -60,9 +60,10 @@ missing implementations of an already accepted spec.
 - **Calendar and date-based entry and waits.** Birthdays, anniversaries, recurring schedules and
   the Contact's local sending window. Define time zones, daylight-saving changes, absent dates
   and the relationship to repeat Enrollment.
-- **Additional Actions.** Set or clear a Custom field, record an Event, and enroll in another
-  Automation. Tag changes and HTTP calls already exist; cross-Automation Enrollment already exists
-  as a Rule Action. Define composition and cycle prevention before adding another entry path.
+- **Additional Actions.** Set or clear a Custom field, enroll in another Automation and notify
+  Members, as Steps and as Rule Actions. The model is decided
+  ([ADR 0125](docs/adr/0125-an-automation-sets-a-field-enrolls-elsewhere-and-notifies-members.md));
+  it is not built. Recording an Event from an Automation is not part of it.
 - **Simulation and diagnostics.** Preview a Contact's path, explain each decision and wait, and
   exercise a scenario before publishing without delivering messages.
 - **Experimentation.** Weighted splits with stable assignment and per-path goal reporting, and
