@@ -6,7 +6,6 @@ import {
   CopyButton,
   Group,
   Image,
-  PasswordInput,
   SimpleGrid,
   Stack,
   Text,
@@ -22,6 +21,7 @@ import { IdentityProof } from '../../components/IdentityProof.tsx'
 import { LinkedIdentities } from '../../components/LinkedIdentities.tsx'
 import { OneTimeCodeInput } from '../../components/OneTimeCodeInput.tsx'
 import { Passkeys } from '../../components/Passkeys.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -46,10 +46,13 @@ import { Route as securityRoute } from '../../routes/account/security.tsx'
 type Proof = SiteSecondFactorStartInput
 
 // The form field of a password, shown only to a User who has one.
-function PasswordField({ passwordless, ...props }: { passwordless: boolean } & PasswordInputProps) {
+function ProofPasswordField({
+  passwordless,
+  ...props
+}: { passwordless: boolean } & PasswordInputProps) {
   const { t } = useTranslation()
   return passwordless ? null : (
-    <PasswordInput label={t(($) => $.security.passwordLabel)} required {...props} />
+    <PasswordField label={t(($) => $.security.passwordLabel)} required {...props} />
   )
 }
 
@@ -204,7 +207,7 @@ function SetUp({
       )}
     >
       <Stack>
-        <PasswordField
+        <ProofPasswordField
           passwordless={passwordless}
           data-autofocus
           {...form.getInputProps('currentPassword')}
@@ -271,7 +274,7 @@ function Regenerate({
     >
       <Stack>
         <Text size="sm">{t(($) => $.security.regenerateDescription)}</Text>
-        <PasswordField
+        <ProofPasswordField
           passwordless={passwordless}
           data-autofocus
           {...form.getInputProps('currentPassword')}
@@ -310,7 +313,7 @@ function Disable({ passwordless, onClose }: { passwordless: boolean; onClose: ()
       )}
     >
       <Stack>
-        <PasswordField
+        <ProofPasswordField
           passwordless={passwordless}
           data-autofocus
           {...form.getInputProps('currentPassword')}

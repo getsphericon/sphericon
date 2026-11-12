@@ -1,10 +1,11 @@
-import { ActionIcon, Button, Group, PasswordInput, Stack, TextInput } from '@mantine/core'
+import { ActionIcon, Button, Group, Stack, TextInput } from '@mantine/core'
 import { IconTrash } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteAutomationHttpHeader } from '../generated/site/types.gen.ts'
 import { zSiteRuleAction } from '../generated/site/zod.gen.ts'
 import { maxItemsOf } from '../utils/bounds.ts'
+import { PasswordField } from './PasswordField.tsx'
 
 // The most request headers an outgoing HTTP request carries, as the contract declares it: a
 // Rule's http Action and an Automation's HTTP step alike.
@@ -35,7 +36,7 @@ export function HttpHeaderRows({ headers, saved, onChange }: HttpHeaderRowsProps
             value={header.name}
             onChange={(event) => change(index, { name: event.currentTarget.value })}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.httpHeaders.valueLabel)}
             description={saved && !header.value ? t(($) => $.httpHeaders.keepHint) : undefined}
             value={header.value ?? ''}

@@ -1,4 +1,4 @@
-import { Button, Card, Group, Loader, PasswordInput, Stack, Text, Title } from '@mantine/core'
+import { Button, Card, Group, Loader, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { Navigate, useNavigate } from '@tanstack/react-router'
@@ -7,6 +7,7 @@ import { useErrorBoundary } from 'react-error-boundary'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import {
@@ -120,13 +121,13 @@ function PasswordForm({ token }: { token: string }) {
         )}
       >
         <Stack>
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.verifyEmail.passwordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('password')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.verifyEmail.confirmPasswordLabel)}
             autoComplete="new-password"
             required

@@ -1,3 +1,5 @@
+import * as z from 'zod'
+
 import { SignupItemKind } from '../generated/site/types.gen.ts'
 import type {
   SiteSignUpInput,
@@ -23,6 +25,10 @@ export function signupItemAnswers(
       : { key: item.key, version: item.version, accepted: ticked[item.key] === true },
   )
 }
+
+// The boxes a sign-up form holds, ticked or not, by item key: a form's `signupItems` value, so a
+// box sits at the field a refusal of its item names (signupItemField). None ticked at first.
+export const signupItemTicks = z.record(z.string(), z.boolean())
 
 // The request field that carries the answers, named by the contract: a rename there fails here.
 const answersField = 'signupItems' satisfies keyof SiteSignUpInput

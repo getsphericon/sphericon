@@ -1,4 +1,4 @@
-import { Button, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { startRegistration } from '@simplewebauthn/browser'
 import { useSuspenseQuery } from '@tanstack/react-query'
@@ -20,6 +20,7 @@ import { useActionModal } from '../hooks/useActionModal.tsx'
 import { useFormat } from '../hooks/useFormat.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { IdentityProof } from './IdentityProof.tsx'
+import { PasswordField } from './PasswordField.tsx'
 import { QueryBoundary } from './QueryBoundary.tsx'
 import { BlockSkeleton } from './Skeletons.tsx'
 
@@ -65,7 +66,7 @@ function AddPasskeyForm({ passwordless, onClose }: { passwordless: boolean; onCl
           {...form.getInputProps('name')}
         />
         {passwordless ? null : (
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.security.passwordLabel)}
             required
             {...form.getInputProps('currentPassword')}
@@ -222,7 +223,7 @@ function RemovePasskeyForm({
     >
       <Stack>
         {passwordless ? null : (
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.security.passwordLabel)}
             required
             data-autofocus

@@ -1,21 +1,11 @@
-import {
-  Badge,
-  Button,
-  Divider,
-  Group,
-  PasswordInput,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
+import { Badge, Button, Divider, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { modals } from '@mantine/modals'
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -128,13 +118,13 @@ function PasswordForm({ onClose }: { onClose: () => void }) {
   return (
     <form onSubmit={form.onSubmit((values) => updateMutation.mutate({ body: values }))}>
       <Stack>
-        <PasswordInput
+        <PasswordField
           label={t(($) => $.profile.currentPasswordLabel)}
           required
           data-autofocus
           {...form.getInputProps('currentPassword')}
         />
-        <PasswordInput
+        <PasswordField
           label={t(($) => $.profile.newPasswordLabel)}
           required
           {...form.getInputProps('newPassword')}
@@ -180,7 +170,7 @@ function EmailForm({ onClose }: { onClose: () => void }) {
           data-autofocus
           {...form.getInputProps('newEmail')}
         />
-        <PasswordInput
+        <PasswordField
           label={t(($) => $.profile.currentPasswordForEmailLabel)}
           required
           {...form.getInputProps('currentPassword')}

@@ -1,10 +1,11 @@
-import { Button, Group, PasswordInput, Stack, Title } from '@mantine/core'
+import { Button, Group, Stack, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { siteAuthResetPasswordMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -58,12 +59,12 @@ export function ResetPasswordPage() {
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.resetPassword.newPasswordLabel)}
             required
             {...form.getInputProps('password')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.resetPassword.confirmPasswordLabel)}
             required
             {...form.getInputProps('confirm')}

@@ -1,15 +1,4 @@
-import {
-  Anchor,
-  Button,
-  Code,
-  Group,
-  Image,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
+import { Anchor, Button, Code, Group, Image, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -18,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../components/CenteredLayout.tsx'
 import { OneTimeCodeInput } from '../components/OneTimeCodeInput.tsx'
+import { PasswordField } from '../components/PasswordField.tsx'
 import {
   staffAuthLoginMutation,
   staffAuthSecondFactorMutation,
@@ -158,7 +148,7 @@ export function ConsoleLoginPage() {
             required
             {...form.getInputProps('email')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.console.login.passwordLabel)}
             autoComplete="current-password"
             required

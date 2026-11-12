@@ -1,8 +1,8 @@
 import { Button, Card, Group, Loader, Stack, Text, Title } from '@mantine/core'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
@@ -15,16 +15,20 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
+import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as signUpRoute } from '../../routes/sign-up.tsx'
 import { Route as signinPendingRoute } from '../../routes/signin-pending.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
-import { signupItemAnswers } from '../../utils/signupItems.ts'
+import { signupItemAnswers, signupItemTicks } from '../../utils/signupItems.ts'
 
 // A pending sign-up answers 400 once it expired, was completed or declined.
 function isGone(error: unknown) {
   return hasErrorStatus(error, [400])
 }
+
+// The answers to the Sign-up items: the boxes the person ticked.
+const answersSchema = z.object({ signupItems: signupItemTicks })
 
 // The screen a Sign-in provider's sign-up lands on while the Instance asks Sign-up items (ADR
 // 0062): no account exists until the person answers them; declining creates nothing.
@@ -40,13 +44,14 @@ export function SigninPendingPage() {
   })
   const itemsQuery = useQuery(siteLegalDocumentsSignupItemsOptions())
   const items = itemsQuery.data?.items ?? []
-  const [ticked, setTicked] = useState<Record<string, boolean>>({})
+  const form = useSchemaForm(answersSchema, { signupItems: {} })
 
   const submitMutation = useMutation({
     ...siteAuthSigninPendingSubmitMutation(),
     onSuccess: async () => navigate(redirect ? { href: redirect } : { to: indexRoute.to }),
     onError: (error) => {
-      if (isGone(error)) {
+      // An expired sign-up says so on the page; a refused box shows under it.
+      if (isGone(error) || !form.showFieldErrors(error)) {
         return
       }
       notify({
@@ -91,8 +96,8 @@ export function SigninPendingPage() {
     )
   }
 
-  const handleSubmit = () => {
-    const signupItems = signupItemAnswers(items, ticked)
+  const handleSubmit = (values: z.output<typeof answersSchema>) => {
+    const signupItems = signupItemAnswers(items, values.signupItems)
     submitMutation.mutate({ body: { token, ...(signupItems && { signupItems }) } })
   }
 
@@ -102,26 +107,23 @@ export function SigninPendingPage() {
       <Text c="dimmed">
         {t(($) => $.signinPending.body, { email: pending.email, provider: pending.provider })}
       </Text>
-      <Stack mt="md">
-        <SignupItemFields
-          items={items}
-          ticked={ticked}
-          onTick={(key, checked) => setTicked((current) => ({ ...current, [key]: checked }))}
-          error={submitMutation.error}
-        />
-        <Group justify="space-between" align="center">
-          <Button
-            variant="default"
-            loading={declineMutation.isPending}
-            onClick={() => declineMutation.mutate({ body: { token } })}
-          >
-            {t(($) => $.signinPending.declineButton)}
-          </Button>
-          <Button loading={submitMutation.isPending} onClick={handleSubmit}>
-            {t(($) => $.signinPending.submitButton)}
-          </Button>
-        </Group>
-      </Stack>
+      <form onSubmit={form.onSubmit(handleSubmit)}>
+        <Stack mt="md">
+          <SignupItemFields items={items} getInputProps={form.getInputProps} />
+          <Group justify="space-between" align="center">
+            <Button
+              variant="default"
+              loading={declineMutation.isPending}
+              onClick={() => declineMutation.mutate({ body: { token } })}
+            >
+              {t(($) => $.signinPending.declineButton)}
+            </Button>
+            <Button type="submit" loading={submitMutation.isPending}>
+              {t(($) => $.signinPending.submitButton)}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
     </AuthLayout>
   )
 }

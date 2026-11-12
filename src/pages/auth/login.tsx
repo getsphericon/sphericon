@@ -1,14 +1,4 @@
-import {
-  Alert,
-  Anchor,
-  Button,
-  Group,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
+import { Alert, Anchor, Button, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import {
   WebAuthnAbortService,
@@ -24,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
 import { OneTimeCodeInput } from '../../components/OneTimeCodeInput.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
@@ -305,7 +296,7 @@ export function LoginPage() {
             required
             {...form.getInputProps('email')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.login.passwordLabel)}
             required
             {...form.getInputProps('password')}

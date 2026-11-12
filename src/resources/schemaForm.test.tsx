@@ -1,4 +1,5 @@
 import { Checkbox, Select, TextInput } from '@mantine/core'
+import { useState } from 'react'
 import { expect, test } from 'vitest'
 import { userEvent } from 'vitest/browser'
 import * as z from 'zod'
@@ -109,4 +110,102 @@ test('a failed submit focuses the first invalid field in the page order', async 
   await name.fill('')
   await userEvent.keyboard('{Enter}')
   await expect.element(name).toHaveFocus()
+})
+
+const refuseLabel = 'Refuse'
+
+// ServerForm hands a server's refusal to the form and writes down what came back.
+function ServerForm({ refusal }: { refusal: unknown }) {
+  const form = useSchemaForm(schema, { name: '', email: '', plan: '', agree: false })
+  const [handedBack, setHandedBack] = useState<string>()
+  return (
+    <form onSubmit={form.onSubmit(() => undefined)}>
+      <TextInput label="Name" {...form.getInputProps('name')} />
+      <TextInput label="Email" {...form.getInputProps('email')} />
+      <Checkbox label="Agree" {...form.getInputProps('agree', { type: 'checkbox' })} />
+      <button
+        type="button"
+        onClick={() => setHandedBack(JSON.stringify(form.showFieldErrors(refusal) ?? null))}
+      >
+        {refuseLabel}
+      </button>
+      <output>{handedBack}</output>
+    </form>
+  )
+}
+
+async function refuse(refusal: unknown) {
+  const screen = await renderWithProviders(<ServerForm refusal={refusal} />)
+  await screen.getByRole('button', { name: refuseLabel }).click()
+  return screen
+}
+
+test('a refusal from the server shows under its fields and focuses the first in the page order', async () => {
+  const screen = await refuse({
+    status: 422,
+    errors: { agree: ['Accept the terms first.'], email: ['That address is taken.'] },
+  })
+
+  await expect.element(screen.getByText('That address is taken.')).toBeInTheDocument()
+  await expect.element(screen.getByText('Accept the terms first.')).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Email')).toHaveFocus()
+  await expect.element(screen.getByRole('status')).toHaveTextContent('null')
+})
+
+test('a refusal of a field the form does not render is handed back, the rest shows', async () => {
+  const screen = await refuse({
+    status: 422,
+    errors: { name: ['Name is too long.'], token: ['The link expired.'] },
+  })
+
+  await expect.element(screen.getByText('Name is too long.')).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Name')).toHaveFocus()
+  await expect
+    .element(screen.getByRole('status'))
+    .toHaveTextContent(JSON.stringify({ token: ['The link expired.'] }))
+})
+
+test('a refusal that names no field is handed back whole', async () => {
+  const screen = await refuse({ status: 403, title: 'Forbidden' })
+
+  await expect.element(screen.getByRole('status')).toHaveTextContent('{}')
+  await expect.element(screen.getByLabelText('Name')).not.toHaveFocus()
+})
+
+const otherSchema = z.object({ password: z.string() })
+
+// TwoForms puts a form with no password field beside one that has it.
+function TwoForms({ refusal }: { refusal: unknown }) {
+  const form = useSchemaForm(schema, { name: '', email: '', plan: '', agree: false })
+  const other = useSchemaForm(otherSchema, { password: '' })
+  const [handedBack, setHandedBack] = useState<string>()
+  return (
+    <>
+      <form onSubmit={form.onSubmit(() => undefined)}>
+        <TextInput label="Name" {...form.getInputProps('name')} />
+        <button
+          type="button"
+          onClick={() => setHandedBack(JSON.stringify(form.showFieldErrors(refusal) ?? null))}
+        >
+          {refuseLabel}
+        </button>
+        <output>{handedBack}</output>
+      </form>
+      <form onSubmit={other.onSubmit(() => undefined)}>
+        <TextInput label="Password" {...other.getInputProps('password')} />
+      </form>
+    </>
+  )
+}
+
+test('a refusal of a field only another form renders is handed back, not placed there', async () => {
+  const screen = await renderWithProviders(
+    <TwoForms refusal={{ status: 422, errors: { password: ['Use at least 8 characters.'] } }} />,
+  )
+  await screen.getByRole('button', { name: refuseLabel }).click()
+
+  await expect
+    .element(screen.getByRole('status'))
+    .toHaveTextContent(JSON.stringify({ password: ['Use at least 8 characters.'] }))
+  await expect.element(screen.getByLabelText('Password')).not.toHaveFocus()
 })

@@ -1,21 +1,11 @@
-import {
-  Alert,
-  Button,
-  Divider,
-  Loader,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
-import { useForm } from '@mantine/form'
+import { Alert, Button, Divider, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
@@ -26,14 +16,27 @@ import {
   sitePublicInvitationsLookupOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { zSiteSigninError } from '../../generated/site/zod.gen.ts'
+import {
+  zSiteAcceptInvitationInput,
+  zSiteSigninError,
+  zUserName,
+} from '../../generated/site/zod.gen.ts'
 import { useAcceptanceWatch } from '../../hooks/useAcceptanceWatch.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
+import { trimmed, useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as acceptInvitationRoute } from '../../routes/invitations/$token.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
-import { signupItemAnswers } from '../../utils/signupItems.ts'
+import { signupItemAnswers, signupItemTicks } from '../../utils/signupItems.ts'
+
+// The accept input as a form: an invitee who sets up an account types a name and a password, and
+// ticks the Sign-up items' boxes, which the submit turns into the answers.
+const acceptSchema = zSiteAcceptInvitationInput.extend({
+  name: trimmed(zUserName),
+  password: zSiteAcceptInvitationInput.shape.password.unwrap(),
+  signupItems: signupItemTicks,
+})
 
 // InvitationLoading shows while the invitation is looked up and the session probed.
 function InvitationLoading() {
@@ -91,12 +94,11 @@ function AcceptInvitation() {
   // refused probe means signed out, not a failure, so it stays out of the boundary.
   const session = useQuery({ ...siteWorkspacesListOptions(), retry: false })
 
-  const form = useForm({ initialValues: { name: '', password: '' } })
+  const form = useSchemaForm(acceptSchema, { name: '', password: '', signupItems: {} })
   // The Sign-up items in effect (ADR 0062), asked only of an invitee who sets up an account:
   // consent follows an existing User, so joining with a session answers none.
   const itemsQuery = useQuery(siteLegalDocumentsSignupItemsOptions())
   const items = itemsQuery.data?.items ?? []
-  const [ticked, setTicked] = useState<Record<string, boolean>>({})
 
   const mutation = useMutation({
     ...sitePublicInvitationsAcceptMutation(),
@@ -112,6 +114,10 @@ function AcceptInvitation() {
       void navigate({ to: joined ? indexRoute.to : loginRoute.to })
     },
     onError: (error) => {
+      // Only a refusal the form cannot show under a field is left for the toast.
+      if (!form.showFieldErrors(error)) {
+        return
+      }
       notify({
         color: 'red',
         title: t(($) => $.acceptInvitation.errorTitle),
@@ -129,13 +135,13 @@ function AcceptInvitation() {
 
   const signedIn = session.isSuccess
 
-  const handleSubmit = (values: { name: string; password: string }) => {
+  const handleSubmit = (values: z.output<typeof acceptSchema>) => {
     // With no items the form sends no answers at all, as it did before items existed.
-    const signupItems = signupItemAnswers(items, ticked)
+    const signupItems = signupItemAnswers(items, values.signupItems)
     mutation.mutate({
       path: { token },
       body: {
-        name: values.name.trim(),
+        name: values.name,
         password: values.password,
         ...(signupItems && { signupItems }),
       },
@@ -165,18 +171,13 @@ function AcceptInvitation() {
             required
             {...form.getInputProps('name')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.acceptInvitation.passwordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('password')}
           />
-          <SignupItemFields
-            items={items}
-            ticked={ticked}
-            onTick={(key, checked) => setTicked((current) => ({ ...current, [key]: checked }))}
-            error={mutation.error}
-          />
+          <SignupItemFields items={items} getInputProps={form.getInputProps} />
           <Button type="submit" loading={mutation.isPending}>
             {t(($) => $.acceptInvitation.acceptButton)}
           </Button>

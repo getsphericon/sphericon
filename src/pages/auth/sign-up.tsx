@@ -1,11 +1,12 @@
-import { Button, Card, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
-import { useForm } from '@mantine/form'
+import { Button, Card, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCountDown } from 'ahooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
+import { PasswordField } from '../../components/PasswordField.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import { SignupItemFields } from '../../components/SignupItemFields.tsx'
@@ -14,14 +15,15 @@ import {
   siteAuthResendVerificationMutation,
   siteLegalDocumentsSignupItemsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteSignUpInput } from '../../generated/site/types.gen.ts'
+import { zEmailAddress, zSiteSignUpInput, zUserName } from '../../generated/site/zod.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { requiresEmailVerification } from '../../instance.ts'
+import { trimmed, useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { secondsFromNow } from '../../utils/datetime.ts'
-import { signupItemAnswers } from '../../utils/signupItems.ts'
+import { signupItemAnswers, signupItemTicks } from '../../utils/signupItems.ts'
 
 // Seconds the resend button waits after a send; the server's per-IP limit stays the real gate.
 const RESEND_COOLDOWN_SECONDS = 60
@@ -39,7 +41,6 @@ export function SignUpPage() {
   // The Sign-up items in effect (ADR 0062) and the boxes the person ticked: none at first.
   const itemsQuery = useQuery(siteLegalDocumentsSignupItemsOptions())
   const items = itemsQuery.data?.items ?? []
-  const [ticked, setTicked] = useState<Record<string, boolean>>({})
 
   // The moment the resend button is offered again; none until a link is resent.
   const [resendAt, setResendAt] = useState<string>()
@@ -52,16 +53,26 @@ export function SignUpPage() {
     onDone: () => setResendAt(secondsFromNow(RESEND_COOLDOWN_SECONDS)),
   })
 
-  const form = useForm<Required<Omit<SiteSignUpInput, 'signupItems'>> & { confirm: string }>({
-    initialValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirm: '',
-    },
-    validate: {
-      confirm: (value, values) => (value === values.password ? null : t(($) => $.signUp.mismatch)),
-    },
+  // The confirmation must repeat the password; the items' boxes are fields of the form, so a
+  // refusal of either shows under it (docs/standards/ui.md, Errors).
+  const schema = zSiteSignUpInput
+    .extend({
+      name: trimmed(zUserName),
+      email: trimmed(zEmailAddress),
+      password: zSiteSignUpInput.shape.password.unwrap(),
+      confirm: z.string(),
+      signupItems: signupItemTicks,
+    })
+    .refine((values) => values.confirm === values.password, {
+      path: ['confirm'],
+      message: t(($) => $.signUp.mismatch),
+    })
+  const form = useSchemaForm(schema, {
+    name: '',
+    email: '',
+    password: '',
+    confirm: '',
+    signupItems: {},
   })
 
   const signUpMutation = useMutation({
@@ -74,6 +85,10 @@ export function SignUpPage() {
       }
     },
     onError: (error) => {
+      // Only a refusal the form cannot show under a field is left for the toast.
+      if (!form.showFieldErrors(error)) {
+        return
+      }
       notify({
         color: 'red',
         title: t(($) => $.signUp.errorTitle),
@@ -85,13 +100,13 @@ export function SignUpPage() {
     },
   })
 
-  const handleSubmit = (values: Required<Omit<SiteSignUpInput, 'signupItems'>>) => {
+  const handleSubmit = (values: z.output<typeof schema>) => {
     // With no items the form sends no answers at all, as it did before items existed.
-    const signupItems = signupItemAnswers(items, ticked)
+    const signupItems = signupItemAnswers(items, values.signupItems)
     signUpMutation.mutate({
       body: {
-        name: values.name.trim(),
-        email: values.email.trim(),
+        name: values.name,
+        email: values.email,
         password: values.password,
         ...(signupItems && { signupItems }),
       },
@@ -164,25 +179,20 @@ export function SignUpPage() {
             required
             {...form.getInputProps('email')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.signUp.passwordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('password')}
           />
-          <PasswordInput
+          <PasswordField
             label={t(($) => $.signUp.confirmPasswordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('confirm')}
           />
 
-          <SignupItemFields
-            items={items}
-            ticked={ticked}
-            onTick={(key, checked) => setTicked((current) => ({ ...current, [key]: checked }))}
-            error={signUpMutation.error}
-          />
+          <SignupItemFields items={items} getInputProps={form.getInputProps} />
 
           <Group justify="space-between" align="center">
             <AnchorLink to={loginRoute.to} size="sm">
