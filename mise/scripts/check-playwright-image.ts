@@ -1,6 +1,6 @@
 // The frontend tests run in CI inside the Playwright image (.github/workflows/ci.yml, test-frontend),
 // which ships the browser and the system libraries of one Playwright release. This checks that the
-// image is the release package.json pins, so an upgrade of the package (Dependabot's) fails here
+// image is the release package.json pins, so an upgrade of the package fails here
 // until the image follows it, instead of testing with a browser the package did not ship with.
 import { readFileSync } from 'node:fs'
 

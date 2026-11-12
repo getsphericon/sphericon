@@ -1,5 +1,5 @@
 // Keeps one open issue that lists the mise tools whose newest release is not the one mise.lock
-// pins (Dependabot has no mise ecosystem), and closes it once the lock is current. Run weekly by
+// pins, and closes it once the lock is current. Run weekly by
 // .github/workflows/tools.yml with GH_TOKEN set; needs mise and gh on the PATH.
 import { execFileSync } from 'node:child_process'
 
