@@ -1,0 +1,5 @@
+# The tombstone of a User deleted before a reload, with an id from the range the users sequence
+# hands out again once the reload moves it back to 100000.
+- id: 100001
+  user_id: 100001
+  feed_position: 100001
