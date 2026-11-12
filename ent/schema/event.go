@@ -95,17 +95,15 @@ func (Event) Fields() []ent.Field {
 			Annotations(Attribute(reasonFact)).
 			Default(false).
 			Immutable(),
-		// The Broadcast whose email the Event is about. Like the url, cleared when an Erasure
-		// anonymizes the Event (events.EraseSubject), as the properties drop their copy.
+		// The Broadcast whose email the Event is about (the broadcast edge). Like the url, cleared
+		// when an Erasure anonymizes the Event (events.EraseSubject), as the properties drop their copy.
 		field.Int64("broadcast_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Unchecked: true, Reason: "a snapshot: an Event outlives the Broadcast it is about"}),
-		// The Automation whose email the Event is about.
+			Nillable(),
+		// The Automation whose email the Event is about (the automation edge).
 		field.Int64("automation_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Unchecked: true, Reason: "a snapshot: an Event outlives the Automation it is about"}),
+			Nillable(),
 		// The link of a click.
 		field.String("url").
 			Optional().
@@ -127,6 +125,17 @@ func (Event) Edges() []ent.Edge {
 			Ref("events").
 			Field("contact_id").
 			Unique(),
+		// The Broadcast and the Automation whose email the Event is about. Only a Workspace's erase
+		// deletes either, after its Events; a late Event written in between loses the reference
+		// (ON DELETE SET NULL) and goes with the next pass.
+		edge.To("broadcast", Broadcast.Type).
+			Field("broadcast_id").
+			Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
+		edge.To("automation", Automation.Type).
+			Field("automation_id").
+			Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 
@@ -141,6 +150,13 @@ func (Event) Indexes() []ent.Index {
 		// Backs stitching anonymous events onto a Contact at Identify time.
 		index.Fields("workspace_id", "visitor_id"),
 		index.Fields("contact_id"),
+		// Back the reports of a Broadcast's and an Automation's email (its opens, its clicks by
+		// link) and the foreign keys' check when either is deleted. Partial: most Events are about
+		// no email.
+		index.Fields("workspace_id", "broadcast_id").
+			Annotations(entsql.IndexWhere("broadcast_id IS NOT NULL")),
+		index.Fields("workspace_id", "automation_id").
+			Annotations(entsql.IndexWhere("automation_id IS NOT NULL")),
 		// Backs the Events Export stream (ADR 0045): the keyset page over
 		// (updated_at, id) inside one Workspace, so a deep back-fill never scans.
 		index.Fields("workspace_id", "updated_at", "id"),

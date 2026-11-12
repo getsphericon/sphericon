@@ -16724,11 +16724,29 @@ func (x *EventScopedCreate) SetContact(v *Contact) *EventScopedCreate {
 	return x
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *EventScopedCreate) SetBroadcast(v *Broadcast) *EventScopedCreate {
+	x.b.SetBroadcast(v)
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *EventScopedCreate) SetAutomation(v *Automation) *EventScopedCreate {
+	x.b.SetAutomation(v)
+	return x
+}
+
 func (x *EventScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
 	}
 	return nil
 }
@@ -16784,6 +16802,24 @@ func (b *EventScopedCreateBulk) check(ctx context.Context) error {
 		}
 		if err := b.s.verifyContact(ctx, ids); err != nil {
 			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BroadcastIDs()...)
+		}
+		if err := b.s.verifyBroadcast(ctx, ids); err != nil {
+			return fmt.Errorf("broadcast: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().AutomationIDs()...)
+		}
+		if err := b.s.verifyAutomation(ctx, ids); err != nil {
+			return fmt.Errorf("automation: %w", err)
 		}
 	}
 	return nil
@@ -16942,18 +16978,6 @@ func (u *EventScopedUpsert) ClearProperties() *EventScopedUpsert {
 	return u
 }
 
-// SetBroadcastID sets the "broadcast_id" field.
-func (u *EventScopedUpsert) SetBroadcastID(v int64) *EventScopedUpsert {
-	u.u.Set(event.FieldBroadcastID, v)
-	return u
-}
-
-// AddBroadcastID adds v to the "broadcast_id" field.
-func (u *EventScopedUpsert) AddBroadcastID(v int64) *EventScopedUpsert {
-	u.u.Add(event.FieldBroadcastID, v)
-	return u
-}
-
 // UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
 func (u *EventScopedUpsert) UpdateBroadcastID() *EventScopedUpsert {
 	u.u.SetExcluded(event.FieldBroadcastID)
@@ -16963,18 +16987,6 @@ func (u *EventScopedUpsert) UpdateBroadcastID() *EventScopedUpsert {
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (u *EventScopedUpsert) ClearBroadcastID() *EventScopedUpsert {
 	u.u.SetNull(event.FieldBroadcastID)
-	return u
-}
-
-// SetAutomationID sets the "automation_id" field.
-func (u *EventScopedUpsert) SetAutomationID(v int64) *EventScopedUpsert {
-	u.u.Set(event.FieldAutomationID, v)
-	return u
-}
-
-// AddAutomationID adds v to the "automation_id" field.
-func (u *EventScopedUpsert) AddAutomationID(v int64) *EventScopedUpsert {
-	u.u.Add(event.FieldAutomationID, v)
 	return u
 }
 
@@ -17292,12 +17304,6 @@ func (x *EventScopedUpdateOne) SetNillableBroadcastID(v *int64) *EventScopedUpda
 	return x
 }
 
-// AddBroadcastID adds value to the "broadcast_id" field.
-func (x *EventScopedUpdateOne) AddBroadcastID(v int64) *EventScopedUpdateOne {
-	x.b.AddBroadcastID(v)
-	return x
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (x *EventScopedUpdateOne) ClearBroadcastID() *EventScopedUpdateOne {
 	x.b.ClearBroadcastID()
@@ -17313,12 +17319,6 @@ func (x *EventScopedUpdateOne) SetAutomationID(v int64) *EventScopedUpdateOne {
 // SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
 func (x *EventScopedUpdateOne) SetNillableAutomationID(v *int64) *EventScopedUpdateOne {
 	x.b.SetNillableAutomationID(v)
-	return x
-}
-
-// AddAutomationID adds value to the "automation_id" field.
-func (x *EventScopedUpdateOne) AddAutomationID(v int64) *EventScopedUpdateOne {
-	x.b.AddAutomationID(v)
 	return x
 }
 
@@ -17358,11 +17358,41 @@ func (x *EventScopedUpdateOne) ClearContact() *EventScopedUpdateOne {
 	return x
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *EventScopedUpdateOne) SetBroadcast(v *Broadcast) *EventScopedUpdateOne {
+	x.b.SetBroadcast(v)
+	return x
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (x *EventScopedUpdateOne) ClearBroadcast() *EventScopedUpdateOne {
+	x.b.ClearBroadcast()
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *EventScopedUpdateOne) SetAutomation(v *Automation) *EventScopedUpdateOne {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *EventScopedUpdateOne) ClearAutomation() *EventScopedUpdateOne {
+	x.b.ClearAutomation()
+	return x
+}
+
 func (x *EventScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
 	}
 	return nil
 }
@@ -17555,12 +17585,6 @@ func (x *EventScopedUpdate) SetNillableBroadcastID(v *int64) *EventScopedUpdate 
 	return x
 }
 
-// AddBroadcastID adds value to the "broadcast_id" field.
-func (x *EventScopedUpdate) AddBroadcastID(v int64) *EventScopedUpdate {
-	x.b.AddBroadcastID(v)
-	return x
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (x *EventScopedUpdate) ClearBroadcastID() *EventScopedUpdate {
 	x.b.ClearBroadcastID()
@@ -17576,12 +17600,6 @@ func (x *EventScopedUpdate) SetAutomationID(v int64) *EventScopedUpdate {
 // SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
 func (x *EventScopedUpdate) SetNillableAutomationID(v *int64) *EventScopedUpdate {
 	x.b.SetNillableAutomationID(v)
-	return x
-}
-
-// AddAutomationID adds value to the "automation_id" field.
-func (x *EventScopedUpdate) AddAutomationID(v int64) *EventScopedUpdate {
-	x.b.AddAutomationID(v)
 	return x
 }
 
@@ -17621,11 +17639,41 @@ func (x *EventScopedUpdate) ClearContact() *EventScopedUpdate {
 	return x
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *EventScopedUpdate) SetBroadcast(v *Broadcast) *EventScopedUpdate {
+	x.b.SetBroadcast(v)
+	return x
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (x *EventScopedUpdate) ClearBroadcast() *EventScopedUpdate {
+	x.b.ClearBroadcast()
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *EventScopedUpdate) SetAutomation(v *Automation) *EventScopedUpdate {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *EventScopedUpdate) ClearAutomation() *EventScopedUpdate {
+	x.b.ClearAutomation()
+	return x
+}
+
 func (x *EventScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
 	}
 	return nil
 }

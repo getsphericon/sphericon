@@ -54,6 +54,10 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
 	EdgeContact = "contact"
+	// EdgeBroadcast holds the string denoting the broadcast edge name in mutations.
+	EdgeBroadcast = "broadcast"
+	// EdgeAutomation holds the string denoting the automation edge name in mutations.
+	EdgeAutomation = "automation"
 	// Table holds the table name of the event in the database.
 	Table = "events"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -70,6 +74,20 @@ const (
 	ContactInverseTable = "contacts"
 	// ContactColumn is the table column denoting the contact relation/edge.
 	ContactColumn = "contact_id"
+	// BroadcastTable is the table that holds the broadcast relation/edge.
+	BroadcastTable = "events"
+	// BroadcastInverseTable is the table name for the Broadcast entity.
+	// It exists in this package in order to avoid circular dependency with the "broadcast" package.
+	BroadcastInverseTable = "broadcasts"
+	// BroadcastColumn is the table column denoting the broadcast relation/edge.
+	BroadcastColumn = "broadcast_id"
+	// AutomationTable is the table that holds the automation relation/edge.
+	AutomationTable = "events"
+	// AutomationInverseTable is the table name for the Automation entity.
+	// It exists in this package in order to avoid circular dependency with the "automation" package.
+	AutomationInverseTable = "automations"
+	// AutomationColumn is the table column denoting the automation relation/edge.
+	AutomationColumn = "automation_id"
 )
 
 // Columns holds all SQL columns for event fields.
@@ -230,6 +248,20 @@ func ByContactField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newContactStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByBroadcastField orders the results by broadcast field.
+func ByBroadcastField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBroadcastStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAutomationField orders the results by automation field.
+func ByAutomationField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAutomationStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -242,5 +274,19 @@ func newContactStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ContactInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ContactTable, ContactColumn),
+	)
+}
+func newBroadcastStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BroadcastInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, BroadcastTable, BroadcastColumn),
+	)
+}
+func newAutomationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AutomationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, AutomationTable, AutomationColumn),
 	)
 }

@@ -21076,35 +21076,35 @@ func (m *ErasureMutation) ResetEdge(name string) error {
 // EventMutation represents an operation that mutates the Event nodes in the graph.
 type EventMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int64
-	created_at       *time.Time
-	updated_at       *time.Time
-	source_id        *string
-	visitor_id       *string
-	subject_id       *string
-	email            *string
-	phone            *string
-	action           *string
-	properties       *map[string]interface{}
-	occurred_at      *time.Time
-	machine          *bool
-	captured         *bool
-	broadcast_id     *int64
-	addbroadcast_id  *int64
-	automation_id    *int64
-	addautomation_id *int64
-	url              *string
-	backfill         *bool
-	clearedFields    map[string]struct{}
-	workspace        *int64
-	clearedworkspace bool
-	contact          *int64
-	clearedcontact   bool
-	done             bool
-	oldValue         func(context.Context) (*Event, error)
-	predicates       []predicate.Event
+	op                Op
+	typ               string
+	id                *int64
+	created_at        *time.Time
+	updated_at        *time.Time
+	source_id         *string
+	visitor_id        *string
+	subject_id        *string
+	email             *string
+	phone             *string
+	action            *string
+	properties        *map[string]interface{}
+	occurred_at       *time.Time
+	machine           *bool
+	captured          *bool
+	url               *string
+	backfill          *bool
+	clearedFields     map[string]struct{}
+	workspace         *int64
+	clearedworkspace  bool
+	contact           *int64
+	clearedcontact    bool
+	broadcast         *int64
+	clearedbroadcast  bool
+	automation        *int64
+	clearedautomation bool
+	done              bool
+	oldValue          func(context.Context) (*Event, error)
+	predicates        []predicate.Event
 }
 
 var _ ent.Mutation = (*EventMutation)(nil)
@@ -21808,13 +21808,12 @@ func (m *EventMutation) ResetCaptured() {
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (m *EventMutation) SetBroadcastID(i int64) {
-	m.broadcast_id = &i
-	m.addbroadcast_id = nil
+	m.broadcast = &i
 }
 
 // BroadcastID returns the value of the "broadcast_id" field in the mutation.
 func (m *EventMutation) BroadcastID() (r int64, exists bool) {
-	v := m.broadcast_id
+	v := m.broadcast
 	if v == nil {
 		return
 	}
@@ -21838,28 +21837,9 @@ func (m *EventMutation) OldBroadcastID(ctx context.Context) (v *int64, err error
 	return oldValue.BroadcastID, nil
 }
 
-// AddBroadcastID adds i to the "broadcast_id" field.
-func (m *EventMutation) AddBroadcastID(i int64) {
-	if m.addbroadcast_id != nil {
-		*m.addbroadcast_id += i
-	} else {
-		m.addbroadcast_id = &i
-	}
-}
-
-// AddedBroadcastID returns the value that was added to the "broadcast_id" field in this mutation.
-func (m *EventMutation) AddedBroadcastID() (r int64, exists bool) {
-	v := m.addbroadcast_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (m *EventMutation) ClearBroadcastID() {
-	m.broadcast_id = nil
-	m.addbroadcast_id = nil
+	m.broadcast = nil
 	m.clearedFields[event.FieldBroadcastID] = struct{}{}
 }
 
@@ -21871,20 +21851,18 @@ func (m *EventMutation) BroadcastIDCleared() bool {
 
 // ResetBroadcastID resets all changes to the "broadcast_id" field.
 func (m *EventMutation) ResetBroadcastID() {
-	m.broadcast_id = nil
-	m.addbroadcast_id = nil
+	m.broadcast = nil
 	delete(m.clearedFields, event.FieldBroadcastID)
 }
 
 // SetAutomationID sets the "automation_id" field.
 func (m *EventMutation) SetAutomationID(i int64) {
-	m.automation_id = &i
-	m.addautomation_id = nil
+	m.automation = &i
 }
 
 // AutomationID returns the value of the "automation_id" field in the mutation.
 func (m *EventMutation) AutomationID() (r int64, exists bool) {
-	v := m.automation_id
+	v := m.automation
 	if v == nil {
 		return
 	}
@@ -21908,28 +21886,9 @@ func (m *EventMutation) OldAutomationID(ctx context.Context) (v *int64, err erro
 	return oldValue.AutomationID, nil
 }
 
-// AddAutomationID adds i to the "automation_id" field.
-func (m *EventMutation) AddAutomationID(i int64) {
-	if m.addautomation_id != nil {
-		*m.addautomation_id += i
-	} else {
-		m.addautomation_id = &i
-	}
-}
-
-// AddedAutomationID returns the value that was added to the "automation_id" field in this mutation.
-func (m *EventMutation) AddedAutomationID() (r int64, exists bool) {
-	v := m.addautomation_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearAutomationID clears the value of the "automation_id" field.
 func (m *EventMutation) ClearAutomationID() {
-	m.automation_id = nil
-	m.addautomation_id = nil
+	m.automation = nil
 	m.clearedFields[event.FieldAutomationID] = struct{}{}
 }
 
@@ -21941,8 +21900,7 @@ func (m *EventMutation) AutomationIDCleared() bool {
 
 // ResetAutomationID resets all changes to the "automation_id" field.
 func (m *EventMutation) ResetAutomationID() {
-	m.automation_id = nil
-	m.addautomation_id = nil
+	m.automation = nil
 	delete(m.clearedFields, event.FieldAutomationID)
 }
 
@@ -22085,6 +22043,60 @@ func (m *EventMutation) ResetContact() {
 	m.clearedcontact = false
 }
 
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (m *EventMutation) ClearBroadcast() {
+	m.clearedbroadcast = true
+	m.clearedFields[event.FieldBroadcastID] = struct{}{}
+}
+
+// BroadcastCleared reports if the "broadcast" edge to the Broadcast entity was cleared.
+func (m *EventMutation) BroadcastCleared() bool {
+	return m.BroadcastIDCleared() || m.clearedbroadcast
+}
+
+// BroadcastIDs returns the "broadcast" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BroadcastID instead. It exists only for internal usage by the builders.
+func (m *EventMutation) BroadcastIDs() (ids []int64) {
+	if id := m.broadcast; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBroadcast resets all changes to the "broadcast" edge.
+func (m *EventMutation) ResetBroadcast() {
+	m.broadcast = nil
+	m.clearedbroadcast = false
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (m *EventMutation) ClearAutomation() {
+	m.clearedautomation = true
+	m.clearedFields[event.FieldAutomationID] = struct{}{}
+}
+
+// AutomationCleared reports if the "automation" edge to the Automation entity was cleared.
+func (m *EventMutation) AutomationCleared() bool {
+	return m.AutomationIDCleared() || m.clearedautomation
+}
+
+// AutomationIDs returns the "automation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AutomationID instead. It exists only for internal usage by the builders.
+func (m *EventMutation) AutomationIDs() (ids []int64) {
+	if id := m.automation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAutomation resets all changes to the "automation" edge.
+func (m *EventMutation) ResetAutomation() {
+	m.automation = nil
+	m.clearedautomation = false
+}
+
 // Where appends a list predicates to the EventMutation builder.
 func (m *EventMutation) Where(ps ...predicate.Event) {
 	m.predicates = append(m.predicates, ps...)
@@ -22162,10 +22174,10 @@ func (m *EventMutation) Fields() []string {
 	if m.captured != nil {
 		fields = append(fields, event.FieldCaptured)
 	}
-	if m.broadcast_id != nil {
+	if m.broadcast != nil {
 		fields = append(fields, event.FieldBroadcastID)
 	}
-	if m.automation_id != nil {
+	if m.automation != nil {
 		fields = append(fields, event.FieldAutomationID)
 	}
 	if m.url != nil {
@@ -22406,12 +22418,6 @@ func (m *EventMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *EventMutation) AddedFields() []string {
 	var fields []string
-	if m.addbroadcast_id != nil {
-		fields = append(fields, event.FieldBroadcastID)
-	}
-	if m.addautomation_id != nil {
-		fields = append(fields, event.FieldAutomationID)
-	}
 	return fields
 }
 
@@ -22420,10 +22426,6 @@ func (m *EventMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *EventMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case event.FieldBroadcastID:
-		return m.AddedBroadcastID()
-	case event.FieldAutomationID:
-		return m.AddedAutomationID()
 	}
 	return nil, false
 }
@@ -22433,20 +22435,6 @@ func (m *EventMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *EventMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case event.FieldBroadcastID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddBroadcastID(v)
-		return nil
-	case event.FieldAutomationID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddAutomationID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Event numeric field %s", name)
 }
@@ -22597,12 +22585,18 @@ func (m *EventMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EventMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.workspace != nil {
 		edges = append(edges, event.EdgeWorkspace)
 	}
 	if m.contact != nil {
 		edges = append(edges, event.EdgeContact)
+	}
+	if m.broadcast != nil {
+		edges = append(edges, event.EdgeBroadcast)
+	}
+	if m.automation != nil {
+		edges = append(edges, event.EdgeAutomation)
 	}
 	return edges
 }
@@ -22619,13 +22613,21 @@ func (m *EventMutation) AddedIDs(name string) []ent.Value {
 		if id := m.contact; id != nil {
 			return []ent.Value{*id}
 		}
+	case event.EdgeBroadcast:
+		if id := m.broadcast; id != nil {
+			return []ent.Value{*id}
+		}
+	case event.EdgeAutomation:
+		if id := m.automation; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EventMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	return edges
 }
 
@@ -22637,12 +22639,18 @@ func (m *EventMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EventMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.clearedworkspace {
 		edges = append(edges, event.EdgeWorkspace)
 	}
 	if m.clearedcontact {
 		edges = append(edges, event.EdgeContact)
+	}
+	if m.clearedbroadcast {
+		edges = append(edges, event.EdgeBroadcast)
+	}
+	if m.clearedautomation {
+		edges = append(edges, event.EdgeAutomation)
 	}
 	return edges
 }
@@ -22655,6 +22663,10 @@ func (m *EventMutation) EdgeCleared(name string) bool {
 		return m.clearedworkspace
 	case event.EdgeContact:
 		return m.clearedcontact
+	case event.EdgeBroadcast:
+		return m.clearedbroadcast
+	case event.EdgeAutomation:
+		return m.clearedautomation
 	}
 	return false
 }
@@ -22669,6 +22681,12 @@ func (m *EventMutation) ClearEdge(name string) error {
 	case event.EdgeContact:
 		m.ClearContact()
 		return nil
+	case event.EdgeBroadcast:
+		m.ClearBroadcast()
+		return nil
+	case event.EdgeAutomation:
+		m.ClearAutomation()
+		return nil
 	}
 	return fmt.Errorf("unknown Event unique edge %s", name)
 }
@@ -22682,6 +22700,12 @@ func (m *EventMutation) ResetEdge(name string) error {
 		return nil
 	case event.EdgeContact:
 		m.ResetContact()
+		return nil
+	case event.EdgeBroadcast:
+		m.ResetBroadcast()
+		return nil
+	case event.EdgeAutomation:
+		m.ResetAutomation()
 		return nil
 	}
 	return fmt.Errorf("unknown Event edge %s", name)
