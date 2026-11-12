@@ -646,7 +646,7 @@ The most marketing messages a Workspace lets one Destination receive on a Channe
 period (three per 24 hours on SMS unless it changes it, none on email and Telegram; with caps of its
 own for countries on a phone Channel). Every Broadcast, series issue and Automation send counts;
 Transactional sends and messages the person asked for do not. Over it a Broadcast Recipient is
-Skipped and an Automation send is deferred. Distinct from the Send cap (per Workspace) and the
+Skipped and an Automation send is deferred, for one period at most, then Skipped. Distinct from the Send cap (per Workspace) and the
 Provider limit (per Integration).
 _Avoid_: Fatigue limit, rate limit, throttle, quota
 
