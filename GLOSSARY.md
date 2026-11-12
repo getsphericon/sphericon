@@ -1145,6 +1145,20 @@ User's Role, can do no more than the Role allows at the moment of each request, 
 Membership.
 _Avoid_: PAT, personal API key, API token (that is the Workspace's)
 
+**Untrusted field**:
+A field anyone other than a Member can write (a door of ingest, Identify, an Inbound message, a
+form, an Import, a third party's answer): a Contact's `subject_id`, names, Identify's core
+attributes and Custom fields, a Custom field's key and name, a Tag's name, an Event's action and
+properties. An agent gets it wrapped as data, never as an instruction, and so it gets message content,
+which is written for recipients.
+_Avoid_: Tainted, user input, PII (that is another question)
+
+**Known host**:
+A host a Workspace has used in a send a person confirmed (a User's Schedule or Publish), or one of
+its Sending and Tracking domains. Schedule and Publish mark any other host as new, beside every
+author of the change; a Test send or anything an agent did makes no host known.
+_Avoid_: Allowlist, trusted domain
+
 **Connection**:
 The access a User gave an application (an MCP client such as Claude) to one Workspace by
 consenting to it. It belongs to that User's Membership, can do no more than the User's Role

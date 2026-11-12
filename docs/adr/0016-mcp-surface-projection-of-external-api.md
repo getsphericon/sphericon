@@ -4,6 +4,12 @@ status: accepted
 
 # MCP surface: a projection of the external `/api`, not a second implementation
 
+> **Amended by [[0132-what-an-injected-agent-could-do-is-bounded-by-origin-marks-an-egress-lock-and-review]]:**
+> `webhooks:write` joins the setup scopes behind the third box; a write through a Connection
+> without `mcp:send` starts nothing that sends; editing a Template in Transactional use and a Test
+> send to another address are send-class over MCP; a field is untrusted by its origin; Schedule and
+> Publish show every author since the last approval and mark new link hosts.
+
 > **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** only
 > the contact lifts an opt-out; the console lifts none either. Recording consent the customer
 > collected stays as below.
