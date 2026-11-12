@@ -85,14 +85,14 @@ func SubjectID(v string) predicate.Erasure {
 	return predicate.Erasure(sql.FieldEQ(FieldSubjectID, v))
 }
 
-// EmailSha256 applies equality check predicate on the "email_sha256" field. It's identical to EmailSha256EQ.
-func EmailSha256(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldEQ(FieldEmailSha256, v))
+// EmailHashEncrypted applies equality check predicate on the "email_hash_encrypted" field. It's identical to EmailHashEncryptedEQ.
+func EmailHashEncrypted(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldEQ(FieldEmailHashEncrypted, v))
 }
 
-// PhoneSha256 applies equality check predicate on the "phone_sha256" field. It's identical to PhoneSha256EQ.
-func PhoneSha256(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldEQ(FieldPhoneSha256, v))
+// PhoneHashEncrypted applies equality check predicate on the "phone_hash_encrypted" field. It's identical to PhoneHashEncryptedEQ.
+func PhoneHashEncrypted(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldEQ(FieldPhoneHashEncrypted, v))
 }
 
 // ErasedAt applies equality check predicate on the "erased_at" field. It's identical to ErasedAtEQ.
@@ -380,154 +380,154 @@ func SubjectIDContainsFold(v string) predicate.Erasure {
 	return predicate.Erasure(sql.FieldContainsFold(FieldSubjectID, v))
 }
 
-// EmailSha256EQ applies the EQ predicate on the "email_sha256" field.
-func EmailSha256EQ(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldEQ(FieldEmailSha256, v))
+// EmailHashEncryptedEQ applies the EQ predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedEQ(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldEQ(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256NEQ applies the NEQ predicate on the "email_sha256" field.
-func EmailSha256NEQ(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldNEQ(FieldEmailSha256, v))
+// EmailHashEncryptedNEQ applies the NEQ predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedNEQ(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldNEQ(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256In applies the In predicate on the "email_sha256" field.
-func EmailSha256In(vs ...string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldIn(FieldEmailSha256, vs...))
+// EmailHashEncryptedIn applies the In predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedIn(vs ...string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldIn(FieldEmailHashEncrypted, vs...))
 }
 
-// EmailSha256NotIn applies the NotIn predicate on the "email_sha256" field.
-func EmailSha256NotIn(vs ...string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldNotIn(FieldEmailSha256, vs...))
+// EmailHashEncryptedNotIn applies the NotIn predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedNotIn(vs ...string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldNotIn(FieldEmailHashEncrypted, vs...))
 }
 
-// EmailSha256GT applies the GT predicate on the "email_sha256" field.
-func EmailSha256GT(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldGT(FieldEmailSha256, v))
+// EmailHashEncryptedGT applies the GT predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedGT(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldGT(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256GTE applies the GTE predicate on the "email_sha256" field.
-func EmailSha256GTE(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldGTE(FieldEmailSha256, v))
+// EmailHashEncryptedGTE applies the GTE predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedGTE(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldGTE(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256LT applies the LT predicate on the "email_sha256" field.
-func EmailSha256LT(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldLT(FieldEmailSha256, v))
+// EmailHashEncryptedLT applies the LT predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedLT(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldLT(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256LTE applies the LTE predicate on the "email_sha256" field.
-func EmailSha256LTE(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldLTE(FieldEmailSha256, v))
+// EmailHashEncryptedLTE applies the LTE predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedLTE(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldLTE(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256Contains applies the Contains predicate on the "email_sha256" field.
-func EmailSha256Contains(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldContains(FieldEmailSha256, v))
+// EmailHashEncryptedContains applies the Contains predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedContains(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldContains(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256HasPrefix applies the HasPrefix predicate on the "email_sha256" field.
-func EmailSha256HasPrefix(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldHasPrefix(FieldEmailSha256, v))
+// EmailHashEncryptedHasPrefix applies the HasPrefix predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedHasPrefix(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldHasPrefix(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256HasSuffix applies the HasSuffix predicate on the "email_sha256" field.
-func EmailSha256HasSuffix(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldHasSuffix(FieldEmailSha256, v))
+// EmailHashEncryptedHasSuffix applies the HasSuffix predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedHasSuffix(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldHasSuffix(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256IsNil applies the IsNil predicate on the "email_sha256" field.
-func EmailSha256IsNil() predicate.Erasure {
-	return predicate.Erasure(sql.FieldIsNull(FieldEmailSha256))
+// EmailHashEncryptedIsNil applies the IsNil predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedIsNil() predicate.Erasure {
+	return predicate.Erasure(sql.FieldIsNull(FieldEmailHashEncrypted))
 }
 
-// EmailSha256NotNil applies the NotNil predicate on the "email_sha256" field.
-func EmailSha256NotNil() predicate.Erasure {
-	return predicate.Erasure(sql.FieldNotNull(FieldEmailSha256))
+// EmailHashEncryptedNotNil applies the NotNil predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedNotNil() predicate.Erasure {
+	return predicate.Erasure(sql.FieldNotNull(FieldEmailHashEncrypted))
 }
 
-// EmailSha256EqualFold applies the EqualFold predicate on the "email_sha256" field.
-func EmailSha256EqualFold(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldEqualFold(FieldEmailSha256, v))
+// EmailHashEncryptedEqualFold applies the EqualFold predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedEqualFold(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldEqualFold(FieldEmailHashEncrypted, v))
 }
 
-// EmailSha256ContainsFold applies the ContainsFold predicate on the "email_sha256" field.
-func EmailSha256ContainsFold(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldContainsFold(FieldEmailSha256, v))
+// EmailHashEncryptedContainsFold applies the ContainsFold predicate on the "email_hash_encrypted" field.
+func EmailHashEncryptedContainsFold(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldContainsFold(FieldEmailHashEncrypted, v))
 }
 
-// PhoneSha256EQ applies the EQ predicate on the "phone_sha256" field.
-func PhoneSha256EQ(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldEQ(FieldPhoneSha256, v))
+// PhoneHashEncryptedEQ applies the EQ predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedEQ(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldEQ(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256NEQ applies the NEQ predicate on the "phone_sha256" field.
-func PhoneSha256NEQ(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldNEQ(FieldPhoneSha256, v))
+// PhoneHashEncryptedNEQ applies the NEQ predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedNEQ(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldNEQ(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256In applies the In predicate on the "phone_sha256" field.
-func PhoneSha256In(vs ...string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldIn(FieldPhoneSha256, vs...))
+// PhoneHashEncryptedIn applies the In predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedIn(vs ...string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldIn(FieldPhoneHashEncrypted, vs...))
 }
 
-// PhoneSha256NotIn applies the NotIn predicate on the "phone_sha256" field.
-func PhoneSha256NotIn(vs ...string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldNotIn(FieldPhoneSha256, vs...))
+// PhoneHashEncryptedNotIn applies the NotIn predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedNotIn(vs ...string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldNotIn(FieldPhoneHashEncrypted, vs...))
 }
 
-// PhoneSha256GT applies the GT predicate on the "phone_sha256" field.
-func PhoneSha256GT(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldGT(FieldPhoneSha256, v))
+// PhoneHashEncryptedGT applies the GT predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedGT(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldGT(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256GTE applies the GTE predicate on the "phone_sha256" field.
-func PhoneSha256GTE(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldGTE(FieldPhoneSha256, v))
+// PhoneHashEncryptedGTE applies the GTE predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedGTE(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldGTE(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256LT applies the LT predicate on the "phone_sha256" field.
-func PhoneSha256LT(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldLT(FieldPhoneSha256, v))
+// PhoneHashEncryptedLT applies the LT predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedLT(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldLT(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256LTE applies the LTE predicate on the "phone_sha256" field.
-func PhoneSha256LTE(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldLTE(FieldPhoneSha256, v))
+// PhoneHashEncryptedLTE applies the LTE predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedLTE(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldLTE(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256Contains applies the Contains predicate on the "phone_sha256" field.
-func PhoneSha256Contains(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldContains(FieldPhoneSha256, v))
+// PhoneHashEncryptedContains applies the Contains predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedContains(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldContains(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256HasPrefix applies the HasPrefix predicate on the "phone_sha256" field.
-func PhoneSha256HasPrefix(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldHasPrefix(FieldPhoneSha256, v))
+// PhoneHashEncryptedHasPrefix applies the HasPrefix predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedHasPrefix(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldHasPrefix(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256HasSuffix applies the HasSuffix predicate on the "phone_sha256" field.
-func PhoneSha256HasSuffix(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldHasSuffix(FieldPhoneSha256, v))
+// PhoneHashEncryptedHasSuffix applies the HasSuffix predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedHasSuffix(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldHasSuffix(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256IsNil applies the IsNil predicate on the "phone_sha256" field.
-func PhoneSha256IsNil() predicate.Erasure {
-	return predicate.Erasure(sql.FieldIsNull(FieldPhoneSha256))
+// PhoneHashEncryptedIsNil applies the IsNil predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedIsNil() predicate.Erasure {
+	return predicate.Erasure(sql.FieldIsNull(FieldPhoneHashEncrypted))
 }
 
-// PhoneSha256NotNil applies the NotNil predicate on the "phone_sha256" field.
-func PhoneSha256NotNil() predicate.Erasure {
-	return predicate.Erasure(sql.FieldNotNull(FieldPhoneSha256))
+// PhoneHashEncryptedNotNil applies the NotNil predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedNotNil() predicate.Erasure {
+	return predicate.Erasure(sql.FieldNotNull(FieldPhoneHashEncrypted))
 }
 
-// PhoneSha256EqualFold applies the EqualFold predicate on the "phone_sha256" field.
-func PhoneSha256EqualFold(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldEqualFold(FieldPhoneSha256, v))
+// PhoneHashEncryptedEqualFold applies the EqualFold predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedEqualFold(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldEqualFold(FieldPhoneHashEncrypted, v))
 }
 
-// PhoneSha256ContainsFold applies the ContainsFold predicate on the "phone_sha256" field.
-func PhoneSha256ContainsFold(v string) predicate.Erasure {
-	return predicate.Erasure(sql.FieldContainsFold(FieldPhoneSha256, v))
+// PhoneHashEncryptedContainsFold applies the ContainsFold predicate on the "phone_hash_encrypted" field.
+func PhoneHashEncryptedContainsFold(v string) predicate.Erasure {
+	return predicate.Erasure(sql.FieldContainsFold(FieldPhoneHashEncrypted, v))
 }
 
 // ErasedAtEQ applies the EQ predicate on the "erased_at" field.

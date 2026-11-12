@@ -16099,27 +16099,27 @@ func (x *ErasureScopedCreate) SetVisitorIds(v []string) *ErasureScopedCreate {
 	return x
 }
 
-// SetEmailSha256 sets the "email_sha256" field.
-func (x *ErasureScopedCreate) SetEmailSha256(v string) *ErasureScopedCreate {
-	x.b.SetEmailSha256(v)
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (x *ErasureScopedCreate) SetEmailHashEncrypted(v string) *ErasureScopedCreate {
+	x.b.SetEmailHashEncrypted(v)
 	return x
 }
 
-// SetNillableEmailSha256 sets the "email_sha256" field if the given value is not nil.
-func (x *ErasureScopedCreate) SetNillableEmailSha256(v *string) *ErasureScopedCreate {
-	x.b.SetNillableEmailSha256(v)
+// SetNillableEmailHashEncrypted sets the "email_hash_encrypted" field if the given value is not nil.
+func (x *ErasureScopedCreate) SetNillableEmailHashEncrypted(v *string) *ErasureScopedCreate {
+	x.b.SetNillableEmailHashEncrypted(v)
 	return x
 }
 
-// SetPhoneSha256 sets the "phone_sha256" field.
-func (x *ErasureScopedCreate) SetPhoneSha256(v string) *ErasureScopedCreate {
-	x.b.SetPhoneSha256(v)
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (x *ErasureScopedCreate) SetPhoneHashEncrypted(v string) *ErasureScopedCreate {
+	x.b.SetPhoneHashEncrypted(v)
 	return x
 }
 
-// SetNillablePhoneSha256 sets the "phone_sha256" field if the given value is not nil.
-func (x *ErasureScopedCreate) SetNillablePhoneSha256(v *string) *ErasureScopedCreate {
-	x.b.SetNillablePhoneSha256(v)
+// SetNillablePhoneHashEncrypted sets the "phone_hash_encrypted" field if the given value is not nil.
+func (x *ErasureScopedCreate) SetNillablePhoneHashEncrypted(v *string) *ErasureScopedCreate {
+	x.b.SetNillablePhoneHashEncrypted(v)
 	return x
 }
 
@@ -16212,6 +16212,42 @@ func (u *ErasureScopedUpsert) SetUpdatedAt(v time.Time) *ErasureScopedUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *ErasureScopedUpsert) UpdateUpdatedAt() *ErasureScopedUpsert {
 	u.u.SetExcluded(erasure.FieldUpdatedAt)
+	return u
+}
+
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (u *ErasureScopedUpsert) SetEmailHashEncrypted(v string) *ErasureScopedUpsert {
+	u.u.Set(erasure.FieldEmailHashEncrypted, v)
+	return u
+}
+
+// UpdateEmailHashEncrypted sets the "email_hash_encrypted" field to the value that was provided on create.
+func (u *ErasureScopedUpsert) UpdateEmailHashEncrypted() *ErasureScopedUpsert {
+	u.u.SetExcluded(erasure.FieldEmailHashEncrypted)
+	return u
+}
+
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (u *ErasureScopedUpsert) ClearEmailHashEncrypted() *ErasureScopedUpsert {
+	u.u.SetNull(erasure.FieldEmailHashEncrypted)
+	return u
+}
+
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (u *ErasureScopedUpsert) SetPhoneHashEncrypted(v string) *ErasureScopedUpsert {
+	u.u.Set(erasure.FieldPhoneHashEncrypted, v)
+	return u
+}
+
+// UpdatePhoneHashEncrypted sets the "phone_hash_encrypted" field to the value that was provided on create.
+func (u *ErasureScopedUpsert) UpdatePhoneHashEncrypted() *ErasureScopedUpsert {
+	u.u.SetExcluded(erasure.FieldPhoneHashEncrypted)
+	return u
+}
+
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (u *ErasureScopedUpsert) ClearPhoneHashEncrypted() *ErasureScopedUpsert {
+	u.u.SetNull(erasure.FieldPhoneHashEncrypted)
 	return u
 }
 
@@ -16367,6 +16403,42 @@ func (x *ErasureScopedUpdateOne) SetUpdatedAt(v time.Time) *ErasureScopedUpdateO
 	return x
 }
 
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (x *ErasureScopedUpdateOne) SetEmailHashEncrypted(v string) *ErasureScopedUpdateOne {
+	x.b.SetEmailHashEncrypted(v)
+	return x
+}
+
+// SetNillableEmailHashEncrypted sets the "email_hash_encrypted" field if the given value is not nil.
+func (x *ErasureScopedUpdateOne) SetNillableEmailHashEncrypted(v *string) *ErasureScopedUpdateOne {
+	x.b.SetNillableEmailHashEncrypted(v)
+	return x
+}
+
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (x *ErasureScopedUpdateOne) ClearEmailHashEncrypted() *ErasureScopedUpdateOne {
+	x.b.ClearEmailHashEncrypted()
+	return x
+}
+
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (x *ErasureScopedUpdateOne) SetPhoneHashEncrypted(v string) *ErasureScopedUpdateOne {
+	x.b.SetPhoneHashEncrypted(v)
+	return x
+}
+
+// SetNillablePhoneHashEncrypted sets the "phone_hash_encrypted" field if the given value is not nil.
+func (x *ErasureScopedUpdateOne) SetNillablePhoneHashEncrypted(v *string) *ErasureScopedUpdateOne {
+	x.b.SetNillablePhoneHashEncrypted(v)
+	return x
+}
+
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (x *ErasureScopedUpdateOne) ClearPhoneHashEncrypted() *ErasureScopedUpdateOne {
+	x.b.ClearPhoneHashEncrypted()
+	return x
+}
+
 func (x *ErasureScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -16426,6 +16498,42 @@ func (x *ErasureScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Erasur
 // SetUpdatedAt sets the "updated_at" field.
 func (x *ErasureScopedUpdate) SetUpdatedAt(v time.Time) *ErasureScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (x *ErasureScopedUpdate) SetEmailHashEncrypted(v string) *ErasureScopedUpdate {
+	x.b.SetEmailHashEncrypted(v)
+	return x
+}
+
+// SetNillableEmailHashEncrypted sets the "email_hash_encrypted" field if the given value is not nil.
+func (x *ErasureScopedUpdate) SetNillableEmailHashEncrypted(v *string) *ErasureScopedUpdate {
+	x.b.SetNillableEmailHashEncrypted(v)
+	return x
+}
+
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (x *ErasureScopedUpdate) ClearEmailHashEncrypted() *ErasureScopedUpdate {
+	x.b.ClearEmailHashEncrypted()
+	return x
+}
+
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (x *ErasureScopedUpdate) SetPhoneHashEncrypted(v string) *ErasureScopedUpdate {
+	x.b.SetPhoneHashEncrypted(v)
+	return x
+}
+
+// SetNillablePhoneHashEncrypted sets the "phone_hash_encrypted" field if the given value is not nil.
+func (x *ErasureScopedUpdate) SetNillablePhoneHashEncrypted(v *string) *ErasureScopedUpdate {
+	x.b.SetNillablePhoneHashEncrypted(v)
+	return x
+}
+
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (x *ErasureScopedUpdate) ClearPhoneHashEncrypted() *ErasureScopedUpdate {
+	x.b.ClearPhoneHashEncrypted()
 	return x
 }
 

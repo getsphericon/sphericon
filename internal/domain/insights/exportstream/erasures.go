@@ -2,9 +2,8 @@ package exportstream
 
 import (
 	"context"
+	"fmt"
 	"time"
-
-	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -32,18 +31,40 @@ type ErasureRow struct {
 // Position is the row's (updated_at, id).
 func (r ErasureRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: r.ID} }
 
-func erasureRow(e *ent.Erasure) ErasureRow {
+// erasureRow is the stream's row of an Erasure, its hashes opened with the cipher: a hash that does
+// not open fails the page rather than leave the row out or hand out ciphertext.
+func (st *Streams) erasureRow(e *ent.Erasure) (ErasureRow, error) {
+	email, err := st.open(e.EmailHashEncrypted)
+	if err != nil {
+		return ErasureRow{}, err
+	}
+	phone, err := st.open(e.PhoneHashEncrypted)
+	if err != nil {
+		return ErasureRow{}, err
+	}
 	return ErasureRow{
 		ID:         e.ID,
 		ContactID:  e.ContactID,
 		SubjectID:  e.SubjectID,
 		VisitorIDs: e.VisitorIds,
-		EmailHash:  e.EmailSha256,
-		PhoneHash:  e.PhoneSha256,
+		EmailHash:  email,
+		PhoneHash:  phone,
 		ErasedAt:   e.ErasedAt.UTC(),
 		CreatedAt:  e.CreatedAt.UTC(),
 		UpdatedAt:  e.UpdatedAt.UTC(),
+	}, nil
+}
+
+// open is a sealed hash in the clear; nil for none.
+func (st *Streams) open(sealed *string) (*string, error) {
+	if sealed == nil {
+		return nil, nil
 	}
+	hash, err := st.cipher.Decrypt(*sealed)
+	if err != nil {
+		return nil, fmt.Errorf("open an erasure hash: %w", err)
+	}
+	return new(string(hash)), nil
 }
 
 // Erasures serves a page of the Workspace's Erasures stream.
@@ -60,6 +81,12 @@ func (st *Streams) Erasures(ctx context.Context, s *ent.Scoped, token string, li
 		if err != nil {
 			return nil, err
 		}
-		return lo.Map(rows, func(e *ent.Erasure, _ int) ErasureRow { return erasureRow(e) }), nil
+		out := make([]ErasureRow, len(rows))
+		for i, e := range rows {
+			if out[i], err = st.erasureRow(e); err != nil {
+				return nil, err
+			}
+		}
+		return out, nil
 	})
 }

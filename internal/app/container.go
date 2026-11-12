@@ -581,6 +581,7 @@ var jobsPackage = do.Package(
 			Detector:        do.MustInvoke[*abusedetector.Detector](i),
 			EventsRetention: cfg.EventsRetention,
 			Clock:           do.MustInvoke[Clock](i),
+			Cipher:          do.MustInvoke[*secrets.Cipher](i),
 		}))
 		if err != nil {
 			return nil, err
@@ -874,6 +875,7 @@ var contentPackage = do.Package(
 		return secretreencryption.New(slices.Concat(
 			integrations.SecretSweeps(client), webhookendpoints.SecretSweeps(client), sendingdomains.SecretSweeps(client),
 			secondfactors.SecretSweeps(client), staffmembers.SecretSweeps(client), automations.SecretSweeps(client), rules.SecretSweeps(client),
+			do.MustInvoke[*ee.Edition](i).SecretSweeps(),
 		), do.MustInvoke[*secrets.Cipher](i)), nil
 	}),
 	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
@@ -1103,7 +1105,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),
 		Tokens:                do.MustInvoke[*apitokens.Module](i),
 		Audit:                 do.MustInvoke[*auditlog.Log](i),
-		Export:                exportstream.New(edition.Export, do.MustInvoke[*auditlog.Log](i)),
+		Export:                exportstream.New(edition.Export, do.MustInvoke[*auditlog.Log](i), do.MustInvoke[*secrets.Cipher](i)),
 
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
 	}, nil

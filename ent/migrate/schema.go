@@ -882,8 +882,8 @@ var (
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "subject_id", Type: field.TypeString, Default: ""},
 		{Name: "visitor_ids", Type: field.TypeJSON},
-		{Name: "email_sha256", Type: field.TypeString, Nullable: true},
-		{Name: "phone_sha256", Type: field.TypeString, Nullable: true},
+		{Name: "email_hash_encrypted", Type: field.TypeString, Nullable: true},
+		{Name: "phone_hash_encrypted", Type: field.TypeString, Nullable: true},
 		{Name: "erased_at", Type: field.TypeTime},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}

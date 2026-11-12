@@ -33,10 +33,10 @@ type Erasure struct {
 	SubjectID string `json:"subject_id,omitempty"`
 	// VisitorIds holds the value of the "visitor_ids" field.
 	VisitorIds []string `json:"visitor_ids,omitempty"`
-	// EmailSha256 holds the value of the "email_sha256" field.
-	EmailSha256 *string `json:"email_sha256,omitempty"`
-	// PhoneSha256 holds the value of the "phone_sha256" field.
-	PhoneSha256 *string `json:"phone_sha256,omitempty"`
+	// EmailHashEncrypted holds the value of the "email_hash_encrypted" field.
+	EmailHashEncrypted *string `json:"email_hash_encrypted,omitempty"`
+	// PhoneHashEncrypted holds the value of the "phone_hash_encrypted" field.
+	PhoneHashEncrypted *string `json:"phone_hash_encrypted,omitempty"`
 	// ErasedAt holds the value of the "erased_at" field.
 	ErasedAt time.Time `json:"erased_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -74,7 +74,7 @@ func (*Erasure) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case erasure.FieldID, erasure.FieldWorkspaceID, erasure.FieldContactID:
 			values[i] = new(sql.NullInt64)
-		case erasure.FieldErasureKey, erasure.FieldSubjectID, erasure.FieldEmailSha256, erasure.FieldPhoneSha256:
+		case erasure.FieldErasureKey, erasure.FieldSubjectID, erasure.FieldEmailHashEncrypted, erasure.FieldPhoneHashEncrypted:
 			values[i] = new(sql.NullString)
 		case erasure.FieldCreatedAt, erasure.FieldUpdatedAt, erasure.FieldErasedAt:
 			values[i] = new(sql.NullTime)
@@ -144,19 +144,19 @@ func (_m *Erasure) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field visitor_ids: %w", err)
 				}
 			}
-		case erasure.FieldEmailSha256:
+		case erasure.FieldEmailHashEncrypted:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field email_sha256", values[i])
+				return fmt.Errorf("unexpected type %T for field email_hash_encrypted", values[i])
 			} else if value.Valid {
-				_m.EmailSha256 = new(string)
-				*_m.EmailSha256 = value.String
+				_m.EmailHashEncrypted = new(string)
+				*_m.EmailHashEncrypted = value.String
 			}
-		case erasure.FieldPhoneSha256:
+		case erasure.FieldPhoneHashEncrypted:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field phone_sha256", values[i])
+				return fmt.Errorf("unexpected type %T for field phone_hash_encrypted", values[i])
 			} else if value.Valid {
-				_m.PhoneSha256 = new(string)
-				*_m.PhoneSha256 = value.String
+				_m.PhoneHashEncrypted = new(string)
+				*_m.PhoneHashEncrypted = value.String
 			}
 		case erasure.FieldErasedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -228,13 +228,13 @@ func (_m *Erasure) String() string {
 	builder.WriteString("visitor_ids=")
 	builder.WriteString(fmt.Sprintf("%v", _m.VisitorIds))
 	builder.WriteString(", ")
-	if v := _m.EmailSha256; v != nil {
-		builder.WriteString("email_sha256=")
+	if v := _m.EmailHashEncrypted; v != nil {
+		builder.WriteString("email_hash_encrypted=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
-	if v := _m.PhoneSha256; v != nil {
-		builder.WriteString("phone_sha256=")
+	if v := _m.PhoneHashEncrypted; v != nil {
+		builder.WriteString("phone_hash_encrypted=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

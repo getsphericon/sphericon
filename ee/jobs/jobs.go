@@ -11,6 +11,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
@@ -83,15 +85,17 @@ type ErasureEventWorker struct {
 
 	client *ent.Client
 	lic    *licensekey.License
+	cipher *secrets.Cipher
 }
 
-// NewErasureEventWorker builds the Erasures stream's consumer over the raw client.
-func NewErasureEventWorker(client *ent.Client, lic *licensekey.License) *ErasureEventWorker {
-	return &ErasureEventWorker{client: client, lic: lic}
+// NewErasureEventWorker builds the Erasures stream's consumer over the raw client and the cipher
+// that seals the hashes it stores.
+func NewErasureEventWorker(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher) *ErasureEventWorker {
+	return &ErasureEventWorker{client: client, lic: lic, cipher: cipher}
 }
 
 func (w *ErasureEventWorker) Work(ctx context.Context, job *river.Job[ErasureEventArgs]) error {
-	return erasures.Record(ctx, w.client, w.lic, job.Args.Envelope)
+	return erasures.Record(ctx, w.client, w.lic, w.cipher, job.Args.Envelope)
 }
 
 // RetentionPruneArgs is the advanced-retention prune (ADR 0014) and the clearing of the Audit
@@ -195,6 +199,8 @@ type Deps struct {
 	EventsRetention time.Duration
 	// Clock is the Instance clock.
 	Clock func() time.Time
+	// Cipher seals the hashes the Erasures stream stores (ADR 0045).
+	Cipher *secrets.Cipher
 }
 
 // Extension is the Enterprise jobs for the job client: the advanced-retention prune (ADR 0014),
@@ -211,7 +217,7 @@ func Extension(deps Deps) jobextension.Extension {
 			river.AddWorker(w, &abuseDetectionWorker{detector: deps.Detector})
 			river.AddWorker(w, newExportPruneWorker(deps.Client, deps.License, deps.EventsRetention, deps.Clock))
 			river.AddWorker(w, NewEntryEventWorker(deps.Client, deps.License))
-			river.AddWorker(w, NewErasureEventWorker(deps.Client, deps.License))
+			river.AddWorker(w, NewErasureEventWorker(deps.Client, deps.License, deps.Cipher))
 		},
 		PeriodicJobs: []*river.PeriodicJob{
 			every(auditlogretention.Interval, RetentionPruneArgs{}),

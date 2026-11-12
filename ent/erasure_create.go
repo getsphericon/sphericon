@@ -97,30 +97,30 @@ func (_c *ErasureCreate) SetVisitorIds(v []string) *ErasureCreate {
 	return _c
 }
 
-// SetEmailSha256 sets the "email_sha256" field.
-func (_c *ErasureCreate) SetEmailSha256(v string) *ErasureCreate {
-	_c.mutation.SetEmailSha256(v)
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (_c *ErasureCreate) SetEmailHashEncrypted(v string) *ErasureCreate {
+	_c.mutation.SetEmailHashEncrypted(v)
 	return _c
 }
 
-// SetNillableEmailSha256 sets the "email_sha256" field if the given value is not nil.
-func (_c *ErasureCreate) SetNillableEmailSha256(v *string) *ErasureCreate {
+// SetNillableEmailHashEncrypted sets the "email_hash_encrypted" field if the given value is not nil.
+func (_c *ErasureCreate) SetNillableEmailHashEncrypted(v *string) *ErasureCreate {
 	if v != nil {
-		_c.SetEmailSha256(*v)
+		_c.SetEmailHashEncrypted(*v)
 	}
 	return _c
 }
 
-// SetPhoneSha256 sets the "phone_sha256" field.
-func (_c *ErasureCreate) SetPhoneSha256(v string) *ErasureCreate {
-	_c.mutation.SetPhoneSha256(v)
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (_c *ErasureCreate) SetPhoneHashEncrypted(v string) *ErasureCreate {
+	_c.mutation.SetPhoneHashEncrypted(v)
 	return _c
 }
 
-// SetNillablePhoneSha256 sets the "phone_sha256" field if the given value is not nil.
-func (_c *ErasureCreate) SetNillablePhoneSha256(v *string) *ErasureCreate {
+// SetNillablePhoneHashEncrypted sets the "phone_hash_encrypted" field if the given value is not nil.
+func (_c *ErasureCreate) SetNillablePhoneHashEncrypted(v *string) *ErasureCreate {
 	if v != nil {
-		_c.SetPhoneSha256(*v)
+		_c.SetPhoneHashEncrypted(*v)
 	}
 	return _c
 }
@@ -279,13 +279,13 @@ func (_c *ErasureCreate) createSpec() (*Erasure, *sqlgraph.CreateSpec) {
 		_spec.SetField(erasure.FieldVisitorIds, field.TypeJSON, value)
 		_node.VisitorIds = value
 	}
-	if value, ok := _c.mutation.EmailSha256(); ok {
-		_spec.SetField(erasure.FieldEmailSha256, field.TypeString, value)
-		_node.EmailSha256 = &value
+	if value, ok := _c.mutation.EmailHashEncrypted(); ok {
+		_spec.SetField(erasure.FieldEmailHashEncrypted, field.TypeString, value)
+		_node.EmailHashEncrypted = &value
 	}
-	if value, ok := _c.mutation.PhoneSha256(); ok {
-		_spec.SetField(erasure.FieldPhoneSha256, field.TypeString, value)
-		_node.PhoneSha256 = &value
+	if value, ok := _c.mutation.PhoneHashEncrypted(); ok {
+		_spec.SetField(erasure.FieldPhoneHashEncrypted, field.TypeString, value)
+		_node.PhoneHashEncrypted = &value
 	}
 	if value, ok := _c.mutation.ErasedAt(); ok {
 		_spec.SetField(erasure.FieldErasedAt, field.TypeTime, value)
@@ -384,6 +384,42 @@ func (u *ErasureUpsert) UpdateWorkspaceID() *ErasureUpsert {
 	return u
 }
 
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (u *ErasureUpsert) SetEmailHashEncrypted(v string) *ErasureUpsert {
+	u.Set(erasure.FieldEmailHashEncrypted, v)
+	return u
+}
+
+// UpdateEmailHashEncrypted sets the "email_hash_encrypted" field to the value that was provided on create.
+func (u *ErasureUpsert) UpdateEmailHashEncrypted() *ErasureUpsert {
+	u.SetExcluded(erasure.FieldEmailHashEncrypted)
+	return u
+}
+
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (u *ErasureUpsert) ClearEmailHashEncrypted() *ErasureUpsert {
+	u.SetNull(erasure.FieldEmailHashEncrypted)
+	return u
+}
+
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (u *ErasureUpsert) SetPhoneHashEncrypted(v string) *ErasureUpsert {
+	u.Set(erasure.FieldPhoneHashEncrypted, v)
+	return u
+}
+
+// UpdatePhoneHashEncrypted sets the "phone_hash_encrypted" field to the value that was provided on create.
+func (u *ErasureUpsert) UpdatePhoneHashEncrypted() *ErasureUpsert {
+	u.SetExcluded(erasure.FieldPhoneHashEncrypted)
+	return u
+}
+
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (u *ErasureUpsert) ClearPhoneHashEncrypted() *ErasureUpsert {
+	u.SetNull(erasure.FieldPhoneHashEncrypted)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -415,12 +451,6 @@ func (u *ErasureUpsertOne) UpdateNewValues() *ErasureUpsertOne {
 		}
 		if _, exists := u.create.mutation.VisitorIds(); exists {
 			s.SetIgnore(erasure.FieldVisitorIds)
-		}
-		if _, exists := u.create.mutation.EmailSha256(); exists {
-			s.SetIgnore(erasure.FieldEmailSha256)
-		}
-		if _, exists := u.create.mutation.PhoneSha256(); exists {
-			s.SetIgnore(erasure.FieldPhoneSha256)
 		}
 		if _, exists := u.create.mutation.ErasedAt(); exists {
 			s.SetIgnore(erasure.FieldErasedAt)
@@ -481,6 +511,48 @@ func (u *ErasureUpsertOne) SetWorkspaceID(v int64) *ErasureUpsertOne {
 func (u *ErasureUpsertOne) UpdateWorkspaceID() *ErasureUpsertOne {
 	return u.Update(func(s *ErasureUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (u *ErasureUpsertOne) SetEmailHashEncrypted(v string) *ErasureUpsertOne {
+	return u.Update(func(s *ErasureUpsert) {
+		s.SetEmailHashEncrypted(v)
+	})
+}
+
+// UpdateEmailHashEncrypted sets the "email_hash_encrypted" field to the value that was provided on create.
+func (u *ErasureUpsertOne) UpdateEmailHashEncrypted() *ErasureUpsertOne {
+	return u.Update(func(s *ErasureUpsert) {
+		s.UpdateEmailHashEncrypted()
+	})
+}
+
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (u *ErasureUpsertOne) ClearEmailHashEncrypted() *ErasureUpsertOne {
+	return u.Update(func(s *ErasureUpsert) {
+		s.ClearEmailHashEncrypted()
+	})
+}
+
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (u *ErasureUpsertOne) SetPhoneHashEncrypted(v string) *ErasureUpsertOne {
+	return u.Update(func(s *ErasureUpsert) {
+		s.SetPhoneHashEncrypted(v)
+	})
+}
+
+// UpdatePhoneHashEncrypted sets the "phone_hash_encrypted" field to the value that was provided on create.
+func (u *ErasureUpsertOne) UpdatePhoneHashEncrypted() *ErasureUpsertOne {
+	return u.Update(func(s *ErasureUpsert) {
+		s.UpdatePhoneHashEncrypted()
+	})
+}
+
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (u *ErasureUpsertOne) ClearPhoneHashEncrypted() *ErasureUpsertOne {
+	return u.Update(func(s *ErasureUpsert) {
+		s.ClearPhoneHashEncrypted()
 	})
 }
 
@@ -681,12 +753,6 @@ func (u *ErasureUpsertBulk) UpdateNewValues() *ErasureUpsertBulk {
 			if _, exists := b.mutation.VisitorIds(); exists {
 				s.SetIgnore(erasure.FieldVisitorIds)
 			}
-			if _, exists := b.mutation.EmailSha256(); exists {
-				s.SetIgnore(erasure.FieldEmailSha256)
-			}
-			if _, exists := b.mutation.PhoneSha256(); exists {
-				s.SetIgnore(erasure.FieldPhoneSha256)
-			}
 			if _, exists := b.mutation.ErasedAt(); exists {
 				s.SetIgnore(erasure.FieldErasedAt)
 			}
@@ -747,6 +813,48 @@ func (u *ErasureUpsertBulk) SetWorkspaceID(v int64) *ErasureUpsertBulk {
 func (u *ErasureUpsertBulk) UpdateWorkspaceID() *ErasureUpsertBulk {
 	return u.Update(func(s *ErasureUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (u *ErasureUpsertBulk) SetEmailHashEncrypted(v string) *ErasureUpsertBulk {
+	return u.Update(func(s *ErasureUpsert) {
+		s.SetEmailHashEncrypted(v)
+	})
+}
+
+// UpdateEmailHashEncrypted sets the "email_hash_encrypted" field to the value that was provided on create.
+func (u *ErasureUpsertBulk) UpdateEmailHashEncrypted() *ErasureUpsertBulk {
+	return u.Update(func(s *ErasureUpsert) {
+		s.UpdateEmailHashEncrypted()
+	})
+}
+
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (u *ErasureUpsertBulk) ClearEmailHashEncrypted() *ErasureUpsertBulk {
+	return u.Update(func(s *ErasureUpsert) {
+		s.ClearEmailHashEncrypted()
+	})
+}
+
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (u *ErasureUpsertBulk) SetPhoneHashEncrypted(v string) *ErasureUpsertBulk {
+	return u.Update(func(s *ErasureUpsert) {
+		s.SetPhoneHashEncrypted(v)
+	})
+}
+
+// UpdatePhoneHashEncrypted sets the "phone_hash_encrypted" field to the value that was provided on create.
+func (u *ErasureUpsertBulk) UpdatePhoneHashEncrypted() *ErasureUpsertBulk {
+	return u.Update(func(s *ErasureUpsert) {
+		s.UpdatePhoneHashEncrypted()
+	})
+}
+
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (u *ErasureUpsertBulk) ClearPhoneHashEncrypted() *ErasureUpsertBulk {
+	return u.Update(func(s *ErasureUpsert) {
+		s.ClearPhoneHashEncrypted()
 	})
 }
 

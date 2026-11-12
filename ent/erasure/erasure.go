@@ -28,10 +28,10 @@ const (
 	FieldSubjectID = "subject_id"
 	// FieldVisitorIds holds the string denoting the visitor_ids field in the database.
 	FieldVisitorIds = "visitor_ids"
-	// FieldEmailSha256 holds the string denoting the email_sha256 field in the database.
-	FieldEmailSha256 = "email_sha256"
-	// FieldPhoneSha256 holds the string denoting the phone_sha256 field in the database.
-	FieldPhoneSha256 = "phone_sha256"
+	// FieldEmailHashEncrypted holds the string denoting the email_hash_encrypted field in the database.
+	FieldEmailHashEncrypted = "email_hash_encrypted"
+	// FieldPhoneHashEncrypted holds the string denoting the phone_hash_encrypted field in the database.
+	FieldPhoneHashEncrypted = "phone_hash_encrypted"
 	// FieldErasedAt holds the string denoting the erased_at field in the database.
 	FieldErasedAt = "erased_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -57,8 +57,8 @@ var Columns = []string{
 	FieldContactID,
 	FieldSubjectID,
 	FieldVisitorIds,
-	FieldEmailSha256,
-	FieldPhoneSha256,
+	FieldEmailHashEncrypted,
+	FieldPhoneHashEncrypted,
 	FieldErasedAt,
 }
 
@@ -123,14 +123,14 @@ func BySubjectID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubjectID, opts...).ToFunc()
 }
 
-// ByEmailSha256 orders the results by the email_sha256 field.
-func ByEmailSha256(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEmailSha256, opts...).ToFunc()
+// ByEmailHashEncrypted orders the results by the email_hash_encrypted field.
+func ByEmailHashEncrypted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmailHashEncrypted, opts...).ToFunc()
 }
 
-// ByPhoneSha256 orders the results by the phone_sha256 field.
-func ByPhoneSha256(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPhoneSha256, opts...).ToFunc()
+// ByPhoneHashEncrypted orders the results by the phone_hash_encrypted field.
+func ByPhoneHashEncrypted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPhoneHashEncrypted, opts...).ToFunc()
 }
 
 // ByErasedAt orders the results by the erased_at field.

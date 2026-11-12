@@ -1075,11 +1075,11 @@ func ScopedEntities() []ScopedEntity {
 				}
 				b.SetSubjectID(src.SubjectID)
 				b.SetVisitorIds(src.VisitorIds)
-				if src.EmailSha256 != nil {
-					b.SetEmailSha256(*src.EmailSha256)
+				if src.EmailHashEncrypted != nil {
+					b.SetEmailHashEncrypted(*src.EmailHashEncrypted)
 				}
-				if src.PhoneSha256 != nil {
-					b.SetPhoneSha256(*src.PhoneSha256)
+				if src.PhoneHashEncrypted != nil {
+					b.SetPhoneHashEncrypted(*src.PhoneHashEncrypted)
 				}
 				b.SetErasedAt(src.ErasedAt)
 				created, err := b.Save(ctx)

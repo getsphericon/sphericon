@@ -20091,26 +20091,26 @@ func (m *EmailTemplateMutation) ResetEdge(name string) error {
 // ErasureMutation represents an operation that mutates the Erasure nodes in the graph.
 type ErasureMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	created_at        *time.Time
-	updated_at        *time.Time
-	erasure_key       *string
-	contact_id        *int64
-	addcontact_id     *int64
-	subject_id        *string
-	visitor_ids       *[]string
-	appendvisitor_ids []string
-	email_sha256      *string
-	phone_sha256      *string
-	erased_at         *time.Time
-	clearedFields     map[string]struct{}
-	workspace         *int64
-	clearedworkspace  bool
-	done              bool
-	oldValue          func(context.Context) (*Erasure, error)
-	predicates        []predicate.Erasure
+	op                   Op
+	typ                  string
+	id                   *int64
+	created_at           *time.Time
+	updated_at           *time.Time
+	erasure_key          *string
+	contact_id           *int64
+	addcontact_id        *int64
+	subject_id           *string
+	visitor_ids          *[]string
+	appendvisitor_ids    []string
+	email_hash_encrypted *string
+	phone_hash_encrypted *string
+	erased_at            *time.Time
+	clearedFields        map[string]struct{}
+	workspace            *int64
+	clearedworkspace     bool
+	done                 bool
+	oldValue             func(context.Context) (*Erasure, error)
+	predicates           []predicate.Erasure
 }
 
 var _ ent.Mutation = (*ErasureMutation)(nil)
@@ -20518,102 +20518,102 @@ func (m *ErasureMutation) ResetVisitorIds() {
 	m.appendvisitor_ids = nil
 }
 
-// SetEmailSha256 sets the "email_sha256" field.
-func (m *ErasureMutation) SetEmailSha256(s string) {
-	m.email_sha256 = &s
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (m *ErasureMutation) SetEmailHashEncrypted(s string) {
+	m.email_hash_encrypted = &s
 }
 
-// EmailSha256 returns the value of the "email_sha256" field in the mutation.
-func (m *ErasureMutation) EmailSha256() (r string, exists bool) {
-	v := m.email_sha256
+// EmailHashEncrypted returns the value of the "email_hash_encrypted" field in the mutation.
+func (m *ErasureMutation) EmailHashEncrypted() (r string, exists bool) {
+	v := m.email_hash_encrypted
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldEmailSha256 returns the old "email_sha256" field's value of the Erasure entity.
+// OldEmailHashEncrypted returns the old "email_hash_encrypted" field's value of the Erasure entity.
 // If the Erasure object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ErasureMutation) OldEmailSha256(ctx context.Context) (v *string, err error) {
+func (m *ErasureMutation) OldEmailHashEncrypted(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEmailSha256 is only allowed on UpdateOne operations")
+		return v, errors.New("OldEmailHashEncrypted is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEmailSha256 requires an ID field in the mutation")
+		return v, errors.New("OldEmailHashEncrypted requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEmailSha256: %w", err)
+		return v, fmt.Errorf("querying old value for OldEmailHashEncrypted: %w", err)
 	}
-	return oldValue.EmailSha256, nil
+	return oldValue.EmailHashEncrypted, nil
 }
 
-// ClearEmailSha256 clears the value of the "email_sha256" field.
-func (m *ErasureMutation) ClearEmailSha256() {
-	m.email_sha256 = nil
-	m.clearedFields[erasure.FieldEmailSha256] = struct{}{}
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (m *ErasureMutation) ClearEmailHashEncrypted() {
+	m.email_hash_encrypted = nil
+	m.clearedFields[erasure.FieldEmailHashEncrypted] = struct{}{}
 }
 
-// EmailSha256Cleared returns if the "email_sha256" field was cleared in this mutation.
-func (m *ErasureMutation) EmailSha256Cleared() bool {
-	_, ok := m.clearedFields[erasure.FieldEmailSha256]
+// EmailHashEncryptedCleared returns if the "email_hash_encrypted" field was cleared in this mutation.
+func (m *ErasureMutation) EmailHashEncryptedCleared() bool {
+	_, ok := m.clearedFields[erasure.FieldEmailHashEncrypted]
 	return ok
 }
 
-// ResetEmailSha256 resets all changes to the "email_sha256" field.
-func (m *ErasureMutation) ResetEmailSha256() {
-	m.email_sha256 = nil
-	delete(m.clearedFields, erasure.FieldEmailSha256)
+// ResetEmailHashEncrypted resets all changes to the "email_hash_encrypted" field.
+func (m *ErasureMutation) ResetEmailHashEncrypted() {
+	m.email_hash_encrypted = nil
+	delete(m.clearedFields, erasure.FieldEmailHashEncrypted)
 }
 
-// SetPhoneSha256 sets the "phone_sha256" field.
-func (m *ErasureMutation) SetPhoneSha256(s string) {
-	m.phone_sha256 = &s
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (m *ErasureMutation) SetPhoneHashEncrypted(s string) {
+	m.phone_hash_encrypted = &s
 }
 
-// PhoneSha256 returns the value of the "phone_sha256" field in the mutation.
-func (m *ErasureMutation) PhoneSha256() (r string, exists bool) {
-	v := m.phone_sha256
+// PhoneHashEncrypted returns the value of the "phone_hash_encrypted" field in the mutation.
+func (m *ErasureMutation) PhoneHashEncrypted() (r string, exists bool) {
+	v := m.phone_hash_encrypted
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldPhoneSha256 returns the old "phone_sha256" field's value of the Erasure entity.
+// OldPhoneHashEncrypted returns the old "phone_hash_encrypted" field's value of the Erasure entity.
 // If the Erasure object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ErasureMutation) OldPhoneSha256(ctx context.Context) (v *string, err error) {
+func (m *ErasureMutation) OldPhoneHashEncrypted(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPhoneSha256 is only allowed on UpdateOne operations")
+		return v, errors.New("OldPhoneHashEncrypted is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPhoneSha256 requires an ID field in the mutation")
+		return v, errors.New("OldPhoneHashEncrypted requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPhoneSha256: %w", err)
+		return v, fmt.Errorf("querying old value for OldPhoneHashEncrypted: %w", err)
 	}
-	return oldValue.PhoneSha256, nil
+	return oldValue.PhoneHashEncrypted, nil
 }
 
-// ClearPhoneSha256 clears the value of the "phone_sha256" field.
-func (m *ErasureMutation) ClearPhoneSha256() {
-	m.phone_sha256 = nil
-	m.clearedFields[erasure.FieldPhoneSha256] = struct{}{}
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (m *ErasureMutation) ClearPhoneHashEncrypted() {
+	m.phone_hash_encrypted = nil
+	m.clearedFields[erasure.FieldPhoneHashEncrypted] = struct{}{}
 }
 
-// PhoneSha256Cleared returns if the "phone_sha256" field was cleared in this mutation.
-func (m *ErasureMutation) PhoneSha256Cleared() bool {
-	_, ok := m.clearedFields[erasure.FieldPhoneSha256]
+// PhoneHashEncryptedCleared returns if the "phone_hash_encrypted" field was cleared in this mutation.
+func (m *ErasureMutation) PhoneHashEncryptedCleared() bool {
+	_, ok := m.clearedFields[erasure.FieldPhoneHashEncrypted]
 	return ok
 }
 
-// ResetPhoneSha256 resets all changes to the "phone_sha256" field.
-func (m *ErasureMutation) ResetPhoneSha256() {
-	m.phone_sha256 = nil
-	delete(m.clearedFields, erasure.FieldPhoneSha256)
+// ResetPhoneHashEncrypted resets all changes to the "phone_hash_encrypted" field.
+func (m *ErasureMutation) ResetPhoneHashEncrypted() {
+	m.phone_hash_encrypted = nil
+	delete(m.clearedFields, erasure.FieldPhoneHashEncrypted)
 }
 
 // SetErasedAt sets the "erased_at" field.
@@ -20735,11 +20735,11 @@ func (m *ErasureMutation) Fields() []string {
 	if m.visitor_ids != nil {
 		fields = append(fields, erasure.FieldVisitorIds)
 	}
-	if m.email_sha256 != nil {
-		fields = append(fields, erasure.FieldEmailSha256)
+	if m.email_hash_encrypted != nil {
+		fields = append(fields, erasure.FieldEmailHashEncrypted)
 	}
-	if m.phone_sha256 != nil {
-		fields = append(fields, erasure.FieldPhoneSha256)
+	if m.phone_hash_encrypted != nil {
+		fields = append(fields, erasure.FieldPhoneHashEncrypted)
 	}
 	if m.erased_at != nil {
 		fields = append(fields, erasure.FieldErasedAt)
@@ -20766,10 +20766,10 @@ func (m *ErasureMutation) Field(name string) (ent.Value, bool) {
 		return m.SubjectID()
 	case erasure.FieldVisitorIds:
 		return m.VisitorIds()
-	case erasure.FieldEmailSha256:
-		return m.EmailSha256()
-	case erasure.FieldPhoneSha256:
-		return m.PhoneSha256()
+	case erasure.FieldEmailHashEncrypted:
+		return m.EmailHashEncrypted()
+	case erasure.FieldPhoneHashEncrypted:
+		return m.PhoneHashEncrypted()
 	case erasure.FieldErasedAt:
 		return m.ErasedAt()
 	}
@@ -20795,10 +20795,10 @@ func (m *ErasureMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldSubjectID(ctx)
 	case erasure.FieldVisitorIds:
 		return m.OldVisitorIds(ctx)
-	case erasure.FieldEmailSha256:
-		return m.OldEmailSha256(ctx)
-	case erasure.FieldPhoneSha256:
-		return m.OldPhoneSha256(ctx)
+	case erasure.FieldEmailHashEncrypted:
+		return m.OldEmailHashEncrypted(ctx)
+	case erasure.FieldPhoneHashEncrypted:
+		return m.OldPhoneHashEncrypted(ctx)
 	case erasure.FieldErasedAt:
 		return m.OldErasedAt(ctx)
 	}
@@ -20859,19 +20859,19 @@ func (m *ErasureMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetVisitorIds(v)
 		return nil
-	case erasure.FieldEmailSha256:
+	case erasure.FieldEmailHashEncrypted:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetEmailSha256(v)
+		m.SetEmailHashEncrypted(v)
 		return nil
-	case erasure.FieldPhoneSha256:
+	case erasure.FieldPhoneHashEncrypted:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetPhoneSha256(v)
+		m.SetPhoneHashEncrypted(v)
 		return nil
 	case erasure.FieldErasedAt:
 		v, ok := value.(time.Time)
@@ -20928,11 +20928,11 @@ func (m *ErasureMutation) ClearedFields() []string {
 	if m.FieldCleared(erasure.FieldContactID) {
 		fields = append(fields, erasure.FieldContactID)
 	}
-	if m.FieldCleared(erasure.FieldEmailSha256) {
-		fields = append(fields, erasure.FieldEmailSha256)
+	if m.FieldCleared(erasure.FieldEmailHashEncrypted) {
+		fields = append(fields, erasure.FieldEmailHashEncrypted)
 	}
-	if m.FieldCleared(erasure.FieldPhoneSha256) {
-		fields = append(fields, erasure.FieldPhoneSha256)
+	if m.FieldCleared(erasure.FieldPhoneHashEncrypted) {
+		fields = append(fields, erasure.FieldPhoneHashEncrypted)
 	}
 	return fields
 }
@@ -20951,11 +20951,11 @@ func (m *ErasureMutation) ClearField(name string) error {
 	case erasure.FieldContactID:
 		m.ClearContactID()
 		return nil
-	case erasure.FieldEmailSha256:
-		m.ClearEmailSha256()
+	case erasure.FieldEmailHashEncrypted:
+		m.ClearEmailHashEncrypted()
 		return nil
-	case erasure.FieldPhoneSha256:
-		m.ClearPhoneSha256()
+	case erasure.FieldPhoneHashEncrypted:
+		m.ClearPhoneHashEncrypted()
 		return nil
 	}
 	return fmt.Errorf("unknown Erasure nullable field %s", name)
@@ -20986,11 +20986,11 @@ func (m *ErasureMutation) ResetField(name string) error {
 	case erasure.FieldVisitorIds:
 		m.ResetVisitorIds()
 		return nil
-	case erasure.FieldEmailSha256:
-		m.ResetEmailSha256()
+	case erasure.FieldEmailHashEncrypted:
+		m.ResetEmailHashEncrypted()
 		return nil
-	case erasure.FieldPhoneSha256:
-		m.ResetPhoneSha256()
+	case erasure.FieldPhoneHashEncrypted:
+		m.ResetPhoneHashEncrypted()
 		return nil
 	case erasure.FieldErasedAt:
 		m.ResetErasedAt()
