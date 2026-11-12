@@ -264,3 +264,45 @@ test('two Saves in a row from one editor never conflict with each other', async 
   const written = await stored()
   expect(written.subject).toBe('Second')
 })
+
+// A write that changed nothing the form shows (another form of the row, a column no form sends)
+// moves the revision: the refresh that brings it moves the base with no notice, and the next Save
+// names it (ADR 0119).
+test('a refetch whose newer revision changes nothing the form shows moves the base silently', () => {
+  const server = serve({ refuse: false })
+  server.gate.release()
+  const form = startForm(RESOURCE)
+  const unseen = { ...RESOURCE, revision: 2, updatedAt: '2026-02-01T00:00:00Z' }
+
+  form.actor.send({ type: 'REFRESH', resource: unseen })
+  const refreshed = form.actor.getSnapshot().context
+  expect(refreshed.changed).toBe(false)
+  expect(refreshed.base).toBe(2)
+})
+
+test('a notice already given stays when a later refetch changes nothing the form shows', () => {
+  const server = serve({ refuse: false })
+  server.gate.release()
+  const form = startForm(RESOURCE)
+  form.actor.send({ type: 'REFRESH', resource: server.elsewhere() })
+  expect(form.actor.getSnapshot().context.changed).toBe(true)
+
+  form.actor.send({ type: 'REFRESH', resource: { ...RESOURCE, revision: 3 } })
+
+  expect(form.actor.getSnapshot().context.changed).toBe(true)
+  expect(form.actor.getSnapshot().context.base).toBe(1)
+})
+
+test('a newer revision that arrives while a Save is pending is left to that Save', async () => {
+  const server = serve({ refuse: false })
+  const form = startForm(RESOURCE)
+  form.edit((content) => ({ ...content, subject: 'Mine' }))
+  form.actor.send({ type: 'SAVE', submission: capture(form.read()) })
+  await server.gate.received
+
+  form.actor.send({ type: 'REFRESH', resource: { ...RESOURCE, revision: 2 } })
+
+  expect(form.actor.getSnapshot().context.changed).toBe(true)
+  expect(form.actor.getSnapshot().context.base).toBe(1)
+  server.gate.release()
+})

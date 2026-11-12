@@ -74,7 +74,12 @@ overwrite a person, and a person overwrites them, the same way.
 - **The editor's base revision moves only with what the editor shows**: when an acknowledgement is
   folded in, or when the session replaces the content (Revert, a reload). A query refetch that
   brings a newer `revision` does not move it, or a background refetch would make a stale form look
-  fresh.
+  fresh, with one exception: when what the editor would open from the refetched resource is exactly
+  what it last saved, the write that moved the revision changed nothing it shows or sends (another
+  form of the same row, such as a Workspace's General and Time zone sections, or a column no form
+  sends), so the base moves to it and nothing is said. This holds only for an editor whose content
+  is made from the resource alone (a schema form, not a canvas whose graph is its own), only while
+  no write of its own is pending, and never clears a notice already given.
 - **The console tells the person and merges nothing.** On `revision_changed`, or when a refetch
   shows a newer `revision` than the base, the editor keeps the person's content as it is, still
   unsaved, and says that the resource changed since it was opened, with two actions: load the

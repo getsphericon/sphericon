@@ -50,6 +50,11 @@ export interface EditorAdapter<
   id: string
   // The content the editor opens with.
   open: (subject: TSubject) => TContent
+  // The content the editor would open with from a refreshed resource, for an adapter whose content
+  // is made from the resource alone. A refresh with a newer revision whose content is the
+  // acknowledged one moves the base with no notice; without it, a newer revision always says the
+  // resource changed (an editor whose content holds more than the resource, a canvas's graph).
+  reopen?: (resource: TResource) => TContent
   fingerprint: (content: TContent) => string
   // The submission Save sends, captured before any asynchronous work; null refuses invalid content.
   submit: (content: TContent) => TSubmission | null
@@ -280,8 +285,12 @@ export function defineEditorSession<
         effects: input.effects,
       }
     },
-    // A query refresh updates the resource's metadata, never the content, its receipt or the base;
-    // a newer revision than the base says the resource changed since the editor showed it.
+    // A query refresh updates the resource's metadata, never the content or its receipt. A newer
+    // revision than the base says the resource changed since the editor showed it, unless what the
+    // editor would open from it is what it last acknowledged: then the write that moved it changed
+    // nothing the editor shows or saves (another form of the same row, a column no form sends), and
+    // the base moves to it with no notice. That holds only while no write is pending, whose answer
+    // or refusal settles the base, and never clears a notice already given.
     on: {
       REFRESH: {
         actions: assign(({ context, event }) => {
@@ -291,7 +300,20 @@ export function defineEditorSession<
           const refreshed = revisionOf(event.resource)
           const newer =
             refreshed !== undefined && context.base !== undefined && refreshed > context.base
-          return { resource: event.resource, ...(newer && { changed: true }) }
+          if (!newer) {
+            return { resource: event.resource }
+          }
+          const idle = context.submitted === null && context.operation === null
+          const reopened = adapter.reopen?.(event.resource)
+          if (
+            idle &&
+            !context.changed &&
+            reopened !== undefined &&
+            adapter.fingerprint(reopened) === context.saved
+          ) {
+            return { resource: event.resource, base: refreshed }
+          }
+          return { resource: event.resource, changed: true }
         }),
       },
     },
