@@ -75,7 +75,8 @@ _Avoid_: Trait, property, attribute (unqualified), metadata
 A named, workspace-scoped label applied to Contacts — by hand, by import, by an Automation
 step, or through the API. Carries presence only (a Contact has the Tag or does not), no type
 and no value; that is what separates it from a Custom field. Auto-created on first use, like
-a Custom field. A Tag is an attribute, never a target set: "send to everyone tagged X" is
+a Custom field. Its name is matched without regard to case or surrounding space ("VIP" and
+"vip" are one Tag), and it keeps the name it was first written with. A Tag is an attribute, never a target set: "send to everyone tagged X" is
 always a Segment with a has-Tag Condition, so Tag does not reintroduce the rejected List model.
 _Avoid_: Label, list, group, category
 

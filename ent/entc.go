@@ -132,6 +132,9 @@ func scopedFuncs() template.FuncMap {
 				case "workspace_id", "created_at", "updated_at", "health_generation", "revision":
 					continue
 				}
+				if _, derived := f.Annotations["Derived"]; derived { // schema.Derived
+					continue
+				}
 				out = append(out, f)
 			}
 			return out

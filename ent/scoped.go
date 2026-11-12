@@ -35580,6 +35580,12 @@ func (x *TagScopedCreate) SetName(v string) *TagScopedCreate {
 	return x
 }
 
+// SetNameKey sets the "name_key" field.
+func (x *TagScopedCreate) SetNameKey(v string) *TagScopedCreate {
+	x.b.SetNameKey(v)
+	return x
+}
+
 func (x *TagScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m

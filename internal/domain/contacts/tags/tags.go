@@ -14,9 +14,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -55,12 +57,13 @@ func (m *Module) ForContact(ctx context.Context, s *ent.Scoped, contactID int64)
 
 // The unique constraint of the Tag's table (ADR 0106): a name is the Workspace's once.
 var _ = db.Declare(
-	db.Fault("tags_workspace_id_name", "a Tag is created only by EnsureIn, ON CONFLICT (name, workspace_id) DO NOTHING, and is never renamed"),
+	db.Fault("tags_workspace_id_name_key", "a Tag is created only by EnsureIn, ON CONFLICT (name_key, workspace_id) DO NOTHING, and is never renamed"),
 )
 
 // EnsureIn returns the Tag named name, creating it on first use, inside the transaction s is
 // bound to: applying a Tag to a Contact (contacts.ApplyTagIn) auto-creates it, like a Custom field.
 // The name is held to the name rule (validation.Name): trimmed, and refused when blank or too long.
+// A name that differs from a Tag's only in case is that Tag (tagname), which keeps its own name.
 func EnsureIn(ctx context.Context, s *ent.Scoped, name string) (*ent.Tag, error) {
 	name, err := validation.Name(name)
 	if err != nil {
@@ -70,14 +73,20 @@ func EnsureIn(ctx context.Context, s *ent.Scoped, name string) (*ent.Tag, error)
 	// a conflict writes nothing.
 	err = s.Tag().Create().
 		SetName(name).
-		OnConflictColumns(tag.FieldName, tag.FieldWorkspaceID).
+		SetNameKey(tagname.Key(name)).
+		OnConflictColumns(tag.FieldNameKey, tag.FieldWorkspaceID).
 		DoNothing().
 		Exec(ctx)
 	_, err = db.Inserted(err)
 	if err != nil {
 		return nil, err
 	}
-	return s.Tag().Query().Where(tag.Name(name)).Only(ctx)
+	return s.Tag().Query().Where(Named(name)).Only(ctx)
+}
+
+// Named is the predicate of the Tag called name, whatever its case (tagname).
+func Named(name string) predicate.Tag {
+	return tag.NameKey(tagname.Key(name))
 }
 
 // Get returns the Tag with the given id, ErrNotFound when the Workspace has none.

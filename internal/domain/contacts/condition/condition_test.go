@@ -160,6 +160,8 @@ func TestTagConditions(t *testing.T) {
 	}
 
 	assert.Equal(t, 2, count(has("vip")))
+	assert.Equal(t, 2, count(has(" VIP ")), "a Tag is named whatever the case (tagname)")
+	assert.True(t, has("VIP").NamesTag("vip"), "a Condition naming the Tag in another case names it")
 	assert.Equal(t, 1, count(has("newsletter")))
 	assert.Equal(t, 0, count(has("unused")), "an existing Tag nobody has matches no one")
 	assert.Equal(t, 0, count(has("never-created")))

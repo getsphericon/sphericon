@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -51,4 +52,26 @@ func TestForContactListsOnlyItsTags(t *testing.T) {
 	require.ErrorIs(t, err, tags.ErrContactNotFound)
 	_, err = m.ForContact(ctx, globex, fixtures.ContactAliceID)
 	require.ErrorIs(t, err, tags.ErrContactNotFound, "a contact of another workspace is invisible")
+}
+
+// A name that differs from a Tag's only in case or surrounding space is that Tag: applying it
+// creates nothing, and the Tag keeps the name it was first written with (tagname).
+func TestANameDifferingInCaseIsTheSameTag(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	ctx := t.Context()
+	before, err := acme.Tag().Query().Count(ctx)
+	require.NoError(t, err)
+
+	var got *ent.Tag
+	require.NoError(t, env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		got, err = tags.EnsureIn(ctx, tx.Scoped(fixtures.AcmeID), " VIP ")
+		return err
+	}))
+
+	assert.Equal(t, int64(fixtures.TagVipID), got.ID)
+	assert.Equal(t, fixtures.TagVipName, got.Name)
+	after, err := acme.Tag().Query().Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, before, after)
 }

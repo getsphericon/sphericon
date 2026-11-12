@@ -8,7 +8,8 @@ package automationsuse
 import (
 	"context"
 	"slices"
-	"strings"
+
+	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 
 	"github.com/samber/lo"
 
@@ -58,7 +59,7 @@ func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
 		return false, err
 	}
 	return slices.ContainsFunc(steps, func(st automationstep.Step) bool {
-		return (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && strings.TrimSpace(st.Tag) == name
+		return (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && tagname.Same(st.Tag, name)
 	}), nil
 }
 

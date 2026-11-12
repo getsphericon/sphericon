@@ -26,6 +26,8 @@ type Tag struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// NameKey holds the value of the "name_key" field.
+	NameKey string `json:"name_key,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TagQuery when eager-loading is set.
 	Edges        TagEdges `json:"edges"`
@@ -81,7 +83,7 @@ func (*Tag) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tag.FieldID, tag.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case tag.FieldName:
+		case tag.FieldName, tag.FieldNameKey:
 			values[i] = new(sql.NullString)
 		case tag.FieldCreatedAt, tag.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -129,6 +131,12 @@ func (_m *Tag) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
+			}
+		case tag.FieldNameKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name_key", values[i])
+			} else if value.Valid {
+				_m.NameKey = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -192,6 +200,9 @@ func (_m *Tag) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("name_key=")
+	builder.WriteString(_m.NameKey)
 	builder.WriteByte(')')
 	return builder.String()
 }

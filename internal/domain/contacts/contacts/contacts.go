@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/tagname"
+
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -681,7 +683,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f
 		q = q.Where(contact.EmailContainsFold(f.EmailContains))
 	}
 	if f.Tag != "" {
-		q = q.Where(contact.HasTagsWith(tag.Name(f.Tag)))
+		q = q.Where(contact.HasTagsWith(tag.NameKey(tagname.Key(f.Tag))))
 	}
 	if f.Country != "" {
 		q = q.Where(contact.Country(f.Country))

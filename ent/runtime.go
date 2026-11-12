@@ -1563,6 +1563,10 @@ func init() {
 	tagDescName := tagFields[1].Descriptor()
 	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	// tagDescNameKey is the schema descriptor for name_key field.
+	tagDescNameKey := tagFields[2].Descriptor()
+	// tag.NameKeyValidator is a validator for the "name_key" field. It is called by the builders before save.
+	tag.NameKeyValidator = tagDescNameKey.Validators[0].(func(string) error)
 	trackedlinkMixin := schema.TrackedLink{}.Mixin()
 	trackedlinkMixinFields0 := trackedlinkMixin[0].Fields()
 	_ = trackedlinkMixinFields0

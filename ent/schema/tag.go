@@ -33,10 +33,16 @@ func (Tag) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The label itself; unique per workspace. It originates outside the workspace
+		// The label itself, as first written; unique per workspace by its key. It originates outside the workspace
 		// (imports, the API), so it is untrusted text (ADR 0016).
 		field.String(nameField).
 			NotEmpty(),
+		// The name as Tags are matched (tagname.Key): trimmed and lower-cased, so "VIP" and "vip"
+		// are one Tag, which keeps the name it was first written with. Set once, by tags.EnsureIn.
+		field.String("name_key").
+			NotEmpty().
+			Immutable().
+			Annotations(Derived{}),
 	}
 }
 
@@ -50,6 +56,6 @@ func (Tag) Edges() []ent.Edge {
 
 func (Tag) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id", nameField).Unique().StorageKey("tags_workspace_id_name"),
+		index.Fields("workspace_id", "name_key").Unique().StorageKey("tags_workspace_id_name_key"),
 	}
 }

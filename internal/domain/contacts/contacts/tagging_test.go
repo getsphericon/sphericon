@@ -118,6 +118,12 @@ func TestSetMakesTheNamedTagsTheContactsCompleteSet(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"fresh", fixtures.TagVipName}, catalogueNames(got))
 
+	// A held Tag named in another case is kept, and two names of one Tag apply it once (tagname).
+	require.NoError(t, set(fixtures.ContactAliceID, []string{"VIP", "vip", "Fresh"}))
+	got, err = m.ForContact(ctx, acme, fixtures.ContactAliceID)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"fresh", fixtures.TagVipName}, catalogueNames(got))
+
 	require.NoError(t, set(fixtures.ContactAliceID, []string{}))
 	got, err = m.ForContact(ctx, acme, fixtures.ContactAliceID)
 	require.NoError(t, err)

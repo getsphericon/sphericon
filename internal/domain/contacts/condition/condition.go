@@ -26,6 +26,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/tagname"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqljson"
 
@@ -593,7 +595,7 @@ func tagRule(op operator, value string) (predicate.Contact, error) {
 		return nil, errors.New("tag name is required")
 	}
 
-	p := contact.HasTagsWith(tag.Name(name))
+	p := contact.HasTagsWith(tag.NameKey(tagname.Key(name)))
 	if negate {
 		p = contact.Not(p)
 	}
@@ -829,7 +831,7 @@ func (g Group) NamesTag(name string) bool {
 			}
 		case kindRule:
 			var r Leaf
-			if json.Unmarshal(raw, &r) == nil && r.Field == tagField && strings.TrimSpace(r.Value) == name {
+			if json.Unmarshal(raw, &r) == nil && r.Field == tagField && tagname.Same(r.Value, name) {
 				return true
 			}
 		}

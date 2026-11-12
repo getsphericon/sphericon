@@ -109,7 +109,8 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 	}
 	// The revision counts the row's writes for editors (ADR 0119): nothing about the person.
 	covered(reflect.TypeFor[externalapi.ContactExportContact](), contact.Columns, "workspace_id", contact.FieldRevision)
-	covered(reflect.TypeFor[externalapi.ContactExportTag](), tag.Columns, "workspace_id", "updated_at")
+	// The name's key is the name lower-cased (tagname): the name itself is exported.
+	covered(reflect.TypeFor[externalapi.ContactExportTag](), tag.Columns, "workspace_id", "updated_at", tag.FieldNameKey)
 	covered(reflect.TypeFor[externalapi.ContactExportVisitor](), visitor.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportEvent](), event.Columns, "workspace_id", "contact_id", "updated_at",
 		event.FieldMachine, event.FieldCaptured, event.FieldBroadcastID, event.FieldAutomationID, event.FieldURL)

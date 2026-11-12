@@ -22,6 +22,8 @@ const (
 	FieldWorkspaceID = "workspace_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldNameKey holds the string denoting the name_key field in the database.
+	FieldNameKey = "name_key"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeContacts holds the string denoting the contacts edge name in mutations.
@@ -58,6 +60,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldWorkspaceID,
 	FieldName,
+	FieldNameKey,
 }
 
 var (
@@ -85,6 +88,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// NameKeyValidator is a validator for the "name_key" field. It is called by the builders before save.
+	NameKeyValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Tag queries.
@@ -113,6 +118,11 @@ func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByNameKey orders the results by the name_key field.
+func ByNameKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNameKey, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.
