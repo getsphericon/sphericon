@@ -46,11 +46,11 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "no from", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}, createParams)
 	require.NoError(t, err)
 
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(updateParams.ID))),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain)}),
 	}, updateParams)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(updateParams.ID))),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainVerifiedDomain)}),
 	}, updateParams)
 	require.NoError(t, err)
@@ -65,6 +65,7 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 			FromEmail: siteapi.NewOptNilEmailAddress("hello@" + fixtures.SendingDomainLostDomain),
 		})},
 	} {
+		in.Revision = siteapi.Revision(env.BroadcastRevision(ctx, t, int64(lost.ID)))
 		_, err := c.SiteBroadcastsUpdate(ctx, in, lost)
 		require.NoError(t, err)
 	}

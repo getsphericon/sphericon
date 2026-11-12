@@ -28,7 +28,7 @@ func TestExternalTelegramBroadcastIsCreatedEditedAndReportedWithoutOpenOrDeliver
 		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(int64(bot.Integration.ID))),
 	})
 	require.NoError(t, err)
-	read, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalTelegramEdit("Edited")},
+	read, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(made.ID))), Content: testhelper.ExternalTelegramEdit("Edited")},
 		externalapi.BroadcastsUpdateParams{ID: made.ID})
 	require.NoError(t, err)
 	report, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: made.ID})
@@ -58,7 +58,7 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 		return b.ID
 	}
 	schedule := func(id externalapi.EntityId) error {
-		_, err := c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+		_, err := c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(id))), ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 			externalapi.BroadcastsScheduleParams{ID: id})
 		return err
 	}

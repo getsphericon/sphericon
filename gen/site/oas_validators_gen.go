@@ -1743,6 +1743,29 @@ func (s *RevisionInput) Validate() error {
 	return nil
 }
 
+func (s *ScheduleBroadcastInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s SendScope) Validate() error {
 	switch s {
 	case "emails:send":
@@ -3590,6 +3613,17 @@ func (s *SiteBroadcastResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "progress",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
 			Error: err,
 		})
 	}
@@ -10912,6 +10946,17 @@ func (s *UpdateBroadcastInput) Validate() error {
 	}
 
 	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
 	if err := func() error {
 		if value, ok := s.Name.Get(); ok {
 			if err := func() error {

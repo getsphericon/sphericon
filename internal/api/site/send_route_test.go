@@ -45,12 +45,12 @@ func TestSiteBroadcastScheduleIsAConflictWhileItsIntegrationCannotSend(t *testin
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	id := idStr(fixtures.BroadcastDraftID)
-	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(id))),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeSesID)),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 
-	_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{
+	_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(id))),
 		ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour)),
 	}, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: workspaceID, ID: id})
 

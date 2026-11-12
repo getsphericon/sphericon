@@ -40,7 +40,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update renames a draft.
-	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID))),
 		Name: siteapi.NewOptName("Spring sale (v2)"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
@@ -49,7 +49,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 
 	// Schedule moves it to scheduled with a future time.
 	when := time.Now().Add(24 * time.Hour)
-	sched, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{
+	sched, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID))),
 		ScheduledAt: siteapi.Timestamp(when),
 	}, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
@@ -58,17 +58,17 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	assert.True(t, schedRes.ScheduledAt.Set)
 
 	// Send moves it into the sending state.
-	sent, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
+	sent, err := c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID)))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	sentRes := sent
 	assert.Equal(t, siteapi.SiteBroadcastStatusSending, sentRes.Status)
 
 	// Sending an already-sending broadcast is rejected with 422.
-	_, err = c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
+	_, err = c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID)))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	// Editing a non-draft broadcast is rejected with 422.
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID))),
 		Name: siteapi.NewOptName("nope"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	testhelper.SiteRefusal(t, err, http.StatusConflict)
@@ -102,7 +102,7 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 100}
 
 	// Absent keys keep values: set the segment, the sender stays.
-	res, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	res, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(params.ID))),
 		SegmentId:     siteapi.NewOptNilEntityId(1),
 		IntegrationId: siteapi.NewOptNilEntityId(1),
 	}, params)
@@ -117,7 +117,7 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	var nullSeg, nullIntegration siteapi.OptNilEntityId
 	nullSeg.SetToNull()
 	nullIntegration.SetToNull()
-	res, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	res, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(params.ID))),
 		Content:       testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{FromName: nullString(), FromEmail: nullEmail()}),
 		SegmentId:     nullSeg,
 		IntegrationId: nullIntegration,
@@ -164,12 +164,12 @@ func TestSiteBroadcastsUpdateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(params.ID))),
 		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
 	}, params)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(params.ID))),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
 	}, params)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)

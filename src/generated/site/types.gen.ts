@@ -1360,6 +1360,10 @@ export type RevisionInput = {
  */
 export type ScheduleBroadcastInput = {
   /**
+   * The broadcast's `revision` the schedule was made on (ADR 0119): the one of what the person scheduling was shown, so a broadcast changed since is a 409 revision_changed and is not scheduled
+   */
+  revision: Revision;
+  /**
    * When the broadcast should be sent
    */
   scheduledAt: Timestamp;
@@ -2910,6 +2914,10 @@ export type SiteBroadcastResource = {
    * When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived.
    */
   archivedAt?: Timestamp | null;
+  /**
+   * The revision of the state this answer shows (ADR 0119): an update, Send now and Schedule name it
+   */
+  revision: Revision;
   /**
    * Creation timestamp
    */
@@ -7452,6 +7460,10 @@ export type TwilioConfigInput = {
  */
 export type UpdateBroadcastInput = {
   /**
+   * The broadcast's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
    * Internal broadcast name
    */
   name?: Name;
@@ -11501,7 +11513,7 @@ export type SiteBroadcastsScheduleResponses = {
 export type SiteBroadcastsScheduleResponse = SiteBroadcastsScheduleResponses[keyof SiteBroadcastsScheduleResponses];
 
 export type SiteBroadcastsSendData = {
-  body?: never;
+  body: RevisionInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested

@@ -33,7 +33,7 @@ func TestExternalSMSBroadcastIsCreatedTestSentScheduledAndKeepsItsIntegrationInU
 		externalapi.BroadcastsTestSendParams{ID: made.ID})
 	badNumber := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Phone: externalapi.NewOptString("not a number")},
 		externalapi.BroadcastsTestSendParams{ID: made.ID})
-	_, err = c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(made.ID))), ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 		externalapi.BroadcastsScheduleParams{ID: made.ID})
 	require.NoError(t, err)
 	report, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: made.ID})

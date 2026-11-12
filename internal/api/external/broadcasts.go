@@ -90,7 +90,7 @@ func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.B
 
 func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.SetBroadcastSegmentInput, params externalapi.BroadcastsSetSegmentParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
-	b, err := h.broadcasts.SetSegment(ctx, auth.TokenScoped(ctx), id, convert.Int64Ptr(req.SegmentId))
+	b, err := h.broadcasts.SetSegment(ctx, auth.TokenScoped(ctx), id, int64(req.Revision), convert.Int64Ptr(req.SegmentId))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.Se
 // MCP they additionally need mcp:send (the x-mcp send flag).
 func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.ScheduleBroadcastInput, params externalapi.BroadcastsScheduleParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
-	b, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, time.Time(req.ScheduledAt))
+	b, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, int64(req.Revision), time.Time(req.ScheduledAt))
 	if err != nil {
 		return nil, err
 	}

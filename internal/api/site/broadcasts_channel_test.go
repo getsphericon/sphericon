@@ -73,7 +73,7 @@ func TestSiteBroadcastRefusesAnIntegrationOfAnotherChannel(t *testing.T) {
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: sms,
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	_, updated := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{IntegrationId: sms},
+	_, updated := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastDraftID)))), IntegrationId: sms},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
@@ -91,7 +91,7 @@ func TestSiteBroadcastUpdateCannotChangeTheChannel(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastDraftID)))),
 		Content: testhelper.SiteTelegramEdit("Elsewhere"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)

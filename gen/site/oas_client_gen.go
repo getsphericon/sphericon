@@ -419,10 +419,11 @@ type Invoker interface {
 	// SiteBroadcastsSend invokes SiteBroadcasts_send operation.
 	//
 	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-	// resolved from; an archived segment is refused. An archived broadcast is a 409.
+	// resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed
+	// since the `revision` it names (revision_changed): nothing is sent.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/send
-	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error)
+	SiteBroadcastsSend(ctx context.Context, request *RevisionInput, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error)
 	// SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 	//
 	// Send a one-off rendered preview to a single address: an email broadcast to the `email` given, an SMS
@@ -8874,15 +8875,16 @@ func (c *Client) sendSiteBroadcastsSchedule(ctx context.Context, request *Schedu
 // SiteBroadcastsSend invokes SiteBroadcasts_send operation.
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-// resolved from; an archived segment is refused. An archived broadcast is a 409.
+// resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed
+// since the `revision` it names (revision_changed): nothing is sent.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
-func (c *Client) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error) {
-	res, err := c.sendSiteBroadcastsSend(ctx, params)
+func (c *Client) SiteBroadcastsSend(ctx context.Context, request *RevisionInput, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error) {
+	res, err := c.sendSiteBroadcastsSend(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (res *SiteBroadcastResource, err error) {
+func (c *Client) sendSiteBroadcastsSend(ctx context.Context, request *RevisionInput, params SiteBroadcastsSendParams) (res *SiteBroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_send"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -8971,6 +8973,9 @@ func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcas
 	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteBroadcastsSendRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{

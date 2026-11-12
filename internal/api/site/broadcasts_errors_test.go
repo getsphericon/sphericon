@@ -24,7 +24,8 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	draft := idStr(fixtures.BroadcastDraftID)
 	missing := idStr(99999)
-	when := siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))}
+	// Every Schedule below is refused before its revision is read: foreign, missing or sending.
+	when := siteapi.ScheduleBroadcastInput{Revision: 1, ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))}
 	testSend := siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")}
 
 	t.Run("foreign workspace", func(t *testing.T) {
@@ -32,11 +33,11 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: foreign, ID: draft})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: foreign, ID: draft})
+		_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft)))}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: foreign, ID: draft})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteBroadcastsArchive(ctx, siteapi.SiteBroadcastsArchiveParams{WorkspaceId: foreign, ID: draft})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: foreign, ID: draft})
+		_, err = c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft)))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: foreign, ID: draft})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteBroadcastsSchedule(ctx, &when, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: foreign, ID: draft})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
@@ -47,11 +48,11 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 	t.Run("unknown id", func(t *testing.T) {
 		_, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: missing})
+		_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(missing)))}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteBroadcastsArchive(ctx, siteapi.SiteBroadcastsArchiveParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: acme, ID: missing})
+		_, err = c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(missing)))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteBroadcastsSchedule(ctx, &when, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
@@ -74,9 +75,9 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 		_, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), IntegrationId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-		_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{SegmentId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
+		_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft))), SegmentId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-		_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{IntegrationId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
+		_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft))), IntegrationId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 		count, err := env.DB.Broadcast.Query().Count(ctx)
 		require.NoError(t, err)
@@ -92,7 +93,7 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 		sending := idStr(fixtures.BroadcastSendingID)
 		_, err := c.SiteBroadcastsSchedule(ctx, &when, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: acme, ID: sending})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-		_, err = c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: acme, ID: idStr(fixtures.BroadcastSentID)})
+		_, err = c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastSentID))))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: acme, ID: idStr(fixtures.BroadcastSentID)})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 		stored, err := env.DB.Broadcast.Get(ctx, fixtures.BroadcastSendingID)
 		require.NoError(t, err)

@@ -116,7 +116,8 @@ func TestMCPSendToolsAreListedOnlyWithMCPSend(t *testing.T) {
 
 func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	args := map[string]any{"id": strconv.Itoa(fixtures.BroadcastDraftID), "scheduledAt": "2099-01-01T00:00:00Z"}
+	// Schedule names the revision the caller read (ADR 0119).
+	args := map[string]any{"id": strconv.Itoa(fixtures.BroadcastDraftID), "scheduledAt": "2099-01-01T00:00:00Z", "revision": env.BroadcastRevision(t.Context(), t, fixtures.BroadcastDraftID)}
 
 	// Direct call, though the token has the /api scope: refused by the MCP lock.
 	s := env.MCPClient(t, env.ScopedBearer(t, "broadcasts:send"))

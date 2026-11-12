@@ -119,6 +119,7 @@ var (
 	ErrorsBroadcastNotFound                     = ID{key: "errors.broadcast_not_found"}
 	ErrorsBroadcastNotScheduled                 = ID{key: "errors.broadcast_not_scheduled"}
 	ErrorsBroadcastNotSendable                  = ID{key: "errors.broadcast_not_sendable"}
+	ErrorsBroadcastRevisionChanged              = ID{key: "errors.broadcast_revision_changed"}
 	ErrorsBroadcastSegmentArchived              = ID{key: "errors.broadcast_segment_archived"}
 	ErrorsBroadcastSegmentNotFound              = ID{key: "errors.broadcast_segment_not_found"}
 	ErrorsBroadcastTextBlank                    = ID{key: "errors.broadcast_text_blank"}

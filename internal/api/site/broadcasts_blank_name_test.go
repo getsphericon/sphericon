@@ -30,7 +30,7 @@ func TestSiteBroadcastsRefuseABlankNameWith422(t *testing.T) {
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 			ctx := context.Background()
 
-			_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName(siteapi.Name(name))},
+			_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastDraftID)))), Name: siteapi.NewOptName(siteapi.Name(name))},
 				siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 			refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)

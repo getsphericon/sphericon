@@ -45,7 +45,7 @@ func TestTheBroadcastReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {
 	env := testhelper.Setup(t)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
-	_, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
+	_, err := jane.SiteBroadcastsSend(t.Context(), &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(t.Context(), t, int64(idStr(fixtures.BroadcastGlobexID))))}, siteapi.SiteBroadcastsSendParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID),
 	})
 	require.NoError(t, err)

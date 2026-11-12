@@ -398,10 +398,11 @@ type Handler interface {
 	// SiteBroadcastsSend implements SiteBroadcasts_send operation.
 	//
 	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-	// resolved from; an archived segment is refused. An archived broadcast is a 409.
+	// resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed
+	// since the `revision` it names (revision_changed): nothing is sent.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/send
-	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error)
+	SiteBroadcastsSend(ctx context.Context, req *RevisionInput, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error)
 	// SiteBroadcastsTestSend implements SiteBroadcasts_testSend operation.
 	//
 	// Send a one-off rendered preview to a single address: an email broadcast to the `email` given, an SMS

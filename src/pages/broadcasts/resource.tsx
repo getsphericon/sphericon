@@ -1,5 +1,6 @@
 import * as z from 'zod'
 
+import { based } from '../../editing/editorSession.ts'
 import {
   siteBroadcastsCreateMutation,
   siteBroadcastsGetOptions,
@@ -19,6 +20,7 @@ import {
   zTelegramBroadcastContentInput,
 } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
+import { withRevision } from '../../resources/resourceEditor.ts'
 import type { ResourceFormSchema, ResourceValues } from '../../resources/resourceFormSchema.ts'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
@@ -138,12 +140,17 @@ const broadcastResource = defineResource({
   Form: BroadcastForm,
   getOptions: siteBroadcastsGetOptions,
   createMutation: siteBroadcastsCreateMutation,
-  update: siteBroadcastsUpdate,
-  // Delivery of the saved draft, serialized with Save by the editor session.
+  update: withRevision(siteBroadcastsUpdate),
+  // Delivery of the saved draft, serialized with Save by the editor session. Each names the
+  // revision the editor shows (ADR 0119), so a draft changed since is refused and not sent.
   operations: {
     SEND: {
-      request: async ({ subject: { path } }) => {
-        const { data } = await siteBroadcastsSend({ path, throwOnError: true })
+      request: async ({ subject: { path }, revision }) => {
+        const { data } = await siteBroadcastsSend({
+          path,
+          body: { revision: based(revision) },
+          throwOnError: true,
+        })
         return data
       },
       available: deliverable,
@@ -154,9 +161,13 @@ const broadcastResource = defineResource({
     },
     SCHEDULE: {
       // Its input is the request's body: the time DeliveryBlock schedules at.
-      request: async ({ subject: { path }, input }) => {
-        const body = zSiteBroadcastsScheduleBody.parse(input)
-        const { data } = await siteBroadcastsSchedule({ path, body, throwOnError: true })
+      request: async ({ subject: { path }, input, revision }) => {
+        const { scheduledAt } = zSiteBroadcastsScheduleBody.omit({ revision: true }).parse(input)
+        const { data } = await siteBroadcastsSchedule({
+          path,
+          body: { scheduledAt, revision: based(revision) },
+          throwOnError: true,
+        })
         return data
       },
       available: deliverable,

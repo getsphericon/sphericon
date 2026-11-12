@@ -41,11 +41,15 @@ func (w *Workspace) SendBroadcast(b Broadcast) {
 func (w *Workspace) ActivateBroadcast(id externalapi.EntityId) {
 	w.t.Helper()
 	ctx := w.t.Context()
-	aud, err := w.api.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
+	// Each write names the revision it was made on (ADR 0119): the draft as read, then as the
+	// segment change left it.
+	read, err := w.api.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: id})
+	draft := ok[externalapi.BroadcastResource](w.t, "read broadcast", read, err)
+	aud, err := w.api.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{Revision: draft.Revision, SegmentId: externalapi.NilEntityId{Null: true}},
 		externalapi.BroadcastsSetSegmentParams{ID: id})
-	ok[externalapi.BroadcastResource](w.t, "set segment", aud, err)
+	targeted := ok[externalapi.BroadcastResource](w.t, "set segment", aud, err)
 
-	sched, err := w.api.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now())},
+	sched, err := w.api.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{Revision: targeted.Revision, ScheduledAt: externalapi.Timestamp(time.Now())},
 		externalapi.BroadcastsScheduleParams{ID: id})
 	ok[externalapi.BroadcastResource](w.t, "schedule broadcast", sched, err)
 }

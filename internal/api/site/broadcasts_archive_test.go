@@ -124,15 +124,15 @@ func TestSiteAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 	_, err := c.SiteBroadcastsArchive(ctx, archiveParams(fixtures.BroadcastDraftID))
 	require.NoError(t, err)
 
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName("Renamed")},
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(id))), Name: siteapi.NewOptName("Renamed")},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
-	_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(id))), ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
-	_, err = c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	_, err = c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(id)))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})

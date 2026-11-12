@@ -132,6 +132,9 @@ var (
 	rn70AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn72AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
 	rn73AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -3136,8 +3139,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 													default:
 														s.notAllowed(w, r, notAllowedParams{
 															allowedMethods: "POST",
-															allowedHeaders: nil,
-															acceptPost:     "",
+															allowedHeaders: rn72AllowedHeaders,
+															acceptPost:     "application/json",
 															acceptPatch:    "",
 														})
 													}

@@ -32,7 +32,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	refusedBroadcast := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedBroadcast.Detail.Or(""), "<span> is never closed")
 
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(fixtures.BroadcastDraftID))),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("{% if %}")}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)

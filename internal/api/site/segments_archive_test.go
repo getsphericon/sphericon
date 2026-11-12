@@ -46,7 +46,7 @@ func TestSiteSegmentOnlyADraftNamesIsArchivedAndTheDraftIsNotScheduled(t *testin
 	require.NoError(t, err)
 	assert.True(t, archived.ArchivedAt.IsSet())
 
-	_, err = c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(t.Context(), t, int64(idStr(fixtures.BroadcastProSegmentID)))), ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastProSegmentID)})
 	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Value, fixtures.SegmentProPlanName)

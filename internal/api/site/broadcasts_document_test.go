@@ -37,7 +37,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	require.NotNil(t, row.EditorVersion)
 
 	// Saving another document rebuilds the body.
-	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID))),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(paragraphDoc("Second"))}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
@@ -46,13 +46,13 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	assert.NotContains(t, testhelper.SiteEmailOf(upd).Body, "Hello")
 
 	// A name-only write leaves the document alone.
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName("Renamed")},
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID))), Name: siteapi.NewOptName("Renamed")},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.NotEmpty(t, env.DB.Broadcast.GetX(ctx, int64(res.ID)).Doc)
 
 	// A body-only write clears the document and its editor version.
-	cleared, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>Plain</p>")})},
+	cleared, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID))), Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>Plain</p>")})},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	clr := cleared
@@ -83,7 +83,7 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	assert.Contains(t, refused.Detail.Value, "level")
 	assert.Equal(t, before, env.DB.Broadcast.Query().CountX(ctx), "nothing is stored")
 
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastDraftID)))),
 		Name:    siteapi.NewOptName("Renamed"),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(map[string]jx.Raw{"type": jx.Raw(`"nope"`)})}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.BroadcastDraftID)})
@@ -104,7 +104,7 @@ func TestSiteBroadcastsRefuseABodyAndADocumentTogether(t *testing.T) {
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastDraftID)))),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)

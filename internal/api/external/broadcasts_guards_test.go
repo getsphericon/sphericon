@@ -40,7 +40,7 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 			ctx := context.Background()
 			c := env.ExternalScoped(t, authorScopes...)
 
-			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName(externalapi.Name(name))},
+			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), Name: externalapi.NewOptName(externalapi.Name(name))},
 				externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
 			refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)

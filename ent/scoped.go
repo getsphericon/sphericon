@@ -7650,6 +7650,18 @@ func (x *BroadcastScopedCreate) SetNillableArchivedAt(v *time.Time) *BroadcastSc
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *BroadcastScopedCreate) SetRevision(v int64) *BroadcastScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableRevision(v *int64) *BroadcastScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *BroadcastScopedCreate) SetName(v string) *BroadcastScopedCreate {
 	x.b.SetName(v)
@@ -8092,6 +8104,24 @@ func (u *BroadcastScopedUpsert) UpdateArchivedAt() *BroadcastScopedUpsert {
 // ClearArchivedAt clears the value of the "archived_at" field.
 func (u *BroadcastScopedUpsert) ClearArchivedAt() *BroadcastScopedUpsert {
 	u.u.SetNull(broadcast.FieldArchivedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *BroadcastScopedUpsert) SetRevision(v int64) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *BroadcastScopedUpsert) AddRevision(v int64) *BroadcastScopedUpsert {
+	u.u.Add(broadcast.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateRevision() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldRevision)
 	return u
 }
 
@@ -8657,6 +8687,24 @@ func (x *BroadcastScopedUpdateOne) ClearArchivedAt() *BroadcastScopedUpdateOne {
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *BroadcastScopedUpdateOne) SetRevision(v int64) *BroadcastScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableRevision(v *int64) *BroadcastScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *BroadcastScopedUpdateOne) AddRevision(v int64) *BroadcastScopedUpdateOne {
+	x.b.AddRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *BroadcastScopedUpdateOne) SetName(v string) *BroadcastScopedUpdateOne {
 	x.b.SetName(v)
@@ -9185,6 +9233,24 @@ func (x *BroadcastScopedUpdate) SetNillableArchivedAt(v *time.Time) *BroadcastSc
 // ClearArchivedAt clears the value of the "archived_at" field.
 func (x *BroadcastScopedUpdate) ClearArchivedAt() *BroadcastScopedUpdate {
 	x.b.ClearArchivedAt()
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *BroadcastScopedUpdate) SetRevision(v int64) *BroadcastScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableRevision(v *int64) *BroadcastScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *BroadcastScopedUpdate) AddRevision(v int64) *BroadcastScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 

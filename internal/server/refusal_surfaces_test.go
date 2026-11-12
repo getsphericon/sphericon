@@ -180,12 +180,12 @@ func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 		{
 			name: "in conflict with its state",
 			site: func(ctx context.Context, c *siteapi.Client) error {
-				_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptName("x")},
+				_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: 1, Name: siteapi.NewOptName("x")},
 					siteapi.SiteBroadcastsUpdateParams{WorkspaceId: ws, ID: fixtures.BroadcastSentID})
 				return err
 			},
 			ext: func(ctx context.Context, c *externalapi.Client) error {
-				_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("x")},
+				_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: 1, Name: externalapi.NewOptName("x")},
 					externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastSentID})
 				return err
 			},

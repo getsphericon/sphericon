@@ -31,12 +31,12 @@ func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	testhelper.ExternalRefusal(t, create("news@"+fixtures.SendingDomainUnverifiedDomain), http.StatusUnprocessableEntity)
 	testhelper.ExternalRefusal(t, create("news@"+fixtures.SendingDomainGlobexDomain), http.StatusUnprocessableEntity)
 
-	_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
+	_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(fixtures.BroadcastDraftID))),
 		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{FromEmail: externalapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain)}),
 	}, externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastDraftID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(fixtures.BroadcastDraftFromLostDomainID))),
 		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("New subject")}),
 	}, externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastDraftFromLostDomainID})
 	require.NoError(t, err)

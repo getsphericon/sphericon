@@ -154,19 +154,19 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	// The edits go to a draft written in the editor.
 	authored := externalapi.BroadcastsUpdateParams{ID: entityIDString(fixtures.BroadcastAuthoredID)}
 	stored := *env.DB.Broadcast.GetX(ctx, fixtures.BroadcastAuthoredID).Body
-	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(authored.ID))),
 		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Doc: externalapi.NewOptEditorDocument(badHeadingDoc())}),
 	}, authored)
 	r := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, r.Detail.Or(""), "level")
 	assert.Equal(t, stored, *env.DB.Broadcast.GetX(ctx, fixtures.BroadcastAuthoredID).Body, "nothing is stored")
 
-	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(authored.ID))),
 		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("x"))}),
 	}, authored)
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>Plain</p>")})},
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(authored.ID))), Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>Plain</p>")})},
 		authored)
 	require.NoError(t, err)
 	assert.Empty(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastAuthoredID).Doc)

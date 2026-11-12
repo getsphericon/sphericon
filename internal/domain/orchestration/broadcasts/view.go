@@ -86,8 +86,8 @@ func (v *Views) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInp
 
 // Send moves a draft or scheduled Broadcast to sending (Module.Send) and returns its view, its
 // Progress included.
-func (v *Views) Send(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
-	b, err := v.m.Send(ctx, s, id)
+func (v *Views) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (View, error) {
+	b, err := v.m.Send(ctx, s, id, revision)
 	if err != nil {
 		return View{}, err
 	}
@@ -95,8 +95,8 @@ func (v *Views) Send(ctx context.Context, s *ent.Scoped, id int64) (View, error)
 }
 
 // Schedule schedules a draft or scheduled Broadcast at when (Module.Schedule) and returns its view.
-func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (View, error) {
-	b, err := v.m.Schedule(ctx, s, id, when)
+func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64, when time.Time) (View, error) {
+	b, err := v.m.Schedule(ctx, s, id, revision, when)
 	if err != nil {
 		return View{}, err
 	}

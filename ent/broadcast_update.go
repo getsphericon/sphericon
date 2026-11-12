@@ -77,6 +77,27 @@ func (_u *BroadcastUpdate) ClearArchivedAt() *BroadcastUpdate {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *BroadcastUpdate) SetRevision(v int64) *BroadcastUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableRevision(v *int64) *BroadcastUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *BroadcastUpdate) AddRevision(v int64) *BroadcastUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *BroadcastUpdate) SetName(v string) *BroadcastUpdate {
 	_u.mutation.SetName(v)
@@ -601,6 +622,11 @@ func (_u *BroadcastUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BroadcastUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := broadcast.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Broadcast.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := broadcast.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Broadcast.name": %w`, err)}
@@ -648,6 +674,12 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ArchivedAtCleared() {
 		_spec.ClearField(broadcast.FieldArchivedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(broadcast.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(broadcast.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)
@@ -958,6 +990,27 @@ func (_u *BroadcastUpdateOne) SetNillableArchivedAt(v *time.Time) *BroadcastUpda
 // ClearArchivedAt clears the value of the "archived_at" field.
 func (_u *BroadcastUpdateOne) ClearArchivedAt() *BroadcastUpdateOne {
 	_u.mutation.ClearArchivedAt()
+	return _u
+}
+
+// SetRevision sets the "revision" field.
+func (_u *BroadcastUpdateOne) SetRevision(v int64) *BroadcastUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableRevision(v *int64) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *BroadcastUpdateOne) AddRevision(v int64) *BroadcastUpdateOne {
+	_u.mutation.AddRevision(v)
 	return _u
 }
 
@@ -1498,6 +1551,11 @@ func (_u *BroadcastUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BroadcastUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := broadcast.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Broadcast.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := broadcast.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Broadcast.name": %w`, err)}
@@ -1562,6 +1620,12 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if _u.mutation.ArchivedAtCleared() {
 		_spec.ClearField(broadcast.FieldArchivedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(broadcast.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(broadcast.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)

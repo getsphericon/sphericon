@@ -574,6 +574,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.ArchivedAt != nil {
 					b.SetArchivedAt(*src.ArchivedAt)
 				}
+				b.SetRevision(src.Revision)
 				b.SetName(src.Name)
 				b.SetChannel(src.Channel)
 				if src.Subject != nil {

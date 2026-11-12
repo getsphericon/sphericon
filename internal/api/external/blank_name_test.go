@@ -18,7 +18,7 @@ func TestExternalBlankNamesAreRefusedWith422(t *testing.T) {
 	const def = `{"kind":"group","combinator":"and","rules":[]}`
 
 	_, segment := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "", Condition: testhelper.ExternalRuleGroup(t, def)})
-	_, broadcast := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptName("")},
+	_, broadcast := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), Name: externalapi.NewOptName("")},
 		externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
 
 	testhelper.ExternalRefusal(t, segment, http.StatusUnprocessableEntity)

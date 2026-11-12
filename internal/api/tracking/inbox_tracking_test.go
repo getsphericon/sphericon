@@ -33,12 +33,12 @@ func TestOpeningAndFollowingALinkOfACapturedMessageIsTrackedLikeAnyOther(t *test
 		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(fixtures.IntegrationGlobexInboxID)})
 	require.NoError(t, err)
 
-	_, err = jane.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = jane.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(siteapi.EntityId(fixtures.BroadcastGlobexID)))),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(`<p>Read <a href="https://dest.test/a">this</a>.</p>`)}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(fixtures.BroadcastGlobexID)})
 	require.NoError(t, err)
 
-	_, err = jane.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{
+	_, err = jane.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(siteapi.EntityId(fixtures.BroadcastGlobexID))))}, siteapi.SiteBroadcastsSendParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(fixtures.BroadcastGlobexID),
 	})
 	require.NoError(t, err)
