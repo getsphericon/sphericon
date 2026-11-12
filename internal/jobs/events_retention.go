@@ -26,7 +26,8 @@ type PruneEventsArgs struct{}
 
 func (PruneEventsArgs) Kind() string { return "events_retention" }
 
-// PruneEventsWorker deletes analytical Events older than the retention window.
+// PruneEventsWorker deletes analytical Events older than the retention window, with the Rule
+// Firings and the receipts of external facts kept for the same window.
 // Evidentiary Events are never deleted by age. It is instance-wide, so it holds
 // the raw ent client; a zero retention disables it.
 type PruneEventsWorker struct {
@@ -50,6 +51,13 @@ func (w *PruneEventsWorker) Work(ctx context.Context, _ *river.Job[PruneEventsAr
 	}
 	if deleted > 0 {
 		slog.InfoContext(ctx, "expired events pruned", "deleted", deleted)
+	}
+	receipts, err := events.PruneReceipts(ctx, w.ent, w.retention, eventsRetentionBatch, w.now())
+	if err != nil {
+		return err
+	}
+	if receipts > 0 {
+		slog.InfoContext(ctx, "expired event receipts pruned", "deleted", receipts)
 	}
 	firings, err := rules.PruneFirings(ctx, w.ent, w.retention, eventsRetentionBatch, w.now())
 	if err != nil {

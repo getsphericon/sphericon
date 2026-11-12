@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -120,4 +121,27 @@ func TestPruneEventsKeepsRuleFiringsWhenRetentionIsZero(t *testing.T) {
 	pruneEvents(t, env, 0)
 
 	assert.True(t, firingPresent(t, env, fixtures.RuleFiringExpiredID))
+}
+
+// A receipt of an external fact ends with the Event retention window (ADR 0114): the fixture one
+// 500 days old is deleted, the recent one kept, and a zero retention keeps both.
+func TestPruneEventsDeletesReceiptsPastTheWindow(t *testing.T) {
+	for name, tc := range map[string]struct {
+		retention time.Duration
+		left      []int64
+	}{
+		"past the window": {eventsRetention, []int64{fixtures.EventReceiptRecentID}},
+		"disabled":        {0, []int64{fixtures.EventReceiptOldID, fixtures.EventReceiptRecentID}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+
+			pruneEvents(t, env, tc.retention)
+
+			left := env.DB.EventReceipt.Query().
+				Where(eventreceipt.IDIn(fixtures.EventReceiptOldID, fixtures.EventReceiptRecentID)).
+				Order(eventreceipt.ByID()).IDsX(t.Context())
+			assert.Equal(t, tc.left, left)
+		})
+	}
 }
