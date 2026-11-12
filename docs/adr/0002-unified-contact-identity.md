@@ -4,6 +4,11 @@ status: accepted
 
 # One Contact identity: absorb the tracking profile, attach events by stable id
 
+> **Amended by [[0128-two-contacts-of-one-person-are-merged-by-a-deliberate-act]]:** an Upsert whose
+> keys resolve to two Contacts no longer fails: it writes to the first by `subject_id`, `email`,
+> `phone`, leaves the key another holds unfilled and records a Duplicate candidate; two Contacts of
+> one person are joined by a deliberate Merge.
+
 There is a single person record per workspace — the **Contact** — covering both the
 behavioral/CDP identity and the marketing audience member. The separate tracking profile is
 absorbed into it. A Contact is anchored by a stable internal id, with `subject_id`

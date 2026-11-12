@@ -88,8 +88,9 @@ _Avoid_: Tracking visitor, session, device, anonymous user
 
 **Contact lock**:
 The row lock on a Contact that every write about that Contact takes first and holds to the end of its
-transaction: an Enrollment made or ended, a change of its Tags or Custom fields, its **Erasure**. Two
-such writes run one after the other, and each reads what the other committed.
+transaction: an Enrollment made or ended, a change of its Tags or Custom fields, its **Erasure**, a
+**Merge** (both Contacts, the lower id first). Two such writes run one after the other, and each
+reads what the other committed.
 _Avoid_: Mutex, advisory lock
 
 **Email case**:
@@ -112,6 +113,21 @@ The act of binding a Visitor to a Contact and asserting that Contact's alias key
 (subject_id / email / phone) and its core attributes. It stitches the Visitor's earlier anonymous
 Events onto the Contact, so pre-identify behavior becomes visible to segmentation.
 _Avoid_: Alias, merge, reconcile
+
+**Merge** (Contact merge):
+Joining two Contacts of one person into one, the **survivor**, by a person's act or an explicit API
+call, never by itself. The survivor keeps its keys and takes the other's into empty slots (a person
+picks where both hold one), wins on attributes, joins Tags, and takes the other's history,
+Enrollments and consent facts; the other is deleted. A key it drops becomes a former key of the
+survivor, and the opt-outs of a dropped address are recorded on the kept one. Recorded as
+`contact.merged`. It cannot be undone.
+_Avoid_: Dedupe, combine, link, Identify (that binds a Visitor)
+
+**Duplicate candidate**:
+A pair of Contacts that an Upsert found holding the keys of one person: its keys resolved one
+Contact while another held a key it carried. Shown to the team to **Merge** or to dismiss as two
+people; only a key conflict raises one.
+_Avoid_: Possible duplicate, match, suggestion
 
 **Visitor identification**:
 One **Identify** carried out whole, in one transaction: the Contact upserted by its alias keys, the
