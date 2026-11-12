@@ -152,7 +152,7 @@ func (_c *CustomFieldCreate) defaults() {
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := customfield.DefaultRevision
+		v := customfield.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 	if _, ok := _c.mutation.GetType(); !ok {

@@ -181,7 +181,7 @@ func (_c *EmailTemplateCreate) defaults() {
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := emailtemplate.DefaultRevision
+		v := emailtemplate.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 	if _, ok := _c.mutation.Subject(); !ok {

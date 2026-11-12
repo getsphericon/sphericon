@@ -20,9 +20,14 @@ func (RevisionMixin) Fields() []ent.Field {
 		field.Int64("revision").
 			Annotations(Attribute("moved by every update of what an editor shows")).
 			Positive().
-			Default(1),
+			// The first revision is the application's rule, set by ent on every insert: a Go default,
+			// which ent does not copy into the column, so a row written past ent names its own.
+			DefaultFunc(firstRevision),
 	}
 }
+
+// firstRevision is the revision a resource is created at (ADR 0119).
+func firstRevision() int64 { return 1 }
 
 // Bookkeeping marks a column of a type with a revision that the system keeps for itself and no
 // editor shows or sends: a reading of a provider, a notice's moment, a feed position. An update that

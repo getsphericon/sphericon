@@ -1,6 +1,7 @@
 # Workspace acme (id 1). Reusable HTML bodies. transactional_emails reference these
 # by foreign key.
 - id: 1 # fixture: TemplateWelcome
+  revision: 1
   name: Welcome
   subject: "Welcome to CodeBasics \U0001F44B"
   body: '<h1>Welcome!</h1><p>Start your first course today.</p><p><a href="https://codebasics.dev">Open CodeBasics</a></p>'
@@ -8,6 +9,7 @@
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 30}}'
 - id: 2
+  revision: 1
   name: Weekly digest
   subject: Your weekly learning digest
   body: '<h1>This week at CodeBasics</h1><p>New lessons are waiting for you.</p>'
@@ -15,6 +17,7 @@
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 20}}'
 - id: 3
+  revision: 1
   name: Receipt
   subject: Your CodeBasics receipt
   body: '<h1>Thanks for your purchase</h1><p>Your access is now active.</p>'
@@ -25,6 +28,7 @@
 # without the save path. A golden test (internal/fixtures) asserts they agree; regenerate with
 # `mise run test -- ./internal/fixtures -run TestFixtureTemplateBodiesAreTheRenderOfTheirDocuments -update`.
 - id: 4 # fixture: TemplateAuthored
+  revision: 1
   name: Product update
   subject: What is new at CodeBasics
   doc: '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"What is new"}]},{"type":"paragraph","content":[{"type":"text","text":"Three new courses landed this month, with "},{"type":"text","marks":[{"type":"bold"}],"text":"hands-on projects"},{"type":"text","text":" in each."}]},{"type":"button","attrs":{"href":"https://codebasics.dev/courses","alignment":"center"},"content":[{"type":"text","text":"Browse courses"}]}]}'
@@ -36,6 +40,7 @@
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: TemplateGlobex
+  revision: 1
   name: Globex template
   subject: Globex
   body: '<p>Globex.</p>'
@@ -45,6 +50,7 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
+  revision: 1
   name: 'Welcome'
   subject: 'Welcome to Brightpath'
   body: '<h1>Welcome!</h1><p>Pick your first course and start today.</p>'
@@ -52,6 +58,7 @@
   created_at: '{{hoursAgo 2400}}'
   updated_at: '{{hoursAgo 480}}'
 - id: 20002
+  revision: 1
   name: 'Receipt'
   subject: 'Your Brightpath receipt'
   body: '<h1>Thanks for your purchase</h1><p>Your plan is now active.</p>'
@@ -59,6 +66,7 @@
   created_at: '{{hoursAgo 2400}}'
   updated_at: '{{hoursAgo 480}}'
 - id: 20003
+  revision: 1
   name: 'Password reset'
   subject: 'Reset your Brightpath password'
   body: '<p>Use the link below to choose a new password.</p>'
@@ -66,6 +74,7 @@
   created_at: '{{hoursAgo 2400}}'
   updated_at: '{{hoursAgo 480}}'
 - id: 20004
+  revision: 1
   name: 'Certificate ready'
   subject: 'Your certificate is ready'
   body: '<h1>Congratulations!</h1><p>Your certificate is waiting.</p>'
@@ -73,6 +82,7 @@
   created_at: '{{hoursAgo 2400}}'
   updated_at: '{{hoursAgo 480}}'
 - id: 20005
+  revision: 1
   name: 'Payment failed'
   subject: 'We could not renew your plan'
   body: '<p>Update your card to keep access to your courses.</p>'
@@ -83,6 +93,7 @@
 # Acme: a transactional template with per-send variables (name, code). The raw-string actions
 # escape the braces from the fixture loader's own templating, so the stored text keeps its braces.
 - id: 5700 # fixture: TemplateWithVariables
+  revision: 1
   name: Order receipt
   subject: '{{`Hello {{ name }}`}}'
   body: '{{`<p>Hi {{ name }}, your code is {{ code }}</p>`}}'
@@ -92,6 +103,7 @@
 
 # Acme: a transactional template whose subject cannot render (an `if` with no condition).
 - id: 7400 # fixture: TemplateBrokenSubject
+  revision: 1
   name: Broken receipt
   subject: '{% if %}broken'
   body: '<p>Your receipt</p>'
@@ -101,6 +113,7 @@
 
 # Acme: a transactional template with a link, for the tracked send (ADR 0053).
 - id: 5702 # fixture: TemplateWithLink
+  revision: 1
   name: Order link
   subject: Your order
   body: '<p>See <a href="https://shop.test/order">your order</a></p>'
@@ -110,6 +123,7 @@
 
 # Vandelay (workspace 7): a template for the send refused while the detector has frozen it.
 - id: 5701 # fixture: TemplateVandelay
+  revision: 1
   name: Vandelay notice
   subject: Vandelay notice
   body: '<p>Notice.</p>'

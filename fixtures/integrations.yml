@@ -5,6 +5,7 @@
 # one is disabled. Exactly one is_default per (workspace, channel) — see the partial
 # unique index on integrations.
 - id: 1 # fixture: IntegrationAcmeDefault
+  revision: 1
   ingest_key: omik_test_integrationacmedefault
   name: Mailpit (dev SMTP)
   channel: email
@@ -16,6 +17,7 @@
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
 - id: 2 # fixture: IntegrationAcmeSes
+  revision: 1
   ingest_key: omik_test_integrationacmeses
   name: Amazon SES (disabled)
   channel: email
@@ -29,6 +31,7 @@
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
 - id: 5 # fixture: IntegrationAcmeSesImplied
+  revision: 1
   ingest_key: omik_test_integrationacmesesimplied
   name: Amazon SES (made before Presets, names none)
   channel: email
@@ -44,6 +47,7 @@
 # Archived (ADR 0049): a retired relay. It gave up is_default when it was archived and keeps its
 # ingest key: its provider may still report bounces for mail already sent through it.
 - id: 6 # fixture: IntegrationAcmeArchived
+  revision: 1
   ingest_key: omik_test_integrationacmearchived
   name: Old relay (archived)
   channel: email
@@ -61,6 +65,7 @@
 # Umbrella (workspace 4): the default Integration of a Workspace with no live Broadcasts or
 # Automations, so archiving a default needs no neutralised shared rows.
 - id: 910 # fixture: IntegrationUmbrellaDefault
+  revision: 1
   ingest_key: omik_test_integrationumbrelladefault
   name: Umbrella SMTP
   channel: email
@@ -75,6 +80,7 @@
 # Globex (workspace 2). Its Test inbox (ADR 0058) is kept, not the default, and holds Captured
 # messages (captured_messages.yml). Globex has no verified Sending domain.
 - id: 902 # fixture: IntegrationGlobexInbox
+  revision: 1
   ingest_key: omik_test_integrationglobexinbox
   name: Test inbox
   channel: email
@@ -88,6 +94,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 900 # fixture: IntegrationGlobex
+  revision: 1
   ingest_key: omik_test_integrationglobex
   name: Globex SMTP
   channel: email
@@ -101,6 +108,7 @@
 # A row that names no topic cannot be saved any more (the `ses` Preset requires one); it stands
 # for one stored before that, and the hook must still refuse its notifications.
 - id: 901 # fixture: IntegrationGlobexSesNoTopic
+  revision: 1
   ingest_key: omik_test_integrationglobexsesnotopic
   name: Globex SES (stored without an SNS topic)
   channel: email
@@ -116,6 +124,7 @@
 
 # Umbrella's Test inbox, with one Captured message: a Workspace deletion removes both.
 - id: 911 # fixture: IntegrationUmbrellaInbox
+  revision: 1
   ingest_key: omik_test_integrationumbrellainbox
   name: Test inbox
   channel: email
@@ -132,6 +141,7 @@
 # Acme's archived Test inbox: archiving stops capturing and keeps what was captured until it
 # expires (ADR 0058), so it frees the place for a new inbox and still holds a Captured message.
 - id: 7 # fixture: IntegrationAcmeInboxArchived
+  revision: 1
   ingest_key: omik_test_integrationacmeinboxarchived
   name: Test inbox (archived)
   channel: email
@@ -149,6 +159,7 @@
 # Two Integrations of Acme read their callbacks with the generic Preset, each with a secret of its
 # own: a callback signed for one must never be accepted by the other.
 - id: 3 # fixture: IntegrationAcmeGenericA
+  revision: 1
   ingest_key: omik_test_integrationacmegenerica
   name: Relay A (generic Preset)
   channel: email
@@ -162,6 +173,7 @@
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
 - id: 4 # fixture: IntegrationAcmeGenericB
+  revision: 1
   ingest_key: omik_test_integrationacmegenericb
   name: Relay B (generic Preset)
   channel: email
@@ -179,6 +191,7 @@
 # drop the stored password: host smtp.example.com, port 587, username mailer, password
 # hunter2-smtp-secret.
 - id: 7300 # fixture: IntegrationAcmeSmtpLogin
+  revision: 1
   ingest_key: omik_test_integrationacmesmtplogin
   name: Relay with a login
   channel: email
@@ -193,6 +206,7 @@
 # An Acme Integration per built-in provider Preset: an SMTP relay whose provider reports
 # bounces and complaints to the Integration's hook.
 - id: 20 # fixture: IntegrationAcmePostmark
+  revision: 1
   ingest_key: omik_test_integrationacmepostmark
   name: Postmark relay
   channel: email
@@ -206,6 +220,7 @@
   created_at: '{{daysAgo 20}}'
   updated_at: '{{daysAgo 20}}'
 - id: 21 # fixture: IntegrationAcmeMailgun
+  revision: 1
   ingest_key: omik_test_integrationacmemailgun
   name: Mailgun relay
   channel: email
@@ -221,6 +236,7 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
+  revision: 1
   ingest_key: omik_test_brightpath_20001
   name: 'Amazon SES · eu-west-1'
   channel: email
@@ -234,6 +250,7 @@
   created_at: '{{daysAgo 110}}'
   updated_at: '{{daysAgo 110}}'
 - id: 20002
+  revision: 1
   ingest_key: omik_test_brightpath_20002
   name: 'Postmark · transactional'
   channel: email
@@ -250,6 +267,7 @@
 # the Mailpit UI. 127.0.0.1 because the daemon runs on the host (a bare `mailpit` name does not
 # resolve there); 1025 is the primary checkout's SMTP port, a linked worktree's is offset.
 - id: 20003
+  revision: 1
   ingest_key: omik_test_brightpath_20003
   name: 'Mailpit (dev SMTP)'
   channel: email
@@ -263,6 +281,7 @@
 
 # --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
 - id: 21001
+  revision: 1
   ingest_key: omik_test_brightpath_21001
   name: 'Test inbox'
   channel: email
@@ -279,6 +298,7 @@
 # signed with the Auth Token in its params, which is also the secret it calls Twilio with.
 # `env.AcmeTwilio` adds the account and its number to the fake Twilio.
 - id: 8 # fixture: IntegrationAcmeSms
+  revision: 1
   ingest_key: omik_test_integrationacmesms
   name: Acme Twilio
   channel: sms
@@ -297,6 +317,7 @@
 # Acme's second one (no Binding), for a test that needs a bot besides the first; Globex's is not
 # in it, so only what never calls Telegram uses that one.
 - id: 7806 # fixture: IntegrationAcmeSecondTelegram
+  revision: 1
   ingest_key: omik_test_integrationacmesecondtelegram
   name: Acme second bot
   channel: telegram
@@ -310,6 +331,7 @@
   created_at: '{{daysAgo 20}}'
   updated_at: '{{daysAgo 20}}'
 - id: 9 # fixture: IntegrationAcmeTelegram
+  revision: 1
   ingest_key: omik_test_integrationacmetelegram
   name: Acme bot
   channel: telegram
@@ -323,6 +345,7 @@
   created_at: '{{daysAgo 20}}'
   updated_at: '{{daysAgo 20}}'
 - id: 903 # fixture: IntegrationGlobexTelegram
+  revision: 1
   ingest_key: omik_test_integrationglobextelegram
   name: Globex bot
   channel: telegram
@@ -338,6 +361,7 @@
 # Sabre's (workspace 79) only Integration, a Telegram bot the fake Bot API does not know: only
 # what never calls Telegram uses it.
 - id: 7301 # fixture: IntegrationSabreTelegram
+  revision: 1
   ingest_key: omik_test_integrationsabretelegram
   name: Sabre bot
   channel: telegram
@@ -356,6 +380,7 @@
 # relay.meridian.test; the stopped one from kept.meridian.test; the others from a domain Meridian never
 # added.
 - id: 7400 # fixture: IntegrationMeridianDefault
+  revision: 1
   ingest_key: omik_test_integrationmeridiandefault
   name: Meridian SMTP
   channel: email
@@ -369,6 +394,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7401 # fixture: IntegrationMeridianRelay
+  revision: 1
   ingest_key: omik_test_integrationmeridianrelay
   name: Meridian relay
   channel: email
@@ -380,6 +406,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7402 # fixture: IntegrationMeridianTelegram
+  revision: 1
   ingest_key: omik_test_integrationmeridiantelegram
   name: Meridian bot
   channel: telegram
@@ -395,6 +422,7 @@
 # Named only by the steps of a draft, of HTTP and Tag steps, of an inactive and of an archived
 # Automation: none of them sends through it. Their provider stopped them, which holds no live send.
 - id: 7403 # fixture: IntegrationMeridianDraftOnly
+  revision: 1
   ingest_key: omik_test_integrationmeridiandraftonly
   name: Relay of a draft
   channel: email
@@ -407,6 +435,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7404 # fixture: IntegrationMeridianNoEmail
+  revision: 1
   ingest_key: omik_test_integrationmeridiannoemail
   name: Relay of HTTP and Tag steps
   channel: email
@@ -419,6 +448,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7405 # fixture: IntegrationMeridianInactive
+  revision: 1
   ingest_key: omik_test_integrationmeridianinactive
   name: Relay of an inactive Automation
   channel: email
@@ -431,6 +461,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7406 # fixture: IntegrationMeridianArchived
+  revision: 1
   ingest_key: omik_test_integrationmeridianarchived
   name: Relay of an archived Automation
   channel: email
@@ -444,6 +475,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Named by the live version of an inactive Automation an unfinished Enrollment stands on.
 - id: 7407 # fixture: IntegrationMeridianEnrolled
+  revision: 1
   ingest_key: omik_test_integrationmeridianenrolled
   name: Relay of an Enrollment
   channel: email
@@ -456,6 +488,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Named by a scheduled Broadcast alone.
 - id: 7408 # fixture: IntegrationMeridianNamed
+  revision: 1
   ingest_key: omik_test_integrationmeridiannamed
   name: Relay a Broadcast names
   channel: email
@@ -468,6 +501,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Disabled and named by nothing.
 - id: 7409 # fixture: IntegrationMeridianDisabled
+  revision: 1
   ingest_key: omik_test_integrationmeridiandisabled
   name: Disabled relay
   channel: email
@@ -480,6 +514,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Stopped by its provider, and named by an active Automation: that Automation cannot send.
 - id: 7410 # fixture: IntegrationMeridianStopped
+  revision: 1
   ingest_key: omik_test_integrationmeridianstopped
   name: Stopped relay
   channel: email
@@ -494,6 +529,7 @@
 
 # Pinewood's default is its Test inbox, with the 200 a day it reports.
 - id: 7420 # fixture: IntegrationPinewoodInbox
+  revision: 1
   ingest_key: omik_test_integrationpinewoodinbox
   name: Test inbox
   channel: email
@@ -510,6 +546,7 @@
 # Duff (workspace 94): its only Integration, a Telegram bot the fake Bot API does not know: the
 # preview that counts its bound Contacts never calls Telegram.
 - id: 7700 # fixture: IntegrationDuffTelegram
+  revision: 1
   ingest_key: omik_test_integrationdufftelegram
   name: Duff bot
   channel: telegram
@@ -526,6 +563,7 @@
 # Krusty (workspace 95): its Twilio account. `env.KrustyTwilio` adds the account and its number to
 # the fake Twilio.
 - id: 7720 # fixture: IntegrationKrustySms
+  revision: 1
   ingest_key: omik_test_integrationkrustysms
   name: Krusty Twilio
   channel: sms
@@ -543,6 +581,7 @@
 # fake Twilio; its Telegram bot, which `env.LacunaTelegram` adds to the fake Bot API; and a second
 # bot the fake does not know, which holds one chat and sends nothing.
 - id: 7740 # fixture: IntegrationLacunaSms
+  revision: 1
   ingest_key: omik_test_integrationlacunasms
   name: Lacuna Twilio
   channel: sms
@@ -556,6 +595,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7741 # fixture: IntegrationLacunaTelegram
+  revision: 1
   ingest_key: omik_test_integrationlacunatelegram
   name: Lacuna bot
   channel: telegram
@@ -569,6 +609,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7742 # fixture: IntegrationLacunaOtherTelegram
+  revision: 1
   ingest_key: omik_test_integrationlacunaothertelegram
   name: Lacuna other bot
   channel: telegram

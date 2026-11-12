@@ -248,7 +248,7 @@ func (_c *RuleCreate) defaults() {
 		_c.mutation.SetStatus(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := rule.DefaultRevision
+		v := rule.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 }

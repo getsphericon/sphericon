@@ -1,12 +1,14 @@
 # Workspace acme (id 1). Anchor segments 1-2 are selected by name in the suite —
 # DO NOT change them. New rule segments use the JSON combinator definition format.
 - id: 1 # fixture: SegmentActive
+  revision: 1
   name: Active subscribers
   condition: "status == 'active'"
   workspace_id: 1
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 2 # fixture: SegmentNewsletter
+  revision: 1
   name: Newsletter subscribers
   workspace_id: 1
   created_at: '2026-01-02 00:00:00'
@@ -14,24 +16,28 @@
 
 # --- CodeBasics segments ---
 - id: 100 # fixture: SegmentProPlan
+  revision: 1
   name: Pro & team members
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}'
   workspace_id: 1
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 10}}'
 - id: 101
+  revision: 1
   name: Completed a course
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:courses_completed","operator":"neq","value":"0"}]}'
   workspace_id: 1
   created_at: '{{daysAgo 45}}'
   updated_at: '{{daysAgo 12}}'
 - id: 102 # fixture: SegmentBlackFriday
+  revision: 1
   name: Black Friday 2026 audience
   workspace_id: 1
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
 # Rule that no contact matches — anchors the empty-audience broadcast (id 104).
 - id: 103
+  revision: 1
   name: Unreachable plan
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"__none__"}]}'
   workspace_id: 1
@@ -39,12 +45,14 @@
   updated_at: '{{daysAgo 30}}'
 # Used only by a failed broadcast (id 103): history, so it does not block an archive (ADR 0100).
 - id: 104 # fixture: SegmentRetired
+  revision: 1
   name: Retired audience
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
 # Names the Tag "newsletter" in a rule, so that Tag cannot be deleted while it exists (ADR 0049).
 - id: 105 # fixture: SegmentNewsletterReaders
+  revision: 1
   name: Newsletter readers
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"tag","operator":"has","value":"newsletter"}]}]}'
   workspace_id: 1
@@ -52,6 +60,7 @@
   updated_at: '{{daysAgo 20}}'
 # The Contacts with no Telegram chat bound, in person or through a Visitor (ADR 0074).
 - id: 7400 # fixture: SegmentWithoutTelegram
+  revision: 1
   name: Not on Telegram
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"doesNotHave"}]}'
   workspace_id: 1
@@ -59,6 +68,7 @@
   updated_at: '{{daysAgo 5}}'
 # Archived (ADR 0100), and the sent broadcast 107 still points at it.
 - id: 106 # fixture: SegmentArchived
+  revision: 1
   name: Archived audience
   workspace_id: 1
   archived_at: '{{daysAgo 5}}'
@@ -67,6 +77,7 @@
 # The Segment of origin of the scheduled Broadcast 109, edited since: the Broadcast keeps the
 # Condition it copied when it was scheduled (ADR 0065), so this Segment is free to edit and archive.
 - id: 107 # fixture: SegmentRenewalAudience
+  revision: 1
   name: Renewal audience
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
@@ -74,6 +85,7 @@
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: SegmentGlobex
+  revision: 1
   name: Globex only
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
@@ -81,36 +93,42 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
+  revision: 1
   name: 'Almost customers'
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"},{"kind":"event","action":"viewed_pricing","operator":"atLeast","times":1,"withinDays":14},{"kind":"event","action":"email.opened","operator":"atMost","times":0,"withinDays":30}]}'
   workspace_id: 20
   created_at: '{{hoursAgo 1080}}'
   updated_at: '{{hoursAgo 360}}'
 - id: 20002
+  revision: 1
   name: 'Pro & team members'
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"},{"kind":"rule","field":"custom:plan","operator":"eq","value":"team"}]}]}'
   workspace_id: 20
   created_at: '{{hoursAgo 1680}}'
   updated_at: '{{hoursAgo 552}}'
 - id: 20003
+  revision: 1
   name: 'Completed a course'
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:courses_completed","operator":"neq","value":"0"}]}'
   workspace_id: 20
   created_at: '{{hoursAgo 1440}}'
   updated_at: '{{hoursAgo 480}}'
 - id: 20004
+  revision: 1
   name: 'Black Friday audience'
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"newsletter"},{"kind":"rule","field":"custom:plan","operator":"neq","value":"team"}]}'
   workspace_id: 20
   created_at: '{{hoursAgo 144}}'
   updated_at: '{{hoursAgo 48}}'
 - id: 20005
+  revision: 1
   name: 'Webinar attendees, not yet paying'
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"webinar-attendee"},{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"}]}'
   workspace_id: 20
   created_at: '{{hoursAgo 600}}'
   updated_at: '{{hoursAgo 192}}'
 - id: 20006
+  revision: 1
   name: 'At risk of churning'
   condition: '{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"tag","operator":"has","value":"churn-risk"},{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"neq","value":"free"},{"kind":"event","action":"lesson_completed","operator":"atMost","times":0,"withinDays":30}]}]}'
   workspace_id: 20
@@ -119,6 +137,7 @@
 
 # Capton (workspace 63): the three Contacts who live in Capton, the audience of both its Broadcasts.
 - id: 20010 # fixture: SegmentCapton
+  revision: 1
   name: Lives in Capton
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"city","operator":"eq","value":"Capton"}]}'
   workspace_id: 63
@@ -128,12 +147,14 @@
 # Tyrell (workspace 56): its eligibility matrix split by "can be texted" (an SMS Confirmation and no
 # SMS opt-out) and its negation.
 - id: 7500 # fixture: SegmentTyrellTextable
+  revision: 1
   name: Can be texted
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"sms","operator":"has"}]}'
   workspace_id: 56
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7501 # fixture: SegmentTyrellUntextable
+  revision: 1
   name: Cannot be texted
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"sms","operator":"doesNotHave"}]}'
   workspace_id: 56
@@ -143,12 +164,14 @@
 # Duff (workspace 94): a Segment that tests ends_on with a date operator, and one that tests only
 # that has_it is there, which every type takes.
 - id: 7700 # fixture: SegmentDuffEndsSoon
+  revision: 1
   name: Ends soon
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"date","field":"custom:ends_on","operator":"after","at":"2026-01-01T00:00:00Z"}]}'
   workspace_id: 94
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7701
+  revision: 1
   name: Has it
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:has_it","operator":"notNull","value":""}]}'
   workspace_id: 94
@@ -156,6 +179,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Krusty (workspace 95): its numbers in the Bay Area.
 - id: 7720 # fixture: SegmentKrustyBayArea
+  revision: 1
   name: Bay Area numbers
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"phone","operator":"beginsWith","value":"+1415555"}]}'
   workspace_id: 95
@@ -164,12 +188,14 @@
 # Lacuna (workspace 96): Textham holds Bea, Uma and Sal, of whom only Bea can be texted; Chatham
 # holds Ben, Eve and Fay, each in one chat of Lacuna's bot, and Cal, in none of it.
 - id: 7740 # fixture: SegmentLacunaTextham
+  revision: 1
   name: Lives in Textham
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"city","operator":"eq","value":"Textham"}]}'
   workspace_id: 96
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7741 # fixture: SegmentLacunaChatham
+  revision: 1
   name: Lives in Chatham
   condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"city","operator":"eq","value":"Chatham"}]}'
   workspace_id: 96

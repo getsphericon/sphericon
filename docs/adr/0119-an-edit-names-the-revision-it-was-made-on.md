@@ -88,8 +88,11 @@ overwrite a person, and a person overwrites them, the same way.
 
 ## Consequences
 
-- A migration adds `revision bigint NOT NULL DEFAULT 1` to each table of the list below: an add-only
-  change (ADR 0033).
+- A migration adds `revision bigint NOT NULL` to each table of the list below: an add-only change
+  (ADR 0033). It is added with `DEFAULT 1`, which fills the rows already there, and the default is
+  dropped in the same migration: that a resource starts at revision 1 is the application's rule,
+  which ent sets on every insert (a Go default, `DefaultFunc`, not copied into the column), so a
+  row written past ent, a fixture included, names its own.
 - Every update test of these resources sends a `revision`, and each resource gets a test that a
   stale one is refused and leaves the row as it was. Every caller of an update, the e2e steps and
   the MCP tools' descriptions included, reads the resource first.

@@ -160,7 +160,7 @@ func (_c *SegmentCreate) defaults() {
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := segment.DefaultRevision
+		v := segment.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 }
