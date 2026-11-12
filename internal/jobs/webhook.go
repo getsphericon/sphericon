@@ -17,17 +17,27 @@ import (
 )
 
 // DeliverWebhookArgs is one delivery attempt of an event to one endpoint. river
-// retries on error, so a receiver may see duplicates — DeliveryID lets it dedupe.
+// retries on error, so a receiver may see duplicates — DeliveryID lets it dedupe. It is unique on
+// the endpoint and the delivery, so the deliveries a retried dispatch queues again are the ones
+// already queued.
 type DeliverWebhookArgs struct {
 	jobkind.Workspace
 
-	EndpointID int64  `json:"endpoint_id"`
+	EndpointID int64  `json:"endpoint_id" river:"unique"`
 	EventName  string `json:"event_name"`
-	DeliveryID string `json:"delivery_id"`
+	DeliveryID string `json:"delivery_id" river:"unique"`
 	Body       []byte `json:"body"`
 }
 
 func (DeliverWebhookArgs) Kind() string { return jobkind.DeliverWebhook.Kind }
+
+func (DeliverWebhookArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{
+		Queue:       QueueWebhooks,
+		MaxAttempts: webhook.HookMaxAttempts(),
+		UniqueOpts:  river.UniqueOpts{ByArgs: true},
+	}
+}
 
 type DeliverWebhookWorker struct {
 	river.WorkerDefaults[DeliverWebhookArgs]
@@ -107,24 +117,28 @@ func NewWebhookDispatcher() events.WebhookDispatcher {
 type webhookDispatcher struct{}
 
 // Dispatch fans a domain event out to every endpoint of the workspace that receives it
-// (webhookendpoints.Subscribed), enqueuing one delivery job each. The scope comes from the caller
-// (the webhooks consumer, which scopes to the event's Workspace).
+// (webhookendpoints.Subscribed), enqueuing one delivery job each, all in one insert. The scope
+// comes from the caller (the webhooks consumer, which scopes to the event's Workspace).
 func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error {
 	endpoints, err := webhookendpoints.Subscribed(ctx, s, eventName)
 	if err != nil {
 		return err
 	}
-	queue := river.ClientFromContext[*sql.Tx](ctx)
-	for _, e := range endpoints {
-		if _, err := queue.Insert(ctx, DeliverWebhookArgs{
+	if len(endpoints) == 0 {
+		return nil
+	}
+	params := make([]river.InsertManyParams, len(endpoints))
+	for i, e := range endpoints {
+		params[i] = river.InsertManyParams{Args: DeliverWebhookArgs{
 			WorkspaceID: e.WorkspaceID,
 			EndpointID:  e.ID,
 			EventName:   eventName,
 			DeliveryID:  deliveryID,
 			Body:        body,
-		}, &river.InsertOpts{Queue: QueueWebhooks, MaxAttempts: webhook.HookMaxAttempts()}); err != nil {
-			return err
-		}
+		}}
+	}
+	if _, err := river.ClientFromContext[*sql.Tx](ctx).InsertMany(ctx, params); err != nil {
+		return err
 	}
 	return nil
 }
