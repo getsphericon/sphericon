@@ -1245,6 +1245,18 @@ at-least-once and carries no ordering guarantee across commits: the consumer ove
 deduplicates. Pull, the opposite direction from a Webhook endpoint, which pushes.
 _Avoid_: Sync, replication, feed, data export (that is one Contact's subject access bundle)
 
+**Reply handling**:
+An option of a Sending domain under which its emails carry a `Reply-To` and a `mailto:` unsubscribe
+on `reply.<domain>`, each with the Outbound message's token, so replies come back through the
+provider's inbound route. A reply with a valid token is recorded (`email.replied`,
+`email.auto_replied`) and forwarded to the **Reply mailbox**; mail without one is dropped.
+_Avoid_: Reply tracking, inbox, two-way email
+
+**Reply mailbox**:
+The team's address a Sending domain forwards replies to under **Reply handling**: each forward comes
+from the domain, in the person's name, with the person's address as its `Reply-To`.
+_Avoid_: Reply-To address, support inbox
+
 **Ingest hook** (inbound provider webhook):
 The inbound endpoint of one Integration that **receives** its provider's callbacks (delivery
 results, Inbound messages, Reachability changes), addressed by the Integration's ingest key and
@@ -1280,8 +1292,8 @@ at the level of the address.
 _Avoid_: Delivery failure (delivery and delay are not failures), Bounce event (it also covers complaints)
 
 **Inbound message**:
-What a person sent on a Channel, as one Preset parsed it: the Channel, the Destination it came
-from, the chat it came in where the Channel has one (a Telegram chat id), its text, the payload of
+What a person sent on a Channel, as one Preset parsed it (on email, through the provider's inbound
+route, under **Reply handling**): the Channel, the Destination it came from, the chat it came in where the Channel has one (a Telegram chat id), its text, the payload of
 a button they pressed, and the provider's ids of the message and of the event (the core
 deduplicates on the event id). sphericon reads it for what it means on
 its Channel (a `/start` with a token binds the chat, a STOP keyword opts out) and, from a known

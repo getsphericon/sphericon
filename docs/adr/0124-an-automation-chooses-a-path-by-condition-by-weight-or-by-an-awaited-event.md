@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation chooses a path by Condition, by weight or by an awaited Event
 
+> **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
+> exit on a reply is decided, as an option of the Automation version.
+
 > **Amended by [[0126-an-automation-starts-on-a-date-and-waits-until-a-local-time]]:** in a
 > date-triggered Automation a Split's hash also takes the anniversary year, so it draws again each
 > year.

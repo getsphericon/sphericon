@@ -4,6 +4,10 @@ status: accepted
 
 # Bulk-sender compliance: RFC 8058 one-click unsubscribe & DMARC readiness
 
+> **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
+> a `mailto:` is added under Reply handling, beside the https URI and in the same `h=` list: the
+> inbound mail it needs now exists.
+
 > **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** the
 > footer carries one link, to the Preference page, which replaces the confirmation page, the
 > `/unsubscribed` page and its `everything` link below. The one-click `POST` is unchanged.

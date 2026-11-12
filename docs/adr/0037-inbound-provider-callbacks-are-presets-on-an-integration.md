@@ -4,6 +4,10 @@ status: accepted
 
 # Inbound provider callbacks are Presets on an Integration
 
+> **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
+> email arrives through the provider's inbound route as a Preset on the Ingest hook; a bare MTA and
+> bounce reports by mail stay out.
+
 > **Amended by [[0076-presets-parse-inbound-and-the-core-reads-what-it-means]] and #962:** a
 > `transform` returns more than Delivery failures. The facts a Preset may emit are a closed set of
 > three kinds, each carrying the provider's event id: Delivery notices, an **Inbound message** (a message, or a

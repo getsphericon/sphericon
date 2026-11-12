@@ -4,6 +4,10 @@ status: accepted
 
 # Presets parse what comes in, and the core reads what it means
 
+> **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
+> an email Inbound message also carries the address it was sent to, its threading and auto-reply
+> headers, the provider's verdicts and the raw message to forward.
+
 > **Amended by #962:** a `/start` from a Destination with a Channel-wide opt-out lifts it (see
 > "An unknown sender creates nothing").
 >
