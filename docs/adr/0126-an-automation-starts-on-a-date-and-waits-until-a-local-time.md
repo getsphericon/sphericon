@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation starts on a date and waits until a local time
 
+> **Amended by [[0134-marketing-sms-waits-for-the-workspaces-sending-window-in-the-recipients-time]]:**
+> quiet hours for SMS are decided, as the Workspace's sending window in Outbound send.
+
 > **Amended by [[0127-an-automation-may-enroll-a-contact-again-one-enrollment-at-a-time]]:** repeat
 > Enrollment on Events is decided; a date Trigger keeps its occurrence key and has no entry policy.
 

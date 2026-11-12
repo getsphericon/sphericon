@@ -602,7 +602,8 @@ _Avoid_: Send log, delivery row, email record
 
 **Outcome** (of an Outbound send):
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (no Destination on the
-Channel, Suppression, Unsubscribe, or missing Confirmation), or a permanent failure of that one message
+Channel, Suppression, Unsubscribe, missing Confirmation, or no local time in which a marketing SMS
+may go), or a permanent failure of that one message
 (on Telegram, a message the Bot API refuses for its content; on SMS, a number the provider refuses,
 which fails that message alone and lets an Automation go on) — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
@@ -639,7 +640,10 @@ _Avoid_: Quota, plan limit, allowance, throttle, ceiling (unqualified)
 The reversible, per-source Outcome of an Outbound send that found its Integration's Provider
 limit or its Workspace's Send cap spent: the message is not consumed and is retried when capacity returns. Unlike a _Hold_,
 nothing is wrong with the source — it is simply busy — so it carries no hold reason and a
-Broadcast stays _sending_ with a progress estimate instead of a blocked state.
+Broadcast stays _sending_ with a progress estimate instead of a blocked state. One kind is per
+recipient: a marketing SMS outside the recipient's **Sending window** is deferred until the window
+opens, and an Automation's send step waits with it. A deferred message goes through every check
+again when it is retried.
 _Avoid_: Throttled, rate-limited (as an outcome), delay
 
 **Hold**:
@@ -1679,6 +1683,14 @@ time it was last computed. Read from a worker or cache, never a recount on read,
 sends still in flight. It is what lets a reader notice a limit being approached before the period
 closes; the Usage snapshot remains the only final figure.
 _Avoid_: Current usage, real-time usage
+
+**Sending window**:
+The hours and days of the week, in the recipient's local time, in which a Workspace's marketing SMS
+may go out (8:00 to 20:00 every day unless it changes it, with windows of its own for countries).
+It must be open in every zone that may be the recipient's: the Contact's time zone, if any, and the
+zones of the number's prefix. A message outside it is deferred; one for which no moment of the week
+is open is Skipped; Transactional sends and messages the person just asked for are outside it.
+_Avoid_: Quiet hours (the hours outside it), send window, DND
 
 **Staff hold**:
 A reversible Workspace state that **freezes all outbound sending** — all three send surfaces

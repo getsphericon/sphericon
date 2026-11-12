@@ -4,6 +4,10 @@ status: accepted
 
 # Outbound send: one module, one message record, two outcome scopes
 
+> **Amended by [[0134-marketing-sms-waits-for-the-workspaces-sending-window-in-the-recipients-time]]:**
+> a marketing SMS outside the recipient's sending window is a per-recipient Deferral, checked again
+> in full when it is retried.
+
 Every email sphericon sends **on a Workspace's behalf** — Broadcast, Automation step, Transactional,
 and a user's test send of a Broadcast — passes through **one module, Outbound send**, which
 owns everything between "this message is wanted" and "the
