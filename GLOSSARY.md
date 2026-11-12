@@ -188,12 +188,27 @@ and webhooks it is history and never a trigger.
 _Avoid_: Historical import, replay, silent event
 
 **Contact intake**:
-The **Import** of Contacts: each row upserts its Contact in a transaction of its own and, when it
-carries the evidence of SMS consent the phone gave outside sphericon, records the phone's imported
-**Confirmation** in that same transaction. The whole batch is one `contact.import` Audit entry. A row
+The **Import** of Contacts, through the API's batch upsert or a **CSV import**: each row upserts its
+Contact in a transaction of its own and, when it carries the evidence of SMS consent the phone gave
+outside sphericon, records the phone's imported **Confirmation** in that same transaction; a CSV
+import may also record the old platform's opt-outs and Suppressions. The whole batch is one `contact.import` Audit entry. A row
 that brings an email address new to the Workspace at a domain that cannot receive mail is refused;
 a disposable or role address is stored with a warning (ADR 0117).
 _Avoid_: Sync, bulk create
+
+**CSV import**:
+A Contact intake from a file a Member holding `contacts:import` uploads in the app: its columns
+mapped to keys, attributes, Custom fields, Tags and refusal columns (the old platform's opt-outs and
+bounces, by the cell values the Member lists), previewed with the opt-outs it would record, then run
+as a job whose refused rows can be downloaded for a week; the file is deleted when it ends. Like a
+Backfill it starts nothing (no Automation, Rule, exit, wait or Webhook) unless the Member asks it to.
+_Avoid_: Upload, bulk create, migration
+
+**CSV export**:
+A streamed download of a Segment's Contacts, or all, with the columns a Member chooses, each
+Channel's state (may receive, opted out, suppressed) among them, so a Workspace that leaves takes its
+refusals with it. Distinct from a Data export (one Contact) and Export streams (a warehouse).
+_Avoid_: Backup, dump
 
 **Erasure**:
 Removing a Contact's personal data at the Workspace's request (GDPR Art. 17). It is what deleting
@@ -223,7 +238,7 @@ bulk retention policy, a separate concern)
 A machine-readable bundle of everything held about one Contact (GDPR Art. 15/20): the Contact,
 its attributes, Tags, Visitors, Events, opt-outs and delivery metadata — not rendered message
 bodies.
-_Avoid_: Backup, dump, contact export (that is the bulk list export)
+_Avoid_: Backup, dump, contact export (that is the **CSV export**)
 
 **Retention**:
 How long an Event is kept before it is deleted. Events split by purpose: **evidentiary** Events

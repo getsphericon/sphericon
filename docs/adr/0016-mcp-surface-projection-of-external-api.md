@@ -4,6 +4,10 @@ status: accepted
 
 # MCP surface: a projection of the external `/api`, not a second implementation
 
+> **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:**
+> the bulk CSV export of Contacts is in the app only; a Connection's `contacts:export` reaches the
+> one-Contact export.
+
 > **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
 > a Broadcast series' Publish and the cancelling of one of its occurrences are send-class.
 

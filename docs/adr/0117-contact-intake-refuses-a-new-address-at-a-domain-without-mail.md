@@ -4,6 +4,9 @@ status: accepted
 
 # Contact intake refuses a new address at a domain without mail
 
+> **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:**
+> a CSV import's preview runs the address check on its sample rows only; the run checks every row.
+
 A list brought from an earlier system is the one way unchecked addresses enter an audience in bulk:
 a form's address is proven by its Confirmation, an address typed by a member is one at a time. So
 the Contact intake (`POST /contacts/batch`, ADR 0022) checks each row's email address before the

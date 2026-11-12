@@ -4,6 +4,10 @@ status: accepted
 
 # What an injected agent could do is bounded by origin marks, an egress lock and review
 
+> **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:**
+> a CSV import's Events carry an import cause that, like a Backfill, starts nothing and reaches no
+> Webhook endpoint unless the Member asks.
+
 > **Amended by [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]:**
 > an Event written through a Connection without `mcp:send` satisfies no Wait for event either.
 

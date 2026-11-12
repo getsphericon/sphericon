@@ -4,6 +4,10 @@ status: accepted
 
 # Consent on the new Channels
 
+> **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:**
+> a CSV import takes the same consent columns as the batch upsert, and may record the old
+> platform's opt-outs and Suppressions.
+
 > **Amended by #962:** on Telegram any `/start`, bare or with a Start token, lifts the Channel-wide
 > opt-out (see "A reversal made in the Channel lifts it").
 >
