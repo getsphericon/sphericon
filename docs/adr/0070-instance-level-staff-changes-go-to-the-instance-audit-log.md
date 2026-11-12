@@ -44,8 +44,10 @@ settings. Each entry says:
   and the Instance page shows it.
 - **The place for later Instance-level Staff changes.** The default Send cap is the first action.
   A later Staff change of an Instance setting names its action in `internal/instanceaudit` and
-  records it the same way. The Telemetry report switch and Sign-up item publishing are not moved in
-  this change.
+  records it the same way. The Sign-up items record theirs here too (ADR 0062): an item added,
+  changed, deleted or reordered, and a version of its Legal document published, each entry naming
+  the item by its key; a draft save is not a decision and records nothing. The Telemetry report
+  switch is not moved yet.
 
 ## Considered options
 

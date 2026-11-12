@@ -35,12 +35,19 @@ export type EntityId = string;
 export type ImageUrl = string;
 
 /**
- * What an entry of the Instance audit log says was changed, as `instance.<what>_change`
+ * What an entry of the Instance audit log says was changed, as `instance.<what>_<verb>`
  */
-export const InstanceAuditAction = { INSTANCE_DEFAULT_SEND_CAP_CHANGE: 'instance.default_send_cap_change' } as const;
+export const InstanceAuditAction = {
+  INSTANCE_DEFAULT_SEND_CAP_CHANGE: 'instance.default_send_cap_change',
+  INSTANCE_SIGNUP_ITEM_ADD: 'instance.signup_item_add',
+  INSTANCE_SIGNUP_ITEM_CHANGE: 'instance.signup_item_change',
+  INSTANCE_SIGNUP_ITEM_DELETE: 'instance.signup_item_delete',
+  INSTANCE_SIGNUP_ITEMS_REORDER: 'instance.signup_items_reorder',
+  INSTANCE_LEGAL_DOCUMENT_PUBLISH: 'instance.legal_document_publish'
+} as const;
 
 /**
- * What an entry of the Instance audit log says was changed, as `instance.<what>_change`
+ * What an entry of the Instance audit log says was changed, as `instance.<what>_<verb>`
  */
 export type InstanceAuditAction = typeof InstanceAuditAction[keyof typeof InstanceAuditAction];
 

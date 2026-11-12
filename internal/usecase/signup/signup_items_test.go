@@ -5,7 +5,6 @@ import (
 	"maps"
 	"slices"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -13,9 +12,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
@@ -111,7 +110,7 @@ func TestTheAnswersToADeletedItemStay(t *testing.T) {
 	_, err := r.signUpAnswering(t, "grace@example.com", termsAccepted, newsUnticked)
 	require.NoError(t, err)
 
-	err = signupitems.New(r.db, r.env.Bus, time.Now).Delete(t.Context(), fixtures.OperatorNewsID)
+	err = testhelper.SignupItems(r.db, r.env.Bus).Delete(t.Context(), fixtures.StaffEnrolledID, fixtures.OperatorNewsID)
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{termsAcceptedRecord, newsDeclinedRecord, noticeShownRecord}, r.decided(t, "grace@example.com"))

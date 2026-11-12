@@ -43,18 +43,28 @@ type EmailAddress string
 
 type EntityId int64
 
-// What an entry of the Instance audit log says was changed, as `instance.<what>_change`.
+// What an entry of the Instance audit log says was changed, as `instance.<what>_<verb>`.
 // Ref: #/components/schemas/InstanceAuditAction
 type InstanceAuditAction string
 
 const (
 	InstanceAuditActionInstanceDefaultSendCapChange InstanceAuditAction = "instance.default_send_cap_change"
+	InstanceAuditActionInstanceSignupItemAdd        InstanceAuditAction = "instance.signup_item_add"
+	InstanceAuditActionInstanceSignupItemChange     InstanceAuditAction = "instance.signup_item_change"
+	InstanceAuditActionInstanceSignupItemDelete     InstanceAuditAction = "instance.signup_item_delete"
+	InstanceAuditActionInstanceSignupItemsReorder   InstanceAuditAction = "instance.signup_items_reorder"
+	InstanceAuditActionInstanceLegalDocumentPublish InstanceAuditAction = "instance.legal_document_publish"
 )
 
 // AllValues returns all InstanceAuditAction values.
 func (InstanceAuditAction) AllValues() []InstanceAuditAction {
 	return []InstanceAuditAction{
 		InstanceAuditActionInstanceDefaultSendCapChange,
+		InstanceAuditActionInstanceSignupItemAdd,
+		InstanceAuditActionInstanceSignupItemChange,
+		InstanceAuditActionInstanceSignupItemDelete,
+		InstanceAuditActionInstanceSignupItemsReorder,
+		InstanceAuditActionInstanceLegalDocumentPublish,
 	}
 }
 
@@ -62,6 +72,16 @@ func (InstanceAuditAction) AllValues() []InstanceAuditAction {
 func (s InstanceAuditAction) MarshalText() ([]byte, error) {
 	switch s {
 	case InstanceAuditActionInstanceDefaultSendCapChange:
+		return []byte(s), nil
+	case InstanceAuditActionInstanceSignupItemAdd:
+		return []byte(s), nil
+	case InstanceAuditActionInstanceSignupItemChange:
+		return []byte(s), nil
+	case InstanceAuditActionInstanceSignupItemDelete:
+		return []byte(s), nil
+	case InstanceAuditActionInstanceSignupItemsReorder:
+		return []byte(s), nil
+	case InstanceAuditActionInstanceLegalDocumentPublish:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -73,6 +93,21 @@ func (s *InstanceAuditAction) UnmarshalText(data []byte) error {
 	switch InstanceAuditAction(data) {
 	case InstanceAuditActionInstanceDefaultSendCapChange:
 		*s = InstanceAuditActionInstanceDefaultSendCapChange
+		return nil
+	case InstanceAuditActionInstanceSignupItemAdd:
+		*s = InstanceAuditActionInstanceSignupItemAdd
+		return nil
+	case InstanceAuditActionInstanceSignupItemChange:
+		*s = InstanceAuditActionInstanceSignupItemChange
+		return nil
+	case InstanceAuditActionInstanceSignupItemDelete:
+		*s = InstanceAuditActionInstanceSignupItemDelete
+		return nil
+	case InstanceAuditActionInstanceSignupItemsReorder:
+		*s = InstanceAuditActionInstanceSignupItemsReorder
+		return nil
+	case InstanceAuditActionInstanceLegalDocumentPublish:
+		*s = InstanceAuditActionInstanceLegalDocumentPublish
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

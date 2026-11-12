@@ -31,9 +31,16 @@ export const zEntityId = z.string().regex(/^[0-9]+$/);
 export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
 
 /**
- * What an entry of the Instance audit log says was changed, as `instance.<what>_change`
+ * What an entry of the Instance audit log says was changed, as `instance.<what>_<verb>`
  */
-export const zInstanceAuditAction = z.enum(['instance.default_send_cap_change']);
+export const zInstanceAuditAction = z.enum([
+  'instance.default_send_cap_change',
+  'instance.signup_item_add',
+  'instance.signup_item_change',
+  'instance.signup_item_delete',
+  'instance.signup_items_reorder',
+  'instance.legal_document_publish'
+]);
 
 /**
  * A JSON object whose members the contract leaves open: custom field values, event properties,

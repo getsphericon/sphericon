@@ -69,10 +69,25 @@ model StaffDefaultSendCapChange {
   defaultSendCap: StaffDefaultSendCap;
 }
 
-/** What an entry of the Instance audit log says was changed, as `instance.<what>_change` */
+/** What an entry of the Instance audit log says was changed, as `instance.<what>_<verb>` */
 enum InstanceAuditAction {
   /** Changed the default Send cap of new workspaces */
   defaultSendCapChange: "instance.default_send_cap_change",
+
+  /** Added a Sign-up item */
+  signupItemAdd: "instance.signup_item_add",
+
+  /** Changed a Sign-up item's title or mailings consent */
+  signupItemChange: "instance.signup_item_change",
+
+  /** Deleted a Sign-up item */
+  signupItemDelete: "instance.signup_item_delete",
+
+  /** Reordered the Sign-up items */
+  signupItemsReorder: "instance.signup_items_reorder",
+
+  /** Published a version of a Sign-up item's Legal document */
+  legalDocumentPublish: "instance.legal_document_publish",
 }
 
 /** One entry of the Instance audit log (ADR 0070): a Staff member changed a setting of the

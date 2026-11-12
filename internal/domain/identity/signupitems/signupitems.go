@@ -15,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -123,20 +124,52 @@ type Input struct {
 
 // Module is the Instance's Sign-up items.
 type Module struct {
-	ent *ent.Client
-	bus *events.Bus
-	now func() time.Time
+	ent    *ent.Client
+	bus    *events.Bus
+	now    func() time.Time
+	record AuditRecorder
 }
+
+// AuditRecorder writes one entry of the Instance audit log (ADR 0070) on tx, the transaction of the
+// change: the Staff member staffID made the change action, with diff its fields' old and new values.
+// The log is a module of the Instance context, above this one, so the wiring hands its Record in.
+type AuditRecorder func(ctx context.Context, tx *ent.Client, staffID int64, action string, diff map[string]any) error
+
+// The changes of the Sign-up items the Instance audit log records (ADR 0062, ADR 0070). Each diff
+// names the item by its key: {to: key} for an added item, {from: key} for a deleted one, and
+// {from: key, to: key} for one that stays, beside the fields that changed.
+const (
+	// ActionAdd records a new Sign-up item: its key, title, kind and mailings consent.
+	ActionAdd = "instance.signup_item_add"
+	// ActionChange records a change of an item's title or mailings consent.
+	ActionChange = "instance.signup_item_change"
+	// ActionDelete records a deleted item.
+	ActionDelete = "instance.signup_item_delete"
+	// ActionReorder records a new order of the items, as their keys (DiffOrder).
+	ActionReorder = "instance.signup_items_reorder"
+	// ActionPublish records a published version of an item's Legal document (DiffVersion, its
+	// label); the text is the version's own, never copied into the entry.
+	ActionPublish = "instance.legal_document_publish"
+)
+
+// AuditActions is every action of the module, which the Instance audit log declares as its own.
+var AuditActions = []string{ActionAdd, ActionChange, ActionDelete, ActionReorder, ActionPublish}
+
+// The diff keys of the entries that no column holds: the items' order and a version's label.
+const (
+	DiffOrder   = "order"
+	DiffVersion = "version"
+)
 
 // New builds the module over the raw client and the bus, whose transaction carries a change of
 // several rows (a new order) and the mailings consent mark (it changes what the service feed of
 // Users reports, internal/domain/identity/usertombstones); now is the Instance clock of publishing and
-// deleting, which is required.
-func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
-	if now == nil {
-		panic("signupitems: the module needs the Instance clock")
+// deleting, and record writes each change to the Instance audit log. Both are required.
+func New(client *ent.Client, bus *events.Bus, now func() time.Time, record AuditRecorder) *Module {
+	if now == nil || record == nil {
+		panic("signupitems: the module needs the Instance clock and the Instance audit log")
 	}
-	return &Module{ent: client, bus: bus, now: now}
+	return &Module{ent: client, bus: bus, now: now, record: record}
 }
 
 // List is every Sign-up item that is not deleted, in the order of the sign-up form.
@@ -195,7 +228,7 @@ func lockItems(ctx context.Context, tx *ent.Client) error {
 // Add makes a Sign-up item after the existing ones. ErrKeyTaken when another item has the key,
 // ErrTitleBlank for a blank title, ErrMailingsKind and ErrMailingsTaken for a mailings consent the
 // item cannot hold. A lost race answers as the refusal it lost to.
-func (m *Module) Add(ctx context.Context, in Input) (Item, error) {
+func (m *Module) Add(ctx context.Context, staffID int64, in Input) (Item, error) {
 	title, err := checkedTitle(in.Title)
 	if err != nil {
 		return Item{}, err
@@ -219,7 +252,7 @@ func (m *Module) Add(ctx context.Context, in Input) (Item, error) {
 		case !ent.IsNotFound(err):
 			return err
 		}
-		return constraints.Write(ctx, tx, func() error {
+		err = constraints.Write(ctx, tx, func() error {
 			row, err = tx.SignupItem.Create().
 				SetKey(in.Key).
 				SetTitle(title).
@@ -228,6 +261,15 @@ func (m *Module) Add(ctx context.Context, in Input) (Item, error) {
 				SetMailingsConsent(in.MailingsConsent).
 				Save(ctx)
 			return err
+		})
+		if err != nil {
+			return err
+		}
+		return m.record(ctx, tx, staffID, ActionAdd, map[string]any{
+			signupitem.FieldKey:             events.Became(row.Key),
+			signupitem.FieldTitle:           events.Became(row.Title),
+			signupitem.FieldKind:            events.Became(string(row.Kind)),
+			signupitem.FieldMailingsConsent: events.Became(row.MailingsConsent),
 		})
 	})
 	if err != nil {
@@ -357,9 +399,10 @@ type UpdateInput struct {
 	MailingsConsent *bool
 }
 
-// Update changes a Sign-up item. ErrNotFound for an unknown or a deleted id, ErrTitleBlank for a
-// blank title, ErrMailingsKind and ErrMailingsTaken for a mailings consent the item cannot hold.
-func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, error) {
+// Update changes a Sign-up item, recorded in the Instance audit log as the Staff member staffID's
+// unless it changes nothing. ErrNotFound for an unknown or a deleted id, ErrTitleBlank for a blank
+// title, ErrMailingsKind and ErrMailingsTaken for a mailings consent the item cannot hold.
+func (m *Module) Update(ctx context.Context, staffID, id int64, u UpdateInput) (Item, error) {
 	row, err := m.inUse(ctx, id)
 	if err != nil {
 		return Item{}, err
@@ -378,21 +421,38 @@ func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, err
 		}
 	}
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		if err := lockItems(ctx, tx); err != nil {
+			return err
+		}
 		// An item deleted in between is not changed.
-		var changed int
-		err := constraints.Write(ctx, tx, func() error {
-			var uerr error
-			changed, uerr = tx.SignupItem.Update().
-				Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).
-				SetNillableTitle(title).
-				SetNillableMailingsConsent(u.MailingsConsent).
-				Save(ctx)
-			return uerr
-		})
-		if err == nil && changed == 0 {
+		was, err := tx.SignupItem.Query().Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).Only(ctx)
+		if ent.IsNotFound(err) {
 			return ErrNotFound
 		}
-		return err
+		if err != nil {
+			return err
+		}
+		err = constraints.Write(ctx, tx, func() error {
+			return tx.SignupItem.UpdateOneID(id).
+				SetNillableTitle(title).
+				SetNillableMailingsConsent(u.MailingsConsent).
+				Exec(ctx)
+		})
+		if err != nil {
+			return err
+		}
+		diff := map[string]any{}
+		if entry, changed := events.ChangeOf(&was.Title, lo.CoalesceOrEmpty(title, &was.Title)); changed {
+			diff[signupitem.FieldTitle] = entry
+		}
+		if entry, changed := events.ChangeOf(&was.MailingsConsent, lo.CoalesceOrEmpty(u.MailingsConsent, &was.MailingsConsent)); changed {
+			diff[signupitem.FieldMailingsConsent] = entry
+		}
+		if len(diff) == 0 {
+			return nil
+		}
+		diff[signupitem.FieldKey] = events.Change(was.Key, was.Key)
+		return m.record(ctx, tx, staffID, ActionChange, diff)
 	})
 	if err != nil {
 		return Item{}, err
@@ -403,8 +463,9 @@ func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, err
 // Delete discards the item: it leaves the sign-up form, its public page and the list, and is never
 // restored; its published versions, and the answers Users gave to them, stay. Deleting a deleted
 // item keeps the moment it was first deleted. ErrNotFound for an unknown id, ErrDeleteMailings for
-// the item that stands for consent to the operator's mailings.
-func (m *Module) Delete(ctx context.Context, id int64) error {
+// the item that stands for consent to the operator's mailings. A delete that moves the item is
+// recorded in the Instance audit log as the Staff member staffID's.
+func (m *Module) Delete(ctx context.Context, staffID, id int64) error {
 	row, err := m.ent.SignupItem.Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return ErrNotFound
@@ -417,12 +478,21 @@ func (m *Module) Delete(ctx context.Context, id int64) error {
 	}
 	// Only an item in use moves: a second delete leaves the first moment, and an item marked as the
 	// mailings consent in between is not deleted.
-	err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
-		moved, err := m.ent.SignupItem.Update().
-			Where(signupitem.ID(id), signupitem.DiscardedAtIsNil(), signupitem.MailingsConsent(false)).
-			SetDiscardedAt(m.now()).
-			Save(ctx)
-		return moved > 0, err
+	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		if err := lockItems(ctx, tx); err != nil {
+			return err
+		}
+		if err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+			moved, err := tx.SignupItem.Update().
+				Where(signupitem.ID(id), signupitem.DiscardedAtIsNil(), signupitem.MailingsConsent(false)).
+				SetDiscardedAt(m.now()).
+				Save(ctx)
+			return moved > 0, err
+		}); err != nil {
+			return err
+		}
+		return m.record(ctx, tx, staffID, ActionDelete,
+			map[string]any{signupitem.FieldKey: map[string]any{events.DiffFrom: row.Key}})
 	})
 	if !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return err
@@ -446,15 +516,40 @@ func (m *Module) inUse(ctx context.Context, id int64) (*ent.SignupItem, error) {
 
 // Reorder puts the items in the order of ids, the order the sign-up form asks them in. ErrOrder
 // unless ids is the id of every item that is not deleted exactly once; a deleted item keeps its
-// place, which nothing reads.
-func (m *Module) Reorder(ctx context.Context, ids []int64) ([]Item, error) {
+// place, which nothing reads. A new order is recorded in the Instance audit log as the Staff member
+// staffID's; the same order records nothing.
+func (m *Module) Reorder(ctx context.Context, staffID int64, ids []int64) ([]Item, error) {
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return reorder(ctx, tx, ids)
+		if err := lockItems(ctx, tx); err != nil {
+			return err
+		}
+		before, err := orderOf(ctx, tx)
+		if err != nil {
+			return err
+		}
+		if err := reorder(ctx, tx, ids); err != nil {
+			return err
+		}
+		after, err := orderOf(ctx, tx)
+		if err != nil || slices.Equal(before, after) {
+			return err
+		}
+		return m.record(ctx, tx, staffID, ActionReorder,
+			map[string]any{DiffOrder: events.Change(before, after)})
 	})
 	if err != nil {
 		return nil, err
 	}
 	return m.List(ctx)
+}
+
+// orderOf is the keys of the items in use, in the order of the sign-up form, read in tx.
+func orderOf(ctx context.Context, tx *ent.Client) ([]string, error) {
+	return tx.SignupItem.Query().
+		Where(signupitem.DiscardedAtIsNil()).
+		Order(ent.Asc(signupitem.FieldPosition), ent.Asc(signupitem.FieldID)).
+		Select(signupitem.FieldKey).
+		Strings(ctx)
 }
 
 // reorder writes the positions of ids in the transaction tx, under LockKey, once it has checked
@@ -533,7 +628,7 @@ func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item
 // Publish makes the item's draft a new version under label, published by the Staff member
 // staffID now: it takes effect at once and is never changed afterwards. ErrNotFound for an
 // unknown or a deleted id, ErrNoDraft for an item without a draft, ErrLabelTaken for a label the
-// item has.
+// item has. It is recorded in the Instance audit log too, beside the version's own publisher.
 func (m *Module) Publish(ctx context.Context, id int64, label string, staffID int64) (Item, error) {
 	if err := validation.Length(fieldname.Label, label, bounds.LegalDocumentLabelMinLength, bounds.LegalDocumentLabelMaxLength); err != nil {
 		return Item{}, err
@@ -549,7 +644,7 @@ func (m *Module) Publish(ctx context.Context, id int64, label string, staffID in
 		return Item{}, ErrNoDraft
 	}
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return constraints.Write(ctx, tx, func() error {
+		err := constraints.Write(ctx, tx, func() error {
 			return tx.LegalDocumentVersion.Create().
 				SetItemID(id).
 				SetLabel(label).
@@ -557,6 +652,13 @@ func (m *Module) Publish(ctx context.Context, id int64, label string, staffID in
 				SetPublishedAt(m.now()).
 				SetPublishedByID(staffID).
 				Exec(ctx)
+		})
+		if err != nil {
+			return err
+		}
+		return m.record(ctx, tx, staffID, ActionPublish, map[string]any{
+			signupitem.FieldKey: events.Change(row.Key, row.Key),
+			DiffVersion:         events.Became(label),
 		})
 	})
 	if err != nil {

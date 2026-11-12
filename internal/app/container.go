@@ -70,6 +70,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instanceauditentries"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -403,7 +404,7 @@ var staffPackage = do.Package(
 	}),
 	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
 	do.Lazy(func(i do.Injector) (*signupitems.Module, error) {
-		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), instanceauditentries.Record), nil
 	}),
 	// The Users' Consent records on those items (ADR 0062).
 	do.Lazy(func(i do.Injector) (*consentrecords.Module, error) {

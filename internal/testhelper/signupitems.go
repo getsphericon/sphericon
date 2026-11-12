@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/domain/instance/instanceauditentries"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
@@ -23,5 +25,11 @@ func (env *TestEnv) PutSignupItemsInEffect(ctx context.Context, ids ...int64) {
 // ConsentRecords is the Consent records module over a client of a test's own database (one from
 // RealDB), for a test that builds a module needing it outside Setup.
 func ConsentRecords(client *ent.Client, bus *events.Bus) *consentrecords.Module {
-	return consentrecords.New(client, bus, signupitems.New(client, bus, time.Now))
+	return consentrecords.New(client, bus, SignupItems(client, bus))
+}
+
+// SignupItems is the Sign-up items module over a client and a bus of a test, recording its changes
+// in the Instance audit log as the wiring does.
+func SignupItems(client *ent.Client, bus *events.Bus) *signupitems.Module {
+	return signupitems.New(client, bus, time.Now, instanceauditentries.Record)
 }
