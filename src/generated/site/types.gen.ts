@@ -2249,6 +2249,10 @@ export type SiteAuditRetention = {
    * Entries older than this many days are pruned; null keeps them forever
    */
   retentionDays: RetentionDays | null;
+  /**
+   * The Workspace's revision (ADR 0119): what a read answers and a change names, the one it was read with
+   */
+  revision: Revision;
 };
 
 /**
@@ -3976,6 +3980,10 @@ export type SiteDomainJoinResource = {
    * becomes a member. Off by default.
    */
   enabled: boolean;
+  /**
+   * The Workspace's revision this answer shows (ADR 0119): a change of the switch names it
+   */
+  revision: Revision;
 };
 
 /**
@@ -5392,6 +5400,10 @@ export type SiteRevenueSettingsResource = {
    * arrive afterwards.
    */
   attributionWindowDays: AttributionWindowDays;
+  /**
+   * The Workspace's revision this answer shows (ADR 0119): a change of the revenue settings names it
+   */
+  revision: Revision;
 };
 
 /**
@@ -5960,6 +5972,10 @@ export type SiteSesConfig = {
  * Switch domain join on or off
  */
 export type SiteSetDomainJoinInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * Whether to admit Users by Join domain from now on
    */
@@ -6736,6 +6752,10 @@ export type SiteUpdateMembershipInput = {
  */
 export type SiteUpdateRevenueSettingsInput = {
   /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
    * The Reporting currency, an ISO 4217 code
    */
   reportingCurrency?: CurrencyCode;
@@ -6794,6 +6814,10 @@ export type SiteUpdateTokenInput = {
  * Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change.
  */
 export type SiteUpdateWorkspaceInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * New display name
    */
@@ -7157,12 +7181,20 @@ export type SiteWorkspaceResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+  /**
+   * The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. Its bookkeeping (the service feed's position, the abuse detector's notices, the Setup checklist's completion) does not move it
+   */
+  revision: Revision;
 };
 
 /**
  * Set the Workspace time zone
  */
 export type SiteWorkspaceTimezoneInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid
    */
@@ -9939,6 +9971,38 @@ export type SiteWorkspacesRestoreResponses = {
 };
 
 export type SiteWorkspacesRestoreResponse = SiteWorkspacesRestoreResponses[keyof SiteWorkspacesRestoreResponses];
+
+export type SiteWorkspacesGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}';
+};
+
+export type SiteWorkspacesGetErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesGetError = SiteWorkspacesGetErrors[keyof SiteWorkspacesGetErrors];
+
+export type SiteWorkspacesGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesGetResponse = SiteWorkspacesGetResponses[keyof SiteWorkspacesGetResponses];
 
 export type SiteWorkspacesUpdateData = {
   body: SiteUpdateWorkspaceInput;
@@ -14293,7 +14357,7 @@ export type SiteWorkspacesLiftSecondFactorRequirementResponses = {
 export type SiteWorkspacesLiftSecondFactorRequirementResponse = SiteWorkspacesLiftSecondFactorRequirementResponses[keyof SiteWorkspacesLiftSecondFactorRequirementResponses];
 
 export type SiteWorkspacesRequireSecondFactorData = {
-  body?: never;
+  body: RevisionInput;
   path: {
     workspaceId: WorkspaceId;
   };

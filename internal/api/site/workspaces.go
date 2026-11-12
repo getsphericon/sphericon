@@ -99,8 +99,10 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, _ siteapi.Site
 
 // SiteWorkspacesRequireSecondFactor switches the Workspace's Two-factor requirement on (Permission
 // second_factor:manage).
-func (h *Handlers) SiteWorkspacesRequireSecondFactor(ctx context.Context, _ siteapi.SiteWorkspacesRequireSecondFactorParams) (*siteapi.SiteWorkspaceResource, error) {
-	r, err := h.switchSecondFactorRequirement(ctx, true)
+func (h *Handlers) SiteWorkspacesRequireSecondFactor(ctx context.Context, req *siteapi.RevisionInput, _ siteapi.SiteWorkspacesRequireSecondFactorParams) (*siteapi.SiteWorkspaceResource, error) {
+	in := inputs.SecondFactorRequire(req)
+	in.Required = true
+	r, err := h.switchSecondFactorRequirement(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +114,9 @@ func (h *Handlers) SiteWorkspacesRequireSecondFactor(ctx context.Context, _ site
 // may still perform in the Workspace, as the contract declares, so an Owner or Admin without a
 // Second factor is never locked out of lifting it.
 func (h *Handlers) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, _ siteapi.SiteWorkspacesLiftSecondFactorRequirementParams) (*siteapi.SiteWorkspaceResource, error) {
-	r, err := h.switchSecondFactorRequirement(ctx, false)
+	// Lifting it takes nothing from a request and names no revision: the zero input.
+	var lift workspaceview.SetSecondFactorRequirementInput
+	r, err := h.switchSecondFactorRequirement(ctx, lift)
 	if err != nil {
 		return nil, err
 	}
@@ -121,13 +125,24 @@ func (h *Handlers) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context
 
 // switchSecondFactorRequirement switches the requirement of the Workspace the operation addresses
 // on or off and answers its Workspace as the caller now sees it. Switching it on tells the Users
-// without a Second factor (workspaces.Module.SetSecondFactorRequirement publishes it).
-func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required bool) (siteapi.SiteWorkspaceResource, error) {
-	v, err := h.workspaceView.SetSecondFactorRequirement(ctx, workspaceScope(ctx), h.viewCaller(ctx), required)
+// without a Second factor (workspaces.Module.SetSecondFactorRequirement publishes it). Switching it
+// on names the revision it was made on; lifting it names none.
+func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, in workspaceview.SetSecondFactorRequirementInput) (siteapi.SiteWorkspaceResource, error) {
+	v, err := h.workspaceView.SetSecondFactorRequirement(ctx, workspaceScope(ctx), h.viewCaller(ctx), in)
 	if err != nil {
 		return siteapi.SiteWorkspaceResource{}, err
 	}
 	return h.workspaceResource(v), nil
+}
+
+// SiteWorkspacesGet answers one Workspace of the caller's, as the list answers each.
+func (h *Handlers) SiteWorkspacesGet(ctx context.Context, _ siteapi.SiteWorkspacesGetParams) (*siteapi.SiteWorkspaceResource, error) {
+	v, err := h.workspaceView.One(ctx, workspaceScope(ctx), h.viewCaller(ctx))
+	if err != nil {
+		return nil, err
+	}
+	resource := h.workspaceResource(v)
+	return &resource, nil
 }
 
 // SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
@@ -142,7 +157,7 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 
 // SiteWorkspacesSetTimezone sets the Workspace time zone (Permission workspace:timezone, ADR 0057).
 func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, _ siteapi.SiteWorkspacesSetTimezoneParams) (*siteapi.SiteWorkspaceResource, error) {
-	v, err := h.workspaceView.SetTimezone(ctx, workspaceScope(ctx), h.viewCaller(ctx), string(req.Timezone))
+	v, err := h.workspaceView.SetTimezone(ctx, workspaceScope(ctx), h.viewCaller(ctx), inputs.TimezoneSet(req))
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +254,7 @@ func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req 
 		n := int(d)
 		days = &n
 	}
-	w, err := h.workspaces.SetRevenueSettings(ctx, s, h.actor(ctx), code, days)
+	w, err := h.workspaces.SetRevenueSettings(ctx, s, h.actor(ctx), int64(req.Revision), code, days)
 	if err != nil {
 		return nil, err
 	}

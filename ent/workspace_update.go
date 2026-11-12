@@ -98,6 +98,27 @@ func (_u *WorkspaceUpdate) ClearDiscardedAt() *WorkspaceUpdate {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *WorkspaceUpdate) SetRevision(v int64) *WorkspaceUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableRevision(v *int64) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *WorkspaceUpdate) AddRevision(v int64) *WorkspaceUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *WorkspaceUpdate) SetName(v string) *WorkspaceUpdate {
 	_u.mutation.SetName(v)
@@ -2115,6 +2136,11 @@ func (_u *WorkspaceUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *WorkspaceUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := workspace.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Workspace.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.CollectKey(); ok {
 		if err := workspace.CollectKeyValidator(v); err != nil {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
@@ -2179,6 +2205,12 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.DiscardedAtCleared() {
 		_spec.ClearField(workspace.FieldDiscardedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(workspace.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(workspace.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
@@ -4286,6 +4318,27 @@ func (_u *WorkspaceUpdateOne) ClearDiscardedAt() *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *WorkspaceUpdateOne) SetRevision(v int64) *WorkspaceUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableRevision(v *int64) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *WorkspaceUpdateOne) AddRevision(v int64) *WorkspaceUpdateOne {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *WorkspaceUpdateOne) SetName(v string) *WorkspaceUpdateOne {
 	_u.mutation.SetName(v)
@@ -6316,6 +6369,11 @@ func (_u *WorkspaceUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *WorkspaceUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := workspace.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Workspace.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.CollectKey(); ok {
 		if err := workspace.CollectKeyValidator(v); err != nil {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
@@ -6397,6 +6455,12 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.DiscardedAtCleared() {
 		_spec.ClearField(workspace.FieldDiscardedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(workspace.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(workspace.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)

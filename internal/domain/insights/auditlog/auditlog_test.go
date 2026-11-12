@@ -29,7 +29,7 @@ func TestTheAuditLogOfAnInstanceWithoutItsLicenseIsRefused(t *testing.T) {
 	require.ErrorIs(t, err, auditlog.ErrUnlicensed)
 	_, err = log.Retention(t.Context(), s)
 	require.ErrorIs(t, err, auditlog.ErrRetentionUnlicensed)
-	err = log.SetRetention(t.Context(), s, new(30))
+	_, err = log.SetRetention(t.Context(), s, 1, new(30))
 	require.ErrorIs(t, err, auditlog.ErrRetentionUnlicensed)
 	assert.Nil(t, env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).RetentionDays, "the window stays unset")
 }

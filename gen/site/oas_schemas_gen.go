@@ -11711,6 +11711,9 @@ func (s *SiteAuditFacets) SetTargetTypes(val []string) {
 type SiteAuditRetention struct {
 	// Entries older than this many days are pruned; null keeps them forever.
 	RetentionDays NilRetentionDays `json:"retentionDays"`
+	// The Workspace's revision (ADR 0119): what a read answers and a change names, the one it was read
+	// with.
+	Revision Revision `json:"revision"`
 }
 
 // GetRetentionDays returns the value of RetentionDays.
@@ -11718,9 +11721,19 @@ func (s *SiteAuditRetention) GetRetentionDays() NilRetentionDays {
 	return s.RetentionDays
 }
 
+// GetRevision returns the value of Revision.
+func (s *SiteAuditRetention) GetRevision() Revision {
+	return s.Revision
+}
+
 // SetRetentionDays sets the value of RetentionDays.
 func (s *SiteAuditRetention) SetRetentionDays(val NilRetentionDays) {
 	s.RetentionDays = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteAuditRetention) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // What an audited change was done to.
@@ -17303,6 +17316,8 @@ type SiteDomainJoinResource struct {
 	// On: a User who proves an address on one of the Workspace's verified Join domains becomes a member.
 	// Off by default.
 	Enabled bool `json:"enabled"`
+	// The Workspace's revision this answer shows (ADR 0119): a change of the switch names it.
+	Revision Revision `json:"revision"`
 }
 
 // GetEnabled returns the value of Enabled.
@@ -17310,9 +17325,19 @@ func (s *SiteDomainJoinResource) GetEnabled() bool {
 	return s.Enabled
 }
 
+// GetRevision returns the value of Revision.
+func (s *SiteDomainJoinResource) GetRevision() Revision {
+	return s.Revision
+}
+
 // SetEnabled sets the value of Enabled.
 func (s *SiteDomainJoinResource) SetEnabled(val bool) {
 	s.Enabled = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteDomainJoinResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // Request body for rendering an HTTP step's body for a Contact.
@@ -21874,6 +21899,8 @@ type SiteRevenueSettingsResource struct {
 	// The Attribution window in whole days: 5 until set. A change affects only Orders that arrive
 	// afterwards.
 	AttributionWindowDays AttributionWindowDays `json:"attributionWindowDays"`
+	// The Workspace's revision this answer shows (ADR 0119): a change of the revenue settings names it.
+	Revision Revision `json:"revision"`
 }
 
 // GetReportingCurrency returns the value of ReportingCurrency.
@@ -21886,6 +21913,11 @@ func (s *SiteRevenueSettingsResource) GetAttributionWindowDays() AttributionWind
 	return s.AttributionWindowDays
 }
 
+// GetRevision returns the value of Revision.
+func (s *SiteRevenueSettingsResource) GetRevision() Revision {
+	return s.Revision
+}
+
 // SetReportingCurrency sets the value of ReportingCurrency.
 func (s *SiteRevenueSettingsResource) SetReportingCurrency(val NilCurrencyCode) {
 	s.ReportingCurrency = val
@@ -21894,6 +21926,11 @@ func (s *SiteRevenueSettingsResource) SetReportingCurrency(val NilCurrencyCode) 
 // SetAttributionWindowDays sets the value of AttributionWindowDays.
 func (s *SiteRevenueSettingsResource) SetAttributionWindowDays(val AttributionWindowDays) {
 	s.AttributionWindowDays = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteRevenueSettingsResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
@@ -23796,13 +23833,25 @@ func (s *SiteSesConfigKind) UnmarshalText(data []byte) error {
 // Switch domain join on or off.
 // Ref: #/components/schemas/SiteSetDomainJoinInput
 type SiteSetDomainJoinInput struct {
+	// The Workspace's `revision` the change was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// Whether to admit Users by Join domain from now on.
 	Enabled bool `json:"enabled"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteSetDomainJoinInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetEnabled returns the value of Enabled.
 func (s *SiteSetDomainJoinInput) GetEnabled() bool {
 	return s.Enabled
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteSetDomainJoinInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetEnabled sets the value of Enabled.
@@ -26383,10 +26432,17 @@ func (s *SiteUpdateMembershipInput) SetRole(val SiteMembershipRole) {
 // Change the revenue settings; a field left out stays as it is.
 // Ref: #/components/schemas/SiteUpdateRevenueSettingsInput
 type SiteUpdateRevenueSettingsInput struct {
+	// The Workspace's `revision` the change was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// The Reporting currency, an ISO 4217 code.
 	ReportingCurrency OptCurrencyCode `json:"reportingCurrency"`
 	// The Attribution window in whole days.
 	AttributionWindowDays OptAttributionWindowDays `json:"attributionWindowDays"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteUpdateRevenueSettingsInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetReportingCurrency returns the value of ReportingCurrency.
@@ -26397,6 +26453,11 @@ func (s *SiteUpdateRevenueSettingsInput) GetReportingCurrency() OptCurrencyCode 
 // GetAttributionWindowDays returns the value of AttributionWindowDays.
 func (s *SiteUpdateRevenueSettingsInput) GetAttributionWindowDays() OptAttributionWindowDays {
 	return s.AttributionWindowDays
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteUpdateRevenueSettingsInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetReportingCurrency sets the value of ReportingCurrency.
@@ -26534,11 +26595,18 @@ func (s *SiteUpdateTokenInput) SetName(val Name) {
 // postal address can change.
 // Ref: #/components/schemas/SiteUpdateWorkspaceInput
 type SiteUpdateWorkspaceInput struct {
+	// The Workspace's `revision` the change was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// New display name.
 	Name Name `json:"name"`
 	// Physical postal address for the marketing email footer (CAN-SPAM). Omit to leave it unchanged; send
 	// an empty string to clear it.
 	PostalAddress OptString `json:"postalAddress"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteUpdateWorkspaceInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -26549,6 +26617,11 @@ func (s *SiteUpdateWorkspaceInput) GetName() Name {
 // GetPostalAddress returns the value of PostalAddress.
 func (s *SiteUpdateWorkspaceInput) GetPostalAddress() OptString {
 	return s.PostalAddress
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteUpdateWorkspaceInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.
@@ -27378,6 +27451,10 @@ type SiteWorkspaceResource struct {
 	AccountLinkAvailable bool `json:"accountLinkAvailable"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
+	// The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. Its
+	// bookkeeping (the service feed's position, the abuse detector's notices, the Setup checklist's
+	// completion) does not move it.
+	Revision Revision `json:"revision"`
 }
 
 // GetID returns the value of ID.
@@ -27490,6 +27567,11 @@ func (s *SiteWorkspaceResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
 }
 
+// GetRevision returns the value of Revision.
+func (s *SiteWorkspaceResource) GetRevision() Revision {
+	return s.Revision
+}
+
 // SetID sets the value of ID.
 func (s *SiteWorkspaceResource) SetID(val WorkspaceId) {
 	s.ID = val
@@ -27600,16 +27682,33 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+// SetRevision sets the value of Revision.
+func (s *SiteWorkspaceResource) SetRevision(val Revision) {
+	s.Revision = val
+}
+
 // Set the Workspace time zone.
 // Ref: #/components/schemas/SiteWorkspaceTimezoneInput
 type SiteWorkspaceTimezoneInput struct {
+	// The Workspace's `revision` the change was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid.
 	Timezone TimeZoneName `json:"timezone"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteWorkspaceTimezoneInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetTimezone returns the value of Timezone.
 func (s *SiteWorkspaceTimezoneInput) GetTimezone() TimeZoneName {
 	return s.Timezone
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteWorkspaceTimezoneInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetTimezone sets the value of Timezone.

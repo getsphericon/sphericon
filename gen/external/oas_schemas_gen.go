@@ -20349,6 +20349,8 @@ type WorkspaceResource struct {
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
 	// Send cap applies.
 	SendCap OptNilSendCap `json:"sendCap"`
+	// The revision of the Workspace this answer shows (ADR 0119).
+	Revision Revision `json:"revision"`
 }
 
 // GetID returns the value of ID.
@@ -20371,6 +20373,11 @@ func (s *WorkspaceResource) GetSendCap() OptNilSendCap {
 	return s.SendCap
 }
 
+// GetRevision returns the value of Revision.
+func (s *WorkspaceResource) GetRevision() Revision {
+	return s.Revision
+}
+
 // SetID sets the value of ID.
 func (s *WorkspaceResource) SetID(val WorkspaceId) {
 	s.ID = val
@@ -20389,4 +20396,9 @@ func (s *WorkspaceResource) SetTimezone(val TimeZoneName) {
 // SetSendCap sets the value of SendCap.
 func (s *WorkspaceResource) SetSendCap(val OptNilSendCap) {
 	s.SendCap = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *WorkspaceResource) SetRevision(val Revision) {
+	s.Revision = val
 }

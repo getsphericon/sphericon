@@ -26,7 +26,7 @@ func setTimezone(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceI
 func trySetTimezone(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, name string) (*siteapi.SiteWorkspaceResource, error) {
 	t.Helper()
 	return c.SiteWorkspacesSetTimezone(context.Background(),
-		&siteapi.SiteWorkspaceTimezoneInput{Timezone: siteapi.TimeZoneName(name)},
+		&siteapi.SiteWorkspaceTimezoneInput{Revision: testhelper.SiteWorkspaceRevision(context.Background(), c, workspaceID), Timezone: siteapi.TimeZoneName(name)},
 		siteapi.SiteWorkspacesSetTimezoneParams{WorkspaceId: workspaceID})
 }
 

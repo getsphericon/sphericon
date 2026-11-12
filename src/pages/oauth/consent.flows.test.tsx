@@ -23,6 +23,7 @@ const workspace = (id: string, name: string) => ({
   id,
   name,
   collectKey: 'omck',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,

@@ -22,7 +22,7 @@ func (Workspace) Annotations() []schema.Annotation {
 }
 
 func (Workspace) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, DiscardMixin{Restorable: true}}
+	return []ent.Mixin{TimeMixin{}, DiscardMixin{Restorable: true}, RevisionMixin{}}
 }
 
 func (Workspace) Fields() []ent.Field {
@@ -86,7 +86,7 @@ func (Workspace) Fields() []ent.Field {
 		// finds every step done, and never cleared: after it the overview shows no checklist, and a
 		// step that regresses (a domain that loses its record) is an item that needs attention.
 		field.Time("setup_completed_at").
-			Annotations(Latch()).
+			Annotations(Bookkeeping{}, Latch()).
 			Optional().
 			Nillable(),
 		// The Reporting currency (ADR 0064): the ISO 4217 code every revenue figure is in. NULL until
@@ -124,6 +124,7 @@ func (Workspace) Fields() []ent.Field {
 		// transferred or changes email or verification. 0 until the first change. Set
 		// only by internal/workspacefeed.
 		field.Int64("feed_position").
+			Annotations(Bookkeeping{}).
 			Default(0),
 		// Workspace deletion (ADR 0043): discarded_at (DiscardMixin) starts the 30-day window, in
 		// which the Workspace is frozen, hidden and restorable; erased_at is set when the erasure
@@ -168,11 +169,11 @@ func (Workspace) Fields() []ent.Field {
 		// (ADR 0026). The warning marker is cleared once the Workspace leaves the
 		// warning tier, which is what makes one email per episode.
 		field.Time("abuse_warning_notified_at").
-			Annotations(Attribute(reasonNotice)).
+			Annotations(Bookkeeping{}, Attribute(reasonNotice)).
 			Optional().
 			Nillable(),
 		field.Time("abuse_freeze_notified_at").
-			Annotations(Attribute(reasonNotice)).
+			Annotations(Bookkeeping{}, Attribute(reasonNotice)).
 			Optional().
 			Nillable(),
 	}

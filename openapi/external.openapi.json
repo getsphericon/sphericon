@@ -13304,7 +13304,7 @@
       },
       "WorkspaceResource": {
         "type": "object",
-        "required": ["id", "name", "timezone"],
+        "required": ["id", "name", "timezone", "revision"],
         "properties": {
           "id": {
             "allOf": [
@@ -13336,6 +13336,14 @@
             ],
             "nullable": true,
             "description": "The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null\nwhen no Send cap applies"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the Workspace this answer shows (ADR 0119)"
           }
         },
         "description": "The Workspace the token acts in"

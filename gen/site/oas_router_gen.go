@@ -198,6 +198,9 @@ var (
 	rn161AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn238AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn175AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -2018,13 +2021,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 					if len(elem) == 0 {
 						switch r.Method {
+						case "GET":
+							s.handleSiteWorkspacesGetRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
 						case "PUT":
 							s.handleSiteWorkspacesUpdateRequest([1]string{
 								args[0],
 							}, elemIsEscaped, w, r)
 						default:
 							s.notAllowed(w, r, notAllowedParams{
-								allowedMethods: "PUT",
+								allowedMethods: "GET,PUT",
 								allowedHeaders: rn2AllowedHeaders,
 								acceptPost:     "",
 								acceptPatch:    "",
@@ -4921,7 +4928,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										default:
 											s.notAllowed(w, r, notAllowedParams{
 												allowedMethods: "DELETE,PUT",
-												allowedHeaders: nil,
+												allowedHeaders: rn238AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -7727,6 +7734,15 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 					if len(elem) == 0 {
 						switch method {
+						case "GET":
+							r.name = SiteWorkspacesGetOperation
+							r.summary = ""
+							r.operationID = "SiteWorkspaces_get"
+							r.operationGroup = ""
+							r.pathPattern = "/workspaces/{workspaceId}"
+							r.args = args
+							r.count = 1
+							return r, true
 						case "PUT":
 							r.name = SiteWorkspacesUpdateOperation
 							r.summary = ""

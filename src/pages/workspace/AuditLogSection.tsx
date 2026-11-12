@@ -8,8 +8,6 @@ import {
   CloseButton,
   Code,
   Group,
-  Modal,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -25,7 +23,6 @@ import { saveAs } from 'file-saver'
 import { Fragment, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
 
 import { ActionOption } from '../../components/ActionName.tsx'
 import { AuditActionName } from '../../components/AuditActionName.tsx'
@@ -37,20 +34,17 @@ import {
   siteAuditFacetsOptions,
   siteAuditGetRetentionOptions,
   siteAuditListOptions,
-  siteAuditSetRetentionMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteAuditActor,
   SiteAuditActorKind,
   SiteAuditEntryResource,
 } from '../../generated/site/types.gen.ts'
-import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
+import { zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
 import { useAuditActionLabel } from '../../hooks/useAuditActionLabel.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useFormat, useTimeZone } from '../../hooks/useFormat.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as auditLogRoute } from '../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import { labelledActionFilter } from '../../utils/actionFilter.ts'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
@@ -65,11 +59,10 @@ import {
   withValue,
 } from '../../utils/auditFilter.ts'
 import type { AuditChipField, AuditFilter } from '../../utils/auditFilter.ts'
-import { boundsOf } from '../../utils/bounds.ts'
 import { dayOf, daysBefore } from '../../utils/datetime.ts'
+import { retentionEditor } from './settings/workspaceSettingsEditors.ts'
 
 const PAGE_SIZE = 25
-const RETENTION_DAYS = boundsOf(zRetentionDays)
 // The API answers 402 without an Enterprise license and 403 to a plain member; in both
 // cases the section is simply not offered.
 const HIDDEN_STATUSES = [402, 403]
@@ -423,66 +416,8 @@ export function AuditExportButton({
   )
 }
 
-// RetentionForm sets how many days the log is kept; an empty value keeps it forever. The
-// change is recorded as an Audit entry by the API.
-function RetentionForm({
-  workspaceId,
-  days,
-  onClose,
-}: {
-  workspaceId: string
-  days: number | null
-  onClose: () => void
-}) {
-  const { t } = useTranslation()
-  // A blank NumberInput holds '': no window, the log is kept forever.
-  const schema = z.object({
-    retentionDays: z
-      .union([zRetentionDays, z.literal('')])
-      .transform((value) => (value === '' ? null : value)),
-  })
-  const form = useSchemaForm(schema, { retentionDays: days ?? '' })
-  const mutation = useResourceMutation({
-    mutation: siteAuditSetRetentionMutation(),
-    successMessage: t(($) => $.settings.auditLog.retentionSaved),
-    errorTitle: t(($) => $.settings.auditLog.retentionError),
-    onDone: onClose,
-  })
-
-  return (
-    <form
-      onSubmit={form.onSubmit(({ retentionDays }) =>
-        mutation.mutate({ path: { workspaceId }, body: { retentionDays } }),
-      )}
-    >
-      <Stack>
-        <NumberInput
-          data-autofocus
-          label={t(($) => $.settings.auditLog.retentionLabel)}
-          description={t(($) => $.settings.auditLog.retentionDescription)}
-          placeholder={t(($) => $.settings.auditLog.retentionPlaceholder)}
-          min={RETENTION_DAYS.min}
-          max={RETENTION_DAYS.max}
-          allowDecimal={false}
-          allowNegative={false}
-          clampBehavior="none"
-          {...form.getInputProps('retentionDays')}
-        />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {t(($) => $.actions.cancel)}
-          </Button>
-          <Button type="submit" loading={mutation.isPending}>
-            {t(($) => $.actions.save)}
-          </Button>
-        </Group>
-      </Stack>
-    </form>
-  )
-}
-
 // RetentionControl is the Enterprise advanced-retention window for the log: the window as it
-// stands, and a form in a modal to change it. It is mounted only with audit:configure and
+// stands, and an editor session in a modal to change it (ADR 0119). It is mounted only with audit:configure and
 // renders nothing without the license.
 function RetentionControl({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
@@ -503,9 +438,7 @@ function RetentionControl({ workspaceId }: { workspaceId: string }) {
       <Button variant="subtle" size="compact-sm" onClick={open}>
         {t(($) => $.settings.auditLog.retentionChange)}
       </Button>
-      <Modal opened={opened} onClose={close} title={t(($) => $.settings.auditLog.retentionTitle)}>
-        <RetentionForm workspaceId={workspaceId} days={days} onClose={close} />
-      </Modal>
+      <retentionEditor.EditModal id={opened ? 'retention' : null} onClose={close} />
     </Group>
   )
 }

@@ -287,7 +287,7 @@ func TestABlankWorkspaceNameIsRefusedOnItsField(t *testing.T) {
 	_, err := k.site.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "   "})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	created := *k.siteAnswer
-	_, err = k.site.SiteWorkspacesUpdate(t.Context(), &siteapi.SiteUpdateWorkspaceInput{Name: "   "},
+	_, err = k.site.SiteWorkspacesUpdate(t.Context(), &siteapi.SiteUpdateWorkspaceInput{Revision: 1, Name: "   "},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	renamed := *k.siteAnswer

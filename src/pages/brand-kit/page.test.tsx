@@ -25,6 +25,7 @@ const workspace = (permissions: Permission[]): SiteWorkspaceResource => ({
   name: 'Acme',
 
   collectKey: 'ck',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,

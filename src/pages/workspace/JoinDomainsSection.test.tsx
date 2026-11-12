@@ -18,7 +18,7 @@ const WORKSPACE_ID = 'TestWs01'
 
 // Every test starts with the switch off; the ones about it override this.
 beforeEach(() => {
-  worker.use(handleSiteDomainJoinGet({ body: { enabled: false } }))
+  worker.use(handleSiteDomainJoinGet({ body: { enabled: false, revision: 1 } }))
 })
 
 function domain(over: Partial<SiteJoinDomainResource> = {}): SiteJoinDomainResource {
@@ -102,7 +102,7 @@ test('removes a domain after confirmation', async () => {
 test('shows the domain join switch as stored', async () => {
   worker.use(
     handleSiteJoinDomainsList({ body: [] }),
-    handleSiteDomainJoinGet({ body: { enabled: true } }),
+    handleSiteDomainJoinGet({ body: { enabled: true, revision: 1 } }),
   )
   const { screen } = await renderWithRouter(<JoinDomainsSection workspaceId={WORKSPACE_ID} />)
 
@@ -113,7 +113,7 @@ test('switches domain join on', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteJoinDomainsList({ body: [] }),
-    handleSiteDomainJoinGet({ body: { enabled: false } }),
+    handleSiteDomainJoinGet({ body: { enabled: false, revision: 1 } }),
     handleSiteDomainJoinSet(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({ enabled: true })
@@ -123,5 +123,5 @@ test('switches domain join on', async () => {
 
   await screen.getByRole('switch').click()
 
-  await expect.poll(() => bodies).toEqual([{ enabled: true }])
+  await expect.poll(() => bodies).toEqual([{ revision: 1, enabled: true }])
 })

@@ -1,115 +1,43 @@
-import { Alert, Button, Group, NumberInput, Select, Skeleton, Stack, Title } from '@mantine/core'
-import { useForm } from '@mantine/form'
-import { useQuery } from '@tanstack/react-query'
+import { Fieldset, Stack, Title } from '@mantine/core'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import {
-  siteWorkspacesGetRevenueSettingsOptions,
-  siteWorkspacesUpdateRevenueSettingsMutation,
-} from '../../../generated/site/@tanstack/react-query.gen.ts'
-import type {
-  SiteRevenueSettingsResource,
-  SiteWorkspaceResource,
-} from '../../../generated/site/types.gen.ts'
-import { zAttributionWindowDays } from '../../../generated/site/zod.gen.ts'
-import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
-import { boundsOf } from '../../../utils/bounds.ts'
+import { QueryBoundary } from '../../../components/QueryBoundary.tsx'
+import { BlockSkeleton } from '../../../components/Skeletons.tsx'
+import { siteWorkspacesGetRevenueSettingsOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { can } from '../../../utils/permissions.ts'
+import { RevenueEditForm } from './workspaceSettingsEditors.ts'
+import { CanEdit } from './workspaceSettingsForm.ts'
 
-// The bounds the contract declares for the Attribution window, read off its generated schema.
-const WINDOW_DAYS = boundsOf(zAttributionWindowDays)
-
-const CURRENCIES = Intl.supportedValuesOf('currency')
-
-function RevenueSettingsForm({
-  workspace,
-  settings,
-}: {
-  workspace: SiteWorkspaceResource
-  settings: SiteRevenueSettingsResource
-}) {
-  const { t } = useTranslation()
+function RevenueSettings({ workspace }: { workspace: SiteWorkspaceResource }) {
+  const { data } = useSuspenseQuery(
+    siteWorkspacesGetRevenueSettingsOptions({ path: { workspaceId: workspace.id } }),
+  )
+  // An Owner or Admin edits them; a Member sees them read-only (the server refuses a Member).
   const canEdit = can(workspace, 'revenue:configure')
-  const form = useForm<{ currency: string | null; days: number }>({
-    initialValues: {
-      currency: settings.reportingCurrency,
-      days: settings.attributionWindowDays,
-    },
-  })
-
-  const mutation = useResourceMutation({
-    mutation: siteWorkspacesUpdateRevenueSettingsMutation(),
-    successMessage: t(($) => $.settings.saved),
-    errorTitle: t(($) => $.settings.revenue.errorTitle),
-    forbiddenMessage: t(($) => $.settings.revenue.forbidden),
-  })
-
   return (
-    <form
-      onSubmit={form.onSubmit((values) =>
-        mutation.mutate({
-          path: { workspaceId: workspace.id },
-          body: {
-            ...(values.currency ? { reportingCurrency: values.currency } : {}),
-            attributionWindowDays: values.days,
-          },
-        }),
-      )}
-    >
-      <Stack maw={420}>
-        <Select
-          label={t(($) => $.settings.revenue.currencyLabel)}
-          description={t(($) => $.settings.revenue.currencyDescription)}
-          placeholder={t(($) => $.settings.revenue.currencyPlaceholder)}
-          data={CURRENCIES}
-          searchable
-          allowDeselect={false}
-          disabled={!canEdit}
-          {...form.getInputProps('currency')}
-        />
-        <NumberInput
-          label={t(($) => $.settings.revenue.windowLabel)}
-          description={t(($) => $.settings.revenue.windowDescription)}
-          min={WINDOW_DAYS.min}
-          max={WINDOW_DAYS.max}
-          allowDecimal={false}
-          allowNegative={false}
-          clampBehavior="strict"
-          disabled={!canEdit}
-          {...form.getInputProps('days')}
-        />
-        {canEdit ? (
-          <Group justify="flex-end">
-            <Button type="submit" loading={mutation.isPending}>
-              {t(($) => $.actions.save)}
-            </Button>
-          </Group>
-        ) : null}
-      </Stack>
-    </form>
+    <CanEdit value={canEdit}>
+      <Fieldset variant="unstyled" disabled={!canEdit}>
+        <RevenueEditForm workspaceId={workspace.id} id="revenue" loaded={data} titled={false} />
+      </Fieldset>
+    </CanEdit>
   )
 }
 
 // RevenueSettingsSection holds the Workspace's Reporting currency and Attribution window
-// (ADR 0064). Every member sees them; an Owner or Admin edits them (the server refuses a
-// Member).
+// (ADR 0064), in an editor session over the Workspace's revision (ADR 0119). Every member sees them.
 export function RevenueSettingsSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const { t } = useTranslation()
-  const query = useQuery(
-    siteWorkspacesGetRevenueSettingsOptions({ path: { workspaceId: workspace.id } }),
-  )
-
-  let body = <Skeleton height={140} maw={420} />
-  if (query.isError) {
-    body = <Alert color="red" title={t(($) => $.settings.revenue.loadError)} />
-  } else if (query.data) {
-    body = <RevenueSettingsForm workspace={workspace} settings={query.data} />
-  }
-
   return (
     <Stack gap="xs">
       <Title order={4}>{t(($) => $.settings.revenue.title)}</Title>
-      {body}
+      <QueryBoundary
+        fallback={<BlockSkeleton />}
+        errorTitle={t(($) => $.settings.revenue.loadError)}
+      >
+        <RevenueSettings workspace={workspace} />
+      </QueryBoundary>
     </Stack>
   )
 }

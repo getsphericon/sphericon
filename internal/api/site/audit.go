@@ -84,11 +84,11 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 // SiteAuditGetRetention reads the Audit log retention window. Owner and admin only;
 // 402 without the Enterprise retention license.
 func (h *Handlers) SiteAuditGetRetention(ctx context.Context, _ siteapi.SiteAuditGetRetentionParams) (*siteapi.SiteAuditRetention, error) {
-	days, err := h.audit.Retention(ctx, workspaceScope(ctx))
+	window, err := h.audit.Retention(ctx, workspaceScope(ctx))
 	if err != nil {
 		return nil, err
 	}
-	return retentionResource(days), nil
+	return retentionResource(window), nil
 }
 
 // SiteAuditSetRetention sets or clears the Audit log retention window and records the
@@ -99,18 +99,19 @@ func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteA
 		d := int(req.RetentionDays.Value)
 		days = &d
 	}
-	if err := h.audit.SetRetention(ctx, workspaceScope(ctx), days); err != nil {
+	window, err := h.audit.SetRetention(ctx, workspaceScope(ctx), int64(req.Revision), days)
+	if err != nil {
 		return nil, err
 	}
-	return retentionResource(days), nil
+	return retentionResource(window), nil
 }
 
-func retentionResource(days *int) *siteapi.SiteAuditRetention {
-	res := &siteapi.SiteAuditRetention{}
-	if days == nil {
+func retentionResource(window auditlog.RetentionWindow) *siteapi.SiteAuditRetention {
+	res := &siteapi.SiteAuditRetention{Revision: siteapi.Revision(window.Revision)}
+	if window.Days == nil {
 		res.RetentionDays.Null = true
 	} else {
-		res.RetentionDays.SetTo(siteapi.RetentionDays(narrow.Int32(*days)))
+		res.RetentionDays.SetTo(siteapi.RetentionDays(narrow.Int32(*window.Days)))
 	}
 	return res
 }

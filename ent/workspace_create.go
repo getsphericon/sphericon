@@ -107,6 +107,20 @@ func (_c *WorkspaceCreate) SetNillableDiscardedAt(v *time.Time) *WorkspaceCreate
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *WorkspaceCreate) SetRevision(v int64) *WorkspaceCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableRevision(v *int64) *WorkspaceCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *WorkspaceCreate) SetName(v string) *WorkspaceCreate {
 	_c.mutation.SetName(v)
@@ -1099,6 +1113,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := workspace.DefaultRevision()
+		_c.mutation.SetRevision(v)
+	}
 	if _, ok := _c.mutation.RequireConfirmedOptIn(); !ok {
 		v := workspace.DefaultRequireConfirmedOptIn
 		_c.mutation.SetRequireConfirmedOptIn(v)
@@ -1132,6 +1150,14 @@ func (_c *WorkspaceCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Workspace.updated_at"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "Workspace.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := workspace.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Workspace.revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Workspace.name"`)}
@@ -1241,6 +1267,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DiscardedAt(); ok {
 		_spec.SetField(workspace.FieldDiscardedAt, field.TypeTime, value)
 		_node.DiscardedAt = &value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(workspace.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
@@ -2104,6 +2134,24 @@ func (u *WorkspaceUpsert) ClearDiscardedAt() *WorkspaceUpsert {
 	return u
 }
 
+// SetRevision sets the "revision" field.
+func (u *WorkspaceUpsert) SetRevision(v int64) *WorkspaceUpsert {
+	u.Set(workspace.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateRevision() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *WorkspaceUpsert) AddRevision(v int64) *WorkspaceUpsert {
+	u.Add(workspace.FieldRevision, v)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *WorkspaceUpsert) SetName(v string) *WorkspaceUpsert {
 	u.Set(workspace.FieldName, v)
@@ -2568,6 +2616,27 @@ func (u *WorkspaceUpsertOne) UpdateDiscardedAt() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearDiscardedAt() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearDiscardedAt()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *WorkspaceUpsertOne) SetRevision(v int64) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *WorkspaceUpsertOne) AddRevision(v int64) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateRevision() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -3264,6 +3333,27 @@ func (u *WorkspaceUpsertBulk) UpdateDiscardedAt() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearDiscardedAt() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearDiscardedAt()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *WorkspaceUpsertBulk) SetRevision(v int64) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *WorkspaceUpsertBulk) AddRevision(v int64) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateRevision() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateRevision()
 	})
 }
 

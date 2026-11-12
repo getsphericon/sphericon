@@ -16,6 +16,7 @@ const workspace: SiteWorkspaceResource = {
   name: 'Acme',
 
   collectKey: 'omck_test_key',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,

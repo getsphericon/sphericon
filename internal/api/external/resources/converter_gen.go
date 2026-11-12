@@ -1775,6 +1775,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 		externalapiWorkspaceResource.Name = (*source).Name
 		externalapiWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		// externalapiWorkspaceResource.SendCap: ignore
+		externalapiWorkspaceResource.Revision = revision((*source).Revision)
 	}
 	return externalapiWorkspaceResource
 }

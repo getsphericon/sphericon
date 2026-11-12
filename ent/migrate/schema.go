@@ -2973,6 +2973,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
+		{Name: "revision", Type: field.TypeInt64},
 		{Name: "name", Type: field.TypeString},
 		{Name: "public_id", Type: field.TypeString, Unique: true, Size: 8},
 		{Name: "collect_key", Type: field.TypeString, Unique: true},
@@ -3006,7 +3007,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[17], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[18], WorkspacesColumns[0]},
 			},
 		},
 	}

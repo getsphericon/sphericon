@@ -31,6 +31,9 @@ model WorkspaceResource {
   /** The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null
    * when no Send cap applies */
   sendCap?: SendCap | null;
+
+  /** The revision of the Workspace this answer shows (ADR 0119) */
+  revision: Revision;
 }
 
 @route("/workspace")

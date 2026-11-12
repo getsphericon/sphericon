@@ -33,7 +33,7 @@ function entry(over: Partial<SiteAuditEntryResource> = {}): SiteAuditEntryResour
 // With audit:configure the section reads the retention window; tests that care override it.
 beforeEach(() => {
   worker.use(
-    handleSiteAuditGetRetention({ body: { retentionDays: 90 } }),
+    handleSiteAuditGetRetention({ body: { retentionDays: 90, revision: 1 } }),
     handleSiteAuditFacets({
       body: {
         actors: [
@@ -432,10 +432,10 @@ test('shows the retention window and saves a new one', async () => {
   let saved: unknown
   worker.use(
     handleSiteAuditList({ body: { items: [entry()] } }),
-    handleSiteAuditGetRetention({ body: { retentionDays: 90 } }),
+    handleSiteAuditGetRetention({ body: { retentionDays: 90, revision: 1 } }),
     handleSiteAuditSetRetention(async ({ request }) => {
       saved = await request.json()
-      return HttpResponse.json({ retentionDays: null })
+      return HttpResponse.json({ retentionDays: null, revision: 1 })
     }),
   )
   const { screen } = await renderWithRouter(
@@ -455,17 +455,17 @@ test('shows the retention window and saves a new one', async () => {
   await expect.element(input).toHaveValue('90')
   await input.fill('30')
   await userEvent.keyboard('{Enter}')
-  await expect.poll(() => saved).toEqual({ retentionDays: 30 })
+  await expect.poll(() => saved).toEqual({ retentionDays: 30, revision: 1 })
 })
 
 test('an empty retention window keeps the log forever', async () => {
   let saved: unknown
   worker.use(
     handleSiteAuditList({ body: { items: [entry()] } }),
-    handleSiteAuditGetRetention({ body: { retentionDays: 90 } }),
+    handleSiteAuditGetRetention({ body: { retentionDays: 90, revision: 1 } }),
     handleSiteAuditSetRetention(async ({ request }) => {
       saved = await request.json()
-      return HttpResponse.json({ retentionDays: null })
+      return HttpResponse.json({ retentionDays: null, revision: 1 })
     }),
   )
   const { screen } = await renderWithRouter(
@@ -480,13 +480,13 @@ test('an empty retention window keeps the log forever', async () => {
   const dialog = screen.getByRole('dialog')
   await dialog.getByLabelText('Keep the log for (days)').fill('')
   await userEvent.keyboard('{Enter}')
-  await expect.poll(() => saved).toEqual({ retentionDays: null })
+  await expect.poll(() => saved).toEqual({ retentionDays: null, revision: 1 })
 })
 
 test('a failed retention save is reported', async () => {
   worker.use(
     handleSiteAuditList({ body: { items: [entry()] } }),
-    handleSiteAuditGetRetention({ body: { retentionDays: null } }),
+    handleSiteAuditGetRetention({ body: { retentionDays: null, revision: 1 } }),
     handleSiteAuditSetRetention(() => problem(422, { detail: 'bad window' })),
   )
   const { screen } = await renderWithRouter(

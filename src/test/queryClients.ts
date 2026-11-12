@@ -10,6 +10,12 @@ export function trackQueryClient(client: QueryClient) {
   rendered.add(client)
 }
 
+// readAgain has every rendered page read its shown data again, as it does when the person comes
+// back to it: what another window changed meanwhile reaches the page.
+export async function readAgain() {
+  await Promise.all([...rendered].map(async (client) => client.refetchQueries({ type: 'active' })))
+}
+
 function fetching() {
   return [...rendered].flatMap((client) =>
     client

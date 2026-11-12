@@ -39,11 +39,15 @@ export function SecondFactorRequirementSection({
           label={t(($) => $.secondFactorRequirement.switchLabel)}
           checked={Boolean(requiredAt)}
           disabled={!canChange || requireMutation.isPending || liftMutation.isPending}
-          onChange={(event) =>
-            (event.currentTarget.checked ? requireMutation : liftMutation).mutate({
-              path: { workspaceId: workspace.id },
-            })
-          }
+          // Switching it on names the revision the Workspace shows (ADR 0119); lifting it names none.
+          onChange={(event) => {
+            const path = { workspaceId: workspace.id }
+            if (event.currentTarget.checked) {
+              requireMutation.mutate({ path, body: { revision: workspace.revision } })
+            } else {
+              liftMutation.mutate({ path })
+            }
+          }}
         />
         {requiredAt && graceEndsAt ? (
           <Text size="sm">

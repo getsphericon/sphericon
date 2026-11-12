@@ -20,6 +20,7 @@ const workspace = (permissions: Permission[]): SiteWorkspaceResource => ({
   id: 'TestWs01',
   name: 'Acme',
   collectKey: 'ck',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
@@ -33,7 +34,11 @@ const workspace = (permissions: Permission[]): SiteWorkspaceResource => ({
   createdAt: '2026-01-01T00:00:00Z',
 })
 
-const unset: SiteRevenueSettingsResource = { reportingCurrency: null, attributionWindowDays: 5 }
+const unset: SiteRevenueSettingsResource = {
+  reportingCurrency: null,
+  attributionWindowDays: 5,
+  revision: 1,
+}
 
 test('revenue:configure chooses the reporting currency and the attribution window', async () => {
   const bodies: string[] = []
@@ -42,7 +47,7 @@ test('revenue:configure chooses the reporting currency and the attribution windo
     handleSiteWorkspacesGetRevenueSettings({ body: unset }),
     handleSiteWorkspacesUpdateRevenueSettings(async ({ request }) => {
       bodies.push(await request.text())
-      return HttpResponse.json({ reportingCurrency: 'EUR', attributionWindowDays: 14 })
+      return HttpResponse.json({ reportingCurrency: 'EUR', attributionWindowDays: 14, revision: 1 })
     }),
   )
   const { screen } = await renderWithRouter(
@@ -58,14 +63,14 @@ test('revenue:configure chooses the reporting currency and the attribution windo
 
   await expect
     .poll(() => bodies)
-    .toEqual(['{"reportingCurrency":"EUR","attributionWindowDays":14}'])
+    .toEqual(['{"reportingCurrency":"EUR","attributionWindowDays":14,"revision":1}'])
 })
 
 test('without revenue:configure both values show and do not change', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace([])] }),
     handleSiteWorkspacesGetRevenueSettings({
-      body: { reportingCurrency: 'USD', attributionWindowDays: 9 },
+      body: { reportingCurrency: 'USD', attributionWindowDays: 9, revision: 1 },
     }),
   )
   const { screen } = await renderWithRouter(<RevenueSettingsSection workspace={workspace([])} />)

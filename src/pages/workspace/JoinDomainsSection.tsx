@@ -16,7 +16,7 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
@@ -32,7 +32,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteJoinDomainResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 interface DomainFormValues {
   domain: string
@@ -153,11 +153,17 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
+  const queryClient = useQueryClient()
+  // The switch is made on the revision it shows (ADR 0119): a refusal says why and reads it again.
   const joinMutation = useResourceMutation({
     mutation: siteDomainJoinSetMutation(),
     successMessage: t(($) => $.joinDomains.switchSaved),
     errorTitle: t(($) => $.joinDomains.switchError),
     forbiddenMessage: t(($) => $.joinDomains.forbidden),
+    handleError: async () => {
+      await invalidateOwn(queryClient, siteDomainJoinSetMutation().mutationKey)
+      return false
+    },
   })
   const addMutation = useResourceMutation({
     mutation: siteJoinDomainsAddMutation(),
@@ -205,12 +211,14 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
           description={t(($) => $.joinDomains.switchDescription)}
           checked={joinQuery.data?.enabled ?? false}
           disabled={!joinQuery.isSuccess || joinMutation.isPending}
-          onChange={(event) =>
-            joinMutation.mutate({
-              path: { workspaceId },
-              body: { enabled: event.currentTarget.checked },
-            })
-          }
+          onChange={(event) => {
+            if (joinQuery.data) {
+              joinMutation.mutate({
+                path: { workspaceId },
+                body: { revision: joinQuery.data.revision, enabled: event.currentTarget.checked },
+              })
+            }
+          }}
         />
 
         <QueryBoundary fallback={<TableSkeleton />} errorTitle={t(($) => $.joinDomains.loadError)}>

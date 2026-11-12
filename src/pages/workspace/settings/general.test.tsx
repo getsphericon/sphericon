@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteWorkspacesDelete,
+  handleSiteWorkspacesGet,
   handleSiteWorkspacesGetRevenueSettings,
   handleSiteWorkspacesLeave,
   handleSiteWorkspacesList,
@@ -12,6 +13,7 @@ import {
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { problem } from '../../../test/problem.ts'
+import { readAgain } from '../../../test/queryClients.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
@@ -20,7 +22,7 @@ import { GeneralPage } from './general.tsx'
 const GENERAL_ROUTE = routeMount(generalRoute, { workspaceId: 'TestWs01' })
 
 const revenueSettings = handleSiteWorkspacesGetRevenueSettings({
-  body: { reportingCurrency: null, attributionWindowDays: 5 },
+  body: { reportingCurrency: null, attributionWindowDays: 5, revision: 1 },
 })
 
 const workspace: SiteWorkspaceResource = {
@@ -28,6 +30,7 @@ const workspace: SiteWorkspaceResource = {
   name: 'Acme',
 
   collectKey: 'omck_test_key',
+  revision: 1,
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
@@ -46,6 +49,7 @@ test('renames the workspace', async () => {
   worker.use(
     revenueSettings,
     handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteWorkspacesGet({ body: workspace }),
     handleSiteWorkspacesUpdate(async ({ request }) => {
       puts.push(await request.text())
       return HttpResponse.json({ ...workspace, name: 'Acme Inc' })
@@ -68,6 +72,7 @@ test('without workspace:update the name is read-only', async () => {
   worker.use(
     revenueSettings,
     handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member', permissions: [] }] }),
+    handleSiteWorkspacesGet({ body: { ...workspace, role: 'member', permissions: [] } }),
   )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
@@ -80,6 +85,7 @@ test('workspace:timezone sets the time zone', async () => {
   worker.use(
     revenueSettings,
     handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteWorkspacesGet({ body: workspace }),
     handleSiteWorkspacesSetTimezone(async ({ request }) => {
       bodies.push(await request.text())
       return HttpResponse.json({ ...workspace, timezone: 'Europe/Berlin' })
@@ -104,6 +110,9 @@ test('without workspace:timezone the time zone is read-only', async () => {
     handleSiteWorkspacesList({
       body: [{ ...workspace, role: 'member', permissions: ['workspace:update'] }],
     }),
+    handleSiteWorkspacesGet({
+      body: { ...workspace, role: 'member', permissions: ['workspace:update'] },
+    }),
   )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
@@ -126,6 +135,7 @@ test('workspace:delete deletes the workspace only after typing its name', async 
   worker.use(
     revenueSettings,
     handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteWorkspacesGet({ body: workspace }),
     handleSiteWorkspacesDelete(async ({ request }) => {
       posts.push(await request.text())
       return HttpResponse.json({
@@ -158,6 +168,9 @@ test('without workspace:delete the workspace can be left but not deleted', async
     handleSiteWorkspacesList({
       body: [{ ...workspace, role: 'admin', permissions: ['workspace:update'] }],
     }),
+    handleSiteWorkspacesGet({
+      body: { ...workspace, role: 'admin', permissions: ['workspace:update'] },
+    }),
   )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
@@ -173,6 +186,7 @@ test('leaves the workspace after confirmation', async () => {
   worker.use(
     revenueSettings,
     handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member', permissions: [] }] }),
+    handleSiteWorkspacesGet({ body: { ...workspace, role: 'member', permissions: [] } }),
     handleSiteWorkspacesLeave(() => {
       left = true
       return new HttpResponse(null, { status: 204 })
@@ -192,6 +206,7 @@ test('keeps the workspace and says why when the only owner tries to leave', asyn
   worker.use(
     revenueSettings,
     handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteWorkspacesGet({ body: workspace }),
     handleSiteWorkspacesLeave(() =>
       HttpResponse.json(
         {
@@ -210,4 +225,68 @@ test('keeps the workspace and says why when the only owner tries to leave', asyn
   await screen.getByRole('dialog').getByRole('button', { name: 'Leave' }).click()
 
   await expect.element(screen.getByText(/make another member an owner/)).toBeInTheDocument()
+})
+
+// The revision a request's body names.
+async function revisionOf(request: Request) {
+  const body: unknown = await request.json()
+  return typeof body === 'object' && body !== null && 'revision' in body ? body.revision : null
+}
+
+// The General and Time zone sections are two editors of one Workspace revision (ADR 0119): saving
+// one, then the other, is never refused and says nothing, since neither changed what the other
+// shows. A time zone changed from another window says so in the Time zone section alone.
+test('two sections of one Workspace save in turn, and only the one changed elsewhere says so', async () => {
+  let stored: SiteWorkspaceResource = { ...workspace, revision: 1 }
+  const refused: unknown[] = []
+  worker.use(
+    revenueSettings,
+    handleSiteWorkspacesList(() => HttpResponse.json([stored])),
+    handleSiteWorkspacesGet(() => HttpResponse.json(stored)),
+    handleSiteWorkspacesUpdate(async ({ request }) => {
+      const revision = await revisionOf(request.clone())
+      const { name } = (await request.json()) as { name: string }
+      if (revision !== stored.revision) {
+        refused.push(revision)
+        return problem(409, { title: 'Changed', code: 'revision_changed' })
+      }
+      stored = { ...stored, name, revision: stored.revision + 1 }
+      return HttpResponse.json(stored)
+    }),
+    handleSiteWorkspacesSetTimezone(async ({ request }) => {
+      const revision = await revisionOf(request.clone())
+      const { timezone } = (await request.json()) as { timezone: string }
+      if (revision !== stored.revision) {
+        refused.push(revision)
+        return problem(409, { title: 'Changed', code: 'revision_changed' })
+      }
+      stored = { ...stored, timezone, revision: stored.revision + 1 }
+      return HttpResponse.json(stored)
+    }),
+  )
+  const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
+
+  await screen.getByLabelText(/^Workspace name/).fill('Acme Inc')
+  await screen.getByRole('button', { name: 'Save' }).first().click()
+  await expect.poll(() => stored.revision).toBe(2)
+  await screen.getByRole('combobox', { name: 'Time zone' }).click()
+  await screen.getByRole('option', { name: 'Europe/Berlin' }).click()
+  await screen.getByRole('button', { name: 'Save' }).nth(1).click()
+
+  await expect.poll(() => stored.timezone).toBe('Europe/Berlin')
+  expect(refused).toEqual([])
+  expect(screen.getByRole('button', { name: 'Load the saved version' }).elements()).toHaveLength(0)
+
+  // Another window changes the time zone; the page reads the Workspace again when it is back.
+  stored = { ...stored, timezone: 'Asia/Tokyo', revision: stored.revision + 1 }
+  await readAgain()
+
+  await expect
+    .element(screen.getByRole('button', { name: 'Load the saved version' }))
+    .toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Load the saved version' }).elements()).toHaveLength(1)
+  await screen.getByLabelText(/^Workspace name/).fill('Acme Two')
+  await screen.getByRole('button', { name: 'Save' }).first().click()
+  await expect.poll(() => stored.name).toBe('Acme Two')
+  expect(refused).toEqual([])
 })

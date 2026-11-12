@@ -21,4 +21,10 @@ var Bookkeeping = map[string]map[string]bool{
 		"last_error_status":    true,
 		"last_failure_at":      true,
 	},
+	"Workspace": {
+		"setup_completed_at":        true,
+		"feed_position":             true,
+		"abuse_warning_notified_at": true,
+		"abuse_freeze_notified_at":  true,
+	},
 }

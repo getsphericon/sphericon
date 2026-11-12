@@ -374,6 +374,7 @@ var (
 	ErrorsWorkspaceNameMismatch                 = ID{key: "errors.workspace_name_mismatch"}
 	ErrorsWorkspaceNotFound                     = ID{key: "errors.workspace_not_found"}
 	ErrorsWorkspaceNotRestorable                = ID{key: "errors.workspace_not_restorable"}
+	ErrorsWorkspaceRevisionChanged              = ID{key: "errors.workspace_revision_changed"}
 	FieldsEmail                                 = ID{key: "fields.email"}
 	FieldsMaxPerDay                             = ID{key: "fields.max_per_day"}
 	FieldsMaxPerSecond                          = ID{key: "fields.max_per_second"}

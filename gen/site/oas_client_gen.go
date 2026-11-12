@@ -1452,6 +1452,13 @@ type Invoker interface {
 	//
 	// POST /workspaces/{workspaceId}/delete
 	SiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (*SiteDeletedWorkspaceResource, error)
+	// SiteWorkspacesGet invokes SiteWorkspaces_get operation.
+	//
+	// Read one Workspace the caller is a member of, as the list shows it: what its settings pages edit,
+	// with its revision (ADR 0119).
+	//
+	// GET /workspaces/{workspaceId}
+	SiteWorkspacesGet(ctx context.Context, params SiteWorkspacesGetParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesGetRevenueSettings invokes SiteWorkspaces_getRevenueSettings operation.
 	//
 	// Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
@@ -1496,7 +1503,7 @@ type Invoker interface {
 	// grace restarts. A change is recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/second-factor-requirement
-	SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (*SiteWorkspaceResource, error)
+	SiteWorkspacesRequireSecondFactor(ctx context.Context, request *RevisionInput, params SiteWorkspacesRequireSecondFactorParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesRestore invokes SiteWorkspaces_restore operation.
 	//
 	// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -30458,6 +30465,141 @@ func (c *Client) sendSiteWorkspacesDelete(ctx context.Context, request *SiteDele
 	return result, nil
 }
 
+// SiteWorkspacesGet invokes SiteWorkspaces_get operation.
+//
+// Read one Workspace the caller is a member of, as the list shows it: what its settings pages edit,
+// with its revision (ADR 0119).
+//
+// GET /workspaces/{workspaceId}
+func (c *Client) SiteWorkspacesGet(ctx context.Context, params SiteWorkspacesGetParams) (*SiteWorkspaceResource, error) {
+	res, err := c.sendSiteWorkspacesGet(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteWorkspacesGet(ctx context.Context, params SiteWorkspacesGetParams) (res *SiteWorkspaceResource, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteWorkspacesGetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteWorkspacesGetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteWorkspacesGetResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteWorkspacesGetRevenueSettings invokes SiteWorkspaces_getRevenueSettings operation.
 //
 // Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
@@ -31103,12 +31245,12 @@ func (c *Client) sendSiteWorkspacesListDeleted(ctx context.Context) (res []SiteD
 // grace restarts. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/second-factor-requirement
-func (c *Client) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (*SiteWorkspaceResource, error) {
-	res, err := c.sendSiteWorkspacesRequireSecondFactor(ctx, params)
+func (c *Client) SiteWorkspacesRequireSecondFactor(ctx context.Context, request *RevisionInput, params SiteWorkspacesRequireSecondFactorParams) (*SiteWorkspaceResource, error) {
+	res, err := c.sendSiteWorkspacesRequireSecondFactor(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (res *SiteWorkspaceResource, err error) {
+func (c *Client) sendSiteWorkspacesRequireSecondFactor(ctx context.Context, request *RevisionInput, params SiteWorkspacesRequireSecondFactorParams) (res *SiteWorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_requireSecondFactor"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -31175,6 +31317,9 @@ func (c *Client) sendSiteWorkspacesRequireSecondFactor(ctx context.Context, para
 	r, err := ht.NewRequest(ctx, "PUT", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteWorkspacesRequireSecondFactorRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{

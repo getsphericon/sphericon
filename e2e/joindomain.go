@@ -47,7 +47,10 @@ func (w *Workspace) AddVerifiedJoinDomain() string {
 // EnableDomainJoin is the Owner switching domain join on in the Domain access section.
 func (w *Workspace) EnableDomainJoin() {
 	w.t.Helper()
-	res, err := w.site.SiteDomainJoinSet(w.t.Context(), &siteapi.SiteSetDomainJoinInput{Enabled: true},
+	// The switch names the revision it shows (ADR 0119), so the section reads it first.
+	read, err := w.site.SiteDomainJoinGet(w.t.Context(), siteapi.SiteDomainJoinGetParams{WorkspaceId: siteapi.WorkspaceId(w.publicID)})
+	shown := ok[siteapi.SiteDomainJoinResource](w.t, "read domain join", read, err)
+	res, err := w.site.SiteDomainJoinSet(w.t.Context(), &siteapi.SiteSetDomainJoinInput{Revision: shown.Revision, Enabled: true},
 		siteapi.SiteDomainJoinSetParams{WorkspaceId: siteapi.WorkspaceId(w.publicID)})
 	got := ok[siteapi.SiteDomainJoinResource](w.t, "switch domain join on", res, err)
 	require.True(w.t, got.Enabled)
