@@ -70,6 +70,11 @@ func WorkspaceID(v int64) predicate.Contact {
 	return predicate.Contact(sql.FieldEQ(FieldWorkspaceID, v))
 }
 
+// Revision applies equality check predicate on the "revision" field. It's identical to RevisionEQ.
+func Revision(v int64) predicate.Contact {
+	return predicate.Contact(sql.FieldEQ(FieldRevision, v))
+}
+
 // SubjectID applies equality check predicate on the "subject_id" field. It's identical to SubjectIDEQ.
 func SubjectID(v string) predicate.Contact {
 	return predicate.Contact(sql.FieldEQ(FieldSubjectID, v))
@@ -223,6 +228,46 @@ func WorkspaceIDIn(vs ...int64) predicate.Contact {
 // WorkspaceIDNotIn applies the NotIn predicate on the "workspace_id" field.
 func WorkspaceIDNotIn(vs ...int64) predicate.Contact {
 	return predicate.Contact(sql.FieldNotIn(FieldWorkspaceID, vs...))
+}
+
+// RevisionEQ applies the EQ predicate on the "revision" field.
+func RevisionEQ(v int64) predicate.Contact {
+	return predicate.Contact(sql.FieldEQ(FieldRevision, v))
+}
+
+// RevisionNEQ applies the NEQ predicate on the "revision" field.
+func RevisionNEQ(v int64) predicate.Contact {
+	return predicate.Contact(sql.FieldNEQ(FieldRevision, v))
+}
+
+// RevisionIn applies the In predicate on the "revision" field.
+func RevisionIn(vs ...int64) predicate.Contact {
+	return predicate.Contact(sql.FieldIn(FieldRevision, vs...))
+}
+
+// RevisionNotIn applies the NotIn predicate on the "revision" field.
+func RevisionNotIn(vs ...int64) predicate.Contact {
+	return predicate.Contact(sql.FieldNotIn(FieldRevision, vs...))
+}
+
+// RevisionGT applies the GT predicate on the "revision" field.
+func RevisionGT(v int64) predicate.Contact {
+	return predicate.Contact(sql.FieldGT(FieldRevision, v))
+}
+
+// RevisionGTE applies the GTE predicate on the "revision" field.
+func RevisionGTE(v int64) predicate.Contact {
+	return predicate.Contact(sql.FieldGTE(FieldRevision, v))
+}
+
+// RevisionLT applies the LT predicate on the "revision" field.
+func RevisionLT(v int64) predicate.Contact {
+	return predicate.Contact(sql.FieldLT(FieldRevision, v))
+}
+
+// RevisionLTE applies the LTE predicate on the "revision" field.
+func RevisionLTE(v int64) predicate.Contact {
+	return predicate.Contact(sql.FieldLTE(FieldRevision, v))
 }
 
 // SubjectIDEQ applies the EQ predicate on the "subject_id" field.

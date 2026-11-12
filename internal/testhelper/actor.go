@@ -325,17 +325,30 @@ func (env *TestEnv) SegmentRevision(ctx context.Context, tb testing.TB, id int64
 	return sg.Revision
 }
 
-// BroadcastRevision is the stored revision of the Broadcast id (ADR 0119): what an editor that read
-// it now names in an edit, a Send or a Schedule.
+// BroadcastRevision is the stored revision of the Broadcast id (ADR 0119): what an editor that read it
+// now names in an edit, a Send or a Schedule.
 func (env *TestEnv) BroadcastRevision(ctx context.Context, tb testing.TB, id int64) int64 {
 	tb.Helper()
-	b, err := env.DB.Broadcast.Get(ctx, id)
+	v, err := env.DB.Broadcast.Get(ctx, id)
 	if ent.IsNotFound(err) {
 		// An id the call is refused for (another Workspace's, none at all): any revision does.
 		return 1
 	}
 	require.NoError(tb, err)
-	return b.Revision
+	return v.Revision
+}
+
+// ContactRevision is the stored revision of the Contact id (ADR 0119): what an editor that read it
+// now names in an edit.
+func (env *TestEnv) ContactRevision(ctx context.Context, tb testing.TB, id int64) int64 {
+	tb.Helper()
+	v, err := env.DB.Contact.Get(ctx, id)
+	if ent.IsNotFound(err) {
+		// An id the call is refused for (another Workspace's, none at all): any revision does.
+		return 1
+	}
+	require.NoError(tb, err)
+	return v.Revision
 }
 
 // AutomationRevisionIn is AutomationRevision read through the scope s, for a test with no TestEnv
@@ -382,4 +395,15 @@ func BroadcastRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id i
 	}
 	require.NoError(tb, err)
 	return b.Revision
+}
+
+// ContactRevisionIn is ContactRevision read through the scope s, for a test with no TestEnv at hand.
+func ContactRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
+	tb.Helper()
+	c, err := s.Contact().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return 1
+	}
+	require.NoError(tb, err)
+	return c.Revision
 }

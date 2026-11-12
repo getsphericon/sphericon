@@ -292,7 +292,8 @@ func TestMCPToolCallReturnsTheAPIResult(t *testing.T) {
 	assert.Equal(t, "mcp-new@example.com", created["email"])
 
 	// Path parameter and body together; 204 carries no body.
-	res = call(t, s, "contacts_update", map[string]any{"id": created["id"], "firstName": "Renamed"})
+	// An update names the revision the caller read (ADR 0119).
+	res = call(t, s, "contacts_update", map[string]any{"id": created["id"], "revision": created["revision"], "firstName": "Renamed"})
 	require.False(t, res.IsError, text(t, res))
 	res = call(t, s, "contacts_delete", map[string]any{"id": created["id"]})
 	require.False(t, res.IsError, text(t, res))

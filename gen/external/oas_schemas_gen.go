@@ -6759,6 +6759,9 @@ type ContactResource struct {
 	Avatar OptNilImageUrl `json:"avatar"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
+	// The revision of the state this answer shows (ADR 0119): an update names it. Every write of the
+	// contact moves it: an update, an Identify or import that changes it, a tag applied or removed.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -6828,6 +6831,11 @@ func (s *ContactResource) GetAvatar() OptNilImageUrl {
 // GetCustomFields returns the value of CustomFields.
 func (s *ContactResource) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
+}
+
+// GetRevision returns the value of Revision.
+func (s *ContactResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -6903,6 +6911,11 @@ func (s *ContactResource) SetAvatar(val OptNilImageUrl) {
 // SetCustomFields sets the value of CustomFields.
 func (s *ContactResource) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *ContactResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -18977,6 +18990,8 @@ func (s *UpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 // Request body for updating a contact.
 // Ref: #/components/schemas/UpdateContactInput
 type UpdateContactInput struct {
+	// The contact's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// The customer's own user id — an alias key.
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — an alias key.
@@ -19006,6 +19021,11 @@ type UpdateContactInput struct {
 	// `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes as UTC and lands on the previous day
 	// east of UTC.
 	CustomFields OptNilJsonObject `json:"customFields"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateContactInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -19066,6 +19086,11 @@ func (s *UpdateContactInput) GetAvatar() OptNilImageUrl {
 // GetCustomFields returns the value of CustomFields.
 func (s *UpdateContactInput) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateContactInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetSubjectId sets the value of SubjectId.

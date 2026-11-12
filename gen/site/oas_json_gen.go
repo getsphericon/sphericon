@@ -23359,6 +23359,10 @@ func (s *SiteContactResource) encodeFields(e *jx.Encoder) {
 		e.ArrEnd()
 	}
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -23368,7 +23372,7 @@ func (s *SiteContactResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteContactResource = [16]string{
+var jsonFieldsNameOfSiteContactResource = [17]string{
 	0:  "id",
 	1:  "subjectId",
 	2:  "email",
@@ -23383,8 +23387,9 @@ var jsonFieldsNameOfSiteContactResource = [16]string{
 	11: "avatar",
 	12: "customFields",
 	13: "tags",
-	14: "createdAt",
-	15: "updatedAt",
+	14: "revision",
+	15: "createdAt",
+	16: "updatedAt",
 }
 
 // Decode decodes SiteContactResource from json.
@@ -23392,7 +23397,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteContactResource to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [3]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -23546,8 +23551,18 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"tags\"")
 			}
-		case "createdAt":
+		case "revision":
 			requiredBitSet[1] |= 1 << 6
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -23557,7 +23572,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -23575,9 +23590,10 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
+	for i, mask := range [3]uint8{
 		0b00000001,
 		0b11100000,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -45920,6 +45936,10 @@ func (s *SiteUpdateContactInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteUpdateContactInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		if s.SubjectId.Set {
 			e.FieldStart("subjectId")
 			s.SubjectId.Encode(e)
@@ -46003,20 +46023,21 @@ func (s *SiteUpdateContactInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateContactInput = [13]string{
-	0:  "subjectId",
-	1:  "email",
-	2:  "phone",
-	3:  "firstName",
-	4:  "lastName",
-	5:  "timeZone",
-	6:  "country",
-	7:  "locale",
-	8:  "birthday",
-	9:  "city",
-	10: "avatar",
-	11: "customFields",
-	12: "tags",
+var jsonFieldsNameOfSiteUpdateContactInput = [14]string{
+	0:  "revision",
+	1:  "subjectId",
+	2:  "email",
+	3:  "phone",
+	4:  "firstName",
+	5:  "lastName",
+	6:  "timeZone",
+	7:  "country",
+	8:  "locale",
+	9:  "birthday",
+	10: "city",
+	11: "avatar",
+	12: "customFields",
+	13: "tags",
 }
 
 // Decode decodes SiteUpdateContactInput from json.
@@ -46024,9 +46045,20 @@ func (s *SiteUpdateContactInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteUpdateContactInput to nil")
 	}
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		case "subjectId":
 			if err := func() error {
 				s.SubjectId.Reset()
@@ -46172,6 +46204,39 @@ func (s *SiteUpdateContactInput) Decode(d *jx.Decoder) error {
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode SiteUpdateContactInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00000001,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteUpdateContactInput) {
+					name = jsonFieldsNameOfSiteUpdateContactInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 
 	return nil

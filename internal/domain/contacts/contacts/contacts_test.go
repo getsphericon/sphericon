@@ -74,7 +74,7 @@ func TestUpdateChangesOnlyGivenAttributes(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{LastName: patch.Set("Jones")})
+	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), LastName: patch.Set("Jones")})
 	require.NoError(t, err)
 	assert.Equal(t, "Jones", lo.FromPtr(c.LastName))
 	assert.Equal(t, "Alice", lo.FromPtr(c.FirstName), "untouched attribute stays")
@@ -86,10 +86,10 @@ func TestUpdateNotFoundAcrossWorkspaces(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, contacts.UpdateInput{})
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), 999999)})
 	require.ErrorIs(t, err, contacts.ErrNotFound)
 
-	_, err = m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, contacts.UpdateInput{LastName: patch.Set("X")})
+	_, err = m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID), LastName: patch.Set("X")})
 	assert.ErrorIs(t, err, contacts.ErrNotFound, "another workspace cannot touch the contact")
 }
 
@@ -97,7 +97,7 @@ func TestUpdateConflict(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Email: patch.Set("bob@example.com")})
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), Email: patch.Set("bob@example.com")})
 	require.ErrorIs(t, err, contacts.ErrEmailTaken)
 }
 

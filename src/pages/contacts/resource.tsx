@@ -3,52 +3,18 @@ import {
   siteContactsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteContactsUpdate } from '../../generated/site/sdk.gen.ts'
-import { zSiteUpdateContactInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
-import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
+import { withRevision } from '../../resources/resourceEditor.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { ContactForm } from './ContactForm.tsx'
-
-// Contact custom fields are not edited here, so they never round-trip into the payload. The
-// subject id is set by the tracker and the API, never typed by hand, so the form leaves it out.
-
-const contactSchema = resourceFormSchema(
-  zSiteUpdateContactInput
-    .pick({
-      email: true,
-      phone: true,
-      firstName: true,
-      lastName: true,
-      timeZone: true,
-      country: true,
-      locale: true,
-      birthday: true,
-      city: true,
-      avatar: true,
-      tags: true,
-    })
-    .required({ tags: true }),
-  {
-    email: '',
-    phone: '',
-    firstName: '',
-    lastName: '',
-    timeZone: '',
-    country: '',
-    locale: '',
-    birthday: '',
-    city: '',
-    avatar: '',
-    tags: [] as string[],
-  },
-)
+import { contactSchema } from './contactSchema.ts'
 
 const contactResource = defineResource({
   schema: contactSchema,
   Form: ContactForm,
   getOptions: siteContactsGetOptions,
   createMutation: siteContactsCreateMutation,
-  update: siteContactsUpdate,
+  update: withRevision(siteContactsUpdate),
   operations: {},
   editRoute: contactsEditRoute,
   idParam: 'contactId',

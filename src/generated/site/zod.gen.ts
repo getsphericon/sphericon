@@ -2649,6 +2649,7 @@ export const zSiteCreateContactInput = z.object({
  * operations (`tags_apply`, `tags_remove`), which is why its body has no tags.
  */
 export const zSiteUpdateContactInput = z.object({
+  revision: zRevision,
   subjectId: z.exactOptional(z.string().nullable()),
   email: z.exactOptional(zEmailAddress.nullable()),
   phone: z.exactOptional(z.string().nullable()),
@@ -3121,6 +3122,7 @@ export const zSiteContactResource = z.object({
   avatar: z.exactOptional(zImageUrl.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
   tags: z.array(z.string()),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3634,6 +3636,7 @@ export const zUpdateBroadcastInput = z.object({
  * Request body for updating a contact
  */
 export const zUpdateContactInput = z.object({
+  revision: zRevision,
   subjectId: z.exactOptional(z.string().nullable()),
   email: z.exactOptional(zEmailAddress.nullable()),
   phone: z.exactOptional(z.string().nullable()),

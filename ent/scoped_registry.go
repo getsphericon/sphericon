@@ -872,6 +872,7 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.Contact().Create()
+				b.SetRevision(src.Revision)
 				if src.SubjectID != nil {
 					b.SetSubjectID(*src.SubjectID)
 				}

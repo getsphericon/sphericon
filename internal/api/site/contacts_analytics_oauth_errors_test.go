@@ -43,12 +43,12 @@ func TestSiteContactsErrorBranches(t *testing.T) {
 	assert.Equal(t, fixtures.ContactAliceEmail, string(got.Email.Or("")))
 
 	// Update.
-	rename := &siteapi.SiteUpdateContactInput{FirstName: siteapi.NewOptNilString("Renamed")}
+	rename := &siteapi.SiteUpdateContactInput{Revision: g4.Revision, FirstName: siteapi.NewOptNilString("Renamed")}
 	_, err = c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{WorkspaceId: foreign, ID: alice})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{WorkspaceId: acme, ID: missing})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
-	_, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
+	_, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Revision: siteapi.Revision(env.ContactRevision(ctx, t, int64(idStr(fixtures.ContactBobID)))), Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
 		siteapi.SiteContactsUpdateParams{WorkspaceId: acme, ID: idStr(fixtures.ContactBobID)})
 	testhelper.SiteRefusal(t, err, http.StatusConflict, "bob cannot take alice's email")
 	bob, err := env.DB.Contact.Get(ctx, fixtures.ContactBobID)

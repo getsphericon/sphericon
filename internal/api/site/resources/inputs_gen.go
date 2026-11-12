@@ -362,6 +362,7 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 	var contactsUpdateInput contacts.UpdateInput
 	if source != nil {
 		contactsUpdateInput.Core = c.siteapiSiteUpdateContactInputToContactsCore((*source))
+		contactsUpdateInput.Revision = revisionIn((*source).Revision)
 		contactsUpdateInput.SubjectID = nilStringPatch((*source).SubjectId)
 		contactsUpdateInput.Email = nilEmailPatch((*source).Email)
 		contactsUpdateInput.Phone = nilStringPatch((*source).Phone)

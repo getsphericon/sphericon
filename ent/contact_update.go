@@ -56,6 +56,27 @@ func (_u *ContactUpdate) SetNillableWorkspaceID(v *int64) *ContactUpdate {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *ContactUpdate) SetRevision(v int64) *ContactUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *ContactUpdate) SetNillableRevision(v *int64) *ContactUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *ContactUpdate) AddRevision(v int64) *ContactUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetSubjectID sets the "subject_id" field.
 func (_u *ContactUpdate) SetSubjectID(v string) *ContactUpdate {
 	_u.mutation.SetSubjectID(v)
@@ -558,6 +579,11 @@ func (_u *ContactUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ContactUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := contact.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Contact.revision": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Contact.workspace"`)
 	}
@@ -584,6 +610,12 @@ func (_u *ContactUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(contact.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(contact.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(contact.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SubjectID(); ok {
 		_spec.SetField(contact.FieldSubjectID, field.TypeString, value)
@@ -998,6 +1030,27 @@ func (_u *ContactUpdateOne) SetNillableWorkspaceID(v *int64) *ContactUpdateOne {
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetRevision sets the "revision" field.
+func (_u *ContactUpdateOne) SetRevision(v int64) *ContactUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *ContactUpdateOne) SetNillableRevision(v *int64) *ContactUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *ContactUpdateOne) AddRevision(v int64) *ContactUpdateOne {
+	_u.mutation.AddRevision(v)
 	return _u
 }
 
@@ -1516,6 +1569,11 @@ func (_u *ContactUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ContactUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := contact.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Contact.revision": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Contact.workspace"`)
 	}
@@ -1559,6 +1617,12 @@ func (_u *ContactUpdateOne) sqlSave(ctx context.Context) (_node *Contact, err er
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(contact.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(contact.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(contact.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SubjectID(); ok {
 		_spec.SetField(contact.FieldSubjectID, field.TypeString, value)

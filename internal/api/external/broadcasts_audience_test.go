@@ -23,9 +23,12 @@ const (
 	freePlanCondition = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"}]}`
 )
 
-var audienceScopes = []string{
-	"broadcasts:read", "broadcasts:write", "broadcasts:send", "segments:read", "segments:write", "contacts:write",
-}
+// audienceScopes is what these tests' token holds: it reads what it writes (ADR 0119), and sends.
+var audienceScopes = lo.Map([]externalapi.ApiTokenScope{
+	externalapi.ApiTokenScopeBroadcastsRead, externalapi.ApiTokenScopeBroadcastsWrite, externalapi.ApiTokenScopeBroadcastsSend,
+	externalapi.ApiTokenScopeSegmentsRead, externalapi.ApiTokenScopeSegmentsWrite,
+	externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeContactsWrite,
+}, func(s externalapi.ApiTokenScope, _ int) string { return string(s) })
 
 // recipientEmails is the addresses of the Broadcast's Recipients.
 func recipientEmails(t *testing.T, env *testhelper.TestEnv, broadcastID int64) []string {
@@ -61,7 +64,10 @@ func setSegmentCondition(t *testing.T, c *externalapi.Client, id externalapi.Ent
 // moveToPro puts the Contact on the pro plan.
 func moveToPro(t *testing.T, c *externalapi.Client, contactID int64) {
 	t.Helper()
-	_, err := c.ContactsUpdate(t.Context(), &externalapi.UpdateContactInput{
+	// An edit names the revision it was made on (ADR 0119), so the client reads the Contact first.
+	read, err := c.ContactsGet(t.Context(), externalapi.ContactsGetParams{ID: externalapi.EntityId(contactID)})
+	require.NoError(t, err)
+	_, err = c.ContactsUpdate(t.Context(), &externalapi.UpdateContactInput{Revision: read.Revision,
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"plan": jx.Raw(`"pro"`)}),
 	}, externalapi.ContactsUpdateParams{ID: externalapi.EntityId(contactID)})
 	require.NoError(t, err)

@@ -137,6 +137,7 @@ var (
 	ErrorsContactIdentityRequired               = ID{key: "errors.contact_identity_required"}
 	ErrorsContactNotFound                       = ID{key: "errors.contact_not_found"}
 	ErrorsContactPhoneMissing                   = ID{key: "errors.contact_phone_missing"}
+	ErrorsContactRevisionChanged                = ID{key: "errors.contact_revision_changed"}
 	ErrorsCurrencyUnknown                       = ID{key: "errors.currency_unknown"}
 	ErrorsCurrentPasswordIncorrect              = ID{key: "errors.current_password_incorrect"}
 	ErrorsCurrentPasswordRequired               = ID{key: "errors.current_password_required"}

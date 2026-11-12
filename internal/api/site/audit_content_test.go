@@ -68,7 +68,7 @@ func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 	require.NoError(t, err)
 	id := created.ID
 
-	_, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
+	_, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Revision: siteapi.Revision(env.ContactRevision(ctx, t, int64(id))),
 		LastName:     siteapi.NewOptNilString("Lastleak"),
 		CustomFields: siteapi.NewOptNilJsonObject(siteapi.JsonObject{"plan": jx.Raw(`"` + secret + `"`)}),
 	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})

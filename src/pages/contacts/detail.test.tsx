@@ -48,6 +48,7 @@ const NOW = '2026-01-01T00:00:00Z'
 
 const ADA: SiteContactResource = {
   id: '9',
+  revision: 1,
   email: 'ada@example.com',
   firstName: 'Ada',
   lastName: 'Lovelace',
@@ -211,7 +212,7 @@ test('a contact with no country has no flag', async () => {
 test('falls back to the subject id as the title when there is no email', async () => {
   worker.use(
     handleSiteContactsGet({
-      body: { id: '9', subjectId: 'anon-1', tags: [], createdAt: NOW, updatedAt: NOW },
+      body: { id: '9', subjectId: 'anon-1', tags: [], revision: 1, createdAt: NOW, updatedAt: NOW },
     }),
     NO_EVENTS,
   )

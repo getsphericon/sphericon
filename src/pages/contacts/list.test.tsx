@@ -31,9 +31,10 @@ const ALICE = {
   firstName: 'Alice',
   lastName: 'Smith',
   tags: [],
+  revision: 1,
   ...TIMESTAMPS,
 }
-const BOB = { id: '2', email: 'bob@example.com', tags: [], ...TIMESTAMPS }
+const BOB = { id: '2', email: 'bob@example.com', tags: [], revision: 1, ...TIMESTAMPS }
 
 test('lists the workspace contacts', async () => {
   worker.use(handleSiteContactsList({ body: page([ALICE, BOB], 2) }))

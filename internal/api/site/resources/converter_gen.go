@@ -972,6 +972,7 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) site.SiteContactR
 		siteapiSiteContactResource.Avatar = optNilImageURL((*source).Avatar)
 		siteapiSiteContactResource.CustomFields = jsonObject((*source).CustomFields)
 		siteapiSiteContactResource.Tags = tagNames((*source).Edges.Tags)
+		siteapiSiteContactResource.Revision = revision((*source).Revision)
 		siteapiSiteContactResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteContactResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

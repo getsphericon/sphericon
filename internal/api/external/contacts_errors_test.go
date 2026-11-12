@@ -24,7 +24,7 @@ func TestExternalContactsUpdatePersistsAttributesAndCustomFields(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
 
-	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{
+	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(entityIDString(fixtures.ContactAliceID)))),
 		FirstName: externalapi.NewOptNilString("Alicia"),
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{
 			"plan": jx.Raw(`"pro"`), "seats": jx.Raw(`4`),
@@ -49,7 +49,7 @@ func TestExternalContactsUpdateConflictNamesTheField(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	_, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{
+	_, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(context.Background(), t, int64(entityIDString(fixtures.ContactAliceID)))),
 		Email: externalapi.NewOptNilEmailAddress(fixtures.ContactBobEmail),
 	}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
 	conflict := testhelper.ExternalRefusal(t, err, http.StatusConflict)
@@ -65,7 +65,7 @@ func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 
 	_, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: foreign})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	_, err = c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{FirstName: externalapi.NewOptNilString("Hijack")}, externalapi.ContactsUpdateParams{ID: foreign})
+	_, err = c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(foreign))), FirstName: externalapi.NewOptNilString("Hijack")}, externalapi.ContactsUpdateParams{ID: foreign})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: foreign})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
@@ -74,7 +74,7 @@ func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, before.FirstName, still.FirstName, "the foreign contact is untouched")
 
-	_, err = c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: 999999})
+	_, err = c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(999999)))}, externalapi.ContactsUpdateParams{ID: 999999})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: 999999})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
@@ -170,7 +170,7 @@ func TestExternalContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 
 	var null externalapi.OptNilString
 	null.SetToNull()
-	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{FirstName: null},
+	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(entityIDString(fixtures.ContactAliceID)))), FirstName: null},
 		externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
 	require.NoError(t, err)
 	assert.Empty(t, got.FirstName.Value, "first name cleared by explicit null")

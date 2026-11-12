@@ -105,7 +105,8 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 		want := lo.Map(lo.Without(columns, left...), func(col string, _ int) string { return camel(col) })
 		assert.ElementsMatch(t, want, keys, dto.Name())
 	}
-	covered(reflect.TypeFor[externalapi.ContactExportContact](), contact.Columns, "workspace_id")
+	// The revision counts the row's writes for editors (ADR 0119): nothing about the person.
+	covered(reflect.TypeFor[externalapi.ContactExportContact](), contact.Columns, "workspace_id", contact.FieldRevision)
 	covered(reflect.TypeFor[externalapi.ContactExportTag](), tag.Columns, "workspace_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportVisitor](), visitor.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportEvent](), event.Columns, "workspace_id", "contact_id", "updated_at",

@@ -214,6 +214,7 @@
   "errors.automation_step_invalid": "invalid step",
   "errors.automation_trigger_invalid": "invalid trigger",
   "errors.contact_not_found": "contact not found",
+  "errors.contact_revision_changed": "the contact changed since it was opened",
   "errors.tag_not_found": "tag not found",
   "errors.webhook_not_found": "webhook not found",
   "errors.webhook_url_invalid": "url must be an absolute http or https URL",

@@ -3611,6 +3611,10 @@ export type SiteContactResource = {
    */
   tags: Array<string>;
   /**
+   * The revision of the state this answer shows (ADR 0119): an update names it. Every write of the contact moves it: an update, an Identify or import that changes it, a tag applied or removed
+   */
+  revision: Revision;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -6593,6 +6597,10 @@ export type SiteUpdateAutomationInput = {
  */
 export type SiteUpdateContactInput = {
   /**
+   * The contact's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
    * The customer's own user id — an alias key
    */
   subjectId?: string | null;
@@ -7485,6 +7493,10 @@ export type UpdateBroadcastInput = {
  * Request body for updating a contact
  */
 export type UpdateContactInput = {
+  /**
+   * The contact's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * The customer's own user id — an alias key
    */

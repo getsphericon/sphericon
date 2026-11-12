@@ -63,6 +63,20 @@ func (_c *ContactCreate) SetWorkspaceID(v int64) *ContactCreate {
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *ContactCreate) SetRevision(v int64) *ContactCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *ContactCreate) SetNillableRevision(v *int64) *ContactCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetSubjectID sets the "subject_id" field.
 func (_c *ContactCreate) SetSubjectID(v string) *ContactCreate {
 	_c.mutation.SetSubjectID(v)
@@ -381,6 +395,10 @@ func (_c *ContactCreate) defaults() {
 		v := contact.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := contact.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -393,6 +411,14 @@ func (_c *ContactCreate) check() error {
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "Contact.workspace_id"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "Contact.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := contact.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Contact.revision": %w`, err)}
+		}
 	}
 	if v, ok := _c.mutation.Source(); ok {
 		if err := contact.SourceValidator(v); err != nil {
@@ -442,6 +468,10 @@ func (_c *ContactCreate) createSpec() (*Contact, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(contact.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(contact.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.SubjectID(); ok {
 		_spec.SetField(contact.FieldSubjectID, field.TypeString, value)
@@ -681,6 +711,24 @@ func (u *ContactUpsert) SetWorkspaceID(v int64) *ContactUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *ContactUpsert) UpdateWorkspaceID() *ContactUpsert {
 	u.SetExcluded(contact.FieldWorkspaceID)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *ContactUpsert) SetRevision(v int64) *ContactUpsert {
+	u.Set(contact.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *ContactUpsert) UpdateRevision() *ContactUpsert {
+	u.SetExcluded(contact.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *ContactUpsert) AddRevision(v int64) *ContactUpsert {
+	u.Add(contact.FieldRevision, v)
 	return u
 }
 
@@ -979,6 +1027,27 @@ func (u *ContactUpsertOne) SetWorkspaceID(v int64) *ContactUpsertOne {
 func (u *ContactUpsertOne) UpdateWorkspaceID() *ContactUpsertOne {
 	return u.Update(func(s *ContactUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *ContactUpsertOne) SetRevision(v int64) *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *ContactUpsertOne) AddRevision(v int64) *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *ContactUpsertOne) UpdateRevision() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -1479,6 +1548,27 @@ func (u *ContactUpsertBulk) SetWorkspaceID(v int64) *ContactUpsertBulk {
 func (u *ContactUpsertBulk) UpdateWorkspaceID() *ContactUpsertBulk {
 	return u.Update(func(s *ContactUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *ContactUpsertBulk) SetRevision(v int64) *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *ContactUpsertBulk) AddRevision(v int64) *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *ContactUpsertBulk) UpdateRevision() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateRevision()
 	})
 }
 

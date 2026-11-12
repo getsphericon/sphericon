@@ -2,6 +2,7 @@ package visitoridentification_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -62,6 +63,69 @@ func TestIdentifyReusesAnExistingContactAndDevice(t *testing.T) {
 	n, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.Email(fixtures.ContactAliceEmail)).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "no duplicate contact")
+}
+
+// An Identify that changes nothing writes nothing: the Contact keeps its revision and updated_at,
+// so a console editor open on it can still save (ADR 0119). One that changes a trait moves both.
+func TestIdentifyThatChangesNothingLeavesTheContactAsItWas(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	identify := func(plan string) {
+		t.Helper()
+		err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+			VisitorID: fixtures.EventAnonymousFirstVisitorID,
+			Email:     new("repeat@example.com"),
+			Traits:    map[string]any{"plan": plan, "firstName": "Rita"},
+		})
+		require.NoError(t, err)
+	}
+	stored := func() (int64, time.Time) {
+		c, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.Email("repeat@example.com")).Only(ctx)
+		require.NoError(t, err)
+		return c.Revision, c.UpdatedAt
+	}
+	identify("pro")
+	revision, updatedAt := stored()
+
+	identify("pro")
+	again, againAt := stored()
+	assert.Equal(t, revision, again)
+	assert.True(t, updatedAt.Equal(againAt), "updated_at %v, then %v", updatedAt, againAt)
+
+	identify("free")
+	changed, _ := stored()
+	assert.Equal(t, revision+1, changed)
+}
+
+// Traits of every type read back from the stored JSON as another Go type than they are given in (a
+// number as float64, a moment as text): repeating them is still no change, so the Contact keeps its
+// revision.
+func TestIdentifyRepeatingTraitsOfEveryTypeLeavesTheRevision(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	traits := map[string]any{
+		"seats":    4,
+		"ratio":    json.Number("2.5"),
+		"beta":     true,
+		"renewsAt": "2026-03-01T10:00:00Z",
+		"address":  map[string]any{"city": "Lisbon", "floors": []any{1, 2}},
+	}
+	identify := func() int64 {
+		t.Helper()
+		err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+			VisitorID: fixtures.EventAnonymousFirstVisitorID,
+			Email:     new("typed@example.com"),
+			Traits:    traits,
+		})
+		require.NoError(t, err)
+		c, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.Email("typed@example.com")).Only(ctx)
+		require.NoError(t, err)
+		return c.Revision
+	}
+
+	first := identify()
+
+	assert.Equal(t, first, identify())
 }
 
 func TestIdentifyRefusesWhatCannotBeIdentified(t *testing.T) {

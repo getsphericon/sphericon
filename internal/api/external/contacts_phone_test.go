@@ -47,7 +47,7 @@ func TestExternalContactsUpdateReadsALocalPhoneWithTheStoredCountry(t *testing.T
 	c := env.ExternalScoped(t, "contacts:write")
 	id := entityIDString(fixtures.ContactLiamID) // stored with the country US
 
-	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Phone: externalapi.NewOptNilString("(415) 555-0101")},
+	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(id))), Phone: externalapi.NewOptNilString("(415) 555-0101")},
 		externalapi.ContactsUpdateParams{ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, "+14155550101", got.Phone.Value)
@@ -57,7 +57,7 @@ func TestExternalContactsUpdateReadsALocalPhoneWithTheCountryItSets(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	got, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{
+	got, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(context.Background(), t, int64(entityIDString(fixtures.ContactAliceID)))),
 		Phone:   externalapi.NewOptNilString("8 999 123-45-67"),
 		Country: externalapi.NewOptNilCountryCode("RU"),
 	}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
@@ -83,7 +83,7 @@ func TestExternalContactsRefuseAPhoneThatIsNoNumber(t *testing.T) {
 			refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Contains(t, refused.Errors.Value, "phone")
 
-			_, err = c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{
+			_, err = c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(context.Background(), t, int64(entityIDString(fixtures.ContactAliceID)))),
 				Phone: externalapi.NewOptNilString(tc.phone),
 			}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
 			testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)

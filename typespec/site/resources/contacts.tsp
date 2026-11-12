@@ -54,6 +54,9 @@ model SiteContactResource {
   /** The labels the contact carries, ordered by name */
   tags: string[];
 
+  /** The revision of the state this answer shows (ADR 0119): an update names it. Every write of the contact moves it: an update, an Identify or import that changes it, a tag applied or removed */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 

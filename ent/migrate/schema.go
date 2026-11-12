@@ -709,6 +709,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "subject_id", Type: field.TypeString, Nullable: true},
 		{Name: "email", Type: field.TypeString, Nullable: true},
 		{Name: "phone", Type: field.TypeString, Nullable: true},
@@ -732,7 +733,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contacts_workspaces_contacts",
-				Columns:    []*schema.Column{ContactsColumns[16]},
+				Columns:    []*schema.Column{ContactsColumns[17]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -741,27 +742,27 @@ var (
 			{
 				Name:    "contacts_email_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[16]},
+				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[17]},
 			},
 			{
 				Name:    "contacts_subject_id_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[3], ContactsColumns[16]},
+				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[17]},
 			},
 			{
 				Name:    "contacts_phone_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[16]},
+				Columns: []*schema.Column{ContactsColumns[6], ContactsColumns[17]},
 			},
 			{
 				Name:    "contact_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[16], ContactsColumns[2], ContactsColumns[0]},
+				Columns: []*schema.Column{ContactsColumns[17], ContactsColumns[2], ContactsColumns[0]},
 			},
 			{
 				Name:    "contacts_workspace_id_identified",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[16]},
+				Columns: []*schema.Column{ContactsColumns[17]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "email IS NOT NULL AND email <> ''",
 				},
