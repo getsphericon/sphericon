@@ -233,8 +233,8 @@ how long its **Audit log** keeps an Audit entry, which is otherwise never delete
 _Avoid_: TTL, expiry, purge, archive
 
 **Condition**:
-A tree of tests (a combinator over nested groups) on a Contact's fields, custom fields, Tags and
-past Events; when a Rule, a **Branch** or a **Wait for event** evaluates it, on the properties of
+A tree of tests (a combinator over nested groups) on a Contact's fields, custom fields, Tags, past
+Events and **Scores**; when a Rule, a **Branch** or a **Wait for event** evaluates it, on the properties of
 the Event that triggered the Rule or the Enrollment, or that the wait awaits; and in a Branch alone,
 on whether the Enrollment's own messages were opened or clicked. A test of engagement (an open, a
 click) is unknown for a Destination that is not tracked; a Segment or a Rule reads an unknown result
@@ -242,6 +242,15 @@ as no match, and a Branch routes it. Evaluated live against current data, never 
 shared grammar: a Segment is a named Condition, a Rule holds one, each path of a Branch one, and a
 Wait for event may hold one.
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
+
+**Score**:
+A named definition of the Workspace whose value for a Contact is computed when it is read, never
+stored: points for the Contact's Events of chosen actions within its window, capped per action, and
+for Conditions on the Contact that hold. Opens and clicks never count. A Condition reads it as a
+number, and the Contact's page shows which component gave how many points. It may have one
+threshold: a rise across it caused by an Event or a write of the Contact records
+`contact.score_reached`; every other change of that state is silent.
+_Avoid_: Lead score (it scores any Contact), rating, points field, engagement score
 
 **Segment**:
 A named, reusable Condition: "which contacts match these conditions", the one targeting
@@ -924,7 +933,7 @@ _Avoid_: Dependency, reference, in use
 
 **Definition use**:
 A definition that names a row: a Segment's Condition, the live version or the draft of a kept
-Automation or Rule, or the Condition an armed Broadcast copied from its Segment. A row in Definition
+Automation or Rule, the Condition an armed Broadcast copied from its Segment, or a **Score**. A row in Definition
 use is not deleted, nor changed in a way the definition would stop reading (a Custom field's type).
 _Avoid_: Dependency, reference, in use
 

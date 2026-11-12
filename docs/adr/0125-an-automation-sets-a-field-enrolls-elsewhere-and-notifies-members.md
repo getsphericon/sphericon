@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation sets a field, enrolls elsewhere and notifies Members
 
+> **Amended by [[0129-a-score-is-computed-from-events-and-attributes-never-kept-as-a-counter]]:** no
+> increment is added to Set field: a Score is computed from Events and Conditions, never counted.
+
 > **Amended by [[0126-an-automation-starts-on-a-date-and-waits-until-a-local-time]]:** an Enroll,
 > Step or Rule Action, cannot target an Automation with a date Trigger.
 
