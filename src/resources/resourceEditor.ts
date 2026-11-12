@@ -81,6 +81,7 @@ export function resourceEditorAdapter<
   id,
   schema,
   editedValues,
+  valuesOf,
   update,
   operations,
 }: {
@@ -88,6 +89,9 @@ export function resourceEditorAdapter<
   schema: ResourceFormSchema<TPayload, TValues>
   // The edited values of a resource whose fields are not at its top level.
   editedValues?: ((resource: TResource) => ResourceValues<TPayload>) | undefined
+  // The form's values of a resource whose form is not its payload's fields (an Integration's
+  // credentials, read from its stored config); the schema's toValues otherwise.
+  valuesOf?: ((resource: TResource) => TValues) | undefined
   // The generated client call that saves an edit.
   update: ResourceUpdate<TPayload, TResource>
   operations: Record<TOperation, ResourceOperation<TResource, TValues>>
@@ -99,7 +103,8 @@ export function resourceEditorAdapter<
   EditorReceipt<TResource>,
   TOperation
 > {
-  const values = (resource: TResource) => schema.toValues(editedValues?.(resource) ?? resource)
+  const values = (resource: TResource) =>
+    valuesOf ? valuesOf(resource) : schema.toValues(editedValues?.(resource) ?? resource)
   return {
     id,
     open: ({ resource }) => values(resource),

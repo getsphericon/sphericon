@@ -160,13 +160,25 @@ export interface CredentialsBody {
 
 // The fields a saved Integration's provider cannot be saved without. A secret is never one: blank,
 // it keeps the stored secret. An SES-compatible service keeps its endpoint.
-function requiredFields(integration: SiteIntegrationResource, values: IntegrationFormValues) {
+// CredentialsVariant is what the credentials form of an Integration depends on: its kind, and
+// whether an SES one is an SES-compatible service with its own endpoint.
+export interface CredentialsVariant {
+  kind: SiteIntegrationProvider
+  compatible: boolean
+}
+
+// credentialsVariant is the variant of a stored Integration's credentials form.
+export function credentialsVariant(integration: SiteIntegrationResource): CredentialsVariant {
   const { config } = integration
-  switch (config.kind) {
+  return { kind: config.kind, compatible: config.kind === 'ses' && Boolean(config.endpoint) }
+}
+
+function requiredFields(variant: CredentialsVariant, values: IntegrationFormValues) {
+  switch (variant.kind) {
     case 'smtp':
       return ['host', 'from'] as const
     case 'ses':
-      return config.endpoint
+      return variant.compatible
         ? (['endpoint', 'region', 'accessKeyId', 'from'] as const)
         : (['region', 'accessKeyId', 'from'] as const)
     case 'twilio':
@@ -183,19 +195,19 @@ function requiredFields(integration: SiteIntegrationResource, values: Integratio
 // credentialsSchema checks the form that saves an Integration's credentials again (a blank required
 // field, an email provider's From that is no address) and turns it into the Update's body.
 export function credentialsSchema(
-  integration: SiteIntegrationResource,
+  variant: CredentialsVariant,
 ): z.ZodType<CredentialsBody, IntegrationFormValues> {
   // The values come from the form's own state, so their types need no check of their own: the
   // contract's rules are the request body's, which buildConfig makes of them.
   return z
     .custom<IntegrationFormValues>()
     .superRefine((values, ctx) => {
-      for (const field of requiredFields(integration, values)) {
+      for (const field of requiredFields(variant, values)) {
         if (values[field].trim() === '') {
           ctx.addIssue({ code: 'custom', path: [field], input: '' })
         }
       }
-      const email = integration.config.kind === 'smtp' || integration.config.kind === 'ses'
+      const email = variant.kind === 'smtp' || variant.kind === 'ses'
       const from = values.from.trim()
       if (email && from !== '') {
         for (const issue of zEmailAddress.safeParse(from).error?.issues ?? []) {

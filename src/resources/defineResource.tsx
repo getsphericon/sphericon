@@ -3,6 +3,7 @@ import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { Navigate, useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
+import { useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -33,12 +34,17 @@ type ResourceForm<TPayload, TValues extends object> = SchemaForm<TValues, TPaylo
 // schema and `onSubmit` is handed the normalized API payload; the component only renders
 // fields and buttons. It never reshapes the payload: the edit page's session sends the schema's
 // output of the values it captures, so whatever makes the request body belongs to the schema.
-export interface ResourceFormProps<TPayload, TValues extends object> {
+export interface ResourceFormProps<TPayload, TValues extends object, TResource = unknown> {
   form: ResourceForm<TPayload, TValues>
   isPending: boolean
   onSubmit: (payload: TPayload) => void
   // Set when the form is shown in a modal: Cancel closes it instead of leaving the page.
   onCancel?: () => void
+  // In an edit: the resource as the session shows it, for what the form renders from what is
+  // stored (a secret that has a value to keep), and the refusal of its last write, for the form to
+  // place on its fields; null once a write is accepted.
+  stored?: TResource
+  failure?: unknown
 }
 
 // The strings of an edit: its title, the toast of a Save, and the titles of a failed load and Save.
@@ -91,7 +97,7 @@ export interface ResourceDescription<
   // Form values <-> API payload, derived from the generated zod schema (resourceFormSchema).
   schema: ResourceFormSchema<TPayload, TValues>
   // The resource's field-rendering form.
-  Form: ComponentType<ResourceFormProps<TPayload, TValues>>
+  Form: ComponentType<ResourceFormProps<TPayload, TValues, TResource>>
   // The generated pieces, passed as generated. The module calls them with
   // { path: { workspaceId } } (create) or { path: { workspaceId, id } } (get, update).
   getOptions: (options: {
@@ -282,6 +288,8 @@ export type EditDescription<
 > & {
   texts: (t: TFunction) => EditTexts
   editorId: string
+  // The form's values of a stored resource, when they are not its payload's fields.
+  valuesOf?: (loaded: TResource) => TValues
 }
 
 // defineEditForm builds the edit form of a resource, the one implementation of an edit in an editor
@@ -300,6 +308,7 @@ export function defineEditForm<
     id: resource.editorId,
     schema: resource.schema,
     editedValues: resource.editedValues,
+    valuesOf: resource.valuesOf,
     update: resource.update,
     operations,
   })
@@ -317,6 +326,8 @@ export function defineEditForm<
     children,
     titled = true,
     onSaved,
+    onCancel,
+    onFailed,
   }: ResourceEditPageProps<TResource, TOperation> & {
     workspaceId: string
     id: string
@@ -325,20 +336,39 @@ export function defineEditForm<
     titled?: boolean
     // Called once a Save is acknowledged: a modal closes.
     onSaved?: () => void
+    // Given to the form as its Cancel: a modal closes.
+    onCancel?: () => void
+    // Takes over a refused write before its toast: true when it dealt with it (an Integration
+    // deleted meanwhile closes its modal; a provider's refusal shows in the form).
+    onFailed?: (error: unknown, operation: TOperation | 'SAVE') => boolean
   }) {
     const { t } = useTranslation()
     const texts = resource.texts(t)
+    const [failure, setFailure] = useState<unknown>(null)
 
     const path = { workspaceId, id }
     // The values the session opens with, the same the form starts from.
     const form = useSchemaForm(resource.schema.update, adapter.open({ path, resource: loaded }))
-    const effects = useEditorEffects<TResource, TOperation>(
+    const toasts = useEditorEffects<TResource, TOperation>(
       resource.getOptions({ path }).queryKey,
       (operation) =>
         operation === 'SAVE'
           ? { accepted: texts.updated, failedTitle: texts.saveErrorTitle }
           : operations[operation].texts(t),
     )
+    const effects: typeof toasts = {
+      ...toasts,
+      accepted: (operation) => {
+        setFailure(null)
+        toasts.accepted(operation)
+      },
+      failed: (operation, error) => {
+        setFailure(error)
+        if (!onFailed?.(error, operation)) {
+          toasts.failed(operation, error)
+        }
+      },
+    }
 
     const {
       snapshot: session,
@@ -413,6 +443,9 @@ export function defineEditForm<
             onSubmit={() => {
               void submit()
             }}
+            stored={session.context.resource}
+            failure={failure}
+            {...(onCancel && { onCancel })}
           />
         </Fieldset>
         {children?.(session.context.resource, editor)}
@@ -429,6 +462,10 @@ export function defineEditForm<
 export interface ResourceEditModalProps<TResource> {
   onClose: () => void
   children?: (loaded: TResource) => ReactNode
+  // The modal's title when it names the resource; the resource's edit title otherwise.
+  title?: string
+  // Takes over a refused write before its toast (EditForm's onFailed).
+  onFailed?: (error: unknown) => boolean
 }
 
 // The edit of a resource that is listed rather than given its own page (a Custom field, a Webhook):
@@ -448,6 +485,7 @@ export function defineModalEditor<
     id,
     onClose,
     children,
+    onFailed,
   }: ResourceEditModalProps<TResource> & { id: string }) {
     const { workspaceId } = workspaceRoute.useParams()
     const { data } = useSuspenseQuery(resource.getOptions({ path: { workspaceId, id } }))
@@ -459,6 +497,8 @@ export function defineModalEditor<
         loaded={data}
         titled={false}
         onSaved={onClose}
+        onCancel={onClose}
+        {...(onFailed && { onFailed: (error: unknown) => onFailed(error) })}
         {...(children && { children })}
       />
     )
@@ -468,14 +508,21 @@ export function defineModalEditor<
     id,
     onClose,
     children,
+    title,
+    onFailed,
   }: ResourceEditModalProps<TResource> & { id: string | null }) {
     const { t } = useTranslation()
     const texts = resource.texts(t)
     return (
-      <Modal opened={id !== null} onClose={onClose} title={texts.editTitle}>
+      <Modal opened={id !== null} onClose={onClose} title={title ?? texts.editTitle}>
         {id !== null && (
           <QueryBoundary fallback={<PageSkeleton />} errorTitle={texts.loadErrorTitle}>
-            <LoadedEditForm id={id} onClose={onClose} {...(children && { children })} />
+            <LoadedEditForm
+              id={id}
+              onClose={onClose}
+              {...(onFailed && { onFailed })}
+              {...(children && { children })}
+            />
           </QueryBoundary>
         )}
       </Modal>

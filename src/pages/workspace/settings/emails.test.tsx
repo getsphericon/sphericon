@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteAuditList,
+  handleSiteIntegrationsGet,
   handleSiteIntegrationsList,
   handleSiteSendingDomainsList,
   handleSiteWorkspacesList,
@@ -119,6 +120,8 @@ test('a link to an Integration opens the form that saves its credentials', async
   worker.use(
     handleSiteWorkspacesList({ body: [{ ...workspace, permissions: ['integrations:manage'] }] }),
     handleSiteIntegrationsList({ body: [telegramBot] }),
+    // The credentials form opens on the Integration as stored.
+    handleSiteIntegrationsGet({ body: telegramBot }),
     handleSiteSendingDomainsList({
       body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
     }),

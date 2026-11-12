@@ -4,6 +4,7 @@ import { userEvent } from 'vitest/browser'
 
 import {
   handleSiteAuditList,
+  handleSiteIntegrationsGet,
   handleSiteIntegrationsRegenerateKey,
   handleSitePresetsList,
   handleSiteIntegrationsCreate,
@@ -64,7 +65,14 @@ const workspaceWith = (permissions: Permission[]): SiteWorkspaceResource => ({
 })
 const manager = workspaceWith(['integrations:manage'])
 
-const list = (items: SiteIntegrationResource[]) => handleSiteIntegrationsList({ body: items })
+// The list, and each Integration on its own: what an Integration's edit window opens with.
+const list = (items: SiteIntegrationResource[]) => [
+  handleSiteIntegrationsList({ body: items }),
+  handleSiteIntegrationsGet(({ params }) => {
+    const found = items.find((item) => item.id === params.id)
+    return found ? HttpResponse.json(found) : problem(404)
+  }),
+]
 
 const create = (bodies: unknown[]) =>
   handleSiteIntegrationsCreate(async ({ request }) => {
@@ -78,7 +86,7 @@ beforeEach(() => {
 })
 
 test('lists connected providers', async () => {
-  worker.use(list([smtp]))
+  worker.use(...list([smtp]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
@@ -86,7 +94,7 @@ test('lists connected providers', async () => {
 
 test('connects an SMTP provider and names it after its host', async () => {
   const bodies: unknown[] = []
-  worker.use(list([]), create(bodies))
+  worker.use(...list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -119,7 +127,7 @@ test('connects an SMTP provider and names it after its host', async () => {
 
 test('a second provider is the default only when asked, and may be named', async () => {
   const bodies: unknown[] = []
-  worker.use(list([smtp]), create(bodies))
+  worker.use(...list([smtp]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -137,7 +145,7 @@ test('a second provider is the default only when asked, and may be named', async
 
 test('connects an Amazon SES provider', async () => {
   const bodies: unknown[] = []
-  worker.use(list([]), create(bodies))
+  worker.use(...list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -174,7 +182,7 @@ test('connects an Amazon SES provider', async () => {
 
 test('connects an SES-compatible service at its own endpoint, with its Provider limit', async () => {
   const bodies: unknown[] = []
-  worker.use(list([]), create(bodies))
+  worker.use(...list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -206,7 +214,7 @@ test('connects an SES-compatible service at its own endpoint, with its Provider 
 })
 
 test('Amazon SES asks for no endpoint', async () => {
-  worker.use(list([]))
+  worker.use(...list([]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -218,7 +226,7 @@ test('Amazon SES asks for no endpoint', async () => {
 
 test('connects the Test inbox with no credentials form', async () => {
   const bodies: unknown[] = []
-  worker.use(list([smtp]), create(bodies))
+  worker.use(...list([smtp]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -239,7 +247,7 @@ test('connects the Test inbox with no credentials form', async () => {
 
 test('says why a second Test inbox is refused', async () => {
   worker.use(
-    list([]),
+    ...list([]),
     handleSiteIntegrationsCreate(() =>
       problem(409, { detail: 'The workspace already has a Test inbox' }),
     ),
@@ -269,7 +277,7 @@ async function confirmDelete(screen: Awaited<ReturnType<typeof renderWithRouter>
 test('deletes a provider once its name is typed', async () => {
   let deleted = false
   worker.use(
-    list([smtp]),
+    ...list([smtp]),
     handleSiteIntegrationsDelete(() => {
       deleted = true
       return new HttpResponse(null, { status: 204 })
@@ -285,7 +293,7 @@ test('deletes a provider once its name is typed', async () => {
 
 test('a provider that live work uses is not deleted and the work is named', async () => {
   worker.use(
-    list([smtp]),
+    ...list([smtp]),
     handleSiteIntegrationsDelete(() =>
       problem(409, { usedBy: [{ kind: 'broadcast', id: '7', name: 'Summer sale teaser' }] }),
     ),
@@ -299,7 +307,7 @@ test('a provider that live work uses is not deleted and the work is named', asyn
 })
 
 test('offers no archived view: a deleted provider is gone for good', async () => {
-  worker.use(list([smtp]))
+  worker.use(...list([smtp]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
@@ -314,7 +322,7 @@ test('shows an error alert when providers fail to load', async () => {
 
 test('reports a create failure', async () => {
   worker.use(
-    list([]),
+    ...list([]),
     handleSiteIntegrationsCreate(() => problem(422, { detail: 'bad host' })),
   )
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
@@ -348,7 +356,7 @@ const update = (bodies: unknown[]) =>
   })
 
 test('warns when an Integration has no Provider limit', async () => {
-  worker.use(list([smtp]))
+  worker.use(...list([smtp]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Primary SMTP has no Provider limit')).toBeInTheDocument()
@@ -362,7 +370,7 @@ test('warns once about all the Integrations that share a warning', async () => {
     name: 'Backup SMTP',
     isDefault: false,
   }
-  worker.use(list([smtp, backup]))
+  worker.use(...list([smtp, backup]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect
@@ -384,7 +392,7 @@ test('puts a stopped account above the other warnings', async () => {
     name: 'Amazon SES',
     providerLimit: { ...limited.providerLimit, warnings: ['providerStopped'] },
   }
-  worker.use(list([smtp, stopped]))
+  worker.use(...list([smtp, stopped]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const titles = screen.getByText(/the provider has stopped this account|has no Provider limit/)
@@ -400,7 +408,7 @@ test('warns when the provider send quota could not be read', async () => {
     name: 'Amazon SES',
     providerLimit: { ...limited.providerLimit, warnings: ['providerQuotaUnavailable'] },
   }
-  worker.use(list([ses]))
+  worker.use(...list([ses]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect
@@ -433,7 +441,7 @@ test.each([
     name: 'Amazon SES',
     providerLimit: { ...limited.providerLimit, warnings: [warning] },
   }
-  worker.use(list([ses]))
+  worker.use(...list([ses]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText(title)).toBeInTheDocument()
@@ -441,7 +449,7 @@ test.each([
 })
 
 test('shows no quota warning when the provider quota is known', async () => {
-  worker.use(list([limited]))
+  worker.use(...list([limited]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Per second: 14')).toBeInTheDocument()
@@ -451,7 +459,7 @@ test('shows no quota warning when the provider quota is known', async () => {
 })
 
 test('shows the effective limit, its source and the 24-hour usage', async () => {
-  worker.use(list([limited]))
+  worker.use(...list([limited]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Per second: 14')).toBeInTheDocument()
@@ -465,7 +473,7 @@ test('shows the effective limit, its source and the 24-hour usage', async () => 
 
 test('connects a provider with a Provider limit', async () => {
   const bodies: unknown[] = []
-  worker.use(list([]), create(bodies))
+  worker.use(...list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -485,7 +493,7 @@ test('connects a provider with a Provider limit', async () => {
 
 test('edits only the limits of an existing provider, and a blank clears one', async () => {
   const bodies: unknown[] = []
-  worker.use(list([limited]), update(bodies))
+  worker.use(...list([limited]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
@@ -511,7 +519,7 @@ test('an SES-compatible service keeps both values: a blank is not saved', async 
     },
   }
   const bodies: unknown[] = []
-  worker.use(list([postbox]), update(bodies))
+  worker.use(...list([postbox]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
@@ -540,7 +548,7 @@ test('saves an SMTP server again as read back, its password kept when left blank
       fromName: 'Acme',
     },
   }
-  worker.use(list([withLogin]), update(bodies))
+  worker.use(...list([withLogin]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const dialog = await openCredentials(screen)
@@ -571,7 +579,7 @@ test('an SES account is saved again only with its access key ID typed in full', 
     provider: 'ses',
     config: { kind: 'ses', region: 'eu-west-1', from: 'hi@acme.com', accessKeyIdLast4: 'WXYZ' },
   }
-  worker.use(list([ses]), update(bodies))
+  worker.use(...list([ses]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const dialog = await openCredentials(screen)
@@ -606,7 +614,7 @@ test('an SES account is saved again only with its access key ID typed in full', 
 
 test('the Test inbox has no credentials to save', async () => {
   const inbox: SiteIntegrationResource = { ...smtp, provider: 'inbox', config: { kind: 'inbox' } }
-  worker.use(list([inbox]))
+  worker.use(...list([inbox]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
@@ -621,7 +629,13 @@ test('the Test inbox has no credentials to save', async () => {
 const deletedMeanwhile = (row: SiteIntegrationResource) => {
   let rows = [row]
   return {
-    list: handleSiteIntegrationsList(() => HttpResponse.json(rows)),
+    list: [
+      handleSiteIntegrationsList(() => HttpResponse.json(rows)),
+      handleSiteIntegrationsGet(({ params }) => {
+        const found = rows.find((item) => item.id === params.id)
+        return found ? HttpResponse.json(found) : problem(404)
+      }),
+    ],
     gone: () => {
       rows = []
       return problem(404, { title: 'Not Found', detail: 'integration not found' })
@@ -634,7 +648,7 @@ const GONE =
 
 test('a Provider limit window whose provider was deleted closes and the list drops it', async () => {
   const deleted = deletedMeanwhile(limited)
-  worker.use(deleted.list, handleSiteIntegrationsUpdate(deleted.gone))
+  worker.use(...deleted.list, handleSiteIntegrationsUpdate(deleted.gone))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
@@ -654,7 +668,7 @@ test('makes another provider the default, and the default offers no such action'
     isDefault: false,
   }
   const bodies: unknown[] = []
-  worker.use(list([smtp, backup]), update(bodies))
+  worker.use(...list([smtp, backup]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
@@ -670,7 +684,7 @@ test('makes another provider the default, and the default offers no such action'
 })
 
 test('a member without integrations:manage reads the providers but does not change them', async () => {
-  worker.use(list([smtp]))
+  worker.use(...list([smtp]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={workspaceWith([])} />)
 
   await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
@@ -682,7 +696,7 @@ test('a member without integrations:manage reads the providers but does not chan
 })
 
 test("a provider's history opens the Audit log filtered to it", async () => {
-  worker.use(list([smtp]), handleSiteAuditList({ body: { items: [] } }))
+  worker.use(...list([smtp]), handleSiteAuditList({ body: { items: [] } }))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
@@ -694,7 +708,7 @@ test("a provider's history opens the Audit log filtered to it", async () => {
 })
 
 test('a member who reads the Audit log but cannot manage providers gets only the history', async () => {
-  worker.use(list([smtp]), handleSiteAuditList({ body: { items: [] } }))
+  worker.use(...list([smtp]), handleSiteAuditList({ body: { items: [] } }))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={workspaceWith([])} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
@@ -807,7 +821,7 @@ const updates = (bodies: unknown[], answer = withPreset) =>
 
 test('shows the hook URL and chooses a Preset, its params as fields', async () => {
   const bodies: unknown[] = []
-  worker.use(list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
+  worker.use(...list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await openInbound(screen)
@@ -821,7 +835,7 @@ test('shows the hook URL and chooses a Preset, its params as fields', async () =
 })
 
 test('every built-in Preset and a custom one render their params as fields', async () => {
-  worker.use(list([smtp]), handleSitePresetsList({ body: PRESETS }))
+  worker.use(...list([smtp]), handleSitePresetsList({ body: PRESETS }))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
   await openInbound(screen)
 
@@ -841,7 +855,7 @@ test('every built-in Preset and a custom one render their params as fields', asy
 
 test('a value the schema refuses is shown on its field and nothing is sent', async () => {
   const bodies: unknown[] = []
-  worker.use(list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
+  worker.use(...list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
   await openInbound(screen)
 
@@ -855,7 +869,7 @@ test('a value the schema refuses is shown on its field and nothing is sent', asy
 
 test('a value off its format is shown on its field and nothing is sent', async () => {
   const bodies: unknown[] = []
-  worker.use(list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
+  worker.use(...list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
   await openInbound(screen)
 
@@ -870,7 +884,7 @@ test('a value off its format is shown on its field and nothing is sent', async (
 
 test("the server's refusal of a param lands on its field", async () => {
   worker.use(
-    list([smtp]),
+    ...list([smtp]),
     handleSitePresetsList({ body: PRESETS }),
     handleSiteIntegrationsUpdate(() =>
       problem(422, { errors: { 'params.user': ['the user name is taken'] } }),
@@ -890,7 +904,7 @@ test("the server's refusal of a param lands on its field", async () => {
 test('a saved secret shows blank, a blank keeps it and a new value starts a rotation', async () => {
   const bodies: unknown[] = []
   worker.use(
-    list([{ ...withPreset, secretsRetiring: [] }]),
+    ...list([{ ...withPreset, secretsRetiring: [] }]),
     handleSitePresetsList({ body: PRESETS }),
     updates(bodies),
   )
@@ -917,7 +931,7 @@ test('a saved secret shows blank, a blank keeps it and a new value starts a rota
 test('retires the old secrets of a rotating Preset', async () => {
   const bodies: unknown[] = []
   worker.use(
-    list([withPreset]),
+    ...list([withPreset]),
     handleSitePresetsList({ body: [generic] }),
     handleSiteIntegrationsUpdate(async ({ request }) => {
       bodies.push(await request.json())
@@ -936,7 +950,7 @@ test('retires the old secrets of a rotating Preset', async () => {
 test('regenerates the hook URL after a confirmation', async () => {
   const calls: string[] = []
   worker.use(
-    list([smtp]),
+    ...list([smtp]),
     handleSitePresetsList({ body: [generic] }),
     handleSiteIntegrationsRegenerateKey(({ params }) => {
       calls.push(params.id)
@@ -959,7 +973,7 @@ test('regenerates the hook URL after a confirmation', async () => {
 test('an Inbound window whose provider was deleted closes and the list drops it', async () => {
   const deleted = deletedMeanwhile(smtp)
   worker.use(
-    deleted.list,
+    ...deleted.list,
     handleSitePresetsList({ body: PRESETS }),
     handleSiteIntegrationsUpdate(deleted.gone),
   )
@@ -1029,7 +1043,7 @@ test('connecting a Telegram bot warns that its webhook is replaced, then shows t
 })
 
 test("a Telegram bot's inbound settings offer no Preset", async () => {
-  worker.use(list([telegramBot]))
+  worker.use(...list([telegramBot]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await openInbound(screen)
@@ -1046,7 +1060,7 @@ async function openCredentials(screen: Awaited<ReturnType<typeof renderWithRoute
 
 test("saves a Telegram bot's stored token again when the token is left blank", async () => {
   const bodies: unknown[] = []
-  worker.use(list([telegramBot]), update(bodies))
+  worker.use(...list([telegramBot]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const dialog = await openCredentials(screen)
@@ -1062,7 +1076,7 @@ test("saves a Telegram bot's stored token again when the token is left blank", a
 
 test('a Credentials window whose provider was deleted closes and the list drops it', async () => {
   const deleted = deletedMeanwhile(telegramBot)
-  worker.use(deleted.list, handleSiteIntegrationsUpdate(deleted.gone))
+  worker.use(...deleted.list, handleSiteIntegrationsUpdate(deleted.gone))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const dialog = await openCredentials(screen)
@@ -1075,7 +1089,7 @@ test('a Credentials window whose provider was deleted closes and the list drops 
 
 test("a provider's refusal of the credentials shows in the form, which stays open", async () => {
   worker.use(
-    list([telegramBot]),
+    ...list([telegramBot]),
     handleSiteIntegrationsUpdate(() =>
       problem(422, {
         title: 'Unprocessable Entity',
@@ -1095,7 +1109,7 @@ test("a provider's refusal of the credentials shows in the form, which stays ope
 
 test("saves a Telegram bot's new token", async () => {
   const bodies: unknown[] = []
-  worker.use(list([telegramBot]), update(bodies))
+  worker.use(...list([telegramBot]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const dialog = await openCredentials(screen)
@@ -1175,7 +1189,7 @@ test('connects a Twilio account with an API key, its Auth Token kept apart, and 
 
 test('a Twilio account sending with its Auth Token sends and signs with the one token', async () => {
   const bodies: unknown[] = []
-  worker.use(list([smtp]), create(bodies))
+  worker.use(...list([smtp]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -1203,7 +1217,7 @@ test('a Twilio account sending with its Auth Token sends and signs with the one 
 
 test('saves a Twilio account again with its stored secret and Auth Token left blank', async () => {
   const bodies: unknown[] = []
-  worker.use(list([twilioAccount]), update(bodies))
+  worker.use(...list([twilioAccount]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const dialog = await openCredentials(screen)
@@ -1231,7 +1245,7 @@ test('saves a Twilio account again with its stored secret and Auth Token left bl
 
 test('a Twilio account saved again needs its Account SID', async () => {
   const bodies: unknown[] = []
-  worker.use(list([twilioAccount]), update(bodies))
+  worker.use(...list([twilioAccount]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const dialog = await openCredentials(screen)
@@ -1257,7 +1271,7 @@ test('a Twilio account that sends with its Auth Token saves a new one as both', 
       callbacksSet: true,
     },
   }
-  worker.use(list([tokenOnly]), update(bodies))
+  worker.use(...list([tokenOnly]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   const dialog = await openCredentials(screen)
@@ -1297,7 +1311,7 @@ test('a Twilio sender whose callbacks sphericon could not set shows the address 
       callbacksSet: false,
     },
   }
-  worker.use(list([twilioAccount, alphanumeric]))
+  worker.use(...list([twilioAccount, alphanumeric]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect
@@ -1309,7 +1323,7 @@ test('a Twilio sender whose callbacks sphericon could not set shows the address 
 
 test("a Twilio account's inbound settings rotate its Auth Token with no Preset to choose", async () => {
   worker.use(
-    list([twilioAccount]),
+    ...list([twilioAccount]),
     handleSitePresetsList({
       body: [
         {
