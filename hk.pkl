@@ -24,7 +24,7 @@ local linters = new Mapping {
     }
     // Check only: the builtin runs `zizmor --fix` in fix mode and rewrites workflows.
     ["zizmor"] {
-        glob = List(".github/workflows/*.yml", ".github/workflows/*.yaml", ".github/dependabot.yml")
+        glob = List(".github/workflows/*.yml", ".github/workflows/*.yaml")
         check = "zizmor --no-progress {{files}}"
     }
     ["typos"] = Builtins.typos

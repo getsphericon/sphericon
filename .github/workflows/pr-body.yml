@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The AI assistance section of the pull request template is filled in. A bot's pull request (dependabot) has no template
+  # The AI assistance section of the pull request template is filled in. A bot's pull request has no template
   # to fill in, and neither has the release pull request, which release-please opens as the maintainer
   # when it runs with a personal access token: a skipped job counts as passed for a required check.
   # A fork cannot borrow the release branch name, because the head must live in this repository.
@@ -35,7 +35,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       - name: Cache Go
         uses: $/.github/actions/go-cache
@@ -63,7 +63,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
