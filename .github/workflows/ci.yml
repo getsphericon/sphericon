@@ -36,7 +36,7 @@ jobs:
       # One toolchain for everything: go, node, pnpm, golangci-lint, betterleaks,
       # jactionlint, zizmor, ... all pinned in .mise.toml.
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -116,7 +116,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       # easement keeps each SCIP index under a key of the files its indexer reads, so a run that
       # changes no Go file reads scip-go's output from an earlier one instead of running it. Saved
@@ -178,7 +178,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -250,7 +250,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       - name: Cache Go
         uses: $/.github/actions/go-cache
@@ -289,7 +289,7 @@ jobs:
 
       # The toolchain also provides the mailpit binary the suite starts.
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       - name: Cache Go
         uses: $/.github/actions/go-cache
@@ -326,7 +326,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -358,7 +358,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
