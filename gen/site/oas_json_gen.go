@@ -18599,9 +18599,13 @@ func (s *SiteBrandKitResource) encodeFields(e *jx.Encoder) {
 			s.UpdatedAt.Encode(e)
 		}
 	}
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfSiteBrandKitResource = [11]string{
+var jsonFieldsNameOfSiteBrandKitResource = [12]string{
 	0:  "saved",
 	1:  "accentColor",
 	2:  "textColor",
@@ -18613,6 +18617,7 @@ var jsonFieldsNameOfSiteBrandKitResource = [11]string{
 	8:  "buttonRadius",
 	9:  "footerText",
 	10: "updatedAt",
+	11: "revision",
 }
 
 // Decode decodes SiteBrandKitResource from json.
@@ -18754,6 +18759,16 @@ func (s *SiteBrandKitResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"updatedAt\"")
 			}
+		case "revision":
+			requiredBitSet[1] |= 1 << 3
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -18765,7 +18780,7 @@ func (s *SiteBrandKitResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11111111,
-		0b00000011,
+		0b00001011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -38783,6 +38798,10 @@ func (s *SiteSaveBrandKitInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteSaveBrandKitInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("accentColor")
 		e.Str(s.AccentColor)
 	}
@@ -38820,16 +38839,17 @@ func (s *SiteSaveBrandKitInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSaveBrandKitInput = [9]string{
-	0: "accentColor",
-	1: "textColor",
-	2: "backgroundColor",
-	3: "headingFont",
-	4: "bodyFont",
-	5: "logoUrl",
-	6: "buttonTextColor",
-	7: "buttonRadius",
-	8: "footerText",
+var jsonFieldsNameOfSiteSaveBrandKitInput = [10]string{
+	0: "revision",
+	1: "accentColor",
+	2: "textColor",
+	3: "backgroundColor",
+	4: "headingFont",
+	5: "bodyFont",
+	6: "logoUrl",
+	7: "buttonTextColor",
+	8: "buttonRadius",
+	9: "footerText",
 }
 
 // Decode decodes SiteSaveBrandKitInput from json.
@@ -38841,8 +38861,18 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "accentColor":
+		case "revision":
 			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "accentColor":
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.AccentColor = string(v)
@@ -38854,7 +38884,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accentColor\"")
 			}
 		case "textColor":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.TextColor = string(v)
@@ -38866,7 +38896,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"textColor\"")
 			}
 		case "backgroundColor":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.BackgroundColor = string(v)
@@ -38878,7 +38908,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"backgroundColor\"")
 			}
 		case "headingFont":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.HeadingFont = string(v)
@@ -38890,7 +38920,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"headingFont\"")
 			}
 		case "bodyFont":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.BodyFont = string(v)
@@ -38902,7 +38932,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"bodyFont\"")
 			}
 		case "logoUrl":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				v, err := d.Str()
 				s.LogoUrl = string(v)
@@ -38914,7 +38944,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"logoUrl\"")
 			}
 		case "buttonTextColor":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Str()
 				s.ButtonTextColor = string(v)
@@ -38926,7 +38956,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"buttonTextColor\"")
 			}
 		case "buttonRadius":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				v, err := d.Int32()
 				s.ButtonRadius = int32(v)
@@ -38938,7 +38968,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"buttonRadius\"")
 			}
 		case "footerText":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.FooterText = string(v)
@@ -38960,7 +38990,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11111111,
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

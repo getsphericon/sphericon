@@ -50,6 +50,27 @@ func (_u *BrandKitUpdate) SetNillableWorkspaceID(v *int64) *BrandKitUpdate {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *BrandKitUpdate) SetRevision(v int64) *BrandKitUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *BrandKitUpdate) SetNillableRevision(v *int64) *BrandKitUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *BrandKitUpdate) AddRevision(v int64) *BrandKitUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetAccentColor sets the "accent_color" field.
 func (_u *BrandKitUpdate) SetAccentColor(v string) *BrandKitUpdate {
 	_u.mutation.SetAccentColor(v)
@@ -237,6 +258,11 @@ func (_u *BrandKitUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BrandKitUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := brandkit.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "BrandKit.revision": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BrandKit.workspace"`)
 	}
@@ -263,6 +289,12 @@ func (_u *BrandKitUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(brandkit.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(brandkit.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(brandkit.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AccentColor(); ok {
 		_spec.SetField(brandkit.FieldAccentColor, field.TypeString, value)
@@ -362,6 +394,27 @@ func (_u *BrandKitUpdateOne) SetNillableWorkspaceID(v *int64) *BrandKitUpdateOne
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetRevision sets the "revision" field.
+func (_u *BrandKitUpdateOne) SetRevision(v int64) *BrandKitUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *BrandKitUpdateOne) SetNillableRevision(v *int64) *BrandKitUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *BrandKitUpdateOne) AddRevision(v int64) *BrandKitUpdateOne {
+	_u.mutation.AddRevision(v)
 	return _u
 }
 
@@ -565,6 +618,11 @@ func (_u *BrandKitUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BrandKitUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := brandkit.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "BrandKit.revision": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BrandKit.workspace"`)
 	}
@@ -608,6 +666,12 @@ func (_u *BrandKitUpdateOne) sqlSave(ctx context.Context) (_node *BrandKit, err 
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(brandkit.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(brandkit.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(brandkit.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AccentColor(); ok {
 		_spec.SetField(brandkit.FieldAccentColor, field.TypeString, value)

@@ -3,6 +3,7 @@
 # Broadcast and an Automation written under it, for the tests that edit it and recreate the
 # starters. Acme's row anchors the generic scoped-client suites.
 - id: 1 # fixture: BrandKitAcme
+  revision: 2
   accent_color: '#1a73e8'
   text_color: '#202124'
   background_color: '#ffffff'
@@ -17,6 +18,7 @@
   updated_at: '2026-01-01 00:00:00'
 
 - id: 300 # fixture: BrandKitInitech
+  revision: 2
   accent_color: '#0a7d5a'
   text_color: '#1d1d1f'
   background_color: '#fafafa'
@@ -32,6 +34,7 @@
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BrandKitGlobex
+  revision: 2
   accent_color: '#cc0000'
   text_color: '#000000'
   background_color: '#ffffff'
@@ -47,6 +50,7 @@
 
 # --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
 - id: 21001
+  revision: 2
   accent_color: '#ff6b35'
   text_color: '#1f2430'
   background_color: '#fff8f3'

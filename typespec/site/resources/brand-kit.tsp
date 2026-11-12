@@ -44,11 +44,17 @@ model SiteBrandKitResource {
 
   /** When the Brand kit was last saved; absent while it is not saved */
   updatedAt?: Timestamp | null;
+
+  /** The revision of the state this answer shows (ADR 0119): a save names it. A Brand kit not saved yet is revision 1 */
+  revision: Revision;
 }
 
 /** Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
  * its values. */
 model SiteSaveBrandKitInput {
+  /** The Brand kit's `revision` the save was made on (ADR 0119): the one it was read with, 1 for the first save */
+  revision: Revision;
+
   /** Brand color of buttons and links, `#rrggbb` */
   accentColor: string;
 

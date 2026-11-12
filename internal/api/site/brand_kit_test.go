@@ -19,6 +19,7 @@ import (
 
 func brandKitInput() *siteapi.SiteSaveBrandKitInput {
 	return &siteapi.SiteSaveBrandKitInput{
+		Revision:        1,
 		AccentColor:     "#FF5500",
 		TextColor:       "#102030",
 		BackgroundColor: "#f0f4f8",
@@ -31,8 +32,10 @@ func brandKitInput() *siteapi.SiteSaveBrandKitInput {
 	}
 }
 
+// saveBrandKit saves in on the revision the Brand kit has now, as a client that read it first.
 func saveBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, in *siteapi.SiteSaveBrandKitInput) *siteapi.SiteBrandKitResource {
 	t.Helper()
+	in.Revision = getBrandKit(t, c, workspaceID).Revision
 	res, err := c.SiteBrandKitSave(context.Background(), in, siteapi.SiteBrandKitSaveParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
@@ -205,13 +208,8 @@ func TestSiteBrandKitIsReadByEveryMemberAndWrittenByOwnersAndAdmins(t *testing.T
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, "#0a7d5a", getBrandKit(t, member, fixtures.InitechPublicID).AccentColor, "a refused save changes nothing")
 
-	admin := env.SiteActor(t, fixtures.InitechAdminAdaEmail)
-	_, err = admin.SiteBrandKitSave(ctx, brandKitInput(), siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.InitechPublicID})
-	require.NoError(t, err)
-
-	owner := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	_, err = owner.SiteBrandKitSave(ctx, brandKitInput(), siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.InitechPublicID})
-	assert.NoError(t, err)
+	saveBrandKit(t, env.SiteActor(t, fixtures.InitechAdminAdaEmail), fixtures.InitechPublicID, brandKitInput())
+	saveBrandKit(t, env.SiteActor(t, fixtures.InitechOwnerOlgaEmail), fixtures.InitechPublicID, brandKitInput())
 }
 
 func TestSiteBrandKitIsWorkspaceScoped(t *testing.T) {

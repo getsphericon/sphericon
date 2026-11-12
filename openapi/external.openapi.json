@@ -6406,7 +6406,8 @@
           "logoUrl",
           "buttonTextColor",
           "buttonRadius",
-          "footerText"
+          "footerText",
+          "revision"
         ],
         "properties": {
           "saved": {
@@ -6463,6 +6464,14 @@
             ],
             "nullable": true,
             "description": "When the Brand kit was last saved; absent while it is not saved"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the state this answer shows (ADR 0119): a save names it. A Brand kit not saved yet is revision 1"
           }
         },
         "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a\nmessage in these values. A Workspace that has not saved one has the defaults and `saved` false."

@@ -55,6 +55,7 @@ const KIT: SiteBrandKitResource = {
   buttonRadius: 12,
   footerText: 'Acme Inc',
   updatedAt: '2026-01-01T00:00:00Z',
+  revision: 2,
 }
 
 const UNSAVED: SiteBrandKitResource = {
@@ -64,6 +65,7 @@ const UNSAVED: SiteBrandKitResource = {
   logoUrl: '',
   footerText: '',
   updatedAt: null,
+  revision: 1,
 }
 
 test('brand_kit:manage saves the Brand kit and the first save announces the starter templates', async () => {
@@ -88,6 +90,7 @@ test('brand_kit:manage saves the Brand kit and the first save announces the star
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         accentColor: hex('2563eb'),
         textColor: hex('102030'),
         backgroundColor: hex('f0f4f8'),
@@ -120,6 +123,24 @@ test('a saved kit is recreated into starter templates only after a confirmation'
   await screen.getByRole('button', { name: 'Recreate the starter templates' }).click()
   await screen.getByRole('button', { name: 'Recreate', exact: true }).click()
   await expect.poll(() => recreated).toBe(1)
+})
+
+// A save made on a revision someone moved past (ADR 0119): the page keeps the edit and says the
+// kit changed since it was opened, offering the saved version.
+test('a save over a kit changed since it was opened is refused and said so', async () => {
+  worker.use(
+    handleSiteBrandKitGet({ body: KIT }),
+    handleSiteBrandKitSave(() => problem(409, { title: 'Changed', code: 'revision_changed' })),
+  )
+  const { screen } = await renderPage(['brand_kit:manage'])
+
+  await screen.getByLabelText('Footer').fill('Mine')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .element(screen.getByRole('button', { name: 'Load the saved version' }))
+    .toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Footer')).toHaveValue('Mine')
 })
 
 test('without brand_kit:manage the Brand kit shows but does not change', async () => {

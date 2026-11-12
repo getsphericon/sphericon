@@ -57,6 +57,20 @@ func (_c *BrandKitCreate) SetWorkspaceID(v int64) *BrandKitCreate {
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *BrandKitCreate) SetRevision(v int64) *BrandKitCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *BrandKitCreate) SetNillableRevision(v *int64) *BrandKitCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetAccentColor sets the "accent_color" field.
 func (_c *BrandKitCreate) SetAccentColor(v string) *BrandKitCreate {
 	_c.mutation.SetAccentColor(v)
@@ -181,6 +195,10 @@ func (_c *BrandKitCreate) defaults() {
 		v := brandkit.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := brandkit.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 	if _, ok := _c.mutation.LogoURL(); !ok {
 		v := brandkit.DefaultLogoURL
 		_c.mutation.SetLogoURL(v)
@@ -201,6 +219,14 @@ func (_c *BrandKitCreate) check() error {
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "BrandKit.workspace_id"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "BrandKit.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := brandkit.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "BrandKit.revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.AccentColor(); !ok {
 		return &ValidationError{Name: "accent_color", err: errors.New(`ent: missing required field "BrandKit.accent_color"`)}
@@ -272,6 +298,10 @@ func (_c *BrandKitCreate) createSpec() (*BrandKit, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(brandkit.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(brandkit.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.AccentColor(); ok {
 		_spec.SetField(brandkit.FieldAccentColor, field.TypeString, value)
@@ -399,6 +429,24 @@ func (u *BrandKitUpsert) SetWorkspaceID(v int64) *BrandKitUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *BrandKitUpsert) UpdateWorkspaceID() *BrandKitUpsert {
 	u.SetExcluded(brandkit.FieldWorkspaceID)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *BrandKitUpsert) SetRevision(v int64) *BrandKitUpsert {
+	u.Set(brandkit.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *BrandKitUpsert) UpdateRevision() *BrandKitUpsert {
+	u.SetExcluded(brandkit.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *BrandKitUpsert) AddRevision(v int64) *BrandKitUpsert {
+	u.Add(brandkit.FieldRevision, v)
 	return u
 }
 
@@ -592,6 +640,27 @@ func (u *BrandKitUpsertOne) SetWorkspaceID(v int64) *BrandKitUpsertOne {
 func (u *BrandKitUpsertOne) UpdateWorkspaceID() *BrandKitUpsertOne {
 	return u.Update(func(s *BrandKitUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *BrandKitUpsertOne) SetRevision(v int64) *BrandKitUpsertOne {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *BrandKitUpsertOne) AddRevision(v int64) *BrandKitUpsertOne {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *BrandKitUpsertOne) UpdateRevision() *BrandKitUpsertOne {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -970,6 +1039,27 @@ func (u *BrandKitUpsertBulk) SetWorkspaceID(v int64) *BrandKitUpsertBulk {
 func (u *BrandKitUpsertBulk) UpdateWorkspaceID() *BrandKitUpsertBulk {
 	return u.Update(func(s *BrandKitUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *BrandKitUpsertBulk) SetRevision(v int64) *BrandKitUpsertBulk {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *BrandKitUpsertBulk) AddRevision(v int64) *BrandKitUpsertBulk {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *BrandKitUpsertBulk) UpdateRevision() *BrandKitUpsertBulk {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.UpdateRevision()
 	})
 }
 

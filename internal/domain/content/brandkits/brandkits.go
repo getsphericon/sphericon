@@ -22,6 +22,10 @@ import (
 // Templates from.
 var ErrNotSaved = validation.Refuse("brandkit: the Brand kit is not saved yet", i18n.ErrorsBrandkitNotSaved)
 
+// ErrRevisionChanged means the save was made on a revision the Brand kit has moved past (ADR 0119):
+// someone saved it since the client read it, a first save included. Nothing is written.
+var ErrRevisionChanged = validation.RevisionChanged("brandkit: the Brand kit changed since it was read", i18n.ErrorsBrandkitRevisionChanged)
+
 // Module reads and saves the Brand kit and makes the starter Templates from it. It holds no
 // Workspace: every call receives the Workspace-scoped client (ADR 0017).
 //
@@ -38,8 +42,9 @@ func New(bus *events.Bus, tpl *emailtemplates.Module) *Module {
 	return &Module{bus: bus, templates: tpl}
 }
 
-// Input is the whole of a save: every value of the kit.
+// Input is the whole of a save: every value of the kit, and the revision it was made on (ADR 0119).
 type Input struct {
+	Revision        int64
 	AccentColor     string
 	TextColor       string
 	BackgroundColor string
@@ -115,41 +120,52 @@ var _ = db.Declare(
 	db.Fault("brandkit_workspace_id", "save inserts the Brand kit ON CONFLICT (workspace_id) DO NOTHING, then updates the one there"),
 )
 
-// save creates the Brand kit with the starters, or replaces the values of the one there: a first
-// save that a concurrent one beat to the row finds it there, so the starters are made once.
+// save writes the values on the revision in names (ADR 0119). A kit not saved yet reports revision
+// 1 (Defaults), so a save on revision 1 may be its first: it inserts the values ON CONFLICT DO
+// NOTHING at revision 2, the revision one save after the defaults, with the starters. Any other save,
+// and a first save a concurrent one beat to the row, updates the row conditional on its revision:
+// the loser of two first saves made on revision 1 finds revision 2 and is ErrRevisionChanged, not a
+// silent overwrite, and the starters are made once.
 func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []renderedStarter) (*ent.BrandKit, error) {
 	var saved *ent.BrandKit
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		id, err := ts.BrandKit().Create().
-			SetAccentColor(in.AccentColor).
-			SetTextColor(in.TextColor).
-			SetBackgroundColor(in.BackgroundColor).
-			SetHeadingFont(in.HeadingFont).
-			SetBodyFont(in.BodyFont).
-			SetLogoURL(in.LogoURL).
-			SetButtonTextColor(in.ButtonTextColor).
-			SetButtonRadius(in.ButtonRadius).
-			SetFooterText(in.FooterText).
-			OnConflictColumns(brandkit.FieldWorkspaceID).
-			DoNothing().
-			ID(ctx)
-		inserted, err := db.Inserted(err)
-		switch {
-		case err != nil:
-			return err
-		case inserted:
-			if _, err := m.createStarters(ctx, ts, starters); err != nil {
+		if in.Revision == Defaults().Revision {
+			id, err := ts.BrandKit().Create().
+				SetAccentColor(in.AccentColor).
+				SetTextColor(in.TextColor).
+				SetBackgroundColor(in.BackgroundColor).
+				SetHeadingFont(in.HeadingFont).
+				SetBodyFont(in.BodyFont).
+				SetLogoURL(in.LogoURL).
+				SetButtonTextColor(in.ButtonTextColor).
+				SetButtonRadius(in.ButtonRadius).
+				SetFooterText(in.FooterText).
+				SetRevision(Defaults().Revision + 1).
+				OnConflictColumns(brandkit.FieldWorkspaceID).
+				DoNothing().
+				ID(ctx)
+			inserted, err := db.Inserted(err)
+			if err != nil {
 				return err
 			}
-			saved, err = ts.BrandKit().Get(ctx, id)
-			return err
+			if inserted {
+				if _, err := m.createStarters(ctx, ts, starters); err != nil {
+					return err
+				}
+				saved, err = ts.BrandKit().Get(ctx, id)
+				return err
+			}
 		}
-		// The Brand kit is there: this save updates it.
+		// The Brand kit is there, or the save names a revision of a saved one.
 		row, err := ts.BrandKit().Query().Only(ctx)
+		if ent.IsNotFound(err) {
+			return ErrRevisionChanged
+		}
 		if err != nil {
 			return err
 		}
 		saved, err = ts.BrandKit().UpdateOneID(row.ID).
+			Where(brandkit.Revision(in.Revision)).
 			SetAccentColor(in.AccentColor).
 			SetTextColor(in.TextColor).
 			SetBackgroundColor(in.BackgroundColor).
@@ -160,6 +176,9 @@ func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []r
 			SetButtonRadius(in.ButtonRadius).
 			SetFooterText(in.FooterText).
 			Save(ctx)
+		if ent.IsNotFound(err) {
+			return ErrRevisionChanged
+		}
 		return err
 	})
 	return saved, err
@@ -251,6 +270,7 @@ func kitOf(row *ent.BrandKit) Kit {
 		ButtonRadius:    row.ButtonRadius,
 		FooterText:      row.FooterText,
 		UpdatedAt:       row.UpdatedAt,
+		Revision:        row.Revision,
 	}
 }
 

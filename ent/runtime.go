@@ -275,6 +275,8 @@ func init() {
 	brandkitMixin := schema.BrandKit{}.Mixin()
 	brandkitMixinFields0 := brandkitMixin[0].Fields()
 	_ = brandkitMixinFields0
+	brandkitMixinFields2 := brandkitMixin[2].Fields()
+	_ = brandkitMixinFields2
 	brandkitFields := schema.BrandKit{}.Fields()
 	_ = brandkitFields
 	// brandkitDescCreatedAt is the schema descriptor for created_at field.
@@ -287,6 +289,12 @@ func init() {
 	brandkit.DefaultUpdatedAt = brandkitDescUpdatedAt.Default.(func() time.Time)
 	// brandkit.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	brandkit.UpdateDefaultUpdatedAt = brandkitDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// brandkitDescRevision is the schema descriptor for revision field.
+	brandkitDescRevision := brandkitMixinFields2[0].Descriptor()
+	// brandkit.DefaultRevision holds the default value on creation for the revision field.
+	brandkit.DefaultRevision = brandkitDescRevision.Default.(int64)
+	// brandkit.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	brandkit.RevisionValidator = brandkitDescRevision.Validators[0].(func(int64) error)
 	// brandkitDescLogoURL is the schema descriptor for logo_url field.
 	brandkitDescLogoURL := brandkitFields[6].Descriptor()
 	// brandkit.DefaultLogoURL holds the default value on creation for the logo_url field.

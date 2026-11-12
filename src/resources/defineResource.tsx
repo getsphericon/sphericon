@@ -155,7 +155,7 @@ export function defineResource<
     TOperation
   >,
 ) {
-  const EditForm = editFormOf({ ...resource, editorId: `${resource.idParam}Editor` })
+  const EditForm = defineEditForm({ ...resource, editorId: `${resource.idParam}Editor` })
 
   function CreatePage() {
     const { t } = useTranslation()
@@ -260,7 +260,7 @@ export function defineResource<
 
 // What an edit needs of a resource: a subset of ResourceDescription, and the id of its editor
 // session.
-type EditDescription<
+export type EditDescription<
   TPayload,
   TValues extends object,
   TResource extends ResourceValues<TPayload>,
@@ -284,9 +284,10 @@ type EditDescription<
   editorId: string
 }
 
-// editFormOf builds the edit form of a resource, the one implementation of an edit in an editor
-// session (docs/standards/ui.md, "Editor sessions"): an edit page's and an edit modal's.
-function editFormOf<
+// defineEditForm builds the edit form of a resource, the one implementation of an edit in an editor
+// session (docs/standards/ui.md, "Editor sessions"): an edit page's, an edit modal's, and a page that
+// edits a resource of its own (the Workspace's Brand kit), which mounts it with the loaded resource.
+export function defineEditForm<
   TPayload,
   TValues extends object,
   TResource extends ResourceValues<TPayload>,
@@ -441,7 +442,7 @@ export function defineModalEditor<
   TGetKey extends QueryKey,
   TOperation extends string,
 >(resource: EditDescription<TPayload, TValues, TResource, TError, TGetKey, TOperation>) {
-  const EditForm = editFormOf(resource)
+  const EditForm = defineEditForm(resource)
 
   function LoadedEditForm({
     id,

@@ -77,3 +77,25 @@ func TestSiteWebhookSaveSurvivesAFailureRecordButNotATurnOff(t *testing.T) {
 	assert.Equal(t, siteapi.ProblemCodeRevisionChanged, refused.Code.Value)
 	assert.NotNil(t, env.DB.WebhookEndpoint.GetX(ctx, fixtures.WebhookCodebasicsID).DisabledAt, "the endpoint stays off")
 }
+
+// Two saves of the Brand kit made on one revision: the second is a 409 revision_changed, and the kit
+// keeps the first's values (ADR 0119).
+func TestSiteBrandKitSaveOnAStaleRevisionIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
+	ctx := context.Background()
+	read := getBrandKit(t, c, fixtures.InitechPublicID)
+	first, second := brandKitInput(), brandKitInput()
+	first.Revision, first.AccentColor = read.Revision, "#111111"
+	second.Revision, second.AccentColor = read.Revision, "#222222"
+
+	saved, err := c.SiteBrandKitSave(ctx, first, siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.InitechPublicID})
+	require.NoError(t, err)
+	_, err = c.SiteBrandKitSave(ctx, second, siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.InitechPublicID})
+
+	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
+	assert.Equal(t, siteapi.ProblemCodeRevisionChanged, refused.Code.Value)
+	stored := env.DB.BrandKit.GetX(ctx, fixtures.BrandKitInitechID)
+	assert.Equal(t, "#111111", stored.AccentColor)
+	assert.EqualValues(t, saved.Revision, stored.Revision)
+}

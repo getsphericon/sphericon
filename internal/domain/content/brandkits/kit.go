@@ -40,11 +40,15 @@ type Kit struct {
 
 	// UpdatedAt is when the kit was last saved; zero while it is not saved.
 	UpdatedAt time.Time
+	// Revision is the kit's revision (ADR 0119): a save names the one it was made on. The defaults
+	// of a kit not saved yet are revision 1, the revision its first save starts from.
+	Revision int64
 }
 
 // Defaults is the Brand kit of a Workspace that has saved none.
 func Defaults() Kit {
 	return Kit{
+		Revision:        1,
 		AccentColor:     "#2563eb",
 		TextColor:       "#111827",
 		BackgroundColor: "#ffffff",
