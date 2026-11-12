@@ -2,7 +2,8 @@ package contacts
 
 import (
 	"context"
-	"strings"
+
+	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 
 	"github.com/samber/lo"
 
@@ -98,13 +99,11 @@ func RemoveTagIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, conta
 
 // SetTagsIn makes the named Tags the Contact's complete set inside the transaction s and pub are
 // bound to: it applies the missing ones (creating them on first use) and removes the rest, each
-// change recorded as ApplyTagIn and RemoveTagIn do. Blank and repeated names are dropped, so a
-// form's empty chip changes nothing.
+// change recorded as ApplyTagIn and RemoveTagIn do. Names are compared as Tags are matched
+// (tagname): a name the Contact holds in another case is kept, not removed and applied again, and
+// blank and repeated names are dropped, so a form's empty chip changes nothing.
 func SetTagsIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, names []string) error {
-	want := lo.Uniq(lo.FilterMap(names, func(n string, _ int) (string, bool) {
-		n = strings.TrimSpace(n)
-		return n, n != ""
-	}))
+	want := lo.UniqBy(lo.Filter(names, func(n string, _ int) bool { return tagname.Key(n) != "" }), tagname.Key)
 	if _, err := lockTagged(ctx, s, contactID); err != nil {
 		return err
 	}
@@ -112,14 +111,21 @@ func SetTagsIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contact
 	if err != nil {
 		return err
 	}
-	haveNames := lo.Map(have, func(t *ent.Tag, _ int) string { return t.Name })
-	for _, name := range lo.Without(want, haveNames...) {
+	wanted := lo.SliceToMap(want, func(n string) (string, bool) { return tagname.Key(n), true })
+	held := lo.SliceToMap(have, func(t *ent.Tag) (string, bool) { return t.NameKey, true })
+	for _, name := range want {
+		if held[tagname.Key(name)] {
+			continue
+		}
 		if _, err := ApplyTagIn(ctx, s, pub, contactID, name); err != nil {
 			return err
 		}
 	}
-	for _, name := range lo.Without(haveNames, want...) {
-		if err := RemoveTagIn(ctx, s, pub, contactID, name); err != nil {
+	for _, t := range have {
+		if wanted[t.NameKey] {
+			continue
+		}
+		if err := RemoveTagIn(ctx, s, pub, contactID, t.Name); err != nil {
 			return err
 		}
 	}
