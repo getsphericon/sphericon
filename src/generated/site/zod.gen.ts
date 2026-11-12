@@ -562,7 +562,7 @@ export const zSesConfigInput = z.object({
  * Set the Workspace's Tracking domain
  */
 export const zSetTrackingDomainInput = z.object({
-  host: z.string()
+  host: z.string().min(1)
 });
 
 /**

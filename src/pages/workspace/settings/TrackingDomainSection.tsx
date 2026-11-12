@@ -12,10 +12,10 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { QueryBoundary } from '../../../components/QueryBoundary.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
@@ -30,9 +30,10 @@ import type {
   SiteTrackingState,
   SiteWorkspaceResource,
 } from '../../../generated/site/types.gen.ts'
+import { zSetTrackingDomainInput } from '../../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
-import { getFieldError } from '../../../utils/apiErrors.ts'
+import { trimmed, useSchemaForm } from '../../../resources/schemaForm.ts'
 import { can } from '../../../utils/permissions.ts'
 
 const stateColor: Record<SiteTrackingState, string> = {
@@ -110,6 +111,8 @@ function CnameRecord({ domain }: { domain: SiteTrackingDomainResource }) {
   )
 }
 
+const hostSchema = z.object({ host: trimmed(zSetTrackingDomainInput.shape.host) })
+
 // HostForm sets a host: the Workspace's first, or another one that replaces the current host. A
 // host the API refuses (not a host below a domain, or one of the Instance's own) shows on the field.
 function HostForm({
@@ -122,20 +125,13 @@ function HostForm({
   onDone?: () => void
 }) {
   const { t } = useTranslation()
-  const form = useForm({ initialValues: { host: '' } })
+  const form = useSchemaForm(hostSchema, { host: '' })
   const setMutation = useResourceMutation({
     mutation: siteTrackingDomainsSetMutation(),
     successMessage: t(($) => $.settings.trackingDomain.setDone),
     errorTitle: t(($) => $.settings.trackingDomain.setError),
     forbiddenMessage: t(($) => $.settings.trackingDomain.forbidden),
-    handleError: (error) => {
-      const message = getFieldError(error, 'host')
-      if (message) {
-        form.setFieldError('host', message)
-        return true
-      }
-      return false
-    },
+    handleError: (error) => form.showFieldErrors(error) === undefined,
     onDone: () => {
       form.reset()
       onDone?.()
@@ -143,11 +139,7 @@ function HostForm({
   })
 
   return (
-    <form
-      onSubmit={form.onSubmit((values) =>
-        setMutation.mutate({ path: { workspaceId }, body: { host: values.host.trim() } }),
-      )}
-    >
+    <form onSubmit={form.onSubmit((body) => setMutation.mutate({ path: { workspaceId }, body }))}>
       <Group align="flex-end" gap="sm">
         <TextInput
           flex={1}
@@ -156,7 +148,7 @@ function HostForm({
           label={t(($) => $.settings.trackingDomain.hostLabel)}
           description={t(($) => $.settings.trackingDomain.hostDescription)}
           placeholder="t.example.com"
-          required
+          withAsterisk
           data-autofocus
           {...form.getInputProps('host')}
         />

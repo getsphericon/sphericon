@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -237,6 +238,9 @@ func CanonicalHost(raw string) (string, bool) {
 func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.TrackingDomain, error) {
 	if m.check == nil {
 		return nil, ErrOff
+	}
+	if err := validation.MinLength("host", raw, bounds.TrackingDomainHostMinLength); err != nil {
+		return nil, err
 	}
 	host, ok := CanonicalHost(raw)
 	if !ok {

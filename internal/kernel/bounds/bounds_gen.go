@@ -182,6 +182,12 @@ const (
 	ConsentBrandMaxLength = 255
 )
 
+// TrackingDomainHost is the host a Workspace serves its links and tracker on, as typed.
+// From site SetTrackingDomainInput.host.
+const (
+	TrackingDomainHostMinLength = 1
+)
+
 // Page is the 1-based number of a page of a list.
 // From site parameter PageQuery.page.
 const (
@@ -257,6 +263,7 @@ var Owners = map[string][]string{
 	"ConsentSourceMaxLength":             {"Confirmation"},
 	"ConsentBrandMinLength":              {"Confirmation"},
 	"ConsentBrandMaxLength":              {"Confirmation"},
+	"TrackingDomainHostMinLength":        {"TrackingDomain"},
 	"PageMin":                            {"internal/kernel/pagination"},
 	"PageDefault":                        {"internal/kernel/pagination"},
 	"PageSizeMin":                        {"internal/kernel/pagination"},

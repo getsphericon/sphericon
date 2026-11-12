@@ -1,5 +1,6 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
+import { userEvent } from 'vitest/browser'
 
 import {
   handleSiteEventsList,
@@ -181,13 +182,42 @@ test('shows a refused host on the field', async () => {
 
   const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
 
-  await screen.getByRole('textbox', { name: /^Host/ }).fill('example.com')
+  const host = screen.getByRole('textbox', { name: /^Host/ })
+  await host.fill('example.com')
   await screen.getByRole('button', { name: 'Set host' }).click()
 
   await expect.element(screen.getByText('Use a host below your domain')).toBeInTheDocument()
+  await expect.element(host).toHaveAttribute('aria-invalid', 'true')
+  await expect.element(host).toHaveFocus()
   await expect
     .element(screen.getByText('Could not set the tracking domain'))
     .not.toBeInTheDocument()
+})
+
+test('a blank host is refused on the field without asking the API', async () => {
+  serveTrackingDomains([])
+  let asked = false
+  worker.use(
+    handleSiteTrackingDomainsSet(() => {
+      asked = true
+      return problem(422, { title: 'Unprocessable', errors: { host: ['not a valid host'] } })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
+
+  const host = screen.getByRole('textbox', { name: /^Host/ })
+  await screen.getByRole('button', { name: 'Set host' }).click()
+
+  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
+  await expect.element(host).toHaveAttribute('aria-invalid', 'true')
+  await expect.element(host).toHaveFocus()
+
+  // Spaces alone are no host: the form trims them before the contract's rule judges the value.
+  await host.fill('   ')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
+  expect(asked).toBe(false)
 })
 
 test('shows the CNAME, a pending replacement and the retired hosts', async () => {

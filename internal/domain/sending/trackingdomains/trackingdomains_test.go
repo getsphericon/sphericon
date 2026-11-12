@@ -135,6 +135,7 @@ func TestSetRefusesAnInvalidOrOwnHost(t *testing.T) {
 	s := env.DB.Scoped(fixtures.KramericaID)
 
 	for host, want := range map[string]error{
+		"":                   validation.ErrTooShort,
 		"example.com":        trackingdomains.ErrInvalidHost,
 		"app.sphericon.test": trackingdomains.ErrOwnHost,
 		"t.sphericon.test":   trackingdomains.ErrOwnHost,

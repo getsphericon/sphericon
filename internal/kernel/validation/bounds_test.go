@@ -2,6 +2,7 @@ package validation_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,16 @@ func TestLengthCountsCharactersAndNamesTheField(t *testing.T) {
 	assert.Equal(t, "message", refusal.Field())
 
 	require.ErrorIs(t, validation.Length("message", "", 1, 5), validation.ErrTooShort)
+}
+
+func TestMinLengthRefusesOnlyAValueTooShort(t *testing.T) {
+	require.NoError(t, validation.MinLength("host", strings.Repeat("a", 1000), 1))
+
+	err := validation.MinLength("host", "", 1)
+	require.ErrorIs(t, err, validation.ErrTooShort)
+	refusal, ok := errors.AsType[*validation.RefusalError](err)
+	require.True(t, ok)
+	assert.Equal(t, "host", refusal.Field())
 }
 
 func TestRangeRefusesAValueOutsideTheBounds(t *testing.T) {

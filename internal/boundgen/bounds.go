@@ -120,6 +120,10 @@ var Bounds = []Bound{
 		Spec: site, Schema: "ConsentEvidence", Property: "brand", Owners: []string{"Confirmation"},
 	},
 	{
+		Name: "TrackingDomainHost", Doc: "is the host a Workspace serves its links and tracker on, as typed.",
+		Spec: site, Schema: "SetTrackingDomainInput", Property: "host", Owners: []string{"TrackingDomain"},
+	},
+	{
 		Name: "Page", Doc: "is the 1-based number of a page of a list.",
 		Spec: site, Parameter: "PageQuery.page", Owners: []string{"internal/kernel/pagination"},
 	},
