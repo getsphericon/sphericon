@@ -4049,6 +4049,38 @@ func (c *EventClient) QueryContact(_m *Event) *ContactQuery {
 	return query
 }
 
+// QueryBroadcast queries the broadcast edge of a Event.
+func (c *EventClient) QueryBroadcast(_m *Event) *BroadcastQuery {
+	query := (&BroadcastClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, id),
+			sqlgraph.To(broadcast.Table, broadcast.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, event.BroadcastTable, event.BroadcastColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomation queries the automation edge of a Event.
+func (c *EventClient) QueryAutomation(_m *Event) *AutomationQuery {
+	query := (&AutomationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, id),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, event.AutomationTable, event.AutomationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *EventClient) Hooks() []Hook {
 	return c.hooks.Event

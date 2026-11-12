@@ -800,26 +800,6 @@ func BroadcastIDNotIn(vs ...int64) predicate.Event {
 	return predicate.Event(sql.FieldNotIn(FieldBroadcastID, vs...))
 }
 
-// BroadcastIDGT applies the GT predicate on the "broadcast_id" field.
-func BroadcastIDGT(v int64) predicate.Event {
-	return predicate.Event(sql.FieldGT(FieldBroadcastID, v))
-}
-
-// BroadcastIDGTE applies the GTE predicate on the "broadcast_id" field.
-func BroadcastIDGTE(v int64) predicate.Event {
-	return predicate.Event(sql.FieldGTE(FieldBroadcastID, v))
-}
-
-// BroadcastIDLT applies the LT predicate on the "broadcast_id" field.
-func BroadcastIDLT(v int64) predicate.Event {
-	return predicate.Event(sql.FieldLT(FieldBroadcastID, v))
-}
-
-// BroadcastIDLTE applies the LTE predicate on the "broadcast_id" field.
-func BroadcastIDLTE(v int64) predicate.Event {
-	return predicate.Event(sql.FieldLTE(FieldBroadcastID, v))
-}
-
 // BroadcastIDIsNil applies the IsNil predicate on the "broadcast_id" field.
 func BroadcastIDIsNil() predicate.Event {
 	return predicate.Event(sql.FieldIsNull(FieldBroadcastID))
@@ -848,26 +828,6 @@ func AutomationIDIn(vs ...int64) predicate.Event {
 // AutomationIDNotIn applies the NotIn predicate on the "automation_id" field.
 func AutomationIDNotIn(vs ...int64) predicate.Event {
 	return predicate.Event(sql.FieldNotIn(FieldAutomationID, vs...))
-}
-
-// AutomationIDGT applies the GT predicate on the "automation_id" field.
-func AutomationIDGT(v int64) predicate.Event {
-	return predicate.Event(sql.FieldGT(FieldAutomationID, v))
-}
-
-// AutomationIDGTE applies the GTE predicate on the "automation_id" field.
-func AutomationIDGTE(v int64) predicate.Event {
-	return predicate.Event(sql.FieldGTE(FieldAutomationID, v))
-}
-
-// AutomationIDLT applies the LT predicate on the "automation_id" field.
-func AutomationIDLT(v int64) predicate.Event {
-	return predicate.Event(sql.FieldLT(FieldAutomationID, v))
-}
-
-// AutomationIDLTE applies the LTE predicate on the "automation_id" field.
-func AutomationIDLTE(v int64) predicate.Event {
-	return predicate.Event(sql.FieldLTE(FieldAutomationID, v))
 }
 
 // AutomationIDIsNil applies the IsNil predicate on the "automation_id" field.
@@ -1003,6 +963,52 @@ func HasContact() predicate.Event {
 func HasContactWith(preds ...predicate.Contact) predicate.Event {
 	return predicate.Event(func(s *sql.Selector) {
 		step := newContactStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBroadcast applies the HasEdge predicate on the "broadcast" edge.
+func HasBroadcast() predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, BroadcastTable, BroadcastColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBroadcastWith applies the HasEdge predicate on the "broadcast" edge with a given conditions (other predicates).
+func HasBroadcastWith(preds ...predicate.Broadcast) predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := newBroadcastStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAutomation applies the HasEdge predicate on the "automation" edge.
+func HasAutomation() predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, AutomationTable, AutomationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAutomationWith applies the HasEdge predicate on the "automation" edge with a given conditions (other predicates).
+func HasAutomationWith(preds ...predicate.Automation) predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := newAutomationStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

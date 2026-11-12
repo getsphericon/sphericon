@@ -1145,10 +1145,10 @@ func ScopedEntities() []ScopedEntity {
 				b.SetMachine(src.Machine)
 				b.SetCaptured(src.Captured)
 				if src.BroadcastID != nil {
-					b.SetBroadcastID(*src.BroadcastID)
+					b.SetBroadcastID(remap("Broadcast", *src.BroadcastID))
 				}
 				if src.AutomationID != nil {
-					b.SetAutomationID(*src.AutomationID)
+					b.SetAutomationID(remap("Automation", *src.AutomationID))
 				}
 				if src.URL != nil {
 					b.SetURL(*src.URL)
@@ -1165,6 +1165,18 @@ func ScopedEntities() []ScopedEntity {
 					Name: "contact", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Event().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "broadcast", Target: "Broadcast",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Event().UpdateOneID(id).SetBroadcastID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "automation", Target: "Automation",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Event().UpdateOneID(id).SetAutomationID(target).Exec(ctx)
 					},
 				},
 			},

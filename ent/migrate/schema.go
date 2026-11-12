@@ -933,11 +933,11 @@ var (
 		{Name: "occurred_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "machine", Type: field.TypeBool, Default: false},
 		{Name: "captured", Type: field.TypeBool, Default: false},
-		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
-		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "url", Type: field.TypeString, Nullable: true},
 		{Name: "backfill", Type: field.TypeBool, Default: false},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// EventsTable holds the schema information for the "events" table.
@@ -948,8 +948,20 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "events_contacts_events",
-				Columns:    []*schema.Column{EventsColumns[17]},
+				Columns:    []*schema.Column{EventsColumns[15]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "events_broadcasts_broadcast",
+				Columns:    []*schema.Column{EventsColumns[16]},
+				RefColumns: []*schema.Column{BroadcastsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "events_automations_automation",
+				Columns:    []*schema.Column{EventsColumns[17]},
+				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
@@ -968,7 +980,7 @@ var (
 			{
 				Name:    "event_workspace_id_contact_id_action",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[18], EventsColumns[17], EventsColumns[8]},
+				Columns: []*schema.Column{EventsColumns[18], EventsColumns[15], EventsColumns[8]},
 			},
 			{
 				Name:    "event_workspace_id_visitor_id",
@@ -978,7 +990,23 @@ var (
 			{
 				Name:    "event_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[17]},
+				Columns: []*schema.Column{EventsColumns[15]},
+			},
+			{
+				Name:    "event_workspace_id_broadcast_id",
+				Unique:  false,
+				Columns: []*schema.Column{EventsColumns[18], EventsColumns[16]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "broadcast_id IS NOT NULL",
+				},
+			},
+			{
+				Name:    "event_workspace_id_automation_id",
+				Unique:  false,
+				Columns: []*schema.Column{EventsColumns[18], EventsColumns[17]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "automation_id IS NOT NULL",
+				},
 			},
 			{
 				Name:    "event_workspace_id_updated_at_id",
@@ -3232,7 +3260,9 @@ func init() {
 		Table: "erasures",
 	}
 	EventsTable.ForeignKeys[0].RefTable = ContactsTable
-	EventsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	EventsTable.ForeignKeys[1].RefTable = BroadcastsTable
+	EventsTable.ForeignKeys[2].RefTable = AutomationsTable
+	EventsTable.ForeignKeys[3].RefTable = WorkspacesTable
 	EventsTable.Annotation = &entsql.Annotation{
 		Table: "events",
 	}

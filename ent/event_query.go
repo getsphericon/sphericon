@@ -12,6 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -21,13 +23,15 @@ import (
 // EventQuery is the builder for querying Event entities.
 type EventQuery struct {
 	config
-	ctx           *QueryContext
-	order         []event.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.Event
-	withWorkspace *WorkspaceQuery
-	withContact   *ContactQuery
-	modifiers     []func(*sql.Selector)
+	ctx            *QueryContext
+	order          []event.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Event
+	withWorkspace  *WorkspaceQuery
+	withContact    *ContactQuery
+	withBroadcast  *BroadcastQuery
+	withAutomation *AutomationQuery
+	modifiers      []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +105,50 @@ func (_q *EventQuery) QueryContact() *ContactQuery {
 			sqlgraph.From(event.Table, event.FieldID, selector),
 			sqlgraph.To(contact.Table, contact.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, event.ContactTable, event.ContactColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBroadcast chains the current query on the "broadcast" edge.
+func (_q *EventQuery) QueryBroadcast() *BroadcastQuery {
+	query := (&BroadcastClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, selector),
+			sqlgraph.To(broadcast.Table, broadcast.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, event.BroadcastTable, event.BroadcastColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAutomation chains the current query on the "automation" edge.
+func (_q *EventQuery) QueryAutomation() *AutomationQuery {
+	query := (&AutomationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, selector),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, event.AutomationTable, event.AutomationColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +343,15 @@ func (_q *EventQuery) Clone() *EventQuery {
 		return nil
 	}
 	return &EventQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]event.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.Event{}, _q.predicates...),
-		withWorkspace: _q.withWorkspace.Clone(),
-		withContact:   _q.withContact.Clone(),
+		config:         _q.config,
+		ctx:            _q.ctx.Clone(),
+		order:          append([]event.OrderOption{}, _q.order...),
+		inters:         append([]Interceptor{}, _q.inters...),
+		predicates:     append([]predicate.Event{}, _q.predicates...),
+		withWorkspace:  _q.withWorkspace.Clone(),
+		withContact:    _q.withContact.Clone(),
+		withBroadcast:  _q.withBroadcast.Clone(),
+		withAutomation: _q.withAutomation.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -328,6 +378,28 @@ func (_q *EventQuery) WithContact(opts ...func(*ContactQuery)) *EventQuery {
 		opt(query)
 	}
 	_q.withContact = query
+	return _q
+}
+
+// WithBroadcast tells the query-builder to eager-load the nodes that are connected to
+// the "broadcast" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EventQuery) WithBroadcast(opts ...func(*BroadcastQuery)) *EventQuery {
+	query := (&BroadcastClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBroadcast = query
+	return _q
+}
+
+// WithAutomation tells the query-builder to eager-load the nodes that are connected to
+// the "automation" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EventQuery) WithAutomation(opts ...func(*AutomationQuery)) *EventQuery {
+	query := (&AutomationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAutomation = query
 	return _q
 }
 
@@ -409,9 +481,11 @@ func (_q *EventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Event,
 	var (
 		nodes       = []*Event{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			_q.withWorkspace != nil,
 			_q.withContact != nil,
+			_q.withBroadcast != nil,
+			_q.withAutomation != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -444,6 +518,18 @@ func (_q *EventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Event,
 	if query := _q.withContact; query != nil {
 		if err := _q.loadContact(ctx, query, nodes, nil,
 			func(n *Event, e *Contact) { n.Edges.Contact = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBroadcast; query != nil {
+		if err := _q.loadBroadcast(ctx, query, nodes, nil,
+			func(n *Event, e *Broadcast) { n.Edges.Broadcast = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAutomation; query != nil {
+		if err := _q.loadAutomation(ctx, query, nodes, nil,
+			func(n *Event, e *Automation) { n.Edges.Automation = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -511,6 +597,70 @@ func (_q *EventQuery) loadContact(ctx context.Context, query *ContactQuery, node
 	}
 	return nil
 }
+func (_q *EventQuery) loadBroadcast(ctx context.Context, query *BroadcastQuery, nodes []*Event, init func(*Event), assign func(*Event, *Broadcast)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Event)
+	for i := range nodes {
+		if nodes[i].BroadcastID == nil {
+			continue
+		}
+		fk := *nodes[i].BroadcastID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(broadcast.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "broadcast_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *EventQuery) loadAutomation(ctx context.Context, query *AutomationQuery, nodes []*Event, init func(*Event), assign func(*Event, *Automation)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Event)
+	for i := range nodes {
+		if nodes[i].AutomationID == nil {
+			continue
+		}
+		fk := *nodes[i].AutomationID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(automation.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "automation_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *EventQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -545,6 +695,12 @@ func (_q *EventQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withContact != nil {
 			_spec.Node.AddColumnOnce(event.FieldContactID)
+		}
+		if _q.withBroadcast != nil {
+			_spec.Node.AddColumnOnce(event.FieldBroadcastID)
+		}
+		if _q.withAutomation != nil {
+			_spec.Node.AddColumnOnce(event.FieldAutomationID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

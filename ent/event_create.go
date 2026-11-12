@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -268,6 +270,16 @@ func (_c *EventCreate) SetContact(v *Contact) *EventCreate {
 	return _c.SetContactID(v.ID)
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (_c *EventCreate) SetBroadcast(v *Broadcast) *EventCreate {
+	return _c.SetBroadcastID(v.ID)
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (_c *EventCreate) SetAutomation(v *Automation) *EventCreate {
+	return _c.SetAutomationID(v.ID)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (_c *EventCreate) Mutation() *EventMutation {
 	return _c.mutation
@@ -444,14 +456,6 @@ func (_c *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 		_spec.SetField(event.FieldCaptured, field.TypeBool, value)
 		_node.Captured = value
 	}
-	if value, ok := _c.mutation.BroadcastID(); ok {
-		_spec.SetField(event.FieldBroadcastID, field.TypeInt64, value)
-		_node.BroadcastID = &value
-	}
-	if value, ok := _c.mutation.AutomationID(); ok {
-		_spec.SetField(event.FieldAutomationID, field.TypeInt64, value)
-		_node.AutomationID = &value
-	}
 	if value, ok := _c.mutation.URL(); ok {
 		_spec.SetField(event.FieldURL, field.TypeString, value)
 		_node.URL = &value
@@ -492,6 +496,40 @@ func (_c *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ContactID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.BroadcastIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.BroadcastTable,
+			Columns: []string{event.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.BroadcastID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AutomationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.AutomationTable,
+			Columns: []string{event.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.AutomationID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -708,12 +746,6 @@ func (u *EventUpsert) UpdateBroadcastID() *EventUpsert {
 	return u
 }
 
-// AddBroadcastID adds v to the "broadcast_id" field.
-func (u *EventUpsert) AddBroadcastID(v int64) *EventUpsert {
-	u.Add(event.FieldBroadcastID, v)
-	return u
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (u *EventUpsert) ClearBroadcastID() *EventUpsert {
 	u.SetNull(event.FieldBroadcastID)
@@ -729,12 +761,6 @@ func (u *EventUpsert) SetAutomationID(v int64) *EventUpsert {
 // UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
 func (u *EventUpsert) UpdateAutomationID() *EventUpsert {
 	u.SetExcluded(event.FieldAutomationID)
-	return u
-}
-
-// AddAutomationID adds v to the "automation_id" field.
-func (u *EventUpsert) AddAutomationID(v int64) *EventUpsert {
-	u.Add(event.FieldAutomationID, v)
 	return u
 }
 
@@ -1010,13 +1036,6 @@ func (u *EventUpsertOne) SetBroadcastID(v int64) *EventUpsertOne {
 	})
 }
 
-// AddBroadcastID adds v to the "broadcast_id" field.
-func (u *EventUpsertOne) AddBroadcastID(v int64) *EventUpsertOne {
-	return u.Update(func(s *EventUpsert) {
-		s.AddBroadcastID(v)
-	})
-}
-
 // UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
 func (u *EventUpsertOne) UpdateBroadcastID() *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
@@ -1035,13 +1054,6 @@ func (u *EventUpsertOne) ClearBroadcastID() *EventUpsertOne {
 func (u *EventUpsertOne) SetAutomationID(v int64) *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
 		s.SetAutomationID(v)
-	})
-}
-
-// AddAutomationID adds v to the "automation_id" field.
-func (u *EventUpsertOne) AddAutomationID(v int64) *EventUpsertOne {
-	return u.Update(func(s *EventUpsert) {
-		s.AddAutomationID(v)
 	})
 }
 
@@ -1494,13 +1506,6 @@ func (u *EventUpsertBulk) SetBroadcastID(v int64) *EventUpsertBulk {
 	})
 }
 
-// AddBroadcastID adds v to the "broadcast_id" field.
-func (u *EventUpsertBulk) AddBroadcastID(v int64) *EventUpsertBulk {
-	return u.Update(func(s *EventUpsert) {
-		s.AddBroadcastID(v)
-	})
-}
-
 // UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
 func (u *EventUpsertBulk) UpdateBroadcastID() *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
@@ -1519,13 +1524,6 @@ func (u *EventUpsertBulk) ClearBroadcastID() *EventUpsertBulk {
 func (u *EventUpsertBulk) SetAutomationID(v int64) *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
 		s.SetAutomationID(v)
-	})
-}
-
-// AddAutomationID adds v to the "automation_id" field.
-func (u *EventUpsertBulk) AddAutomationID(v int64) *EventUpsertBulk {
-	return u.Update(func(s *EventUpsert) {
-		s.AddAutomationID(v)
 	})
 }
 

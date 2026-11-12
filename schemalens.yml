@@ -2,3 +2,9 @@ exclusions:
   - rule: narrow-key
     object: public.goose_db_version.column:id
     reason: goose's own migration bookkeeping table, one row per migration file, bounded by the number of migrations and not part of the ent model
+  - rule: fk-without-index
+    object: public.events.foreign_key:events_automations_automation
+    reason: supported by the partial index event_workspace_id_automation_id (WHERE automation_id IS NOT NULL); the delete action's automation_id = $2 implies the predicate, and most Events reference no Automation
+  - rule: fk-without-index
+    object: public.events.foreign_key:events_broadcasts_broadcast
+    reason: supported by the partial index event_workspace_id_broadcast_id (WHERE broadcast_id IS NOT NULL); the delete action's broadcast_id = $2 implies the predicate, and most Events reference no Broadcast

@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -185,7 +187,6 @@ func (_u *EventUpdate) ClearProperties() *EventUpdate {
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *EventUpdate) SetBroadcastID(v int64) *EventUpdate {
-	_u.mutation.ResetBroadcastID()
 	_u.mutation.SetBroadcastID(v)
 	return _u
 }
@@ -198,12 +199,6 @@ func (_u *EventUpdate) SetNillableBroadcastID(v *int64) *EventUpdate {
 	return _u
 }
 
-// AddBroadcastID adds value to the "broadcast_id" field.
-func (_u *EventUpdate) AddBroadcastID(v int64) *EventUpdate {
-	_u.mutation.AddBroadcastID(v)
-	return _u
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (_u *EventUpdate) ClearBroadcastID() *EventUpdate {
 	_u.mutation.ClearBroadcastID()
@@ -212,7 +207,6 @@ func (_u *EventUpdate) ClearBroadcastID() *EventUpdate {
 
 // SetAutomationID sets the "automation_id" field.
 func (_u *EventUpdate) SetAutomationID(v int64) *EventUpdate {
-	_u.mutation.ResetAutomationID()
 	_u.mutation.SetAutomationID(v)
 	return _u
 }
@@ -222,12 +216,6 @@ func (_u *EventUpdate) SetNillableAutomationID(v *int64) *EventUpdate {
 	if v != nil {
 		_u.SetAutomationID(*v)
 	}
-	return _u
-}
-
-// AddAutomationID adds value to the "automation_id" field.
-func (_u *EventUpdate) AddAutomationID(v int64) *EventUpdate {
-	_u.mutation.AddAutomationID(v)
 	return _u
 }
 
@@ -267,6 +255,16 @@ func (_u *EventUpdate) SetContact(v *Contact) *EventUpdate {
 	return _u.SetContactID(v.ID)
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (_u *EventUpdate) SetBroadcast(v *Broadcast) *EventUpdate {
+	return _u.SetBroadcastID(v.ID)
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (_u *EventUpdate) SetAutomation(v *Automation) *EventUpdate {
+	return _u.SetAutomationID(v.ID)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (_u *EventUpdate) Mutation() *EventMutation {
 	return _u.mutation
@@ -281,6 +279,18 @@ func (_u *EventUpdate) ClearWorkspace() *EventUpdate {
 // ClearContact clears the "contact" edge to the Contact entity.
 func (_u *EventUpdate) ClearContact() *EventUpdate {
 	_u.mutation.ClearContact()
+	return _u
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (_u *EventUpdate) ClearBroadcast() *EventUpdate {
+	_u.mutation.ClearBroadcast()
+	return _u
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (_u *EventUpdate) ClearAutomation() *EventUpdate {
+	_u.mutation.ClearAutomation()
 	return _u
 }
 
@@ -385,24 +395,6 @@ func (_u *EventUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.PropertiesCleared() {
 		_spec.ClearField(event.FieldProperties, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.BroadcastID(); ok {
-		_spec.SetField(event.FieldBroadcastID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedBroadcastID(); ok {
-		_spec.AddField(event.FieldBroadcastID, field.TypeInt64, value)
-	}
-	if _u.mutation.BroadcastIDCleared() {
-		_spec.ClearField(event.FieldBroadcastID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.AutomationID(); ok {
-		_spec.SetField(event.FieldAutomationID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedAutomationID(); ok {
-		_spec.AddField(event.FieldAutomationID, field.TypeInt64, value)
-	}
-	if _u.mutation.AutomationIDCleared() {
-		_spec.ClearField(event.FieldAutomationID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.URL(); ok {
 		_spec.SetField(event.FieldURL, field.TypeString, value)
 	}
@@ -460,6 +452,64 @@ func (_u *EventUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.BroadcastTable,
+			Columns: []string{event.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.BroadcastTable,
+			Columns: []string{event.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.AutomationTable,
+			Columns: []string{event.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.AutomationTable,
+			Columns: []string{event.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -643,7 +693,6 @@ func (_u *EventUpdateOne) ClearProperties() *EventUpdateOne {
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *EventUpdateOne) SetBroadcastID(v int64) *EventUpdateOne {
-	_u.mutation.ResetBroadcastID()
 	_u.mutation.SetBroadcastID(v)
 	return _u
 }
@@ -656,12 +705,6 @@ func (_u *EventUpdateOne) SetNillableBroadcastID(v *int64) *EventUpdateOne {
 	return _u
 }
 
-// AddBroadcastID adds value to the "broadcast_id" field.
-func (_u *EventUpdateOne) AddBroadcastID(v int64) *EventUpdateOne {
-	_u.mutation.AddBroadcastID(v)
-	return _u
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (_u *EventUpdateOne) ClearBroadcastID() *EventUpdateOne {
 	_u.mutation.ClearBroadcastID()
@@ -670,7 +713,6 @@ func (_u *EventUpdateOne) ClearBroadcastID() *EventUpdateOne {
 
 // SetAutomationID sets the "automation_id" field.
 func (_u *EventUpdateOne) SetAutomationID(v int64) *EventUpdateOne {
-	_u.mutation.ResetAutomationID()
 	_u.mutation.SetAutomationID(v)
 	return _u
 }
@@ -680,12 +722,6 @@ func (_u *EventUpdateOne) SetNillableAutomationID(v *int64) *EventUpdateOne {
 	if v != nil {
 		_u.SetAutomationID(*v)
 	}
-	return _u
-}
-
-// AddAutomationID adds value to the "automation_id" field.
-func (_u *EventUpdateOne) AddAutomationID(v int64) *EventUpdateOne {
-	_u.mutation.AddAutomationID(v)
 	return _u
 }
 
@@ -725,6 +761,16 @@ func (_u *EventUpdateOne) SetContact(v *Contact) *EventUpdateOne {
 	return _u.SetContactID(v.ID)
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (_u *EventUpdateOne) SetBroadcast(v *Broadcast) *EventUpdateOne {
+	return _u.SetBroadcastID(v.ID)
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (_u *EventUpdateOne) SetAutomation(v *Automation) *EventUpdateOne {
+	return _u.SetAutomationID(v.ID)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (_u *EventUpdateOne) Mutation() *EventMutation {
 	return _u.mutation
@@ -739,6 +785,18 @@ func (_u *EventUpdateOne) ClearWorkspace() *EventUpdateOne {
 // ClearContact clears the "contact" edge to the Contact entity.
 func (_u *EventUpdateOne) ClearContact() *EventUpdateOne {
 	_u.mutation.ClearContact()
+	return _u
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (_u *EventUpdateOne) ClearBroadcast() *EventUpdateOne {
+	_u.mutation.ClearBroadcast()
+	return _u
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (_u *EventUpdateOne) ClearAutomation() *EventUpdateOne {
+	_u.mutation.ClearAutomation()
 	return _u
 }
 
@@ -873,24 +931,6 @@ func (_u *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error)
 	if _u.mutation.PropertiesCleared() {
 		_spec.ClearField(event.FieldProperties, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.BroadcastID(); ok {
-		_spec.SetField(event.FieldBroadcastID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedBroadcastID(); ok {
-		_spec.AddField(event.FieldBroadcastID, field.TypeInt64, value)
-	}
-	if _u.mutation.BroadcastIDCleared() {
-		_spec.ClearField(event.FieldBroadcastID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.AutomationID(); ok {
-		_spec.SetField(event.FieldAutomationID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedAutomationID(); ok {
-		_spec.AddField(event.FieldAutomationID, field.TypeInt64, value)
-	}
-	if _u.mutation.AutomationIDCleared() {
-		_spec.ClearField(event.FieldAutomationID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.URL(); ok {
 		_spec.SetField(event.FieldURL, field.TypeString, value)
 	}
@@ -948,6 +988,64 @@ func (_u *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.BroadcastTable,
+			Columns: []string{event.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.BroadcastTable,
+			Columns: []string{event.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.AutomationTable,
+			Columns: []string{event.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   event.AutomationTable,
+			Columns: []string{event.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
