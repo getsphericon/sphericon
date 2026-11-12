@@ -35,6 +35,7 @@ const STORED: SiteRuleResource = {
       },
     ],
   },
+  revision: 1,
   ...TIMESTAMPS,
 }
 

@@ -90,6 +90,11 @@ func DraftVersionID(v int64) predicate.Rule {
 	return predicate.Rule(sql.FieldEQ(FieldDraftVersionID, v))
 }
 
+// Revision applies equality check predicate on the "revision" field. It's identical to RevisionEQ.
+func Revision(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldRevision, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Rule {
 	return predicate.Rule(sql.FieldEQ(FieldName, v))
@@ -373,6 +378,46 @@ func DraftVersionIDIsNil() predicate.Rule {
 // DraftVersionIDNotNil applies the NotNil predicate on the "draft_version_id" field.
 func DraftVersionIDNotNil() predicate.Rule {
 	return predicate.Rule(sql.FieldNotNull(FieldDraftVersionID))
+}
+
+// RevisionEQ applies the EQ predicate on the "revision" field.
+func RevisionEQ(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldRevision, v))
+}
+
+// RevisionNEQ applies the NEQ predicate on the "revision" field.
+func RevisionNEQ(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldNEQ(FieldRevision, v))
+}
+
+// RevisionIn applies the In predicate on the "revision" field.
+func RevisionIn(vs ...int64) predicate.Rule {
+	return predicate.Rule(sql.FieldIn(FieldRevision, vs...))
+}
+
+// RevisionNotIn applies the NotIn predicate on the "revision" field.
+func RevisionNotIn(vs ...int64) predicate.Rule {
+	return predicate.Rule(sql.FieldNotIn(FieldRevision, vs...))
+}
+
+// RevisionGT applies the GT predicate on the "revision" field.
+func RevisionGT(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldGT(FieldRevision, v))
+}
+
+// RevisionGTE applies the GTE predicate on the "revision" field.
+func RevisionGTE(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldGTE(FieldRevision, v))
+}
+
+// RevisionLT applies the LT predicate on the "revision" field.
+func RevisionLT(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldLT(FieldRevision, v))
+}
+
+// RevisionLTE applies the LTE predicate on the "revision" field.
+func RevisionLTE(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldLTE(FieldRevision, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

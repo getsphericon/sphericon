@@ -7,6 +7,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteRulesUpdate } from '../../generated/site/sdk.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
+import { withRevision } from '../../resources/resourceEditor.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { RuleDryRun } from './RuleDryRun.tsx'
 import { editedRule, ruleOperations, ruleSchema } from './ruleEditor.ts'
@@ -17,7 +18,7 @@ const ruleResource = defineResource({
   Form: RuleForm,
   getOptions: siteRulesGetOptions,
   createMutation: siteRulesCreateMutation,
-  update: siteRulesUpdate,
+  update: withRevision(siteRulesUpdate),
   operations: ruleOperations,
   editRoute: rulesEditRoute,
   idParam: 'ruleId',

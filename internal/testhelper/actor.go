@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/user"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -280,4 +282,53 @@ type collectKeySource struct{ key string }
 
 func (s collectKeySource) ApiKeyAuth(context.Context, collectapi.OperationName) (collectapi.ApiKeyAuth, error) {
 	return collectapi.ApiKeyAuth{APIKey: s.key}, nil
+}
+
+// AutomationRevision is the stored revision of the Automation id (ADR 0119): what an editor that
+// read it now names in an edit, Publish or Revert.
+func (env *TestEnv) AutomationRevision(ctx context.Context, tb testing.TB, id int64) int64 {
+	tb.Helper()
+	a, err := env.DB.Automation.Get(ctx, id)
+	if ent.IsNotFound(err) {
+		// An id the call is refused for (another Workspace's, none at all): any revision does.
+		return 1
+	}
+	require.NoError(tb, err)
+	return a.Revision
+}
+
+// RuleRevision is the stored revision of the Rule id (ADR 0119): what an editor that read it now
+// names in an edit, Publish or Revert.
+func (env *TestEnv) RuleRevision(ctx context.Context, tb testing.TB, id int64) int64 {
+	tb.Helper()
+	r, err := env.DB.Rule.Get(ctx, id)
+	if ent.IsNotFound(err) {
+		// An id the call is refused for (another Workspace's, none at all): any revision does.
+		return 1
+	}
+	require.NoError(tb, err)
+	return r.Revision
+}
+
+// AutomationRevisionIn is AutomationRevision read through the scope s, for a test with no TestEnv
+// at hand.
+func AutomationRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
+	tb.Helper()
+	a, err := s.Automation().QueryWithArchived().Where(automation.ID(id)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return 1
+	}
+	require.NoError(tb, err)
+	return a.Revision
+}
+
+// RuleRevisionIn is RuleRevision read through the scope s, for a test with no TestEnv at hand.
+func RuleRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
+	tb.Helper()
+	r, err := s.Rule().QueryWithDiscarded().Where(rule.ID(id)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return 1
+	}
+	require.NoError(tb, err)
+	return r.Revision
 }

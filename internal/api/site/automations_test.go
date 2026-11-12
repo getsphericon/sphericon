@@ -41,7 +41,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	assert.Equal(t, int32(3600), res.Draft.Value.Steps[1].Seconds.Or(0))
 
 	// Publish / deactivate flip the status.
-	act, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: res.ID})
+	act, err := c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID)))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	actRes := act
 	assert.Equal(t, siteapi.SiteAutomationStatusActive, actRes.Status)
@@ -58,7 +58,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update renames.
-	upd, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
+	upd, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
 		Name: siteapi.NewOptName("Onboarding"),
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)

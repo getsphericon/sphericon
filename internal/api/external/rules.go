@@ -67,8 +67,8 @@ func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDele
 
 // RulesPublish needs automations:publish, which authoring scopes never imply (ADR 0016, ADR 0065).
 // Over MCP, it additionally needs mcp:send (the x-mcp send flag).
-func (h *Handlers) RulesPublish(ctx context.Context, params externalapi.RulesPublishParams) (*externalapi.RuleResource, error) {
-	r, err := h.rules.Publish(ctx, auth.TokenScoped(ctx), int64(params.ID))
+func (h *Handlers) RulesPublish(ctx context.Context, req *externalapi.RevisionInput, params externalapi.RulesPublishParams) (*externalapi.RuleResource, error) {
+	r, err := h.rules.Publish(ctx, auth.TokenScoped(ctx), int64(params.ID), int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +77,8 @@ func (h *Handlers) RulesPublish(ctx context.Context, params externalapi.RulesPub
 }
 
 // RulesRevert drops the Rule's draft, which changes nothing the Rule does: automations:write.
-func (h *Handlers) RulesRevert(ctx context.Context, params externalapi.RulesRevertParams) (*externalapi.RuleResource, error) {
-	r, err := h.rules.Revert(ctx, auth.TokenScoped(ctx), int64(params.ID))
+func (h *Handlers) RulesRevert(ctx context.Context, req *externalapi.RevisionInput, params externalapi.RulesRevertParams) (*externalapi.RuleResource, error) {
+	r, err := h.rules.Revert(ctx, auth.TokenScoped(ctx), int64(params.ID), int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}

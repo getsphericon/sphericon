@@ -158,6 +158,7 @@ var (
 		{Name: "archived_at", Type: field.TypeTime, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive"}, Default: "inactive"},
 		{Name: "activated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "live_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "draft_version_id", Type: field.TypeInt64, Nullable: true},
@@ -171,19 +172,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automations_automation_versions_live_version",
-				Columns:    []*schema.Column{AutomationsColumns[7]},
-				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "automations_automation_versions_draft_version",
 				Columns:    []*schema.Column{AutomationsColumns[8]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "automations_workspaces_automations",
+				Symbol:     "automations_automation_versions_draft_version",
 				Columns:    []*schema.Column{AutomationsColumns[9]},
+				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "automations_workspaces_automations",
+				Columns:    []*schema.Column{AutomationsColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -192,12 +193,12 @@ var (
 			{
 				Name:    "automation_workspace_id_live_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[9], AutomationsColumns[7]},
+				Columns: []*schema.Column{AutomationsColumns[10], AutomationsColumns[8]},
 			},
 			{
 				Name:    "automation_workspace_id_draft_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[9], AutomationsColumns[8]},
+				Columns: []*schema.Column{AutomationsColumns[10], AutomationsColumns[9]},
 			},
 		},
 	}
@@ -2013,6 +2014,7 @@ var (
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive"}, Default: "inactive"},
 		{Name: "activated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "revision", Type: field.TypeInt64, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "live_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "draft_version_id", Type: field.TypeInt64, Nullable: true},
@@ -2026,19 +2028,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "rules_rule_versions_live_version",
-				Columns:    []*schema.Column{RulesColumns[7]},
-				RefColumns: []*schema.Column{RuleVersionsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "rules_rule_versions_draft_version",
 				Columns:    []*schema.Column{RulesColumns[8]},
 				RefColumns: []*schema.Column{RuleVersionsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "rules_workspaces_rules",
+				Symbol:     "rules_rule_versions_draft_version",
 				Columns:    []*schema.Column{RulesColumns[9]},
+				RefColumns: []*schema.Column{RuleVersionsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "rules_workspaces_rules",
+				Columns:    []*schema.Column{RulesColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2047,12 +2049,12 @@ var (
 			{
 				Name:    "rule_workspace_id_live_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{RulesColumns[9], RulesColumns[7]},
+				Columns: []*schema.Column{RulesColumns[10], RulesColumns[8]},
 			},
 			{
 				Name:    "rule_workspace_id_draft_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{RulesColumns[9], RulesColumns[8]},
+				Columns: []*schema.Column{RulesColumns[10], RulesColumns[9]},
 			},
 		},
 	}

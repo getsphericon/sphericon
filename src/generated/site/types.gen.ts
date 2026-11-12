@@ -1345,6 +1345,17 @@ export type RetentionDays = number;
 export type Revision = number;
 
 /**
+ * The body of an editor's operation on stored content (Publish, Revert): the revision of what the
+ * editor shows (ADR 0119)
+ */
+export type RevisionInput = {
+  /**
+   * The resource's `revision` the operation was made on: the one it was read with
+   */
+  revision: Revision;
+};
+
+/**
  * Request body for scheduling a broadcast
  */
 export type ScheduleBroadcastInput = {
@@ -2418,6 +2429,10 @@ export type SiteAutomationResource = {
    * the single read, absent on the responses of a change
    */
   revenue?: SiteMessageRevenue;
+  /**
+   * The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it
+   */
+  revision: Revision;
   /**
    * Creation timestamp
    */
@@ -5563,6 +5578,10 @@ export type SiteRuleResource = {
    */
   discardedAt?: Timestamp | null;
   /**
+   * The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it
+   */
+  revision: Revision;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -6538,6 +6557,10 @@ export type SiteTwilioConfig = {
  * version's, and publishing makes the draft live.
  */
 export type SiteUpdateAutomationInput = {
+  /**
+   * The automation's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   name?: Name;
   triggerEvent?: string;
   /**
@@ -6684,6 +6707,10 @@ export type SiteUpdateRevenueSettingsInput = {
  * Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
 export type SiteUpdateRuleInput = {
+  /**
+   * The rule's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   name?: Name;
   /**
    * The Event actions that make the Rule fire; at least one
@@ -10939,7 +10966,7 @@ export type SiteAutomationsDeactivateResponses = {
 export type SiteAutomationsDeactivateResponse = SiteAutomationsDeactivateResponses[keyof SiteAutomationsDeactivateResponses];
 
 export type SiteAutomationsPublishData = {
-  body?: never;
+  body: RevisionInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -10979,7 +11006,7 @@ export type SiteAutomationsPublishResponses = {
 export type SiteAutomationsPublishResponse = SiteAutomationsPublishResponses[keyof SiteAutomationsPublishResponses];
 
 export type SiteAutomationsRevertData = {
-  body?: never;
+  body: RevisionInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -13985,7 +14012,7 @@ export type SiteRulesDryRunResponses = {
 export type SiteRulesDryRunResponse = SiteRulesDryRunResponses[keyof SiteRulesDryRunResponses];
 
 export type SiteRulesPublishData = {
-  body?: never;
+  body: RevisionInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -14025,7 +14052,7 @@ export type SiteRulesPublishResponses = {
 export type SiteRulesPublishResponse = SiteRulesPublishResponses[keyof SiteRulesPublishResponses];
 
 export type SiteRulesRevertData = {
-  body?: never;
+  body: RevisionInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested

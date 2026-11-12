@@ -160,7 +160,7 @@ func TestAnEmptyStoredDefinitionAllowsPublishingAndRemovingItsUnusedIntegration(
 	s := env.DB.Scoped(fixtures.MeridianID)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
-	_, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{
+	_, err := c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationMeridianEmptyID))))}, siteapi.SiteAutomationsPublishParams{
 		WorkspaceId: fixtures.MeridianPublicID, ID: idStr(fixtures.AutomationMeridianEmptyID),
 	})
 	require.NoError(t, err)

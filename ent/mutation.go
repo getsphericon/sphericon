@@ -3364,6 +3364,8 @@ type AutomationMutation struct {
 	archived_at          *time.Time
 	status               *automation.Status
 	activated_at         *time.Time
+	revision             *int64
+	addrevision          *int64
 	name                 *string
 	clearedFields        map[string]struct{}
 	workspace            *int64
@@ -3827,6 +3829,62 @@ func (m *AutomationMutation) ResetDraftVersionID() {
 	delete(m.clearedFields, automation.FieldDraftVersionID)
 }
 
+// SetRevision sets the "revision" field.
+func (m *AutomationMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *AutomationMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the Automation entity.
+// If the Automation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *AutomationMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *AutomationMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *AutomationMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
+}
+
 // SetName sets the "name" field.
 func (m *AutomationMutation) SetName(s string) {
 	m.name = &s
@@ -4086,7 +4144,7 @@ func (m *AutomationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, automation.FieldCreatedAt)
 	}
@@ -4110,6 +4168,9 @@ func (m *AutomationMutation) Fields() []string {
 	}
 	if m.draft_version != nil {
 		fields = append(fields, automation.FieldDraftVersionID)
+	}
+	if m.revision != nil {
+		fields = append(fields, automation.FieldRevision)
 	}
 	if m.name != nil {
 		fields = append(fields, automation.FieldName)
@@ -4138,6 +4199,8 @@ func (m *AutomationMutation) Field(name string) (ent.Value, bool) {
 		return m.LiveVersionID()
 	case automation.FieldDraftVersionID:
 		return m.DraftVersionID()
+	case automation.FieldRevision:
+		return m.Revision()
 	case automation.FieldName:
 		return m.Name()
 	}
@@ -4165,6 +4228,8 @@ func (m *AutomationMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldLiveVersionID(ctx)
 	case automation.FieldDraftVersionID:
 		return m.OldDraftVersionID(ctx)
+	case automation.FieldRevision:
+		return m.OldRevision(ctx)
 	case automation.FieldName:
 		return m.OldName(ctx)
 	}
@@ -4232,6 +4297,13 @@ func (m *AutomationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDraftVersionID(v)
 		return nil
+	case automation.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
+		return nil
 	case automation.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -4247,6 +4319,9 @@ func (m *AutomationMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *AutomationMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, automation.FieldRevision)
+	}
 	return fields
 }
 
@@ -4255,6 +4330,8 @@ func (m *AutomationMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *AutomationMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case automation.FieldRevision:
+		return m.AddedRevision()
 	}
 	return nil, false
 }
@@ -4264,6 +4341,13 @@ func (m *AutomationMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *AutomationMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case automation.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Automation numeric field %s", name)
 }
@@ -4341,6 +4425,9 @@ func (m *AutomationMutation) ResetField(name string) error {
 		return nil
 	case automation.FieldDraftVersionID:
 		m.ResetDraftVersionID()
+		return nil
+	case automation.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case automation.FieldName:
 		m.ResetName()
@@ -45159,6 +45246,8 @@ type RuleMutation struct {
 	discarded_at         *time.Time
 	status               *rule.Status
 	activated_at         *time.Time
+	revision             *int64
+	addrevision          *int64
 	name                 *string
 	clearedFields        map[string]struct{}
 	workspace            *int64
@@ -45622,6 +45711,62 @@ func (m *RuleMutation) ResetDraftVersionID() {
 	delete(m.clearedFields, rule.FieldDraftVersionID)
 }
 
+// SetRevision sets the "revision" field.
+func (m *RuleMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *RuleMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the Rule entity.
+// If the Rule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *RuleMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *RuleMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *RuleMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
+}
+
 // SetName sets the "name" field.
 func (m *RuleMutation) SetName(s string) {
 	m.name = &s
@@ -45881,7 +46026,7 @@ func (m *RuleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RuleMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, rule.FieldCreatedAt)
 	}
@@ -45905,6 +46050,9 @@ func (m *RuleMutation) Fields() []string {
 	}
 	if m.draft_version != nil {
 		fields = append(fields, rule.FieldDraftVersionID)
+	}
+	if m.revision != nil {
+		fields = append(fields, rule.FieldRevision)
 	}
 	if m.name != nil {
 		fields = append(fields, rule.FieldName)
@@ -45933,6 +46081,8 @@ func (m *RuleMutation) Field(name string) (ent.Value, bool) {
 		return m.LiveVersionID()
 	case rule.FieldDraftVersionID:
 		return m.DraftVersionID()
+	case rule.FieldRevision:
+		return m.Revision()
 	case rule.FieldName:
 		return m.Name()
 	}
@@ -45960,6 +46110,8 @@ func (m *RuleMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldLiveVersionID(ctx)
 	case rule.FieldDraftVersionID:
 		return m.OldDraftVersionID(ctx)
+	case rule.FieldRevision:
+		return m.OldRevision(ctx)
 	case rule.FieldName:
 		return m.OldName(ctx)
 	}
@@ -46027,6 +46179,13 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDraftVersionID(v)
 		return nil
+	case rule.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
+		return nil
 	case rule.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -46042,6 +46201,9 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *RuleMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, rule.FieldRevision)
+	}
 	return fields
 }
 
@@ -46050,6 +46212,8 @@ func (m *RuleMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *RuleMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case rule.FieldRevision:
+		return m.AddedRevision()
 	}
 	return nil, false
 }
@@ -46059,6 +46223,13 @@ func (m *RuleMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *RuleMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case rule.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Rule numeric field %s", name)
 }
@@ -46136,6 +46307,9 @@ func (m *RuleMutation) ResetField(name string) error {
 		return nil
 	case rule.FieldDraftVersionID:
 		m.ResetDraftVersionID()
+		return nil
+	case rule.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case rule.FieldName:
 		m.ResetName()

@@ -48,7 +48,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 
 	// Editing the body and resending only the step id keeps the stored secrets.
 	step.Body = siteapi.NewOptString(`{"text":"edited"}`)
-	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Steps: []siteapi.SiteAutomationStep{step}},
+	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []siteapi.SiteAutomationStep{step}},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated
@@ -140,7 +140,7 @@ func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
 		require.NoError(t, err, trigger)
 	}
 
-	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{TriggerEvent: siteapi.NewOptString("email.bounced")},
+	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWinBackID)))), TriggerEvent: siteapi.NewOptString("email.bounced")},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWinBackID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

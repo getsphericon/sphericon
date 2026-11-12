@@ -45,7 +45,7 @@ func (w *Workspace) PublishRule(r Rule) {
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 	created := ok[siteapi.SiteRuleResource](w.t, "create rule", res, err)
 
-	published, err := w.site.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: created.ID})
+	published, err := w.site.SiteRulesPublish(ctx, &siteapi.RevisionInput{Revision: created.Revision}, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: created.ID})
 	got := ok[siteapi.SiteRuleResource](w.t, "publish rule", published, err)
 	require.Equal(w.t, siteapi.SiteRuleStatusActive, got.Status)
 }

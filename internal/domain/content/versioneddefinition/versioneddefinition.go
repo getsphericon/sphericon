@@ -69,6 +69,9 @@ type Errors struct {
 	NothingToPublish error
 	// NothingToRevert: the object has no draft above a live version.
 	NothingToRevert error
+	// RevisionChanged: an editor's move (Edit, Publish, Revert) named a revision the object has
+	// moved past (ADR 0119): someone changed it since the editor read it.
+	RevisionChanged error
 }
 
 // Lifecycle runs the moves of one kind of Versioned definition.
@@ -82,7 +85,7 @@ type Lifecycle[O, V, E, B any] struct {
 // New builds the lifecycle of a kind of definition. The bus opens the transaction of each move;
 // now is the Instance clock an activation is dated by.
 func New[O, V, E, B any](bus *events.Bus, def Definition[O, V, E, B], errs Errors, now func() time.Time) *Lifecycle[O, V, E, B] {
-	if errs.NotFound == nil || errs.Archived == nil || errs.NothingToPublish == nil || errs.NothingToRevert == nil {
+	if errs.NotFound == nil || errs.Archived == nil || errs.NothingToPublish == nil || errs.NothingToRevert == nil || errs.RevisionChanged == nil {
 		panic("drafts: a kind names every refusal of drafts.Errors")
 	}
 	return &Lifecycle[O, V, E, B]{bus: bus, def: def, errs: errs, now: now}
@@ -143,7 +146,7 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 		if err != nil {
 			return err
 		}
-		return l.move(ctx, store, st, Draft, versionID)
+		return l.move(ctx, store, st, Draft, versionID, "")
 	})
 	if err != nil {
 		return nil, err
@@ -155,10 +158,10 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 // draft's, or the live version's when there is no draft. The live version is never rewritten: the
 // first edit above it makes the draft, the version above the newest, and the next ones rewrite the
 // draft in place. A definition equal to the one it starts from stores nothing. The status is
-// untouched. own, when given, plans a change of the object's own row (its name) from the loaded
-// snapshot: it returns nil if nothing differs, otherwise a writer to run after the conditional
-// move. Planning has no effects; the writer runs in the move's transaction.
-func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int64, own func(row *O) func(ctx context.Context, ts *ent.Scoped) error, edit E) (*O, error) {
+// untouched. revision is the one the edit was made on (ADR 0119): an object that moved past it is
+// RevisionChanged and nothing is written. name, when given and different, renames the object in
+// the same write as the move, so one save moves the revision once.
+func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id, revision int64, name *string, edit E) (*O, error) {
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
 		ts := wl.Scope()
 		store := l.def.Store(ts)
@@ -168,6 +171,9 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 		}
 		if err := l.editable(st); err != nil {
 			return err
+		}
+		if st.Revision != revision {
+			return l.errs.RevisionChanged
 		}
 		base := st.Draft
 		if base == nil {
@@ -180,12 +186,12 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 		if err != nil {
 			return err
 		}
-		var writeOwner func(context.Context, *ent.Scoped) error
-		if own != nil {
-			writeOwner = own(st.Row)
+		rename := ""
+		if name != nil && *name != st.Name {
+			rename = *name
 		}
 		unchanged := l.def.Equal(base, body)
-		if unchanged && writeOwner == nil {
+		if unchanged && rename == "" {
 			return nil
 		}
 		draftID := st.DraftID
@@ -205,16 +211,13 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 		}
 		// Fence the owner before rewriting an existing draft. A concurrent move cannot
 		// publish or remove that version between this write and the body's write.
-		if err := l.move(ctx, store, st, event, draftID); err != nil {
+		if err := l.move(ctx, store, st, event, draftID, rename); err != nil {
 			return err
 		}
 		if !unchanged && st.Draft != nil {
 			if _, err := l.def.Write(ctx, wl, id, 0, st.Draft, body); err != nil {
 				return err
 			}
-		}
-		if writeOwner != nil {
-			return writeOwner(ctx, ts)
 		}
 		return nil
 	})
@@ -231,8 +234,9 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 // own. A version the definition finds unpublishable is refused and stays as it was: the draft, or
 // the inactive live version a Publish without a draft would make active again. Publish is send-class: the
 // surfaces gate it by the publish scope. A discarded object is as good as absent here (NotFound);
-// an archived one is unarchived before it is published (Archived).
-func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
+// an archived one is unarchived before it is published (Archived). revision is the one of what the
+// editor shows (ADR 0119): an object that moved past it is RevisionChanged and nothing is published.
+func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id, revision int64) (*O, error) {
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
 		ts := wl.Scope()
 		st, err := l.read(ctx, l.def.Store(ts), id)
@@ -241,6 +245,9 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id i
 		}
 		if err := l.acting(st); err != nil {
 			return err
+		}
+		if st.Revision != revision {
+			return l.errs.RevisionChanged
 		}
 		switch {
 		case st.Draft != nil:
@@ -268,13 +275,14 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id i
 // publish makes the version st stands on live and the object active: the write that makes it Live
 // use (ADR 0099), so it takes the Workspace lock (ADR 0108).
 func (l *Lifecycle[O, V, E, B]) publish(ctx context.Context, wl *ent.WorkspaceLocked, st ent.VersionState[O, V]) error {
-	return l.move(ctx, l.def.Store(wl.Scope()), st, Publish, 0)
+	return l.move(ctx, l.def.Store(wl.Scope()), st, Publish, 0, "")
 }
 
 // Revert drops the draft: the live version is again the latest. It is refused (NothingToRevert)
 // unless there is a draft above a live version, since a never-published object's draft is its
-// whole definition. Nothing stands on a draft, so the version goes. Revert is authoring.
-func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
+// whole definition. Nothing stands on a draft, so the version goes. Revert is authoring. revision is
+// the one of what the editor shows (ADR 0119): an object that moved past it is RevisionChanged.
+func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id, revision int64) (*O, error) {
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.read(ctx, store, id)
@@ -284,12 +292,15 @@ func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id in
 		if err := l.editable(st); err != nil {
 			return err
 		}
+		if st.Revision != revision {
+			return l.errs.RevisionChanged
+		}
 		if st.LiveID == 0 || st.DraftID == 0 {
 			return l.errs.NothingToRevert
 		}
 		// The pointer is cleared through the audited write first, so the Audit log records the
 		// Revert; the key's SET NULL would leave no trace.
-		if err := l.move(ctx, store, st, Revert, 0); err != nil {
+		if err := l.move(ctx, store, st, Revert, 0, ""); err != nil {
 			return err
 		}
 		return store.DeleteVersion(ctx, id, st.DraftID)
@@ -317,7 +328,7 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 		if !st.Active {
 			return nil
 		}
-		return l.move(ctx, store, st, Deactivate, 0)
+		return l.move(ctx, store, st, Deactivate, 0, "")
 	})
 	if err != nil {
 		return nil, err
@@ -343,7 +354,7 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 		if err := l.def.Archivable(ctx, wl, st.Row); err != nil {
 			return err
 		}
-		return l.move(ctx, store, st, Archive, 0)
+		return l.move(ctx, store, st, Archive, 0, "")
 	})
 	if err != nil {
 		return nil, err
@@ -364,7 +375,7 @@ func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id
 		if !st.Archived {
 			return nil
 		}
-		return l.move(ctx, store, st, Unarchive, 0)
+		return l.move(ctx, store, st, Unarchive, 0, "")
 	})
 	if err != nil {
 		return nil, err
@@ -387,7 +398,7 @@ func (l *Lifecycle[O, V, E, B]) Discard(ctx context.Context, s *ent.Scoped, id i
 		if st.Discarded {
 			return nil
 		}
-		return l.move(ctx, store, st, Discard, 0)
+		return l.move(ctx, store, st, Discard, 0, "")
 	})
 	if err != nil {
 		return nil, err

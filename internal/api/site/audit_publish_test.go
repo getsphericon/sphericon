@@ -35,7 +35,7 @@ func TestSiteAutomationPublishAndDeactivateAreAudited(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWinBackID)}
 
-	_, err := c.SiteAutomationsPublish(ctx, params)
+	_, err := c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID)))}, params)
 	require.NoError(t, err)
 	_, err = c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams(params))
 	require.NoError(t, err)
@@ -78,13 +78,13 @@ func TestSiteAutomationPublishAndRevertAreAudited(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteAutomationsRevertParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWelcomeSeriesID)}
 
-	_, err := c.SiteAutomationsRevert(ctx, params)
+	_, err := c.SiteAutomationsRevert(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID)))}, params)
 	require.NoError(t, err)
-	edited, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{TriggerEvent: siteapi.NewOptString("signup_edited")},
+	edited, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.SiteAutomationsUpdateParams(params).ID))), TriggerEvent: siteapi.NewOptString("signup_edited")},
 		siteapi.SiteAutomationsUpdateParams(params))
 	require.NoError(t, err)
 	draft := edited.Draft.Value
-	_, err = c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams(params))
+	_, err = c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.SiteAutomationsPublishParams(params).ID)))}, siteapi.SiteAutomationsPublishParams(params))
 	require.NoError(t, err)
 
 	got := auditedVersionMoves(t, env, fixtures.AutomationWelcomeSeriesID)
@@ -113,7 +113,7 @@ func TestSiteRulePublishAndDeactivateAreAudited(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteRulesPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.RuleInactiveID)}
 
-	_, err := c.SiteRulesPublish(ctx, params)
+	_, err := c.SiteRulesPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(params.ID)))}, params)
 	require.NoError(t, err)
 	_, err = c.SiteRulesDeactivate(ctx, siteapi.SiteRulesDeactivateParams(params))
 	require.NoError(t, err)

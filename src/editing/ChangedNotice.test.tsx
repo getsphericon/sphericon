@@ -6,7 +6,12 @@ import { ChangedNotice } from './ChangedNotice.tsx'
 test('loading the saved version over unsaved edits asks first, in the leave dialog words', async () => {
   const onLoad = vi.fn<() => void>()
   const screen = await renderWithProviders(
-    <ChangedNotice dirty busy={false} onLoad={onLoad} onOverwrite={vi.fn<() => void>()} />,
+    <ChangedNotice
+      isDirty={() => true}
+      busy={false}
+      onLoad={onLoad}
+      onOverwrite={vi.fn<() => void>()}
+    />,
   )
 
   await screen.getByRole('button', { name: 'Load the saved version' }).click()
@@ -20,7 +25,12 @@ test('loading the saved version over unsaved edits asks first, in the leave dial
 test('loading the saved version with nothing unsaved asks nothing', async () => {
   const onLoad = vi.fn<() => void>()
   const screen = await renderWithProviders(
-    <ChangedNotice dirty={false} busy={false} onLoad={onLoad} onOverwrite={vi.fn<() => void>()} />,
+    <ChangedNotice
+      isDirty={() => false}
+      busy={false}
+      onLoad={onLoad}
+      onOverwrite={vi.fn<() => void>()}
+    />,
   )
 
   await screen.getByRole('button', { name: 'Load the saved version' }).click()
@@ -31,7 +41,12 @@ test('loading the saved version with nothing unsaved asks nothing', async () => 
 test('saving mine over it is one click', async () => {
   const onOverwrite = vi.fn<() => void>()
   const screen = await renderWithProviders(
-    <ChangedNotice dirty busy={false} onLoad={vi.fn<() => void>()} onOverwrite={onOverwrite} />,
+    <ChangedNotice
+      isDirty={() => true}
+      busy={false}
+      onLoad={vi.fn<() => void>()}
+      onOverwrite={onOverwrite}
+    />,
   )
 
   await screen.getByRole('button', { name: 'Save mine over it' }).click()

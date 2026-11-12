@@ -99,12 +99,12 @@ func TestPublishIsRefusedForAnSMSStepThatCannotSend(t *testing.T) {
 	}
 	for name, integration := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 				Steps: &[]automationstep.Step{smsVia(integration, "Hi")},
 			})
 			require.NoError(t, err, "a draft may name it")
 
-			_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
+			_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID))
 
 			require.ErrorIs(t, err, outboundmessages.ErrRouteHeld)
 		})
@@ -116,12 +116,12 @@ func TestPublishSendsAnSMSStepThroughItsTwilioIntegration(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	id := int64(env.AcmeTwilio(t).Integration.ID)
-	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 		Steps: &[]automationstep.Step{smsVia(&id, "Hi")},
 	})
 	require.NoError(t, err)
 
-	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
+	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID))
 
 	require.NoError(t, err)
 }
@@ -132,7 +132,7 @@ func TestAnSMSStepNeedsATextThatRenders(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	for name, text := range map[string]string{"blank": "  ", "bad Liquid": "{% if %}"} {
 		t.Run(name, func(t *testing.T) {
-			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 				Steps: &[]automationstep.Step{smsVia(nil, text)},
 			})
 
@@ -148,11 +148,11 @@ func TestSavingAnSMSStepOverTwiliosLengthLimitIsRefused(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	atLimit := strings.Repeat("я", 700)
 
-	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 		Steps: &[]automationstep.Step{smsVia(nil, atLimit)},
 	})
 	require.NoError(t, err)
-	_, err = m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+	_, err = m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 		Steps: &[]automationstep.Step{smsVia(nil, atLimit+"я")},
 	})
 

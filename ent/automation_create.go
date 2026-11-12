@@ -129,6 +129,20 @@ func (_c *AutomationCreate) SetNillableDraftVersionID(v *int64) *AutomationCreat
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *AutomationCreate) SetRevision(v int64) *AutomationCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *AutomationCreate) SetNillableRevision(v *int64) *AutomationCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *AutomationCreate) SetName(v string) *AutomationCreate {
 	_c.mutation.SetName(v)
@@ -233,6 +247,10 @@ func (_c *AutomationCreate) defaults() {
 		v := automation.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := automation.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -252,6 +270,14 @@ func (_c *AutomationCreate) check() error {
 	if v, ok := _c.mutation.Status(); ok {
 		if err := automation.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "Automation.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := automation.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Automation.revision": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
@@ -317,6 +343,10 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ActivatedAt(); ok {
 		_spec.SetField(automation.FieldActivatedAt, field.TypeTime, value)
 		_node.ActivatedAt = &value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(automation.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(automation.FieldName, field.TypeString, value)
@@ -565,6 +595,24 @@ func (u *AutomationUpsert) ClearDraftVersionID() *AutomationUpsert {
 	return u
 }
 
+// SetRevision sets the "revision" field.
+func (u *AutomationUpsert) SetRevision(v int64) *AutomationUpsert {
+	u.Set(automation.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *AutomationUpsert) UpdateRevision() *AutomationUpsert {
+	u.SetExcluded(automation.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *AutomationUpsert) AddRevision(v int64) *AutomationUpsert {
+	u.Add(automation.FieldRevision, v)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *AutomationUpsert) SetName(v string) *AutomationUpsert {
 	u.Set(automation.FieldName, v)
@@ -751,6 +799,27 @@ func (u *AutomationUpsertOne) UpdateDraftVersionID() *AutomationUpsertOne {
 func (u *AutomationUpsertOne) ClearDraftVersionID() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
 		s.ClearDraftVersionID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *AutomationUpsertOne) SetRevision(v int64) *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *AutomationUpsertOne) AddRevision(v int64) *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *AutomationUpsertOne) UpdateRevision() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -1108,6 +1177,27 @@ func (u *AutomationUpsertBulk) UpdateDraftVersionID() *AutomationUpsertBulk {
 func (u *AutomationUpsertBulk) ClearDraftVersionID() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
 		s.ClearDraftVersionID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *AutomationUpsertBulk) SetRevision(v int64) *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *AutomationUpsertBulk) AddRevision(v int64) *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *AutomationUpsertBulk) UpdateRevision() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateRevision()
 	})
 }
 

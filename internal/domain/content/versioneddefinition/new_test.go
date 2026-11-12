@@ -15,15 +15,16 @@ import (
 // refusal, or a bare error the server turns into a 500, so New refuses to build it.
 func TestNewRefusesAKindThatNamesNotEveryRefusal(t *testing.T) {
 	refusal := errors.New("refused")
-	every := versioneddefinition.Errors{NotFound: refusal, Archived: refusal, NothingToPublish: refusal, NothingToRevert: refusal}
+	every := versioneddefinition.Errors{NotFound: refusal, Archived: refusal, NothingToPublish: refusal, NothingToRevert: refusal, RevisionChanged: refusal}
 	for _, missing := range []struct {
 		name string
 		errs versioneddefinition.Errors
 	}{
-		{"NotFound", versioneddefinition.Errors{Archived: refusal, NothingToPublish: refusal, NothingToRevert: refusal}},
-		{"Archived", versioneddefinition.Errors{NotFound: refusal, NothingToPublish: refusal, NothingToRevert: refusal}},
-		{"NothingToPublish", versioneddefinition.Errors{NotFound: refusal, Archived: refusal, NothingToRevert: refusal}},
-		{"NothingToRevert", versioneddefinition.Errors{NotFound: refusal, Archived: refusal, NothingToPublish: refusal}},
+		{"NotFound", versioneddefinition.Errors{Archived: refusal, NothingToPublish: refusal, NothingToRevert: refusal, RevisionChanged: refusal}},
+		{"Archived", versioneddefinition.Errors{NotFound: refusal, NothingToPublish: refusal, NothingToRevert: refusal, RevisionChanged: refusal}},
+		{"NothingToPublish", versioneddefinition.Errors{NotFound: refusal, Archived: refusal, NothingToRevert: refusal, RevisionChanged: refusal}},
+		{"NothingToRevert", versioneddefinition.Errors{NotFound: refusal, Archived: refusal, NothingToPublish: refusal, RevisionChanged: refusal}},
+		{"RevisionChanged", versioneddefinition.Errors{NotFound: refusal, Archived: refusal, NothingToPublish: refusal, NothingToRevert: refusal}},
 	} {
 		t.Run(missing.name, func(t *testing.T) {
 			assert.Panics(t, func() {

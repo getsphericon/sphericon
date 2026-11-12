@@ -1,4 +1,4 @@
-import { defineEditorSession, draftGuards } from '../../editing/editorSession.ts'
+import { based, defineEditorSession, draftGuards } from '../../editing/editorSession.ts'
 import {
   siteAutomationsPublish,
   siteAutomationsRevert,
@@ -19,7 +19,8 @@ export interface AutomationContent {
   graph: AutomationGraph
 }
 interface Submission {
-  body: SiteAutomationsUpdateData['body'] & { name: string }
+  // The revision is the session's base, added when the Save is sent (ADR 0119).
+  body: Omit<SiteAutomationsUpdateData['body'], 'revision'> & { name: string }
   graph: AutomationGraph
   fingerprint: string
   dropped: number
@@ -113,10 +114,19 @@ export const automationAdapter = {
   }),
   fingerprint: ({ name, graph }: AutomationContent) => automationSnapshot(name, graph),
   submit: ({ name, graph }: AutomationContent) => automationSubmission(name, graph),
-  save: async ({ subject, submission }: { subject: AutomationSubject; submission: Submission }) => {
+  revision: (resource: SiteAutomationResource) => resource.revision,
+  save: async ({
+    subject,
+    submission,
+    revision,
+  }: {
+    subject: AutomationSubject
+    submission: Submission
+    revision: number | undefined
+  }) => {
     const { data } = await siteAutomationsUpdate({
       path: subject.path,
-      body: submission.body,
+      body: { ...submission.body, revision: based(revision) },
       throwOnError: true,
     })
     return data
@@ -139,9 +149,16 @@ export const automationAdapter = {
   }),
   operations: {
     PUBLISH: {
-      request: async ({ subject }: { subject: AutomationSubject }) => {
+      request: async ({
+        subject,
+        revision,
+      }: {
+        subject: AutomationSubject
+        revision: number | undefined
+      }) => {
         const { data } = await siteAutomationsPublish({
           path: subject.path,
+          body: { revision: based(revision) },
           throwOnError: true,
         })
         return data
@@ -149,9 +166,16 @@ export const automationAdapter = {
       available: draftGuards.publishable,
     },
     REVERT: {
-      request: async ({ subject }: { subject: AutomationSubject }) => {
+      request: async ({
+        subject,
+        revision,
+      }: {
+        subject: AutomationSubject
+        revision: number | undefined
+      }) => {
         const { data } = await siteAutomationsRevert({
           path: subject.path,
+          body: { revision: based(revision) },
           throwOnError: true,
         })
         return data

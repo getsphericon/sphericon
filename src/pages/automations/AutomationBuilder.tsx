@@ -1,5 +1,6 @@
 import { Box, Button, Group, Modal, Paper, TextInput, useComputedColorScheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   closeSnackbar,
   registerComponentDecorator,
@@ -19,6 +20,7 @@ import type { SnapshotFrom } from 'xstate'
 
 import { DraftActions } from '../../components/DraftControls.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
+import { ChangedNotice } from '../../editing/ChangedNotice.tsx'
 import { useEditorEffects } from '../../editing/useEditorEffects.ts'
 import { useEditorSession } from '../../editing/useEditorSession.ts'
 import { siteAutomationsGetQueryKey } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -262,6 +264,8 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
     can,
     run,
     save,
+    reload,
+    overwrite,
   } = useEditorSession(automationAdapter, editorSession, {
     subject: {
       path: { workspaceId, id: automation.id },
@@ -314,6 +318,21 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
   }, [save, form, notify, t])
 
   const onDataSave = useCallback<OnSaveExternal>(async () => saveCanvas(), [saveCanvas])
+
+  // The Automation as stored now, read again for the changed notice's two actions (ADR 0119).
+  const queryClient = useQueryClient()
+  const stored = async (then: (resource: SiteAutomationResource) => unknown) => {
+    const queryKey = siteAutomationsGetQueryKey({ path: { workspaceId, id: automation.id } })
+    await queryClient.refetchQueries({ queryKey, exact: true }, { throwOnError: true })
+    const fresh = queryClient.getQueryData<SiteAutomationResource>(queryKey)
+    if (fresh !== undefined) {
+      await then(fresh)
+    }
+  }
+  const unsaved = () => {
+    const { nodes, edges } = useStore.getState()
+    return dirty({ name: form.getValues().name, graph: { nodes, edges } })
+  }
 
   const integration = useMemo(() => ({ strategy: 'props' as const, onDataSave }), [onDataSave])
 
@@ -369,6 +388,20 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
             <Box pos="absolute" top={88} left={16}>
               <WorkflowBuilder.Palette />
             </Box>
+            {session.context.changed && (
+              <Box pos="absolute" bottom={16} left={16} maw={420}>
+                <ChangedNotice
+                  isDirty={unsaved}
+                  busy={!session.matches('idle')}
+                  onLoad={() => {
+                    void stored(reload)
+                  }}
+                  onOverwrite={() => {
+                    void stored(overwrite)
+                  }}
+                />
+              </Box>
+            )}
             <Box
               pos="absolute"
               top={{ base: 'auto', sm: 88 }}

@@ -51,13 +51,13 @@ var (
 		"GET": "Authorization",
 	}
 	rn17AllowedHeaders = map[string]string{
-		"POST": "Authorization",
+		"POST": "Authorization,Content-Type",
 	}
 	rn18AllowedHeaders = map[string]string{
 		"GET": "Authorization",
 	}
 	rn20AllowedHeaders = map[string]string{
-		"POST": "Authorization",
+		"POST": "Authorization,Content-Type",
 	}
 	rn21AllowedHeaders = map[string]string{
 		"POST": "Authorization",
@@ -211,10 +211,10 @@ var (
 		"GET": "Authorization",
 	}
 	rn87AllowedHeaders = map[string]string{
-		"POST": "Authorization",
+		"POST": "Authorization,Content-Type",
 	}
 	rn88AllowedHeaders = map[string]string{
-		"POST": "Authorization",
+		"POST": "Authorization,Content-Type",
 	}
 	rn92AllowedHeaders = map[string]string{
 		"GET":  "Authorization",
@@ -779,7 +779,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											s.notAllowed(w, r, notAllowedParams{
 												allowedMethods: "POST",
 												allowedHeaders: rn17AllowedHeaders,
-												acceptPost:     "",
+												acceptPost:     "application/json",
 												acceptPatch:    "",
 											})
 										}
@@ -845,7 +845,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 												s.notAllowed(w, r, notAllowedParams{
 													allowedMethods: "POST",
 													allowedHeaders: rn20AllowedHeaders,
-													acceptPost:     "",
+													acceptPost:     "application/json",
 													acceptPatch:    "",
 												})
 											}
@@ -2430,7 +2430,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									s.notAllowed(w, r, notAllowedParams{
 										allowedMethods: "POST",
 										allowedHeaders: rn87AllowedHeaders,
-										acceptPost:     "",
+										acceptPost:     "application/json",
 										acceptPatch:    "",
 									})
 								}
@@ -2457,7 +2457,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									s.notAllowed(w, r, notAllowedParams{
 										allowedMethods: "POST",
 										allowedHeaders: rn88AllowedHeaders,
-										acceptPost:     "",
+										acceptPost:     "application/json",
 										acceptPatch:    "",
 									})
 								}

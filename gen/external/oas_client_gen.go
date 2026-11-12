@@ -103,7 +103,7 @@ type Invoker interface {
 	// refused. 409 for an archived automation too. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
-	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (*AutomationResource, error)
+	AutomationsPublish(ctx context.Context, request *RevisionInput, params AutomationsPublishParams) (*AutomationResource, error)
 	// AutomationsReport invokes Automations_report operation.
 	//
 	// Read the report: the engagement of the automation's emails over its whole history, and its results
@@ -119,7 +119,7 @@ type Invoker interface {
 	// 409 when the automation is archived. Needs the automations:write scope.
 	//
 	// POST /automations/{id}/revert
-	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (*AutomationResource, error)
+	AutomationsRevert(ctx context.Context, request *RevisionInput, params AutomationsRevertParams) (*AutomationResource, error)
 	// AutomationsUnarchive invokes Automations_unarchive operation.
 	//
 	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
@@ -521,14 +521,14 @@ type Invoker interface {
 	// neither draft nor live version. Needs the automations:publish scope.
 	//
 	// POST /rules/{id}/publish
-	RulesPublish(ctx context.Context, params RulesPublishParams) (*RuleResource, error)
+	RulesPublish(ctx context.Context, request *RevisionInput, params RulesPublishParams) (*RuleResource, error)
 	// RulesRevert invokes Rules_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 	// Needs the automations:write scope.
 	//
 	// POST /rules/{id}/revert
-	RulesRevert(ctx context.Context, params RulesRevertParams) (*RuleResource, error)
+	RulesRevert(ctx context.Context, request *RevisionInput, params RulesRevertParams) (*RuleResource, error)
 	// RulesUpdate invokes Rules_update operation.
 	//
 	// Update a resource.
@@ -2533,12 +2533,12 @@ func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsList
 // refused. 409 for an archived automation too. Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
-func (c *Client) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (*AutomationResource, error) {
-	res, err := c.sendAutomationsPublish(ctx, params)
+func (c *Client) AutomationsPublish(ctx context.Context, request *RevisionInput, params AutomationsPublishParams) (*AutomationResource, error) {
+	res, err := c.sendAutomationsPublish(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsPublish(ctx context.Context, params AutomationsPublishParams) (res *AutomationResource, err error) {
+func (c *Client) sendAutomationsPublish(ctx context.Context, request *RevisionInput, params AutomationsPublishParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2605,6 +2605,9 @@ func (c *Client) sendAutomationsPublish(ctx context.Context, params AutomationsP
 	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeAutomationsPublishRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{
@@ -2828,12 +2831,12 @@ func (c *Client) sendAutomationsReport(ctx context.Context, params AutomationsRe
 // 409 when the automation is archived. Needs the automations:write scope.
 //
 // POST /automations/{id}/revert
-func (c *Client) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (*AutomationResource, error) {
-	res, err := c.sendAutomationsRevert(ctx, params)
+func (c *Client) AutomationsRevert(ctx context.Context, request *RevisionInput, params AutomationsRevertParams) (*AutomationResource, error) {
+	res, err := c.sendAutomationsRevert(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsRevert(ctx context.Context, params AutomationsRevertParams) (res *AutomationResource, err error) {
+func (c *Client) sendAutomationsRevert(ctx context.Context, request *RevisionInput, params AutomationsRevertParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_revert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2900,6 +2903,9 @@ func (c *Client) sendAutomationsRevert(ctx context.Context, params AutomationsRe
 	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeAutomationsRevertRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{
@@ -10678,12 +10684,12 @@ func (c *Client) sendRulesList(ctx context.Context, params RulesListParams) (res
 // neither draft nor live version. Needs the automations:publish scope.
 //
 // POST /rules/{id}/publish
-func (c *Client) RulesPublish(ctx context.Context, params RulesPublishParams) (*RuleResource, error) {
-	res, err := c.sendRulesPublish(ctx, params)
+func (c *Client) RulesPublish(ctx context.Context, request *RevisionInput, params RulesPublishParams) (*RuleResource, error) {
+	res, err := c.sendRulesPublish(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendRulesPublish(ctx context.Context, params RulesPublishParams) (res *RuleResource, err error) {
+func (c *Client) sendRulesPublish(ctx context.Context, request *RevisionInput, params RulesPublishParams) (res *RuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -10751,6 +10757,9 @@ func (c *Client) sendRulesPublish(ctx context.Context, params RulesPublishParams
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
+	if err := encodeRulesPublishRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
 
 	{
 		type bitset = [1]uint8
@@ -10814,12 +10823,12 @@ func (c *Client) sendRulesPublish(ctx context.Context, params RulesPublishParams
 // Needs the automations:write scope.
 //
 // POST /rules/{id}/revert
-func (c *Client) RulesRevert(ctx context.Context, params RulesRevertParams) (*RuleResource, error) {
-	res, err := c.sendRulesRevert(ctx, params)
+func (c *Client) RulesRevert(ctx context.Context, request *RevisionInput, params RulesRevertParams) (*RuleResource, error) {
+	res, err := c.sendRulesRevert(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendRulesRevert(ctx context.Context, params RulesRevertParams) (res *RuleResource, err error) {
+func (c *Client) sendRulesRevert(ctx context.Context, request *RevisionInput, params RulesRevertParams) (res *RuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_revert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -10886,6 +10895,9 @@ func (c *Client) sendRulesRevert(ctx context.Context, params RulesRevertParams) 
 	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeRulesRevertRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{

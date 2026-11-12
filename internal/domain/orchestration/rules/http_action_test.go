@@ -71,10 +71,10 @@ func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id, actionID := newHTTPRule(t, env, m)
-	_, err := m.Publish(context.Background(), s, id)
+	_, err := m.Publish(context.Background(), s, id, testhelper.RuleRevisionIn(t.Context(), t, s, id))
 	require.NoError(t, err)
 
-	r, err := m.Update(context.Background(), s, id, rules.UpdateInput{Actions: &[]rules.Action{{
+	r, err := m.Update(context.Background(), s, id, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(t.Context(), t, s, id), Actions: &[]rules.Action{{
 		Type: rules.ActionHTTP, ID: actionID, Body: `{"changed":true}`,
 		Headers: []httpcall.Header{{Name: "Authorization"}},
 	}}})

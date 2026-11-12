@@ -56,18 +56,18 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		rename := &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptName("Renamed")}
+		rename := &siteapi.SiteUpdateAutomationInput{Revision: 1, Name: siteapi.NewOptName("Renamed")}
 		_, err := c.SiteAutomationsUpdate(ctx, rename, siteapi.SiteAutomationsUpdateParams{WorkspaceId: foreign, ID: known})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteAutomationsUpdate(ctx, rename, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Steps: []siteapi.SiteAutomationStep{
+		_, err = c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))), Steps: []siteapi.SiteAutomationStep{
 			{Type: siteapi.SiteAutomationStepTypeRemoveTag},
 		}}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: known})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 		// Valid step edit round-trips.
-		r5, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
+		r5, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))),
 			Name: siteapi.NewOptName("Renamed"),
 			Steps: []siteapi.SiteAutomationStep{
 				{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)},
@@ -83,9 +83,9 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("activate and deactivate", func(t *testing.T) {
-		_, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: foreign, ID: known})
+		_, err := c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known)))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: foreign, ID: known})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: acme, ID: missing})
+		_, err = c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(missing)))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 		_, err = c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams{WorkspaceId: foreign, ID: known})

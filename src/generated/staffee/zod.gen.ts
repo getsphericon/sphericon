@@ -185,6 +185,14 @@ export const zRegionalFormat = z.string().max(35);
 export const zRevision = z.int().gte(1);
 
 /**
+ * The body of an editor's operation on stored content (Publish, Revert): the revision of what the
+ * editor shows (ADR 0119)
+ */
+export const zRevisionInput = z.object({
+  revision: zRevision
+});
+
+/**
  * Which metric of a Sending domain breached the abuse detector's warning limit
  */
 export const zStaffAbuseMetric = z.enum(['complaint', 'bounce']);

@@ -38,15 +38,20 @@ type VersionPosition struct {
     Discarded bool
     LiveID    int64
     DraftID   int64
+    // Rename is the name a move writes with its position, so a rename and a draft edit made by one
+    // save are one write of the row and move its revision once; empty keeps the name.
+    Rename string
 }
 
-// VersionState is a loaded position and its versions. UpdatedAt fences every write, including
-// an edit that rewrites the same draft, so a stale reader cannot accept an unchanged status.
+// VersionState is a loaded position and its versions. Revision (ADR 0119) fences every write,
+// including an edit that rewrites the same draft, so a stale reader cannot accept an unchanged
+// status; Name is the row's, which a rename compares with.
 type VersionState[O, V any] struct {
     VersionPosition
     Row         *O
     ID          int64
-    UpdatedAt   time.Time
+    Name        string
+    Revision    int64
     ActivatedAt *time.Time
     Live        *V
     Draft       *V
@@ -77,7 +82,8 @@ func ({{ $n.Receiver }} *{{ $N }}) VersionState() VersionState[{{ $N }}, {{ $V.N
     st := VersionState[{{ $N }}, {{ $V.Name }}]{
         Row: {{ $n.Receiver }},
         ID: {{ $n.Receiver }}.ID,
-        UpdatedAt: {{ $n.Receiver }}.UpdatedAt,
+        Name: {{ $n.Receiver }}.Name,
+        Revision: {{ $n.Receiver }}.Revision,
         ActivatedAt: {{ $n.Receiver }}.ActivatedAt,
         Live: {{ $n.Receiver }}.Edges.LiveVersion,
         Draft: {{ $n.Receiver }}.Edges.DraftVersion,
@@ -129,7 +135,8 @@ func (p *{{ $N }}Pointers) Read(ctx context.Context, id int64) (VersionState[{{ 
 }
 
 // CompareAndSwap writes status, pointers and deletion markers in one conditional update.
-// Matching UpdatedAt also fences an edit of an existing draft whose pointers do not change.
+// Matching Revision also fences an edit of an existing draft whose pointers do not change; the
+// Revision hook every client carries moves it by one with the write (ADR 0119).
 func (p *{{ $N }}Pointers) CompareAndSwap(ctx context.Context, before VersionState[{{ $N }}, {{ $V.Name }}], after VersionPosition, at time.Time) (bool, error) {
     {{- if $R }}
     if after.Discarded {
@@ -140,7 +147,10 @@ func (p *{{ $N }}Pointers) CompareAndSwap(ctx context.Context, before VersionSta
         return false, ErrNotArchivable
     }
     {{- end }}
-    u := p.t.UpdateOneID(before.ID).Where({{ $P }}.UpdatedAtEQ(before.UpdatedAt))
+    u := p.t.UpdateOneID(before.ID).Where({{ $P }}.RevisionEQ(before.Revision))
+    if after.Rename != "" {
+        u.SetName(after.Rename)
+    }
     if before.Active {
         u.Where({{ $P }}.StatusEQ({{ $P }}.StatusActive))
     } else {

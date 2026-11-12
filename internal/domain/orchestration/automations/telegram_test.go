@@ -34,12 +34,12 @@ func TestPublishIsRefusedForATelegramStepThatCannotSend(t *testing.T) {
 	}
 	for name, integration := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 				Steps: &[]automationstep.Step{telegramVia(integration, "Hi")},
 			})
 			require.NoError(t, err, "a draft may name it")
 
-			_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
+			_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID))
 
 			require.ErrorIs(t, err, outboundmessages.ErrRouteHeld)
 		})
@@ -50,12 +50,12 @@ func TestPublishIsRefusedForATextOverTheLimitAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
-	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 		Steps: &[]automationstep.Step{telegramVia(nil, strings.Repeat("a", 4097))},
 	})
 	require.NoError(t, err, "saving warns, it does not refuse")
 
-	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
+	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID))
 
 	require.ErrorIs(t, err, automations.ErrInvalidStep)
 	assert.Contains(t, err.Error(), "4097")
@@ -67,7 +67,7 @@ func TestATelegramStepNeedsATextThatRenders(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	for name, text := range map[string]string{"blank": "  ", "bad Liquid": "{% if %}"} {
 		t.Run(name, func(t *testing.T) {
-			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
+			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 				Steps: &[]automationstep.Step{telegramVia(nil, text)},
 			})
 
@@ -103,10 +103,10 @@ func TestPublishIsRefusedForACaptionOverTheLimitAsWritten(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	step := telegramVia(nil, strings.Repeat("a", 1025))
 	step.ImageURL = "https://cdn.example.com/a.png"
-	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{step}})
+	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID), Steps: &[]automationstep.Step{step}})
 	require.NoError(t, err, "saving warns, it does not refuse")
 
-	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
+	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID))
 
 	require.ErrorIs(t, err, automations.ErrInvalidStep)
 	assert.Contains(t, err.Error(), "1025")
@@ -128,7 +128,7 @@ func TestATelegramStepRefusesABadImageAndBadButtons(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			step := telegramVia(nil, "Hi")
 			edit(&step)
-			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{step}})
+			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID), Steps: &[]automationstep.Step{step}})
 			require.ErrorIs(t, err, automations.ErrInvalidStep)
 		})
 	}

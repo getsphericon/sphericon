@@ -206,6 +206,34 @@ func encodeSiteAutomationsDryRunHttpStepRequest(
 	return nil
 }
 
+func encodeSiteAutomationsPublishRequest(
+	req *RevisionInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteAutomationsRevertRequest(
+	req *RevisionInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeSiteAutomationsUpdateRequest(
 	req *SiteUpdateAutomationInput,
 	r *http.Request,
@@ -558,6 +586,34 @@ func encodeSiteRulesCreateRequest(
 
 func encodeSiteRulesDryRunRequest(
 	req *SiteDryRunRuleInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteRulesPublishRequest(
+	req *RevisionInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteRulesRevertRequest(
+	req *RevisionInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

@@ -40,7 +40,7 @@ func TestSiteSavingALiveRuleUnchangedMakesNoDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	updated, err := c.SiteRulesUpdate(context.Background(), &siteapi.SiteUpdateRuleInput{
+	updated, err := c.SiteRulesUpdate(context.Background(), &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleMultiTriggerID)))),
 		Name:          siteapi.NewOptName("Either of two events"),
 		TriggerEvents: []string{"rule_multi_a", "rule_multi_b"},
 		Condition:     siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)),
@@ -59,7 +59,7 @@ func TestSiteRevertRefusesARuleNeverPublished(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteRulesRevert(context.Background(), siteapi.SiteRulesRevertParams{
+	_, err := c.SiteRulesRevert(context.Background(), &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleInactiveID))))}, siteapi.SiteRulesRevertParams{
 		WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: siteapi.EntityId(fixtures.RuleInactiveID),
 	})
 

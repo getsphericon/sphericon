@@ -33,7 +33,9 @@ func subjectsOf(fs *fakeSender) []string {
 // Mailgun relay, through /api.
 func editGreeting(t *testing.T, c *externalapi.Client) {
 	t.Helper()
-	_, err := c.AutomationsUpdate(t.Context(), &externalapi.UpdateAutomationInput{
+	read, err := c.AutomationsGet(t.Context(), externalapi.AutomationsGetParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
+	require.NoError(t, err)
+	_, err = c.AutomationsUpdate(t.Context(), &externalapi.UpdateAutomationInput{Revision: read.Revision,
 		TriggerEvent: externalapi.NewOptString("job_hijacked"),
 		Steps: []externalapi.AutomationStep{{
 			Type:          externalapi.AutomationStepTypeEmail,
@@ -78,7 +80,7 @@ func TestAfterPublishTheNextEnrollmentFollowsTheNewVersion(t *testing.T) {
 	editGreeting(t, env.ExternalScoped(t, "automations:read", "automations:write"))
 
 	publisher := env.ExternalScoped(t, "automations:publish")
-	_, err := publisher.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
+	_, err := publisher.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(externalapi.EntityId(fixtures.AutomationJobsGreetingID))))}, externalapi.AutomationsPublishParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
 	require.NoError(t, err)
 
 	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactBobID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))

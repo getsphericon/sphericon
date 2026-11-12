@@ -23,7 +23,7 @@ func TestSiteAutomationPublishIsAConflictWhileAStepsIntegrationCannotSend(t *tes
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	id := idStr(fixtures.AutomationHoldDemoID)
-	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
+	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(id))),
 		Steps: []siteapi.SiteAutomationStep{
 			siteEmailStepVia(siteapi.OptNilEntityId{}),
 			siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeSesID))),
@@ -31,7 +31,7 @@ func TestSiteAutomationPublishIsAConflictWhileAStepsIntegrationCannotSend(t *tes
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 
-	_, err = c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: id})
+	_, err = c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(id)))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: id})
 
 	conflict := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Contains(t, conflict.Detail.Or(""), "cannot send")

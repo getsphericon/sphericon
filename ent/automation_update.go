@@ -146,6 +146,27 @@ func (_u *AutomationUpdate) ClearDraftVersionID() *AutomationUpdate {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *AutomationUpdate) SetRevision(v int64) *AutomationUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *AutomationUpdate) SetNillableRevision(v *int64) *AutomationUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *AutomationUpdate) AddRevision(v int64) *AutomationUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *AutomationUpdate) SetName(v string) *AutomationUpdate {
 	_u.mutation.SetName(v)
@@ -313,6 +334,11 @@ func (_u *AutomationUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := automation.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Automation.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := automation.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Automation.name": %w`, err)}
@@ -359,6 +385,12 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if _u.mutation.ActivatedAtCleared() {
 		_spec.ClearField(automation.FieldActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(automation.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(automation.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(automation.FieldName, field.TypeString, value)
@@ -676,6 +708,27 @@ func (_u *AutomationUpdateOne) ClearDraftVersionID() *AutomationUpdateOne {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *AutomationUpdateOne) SetRevision(v int64) *AutomationUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *AutomationUpdateOne) SetNillableRevision(v *int64) *AutomationUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *AutomationUpdateOne) AddRevision(v int64) *AutomationUpdateOne {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *AutomationUpdateOne) SetName(v string) *AutomationUpdateOne {
 	_u.mutation.SetName(v)
@@ -856,6 +909,11 @@ func (_u *AutomationUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := automation.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Automation.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := automation.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Automation.name": %w`, err)}
@@ -919,6 +977,12 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 	}
 	if _u.mutation.ActivatedAtCleared() {
 		_spec.ClearField(automation.FieldActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(automation.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(automation.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(automation.FieldName, field.TypeString, value)

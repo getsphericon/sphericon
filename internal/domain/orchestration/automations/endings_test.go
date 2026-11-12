@@ -259,11 +259,11 @@ func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID, contactID := recoveryRun(t, env)
 
-	_, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{
+	_, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID),
 		ExitEvents: &[]string{"card_removed"}, GoalEvent: patch.Clear[string](),
 	})
 	require.NoError(t, err)
-	_, err = m.Publish(ctx, s, fixtures.AutomationPaymentRecoveryID)
+	_, err = m.Publish(ctx, s, fixtures.AutomationPaymentRecoveryID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID))
 	require.NoError(t, err)
 	_, err = m.Deactivate(ctx, s, fixtures.AutomationPaymentRecoveryID)
 	require.NoError(t, err)
@@ -348,7 +348,7 @@ func TestUpdateRefusesATriggerEqualToAStoredExitEvent(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID),
 		TriggerEvent: new(recoveryExit),
 	})
 
@@ -363,7 +363,7 @@ func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	updated, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{
+	updated, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID),
 		ExitEvents: &[]string{}, GoalEvent: patch.Set("invoice_paid"),
 	})
 	require.NoError(t, err)
@@ -375,7 +375,7 @@ func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	assert.Equal(t, []string{recoveryExit, "plan_downgraded", "email.clicked"}, live.ExitEvents)
 	assert.Equal(t, new(recoveryGoal), live.GoalEvent)
 
-	cleared, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{GoalEvent: patch.Clear[string]()})
+	cleared, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID), GoalEvent: patch.Clear[string]()})
 	require.NoError(t, err)
 	_, draft = automations.LiveAndDraft(cleared)
 	assert.Nil(t, draft.GoalEvent)

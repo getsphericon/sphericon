@@ -46,7 +46,7 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 
 	// Resending only the action id keeps the stored secrets.
 	action.Body = siteapi.NewOptString(`{"text":"edited"}`)
-	updated, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Actions: []siteapi.SiteRuleAction{action}},
+	updated, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(res.ID))), Actions: []siteapi.SiteRuleAction{action}},
 		siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated

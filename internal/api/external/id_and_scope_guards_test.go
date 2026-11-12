@@ -27,7 +27,7 @@ func idGuardCases() []guardCase {
 			return err
 		}},
 		{"AutomationsUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{}, externalapi.AutomationsUpdateParams{ID: id})
+			_, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: 1}, externalapi.AutomationsUpdateParams{ID: id})
 			return err
 		}},
 		{"AutomationsArchive", func(c *externalapi.Client, id externalapi.EntityId) error {
@@ -35,7 +35,7 @@ func idGuardCases() []guardCase {
 			return err
 		}},
 		{"AutomationsPublish", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
+			_, err := c.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: 1}, externalapi.AutomationsPublishParams{ID: id})
 			return err
 		}},
 		{"AutomationsDeactivate", func(c *externalapi.Client, id externalapi.EntityId) error {

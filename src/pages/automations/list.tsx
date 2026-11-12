@@ -172,7 +172,9 @@ export function AutomationsListPage() {
           {t(($) => $.actions.edit)}
         </MenuItemLink>
         {publishable ? (
-          <Menu.Item onClick={() => publishMutation.mutate({ path })}>
+          <Menu.Item
+            onClick={() => publishMutation.mutate({ path, body: { revision: record.revision } })}
+          >
             {t(($) => $.automations.publish)}
           </Menu.Item>
         ) : null}

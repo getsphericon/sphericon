@@ -37,7 +37,7 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	assert.Equal(t, externalapi.EntityId(twilio), step.IntegrationId.Value)
 	assert.False(t, step.Subject.Set, "an SMS step carries no email field")
 
-	_, err = c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: a.ID})
+	_, err = c.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(a.ID)))}, externalapi.AutomationsPublishParams{ID: a.ID})
 	require.NoError(t, err)
 
 	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(twilio)})

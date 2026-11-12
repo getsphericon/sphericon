@@ -155,10 +155,13 @@ func TestMCPPublishNeedsMCPSendAndDeactivateDoesNot(t *testing.T) {
 	env := testhelper.Setup(t)
 	automationID := map[string]any{"id": strconv.Itoa(fixtures.AutomationWinBackID)}
 	ruleID := map[string]any{"id": strconv.Itoa(fixtures.RuleInactiveID)}
+	// Publish names the revision the caller read (ADR 0119).
+	publishAutomation := map[string]any{"id": automationID["id"], "revision": env.AutomationRevision(t.Context(), t, fixtures.AutomationWinBackID)}
+	publishRule := map[string]any{"id": ruleID["id"], "revision": env.RuleRevision(t.Context(), t, fixtures.RuleInactiveID)}
 
 	publishOnly := env.MCPClient(t, env.ScopedBearer(t, "automations:read", "automations:publish"))
-	refusedAutomation := call(t, publishOnly, "automations_publish", automationID)
-	refusedRule := call(t, publishOnly, "rules_publish", ruleID)
+	refusedAutomation := call(t, publishOnly, "automations_publish", publishAutomation)
+	refusedRule := call(t, publishOnly, "rules_publish", publishRule)
 	unchanged := text(t, call(t, publishOnly, "automations_get", automationID))
 	assert.True(t, refusedAutomation.IsError)
 	assert.Contains(t, text(t, refusedAutomation), "mcp:send")
@@ -167,8 +170,8 @@ func TestMCPPublishNeedsMCPSendAndDeactivateDoesNot(t *testing.T) {
 	assert.Contains(t, unchanged, `"status":"inactive"`, "the refused call changed nothing")
 
 	publisher := env.MCPClient(t, env.ScopedBearer(t, "automations:publish", "mcp:send"))
-	publishedAutomation := call(t, publisher, "automations_publish", automationID)
-	publishedRule := call(t, publisher, "rules_publish", ruleID)
+	publishedAutomation := call(t, publisher, "automations_publish", publishAutomation)
+	publishedRule := call(t, publisher, "rules_publish", publishRule)
 	require.False(t, publishedAutomation.IsError, text(t, publishedAutomation))
 	require.False(t, publishedRule.IsError, text(t, publishedRule))
 	assert.Contains(t, text(t, publishedAutomation), `"status":"active"`)

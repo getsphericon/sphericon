@@ -79,10 +79,10 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	require.NoError(t, err)
 	published := liveSteps(t, before)
 
-	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 60}}, TriggerEvent: new("hold_demo_edited")})
+	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 60}}, TriggerEvent: new("hold_demo_edited")})
 	require.NoError(t, err)
 	edited := []automationstep.Step{{Type: automationstep.Wait, Seconds: 120}}
-	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &edited})
+	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &edited})
 	require.NoError(t, err)
 
 	assert.Equal(t, edited, draftSteps(t, updated))
@@ -109,7 +109,7 @@ func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	require.NoError(t, err)
 	same := liveSteps(t, before)
 
-	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &same, TriggerEvent: new("hold_demo")})
+	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &same, TriggerEvent: new("hold_demo")})
 	require.NoError(t, err)
 	_, draft := automations.LiveAndDraft(updated)
 	assert.Nil(t, draft)
@@ -127,10 +127,10 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 	require.NoError(t, err)
 	first := runOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	edited := []automationstep.Step{{Type: automationstep.Wait, Seconds: 99}}
-	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &edited})
+	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &edited})
 	require.NoError(t, err)
 
-	published, err := m.Publish(ctx, acme, fixtures.AutomationHoldDemoID)
+	published, err := m.Publish(ctx, acme, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID))
 	require.NoError(t, err)
 	assert.Equal(t, automation.StatusActive, published.Status)
 	assert.Equal(t, edited, liveSteps(t, published))
@@ -159,11 +159,11 @@ func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
-	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{emailVia(&mailgun)}})
+	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &[]automationstep.Step{emailVia(&mailgun)}})
 	require.NoError(t, err)
 	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID, time.Now()))
 
-	_, err = m.Publish(ctx, acme, fixtures.AutomationHoldDemoID)
+	_, err = m.Publish(ctx, acme, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID))
 	require.ErrorIs(t, err, automations.ErrIntegrationNotFound)
 	after, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)

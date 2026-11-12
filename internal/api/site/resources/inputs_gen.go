@@ -182,6 +182,7 @@ func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automat
 func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
 	if source != nil {
+		automationsUpdateInput.Revision = revisionIn((*source).Revision)
 		automationsUpdateInput.Name = namePtrIn((*source).Name)
 		automationsUpdateInput.TriggerEvent = stringPtrIn((*source).TriggerEvent)
 		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
@@ -608,6 +609,7 @@ func (c *InputsImpl) RuleCreate(source *site.SiteCreateRuleInput) (rules.CreateI
 func (c *InputsImpl) RuleUpdate(source *site.SiteUpdateRuleInput) (rules.UpdateInput, error) {
 	var rulesUpdateInput rules.UpdateInput
 	if source != nil {
+		rulesUpdateInput.Revision = revisionIn((*source).Revision)
 		rulesUpdateInput.Name = namePtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
 		pString, err := conditionIn((*source).Condition)

@@ -116,10 +116,12 @@ func Machine(before ent.VersionPosition, change Change, write func(context.Conte
 }
 
 // move updates the owner before a body edit: the transaction holds its update lock until the
-// draft's write or removal commits. The generated writer also compares the loaded revision.
-func (l *Lifecycle[O, V, E, B]) move(ctx context.Context, store ent.VersionedStore[O, V], before ent.VersionState[O, V], event Trigger, draftID int64) error {
+// draft's write or removal commits. The generated writer also compares the loaded revision, and
+// writes rename (empty keeps the name) with the position.
+func (l *Lifecycle[O, V, E, B]) move(ctx context.Context, store ent.VersionedStore[O, V], before ent.VersionState[O, V], event Trigger, draftID int64, rename string) error {
 	m := Machine(before.VersionPosition, Change{Trigger: event, DraftID: draftID},
 		func(ctx context.Context, _, after ent.VersionPosition) (bool, error) {
+			after.Rename = rename
 			return store.CompareAndSwap(ctx, before, after, l.now())
 		})
 	return m.FireCtx(ctx, event)

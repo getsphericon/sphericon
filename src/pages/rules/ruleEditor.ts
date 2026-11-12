@@ -1,5 +1,5 @@
 import { emptyGroup } from '../../components/conditions/condition.ts'
-import { draftGuards } from '../../editing/editorSession.ts'
+import { based, draftGuards } from '../../editing/editorSession.ts'
 import { siteRulesPublish, siteRulesRevert } from '../../generated/site/sdk.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { zSiteCreateRuleInput } from '../../generated/site/zod.gen.ts'
@@ -25,8 +25,12 @@ export const editedRule = (rule: SiteRuleResource) => ({
 // Publish and Revert of the draft (ADR 0065), serialized with Save by the editor session.
 export const ruleOperations = {
   PUBLISH: {
-    request: async ({ subject: { path } }) => {
-      const { data } = await siteRulesPublish({ path, throwOnError: true })
+    request: async ({ subject: { path }, revision }) => {
+      const { data } = await siteRulesPublish({
+        path,
+        body: { revision: based(revision) },
+        throwOnError: true,
+      })
       return data
     },
     available: draftGuards.publishable,
@@ -36,8 +40,12 @@ export const ruleOperations = {
     }),
   },
   REVERT: {
-    request: async ({ subject: { path } }) => {
-      const { data } = await siteRulesRevert({ path, throwOnError: true })
+    request: async ({ subject: { path }, revision }) => {
+      const { data } = await siteRulesRevert({
+        path,
+        body: { revision: based(revision) },
+        throwOnError: true,
+      })
       return data
     },
     available: draftGuards.revertible,

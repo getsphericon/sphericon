@@ -29,15 +29,20 @@ type VersionPosition struct {
 	Discarded bool
 	LiveID    int64
 	DraftID   int64
+	// Rename is the name a move writes with its position, so a rename and a draft edit made by one
+	// save are one write of the row and move its revision once; empty keeps the name.
+	Rename string
 }
 
-// VersionState is a loaded position and its versions. UpdatedAt fences every write, including
-// an edit that rewrites the same draft, so a stale reader cannot accept an unchanged status.
+// VersionState is a loaded position and its versions. Revision (ADR 0119) fences every write,
+// including an edit that rewrites the same draft, so a stale reader cannot accept an unchanged
+// status; Name is the row's, which a rename compares with.
 type VersionState[O, V any] struct {
 	VersionPosition
 	Row         *O
 	ID          int64
-	UpdatedAt   time.Time
+	Name        string
+	Revision    int64
 	ActivatedAt *time.Time
 	Live        *V
 	Draft       *V
@@ -60,7 +65,8 @@ func (_m *Automation) VersionState() VersionState[Automation, AutomationVersion]
 	st := VersionState[Automation, AutomationVersion]{
 		Row:         _m,
 		ID:          _m.ID,
-		UpdatedAt:   _m.UpdatedAt,
+		Name:        _m.Name,
+		Revision:    _m.Revision,
 		ActivatedAt: _m.ActivatedAt,
 		Live:        _m.Edges.LiveVersion,
 		Draft:       _m.Edges.DraftVersion,
@@ -108,12 +114,16 @@ func (p *AutomationPointers) Read(ctx context.Context, id int64) (VersionState[A
 }
 
 // CompareAndSwap writes status, pointers and deletion markers in one conditional update.
-// Matching UpdatedAt also fences an edit of an existing draft whose pointers do not change.
+// Matching Revision also fences an edit of an existing draft whose pointers do not change; the
+// Revision hook every client carries moves it by one with the write (ADR 0119).
 func (p *AutomationPointers) CompareAndSwap(ctx context.Context, before VersionState[Automation, AutomationVersion], after VersionPosition, at time.Time) (bool, error) {
 	if after.Discarded {
 		return false, ErrNotDiscardable
 	}
-	u := p.t.UpdateOneID(before.ID).Where(automation.UpdatedAtEQ(before.UpdatedAt))
+	u := p.t.UpdateOneID(before.ID).Where(automation.RevisionEQ(before.Revision))
+	if after.Rename != "" {
+		u.SetName(after.Rename)
+	}
 	if before.Active {
 		u.Where(automation.StatusEQ(automation.StatusActive))
 	} else {
@@ -197,7 +207,8 @@ func (_m *Rule) VersionState() VersionState[Rule, RuleVersion] {
 	st := VersionState[Rule, RuleVersion]{
 		Row:         _m,
 		ID:          _m.ID,
-		UpdatedAt:   _m.UpdatedAt,
+		Name:        _m.Name,
+		Revision:    _m.Revision,
 		ActivatedAt: _m.ActivatedAt,
 		Live:        _m.Edges.LiveVersion,
 		Draft:       _m.Edges.DraftVersion,
@@ -245,12 +256,16 @@ func (p *RulePointers) Read(ctx context.Context, id int64) (VersionState[Rule, R
 }
 
 // CompareAndSwap writes status, pointers and deletion markers in one conditional update.
-// Matching UpdatedAt also fences an edit of an existing draft whose pointers do not change.
+// Matching Revision also fences an edit of an existing draft whose pointers do not change; the
+// Revision hook every client carries moves it by one with the write (ADR 0119).
 func (p *RulePointers) CompareAndSwap(ctx context.Context, before VersionState[Rule, RuleVersion], after VersionPosition, at time.Time) (bool, error) {
 	if after.Archived {
 		return false, ErrNotArchivable
 	}
-	u := p.t.UpdateOneID(before.ID).Where(rule.UpdatedAtEQ(before.UpdatedAt))
+	u := p.t.UpdateOneID(before.ID).Where(rule.RevisionEQ(before.Revision))
+	if after.Rename != "" {
+		u.SetName(after.Rename)
+	}
 	if before.Active {
 		u.Where(rule.StatusEQ(rule.StatusActive))
 	} else {

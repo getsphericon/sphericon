@@ -96,6 +96,7 @@ var (
 	ErrorsAutomationNotFound                    = ID{key: "errors.automation_not_found"}
 	ErrorsAutomationNothingToPublish            = ID{key: "errors.automation_nothing_to_publish"}
 	ErrorsAutomationNothingToRevert             = ID{key: "errors.automation_nothing_to_revert"}
+	ErrorsAutomationRevisionChanged             = ID{key: "errors.automation_revision_changed"}
 	ErrorsAutomationStepInvalid                 = ID{key: "errors.automation_step_invalid"}
 	ErrorsAutomationTriggerInvalid              = ID{key: "errors.automation_trigger_invalid"}
 	ErrorsBodyAndDoc                            = ID{key: "errors.body_and_doc"}
@@ -280,6 +281,7 @@ var (
 	ErrorsRuleNotFound                          = ID{key: "errors.rule_not_found"}
 	ErrorsRuleNothingToPublish                  = ID{key: "errors.rule_nothing_to_publish"}
 	ErrorsRuleNothingToRevert                   = ID{key: "errors.rule_nothing_to_revert"}
+	ErrorsRuleRevisionChanged                   = ID{key: "errors.rule_revision_changed"}
 	ErrorsSecondFactorAlreadyActive             = ID{key: "errors.second_factor_already_active"}
 	ErrorsSecondFactorCodeInvalid               = ID{key: "errors.second_factor_code_invalid"}
 	ErrorsSecondFactorNoPending                 = ID{key: "errors.second_factor_no_pending"}

@@ -307,14 +307,14 @@ type Handler interface {
 	// refused. 409 for an archived automation too.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
-	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (*SiteAutomationResource, error)
+	SiteAutomationsPublish(ctx context.Context, req *RevisionInput, params SiteAutomationsPublishParams) (*SiteAutomationResource, error)
 	// SiteAutomationsRevert implements SiteAutomations_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
 	// 409 when the automation is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/revert
-	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (*SiteAutomationResource, error)
+	SiteAutomationsRevert(ctx context.Context, req *RevisionInput, params SiteAutomationsRevertParams) (*SiteAutomationResource, error)
 	// SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
 	//
 	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
@@ -951,13 +951,13 @@ type Handler interface {
 	// neither draft nor live version.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/publish
-	SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (*SiteRuleResource, error)
+	SiteRulesPublish(ctx context.Context, req *RevisionInput, params SiteRulesPublishParams) (*SiteRuleResource, error)
 	// SiteRulesRevert implements SiteRules_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/revert
-	SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (*SiteRuleResource, error)
+	SiteRulesRevert(ctx context.Context, req *RevisionInput, params SiteRulesRevertParams) (*SiteRuleResource, error)
 	// SiteRulesUpdate implements SiteRules_update operation.
 	//
 	// Update a resource from the site UI.

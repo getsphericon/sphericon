@@ -74,9 +74,9 @@ func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.
 
 // AutomationsPublish needs automations:publish, which authoring scopes never imply (ADR 0016,
 // ADR 0065). Over MCP, it additionally needs mcp:send (the x-mcp send flag).
-func (h *Handlers) AutomationsPublish(ctx context.Context, params externalapi.AutomationsPublishParams) (*externalapi.AutomationResource, error) {
+func (h *Handlers) AutomationsPublish(ctx context.Context, req *externalapi.RevisionInput, params externalapi.AutomationsPublishParams) (*externalapi.AutomationResource, error) {
 	id := int64(params.ID)
-	a, err := h.automations.Publish(ctx, auth.TokenScoped(ctx), id)
+	a, err := h.automations.Publish(ctx, auth.TokenScoped(ctx), id, int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +108,8 @@ func (h *Handlers) AutomationsReport(ctx context.Context, params externalapi.Aut
 
 // AutomationsRevert drops the draft and changes nothing that sends, so it is authoring:
 // automations:write.
-func (h *Handlers) AutomationsRevert(ctx context.Context, params externalapi.AutomationsRevertParams) (*externalapi.AutomationResource, error) {
-	a, err := h.automations.Revert(ctx, auth.TokenScoped(ctx), int64(params.ID))
+func (h *Handlers) AutomationsRevert(ctx context.Context, req *externalapi.RevisionInput, params externalapi.AutomationsRevertParams) (*externalapi.AutomationResource, error) {
+	a, err := h.automations.Revert(ctx, auth.TokenScoped(ctx), int64(params.ID), int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}

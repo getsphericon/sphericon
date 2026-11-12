@@ -39,6 +39,7 @@ test('loads the automation into the builder', async () => {
   worker.use(
     handleSiteAutomationsGet({
       body: {
+        revision: 1,
         id: '5',
         name: 'Welcome flow',
         status: 'inactive',
@@ -76,6 +77,7 @@ test('shows an error alert when the automation fails to load', async () => {
 })
 
 const STORED: SiteAutomationResource = {
+  revision: 1,
   id: '5',
   name: 'Welcome flow',
   status: 'inactive',
@@ -112,6 +114,7 @@ test('saving from the builder sends the edited name, the trigger and the canvas 
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         name: 'Renamed',
         triggerEvent: 'email.clicked',
         exitEvents: [],
@@ -184,6 +187,7 @@ test('saving an email step written in the editor sends its document and no body'
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         name: 'Welcome flow',
         triggerEvent: 'email.clicked',
         exitEvents: [],

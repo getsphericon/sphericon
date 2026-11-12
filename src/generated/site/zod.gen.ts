@@ -524,6 +524,14 @@ export const zRetentionDays = z.int().gte(1).lte(3650);
 export const zRevision = z.int().gte(1);
 
 /**
+ * The body of an editor's operation on stored content (Publish, Revert): the revision of what the
+ * editor shows (ADR 0119)
+ */
+export const zRevisionInput = z.object({
+  revision: zRevision
+});
+
+/**
  * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
  * only when the user explicitly opts in. mcp:send is the MCP-specific key: send-class
  * tools are not listed over /mcp without it, so any send-class grant brings it along.
@@ -2508,6 +2516,7 @@ export const zSiteCreateAutomationInput = z.object({
  * version's, and publishing makes the draft live.
  */
 export const zSiteUpdateAutomationInput = z.object({
+  revision: zRevision,
   name: z.exactOptional(zName),
   triggerEvent: z.exactOptional(z.string()),
   exitEvents: z.exactOptional(z.array(z.string())),
@@ -2937,6 +2946,7 @@ export const zSiteAutomationResource = z.object({
   draft: zSiteAutomationVersion.nullable(),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   revenue: z.exactOptional(zSiteMessageRevenue),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3893,6 +3903,7 @@ export const zSiteRuleResource = z.object({
   draft: z.lazy((): any => zSiteRuleVersion).nullable(),
   activatedAt: z.exactOptional(zTimestamp.nullable()),
   discardedAt: z.exactOptional(zTimestamp.nullable()),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3923,6 +3934,7 @@ export const zSiteSegmentResource = z.object({
  * Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
 export const zSiteUpdateRuleInput = z.object({
+  revision: zRevision,
   name: z.exactOptional(zName),
   triggerEvents: z.exactOptional(z.array(z.string()).min(1)),
   condition: z.exactOptional(zSiteConditionGroup),
@@ -5102,6 +5114,8 @@ export const zSiteAutomationsDeactivatePath = z.object({
  */
 export const zSiteAutomationsDeactivateResponse = zSiteAutomationResource;
 
+export const zSiteAutomationsPublishBody = zRevisionInput;
+
 export const zSiteAutomationsPublishPath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -5111,6 +5125,8 @@ export const zSiteAutomationsPublishPath = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationsPublishResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsRevertBody = zRevisionInput;
 
 export const zSiteAutomationsRevertPath = z.object({
   workspaceId: zWorkspaceId,
@@ -6434,6 +6450,8 @@ export const zSiteRulesDeactivatePath = z.object({
  */
 export const zSiteRulesDeactivateResponse = zSiteRuleResource;
 
+export const zSiteRulesPublishBody = zRevisionInput;
+
 export const zSiteRulesPublishPath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -6443,6 +6461,8 @@ export const zSiteRulesPublishPath = z.object({
  * The request has succeeded.
  */
 export const zSiteRulesPublishResponse = zSiteRuleResource;
+
+export const zSiteRulesRevertBody = zRevisionInput;
 
 export const zSiteRulesRevertPath = z.object({
   workspaceId: zWorkspaceId,

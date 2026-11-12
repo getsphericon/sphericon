@@ -8,12 +8,13 @@ import { useConfirmation } from '../hooks/useConfirmation.tsx'
 // merged: the content stays as it is, unsaved, until they load the saved version (asked first over
 // unsaved edits, in the leave dialog's words) or save theirs over it.
 export function ChangedNotice({
-  dirty,
+  isDirty,
   busy,
   onLoad,
   onOverwrite,
 }: {
-  dirty: boolean
+  // Whether the editor holds unsaved edits, read when Load is chosen.
+  isDirty: () => boolean
   busy: boolean
   onLoad: () => void
   onOverwrite: () => void
@@ -21,7 +22,7 @@ export function ChangedNotice({
   const { t } = useTranslation()
   const confirm = useConfirmation()
   const load = () => {
-    if (!dirty) {
+    if (!isDirty()) {
       onLoad()
       return
     }

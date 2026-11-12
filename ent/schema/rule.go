@@ -31,7 +31,7 @@ func (Rule) Mixin() []ent.Mixin {
 		TimeMixin{}, WorkspaceMixin{Ref: "rules"}, DiscardMixin{},
 		// The status, activated_at (an active Rule reacts only to Events recorded at or after it)
 		// and the pointers to the live and draft versions.
-		VersionedMixin{Version: RuleVersion.Type},
+		VersionedMixin{Version: RuleVersion.Type}, RevisionMixin{},
 	}
 }
 

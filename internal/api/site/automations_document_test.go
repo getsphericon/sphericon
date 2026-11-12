@@ -54,7 +54,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	assert.Empty(t, stored[2].Doc)
 
 	// Saving another document rebuilds that step's body.
-	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
+	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
 		Steps: []siteapi.SiteAutomationStep{docStep("Hi", paragraphDoc("Second"))},
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	assert.NotContains(t, upd.Draft.Value.Steps[0].Body.Value, "Hello")
 
 	// A body-only write to the step clears its document.
-	cleared, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
+	cleared, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
 		Steps: []siteapi.SiteAutomationStep{{
 			Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>Plain now</p>"),
 		}},

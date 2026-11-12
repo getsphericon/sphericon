@@ -28,7 +28,7 @@ func (Automation) Annotations() []schema.Annotation {
 func (Automation) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		TimeMixin{}, WorkspaceMixin{Ref: "automations"}, ArchiveMixin{},
-		VersionedMixin{Version: AutomationVersion.Type},
+		VersionedMixin{Version: AutomationVersion.Type}, RevisionMixin{},
 	}
 }
 

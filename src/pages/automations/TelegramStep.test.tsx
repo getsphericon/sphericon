@@ -36,6 +36,7 @@ function stored(steps: SiteAutomationStep[]): SiteAutomationResource {
     status: 'inactive',
     live: null,
     draft: { number: 1, triggerEvent: 'telegram.bound', exitEvents: [], goalEvent: null, steps },
+    revision: 1,
     ...TIMESTAMPS,
   }
 }

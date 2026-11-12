@@ -25,7 +25,7 @@ func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 	_, err = m.Get(ctx, globex, fixtures.AutomationWelcomeSeriesID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
 
-	_, err = m.Publish(ctx, acme, fixtures.AutomationGlobexID)
+	_, err = m.Publish(ctx, acme, fixtures.AutomationGlobexID, testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationGlobexID))
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Archive(ctx, acme, fixtures.AutomationGlobexID)
 	require.ErrorIs(t, err, automations.ErrNotFound)

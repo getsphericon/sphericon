@@ -1720,6 +1720,29 @@ func (s Revision) Validate() error {
 	return nil
 }
 
+func (s *RevisionInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s SendScope) Validate() error {
 	switch s {
 	case "emails:send":
@@ -3081,6 +3104,17 @@ func (s *SiteAutomationResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "revenue",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
 			Error: err,
 		})
 	}
@@ -7805,6 +7839,17 @@ func (s *SiteRuleResource) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -9427,6 +9472,17 @@ func (s *SiteUpdateAutomationInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if value, ok := s.Name.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
@@ -9762,6 +9818,17 @@ func (s *SiteUpdateRuleInput) Validate() error {
 	}
 
 	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
 	if err := func() error {
 		if value, ok := s.Name.Get(); ok {
 			if err := func() error {

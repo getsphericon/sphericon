@@ -71,10 +71,10 @@ func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRules
 }
 
 // SiteRulesPublish makes the Rule active: it reacts to the Events recorded from now on.
-func (h *Handlers) SiteRulesPublish(ctx context.Context, params siteapi.SiteRulesPublishParams) (*siteapi.SiteRuleResource, error) {
+func (h *Handlers) SiteRulesPublish(ctx context.Context, req *siteapi.RevisionInput, params siteapi.SiteRulesPublishParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
-	r, err := h.rules.Publish(ctx, ws, int64(params.ID))
+	r, err := h.rules.Publish(ctx, ws, int64(params.ID), int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}
@@ -83,10 +83,10 @@ func (h *Handlers) SiteRulesPublish(ctx context.Context, params siteapi.SiteRule
 }
 
 // SiteRulesRevert drops the Rule's draft: its live version is again the latest.
-func (h *Handlers) SiteRulesRevert(ctx context.Context, params siteapi.SiteRulesRevertParams) (*siteapi.SiteRuleResource, error) {
+func (h *Handlers) SiteRulesRevert(ctx context.Context, req *siteapi.RevisionInput, params siteapi.SiteRulesRevertParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
-	r, err := h.rules.Revert(ctx, ws, int64(params.ID))
+	r, err := h.rules.Revert(ctx, ws, int64(params.ID), int64(req.Revision))
 	if err != nil {
 		return nil, err
 	}

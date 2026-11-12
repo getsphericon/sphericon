@@ -105,19 +105,19 @@ func automationKind(env *testhelper.TestEnv) kind {
 		liveWithDraft: fixtures.AutomationWelcomeSeriesID, neverPublished: fixtures.AutomationWinBackID,
 		foreign: fixtures.AutomationGlobexID,
 		rename: func(ctx context.Context, s *ent.Scoped, id int64, name string) (view, error) {
-			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Name: &name}))
+			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Revision: automationRevision(ctx, s, id), Name: &name}))
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id int64, mark string) (view, error) {
-			return automationView(m.Update(ctx, s, id, automations.UpdateInput{TriggerEvent: &mark}))
+			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Revision: automationRevision(ctx, s, id), TriggerEvent: &mark}))
 		},
 		get: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return automationView(m.Get(ctx, s, id))
 		},
 		publish: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
-			return automationView(m.Publish(ctx, s, id))
+			return automationView(m.Publish(ctx, s, id, automationRevision(ctx, s, id)))
 		},
 		revert: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
-			return automationView(m.Revert(ctx, s, id))
+			return automationView(m.Revert(ctx, s, id, automationRevision(ctx, s, id)))
 		},
 		deactivate: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return automationView(m.Deactivate(ctx, s, id))
@@ -169,19 +169,19 @@ func ruleKind(env *testhelper.TestEnv) kind {
 		liveWithDraft: fixtures.RuleTagClickedID, neverPublished: fixtures.RuleInactiveID,
 		foreign: fixtures.RuleGlobexID,
 		rename: func(ctx context.Context, s *ent.Scoped, id int64, name string) (view, error) {
-			return ruleView(m.Update(ctx, s, id, rules.UpdateInput{Name: &name}))
+			return ruleView(m.Update(ctx, s, id, rules.UpdateInput{Revision: ruleRevision(ctx, s, id), Name: &name}))
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id int64, mark string) (view, error) {
-			return ruleView(m.Update(ctx, s, id, rules.UpdateInput{TriggerEvents: &[]string{mark}}))
+			return ruleView(m.Update(ctx, s, id, rules.UpdateInput{Revision: ruleRevision(ctx, s, id), TriggerEvents: &[]string{mark}}))
 		},
 		get: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return ruleView(m.Get(ctx, s, id))
 		},
 		publish: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
-			return ruleView(m.Publish(ctx, s, id))
+			return ruleView(m.Publish(ctx, s, id, ruleRevision(ctx, s, id)))
 		},
 		revert: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
-			return ruleView(m.Revert(ctx, s, id))
+			return ruleView(m.Revert(ctx, s, id, ruleRevision(ctx, s, id)))
 		},
 		deactivate: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return ruleView(m.Deactivate(ctx, s, id))
@@ -588,4 +588,23 @@ func TestAnArchivedObjectTakesNoOwnerMove(t *testing.T) {
 			assert.Equal(t, archived, stored)
 		})
 	}
+}
+
+// automationRevision is the stored revision of the Automation (ADR 0119), as an editor that read it
+// now names it; 1 for one the scope does not see, whose move is refused whatever it names.
+func automationRevision(ctx context.Context, s *ent.Scoped, id int64) int64 {
+	a, err := s.Automation().QueryWithArchived().Where(automation.ID(id)).Only(ctx)
+	if err != nil {
+		return 1
+	}
+	return a.Revision
+}
+
+// ruleRevision is automationRevision for a Rule.
+func ruleRevision(ctx context.Context, s *ent.Scoped, id int64) int64 {
+	r, err := s.Rule().QueryWithDiscarded().Where(rule.ID(id)).Only(ctx)
+	if err != nil {
+		return 1
+	}
+	return r.Revision
 }

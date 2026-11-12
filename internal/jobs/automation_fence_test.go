@@ -228,10 +228,10 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	bus := e.bus(t)
 	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 	mod := automations.New(cipher, bus, testhelper.Renderer(), out, time.Now)
-	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
+	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID), Steps: &steps})
 	require.NoError(t, err)
 	// The edit is a draft until it is published (ADR 0065); the Enrollment begins on the live one.
-	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID)
+	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID, testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID))
 	require.NoError(t, err)
 	runID := e.enrolledNow(t, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	w := jobs.NewRunHTTPStepWorker(e.client, automations.NewStepExecution(bus, nil, e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now), lowestDraw)

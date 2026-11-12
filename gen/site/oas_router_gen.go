@@ -114,6 +114,12 @@ var (
 	rn49AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
+	rn56AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn58AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
 	rn61AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
@@ -181,6 +187,12 @@ var (
 		"PUT": "Content-Type",
 	}
 	rn159AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn160AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn161AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 	rn175AllowedHeaders = map[string]string{
@@ -2738,8 +2750,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 													default:
 														s.notAllowed(w, r, notAllowedParams{
 															allowedMethods: "POST",
-															allowedHeaders: nil,
-															acceptPost:     "",
+															allowedHeaders: rn56AllowedHeaders,
+															acceptPost:     "application/json",
 															acceptPatch:    "",
 														})
 													}
@@ -2806,8 +2818,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 														default:
 															s.notAllowed(w, r, notAllowedParams{
 																allowedMethods: "POST",
-																allowedHeaders: nil,
-																acceptPost:     "",
+																allowedHeaders: rn58AllowedHeaders,
+																acceptPost:     "application/json",
 																acceptPatch:    "",
 															})
 														}
@@ -4810,8 +4822,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 												default:
 													s.notAllowed(w, r, notAllowedParams{
 														allowedMethods: "POST",
-														allowedHeaders: nil,
-														acceptPost:     "",
+														allowedHeaders: rn160AllowedHeaders,
+														acceptPost:     "application/json",
 														acceptPatch:    "",
 													})
 												}
@@ -4838,8 +4850,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 												default:
 													s.notAllowed(w, r, notAllowedParams{
 														allowedMethods: "POST",
-														allowedHeaders: nil,
-														acceptPost:     "",
+														allowedHeaders: rn161AllowedHeaders,
+														acceptPost:     "application/json",
 														acceptPatch:    "",
 													})
 												}

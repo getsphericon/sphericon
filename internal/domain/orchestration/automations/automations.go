@@ -69,6 +69,9 @@ var (
 	// ErrNothingToRevert: the Automation has no draft above a live version. A never-published
 	// Automation's draft is its whole definition, so it is not reverted either.
 	ErrNothingToRevert = validation.Refuse("automations: nothing to revert", i18n.ErrorsAutomationNothingToRevert)
+	// ErrRevisionChanged is an edit, Publish or Revert made on a revision the Automation has moved past
+	// (ADR 0119): someone changed it since the editor read it. Nothing is written.
+	ErrRevisionChanged = validation.RevisionChanged("automations: automation changed since it was read", i18n.ErrorsAutomationRevisionChanged)
 
 	// ErrNoVersion: the Automation has no live version: it was never published, so nobody can
 	// be enrolled in it.
@@ -240,6 +243,7 @@ func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, o
 		Archived:         ErrArchived,
 		NothingToPublish: ErrNothingToPublish,
 		NothingToRevert:  ErrNothingToRevert,
+		RevisionChanged:  ErrRevisionChanged,
 	}, now)
 	return m
 }
@@ -390,6 +394,8 @@ type CreateInput struct {
 // UpdateInput changes an Automation; nil fields are left alone. The name is the Automation's own;
 // the rest is the definition, written to the draft (ADR 0065).
 type UpdateInput struct {
+	// Revision is the one the edit was made on (ADR 0119).
+	Revision     int64
 	Name         *string
 	TriggerEvent *string
 	// ExitEvents replaces the exit events; nil leaves them alone.
@@ -464,15 +470,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		e.steps = &built
 	}
-	rename := func(a *ent.Automation) func(context.Context, *ent.Scoped) error {
-		if in.Name == nil || *in.Name == a.Name {
-			return nil
-		}
-		return func(ctx context.Context, ts *ent.Scoped) error {
-			return ts.Automation().UpdateOneID(a.ID).SetName(*in.Name).Exec(ctx)
-		}
-	}
-	return m.life.Edit(ctx, s, id, rename, e)
+	return m.life.Edit(ctx, s, id, in.Revision, in.Name, e)
 }
 
 // edit is a change of an Automation's definition; nil fields keep the base's. The steps are built
@@ -751,15 +749,15 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.A
 // still be kept and its Send route able to send (outboundmessages.ErrRouteHeld). Publish is send-class (ADR
 // 0065): the surfaces gate it by the publish scope. An archived Automation is unarchived before it
 // is published: ErrArchived.
-func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	return m.life.Publish(ctx, s, id)
+func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id, revision int64) (*ent.Automation, error) {
+	return m.life.Publish(ctx, s, id, revision)
 }
 
 // Revert drops the draft: the live version is again the Automation's latest. It is refused
 // unless there is a draft above a live version, since a never-published Automation's draft is
 // its whole definition. Revert is authoring. An archived Automation is read-only: ErrArchived.
-func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	return m.life.Revert(ctx, s, id)
+func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id, revision int64) (*ent.Automation, error) {
+	return m.life.Revert(ctx, s, id, revision)
 }
 
 // Deactivate makes the Automation inactive: it stops new Enrollments, and in-flight ones finish.

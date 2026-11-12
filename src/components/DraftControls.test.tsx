@@ -9,7 +9,7 @@ test('a draft above a live version shows the pending badge and Revert; Publish w
   const screen = await renderWithProviders(
     <DraftControls
       workspaceId="TestWs01"
-      resource={{ id: '1', status: 'active', live: {}, draft: {} }}
+      resource={{ id: '1', status: 'active', live: {}, draft: {}, revision: 1 }}
       dirty
       publishMutation={NOOP}
       revertMutation={NOOP}

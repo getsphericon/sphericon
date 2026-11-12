@@ -82,7 +82,7 @@ type Handler interface {
 	// refused. 409 for an archived automation too. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
-	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (*AutomationResource, error)
+	AutomationsPublish(ctx context.Context, req *RevisionInput, params AutomationsPublishParams) (*AutomationResource, error)
 	// AutomationsReport implements Automations_report operation.
 	//
 	// Read the report: the engagement of the automation's emails over its whole history, and its results
@@ -98,7 +98,7 @@ type Handler interface {
 	// 409 when the automation is archived. Needs the automations:write scope.
 	//
 	// POST /automations/{id}/revert
-	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (*AutomationResource, error)
+	AutomationsRevert(ctx context.Context, req *RevisionInput, params AutomationsRevertParams) (*AutomationResource, error)
 	// AutomationsUnarchive implements Automations_unarchive operation.
 	//
 	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
@@ -500,14 +500,14 @@ type Handler interface {
 	// neither draft nor live version. Needs the automations:publish scope.
 	//
 	// POST /rules/{id}/publish
-	RulesPublish(ctx context.Context, params RulesPublishParams) (*RuleResource, error)
+	RulesPublish(ctx context.Context, req *RevisionInput, params RulesPublishParams) (*RuleResource, error)
 	// RulesRevert implements Rules_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 	// Needs the automations:write scope.
 	//
 	// POST /rules/{id}/revert
-	RulesRevert(ctx context.Context, params RulesRevertParams) (*RuleResource, error)
+	RulesRevert(ctx context.Context, req *RevisionInput, params RulesRevertParams) (*RuleResource, error)
 	// RulesUpdate implements Rules_update operation.
 	//
 	// Update a resource.

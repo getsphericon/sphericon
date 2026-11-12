@@ -179,6 +179,9 @@ model SiteAutomationResource {
    * the single read, absent on the responses of a change */
   revenue?: SiteMessageRevenue;
 
+  /** The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -207,6 +210,9 @@ model SiteCreateAutomationInput {
  * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and publishing makes the draft live. */
 model SiteUpdateAutomationInput {
+  /** The automation's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   name?: Name;
   triggerEvent?: string;
 
@@ -293,17 +299,19 @@ interface SiteAutomations
   @action("publish")
   @autoRoute
   @requiresPermissions(#[])
-  publish(...ResourceParameters<SiteAutomationResource>):
-    | SiteAutomationResource
-    | Problem;
+  publish(
+    ...ResourceParameters<SiteAutomationResource>,
+    @body body: RevisionInput,
+  ): SiteAutomationResource | Problem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. */
   @action("revert")
   @autoRoute
   @requiresPermissions(#[])
-  revert(...ResourceParameters<SiteAutomationResource>):
-    | SiteAutomationResource
-    | Problem;
+  revert(
+    ...ResourceParameters<SiteAutomationResource>,
+    @body body: RevisionInput,
+  ): SiteAutomationResource | Problem;
 
   /** Deactivate an automation (stops new enrollments). 409 when it is archived. */
   @action("deactivate")

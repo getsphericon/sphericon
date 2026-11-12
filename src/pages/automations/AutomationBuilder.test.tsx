@@ -37,6 +37,7 @@ const DRAFT: SiteAutomationVersion = {
   steps: [{ type: 'wait', seconds: 60 }],
 }
 const STORED: SiteAutomationResource = {
+  revision: 1,
   id: '5',
   name: 'Welcome flow',
   status: 'inactive',

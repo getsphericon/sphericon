@@ -31,6 +31,8 @@ const (
 	FieldLiveVersionID = "live_version_id"
 	// FieldDraftVersionID holds the string denoting the draft_version_id field in the database.
 	FieldDraftVersionID = "draft_version_id"
+	// FieldRevision holds the string denoting the revision field in the database.
+	FieldRevision = "revision"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -93,6 +95,7 @@ var Columns = []string{
 	FieldActivatedAt,
 	FieldLiveVersionID,
 	FieldDraftVersionID,
+	FieldRevision,
 	FieldName,
 }
 
@@ -113,6 +116,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultRevision holds the default value on creation for the "revision" field.
+	DefaultRevision int64
+	// RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	RevisionValidator func(int64) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 )
@@ -189,6 +196,11 @@ func ByLiveVersionID(opts ...sql.OrderTermOption) OrderOption {
 // ByDraftVersionID orders the results by the draft_version_id field.
 func ByDraftVersionID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDraftVersionID, opts...).ToFunc()
+}
+
+// ByRevision orders the results by the revision field.
+func ByRevision(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRevision, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

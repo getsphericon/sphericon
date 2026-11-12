@@ -29,6 +29,7 @@ function storedWith(steps: SiteAutomationStep[]): SiteAutomationResource {
     status: 'inactive',
     live: null,
     draft: { number: 1, triggerEvent: 'email.clicked', exitEvents: [], goalEvent: null, steps },
+    revision: 1,
     ...TIMESTAMPS,
   }
 }

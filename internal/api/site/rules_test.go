@@ -50,7 +50,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	_, activated := res.ActivatedAt.Get()
 	assert.False(t, activated)
 
-	act, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: res.ID})
+	act, err := c.SiteRulesPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(res.ID)))}, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	actRes := act
 	assert.Equal(t, siteapi.SiteRuleStatusActive, actRes.Status)
@@ -61,7 +61,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	assert.EqualValues(t, 1, published.Number, "the draft became live")
 	assert.True(t, actRes.Draft.Null)
 
-	upd, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{
+	upd, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(res.ID))),
 		Name:          siteapi.NewOptName("Tag the clickers"),
 		TriggerEvents: []string{"email.clicked"},
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
@@ -126,7 +126,7 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	testhelper.SiteRefusal(t, blankTrigger, http.StatusUnprocessableEntity)
 
-	_, typoUpdate := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{
+	_, typoUpdate := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(fixtures.RuleTagClickedID))),
 		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, unknownField)),
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: fixtures.RuleTagClickedID})
 	testhelper.SiteRefusal(t, typoUpdate, http.StatusUnprocessableEntity)
@@ -205,7 +205,7 @@ func TestSiteRulesPublishRefusesARuleWithNoActions(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	_, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleNoActionsID})
+	_, err := c.SiteRulesPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(fixtures.RuleNoActionsID)))}, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleNoActionsID})
 
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -219,7 +219,7 @@ func TestSiteRulesStayInTheirWorkspace(t *testing.T) {
 	_, get := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
 	testhelper.SiteRefusal(t, get, http.StatusNotFound)
 
-	_, published := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
+	_, published := c.SiteRulesPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(fixtures.RuleGlobexID)))}, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
 	testhelper.SiteRefusal(t, published, http.StatusNotFound)
 
 	_, firings := c.SiteRuleFiringsList(ctx, siteapi.SiteRuleFiringsListParams{WorkspaceId: workspaceID, RuleId: fixtures.RuleGlobexID})

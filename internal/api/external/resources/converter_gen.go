@@ -284,6 +284,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.Au
 		externalapiAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
 		externalapiAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
 		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
+		externalapiAutomationResource.Revision = revision((*source).Revision)
 		externalapiAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1244,6 +1245,7 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) external.RuleResource {
 		externalapiRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		externalapiRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
 		externalapiRuleResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiRuleResource.Revision = revision((*source).Revision)
 		externalapiRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

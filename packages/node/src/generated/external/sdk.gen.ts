@@ -164,7 +164,11 @@ export const automationsDeactivate = <ThrowOnError extends boolean = false>(opti
 export const automationsPublish = <ThrowOnError extends boolean = false>(options: Options<AutomationsPublishData, ThrowOnError>): RequestResult<AutomationsPublishResponses, AutomationsPublishErrors, ThrowOnError> => (options.client ?? client).post<AutomationsPublishResponses, AutomationsPublishErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
   url: '/automations/{id}/publish',
-  ...options
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**
@@ -185,7 +189,11 @@ export const automationsReport = <ThrowOnError extends boolean = false>(options:
 export const automationsRevert = <ThrowOnError extends boolean = false>(options: Options<AutomationsRevertData, ThrowOnError>): RequestResult<AutomationsRevertResponses, AutomationsRevertErrors, ThrowOnError> => (options.client ?? client).post<AutomationsRevertResponses, AutomationsRevertErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
   url: '/automations/{id}/revert',
-  ...options
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**
@@ -844,7 +852,11 @@ export const rulesDryRun = <ThrowOnError extends boolean = false>(options: Optio
 export const rulesPublish = <ThrowOnError extends boolean = false>(options: Options<RulesPublishData, ThrowOnError>): RequestResult<RulesPublishResponses, RulesPublishErrors, ThrowOnError> => (options.client ?? client).post<RulesPublishResponses, RulesPublishErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
   url: '/rules/{id}/publish',
-  ...options
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**
@@ -853,7 +865,11 @@ export const rulesPublish = <ThrowOnError extends boolean = false>(options: Opti
 export const rulesRevert = <ThrowOnError extends boolean = false>(options: Options<RulesRevertData, ThrowOnError>): RequestResult<RulesRevertResponses, RulesRevertErrors, ThrowOnError> => (options.client ?? client).post<RulesRevertResponses, RulesRevertErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
   url: '/rules/{id}/revert',
-  ...options
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**

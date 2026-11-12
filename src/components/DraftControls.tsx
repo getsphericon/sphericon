@@ -6,8 +6,10 @@ import { useConfirmation } from '../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { draftState } from './draftState.ts'
 
-interface IdPath {
+// Publish and Revert act on the stored content the page shows, so they name its revision (ADR 0119).
+interface RevisedPath {
   path: { workspaceId: string; id: string }
+  body: { revision: number }
 }
 
 // DraftControls shows what an Automation or a Rule has beside its live version (ADR 0065): a
@@ -23,10 +25,16 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   messages,
 }: {
   workspaceId: string
-  resource: { id: string; status: string; live: object | null; draft: object | null }
+  resource: {
+    id: string
+    status: string
+    live: object | null
+    draft: object | null
+    revision: number
+  }
   dirty?: boolean
-  publishMutation: UseMutationOptions<TPublished, TPublishError, IdPath>
-  revertMutation: UseMutationOptions<TReverted, TRevertError, IdPath>
+  publishMutation: UseMutationOptions<TPublished, TPublishError, RevisedPath>
+  revertMutation: UseMutationOptions<TReverted, TRevertError, RevisedPath>
   messages: { published: string; reverted: string; errorTitle: string }
 }) {
   const path = { workspaceId, id: resource.id }
@@ -53,8 +61,8 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
       publishable={publishable}
       publishing={publish.isPending}
       reverting={revert.isPending}
-      onPublish={() => publish.mutate({ path })}
-      onRevert={() => revert.mutate({ path })}
+      onPublish={() => publish.mutate({ path, body: { revision: resource.revision } })}
+      onRevert={() => revert.mutate({ path, body: { revision: resource.revision } })}
     />
   )
 }

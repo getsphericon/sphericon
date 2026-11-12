@@ -28,6 +28,7 @@ const WELCOME: SiteRuleResource = {
     triggerEvents: ['signed_up', 'trial_started'],
     actions: [{ type: 'apply_tag', tag: 'new' }],
   },
+  revision: 1,
   ...TIMESTAMPS,
 }
 const LIVE: SiteRuleResource = {

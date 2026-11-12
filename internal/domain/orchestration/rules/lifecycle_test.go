@@ -64,9 +64,12 @@ func TestADeletedRuleTakesNoMove(t *testing.T) {
 
 	name := "renamed"
 	moves := map[string]func() error{
-		"update":     func() error { _, err := m.Update(ctx, s, id, rules.UpdateInput{Name: &name}); return err },
-		"publish":    func() error { _, err := m.Publish(ctx, s, id); return err },
-		"revert":     func() error { _, err := m.Revert(ctx, s, id); return err },
+		"update": func() error {
+			_, err := m.Update(ctx, s, id, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, s, id), Name: &name})
+			return err
+		},
+		"publish":    func() error { _, err := m.Publish(ctx, s, id, testhelper.RuleRevisionIn(ctx, t, s, id)); return err },
+		"revert":     func() error { _, err := m.Revert(ctx, s, id, testhelper.RuleRevisionIn(ctx, t, s, id)); return err },
 		"deactivate": func() error { _, err := m.Deactivate(ctx, s, id); return err },
 		"dry run":    func() error { _, err := m.DryRun(ctx, s, id, 999999); return err },
 	}
@@ -93,7 +96,9 @@ func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing
 	// Either may be refused because the other won; what matters is the state they leave.
 	var publishErr, deleteErr error
 	var wg sync.WaitGroup
-	wg.Go(func() { _, publishErr = m.Publish(t.Context(), s, fixtures.RuleTagClickedID) })
+	wg.Go(func() {
+		_, publishErr = m.Publish(t.Context(), s, fixtures.RuleTagClickedID, testhelper.RuleRevisionIn(t.Context(), t, s, fixtures.RuleTagClickedID))
+	})
 	wg.Go(func() { deleteErr = m.Delete(t.Context(), s, fixtures.RuleTagClickedID) })
 	wg.Wait()
 
@@ -138,7 +143,7 @@ func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 	usingTag := func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) { return rulesuse.UsingTag(ctx, l, "rule-inactive") }
 	drafted, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), usingTag)
 	require.NoError(t, err)
-	_, err = m.Publish(ctx, acme(env), fixtures.RuleInactiveID)
+	_, err = m.Publish(ctx, acme(env), fixtures.RuleInactiveID, testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID))
 	require.NoError(t, err)
 	published, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), usingTag)
 	require.NoError(t, err)
@@ -206,7 +211,7 @@ func TestCreateAcceptsTheCapExactlyAndUpdateEnforcesIt(t *testing.T) {
 	require.NoError(t, err)
 
 	over := manyActions(rules.MaxActions + 1)
-	_, err = m.Update(ctx, acme(env), r.ID, rules.UpdateInput{Actions: &over})
+	_, err = m.Update(ctx, acme(env), r.ID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), r.ID), Actions: &over})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 }
 
@@ -226,7 +231,7 @@ func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
 	require.ErrorIs(t, err, rules.ErrInvalid)
 	assert.Contains(t, err.Error(), "Condition")
 
-	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Condition: &big})
+	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Condition: &big})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 
 	fits := conditionOf(rules.MaxConditionNodes - 1)
@@ -255,9 +260,9 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	r, err := m.Create(ctx, s, rules.CreateInput{Name: "audited", TriggerEvents: []string{"x"}, Actions: tagAction("secretish")})
 	require.NoError(t, err)
 	acts := tagAction("secretish2")
-	_, err = m.Update(ctx, s, r.ID, rules.UpdateInput{Actions: &acts})
+	_, err = m.Update(ctx, s, r.ID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, s, r.ID), Actions: &acts})
 	require.NoError(t, err)
-	_, err = m.Publish(ctx, s, r.ID)
+	_, err = m.Publish(ctx, s, r.ID, testhelper.RuleRevisionIn(ctx, t, s, r.ID))
 	require.NoError(t, err)
 	_, err = m.Deactivate(ctx, s, r.ID)
 	require.NoError(t, err)

@@ -1736,6 +1736,8 @@ type AutomationResource struct {
 	Draft NilAutomationVersion `json:"draft"`
 	// When the automation was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -1770,6 +1772,11 @@ func (s *AutomationResource) GetDraft() NilAutomationVersion {
 // GetArchivedAt returns the value of ArchivedAt.
 func (s *AutomationResource) GetArchivedAt() OptNilTimestamp {
 	return s.ArchivedAt
+}
+
+// GetRevision returns the value of Revision.
+func (s *AutomationResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -1810,6 +1817,11 @@ func (s *AutomationResource) SetDraft(val NilAutomationVersion) {
 // SetArchivedAt sets the value of ArchivedAt.
 func (s *AutomationResource) SetArchivedAt(val OptNilTimestamp) {
 	s.ArchivedAt = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *AutomationResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -14744,6 +14756,24 @@ func (s *RecordEventsInput) SetEvents(val []EventInput) {
 
 type Revision int
 
+// The body of an editor's operation on stored content (Publish, Revert): the revision of what the
+// editor shows (ADR 0119).
+// Ref: #/components/schemas/RevisionInput
+type RevisionInput struct {
+	// The resource's `revision` the operation was made on: the one it was read with.
+	Revision Revision `json:"revision"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *RevisionInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// SetRevision sets the value of Revision.
+func (s *RevisionInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
 // One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
 // name, http actions the call.
 // Ref: #/components/schemas/RuleAction
@@ -15343,6 +15373,8 @@ type RuleResource struct {
 	// When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and
 	// changes no more. Null while it is kept.
 	DiscardedAt OptNilTimestamp `json:"discardedAt"`
+	// The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -15382,6 +15414,11 @@ func (s *RuleResource) GetActivatedAt() OptNilTimestamp {
 // GetDiscardedAt returns the value of DiscardedAt.
 func (s *RuleResource) GetDiscardedAt() OptNilTimestamp {
 	return s.DiscardedAt
+}
+
+// GetRevision returns the value of Revision.
+func (s *RuleResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -15427,6 +15464,11 @@ func (s *RuleResource) SetActivatedAt(val OptNilTimestamp) {
 // SetDiscardedAt sets the value of DiscardedAt.
 func (s *RuleResource) SetDiscardedAt(val OptNilTimestamp) {
 	s.DiscardedAt = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *RuleResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -18744,6 +18786,8 @@ func (s *UnsubscribeResource) SetCreatedAt(val Timestamp) {
 // and only publishing makes the draft live.
 // Ref: #/components/schemas/UpdateAutomationInput
 type UpdateAutomationInput struct {
+	// The automation's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision     Revision  `json:"revision"`
 	Name         OptName   `json:"name"`
 	TriggerEvent OptString `json:"triggerEvent"`
 	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
@@ -18751,6 +18795,11 @@ type UpdateAutomationInput struct {
 	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
 	GoalEvent OptNilString     `json:"goalEvent"`
 	Steps     []AutomationStep `json:"steps"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateAutomationInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -18776,6 +18825,11 @@ func (s *UpdateAutomationInput) GetGoalEvent() OptNilString {
 // GetSteps returns the value of Steps.
 func (s *UpdateAutomationInput) GetSteps() []AutomationStep {
 	return s.Steps
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateAutomationInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.
@@ -19160,12 +19214,19 @@ func (s *UpdateIntegrationInput) SetRetireSecrets(val OptBool) {
 // Actions write the draft, and the ones left out keep the draft's, else the live version's.
 // Ref: #/components/schemas/UpdateRuleInput
 type UpdateRuleInput struct {
-	Name OptName `json:"name"`
+	// The rule's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	Name     OptName  `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
 	TriggerEvents []string          `json:"triggerEvents"`
 	Condition     OptConditionGroup `json:"condition"`
 	// The Actions to run, in order.
 	Actions []RuleAction `json:"actions"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateRuleInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -19186,6 +19247,11 @@ func (s *UpdateRuleInput) GetCondition() OptConditionGroup {
 // GetActions returns the value of Actions.
 func (s *UpdateRuleInput) GetActions() []RuleAction {
 	return s.Actions
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateRuleInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.
