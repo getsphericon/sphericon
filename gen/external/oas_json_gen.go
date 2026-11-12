@@ -11151,6 +11151,10 @@ func (s *ContactResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -11160,7 +11164,7 @@ func (s *ContactResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactResource = [15]string{
+var jsonFieldsNameOfContactResource = [16]string{
 	0:  "id",
 	1:  "subjectId",
 	2:  "email",
@@ -11174,8 +11178,9 @@ var jsonFieldsNameOfContactResource = [15]string{
 	10: "city",
 	11: "avatar",
 	12: "customFields",
-	13: "createdAt",
-	14: "updatedAt",
+	13: "revision",
+	14: "createdAt",
+	15: "updatedAt",
 }
 
 // Decode decodes ContactResource from json.
@@ -11317,8 +11322,18 @@ func (s *ContactResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"customFields\"")
 			}
-		case "createdAt":
+		case "revision":
 			requiredBitSet[1] |= 1 << 5
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -11328,7 +11343,7 @@ func (s *ContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -11348,7 +11363,7 @@ func (s *ContactResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000001,
-		0b01100000,
+		0b11100000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -33063,6 +33078,10 @@ func (s *UpdateContactInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *UpdateContactInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		if s.SubjectId.Set {
 			e.FieldStart("subjectId")
 			s.SubjectId.Encode(e)
@@ -33136,19 +33155,20 @@ func (s *UpdateContactInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUpdateContactInput = [12]string{
-	0:  "subjectId",
-	1:  "email",
-	2:  "phone",
-	3:  "firstName",
-	4:  "lastName",
-	5:  "timeZone",
-	6:  "country",
-	7:  "locale",
-	8:  "birthday",
-	9:  "city",
-	10: "avatar",
-	11: "customFields",
+var jsonFieldsNameOfUpdateContactInput = [13]string{
+	0:  "revision",
+	1:  "subjectId",
+	2:  "email",
+	3:  "phone",
+	4:  "firstName",
+	5:  "lastName",
+	6:  "timeZone",
+	7:  "country",
+	8:  "locale",
+	9:  "birthday",
+	10: "city",
+	11: "avatar",
+	12: "customFields",
 }
 
 // Decode decodes UpdateContactInput from json.
@@ -33156,9 +33176,20 @@ func (s *UpdateContactInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode UpdateContactInput to nil")
 	}
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		case "subjectId":
 			if err := func() error {
 				s.SubjectId.Reset()
@@ -33285,6 +33316,39 @@ func (s *UpdateContactInput) Decode(d *jx.Decoder) error {
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode UpdateContactInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00000001,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfUpdateContactInput) {
+					name = jsonFieldsNameOfUpdateContactInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 
 	return nil

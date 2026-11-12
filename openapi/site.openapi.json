@@ -15058,7 +15058,7 @@
       },
       "SiteContactResource": {
         "type": "object",
-        "required": ["id", "tags", "createdAt", "updatedAt"],
+        "required": ["id", "tags", "revision", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -15166,6 +15166,14 @@
               "type": "string"
             },
             "description": "The labels the contact carries, ordered by name"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the state this answer shows (ADR 0119): an update names it. Every write of the contact moves it: an update, an Identify or import that changes it, a tag applied or removed"
           },
           "createdAt": {
             "allOf": [
@@ -19177,7 +19185,16 @@
       },
       "SiteUpdateContactInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The contact's `revision` the edit was made on (ADR 0119): the one it was read with"
+          },
           "subjectId": {
             "type": "string",
             "nullable": true,
@@ -20393,7 +20410,16 @@
       },
       "UpdateContactInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The contact's `revision` the edit was made on (ADR 0119): the one it was read with"
+          },
           "subjectId": {
             "type": "string",
             "nullable": true,

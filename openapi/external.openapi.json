@@ -8173,7 +8173,7 @@
       },
       "ContactResource": {
         "type": "object",
-        "required": ["id", "createdAt", "updatedAt"],
+        "required": ["id", "revision", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -8277,6 +8277,14 @@
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key",
             "x-untrusted": true
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the state this answer shows (ADR 0119): an update names it. Every write of the contact moves it: an update, an Identify or import that changes it, a tag applied or removed"
           },
           "createdAt": {
             "allOf": [
@@ -12578,7 +12586,16 @@
       },
       "UpdateContactInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The contact's `revision` the edit was made on (ADR 0119): the one it was read with"
+          },
           "subjectId": {
             "type": "string",
             "nullable": true,

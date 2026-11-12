@@ -50,7 +50,7 @@ func TestExternalContactEditIsAuditedWithNamesOnly(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:write", "contacts:erase")
 	ctx := context.Background()
 
-	_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{FirstName: externalapi.NewOptNilString("Renamed")},
+	_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(entityIDString(fixtures.ContactBobID)))), FirstName: externalapi.NewOptNilString("Renamed")},
 		externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactBobID)})
 	require.NoError(t, err)
 	err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactBobID)})

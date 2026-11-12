@@ -58,7 +58,7 @@ func TestContactUpdateRecordsFieldChanges(t *testing.T) {
 	bob := entityIDString(fixtures.ContactBobID)
 	update := func(fields externalapi.JsonObject) {
 		t.Helper()
-		_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{
+		_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(bob))),
 			CustomFields: externalapi.NewOptNilJsonObject(fields),
 		}, externalapi.ContactsUpdateParams{ID: bob})
 		require.NoError(t, err)

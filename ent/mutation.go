@@ -15852,6 +15852,8 @@ type ContactMutation struct {
 	id                  *int64
 	created_at          *time.Time
 	updated_at          *time.Time
+	revision            *int64
+	addrevision         *int64
 	subject_id          *string
 	email               *string
 	phone               *string
@@ -16101,6 +16103,62 @@ func (m *ContactMutation) OldWorkspaceID(ctx context.Context) (v int64, err erro
 // ResetWorkspaceID resets all changes to the "workspace_id" field.
 func (m *ContactMutation) ResetWorkspaceID() {
 	m.workspace = nil
+}
+
+// SetRevision sets the "revision" field.
+func (m *ContactMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *ContactMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *ContactMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *ContactMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *ContactMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
 }
 
 // SetSubjectID sets the "subject_id" field.
@@ -17125,7 +17183,7 @@ func (m *ContactMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, contact.FieldCreatedAt)
 	}
@@ -17134,6 +17192,9 @@ func (m *ContactMutation) Fields() []string {
 	}
 	if m.workspace != nil {
 		fields = append(fields, contact.FieldWorkspaceID)
+	}
+	if m.revision != nil {
+		fields = append(fields, contact.FieldRevision)
 	}
 	if m.subject_id != nil {
 		fields = append(fields, contact.FieldSubjectID)
@@ -17188,6 +17249,8 @@ func (m *ContactMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case contact.FieldWorkspaceID:
 		return m.WorkspaceID()
+	case contact.FieldRevision:
+		return m.Revision()
 	case contact.FieldSubjectID:
 		return m.SubjectID()
 	case contact.FieldEmail:
@@ -17229,6 +17292,8 @@ func (m *ContactMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpdatedAt(ctx)
 	case contact.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
+	case contact.FieldRevision:
+		return m.OldRevision(ctx)
 	case contact.FieldSubjectID:
 		return m.OldSubjectID(ctx)
 	case contact.FieldEmail:
@@ -17284,6 +17349,13 @@ func (m *ContactMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWorkspaceID(v)
+		return nil
+	case contact.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
 		return nil
 	case contact.FieldSubjectID:
 		v, ok := value.(string)
@@ -17384,6 +17456,9 @@ func (m *ContactMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *ContactMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, contact.FieldRevision)
+	}
 	return fields
 }
 
@@ -17392,6 +17467,8 @@ func (m *ContactMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *ContactMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case contact.FieldRevision:
+		return m.AddedRevision()
 	}
 	return nil, false
 }
@@ -17401,6 +17478,13 @@ func (m *ContactMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ContactMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case contact.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Contact numeric field %s", name)
 }
@@ -17517,6 +17601,9 @@ func (m *ContactMutation) ResetField(name string) error {
 		return nil
 	case contact.FieldWorkspaceID:
 		m.ResetWorkspaceID()
+		return nil
+	case contact.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case contact.FieldSubjectID:
 		m.ResetSubjectID()

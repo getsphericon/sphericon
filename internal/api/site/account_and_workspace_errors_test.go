@@ -26,7 +26,7 @@ func TestSiteContactsCustomFieldsRoundTrip(t *testing.T) {
 	res := created
 	assert.JSONEq(t, `"gold"`, string(res.CustomFields.Value["plan"]))
 
-	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
+	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Revision: siteapi.Revision(env.ContactRevision(ctx, t, int64(res.ID))),
 		CustomFields: siteapi.NewOptNilJsonObject(siteapi.JsonObject{"plan": []byte(`"platinum"`)}),
 	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)

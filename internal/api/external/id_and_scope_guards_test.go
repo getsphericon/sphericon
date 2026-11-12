@@ -74,7 +74,7 @@ func idGuardCases() []guardCase {
 			return err
 		}},
 		{"ContactsUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
-			_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: id})
+			_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: 1}, externalapi.ContactsUpdateParams{ID: id})
 			return err
 		}},
 		{"ContactsDelete", func(c *externalapi.Client, id externalapi.EntityId) error {

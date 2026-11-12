@@ -12126,6 +12126,18 @@ func (x *ContactScopedCreate) SetNillableUpdatedAt(v *time.Time) *ContactScopedC
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *ContactScopedCreate) SetRevision(v int64) *ContactScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *ContactScopedCreate) SetNillableRevision(v *int64) *ContactScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetSubjectID sets the "subject_id" field.
 func (x *ContactScopedCreate) SetSubjectID(v string) *ContactScopedCreate {
 	x.b.SetSubjectID(v)
@@ -12508,6 +12520,24 @@ func (u *ContactScopedUpsert) SetUpdatedAt(v time.Time) *ContactScopedUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *ContactScopedUpsert) UpdateUpdatedAt() *ContactScopedUpsert {
 	u.u.SetExcluded(contact.FieldUpdatedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *ContactScopedUpsert) SetRevision(v int64) *ContactScopedUpsert {
+	u.u.Set(contact.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *ContactScopedUpsert) AddRevision(v int64) *ContactScopedUpsert {
+	u.u.Add(contact.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *ContactScopedUpsert) UpdateRevision() *ContactScopedUpsert {
+	u.u.SetExcluded(contact.FieldRevision)
 	return u
 }
 
@@ -12908,6 +12938,24 @@ func (x *ContactScopedUpdateOne) Where(ps ...predicate.Contact) *ContactScopedUp
 // SetUpdatedAt sets the "updated_at" field.
 func (x *ContactScopedUpdateOne) SetUpdatedAt(v time.Time) *ContactScopedUpdateOne {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *ContactScopedUpdateOne) SetRevision(v int64) *ContactScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *ContactScopedUpdateOne) SetNillableRevision(v *int64) *ContactScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *ContactScopedUpdateOne) AddRevision(v int64) *ContactScopedUpdateOne {
+	x.b.AddRevision(v)
 	return x
 }
 
@@ -13361,6 +13409,24 @@ func (x *ContactScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Contac
 // SetUpdatedAt sets the "updated_at" field.
 func (x *ContactScopedUpdate) SetUpdatedAt(v time.Time) *ContactScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *ContactScopedUpdate) SetRevision(v int64) *ContactScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *ContactScopedUpdate) SetNillableRevision(v *int64) *ContactScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *ContactScopedUpdate) AddRevision(v int64) *ContactScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 

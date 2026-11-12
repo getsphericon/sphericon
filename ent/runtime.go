@@ -409,6 +409,8 @@ func init() {
 	contactMixin := schema.Contact{}.Mixin()
 	contactMixinFields0 := contactMixin[0].Fields()
 	_ = contactMixinFields0
+	contactMixinFields2 := contactMixin[2].Fields()
+	_ = contactMixinFields2
 	contactFields := schema.Contact{}.Fields()
 	_ = contactFields
 	// contactDescCreatedAt is the schema descriptor for created_at field.
@@ -421,6 +423,12 @@ func init() {
 	contact.DefaultUpdatedAt = contactDescUpdatedAt.Default.(func() time.Time)
 	// contact.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	contact.UpdateDefaultUpdatedAt = contactDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// contactDescRevision is the schema descriptor for revision field.
+	contactDescRevision := contactMixinFields2[0].Descriptor()
+	// contact.DefaultRevision holds the default value on creation for the revision field.
+	contact.DefaultRevision = contactDescRevision.Default.(int64)
+	// contact.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	contact.RevisionValidator = contactDescRevision.Validators[0].(func(int64) error)
 	customfieldMixin := schema.CustomField{}.Mixin()
 	customfieldMixinFields0 := customfieldMixin[0].Fields()
 	_ = customfieldMixinFields0

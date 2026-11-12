@@ -276,6 +276,7 @@ func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts
 	var contactsUpdateInput contacts.UpdateInput
 	if source != nil {
 		contactsUpdateInput.Core = c.externalapiUpdateContactInputToContactsCore((*source))
+		contactsUpdateInput.Revision = revisionIn((*source).Revision)
 		contactsUpdateInput.SubjectID = nilStringPatch((*source).SubjectId)
 		contactsUpdateInput.Email = nilEmailPatch((*source).Email)
 		contactsUpdateInput.Phone = nilStringPatch((*source).Phone)

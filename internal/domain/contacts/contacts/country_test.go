@@ -36,7 +36,7 @@ func TestEveryWriteReadsTheCountryAsAnISOCode(t *testing.T) {
 			return err
 		},
 		"update": func() error {
-			_, err := m.Update(ctx, s, fixtures.ContactAliceID, contacts.UpdateInput{Country: patch.Set("U5")})
+			_, err := m.Update(ctx, s, fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, s, fixtures.ContactAliceID), Country: patch.Set("U5")})
 			return err
 		},
 	} {

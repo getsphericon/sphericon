@@ -162,6 +162,7 @@ const LOADED_CONTACT = {
   firstName: 'Ada',
   customFields: { plan: 'pro' },
   tags: ['vip'],
+  revision: 1,
 }
 
 // Active detail query next to the edit page, so its invalidation is observable.
@@ -177,7 +178,7 @@ test('editing shows existing values with nulls as blanks; a cleared field is sen
   worker.use(
     handleSiteContactsUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '7', email: 'ada@example.com' })
+      return HttpResponse.json({ id: '7', email: 'ada@example.com', revision: 2 })
     }),
     handleSiteContactsList(() => {
       listFetches++
@@ -209,6 +210,7 @@ test('editing shows existing values with nulls as blanks; a cleared field is sen
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         email: 'ada@example.com',
         phone: null,
         firstName: null,

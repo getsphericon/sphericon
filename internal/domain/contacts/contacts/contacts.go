@@ -20,6 +20,7 @@ package contacts
 
 import (
 	"context"
+	"reflect"
 	"strings"
 	"time"
 
@@ -49,6 +50,11 @@ const (
 
 // ErrNotFound means the Contact does not exist in the Workspace.
 var ErrNotFound = validation.NotFound("contacts: contact not found", i18n.ErrorsContactNotFound)
+
+// ErrRevisionChanged means the update was made on a revision the Contact has moved past (ADR
+// 0119): someone, or something (an Identify, an import, a Tag a Rule or an Automation applied),
+// wrote it since the client read it. Nothing is written.
+var ErrRevisionChanged = validation.RevisionChanged("contacts: contact changed since it was read", i18n.ErrorsContactRevisionChanged)
 
 // ErrIdentityRequired means an upsert was given none of the alias keys, so there is
 // nothing to resolve or anchor a Contact by.
@@ -117,6 +123,9 @@ type CreateInput struct {
 // set, and set Tags become the Contact's complete tag set.
 type UpdateInput struct {
 	Core
+
+	// Revision is the Contact's revision the edit was made on (ADR 0119).
+	Revision int64
 
 	SubjectID, Email, Phone patch.Field[string]
 	CustomFields            patch.Field[map[string]any]
@@ -229,7 +238,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 
 // Update applies a patch to a Contact, its Tags included, in one transaction and returns it with
 // its Tags; each Custom field and Tag it changes is recorded as its System event. ErrNotFound when
-// the Contact is not in the Workspace.
+// the Contact is not in the Workspace, and ErrRevisionChanged when it moved past the revision the
+// edit was made on: compared under the Contact lock every writer takes, so no write lands between
+// the check and this one.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Contact, error) {
 	in = in.normalized()
 	if _, err := checked(in.Email.Ptr(), in.City.Ptr(), in.Country.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr()); err != nil {
@@ -242,6 +253,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			return err
 		}
 		before := locked.Contact()
+		if before.Revision != in.Revision {
+			return ErrRevisionChanged
+		}
 		phone, err := patchedPhone(in, before.Country)
 		if err != nil {
 			return err
@@ -462,18 +476,24 @@ func createCore(q *ent.ContactScopedCreate, c Core) {
 // enrich fills the Contact's missing alias keys, writes the core attributes in gives and merges
 // the typed Custom fields into its own, recording each field it changes unless ch is an import's.
 // The Contact is read again under the lock the update takes anyway, so two Identifies of one
-// Contact merge, and record, one after the other.
+// Contact merge, and record, one after the other. An enrichment that changes nothing writes
+// nothing: the Contact keeps its revision and updated_at, so an editor open on it can still save
+// (ADR 0119), and a tracker that identifies on every page view does not rewrite the row.
 func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, in UpsertInput, typed map[string]any, ch changes) (*ent.Contact, error) {
 	locked, err := contactlock.Lock(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
 	existing := locked.Contact()
+	core := in.withGuesses(existing.TimeZone, existing.Locale)
+	if !enriches(existing, in, core, typed) {
+		return existing, nil
+	}
 	q := s.Contact().UpdateOneID(existing.ID)
 	fillMissing(existing.SubjectID, in.SubjectID, q.SetNillableSubjectID)
 	fillMissing(existing.Email, in.Email, q.SetNillableEmail)
 	fillMissing(existing.Phone, in.Phone, q.SetNillablePhone)
-	applyCore(q, in.withGuesses(existing.TimeZone, existing.Locale))
+	applyCore(q, core)
 	if len(typed) > 0 {
 		q.SetCustomFields(lo.Assign(existing.CustomFields, typed))
 	}
@@ -482,6 +502,38 @@ func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, 
 		return c, err
 	}
 	return c, publishFieldChanges(ctx, pub, s.WorkspaceID(), c, existing.CustomFields)
+}
+
+// enriches reports whether enrich writes anything into existing: an alias key it lacks, a core
+// attribute core sets to another value or clears, or a Custom field typed holds another value of,
+// compared as publishFieldChanges compares them (storedValue), so the two never disagree.
+func enriches(existing *ent.Contact, in UpsertInput, core Core, typed map[string]any) bool {
+	fills := func(have, given *string) bool { return have == nil && given != nil }
+	if fills(existing.SubjectID, in.SubjectID) || fills(existing.Email, in.Email) || fills(existing.Phone, in.Phone) {
+		return true
+	}
+	same := func(a, b string) bool { return a == b }
+	if differs(core.FirstName, existing.FirstName, same) || differs(core.LastName, existing.LastName, same) ||
+		differs(core.TimeZone, existing.TimeZone, same) || differs(core.Country, existing.Country, same) ||
+		differs(core.Locale, existing.Locale, same) || differs(core.City, existing.City, same) ||
+		differs(core.Avatar, existing.Avatar, same) || differs(core.Birthday, existing.Birthday, time.Time.Equal) {
+		return true
+	}
+	for key, value := range typed {
+		if !reflect.DeepEqual(storedValue(existing.CustomFields[key]), storedValue(value)) {
+			return true
+		}
+	}
+	return false
+}
+
+// differs reports whether f laid over have leaves another value than have.
+func differs[T any](f patch.Field[T], have *T, eq func(a, b T) bool) bool {
+	after := f.Over(have)
+	if after == nil || have == nil {
+		return (after == nil) != (have == nil)
+	}
+	return !eq(*after, *have)
 }
 
 // Resolve finds an existing Contact by any present alias key (subject_id → email →

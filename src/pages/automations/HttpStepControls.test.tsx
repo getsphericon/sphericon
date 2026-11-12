@@ -102,6 +102,7 @@ const contacts = handleSiteContactsList({
         id: '11',
         email: 'alice@example.com',
         tags: [],
+        revision: 1,
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-01-01T00:00:00Z',
       },
@@ -185,6 +186,7 @@ test('a contact without an email is offered by its id, and a failed dry run says
           {
             id: '12',
             tags: [],
+            revision: 1,
             createdAt: '2026-01-01T00:00:00Z',
             updatedAt: '2026-01-01T00:00:00Z',
           },

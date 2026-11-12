@@ -49,6 +49,9 @@ model CreateContactInput {
 
 /** Request body for updating a contact */
 model UpdateContactInput {
+  /** The contact's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   /** The customer's own user id — an alias key */
   subjectId?: string | null;
 

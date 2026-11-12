@@ -30,7 +30,7 @@ func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	c, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{
+	c, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID),
 		CustomFields: patch.Set(map[string]any{"vip": true, "visits": float64(3), "plan": "pro", "": "ignored"}),
 	})
 	require.NoError(t, err)
@@ -39,7 +39,7 @@ func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 	assert.Equal(t, customfield.TypeNumber, fieldType(t, env, "visits"))
 	assert.Equal(t, customfield.TypeString, fieldType(t, env, "plan"))
 
-	replaced, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{
+	replaced, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID),
 		CustomFields: patch.Set(map[string]any{"plan": "free"}),
 	})
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.StarkID), fixtures.ContactStarkFullID, contacts.UpdateInput{
+	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.StarkID), fixtures.ContactStarkFullID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, env.DB.Scoped(fixtures.StarkID), fixtures.ContactStarkFullID),
 		SubjectID: patch.Clear[string](), Email: patch.Clear[string](), Phone: patch.Clear[string](),
 		FirstName: patch.Clear[string](), LastName: patch.Clear[string](), TimeZone: patch.Clear[string](),
 		Country: patch.Clear[string](), CustomFields: patch.Clear[map[string]any](),
@@ -83,11 +83,11 @@ func TestCreateAndUpdateSetTheTagsAndReturnTheContactWithThem(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"alpha", "beta"}, tagNames(created), "Create returns the Contact with its tags")
 
-	renamed, err := m.Update(ctx, s, created.ID, contacts.UpdateInput{FirstName: patch.Set("Tag")})
+	renamed, err := m.Update(ctx, s, created.ID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, s, created.ID), FirstName: patch.Set("Tag")})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"alpha", "beta"}, tagNames(renamed), "absent tags keep the tag set")
 
-	retagged, err := m.Update(ctx, s, created.ID, contacts.UpdateInput{Tags: patch.Set([]string{"gamma"})})
+	retagged, err := m.Update(ctx, s, created.ID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, s, created.ID), Tags: patch.Set([]string{"gamma"})})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"gamma"}, tagNames(retagged), "set tags become the complete tag set")
 	assert.Equal(t, "Tag", lo.FromPtr(retagged.FirstName))
@@ -98,7 +98,7 @@ func TestUpdateKeepsAnAliasKeySetBlank(t *testing.T) {
 	m := contacts.New(env.Bus)
 
 	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID,
-		contacts.UpdateInput{Email: patch.Set("  ")})
+		contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), Email: patch.Set("  ")})
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactAliceEmail, lo.FromPtr(c.Email))
 }

@@ -33,7 +33,7 @@ func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 1}
 
-	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{FirstName: nullString()}, params)
+	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Revision: siteapi.Revision(env.ContactRevision(ctx, t, int64(params.ID))), FirstName: nullString()}, params)
 	require.NoError(t, err)
 	got := res
 	assert.Empty(t, got.FirstName.Or(""), "first name cleared by explicit null")
@@ -56,7 +56,7 @@ func TestSiteContactsUpdateNullClearsCustomFields(t *testing.T) {
 
 	var null siteapi.OptNilJsonObject
 	null.SetToNull()
-	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{CustomFields: null}, params)
+	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Revision: siteapi.Revision(env.ContactRevision(ctx, t, int64(params.ID))), CustomFields: null}, params)
 	require.NoError(t, err)
 	got := res
 	assert.Empty(t, got.CustomFields.Value)
@@ -148,12 +148,12 @@ func TestSiteContactsCarryTheirTags(t *testing.T) {
 	assert.Equal(t, []string{"alpha", "zeta"}, created.Tags)
 
 	params := siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID}
-	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{FirstName: nullString()}, params)
+	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Revision: siteapi.Revision(env.ContactRevision(ctx, t, int64(params.ID))), FirstName: nullString()}, params)
 	require.NoError(t, err)
 	kept := updated
 	assert.Equal(t, []string{"alpha", "zeta"}, kept.Tags, "an absent tags key keeps the set")
 
-	updated, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Tags: []string{"beta"}}, params)
+	updated, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Revision: siteapi.Revision(env.ContactRevision(ctx, t, int64(params.ID))), Tags: []string{"beta"}}, params)
 	require.NoError(t, err)
 	replaced := updated
 	assert.Equal(t, []string{"beta"}, replaced.Tags)

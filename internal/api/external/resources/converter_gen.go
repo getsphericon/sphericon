@@ -658,6 +658,7 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) external.ContactR
 		externalapiContactResource.City = optNilString((*source).City)
 		externalapiContactResource.Avatar = optNilImageURL((*source).Avatar)
 		externalapiContactResource.CustomFields = jsonObject((*source).CustomFields)
+		externalapiContactResource.Revision = revision((*source).Revision)
 		externalapiContactResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiContactResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

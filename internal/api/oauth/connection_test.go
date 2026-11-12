@@ -228,7 +228,7 @@ func TestAConnectionActsAsItsUser(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	_, err := env.ExternalWithToken(t, melsConnection).ContactsUpdate(t.Context(),
-		&externalapi.UpdateContactInput{FirstName: externalapi.NewOptNilString("Renamed")},
+		&externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(t.Context(), t, int64(externalapi.EntityId(fixtures.ContactVehementVicID)))), FirstName: externalapi.NewOptNilString("Renamed")},
 		externalapi.ContactsUpdateParams{ID: externalapi.EntityId(fixtures.ContactVehementVicID)})
 	require.NoError(t, err)
 

@@ -30,7 +30,7 @@ func (Contact) Annotations() []schema.Annotation {
 }
 
 func (Contact) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "contacts"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "contacts"}, RevisionMixin{}}
 }
 
 func (Contact) Fields() []ent.Field {

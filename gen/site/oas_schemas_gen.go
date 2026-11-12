@@ -15993,6 +15993,9 @@ type SiteContactResource struct {
 	CustomFields OptNilJsonObject `json:"customFields"`
 	// The labels the contact carries, ordered by name.
 	Tags []string `json:"tags"`
+	// The revision of the state this answer shows (ADR 0119): an update names it. Every write of the
+	// contact moves it: an update, an Identify or import that changes it, a tag applied or removed.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -16067,6 +16070,11 @@ func (s *SiteContactResource) GetCustomFields() OptNilJsonObject {
 // GetTags returns the value of Tags.
 func (s *SiteContactResource) GetTags() []string {
 	return s.Tags
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteContactResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -16147,6 +16155,11 @@ func (s *SiteContactResource) SetCustomFields(val OptNilJsonObject) {
 // SetTags sets the value of Tags.
 func (s *SiteContactResource) SetTags(val []string) {
 	s.Tags = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteContactResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -26015,6 +26028,8 @@ func (s *SiteUpdateAutomationInput) SetSteps(val []SiteAutomationStep) {
 // (`tags_apply`, `tags_remove`), which is why its body has no tags.
 // Ref: #/components/schemas/SiteUpdateContactInput
 type SiteUpdateContactInput struct {
+	// The contact's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
 	// The customer's own user id — an alias key.
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — an alias key.
@@ -26047,6 +26062,11 @@ type SiteUpdateContactInput struct {
 	// The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps
 	// them.
 	Tags []string `json:"tags"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteUpdateContactInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -26112,6 +26132,11 @@ func (s *SiteUpdateContactInput) GetCustomFields() OptNilJsonObject {
 // GetTags returns the value of Tags.
 func (s *SiteUpdateContactInput) GetTags() []string {
 	return s.Tags
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteUpdateContactInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetSubjectId sets the value of SubjectId.
