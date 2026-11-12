@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation starts on a date and waits until a local time
 
+> **Amended by [[0127-an-automation-may-enroll-a-contact-again-one-enrollment-at-a-time]]:** repeat
+> Enrollment on Events is decided; a date Trigger keeps its occurrence key and has no entry policy.
+
 An Automation's Trigger is one Event action, and its only wait is a delay. Three things marketers
 schedule by the calendar have no place in that model: a message on a date the Contact holds (a
 birthday, the anniversary of a sign-up, three days before a trial ends), a pause until a time that

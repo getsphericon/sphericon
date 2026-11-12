@@ -55,8 +55,10 @@ missing implementations of an already accepted spec.
   next path according to whether it happened. The model is decided
   ([ADR 0124](docs/adr/0124-an-automation-chooses-a-path-by-condition-by-weight-or-by-an-awaited-event.md));
   it is not built.
-- **Repeat Enrollment.** Example: run a post-purchase sequence after each order. Define repeat
-  entry after completion or failure, concurrent Enrollment, cooldown and Event deduplication.
+- **Repeat Enrollment.** Example: run an abandoned-cart reminder each time a cart is abandoned. The
+  model is decided ([ADR 0127](docs/adr/0127-an-automation-may-enroll-a-contact-again-one-enrollment-at-a-time.md)):
+  one active Enrollment at a time, a cooldown of an hour at least, one Enrollment per Event and no
+  cycle; it is not built. A flow per order, concurrent for two orders, is not part of it.
 - **Calendar and date-based entry and waits.** Birthdays, anniversaries and dates such as a
   trial's end as a Trigger, and waits until a local time. The model is decided
   ([ADR 0126](docs/adr/0126-an-automation-starts-on-a-date-and-waits-until-a-local-time.md)); it is

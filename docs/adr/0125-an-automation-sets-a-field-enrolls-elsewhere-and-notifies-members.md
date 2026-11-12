@@ -7,6 +7,11 @@ status: accepted
 > **Amended by [[0126-an-automation-starts-on-a-date-and-waits-until-a-local-time]]:** an Enroll,
 > Step or Rule Action, cannot target an Automation with a date Trigger.
 
+> **Amended by [[0127-an-automation-may-enroll-a-contact-again-one-enrollment-at-a-time]]:** cycles of
+> Enroll steps are no longer bounded by once-ever alone: an entry caused by a chain that passed
+> through the target Automation is skipped. "Already enrolled" below means what the target version's
+> entry policy refuses: an active Enrollment, `once`, a cooldown or a cycle.
+
 An Automation's Steps send, wait, change Tags, call HTTP, branch and end. A Rule's Actions change
 Tags, call HTTP and enroll in an Automation. Three things marketers ask an Automation to do have no
 Step: write what it learned onto the Contact ("plan = pro"), hand the Contact to another Automation

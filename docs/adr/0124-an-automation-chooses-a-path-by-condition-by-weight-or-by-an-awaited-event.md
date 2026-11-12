@@ -8,6 +8,9 @@ status: accepted
 > date-triggered Automation a Split's hash also takes the anniversary year, so it draws again each
 > year.
 
+> **Amended by [[0127-an-automation-may-enroll-a-contact-again-one-enrollment-at-a-time]]:** when Contacts
+> are enrolled again, a Split's hash also takes the Enrollment's ordinal.
+
 ADR 0122 gave an Automation one way to fork: a Branch with a Condition and two paths, `yes` and
 `no`, that rejoin. Three more forks are common in marketing automation and were left out of it. One
 is a choice among more than two paths: new, active and lapsed customers each get their own path. One

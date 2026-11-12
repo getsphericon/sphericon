@@ -711,12 +711,13 @@ Neither may be the Trigger, nor the goal an exit event.
 _Avoid_: Stop condition, exit criteria, conversion
 
 **Enrollment**:
-One Contact's membership-and-progress in one Automation — enrolled at most once ever, or, for a
-date Trigger, once per occurrence (once a year for a yearly date); re-enrollment on Events is
-deliberately out of scope. A date Trigger's Enrollment begins at the occurrence, with an empty
-`event`. Any other begins when its triggering Event occurred (when a
-Rule enrolls, the Event the Rule fired on; when an **Enroll** step does, the moment it runs, with a
-copy of its own Enrollment's `event`). It keeps a copy of that Event's action and properties, taken
+One Contact's membership-and-progress in one Automation. A Contact has at most one active Enrollment
+in an Automation; whether it is enrolled again after one ends is the version's **Entry policy**, and
+for a date Trigger once per occurrence (once a year for a yearly date). One Event enrolls a Contact
+in an Automation at most once. A date Trigger's Enrollment begins at the occurrence, with an empty
+`event`. Any other begins when its triggering Event occurred (when a Rule enrolls, the Event the
+Rule fired on; when an **Enroll** step does, the moment it runs, with a copy of its own Enrollment's
+`event`). It keeps a copy of that Event's action and properties, taken
 when it begins and never changed, which every email and HTTP step renders as `event` (the
 shape a Rule's HTTP action binds); an Enrollment no Event began has an empty `event`. Stands on one
 **Automation version** (the one live when it was made) and holds the current step in it, and a
@@ -731,6 +732,14 @@ the Enrollment. Any other reason a send step's message is Skipped (no Destinatio
 opt-out from that Channel, a Suppression) moves the Enrollment on to the next step, and the skip is
 recorded and reported, so one Channel's absence never ends a sequence that also uses others.
 _Avoid_: Run, automation run, journey instance, subscription
+
+**Entry policy**:
+Whether an Automation version with an Event Trigger enrolls a Contact again: `once`, the default (a
+Contact with any Enrollment in the Automation is not enrolled again), or `again` (once the previous
+Enrollment has ended, after a cooldown counted from its beginning, one hour at least). Whatever the policy, a
+Contact has one active Enrollment at a time, and an entry caused by a chain that passed through the
+same Automation is skipped.
+_Avoid_: Re-entry setting, frequency, recurrence (that is a date Trigger's)
 
 **Step**:
 One node in an Automation's sequence, with an id it keeps in every version; an Enrollment points at
@@ -761,7 +770,8 @@ _Avoid_: Split (that one chooses by weight), decision node, if/else node, filter
 **Split**:
 A Step with two or more weighted paths, its weights summing to 100, which rejoin right after it; the
 Contact's path is fixed by the Contact and the Step (and, in a date-triggered Automation, the
-year), so the same Contact lands on the same one, and it is kept on the Enrollment. An empty path is a holdout group. Used to test one path
+year, and when Contacts are enrolled again, the Enrollment's ordinal), so the same Enrollment lands
+on the same one, and it is kept on the Enrollment. An empty path is a holdout group. Used to test one path
 against another; no winner is picked for the author.
 _Avoid_: A/B test step, experiment, variant, random branch
 
@@ -792,7 +802,7 @@ _Avoid_: Update contact, set attribute, set property
 A Step kind, and a Rule Action, that enrolls the Contact in another Automation's live version. As a
 Step, the Enrollment that ran it goes on, and the new one begins when it runs, carrying the same
 `event`; as a Rule Action, the new one begins when the Event the Rule fired on occurred. An inactive
-Automation or a Contact already enrolled in it is a skip.
+Automation, or an entry its **Entry policy** refuses, is a skip.
 _Avoid_: Start automation, go to automation, jump
 
 **Notify**:
