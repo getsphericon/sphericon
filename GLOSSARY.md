@@ -1043,6 +1043,27 @@ advisory-with-teeth (ADR 0012), because a missing `_dmarc` record gets otherwise
 rejected (a bounce) or spam-foldered by bulk-sender policy.
 _Avoid_: From domain, verified domain, sender identity, SPF domain
 
+**Feedback-ID**:
+The header on every email that Gmail counts spam reports by: the send's origin (an opaque id of the
+Broadcast or Automation, or a fixed word such as `transactional`) and an opaque id of the Workspace,
+written by sphericon or passed to the provider that writes it, never both. Gmail
+reports its rates per identifier in Postmaster Tools, in aggregate and only above a volume.
+_Avoid_: Campaign header, tracking header
+
+**Postmaster data**:
+What Gmail Postmaster Tools reported for a Workspace's Sending domain on a day, read through a
+connected Google account: Gmail's spam rate for the whole domain and per **Feedback-ID**
+identifier, and its compliance status. Shown beside the Workspace's own rates as Gmail's; it never
+holds a send.
+_Avoid_: Reputation (Gmail no longer reports it), Gmail stats
+
+**Content check**:
+A fixed rule an email is checked against before it is sent (clipped size, images without text, a
+link or image off `https`, a URL shortener, an image without `alt`, a merge tag that renders empty),
+shown as a warning in the editor, at Schedule and Publish and when a Template is saved; it never
+blocks and is never a score.
+_Avoid_: Spam score, spam check, lint
+
 **Complaint rate**:
 The reputation-monitoring ratio `complaints / delivered`, per (Workspace, **Sending domain**), over a
 trailing time window, where `delivered` is the count of `email.delivered` Events (mailbox providers
@@ -1524,7 +1545,7 @@ What in a Workspace needs a member's action now, the Overview's first block, sho
 holds an item: what stops its mail (a Sending domain that lost its DKIM record, an Integration whose
 provider stopped the account, a Broadcast held by a check of its own, an active Automation whose
 email steps a send would hold now), what slows it or puts it at
-risk (the abuse detector's warning tier, a spent Send cap or Provider limit, a Broadcast scheduled
+risk (the abuse detector's warning tier, a `NEEDS_WORK` in **Postmaster data** or a lost Postmaster grant, a spent Send cap or Provider limit, a Broadcast scheduled
 within a day that the Send cap will slow, a provider's probation or sandbox), and what failed without a retry this week (Automation runs, a Broadcast, a Webhook
 endpoint that disabled itself). Every item is read live from the rows that hold the fact; none is
 stored. A Workspace suspension and a Staff hold are banners of their own, not items.

@@ -8,6 +8,10 @@ status: accepted
 > footer carries one link, to the Preference page, which replaces the confirmation page, the
 > `/unsubscribed` page and its `everything` link below. The one-click `POST` is unchanged.
 
+> **Amended by [[0130-deliverability-is-observed-through-feedback-ids-gmails-postmaster-data-and-content-checks]]:**
+> a `Feedback-ID` sphericon writes is signed in the same `h=` list; unlike the unsubscribe headers,
+> a message without one is still sent.
+
 Gmail/Yahoo/Microsoft enforce bulk-sender requirements (2024+) as the **receiving** side: any
 mail landing in those inboxes — regardless of the transport it was sent through (SES, SMTP, …) —
 must be DKIM-authenticated, come from a domain with a published DMARC record, and (for senders

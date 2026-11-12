@@ -4,6 +4,10 @@ status: superseded in part by ADR 0053 (a delivered denominator replaces the pro
 
 # Deliverability rate metrics: complaint & bounce rate in core, thresholds in EE
 
+> **Amended by [[0130-deliverability-is-observed-through-feedback-ids-gmails-postmaster-data-and-content-checks]]:**
+> Gmail's own spam rate for the whole domain is shown beside the Complaint rate as Gmail's, never
+> read by automated decisions.
+
 The automated abuse detector designed in ADR 0007 (auto-suspend a sender torching the shared
 reputation) has **nothing to read** until a complaint/bounce _rate_ exists. This ADR defines
 that rate: what it measures, where it is computed, and at what grain — the prerequisite metric,
