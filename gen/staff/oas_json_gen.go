@@ -111,6 +111,16 @@ func (s *InstanceAuditAction) Decode(d *jx.Decoder) error {
 	switch InstanceAuditAction(v) {
 	case InstanceAuditActionInstanceDefaultSendCapChange:
 		*s = InstanceAuditActionInstanceDefaultSendCapChange
+	case InstanceAuditActionInstanceSignupItemAdd:
+		*s = InstanceAuditActionInstanceSignupItemAdd
+	case InstanceAuditActionInstanceSignupItemChange:
+		*s = InstanceAuditActionInstanceSignupItemChange
+	case InstanceAuditActionInstanceSignupItemDelete:
+		*s = InstanceAuditActionInstanceSignupItemDelete
+	case InstanceAuditActionInstanceSignupItemsReorder:
+		*s = InstanceAuditActionInstanceSignupItemsReorder
+	case InstanceAuditActionInstanceLegalDocumentPublish:
+		*s = InstanceAuditActionInstanceLegalDocumentPublish
 	default:
 		*s = InstanceAuditAction(v)
 	}

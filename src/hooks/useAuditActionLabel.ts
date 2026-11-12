@@ -45,6 +45,11 @@ export function useAuditActionLabel() {
       'audit_log.export': t(($) => $.auditActions.auditLogExport),
       'webhook_endpoint.test': t(($) => $.auditActions.webhookEndpointTest),
       'instance.default_send_cap_change': t(($) => $.auditActions.instanceDefaultSendCapChange),
+      'instance.signup_item_add': t(($) => $.auditActions.instanceSignupItemAdd),
+      'instance.signup_item_change': t(($) => $.auditActions.instanceSignupItemChange),
+      'instance.signup_item_delete': t(($) => $.auditActions.instanceSignupItemDelete),
+      'instance.signup_items_reorder': t(($) => $.auditActions.instanceSignupItemsReorder),
+      'instance.legal_document_publish': t(($) => $.auditActions.instanceLegalDocumentPublish),
       // The create, update and delete of each Audited entity (ent/schema, Audited.Action).
       'api_token.create': t(($) => $.auditActions.apiTokenCreate),
       'api_token.update': t(($) => $.auditActions.apiTokenUpdate),

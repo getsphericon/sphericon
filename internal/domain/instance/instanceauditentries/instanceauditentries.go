@@ -12,6 +12,7 @@ package instanceauditentries
 import (
 	"context"
 	"fmt"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
@@ -22,6 +23,10 @@ import (
 // ActionDefaultSendCapChange records a change of the default Send cap of new Workspaces
 // (ADR 0067).
 const ActionDefaultSendCapChange = "instance.default_send_cap_change"
+
+// Actions is every action the log records, which the Staff contract declares: its own, and those
+// a module below the Instance names and records through Record handed to it (the Sign-up items).
+var Actions = append([]string{ActionDefaultSendCapChange}, signupitems.AuditActions...)
 
 // Record writes one entry: the Staff member staffMemberID made the change action, with diff the
 // old and the new value of each changed field (events.Change, events.ChangeOf). tx is the transaction client of the

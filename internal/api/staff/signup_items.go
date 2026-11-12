@@ -19,7 +19,7 @@ func (h *Handlers) StaffSignupItemsList(ctx context.Context) (*staffapi.StaffSig
 
 // StaffSignupItemsCreate adds a Sign-up item.
 func (h *Handlers) StaffSignupItemsCreate(ctx context.Context, req *staffapi.StaffSignupItemInput) (*staffapi.StaffSignupItemResource, error) {
-	it, err := h.items.Add(ctx, inputs.SignupItemCreate(req))
+	it, err := h.items.Add(ctx, auth.StaffMember(ctx).ID, inputs.SignupItemCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (h *Handlers) StaffSignupItemsGet(ctx context.Context, params staffapi.Staf
 
 // StaffSignupItemsUpdate changes a Sign-up item.
 func (h *Handlers) StaffSignupItemsUpdate(ctx context.Context, req *staffapi.StaffSignupItemUpdate, params staffapi.StaffSignupItemsUpdateParams) (*staffapi.StaffSignupItemResource, error) {
-	it, err := h.items.Update(ctx, int64(params.ID), inputs.SignupItemUpdate(req))
+	it, err := h.items.Update(ctx, auth.StaffMember(ctx).ID, int64(params.ID), inputs.SignupItemUpdate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (h *Handlers) StaffSignupItemsUpdate(ctx context.Context, req *staffapi.Sta
 
 // StaffSignupItemsReorder puts the Sign-up items in a new order.
 func (h *Handlers) StaffSignupItemsReorder(ctx context.Context, req *staffapi.StaffSignupItemOrder) (*staffapi.StaffSignupItemList, error) {
-	items, err := h.items.Reorder(ctx, inputs.SignupItemOrder(req.Ids))
+	items, err := h.items.Reorder(ctx, auth.StaffMember(ctx).ID, inputs.SignupItemOrder(req.Ids))
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (h *Handlers) StaffSignupItemsReorder(ctx context.Context, req *staffapi.St
 
 // StaffSignupItemsDelete deletes a Sign-up item.
 func (h *Handlers) StaffSignupItemsDelete(ctx context.Context, params staffapi.StaffSignupItemsDeleteParams) error {
-	return h.items.Delete(ctx, int64(params.ID))
+	return h.items.Delete(ctx, auth.StaffMember(ctx).ID, int64(params.ID))
 }
 
 // StaffSignupItemsListVersions is every published version of the item's Legal document.

@@ -33,6 +33,16 @@ func (s InstanceAuditAction) Validate() error {
 	switch s {
 	case "instance.default_send_cap_change":
 		return nil
+	case "instance.signup_item_add":
+		return nil
+	case "instance.signup_item_change":
+		return nil
+	case "instance.signup_item_delete":
+		return nil
+	case "instance.signup_items_reorder":
+		return nil
+	case "instance.legal_document_publish":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
