@@ -1,5 +1,9 @@
 # Sending domains: sphericon-native DKIM, verified-domain required to send
 
+> **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
+> under Reply handling a Sending domain names the one Integration whose inbound route receives its
+> replies; sending from it stays open to every Integration.
+
 To reach deliverability parity, mail must be authenticated (DKIM/SPF/DMARC) and sent from a
 domain the workspace controls — today `from_email` is a free string, nothing is signed, and
 nothing verifies the From domain. We add a first-class, workspace-scoped **Sending domain**

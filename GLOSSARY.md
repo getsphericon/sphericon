@@ -144,7 +144,8 @@ snapshot fields for debugging; **Identify** later stitches an anonymous Event on
 and **Erasure** strips the identity and the personal data from the Events it keeps. The link is a
 nullable foreign key that is set to null when the Contact is deleted: an Event outlives the
 mutable Contact, it never blocks or follows its deletion. The raw material behind behavioral segmentation. sphericon's own delivery and engagement facts (`email.sent`, `email.delivered`, `email.delayed`, `email.dropped`, `email.bounced`,
-`email.complained`, `email.opened`, `email.clicked`, `email.unsubscribed`) are Events too — **System
+`email.complained`, `email.opened`, `email.clicked`, `email.unsubscribed`, and under Reply handling
+`email.replied` and `email.auto_replied`) are Events too — **System
 events** — so engagement is segmentable through the very same machinery as
 customer-tracked actions, with no parallel event stream.
 _Avoid_: Activity, log entry, signal
@@ -685,8 +686,8 @@ and enrolls nobody while its Enrollments stay.
 _Avoid_: Workflow, flow, journey, drip, campaign
 
 **Automation version**:
-One copy of an Automation's definition: its Trigger, its exit and goal events and its Steps (each
-send step names its own Integration). The **live
+One copy of an Automation's definition: its Trigger, its exit and goal events, whether a reply ends
+an Enrollment (under **Reply handling**), and its Steps (each send step names its own Integration). The **live
 version** is the one new Enrollments begin on; the **draft** is a newer version that edits are
 written into, rewritten in place until it is published. A live version is never rewritten, and an
 Enrollment stays on the version it began on. The name belongs to the Automation, not to a version.
@@ -1246,9 +1247,9 @@ deduplicates. Pull, the opposite direction from a Webhook endpoint, which pushes
 _Avoid_: Sync, replication, feed, data export (that is one Contact's subject access bundle)
 
 **Reply handling**:
-An option of a Sending domain under which its emails carry a `Reply-To` and a `mailto:` unsubscribe
-on `reply.<domain>`, each with the Outbound message's token, so replies come back through the
-provider's inbound route. A reply with a valid token is recorded (`email.replied`,
+An option of a Sending domain under which its emails carry a `Reply-To` on `reply.<domain>` with the
+Outbound message's reply token (and a Broadcast's or Automation's a `mailto:` unsubscribe there), so
+replies come back through the provider's inbound route. A reply with a valid token is recorded (`email.replied`,
 `email.auto_replied`) and forwarded to the **Reply mailbox**; mail without one is dropped.
 _Avoid_: Reply tracking, inbox, two-way email
 

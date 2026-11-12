@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation branches into nested paths that rejoin
 
+> **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
+> exit on a reply is decided, as an option of the Automation version.
+
 > **Amended by [[0123-engagement-history-is-unknown-for-an-untracked-destination]]:** history tests
 > of engagement are unknown for an untracked Destination too, and a Branch holding any engagement
 > test names the path unknown takes.
