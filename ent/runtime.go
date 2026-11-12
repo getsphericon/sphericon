@@ -710,6 +710,8 @@ func init() {
 	integrationMixin := schema.Integration{}.Mixin()
 	integrationMixinFields0 := integrationMixin[0].Fields()
 	_ = integrationMixinFields0
+	integrationMixinFields3 := integrationMixin[3].Fields()
+	_ = integrationMixinFields3
 	integrationFields := schema.Integration{}.Fields()
 	_ = integrationFields
 	// integrationDescCreatedAt is the schema descriptor for created_at field.
@@ -722,6 +724,12 @@ func init() {
 	integration.DefaultUpdatedAt = integrationDescUpdatedAt.Default.(func() time.Time)
 	// integration.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	integration.UpdateDefaultUpdatedAt = integrationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// integrationDescRevision is the schema descriptor for revision field.
+	integrationDescRevision := integrationMixinFields3[0].Descriptor()
+	// integration.DefaultRevision holds the default value on creation for the revision field.
+	integration.DefaultRevision = integrationDescRevision.Default.(int64)
+	// integration.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	integration.RevisionValidator = integrationDescRevision.Validators[0].(func(int64) error)
 	// integrationDescName is the schema descriptor for name field.
 	integrationDescName := integrationFields[1].Descriptor()
 	// integration.NameValidator is a validator for the "name" field. It is called by the builders before save.

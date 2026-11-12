@@ -48,7 +48,7 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 	_, err := reader.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "x", Config: smtpInput("smtp.example.com")})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	_, err = reader.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptName("x")}, externalapi.IntegrationsUpdateParams{ID: id})
+	_, err = reader.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(id))), Name: externalapi.NewOptName("x")}, externalapi.IntegrationsUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	err = reader.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
@@ -130,7 +130,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	before, err := scoped.Integration().Get(ctx, fixtures.IntegrationAcmeSmtpLoginID)
 	require.NoError(t, err)
 
-	res, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
+	res, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(id))),
 		Name: externalapi.NewOptName("Renamed"), Enabled: externalapi.NewOptBool(false),
 		MaxPerSecond: externalapi.NewOptNilMaxPerSecond(externalapi.MaxPerSecond(5)),
 	}, externalapi.IntegrationsUpdateParams{ID: id})
@@ -150,7 +150,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 		return externalapi.IntegrationConfigInput{OneOf: externalapi.NewSmtpConfigInputIntegrationConfigInputSum(smtpIn)}
 	}
 	cfg := blankPassword("smtp.example.com")
-	edited, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
+	edited, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(id))),
 		Config:       externalapi.NewOptIntegrationConfigInput(cfg),
 		MaxPerSecond: externalapi.OptNilMaxPerSecond{Null: true, Set: true},
 	}, externalapi.IntegrationsUpdateParams{ID: id})
@@ -166,7 +166,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 
 	// Pointing the Integration at another host without the password is refused: the stored
 	// secret is never sent to a destination it was not saved for.
-	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(blankPassword("attacker.example"))},
+	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(id))), Config: externalapi.NewOptIntegrationConfigInput(blankPassword("attacker.example"))},
 		externalapi.IntegrationsUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
@@ -174,7 +174,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	sesCfg := externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
 		Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
 	})}
-	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(sesCfg)},
+	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(id))), Config: externalapi.NewOptIntegrationConfigInput(sesCfg)},
 		externalapi.IntegrationsUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -189,7 +189,7 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	_, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: globex})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptName("hijacked")}, externalapi.IntegrationsUpdateParams{ID: globex})
+	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(globex))), Name: externalapi.NewOptName("hijacked")}, externalapi.IntegrationsUpdateParams{ID: globex})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: globex})

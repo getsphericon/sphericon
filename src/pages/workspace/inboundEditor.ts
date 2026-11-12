@@ -1,5 +1,6 @@
 import * as z from 'zod'
 
+import { based } from '../../editing/editorSession.ts'
 import { siteIntegrationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import {
   siteIntegrationsRegenerateKey,
@@ -8,6 +9,7 @@ import {
 import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { defineEditForm } from '../../resources/defineResource.tsx'
 import type { ResourceEditOperation } from '../../resources/defineResource.tsx'
+import { withRevision } from '../../resources/resourceEditor.ts'
 import type { ResourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { InboundForm } from './InboundForm.tsx'
 import type { InboundPayload, InboundValues } from './InboundForm.tsx'
@@ -31,10 +33,10 @@ const inboundSchema: ResourceFormSchema<InboundPayload, InboundValues> = {
 // the session's operations, so they wait for a Save and the editor follows what each answers.
 export const inboundOperations = {
   RETIRE: {
-    request: async ({ subject: { path } }) => {
+    request: async ({ subject: { path }, revision }) => {
       const { data } = await siteIntegrationsUpdate({
         path,
-        body: { retireSecrets: true },
+        body: { revision: based(revision), retireSecrets: true },
         throwOnError: true,
       })
       return data
@@ -65,7 +67,7 @@ export const InboundEditForm = defineEditForm({
   valuesOf: (integration) => ({ preset: integration.preset, params: unmasked(integration.params) }),
   Form: InboundForm,
   getOptions: siteIntegrationsGetOptions,
-  update: siteIntegrationsUpdate,
+  update: withRevision(siteIntegrationsUpdate),
   operations: inboundOperations,
   texts: (t) => ({
     editTitle: t(($) => $.settings.integrations.inbound.open),

@@ -29,6 +29,8 @@ type Integration struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// DiscardedAt holds the value of the "discarded_at" field.
 	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
+	// Revision holds the value of the "revision" field.
+	Revision int64 `json:"revision,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Channel holds the value of the "channel" field.
@@ -144,7 +146,7 @@ func (*Integration) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case integration.FieldEnabled, integration.FieldIsDefault, integration.FieldProviderSandbox:
 			values[i] = new(sql.NullBool)
-		case integration.FieldID, integration.FieldWorkspaceID, integration.FieldMaxPerSecond, integration.FieldMaxPerDay, integration.FieldProviderMaxPerSecond, integration.FieldProviderMaxPerDay:
+		case integration.FieldID, integration.FieldWorkspaceID, integration.FieldRevision, integration.FieldMaxPerSecond, integration.FieldMaxPerDay, integration.FieldProviderMaxPerSecond, integration.FieldProviderMaxPerDay:
 			values[i] = new(sql.NullInt64)
 		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey, integration.FieldProviderEnforcement:
 			values[i] = new(sql.NullString)
@@ -195,6 +197,12 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DiscardedAt = new(time.Time)
 				*_m.DiscardedAt = value.Time
+			}
+		case integration.FieldRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field revision", values[i])
+			} else if value.Valid {
+				_m.Revision = value.Int64
 			}
 		case integration.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -387,6 +395,9 @@ func (_m *Integration) String() string {
 		builder.WriteString("discarded_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Revision))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

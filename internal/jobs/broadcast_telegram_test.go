@@ -272,7 +272,7 @@ func TestATelegramBroadcastIsHeldWhileItsBotIsRefusedAndResumesWhenTheTokenIsSav
 	shown := got
 	assert.Equal(t, siteapi.NewOptNilHoldReason(siteapi.HoldReasonProviderRefused), shown.HoldReason, "the Broadcast shows why it waits")
 
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(bot.Integration.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(siteapi.IntegrationConfigInput{
 			OneOf: siteapi.NewTelegramConfigInputIntegrationConfigInputSum(siteapi.TelegramConfigInput{
 				Kind: siteapi.TelegramConfigInputKindTelegram, Token: rotated,

@@ -28,7 +28,7 @@ import {
   IconPlugConnected,
   IconServer,
 } from '@tabler/icons-react'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -51,7 +51,7 @@ import type {
 import { zSiteIntegrationChannel, zSiteIntegrationProvider } from '../../generated/site/zod.gen.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
 import { can } from '../../utils/permissions.ts'
 import { HistoryMenuItem } from './AuditLogSection.tsx'
@@ -151,7 +151,7 @@ function IntegrationsList({
 }: {
   workspaceId: string
   canManage: boolean
-  onMakeDefault: (id: string) => void
+  onMakeDefault: (record: SiteIntegrationResource) => void
   onEditLimits: (record: SiteIntegrationResource) => void
   onCredentials: (record: SiteIntegrationResource) => void
   onInbound: (record: SiteIntegrationResource) => void
@@ -267,7 +267,7 @@ function IntegrationsList({
                           />
                         ) : null}
                         {canManage && !record.isDefault ? (
-                          <Menu.Item onClick={() => onMakeDefault(record.id)}>
+                          <Menu.Item onClick={() => onMakeDefault(record)}>
                             {t(($) => $.settings.integrations.makeDefault)}
                           </Menu.Item>
                         ) : null}
@@ -382,11 +382,17 @@ export function IntegrationsSection({
     consequence: t(($) => $.settings.integrations.deleteConsequence),
   })
 
-  // Promoting a provider clears the channel's current default on the server.
+  // Promoting a provider clears the channel's current default on the server. It is made on the
+  // revision the row shows (ADR 0119): a refusal says why and reads the list again.
+  const queryClient = useQueryClient()
   const defaultMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
     successMessage: t(($) => $.settings.integrations.defaultChanged),
     errorTitle: t(($) => $.settings.integrations.defaultError),
+    handleError: async () => {
+      await invalidateOwn(queryClient, siteIntegrationsUpdateMutation().mutationKey)
+      return false
+    },
   })
 
   const providerLabels = {
@@ -461,8 +467,11 @@ export function IntegrationsSection({
         <IntegrationsList
           workspaceId={workspaceId}
           canManage={canManageIntegrations}
-          onMakeDefault={(id) =>
-            defaultMutation.mutate({ path: { workspaceId, id }, body: { isDefault: true } })
+          onMakeDefault={(record) =>
+            defaultMutation.mutate({
+              path: { workspaceId, id: record.id },
+              body: { revision: record.revision, isDefault: true },
+            })
           }
           onEditLimits={setEditing}
           onCredentials={setCredentialsOf}

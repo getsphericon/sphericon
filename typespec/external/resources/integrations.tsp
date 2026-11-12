@@ -132,6 +132,9 @@ model IntegrationResource {
   /** When the integration was deleted (discarded); null while it is kept. A deleted integration is no longer listed, is read-only and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks. */
   discardedAt?: Timestamp | null;
 
+  /** The revision of the state this answer shows (ADR 0119): an update names it. A provider's reading of the integration (its quota, standing and refusal) does not move it */
+  revision: Revision;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 

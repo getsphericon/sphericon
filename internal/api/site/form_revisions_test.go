@@ -11,7 +11,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -98,4 +100,53 @@ func TestSiteBrandKitSaveOnAStaleRevisionIsRefused(t *testing.T) {
 	stored := env.DB.BrandKit.GetX(ctx, fixtures.BrandKitInitechID)
 	assert.Equal(t, "#111111", stored.AccentColor)
 	assert.EqualValues(t, saved.Revision, stored.Revision)
+}
+
+// Two renames of an Integration made on one revision: the second is a 409 revision_changed, and the
+// Integration keeps the first's name (ADR 0119). The quota read every credentials save schedules
+// writes only the provider's reading (schema.Bookkeeping): run between the load and a save, it does
+// not refuse that save.
+func TestSiteIntegrationUpdateOnAStaleRevisionIsRefusedButNotOverAQuotaRead(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	env.SES.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
+		Params: sesTopicParams, Name: "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
+	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID}
+
+	env.PerformEnqueuedJobs(t, integrations.RefreshQuotaArgs{})
+	refreshed := env.DB.Integration.GetX(ctx, int64(created.ID))
+	require.NotNil(t, refreshed.ProviderQuotaCheckedAt, "the quota read ran")
+	first, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: created.Revision, Name: siteapi.NewOptName("First")}, params)
+	require.NoError(t, err, "the quota read leaves the revision the editor loaded")
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: created.Revision, Name: siteapi.NewOptName("Second")}, params)
+
+	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
+	assert.Equal(t, siteapi.ProblemCodeRevisionChanged, refused.Code.Value)
+	stored := env.DB.Integration.GetX(ctx, int64(created.ID))
+	assert.Equal(t, "First", stored.Name)
+	assert.EqualValues(t, first.Revision, stored.Revision)
+}
+
+// A new ingest key is a write of the Integration (its own POST, no revision named): an edit made on
+// the revision read before it is refused, so a form that kept the old revision learns of it.
+func TestSiteIntegrationRegeneratedKeyMovesTheRevision(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	id := idStr(fixtures.IntegrationAcmeGenericAID)
+	read, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+
+	regenerated, err := c.SiteIntegrationsRegenerateKey(ctx, siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	assert.Equal(t, read.Revision+1, regenerated.Revision)
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: read.Revision, Name: siteapi.NewOptName("Stale")},
+		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+
+	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
+	assert.Equal(t, siteapi.ProblemCodeRevisionChanged, refused.Code.Value)
 }

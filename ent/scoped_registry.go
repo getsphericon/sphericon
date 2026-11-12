@@ -1288,6 +1288,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.DiscardedAt != nil {
 					b.SetDiscardedAt(*src.DiscardedAt)
 				}
+				b.SetRevision(src.Revision)
 				b.SetName(src.Name)
 				b.SetChannel(src.Channel)
 				b.SetProvider(src.Provider)

@@ -3318,6 +3318,10 @@ export type IntegrationResource = {
    */
   discardedAt?: Timestamp | null;
   /**
+   * The revision of the state this answer shows (ADR 0119): an update names it. A provider's reading of the integration (its quota, standing and refusal) does not move it
+   */
+  revision: Revision;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -5122,6 +5126,10 @@ export type UpdateCustomFieldInput = {
  * Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.
  */
 export type UpdateIntegrationInput = {
+  /**
+   * The integration's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   name?: Name;
   enabled?: boolean;
   isDefault?: boolean;

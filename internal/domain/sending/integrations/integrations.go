@@ -51,6 +51,11 @@ var ErrDefaultConflict = validation.ConflictField("isDefault", "a default provid
 // ErrNotFound means there is no such Integration in this Workspace.
 var ErrNotFound = validation.NotFound("integrations: integration not found", i18n.ErrorsIntegrationNotFound)
 
+// ErrRevisionChanged means the edit was made on a revision the Integration has moved past (ADR
+// 0119): someone saved it since the client read it. A provider's reading of it (schema.Bookkeeping)
+// does not move it. Nothing is written.
+var ErrRevisionChanged = validation.RevisionChanged("integrations: integration changed since it was read", i18n.ErrorsIntegrationRevisionChanged)
+
 // ErrOneInbox means the Workspace already keeps a Test inbox: it has at most one (ADR 0058).
 var ErrOneInbox = validation.Conflict("a workspace has at most one Test inbox", i18n.ErrorsIntegrationOneInbox)
 
@@ -92,6 +97,15 @@ func missing(err error) error {
 		return ErrNotFound
 	}
 	return err
+}
+
+// missOn tells why an edit conditional on its revision found no row: the Integration is gone or
+// deleted (ErrNotFound), or it is there at another revision.
+func (m *Module) missOn(ctx context.Context, s *ent.Scoped, id int64) error {
+	if _, err := m.editable(ctx, s, id); err != nil {
+		return err
+	}
+	return ErrRevisionChanged
 }
 
 // Get returns one Integration of the Workspace. An unknown id is ErrNotFound.
@@ -186,6 +200,8 @@ type CreateInput struct {
 // limit clears to no limit. An absent Config leaves the credentials as they are; inside a set Config,
 // blank secrets keep the stored secret. Name, Enabled, IsDefault and Config cannot be cleared.
 type UpdateInput struct {
+	// Revision is the Integration's revision the edit was made on (ADR 0119).
+	Revision     int64
 	Name         patch.Field[string]
 	Enabled      patch.Field[bool]
 	IsDefault    patch.Field[bool]
@@ -321,11 +337,17 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 	return m.viewOf(ctx, s, row)
 }
 
-// Update applies a partial edit and answers the View of the result. An unknown id, or a deleted Integration's, is ErrNotFound.
+// Update applies a partial edit and answers the View of the result. An unknown id, or a deleted
+// Integration's, is ErrNotFound. An edit made on a revision the Integration has moved past is
+// ErrRevisionChanged (ADR 0119): refused before a provider is asked anything about new
+// credentials, and again by the write, which is conditional on it.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (View, error) {
 	row, err := m.editable(ctx, s, id)
 	if err != nil {
 		return View{}, err
+	}
+	if row.Revision != in.Revision {
+		return View{}, ErrRevisionChanged
 	}
 
 	// Validate and collect the changes up front so a refusal short-circuits before the
@@ -375,6 +397,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	err = m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
 		var err error
 		updated, err = saveEdit(ctx, wl, row, promote, func(upd *ent.IntegrationScopedUpdateOne) {
+			upd.Where(integration.Revision(in.Revision))
 			applyEdit(upd, in, name, sealed, inb)
 			if tg.connected {
 				upd.SetProviderMaxPerSecond(telegramPerSecond)
@@ -393,8 +416,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		// New credentials or endpoint: what the provider allows may have changed.
 		return m.discoverQuota(ctx, q, updated)
 	})
+	if ent.IsNotFound(err) {
+		return View{}, m.missOn(ctx, s, id)
+	}
 	if err != nil {
-		return View{}, missing(err)
+		return View{}, err
 	}
 	if tg.release {
 		m.release(ctx, updated)

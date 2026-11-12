@@ -3237,6 +3237,7 @@ export const zSiteIntegrationResource = z.object({
   secretsRetiring: z.array(z.string()),
   hookUrl: z.string(),
   discardedAt: z.exactOptional(zTimestamp.nullable()),
+  revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3662,6 +3663,7 @@ export const zUpdateContactInput = z.object({
  * Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.
  */
 export const zUpdateIntegrationInput = z.object({
+  revision: zRevision,
   name: z.exactOptional(zName),
   enabled: z.exactOptional(z.boolean()),
   isDefault: z.exactOptional(z.boolean()),

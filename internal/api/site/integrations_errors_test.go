@@ -64,15 +64,15 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		in := &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptName("Renamed")}
+		in := &siteapi.UpdateIntegrationInput{Revision: 1, Name: siteapi.NewOptName("Renamed")}
 		_, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: foreign, ID: id})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: idStr(99999)})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptName(" ")},
+		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(id))), Name: siteapi.NewOptName(" ")},
 			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(smtpInput("", "p"))},
+		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(id))), Config: siteapi.NewOptIntegrationConfigInput(smtpInput("", "p"))},
 			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "an invalid config is rejected")
 
@@ -81,7 +81,7 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		assert.Equal(t, fixtures.IntegrationAcmeGenericAName, stored.Name, "rejected updates changed nothing")
 
 		// Enabled toggles and demoting a non-default keep working.
-		r6, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		r6, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(id))),
 			Enabled: siteapi.NewOptBool(false), IsDefault: siteapi.NewOptBool(false),
 		}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
 		require.NoError(t, err)

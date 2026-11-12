@@ -129,7 +129,7 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update name + re-supply credentials.
-	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(res.ID))),
 		Name:   siteapi.NewOptName("Renamed SMTP"),
 		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("smtp2.example.com", "new-pass")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
@@ -148,7 +148,7 @@ func TestSiteIntegrationsRejectsWrongProviderOnUpdate(t *testing.T) {
 	ctx := context.Background()
 
 	// Swapping an SMTP relay's config to a different provider kind is rejected.
-	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(fixtures.IntegrationAcmeGenericAID))),
 		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA", "secret")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeGenericAID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
@@ -189,7 +189,7 @@ func TestSiteIntegrationsPromoteViaUpdate(t *testing.T) {
 
 	// Promote a relay to default via update; this must demote the old default in the
 	// same transaction (see promote path in SiteIntegrationsUpdate).
-	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(fixtures.IntegrationAcmeGenericAID))),
 		IsDefault: siteapi.NewOptBool(true),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeGenericAID})
 	require.NoError(t, err)
@@ -225,7 +225,7 @@ func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	_, err = member.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = member.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(id))),
 		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("attacker.example", "")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
@@ -238,7 +238,7 @@ func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	require.NoError(t, err)
 
 	// An admin manages them.
-	_, err = env.SiteActor(t, fixtures.AdminAliceEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = env.SiteActor(t, fixtures.AdminAliceEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(id))),
 		Name: siteapi.NewOptName("Renamed"),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
@@ -252,19 +252,19 @@ func TestSiteIntegrationsBlankSecretIsKeptOnlyForTheSameDestination(t *testing.T
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeSmtpLoginID}
 
 	// Same host, port and username: the blank password keeps the stored one.
-	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("smtp.example.com", "")),
 	}, params)
 	require.NoError(t, err)
 
 	// A new host with a blank password is refused rather than sent the stored secret.
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("attacker.example", "")),
 	}, params)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	// Supplying the password again is how a destination changes.
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("smtp2.example.com", "new-pass")),
 	}, params)
 	require.NoError(t, err)
@@ -281,7 +281,7 @@ func TestSiteIntegrationsSesBlankSecretFollowsRegionAndKey(t *testing.T) {
 	require.NoError(t, err)
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID}
 
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA1234", "")),
 	}, params)
 	require.NoError(t, err)
@@ -291,7 +291,7 @@ func TestSiteIntegrationsSesBlankSecretFollowsRegionAndKey(t *testing.T) {
 		"new region": sesInput("us-east-1", "AKIA1234", ""),
 	} {
 		t.Run(name, func(t *testing.T) {
-			_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+			_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 				Config: siteapi.NewOptIntegrationConfigInput(cfg),
 			}, params)
 			testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)

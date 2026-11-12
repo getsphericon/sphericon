@@ -1,6 +1,7 @@
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 import { userEvent } from 'vitest/browser'
+import * as z from 'zod'
 
 import {
   handleSiteAuditList,
@@ -41,6 +42,7 @@ const smtp: SiteIntegrationResource = {
   preset: null,
   params: {},
   secretsRetiring: [],
+  revision: 1,
   hookUrl: 'https://app.test/hooks/omik_one',
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
@@ -504,7 +506,7 @@ test('edits only the limits of an existing provider, and a blank clears one', as
   await dialog.getByLabelText('Max per 24 hours').clear()
   await dialog.getByRole('button', { name: 'Save limits' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ maxPerSecond: 20, maxPerDay: null }])
+  await expect.poll(() => bodies).toEqual([{ revision: 1, maxPerSecond: 20, maxPerDay: null }])
 })
 
 test('an SES-compatible service keeps both values: a blank is not saved', async () => {
@@ -559,6 +561,7 @@ test('saves an SMTP server again as read back, its password kept when left blank
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         config: {
           kind: 'smtp',
           host: 'smtp.test',
@@ -599,6 +602,7 @@ test('an SES account is saved again only with its access key ID typed in full', 
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         config: {
           kind: 'ses',
           region: 'eu-west-1',
@@ -679,7 +683,7 @@ test('makes another provider the default, and the default offers no such action'
   await screen.getByRole('button', { name: 'More actions' }).nth(1).click()
   await screen.getByRole('menuitem', { name: 'Set as default' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ isDefault: true }])
+  await expect.poll(() => bodies).toEqual([{ revision: 1, isDefault: true }])
   await expect.element(screen.getByText('Default provider changed')).toBeInTheDocument()
 })
 
@@ -830,7 +834,9 @@ test('shows the hook URL and chooses a Preset, its params as fields', async () =
   await screen.getByLabelText(/^Signing secret/).fill('whsec_abc')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ preset: 'generic', params: { secret: 'whsec_abc' } }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ revision: 1, preset: 'generic', params: { secret: 'whsec_abc' } }])
   await expect.element(screen.getByRole('textbox', { name: /^Params/ })).not.toBeInTheDocument()
 })
 
@@ -916,15 +922,15 @@ test('a saved secret shows blank, a blank keeps it and a new value starts a rota
   await expect.element(secret).toHaveAttribute('placeholder', 'Stored. Leave blank to keep it.')
   await expect.element(screen.getByText(/A new value starts a rotation/)).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Save' }).click()
-  await expect.poll(() => bodies).toEqual([{ preset: 'generic', params: {} }])
+  await expect.poll(() => bodies).toEqual([{ revision: 1, preset: 'generic', params: {} }])
 
   await secret.fill('whsec_new')
   await screen.getByRole('button', { name: 'Save' }).click()
   await expect
     .poll(() => bodies)
     .toEqual([
-      { preset: 'generic', params: {} },
-      { preset: 'generic', params: { secret: 'whsec_new' } },
+      { revision: 1, preset: 'generic', params: {} },
+      { revision: 1, preset: 'generic', params: { secret: 'whsec_new' } },
     ])
 })
 
@@ -944,7 +950,7 @@ test('retires the old secrets of a rotating Preset', async () => {
   await screen.getByRole('menuitem', { name: 'Inbound' }).click()
   await screen.getByRole('button', { name: 'Retire old secrets' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ retireSecrets: true }])
+  await expect.poll(() => bodies).toEqual([{ revision: 1, retireSecrets: true }])
 })
 
 test('regenerates the hook URL after a confirmation', async () => {
@@ -968,6 +974,59 @@ test('regenerates the hook URL after a confirmation', async () => {
     .click()
 
   await expect.poll(() => calls).toEqual(['1'])
+})
+
+// The Inbound window stays open across its writes, and each moves the revision (ADR 0119): a Save,
+// retiring a rotation's old secrets, a new hook key, and a Save again all go through, each made on
+// the revision the one before answered, against a server that refuses a stale one.
+test('one Inbound window saves, retires, regenerates and saves again, never refused', async () => {
+  let stored: SiteIntegrationResource = { ...withPreset, revision: 1 }
+  const sent: unknown[] = []
+  const refused: unknown[] = []
+  worker.use(
+    handleSiteIntegrationsList(() => HttpResponse.json([stored])),
+    handleSiteIntegrationsGet(() => HttpResponse.json(stored)),
+    handleSitePresetsList({ body: [generic] }),
+    handleSiteIntegrationsUpdate(async ({ request }) => {
+      const body = z
+        .object({ revision: z.number(), retireSecrets: z.boolean().optional() })
+        .loose()
+        .parse(await request.json())
+      if (body.revision !== stored.revision) {
+        refused.push(body)
+        return problem(409, { title: 'Changed', code: 'revision_changed' })
+      }
+      sent.push(body.revision)
+      stored = {
+        ...stored,
+        revision: stored.revision + 1,
+        secretsRetiring: body.retireSecrets ? [] : stored.secretsRetiring,
+      }
+      return HttpResponse.json(stored)
+    }),
+    handleSiteIntegrationsRegenerateKey(() => {
+      stored = { ...stored, revision: stored.revision + 1, hookUrl: 'https://app.test/hooks/new' }
+      return HttpResponse.json(stored)
+    }),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+  await openInbound(screen)
+  const dialog = screen.getByRole('dialog', { name: /^Inbound/ })
+
+  await dialog.getByRole('button', { name: 'Save' }).click()
+  await expect.poll(() => sent).toEqual([1])
+  await dialog.getByRole('button', { name: 'Retire old secrets' }).click()
+  await expect.poll(() => sent).toEqual([1, 2])
+  await dialog.getByRole('button', { name: 'Regenerate URL' }).click()
+  await screen
+    .getByRole('dialog', { name: 'Regenerate the hook URL?' })
+    .getByRole('button', { name: 'Regenerate URL' })
+    .click()
+  await expect.element(dialog.getByText('https://app.test/hooks/new')).toBeInTheDocument()
+  await dialog.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => sent).toEqual([1, 2, 4])
+  expect(refused).toEqual([])
 })
 
 test('an Inbound window whose provider was deleted closes and the list drops it', async () => {
@@ -1070,7 +1129,9 @@ test("saves a Telegram bot's stored token again when the token is left blank", a
   await expect.element(token).toHaveAccessibleDescription(/Leave blank to keep the stored one/)
   await dialog.getByRole('button', { name: 'Save credentials' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ config: { kind: 'telegram', token: '' } }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ revision: 1, config: { kind: 'telegram', token: '' } }])
   await expect.element(dialog).not.toBeInTheDocument()
 })
 
@@ -1118,7 +1179,7 @@ test("saves a Telegram bot's new token", async () => {
 
   await expect
     .poll(() => bodies)
-    .toEqual([{ config: { kind: 'telegram', token: '7000000001:AAnew' } }])
+    .toEqual([{ revision: 1, config: { kind: 'telegram', token: '7000000001:AAnew' } }])
 })
 
 const twilioAccount: SiteIntegrationResource = {
@@ -1232,6 +1293,7 @@ test('saves a Twilio account again with its stored secret and Auth Token left bl
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         config: {
           kind: 'twilio',
           accountSid: 'AC-test-account',
@@ -1283,6 +1345,7 @@ test('a Twilio account that sends with its Auth Token saves a new one as both', 
     .poll(() => bodies)
     .toEqual([
       {
+        revision: 1,
         config: {
           kind: 'twilio',
           accountSid: 'AC-test-account',

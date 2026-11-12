@@ -29,7 +29,7 @@ func TestOpeningAndFollowingALinkOfACapturedMessageIsTrackedLikeAnyOther(t *test
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	_, err := jane.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
+	_, err := jane.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(siteapi.EntityId(fixtures.IntegrationGlobexInboxID)))), IsDefault: siteapi.NewOptBool(true)},
 		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(fixtures.IntegrationGlobexInboxID)})
 	require.NoError(t, err)
 

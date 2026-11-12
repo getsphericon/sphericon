@@ -968,6 +968,7 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 		// externalapiIntegrationResource.SecretsRetiring: ignore
 		// externalapiIntegrationResource.HookUrl: ignore
 		externalapiIntegrationResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiIntegrationResource.Revision = revision((*source).Revision)
 		externalapiIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

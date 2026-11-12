@@ -179,6 +179,7 @@ var (
 	ErrorsIntegrationPresetTelegramOnly         = ID{key: "errors.integration_preset_telegram_only"}
 	ErrorsIntegrationPresetTwilioOnly           = ID{key: "errors.integration_preset_twilio_only"}
 	ErrorsIntegrationProviderLimitRequired      = ID{key: "errors.integration_provider_limit_required"}
+	ErrorsIntegrationRevisionChanged            = ID{key: "errors.integration_revision_changed"}
 	ErrorsIntegrationSecretRequired             = ID{key: "errors.integration_secret_required"}
 	ErrorsIntegrationTelegramOtherBot           = ID{key: "errors.integration_telegram_other_bot"}
 	ErrorsIntegrationTelegramPresetFixed        = ID{key: "errors.integration_telegram_preset_fixed"}

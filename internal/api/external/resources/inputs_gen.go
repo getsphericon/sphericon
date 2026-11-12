@@ -374,6 +374,7 @@ func (c *InputsImpl) IntegrationCreate(source *external.CreateIntegrationInput) 
 func (c *InputsImpl) IntegrationUpdate(source *external.UpdateIntegrationInput) (integrations.UpdateInput, error) {
 	var integrationsUpdateInput integrations.UpdateInput
 	if source != nil {
+		integrationsUpdateInput.Revision = revisionIn((*source).Revision)
 		integrationsUpdateInput.Name = namePatch((*source).Name)
 		integrationsUpdateInput.Enabled = boolPatch((*source).Enabled)
 		integrationsUpdateInput.IsDefault = boolPatch((*source).IsDefault)

@@ -420,6 +420,7 @@ func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (int
 func (c *InputsImpl) IntegrationUpdate(source *site.UpdateIntegrationInput) (integrations.UpdateInput, error) {
 	var integrationsUpdateInput integrations.UpdateInput
 	if source != nil {
+		integrationsUpdateInput.Revision = revisionIn((*source).Revision)
 		integrationsUpdateInput.Name = namePatch((*source).Name)
 		integrationsUpdateInput.Enabled = boolPatch((*source).Enabled)
 		integrationsUpdateInput.IsDefault = boolPatch((*source).IsDefault)

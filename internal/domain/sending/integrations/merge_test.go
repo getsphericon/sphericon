@@ -34,13 +34,13 @@ func stored[T any](t *testing.T, env *testhelper.TestEnv, id int64) T {
 
 func editSMTP(env *testhelper.TestEnv, id int64, c integrations.SMTPConfig) error {
 	_, err := env.Integrations.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), id,
-		integrations.UpdateInput{Config: patch.Set(integrations.ConfigInput{SMTP: &c})})
+		integrations.UpdateInput{Revision: env.DB.Integration.GetX(context.Background(), id).Revision, Config: patch.Set(integrations.ConfigInput{SMTP: &c})})
 	return err
 }
 
 func editSES(env *testhelper.TestEnv, id int64, c integrations.SESConfig) error {
 	_, err := env.Integrations.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), id,
-		integrations.UpdateInput{Config: patch.Set(integrations.ConfigInput{SES: &c})})
+		integrations.UpdateInput{Revision: env.DB.Integration.GetX(context.Background(), id).Revision, Config: patch.Set(integrations.ConfigInput{SES: &c})})
 	return err
 }
 

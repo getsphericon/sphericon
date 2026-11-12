@@ -29,7 +29,7 @@ func TestAnAutomationStepThroughTheTestInboxIsSentAndCapturedWithoutAVerifiedDom
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	inbox := created
-	_, err = owner.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
+	_, err = owner.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(inbox.ID))), IsDefault: siteapi.NewOptBool(true)},
 		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: inbox.ID})
 	require.NoError(t, err)
 

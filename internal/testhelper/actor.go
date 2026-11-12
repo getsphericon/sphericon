@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/user"
@@ -377,6 +378,19 @@ func (env *TestEnv) WebhookRevision(ctx context.Context, tb testing.TB, id int64
 	return v.Revision
 }
 
+// IntegrationRevision is the stored revision of the Integration id (ADR 0119): what an editor that
+// read it now names in an edit.
+func (env *TestEnv) IntegrationRevision(ctx context.Context, tb testing.TB, id int64) int64 {
+	tb.Helper()
+	v, err := env.DB.Integration.Get(ctx, id)
+	if ent.IsNotFound(err) {
+		// An id the call is refused for (another Workspace's, none at all): any revision does.
+		return 1
+	}
+	require.NoError(tb, err)
+	return v.Revision
+}
+
 // AutomationRevisionIn is AutomationRevision read through the scope s, for a test with no TestEnv
 // at hand.
 func AutomationRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
@@ -450,6 +464,18 @@ func CustomFieldRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id
 func WebhookRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
 	tb.Helper()
 	v, err := s.WebhookEndpoint().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return 1
+	}
+	require.NoError(tb, err)
+	return v.Revision
+}
+
+// IntegrationRevisionIn is IntegrationRevision read through the scope s, for a test with no TestEnv
+// at hand.
+func IntegrationRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
+	tb.Helper()
+	v, err := s.Integration().QueryWithDiscarded().Where(integration.ID(id)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return 1
 	}
