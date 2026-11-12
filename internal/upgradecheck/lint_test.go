@@ -224,3 +224,26 @@ ALTER TABLE t ADD COLUMN IF NOT EXISTS a bigint NULL;`})
 	assert.Equal(t, upgradecheck.UnboundedWaitRule, findings[0].Code)
 	assert.Contains(t, findings[0].Text, "ALTER TABLE t ADD COLUMN")
 }
+
+// Statements are split as Postgres reads them, so a statement whose wait queues queries cannot
+// hide behind another one's head: after a trailing comment, on the same line, or as a second action
+// of an ALTER TABLE that validates a constraint. A semicolon or a `--` inside a literal splits
+// nothing.
+func TestAStatementCannotHideBehindAnotherOnesHead(t *testing.T) {
+	for name, sql := range map[string]string{
+		"after a trailing comment": "CREATE INDEX CONCURRENTLY t_a ON t (a); -- the clearing reads it\nALTER TABLE t ADD COLUMN b bigint NULL;",
+		"on the same line":         "UPDATE t SET a = 1; ALTER TABLE t ALTER COLUMN a DROP NOT NULL;",
+		"a second action":          "ALTER TABLE t VALIDATE CONSTRAINT t_c, DROP CONSTRAINT t_d;",
+	} {
+		t.Run(name, func(t *testing.T) {
+			findings := lint(t, map[string]string{"20260117000000_no_tx.sql": "-- +goose NO TRANSACTION\n" + sql})
+
+			assert.Contains(t, codesOf(findings), upgradecheck.UnboundedWaitRule)
+		})
+	}
+
+	findings := lint(t, map[string]string{"20260118000000_no_tx.sql": `-- +goose NO TRANSACTION
+UPDATE t SET a = 'x; -- it''s
+ALTER TABLE t DROP NOT NULL';`})
+	assert.NotContains(t, codesOf(findings), upgradecheck.UnboundedWaitRule)
+}
