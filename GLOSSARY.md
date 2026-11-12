@@ -1698,7 +1698,8 @@ _Avoid_: Cycle, anniversary period
 **Usage snapshot**:
 A per-(Workspace, Usage period, metric) materialized aggregate of activity, finalized (made
 immutable) at period close. Distinct from the raw Events it is computed from, which stay the
-source of truth for audit and dispute. Two metrics, aggregated differently: `emails_sent` is a
+source of truth for audit and dispute. Besides the tokens a Workspace's inline intents used (a sum),
+two metrics, aggregated differently: `emails_sent` is a
 _sum_ of the Outbound messages the provider accepted over all three send surfaces, one per recipient,
 in a single total, each counted in the Usage period it was accepted in (a suppressed, held or failed
 message is never accepted, so never counted); `contacts` is a **high-water-mark**
