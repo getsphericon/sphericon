@@ -5,7 +5,7 @@
 
 // A switch a node turns off: OFF when it is off, '' when it is on (the default).
 export const OFF = 'off'
-export type Switch = '' | typeof OFF
+type Switch = '' | typeof OFF
 
 export interface NodeProperties {
   email: { integrationId: string; subject: string; body: string; doc: string }
