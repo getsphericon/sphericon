@@ -11,12 +11,14 @@ import {
   siteSegmentContactsListOptions,
   siteSegmentsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteContactResource } from '../../generated/site/types.gen.ts'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
 import { contactName } from '../../utils/contactName.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 
 export function SegmentDetailPage() {
   const { t } = useTranslation()
@@ -88,8 +90,14 @@ function SegmentDetail() {
               </Group>
             ),
           },
-          { accessor: 'firstName', title: t(($) => $.table.firstName) },
-          { accessor: 'lastName', title: t(($) => $.table.lastName) },
+          {
+            accessor: 'firstName',
+            title: t(($) => $.table.firstName),
+          } satisfies FieldColumn<SiteContactResource>,
+          {
+            accessor: 'lastName',
+            title: t(($) => $.table.lastName),
+          } satisfies FieldColumn<SiteContactResource>,
         ]}
         onRowClick={(record) =>
           void navigate({

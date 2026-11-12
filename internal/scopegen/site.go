@@ -26,7 +26,7 @@ const (
 // declares none and is not marked as allowed while withheld. Any operation may be marked as
 // allowed while an acceptance is pending.
 var SitePermissions = Table{
-	Spec:    "openapi/site.openapi.json",
+	Spec:    siteSpec,
 	Out:     "internal/api/site/access_gen.go",
 	Package: "site",
 	Imports: []string{

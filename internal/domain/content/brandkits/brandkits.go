@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -305,17 +306,17 @@ func validate(in Input) (Input, error) {
 			return in, ErrInvalidFont.On(f.field).Args(map[string]any{"Field": f.field})
 		}
 	}
-	if err := validation.MaxLength("logoUrl", in.LogoURL, bounds.BrandKitLogoURLMaxLength); err != nil {
+	if err := validation.MaxLength(fieldname.LogoURL, in.LogoURL, bounds.BrandKitLogoURLMaxLength); err != nil {
 		return in, err
 	}
 	if !validLogo(in.LogoURL) {
 		return in, ErrInvalidLogo
 	}
-	if err := validation.Range("buttonRadius", in.ButtonRadius,
+	if err := validation.Range(fieldname.ButtonRadius, in.ButtonRadius,
 		bounds.BrandKitButtonRadiusMin, bounds.BrandKitButtonRadiusMax); err != nil {
 		return in, err
 	}
-	if err := validation.MaxLength("footerText", in.FooterText, bounds.BrandKitFooterTextMaxLength); err != nil {
+	if err := validation.MaxLength(fieldname.FooterText, in.FooterText, bounds.BrandKitFooterTextMaxLength); err != nil {
 		return in, err
 	}
 	if !validFooter(in.FooterText) {
@@ -328,8 +329,8 @@ func validate(in Input) (Input, error) {
 var (
 	ErrInvalidColor  = validation.Refuse("brandkits: invalid color", i18n.ErrorsBrandkitColor)
 	ErrInvalidFont   = validation.Refuse("brandkits: invalid font", i18n.ErrorsBrandkitFont)
-	ErrInvalidLogo   = validation.RefuseField("logoUrl", "brandkits: invalid logo", i18n.ErrorsBrandkitLogo)
-	ErrInvalidFooter = validation.RefuseField("footerText", "brandkits: invalid footer", i18n.ErrorsBrandkitFooter)
+	ErrInvalidLogo   = validation.RefuseField(fieldname.LogoURL, "brandkits: invalid logo", i18n.ErrorsBrandkitLogo)
+	ErrInvalidFooter = validation.RefuseField(fieldname.FooterText, "brandkits: invalid footer", i18n.ErrorsBrandkitFooter)
 )
 
 // validLogo accepts no logo, or an absolute http(s) URL with no character that could leave the

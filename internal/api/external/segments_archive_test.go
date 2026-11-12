@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -28,7 +29,7 @@ func listedSegmentIDs(t *testing.T, c *externalapi.Client, archived bool) []exte
 // /api archives, lists and restores a Segment.
 func TestExternalSegmentsArchiveAndRestore(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "segments:write", "segments:read")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsWrite, apitokens.ScopeSegmentsRead)
 	ctx := context.Background()
 
 	id := entityIDString(fixtures.SegmentRetiredID)
@@ -51,7 +52,7 @@ func TestExternalSegmentsArchiveAndRestore(t *testing.T) {
 // that draft is then refused with 422 naming the Segment.
 func TestExternalSegmentOnlyADraftNamesIsArchivedAndTheDraftIsNotScheduled(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "segments:write", "broadcasts:send")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsWrite, apitokens.ScopeBroadcastsSend)
 	ctx := context.Background()
 
 	archived, err := c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentProPlanID)})
@@ -67,7 +68,7 @@ func TestExternalSegmentOnlyADraftNamesIsArchivedAndTheDraftIsNotScheduled(t *te
 // An archived Segment is read-only to /api until it is unarchived (ADR 0100).
 func TestExternalArchivedSegmentIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "segments:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsWrite)
 
 	_, err := c.SegmentsUpdate(context.Background(), &externalapi.UpdateSegmentInput{Revision: externalapi.Revision(env.SegmentRevision(t.Context(), t, fixtures.SegmentArchivedID)), Name: externalapi.NewOptName("Renamed")},
 		externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentArchivedID)})

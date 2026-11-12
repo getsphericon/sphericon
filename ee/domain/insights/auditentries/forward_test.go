@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 type recorder struct{ names []string }
@@ -39,8 +40,8 @@ func TestForwarderDeliversAuditEntriesOnlyUnderLicense(t *testing.T) {
 	next := &recorder{}
 	require.NoError(t, auditentries.Forwarder(next, unlicensed).Dispatch(t.Context(), nil, events.NameAuditEntry, "d1", nil))
 	assert.Empty(t, next.names, "without a license nothing is delivered")
-	require.NoError(t, auditentries.Forwarder(next, unlicensed).Dispatch(t.Context(), nil, events.NameContactCreated, "d2", nil))
-	assert.Equal(t, []string{events.NameContactCreated}, next.names, "customer events are not gated")
+	require.NoError(t, auditentries.Forwarder(next, unlicensed).Dispatch(t.Context(), nil, systemevent.ContactCreated, "d2", nil))
+	assert.Equal(t, []string{systemevent.ContactCreated}, next.names, "customer events are not gated")
 
 	next = &recorder{}
 	require.NoError(t, auditentries.Forwarder(next, licenseFor(t, licensekey.FeatureAudit)).Dispatch(t.Context(), nil, events.NameAuditEntry, "d3", nil))

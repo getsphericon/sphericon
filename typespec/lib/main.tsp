@@ -31,6 +31,16 @@ extern dec allowedWhileWithheld(target: Reflection.Operation);
 extern dec allowedWhileAcceptancePending(target: Reflection.Operation);
 
 /**
+ * The server limits the operation per client address under the policy, as `x-rate-limit`: `login`,
+ * one budget every step of a login shares; `forgot_password`, the reset requests'; `human`, a budget
+ * of its own for each public form a person submits
+ */
+extern dec rateLimited(
+  target: Reflection.Operation,
+  policy: valueof "login" | "forgot_password" | "human"
+);
+
+/**
  * What every operation of the surface declares, checked at compile. `scopes`: its scopes, `#[]`
  * for none. `workspacePermissions`: an operation with `workspaceId` in its path declares its
  * Permissions, `#[]` for any member, and no other operation declares Permissions or

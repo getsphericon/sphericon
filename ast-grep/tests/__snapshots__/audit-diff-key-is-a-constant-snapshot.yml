@@ -1,0 +1,20 @@
+id: audit-diff-key-is-a-constant
+snapshots:
+  "func diff(before, after *ent.Workspace) map[string]any {\n\td := map[string]any{}\n\td[\"name\"] = events.Change(before.Name, after.Name)\n\treturn d\n}\n":
+    labels:
+      - source: d["name"] = events.Change(before.Name, after.Name)
+        style: primary
+        start: 81
+        end: 131
+  "func diff(before, after *ent.Workspace) map[string]any {\n\treturn map[string]any{\"retention_days\": events.Change(before.RetentionDays, after.RetentionDays)}\n}\n":
+    labels:
+      - source: '"retention_days": events.Change(before.RetentionDays, after.RetentionDays)'
+        style: primary
+        start: 80
+        end: 154
+  "func diff(domain string) map[string]any {\n\treturn map[string]any{\n\t\tmembership.FieldRole: events.Became(\"member\"),\n\t\t\"domain\":             events.Became(domain),\n\t}\n}\n":
+    labels:
+      - source: '"domain":             events.Became(domain)'
+        style: primary
+        start: 117
+        end: 160

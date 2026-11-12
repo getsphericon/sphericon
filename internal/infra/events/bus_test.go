@@ -7,15 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func publishedCount(t *testing.T, env *testhelper.TestEnv) int {
@@ -175,14 +177,14 @@ func TestARepeatedEventIsStoredAndPublishedOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	before := publishedCount(t, env)
 	bounce := &events.EmailDelivery{
-		Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID, Email: "repeat@example.com",
-		BounceKind: events.BounceKindHard, DedupID: "sns-1/repeat@example.com",
+		Action: systemevent.EmailBounced, WorkspaceID: fixtures.AcmeID, Email: "repeat@example.com",
+		BounceKind: systemevent.BounceKindHard, DedupID: "sns-1/repeat@example.com",
 	}
 
 	publishAlone(t, env, bounce)
 	publishAlone(t, env, bounce)
 
-	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailBounced + ":sns-1/repeat@example.com")).Count(t.Context())
+	n, err := env.DB.Event.Query().Where(event.SourceID(systemevent.EmailBounced + ":sns-1/repeat@example.com")).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "one row")
 	assert.Equal(t, before+1, publishedCount(t, env), "published once")

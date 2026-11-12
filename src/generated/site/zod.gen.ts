@@ -2464,6 +2464,47 @@ export const zSmtpConfigInput = z.object({
 export const zSortDirection = z.enum(['asc', 'desc']);
 
 /**
+ * The action of a System event: an Event sphericon itself records, never a customer. An Event's
+ * `action`, an Automation's trigger and a condition carry one of these or a customer's own action,
+ * which may not take a System event's namespace; a webhook's event types may also name the Audit
+ * log's `audit.entry`.
+ */
+export const zSystemEventAction = z.enum([
+  'contact.created',
+  'contact.erased',
+  'email.sent',
+  'email.delivered',
+  'email.delayed',
+  'email.dropped',
+  'email.opened',
+  'email.clicked',
+  'email.unsubscribed',
+  'email.bounced',
+  'email.complained',
+  'marketing.confirmed',
+  'contact.tagged',
+  'contact.untagged',
+  'contact.field_changed',
+  'automation.enrolled',
+  'automation.completed',
+  'automation.goal_reached',
+  'automation.exited',
+  'telegram.bound',
+  'telegram.unbound',
+  'telegram.received',
+  'telegram.sent',
+  'telegram.clicked',
+  'telegram.unsubscribed',
+  'sms.received',
+  'sms.sent',
+  'sms.delivered',
+  'sms.undelivered',
+  'sms.confirmed',
+  'sms.clicked',
+  'sms.unsubscribed'
+]);
+
+/**
  * A link button under a Telegram message: an inline URL button on a row of its own
  */
 export const zTelegramButton = z.object({

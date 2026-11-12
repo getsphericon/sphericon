@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/systemmail"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -105,7 +106,7 @@ func (a *sesAPI) Do(r *http.Request) (*http.Response, error) {
 func TestSenderMailsThroughSESFromTheSystemAddress(t *testing.T) {
 	api := &sesAPI{}
 	cfg := &config.Config{
-		SystemEmailProvider: "ses", SystemEmailFrom: "noreply@example.test", SystemEmailFromName: "Example Mail",
+		SystemEmailProvider: providers.SES, SystemEmailFrom: "noreply@example.test", SystemEmailFromName: "Example Mail",
 		SystemEmailReplyTo: "replies@example.test",
 		SESRegion:          "eu-west-1", SESAccessKeyID: "AKIA", SESSecretAccessKey: "shh",
 	}

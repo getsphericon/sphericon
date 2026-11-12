@@ -1,0 +1,16 @@
+id: cli-flag-is-a-constant
+valid:
+  - |
+    func action(ctx context.Context, cmd *cli.Command) error {
+    	return run(cmd.String(flagVersion), cmd.Bool(flagYes))
+    }
+invalid:
+  - |
+    func action(ctx context.Context, cmd *cli.Command) error {
+    	return run(cmd.String("version"))
+    }
+  - |
+    func action(ctx context.Context, cmd *cli.Command) error {
+    	email := cmd.StringArg("email")
+    	return run(email)
+    }

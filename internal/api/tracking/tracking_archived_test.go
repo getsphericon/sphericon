@@ -22,7 +22,7 @@ import (
 func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -24,7 +25,7 @@ func createDomain(t *testing.T, c *externalapi.Client, in externalapi.CreateSend
 func TestExternalSendingDomainsWritesNeedTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	reader := env.ExternalScoped(t, "sending_domains:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead)
 	id := entityIDString(fixtures.SendingDomainUnverifiedID)
 
 	_, err := reader.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: "x.example.com"})
@@ -39,7 +40,7 @@ func TestExternalSendingDomainsWritesNeedTheWriteScope(t *testing.T) {
 	err = reader.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	writer := env.ExternalScoped(t, "sending_domains:write")
+	writer := env.ExternalScoped(t, apitokens.ScopeSendingDomainsWrite)
 	_, err = writer.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "write does not imply read")
 }
@@ -47,7 +48,7 @@ func TestExternalSendingDomainsWritesNeedTheWriteScope(t *testing.T) {
 func TestExternalSendingDomainsCreateReturnsRecordsNeverTheKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite)
 
 	created := createDomain(t, c, externalapi.CreateSendingDomainInput{Domain: " Marketing.Example.COM. "})
 	assert.Equal(t, "marketing.example.com", created.Domain)
@@ -76,7 +77,7 @@ func TestExternalSendingDomainsCreateReturnsRecordsNeverTheKey(t *testing.T) {
 func TestExternalSendingDomainsCreateValidatesAndRefusesDuplicates(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsWrite)
 
 	for _, in := range []externalapi.CreateSendingDomainInput{
 		{Domain: "not a domain"},
@@ -95,7 +96,7 @@ func TestExternalSendingDomainsCreateValidatesAndRefusesDuplicates(t *testing.T)
 func TestExternalSendingDomainsUpdateMovesTheSelectorAndUnverifies(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite)
 	id := entityIDString(fixtures.SendingDomainVerifiedID)
 
 	same, err := c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{}, externalapi.SendingDomainsUpdateParams{ID: id})
@@ -118,7 +119,7 @@ func TestExternalSendingDomainsUpdateMovesTheSelectorAndUnverifies(t *testing.T)
 func TestExternalSendingDomainsVerifyRunsALiveCheckAndReportsIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite)
 	id := entityIDString(fixtures.SendingDomainUnverifiedID)
 
 	accepted, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
@@ -135,7 +136,7 @@ func TestExternalSendingDomainsVerifyRunsALiveCheckAndReportsIt(t *testing.T) {
 // Fixtures: mail.acme.com has a DMARC record found; news.acme.com was never checked.
 func TestExternalSendingDomainsSayWhenTheDMARCRecordWasFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "sending_domains:read")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead)
 
 	bulk, err := c.SendingDomainsGet(t.Context(), externalapi.SendingDomainsGetParams{ID: entityIDString(fixtures.SendingDomainVerifiedID)})
 	require.NoError(t, err)
@@ -164,7 +165,7 @@ func listedSendingDomainIDs(t *testing.T, c *externalapi.Client) []externalapi.E
 func TestExternalSendingDomainsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite)
 	id := entityIDString(fixtures.SendingDomainUnverifiedID)
 
 	err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: id})
@@ -184,7 +185,7 @@ func TestExternalSendingDomainsDelete(t *testing.T) {
 func TestExternalSendingDomainsDeletedOneIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite)
 	id := entityIDString(fixtures.SendingDomainArchivedID)
 
 	for _, in := range []externalapi.UpdateSendingDomainInput{
@@ -208,7 +209,7 @@ func TestExternalSendingDomainsDeletedOneIsReadOnly(t *testing.T) {
 func TestExternalSendingDomainsStayInTheirWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite)
 	foreign := entityIDString(fixtures.SendingDomainGlobexID)
 
 	_, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: foreign})

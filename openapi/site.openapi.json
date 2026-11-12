@@ -213,7 +213,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "forgot_password"
       }
     },
     "/auth/login": {
@@ -263,7 +264,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "login"
       }
     },
     "/auth/logout": {
@@ -398,7 +400,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "login"
       }
     },
     "/auth/resend-verification": {
@@ -443,7 +446,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "human"
       }
     },
     "/auth/reset-password": {
@@ -527,7 +531,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "login"
       }
     },
     "/auth/sign-up": {
@@ -570,7 +575,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "human"
       }
     },
     "/auth/signin-not-me": {
@@ -980,7 +986,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "human"
       }
     },
     "/confirmations/{token}": {
@@ -1013,7 +1020,8 @@
           }
         },
         "tags": ["Site Consent"],
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "human"
       }
     },
     "/instance/release": {
@@ -1131,7 +1139,8 @@
             "ApiKeyAuth": []
           },
           {}
-        ]
+        ],
+        "x-rate-limit": "human"
       }
     },
     "/legal-documents/{key}": {
@@ -16128,7 +16137,7 @@
           },
           "action": {
             "type": "string",
-            "description": "Event action / name"
+            "description": "Event action: a System event's (`SystemEventAction`) or the customer's own"
           },
           "properties": {
             "type": "object",
@@ -20376,6 +20385,44 @@
         "type": "string",
         "enum": ["asc", "desc"],
         "description": "Direction of a list's order. Only the surfaces with a sortable list import this file, so the\nothers do not carry an unused schema."
+      },
+      "SystemEventAction": {
+        "type": "string",
+        "enum": [
+          "contact.created",
+          "contact.erased",
+          "email.sent",
+          "email.delivered",
+          "email.delayed",
+          "email.dropped",
+          "email.opened",
+          "email.clicked",
+          "email.unsubscribed",
+          "email.bounced",
+          "email.complained",
+          "marketing.confirmed",
+          "contact.tagged",
+          "contact.untagged",
+          "contact.field_changed",
+          "automation.enrolled",
+          "automation.completed",
+          "automation.goal_reached",
+          "automation.exited",
+          "telegram.bound",
+          "telegram.unbound",
+          "telegram.received",
+          "telegram.sent",
+          "telegram.clicked",
+          "telegram.unsubscribed",
+          "sms.received",
+          "sms.sent",
+          "sms.delivered",
+          "sms.undelivered",
+          "sms.confirmed",
+          "sms.clicked",
+          "sms.unsubscribed"
+        ],
+        "description": "The action of a System event: an Event sphericon itself records, never a customer. An Event's\n`action`, an Automation's trigger and a condition carry one of these or a customer's own action,\nwhich may not take a System event's namespace; a webhook's event types may also name the Audit\nlog's `audit.entry`."
       },
       "TelegramBroadcastContent": {
         "type": "object",

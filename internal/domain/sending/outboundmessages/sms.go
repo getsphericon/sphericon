@@ -12,8 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // SMSContent is SMS's Message content (ADR 0078): one plain text with Liquid merge tags, no media,
@@ -129,7 +131,7 @@ type smsAdapter struct {
 // DeliversOutside: an account's texts reach the carriers.
 func (smsAdapter) DeliversOutside() bool { return true }
 
-func (smsAdapter) prepare(_ context.Context, _ *ent.Scoped, content Content) (sendAs, string, error) {
+func (smsAdapter) prepare(_ context.Context, _ *ent.Scoped, content Content) (sendAs, holdreason.Reason, error) {
 	if _, ok := content.(SMSContent); !ok {
 		return sendAs{}, "", fmt.Errorf("outbound: %T is no SMS content", content)
 	}
@@ -151,7 +153,7 @@ func (a smsAdapter) send(ctx context.Context, _ sendAs, msg any, to target, _ me
 }
 
 // classifySMS takes the course a refusal of the provider calls for, by whom the provider's adapter
-// says it concerns (ADR 0079): the account holds the Integration (HoldProviderRefused), a rate signal
+// says it concerns (ADR 0079): the account holds the Integration (holdreason.ProviderRefused), a rate signal
 // defers the send, a number that opted out at the provider is the person's stop (optedOutError, the
 // send records it and Skips the message), a number that reaches no handset is suppressed, and a refusal of the number or one
 // that tells nothing fails this message alone (ReasonMessageRefused), with the provider's words and
@@ -163,7 +165,7 @@ func classifySMS(err error) error {
 	}
 	switch e.Refusal {
 	case messaging.SMSRefusalAccount:
-		return fmt.Errorf("%w: %w", holdError{reason: HoldProviderRefused}, err)
+		return fmt.Errorf("%w: %w", holdError{reason: holdreason.ProviderRefused}, err)
 	case messaging.SMSRefusalRate:
 		return deferError{wait: DeferralBackoff, err: err}
 	case messaging.SMSRefusalOptedOut:
@@ -189,7 +191,7 @@ func (smsAdapter) publishSent(ctx context.Context, pub events.Publisher, f sentF
 		OutboundMessageID: f.messageID,
 		Surface:           string(f.req.Kind()),
 		SendingSource:     f.req.Source,
-		DedupID:           fmt.Sprintf("%s:%d", events.NameSmsSent, f.messageID),
+		DedupID:           fmt.Sprintf("%s:%d", systemevent.SmsSent, f.messageID),
 	}
 	if f.req.Contact != nil && f.req.Contact.Email != nil {
 		e.Email = *f.req.Contact.Email
@@ -217,7 +219,7 @@ func (m *Module) sendSMSTest(ctx context.Context, s *ent.Scoped, content SMSCont
 		return Result{}, err
 	}
 	if g.hold != "" {
-		return Result{}, ErrHeld.With(Detail(g.hold))
+		return Result{}, ErrHeld.With(HoldDetail(g.hold))
 	}
 	adapter, ok := g.route.Sender.(smsAdapter)
 	if !ok {

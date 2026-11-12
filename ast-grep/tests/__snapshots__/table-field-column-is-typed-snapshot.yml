@@ -1,0 +1,24 @@
+id: table-field-column-is-typed
+snapshots:
+  "const table = (\n  <DataTable\n    records={records}\n    columns={[{ accessor: 'name', title: 'Name' }]}\n  />\n)\n":
+    labels:
+      - source: "{ accessor: 'name', title: 'Name' }"
+        style: primary
+        start: 65
+        end: 100
+      - source: columns
+        style: secondary
+        start: 55
+        end: 62
+      - source: "columns={[{ accessor: 'name', title: 'Name' }]}"
+        style: secondary
+        start: 55
+        end: 102
+      - source: accessor
+        style: secondary
+        start: 67
+        end: 75
+      - source: "accessor: 'name'"
+        style: secondary
+        start: 67
+        end: 83

@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -95,7 +96,7 @@ func LinkUsed(err error) error {
 
 // checkPassword checks a new password a link sets against the password rule.
 func checkPassword(password string) error {
-	return validation.Fields(validation.Password(validation.FieldPassword, password))
+	return validation.Fields(validation.Password(fieldname.Password, password))
 }
 
 // hashPassword checks a new password against the password rule and hashes it.

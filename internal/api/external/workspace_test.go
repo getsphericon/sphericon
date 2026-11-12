@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -17,7 +18,7 @@ import (
 // a token acts in is no scope's secret, as whoami is not.
 func workspaceOf(t *testing.T, env *testhelper.TestEnv) *externalapi.WorkspaceResource {
 	t.Helper()
-	res, err := env.ExternalScoped(t, "contacts:read").WorkspaceGet(context.Background())
+	res, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).WorkspaceGet(context.Background())
 	require.NoError(t, err)
 	ws := res
 	return ws

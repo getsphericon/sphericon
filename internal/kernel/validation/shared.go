@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 )
@@ -15,24 +16,24 @@ import (
 // them with errors.Is.
 var (
 	// ErrNameBlank is the name of a named row that is empty once trimmed.
-	ErrNameBlank = RefuseField(FieldName, "validation: name must not be empty", i18n.ErrorsNameEmpty)
+	ErrNameBlank = RefuseField(fieldname.Name, "validation: name must not be empty", i18n.ErrorsNameEmpty)
 	// ErrNameTooLong is the name of a named row longer than the contract's Name allows.
-	ErrNameTooLong = RefuseField(FieldName, "validation: name is too long", i18n.ErrorsNameTooLong)
+	ErrNameTooLong = RefuseField(fieldname.Name, "validation: name is too long", i18n.ErrorsNameTooLong)
 	// ErrUserNameRequired is a User's name that is empty once trimmed.
-	ErrUserNameRequired = RefuseField(FieldName, "validation: name is required", i18n.ErrorsNameRequired)
+	ErrUserNameRequired = RefuseField(fieldname.Name, "validation: name is required", i18n.ErrorsNameRequired)
 	// ErrUserNameInvalid is a User's name IsDisplayName refuses: too long, empty to the eye, or
 	// with a character that breaks a line or hides.
-	ErrUserNameInvalid = RefuseField(FieldName, "validation: invalid name", i18n.ErrorsNameInvalid)
+	ErrUserNameInvalid = RefuseField(fieldname.Name, "validation: invalid name", i18n.ErrorsNameInvalid)
 	// ErrEmailRequired is an address that is empty once trimmed.
-	ErrEmailRequired = RefuseField(FieldEmail, "validation: email is required", i18n.ErrorsEmailRequired)
+	ErrEmailRequired = RefuseField(fieldname.Email, "validation: email is required", i18n.ErrorsEmailRequired)
 	// ErrEmailInvalid is an address that is none, or one longer than the contract allows.
-	ErrEmailInvalid = RefuseField(FieldEmail, "validation: invalid email", i18n.ErrorsEmailInvalid)
+	ErrEmailInvalid = RefuseField(fieldname.Email, "validation: invalid email", i18n.ErrorsEmailInvalid)
 	// ErrPasswordRequired is a password left out.
-	ErrPasswordRequired = RefuseField(FieldPassword, "validation: password is required", i18n.ErrorsPasswordRequired)
+	ErrPasswordRequired = RefuseField(fieldname.Password, "validation: password is required", i18n.ErrorsPasswordRequired)
 	// ErrPasswordLength is a password shorter or longer than PasswordMinLength to PasswordMaxLength.
-	ErrPasswordLength = RefuseField(FieldPassword, "validation: password length", i18n.ErrorsPasswordLength)
+	ErrPasswordLength = RefuseField(fieldname.Password, "validation: password length", i18n.ErrorsPasswordLength)
 	// ErrPasswordBlank is a password of spaces only.
-	ErrPasswordBlank = RefuseField(FieldPassword, "validation: password is blank", i18n.ErrorsPasswordBlank)
+	ErrPasswordBlank = RefuseField(fieldname.Password, "validation: password is blank", i18n.ErrorsPasswordBlank)
 )
 
 // Name is the rule of the name of a named row (a Tag, a Segment, a Rule, an Automation, a Template,

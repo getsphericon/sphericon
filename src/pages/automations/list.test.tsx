@@ -23,7 +23,7 @@ const LIST_ROUTE = routeMount(automationsRoute, { workspaceId: 'TestWs01' })
 type Navigate = Awaited<ReturnType<typeof renderWithRouter>>['navigate']
 const searches = (navigate: Navigate, from: Record<string, unknown>) =>
   navigate.mock.calls.map(([options]) =>
-    typeof options?.search === 'function' ? options.search(from) : options?.search,
+    typeof options.search === 'function' ? options.search(from) : options.search,
   )
 const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 const NOW = '2026-01-01T00:00:00Z'

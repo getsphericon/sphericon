@@ -8,6 +8,12 @@ import * as z from 'zod'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { docCodec } from '../../utils/messageDoc.ts'
+import { propertySetter } from './nodeProperties.ts'
+import type { ReadProperties } from './nodeProperties.ts'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
 
 // The properties panel is narrow, so the message is edited in a dialog opened from it. A step
 // keeps its document as JSON text beside the body (the form holds only strings): an edit in the
@@ -20,7 +26,9 @@ export function MessageControl(props: ControlProps) {
   const [opened, { open, close }] = useDisclosure(false)
 
   const body = typeof data === 'string' ? data : ''
-  const docText: unknown = core?.data?.doc
+  const node: ReadProperties<'email'> = isRecord(core?.data) ? core.data : {}
+  const docText = node.doc
+  const set = propertySetter<'email'>(props)
   const doc = useMemo(() => {
     const parsed = docCodec.safeParse(docText)
     return parsed.success ? parsed.data : null
@@ -40,10 +48,10 @@ export function MessageControl(props: ControlProps) {
             eventTags
             onChange={(edit) => {
               if ('doc' in edit) {
-                props.handleChange('doc', z.encode(docCodec, edit.doc))
+                set('doc', z.encode(docCodec, edit.doc))
               } else {
-                props.handleChange('doc', '')
-                props.handleChange('body', edit.body)
+                set('doc', '')
+                set('body', edit.body)
               }
             }}
           />

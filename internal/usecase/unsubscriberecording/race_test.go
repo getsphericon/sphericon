@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
@@ -49,7 +50,7 @@ func TestAClickThatLosesTheRaceToTheOptOutRecordsNothingMore(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, rows)
 	logged, err := client.Event.Query().Where(
-		event.WorkspaceID(fixtures.AcmeID), event.Action(events.NameEmailUnsubscribed), event.Email(dest),
+		event.WorkspaceID(fixtures.AcmeID), event.Action(systemevent.EmailUnsubscribed), event.Email(dest),
 	).Count(ctx)
 	require.NoError(t, err)
 	assert.Zero(t, logged, "the click that found the opt-out written publishes nothing")

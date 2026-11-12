@@ -21,12 +21,12 @@ func userCommand(d deps) *cli.Command {
 			Usage:     "create a verified User with its first Workspace and print its one-time password",
 			ArgsUsage: "<email> <name...>",
 			Arguments: []cli.Argument{
-				&cli.StringArg{Name: "email", Required: true},
-				&cli.StringArgs{Name: "name", Max: -1},
+				&cli.StringArg{Name: flagEmail, Required: true},
+				&cli.StringArgs{Name: flagName, Max: -1},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
-				email := cmd.StringArg("email")
-				name := strings.Join(cmd.StringArgs("name"), " ")
+				email := cmd.StringArg(flagEmail)
+				name := strings.Join(cmd.StringArgs(flagName), " ")
 				signUp, err := c.SignUp()
 				if err != nil {
 					return err
@@ -39,13 +39,13 @@ func userCommand(d deps) *cli.Command {
 			Name:      "reset-second-factor",
 			Usage:     "clear a User's Second factor and recovery codes and end their sessions",
 			ArgsUsage: "<email>",
-			Arguments: []cli.Argument{&cli.StringArg{Name: "email", Required: true}},
+			Arguments: []cli.Argument{&cli.StringArg{Name: flagEmail, Required: true}},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				reset, err := c.SecondFactorReset()
 				if err != nil {
 					return err
 				}
-				email := cmd.StringArg("email")
+				email := cmd.StringArg(flagEmail)
 				err = reset.ResetByStaff(ctx, email, "cli")
 				return commandline.ReportSecondFactorReset(out(cmd), email, err)
 			}),

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -53,7 +54,7 @@ func TestNameOptRefusesOnlyASetName(t *testing.T) {
 
 func TestFieldsGathersTheRefusalOfEachField(t *testing.T) {
 	_, nameErr := validation.Name("")
-	_, emailErr := validation.Email(validation.FieldEmail, "not an address")
+	_, emailErr := validation.Email(fieldname.Email, "not an address")
 
 	err := validation.Fields(nameErr, nil, emailErr)
 
@@ -74,16 +75,16 @@ func TestFieldsPassesOnAnErrorThatIsNoRefusal(t *testing.T) {
 }
 
 func TestEmailKeepsTheEmailCaseAndRefusesWhatIsNoAddress(t *testing.T) {
-	email, err := validation.Email(validation.FieldEmail, "  Grace@Example.COM ")
+	email, err := validation.Email(fieldname.Email, "  Grace@Example.COM ")
 	require.NoError(t, err)
 	assert.Equal(t, "grace@example.com", email)
 
 	for _, raw := range []string{"grace", "Grace <grace@example.com>", "a@" + strings.Repeat("b", 320) + ".com"} {
-		_, err = validation.Email(validation.FieldEmail, raw)
+		_, err = validation.Email(fieldname.Email, raw)
 		require.ErrorIs(t, err, validation.ErrEmailInvalid, "%q", raw)
 	}
 
-	_, err = validation.Email(validation.FieldNewEmail, " ")
+	_, err = validation.Email(fieldname.NewEmail, " ")
 	require.ErrorIs(t, err, validation.ErrEmailRequired)
 	refusal, ok := errors.AsType[*validation.RefusalError](err)
 	require.True(t, ok)
@@ -91,13 +92,13 @@ func TestEmailKeepsTheEmailCaseAndRefusesWhatIsNoAddress(t *testing.T) {
 }
 
 func TestAccountEmailIsStricterThanAStoredAddress(t *testing.T) {
-	_, err := validation.Email(validation.FieldEmail, "fdsadsf@fdsa")
+	_, err := validation.Email(fieldname.Email, "fdsadsf@fdsa")
 	require.NoError(t, err)
 
-	_, err = validation.AccountEmail(validation.FieldEmail, "fdsadsf@fdsa")
+	_, err = validation.AccountEmail(fieldname.Email, "fdsadsf@fdsa")
 	require.ErrorIs(t, err, validation.ErrEmailInvalid)
 
-	email, err := validation.AccountEmail(validation.FieldEmail, " Grace@Example.com")
+	email, err := validation.AccountEmail(fieldname.Email, " Grace@Example.com")
 	require.NoError(t, err)
 	assert.Equal(t, "grace@example.com", email)
 }

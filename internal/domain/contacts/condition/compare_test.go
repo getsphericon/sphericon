@@ -60,7 +60,7 @@ func TestNumberLeafComparesANumberCustomField(t *testing.T) {
 // does for a Rule's folded trigger leaf.
 func TestNotOfANumberLeafHoldsForAValueThatIsNotANumber(t *testing.T) {
 	env := testhelper.Setup(t)
-	not := condition.Group{Kind: "group", Combinator: "and", Not: true, Rules: marshal(numberLeaf(score, siteapi.SiteConditionNumberOperatorGt, -1000))}
+	not := condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(numberLeaf(score, siteapi.SiteConditionNumberOperatorGt, -1000))}
 
 	got := emailsIn(t, env, fixtures.WonkaID, not)
 
@@ -162,8 +162,8 @@ func TestNumberLeavesAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
 		not := rapid.Bool().Draw(rt, "not")
 		c := rapid.SampledFrom(contacts).Draw(rt, "contact")
 		// The Contact's Custom fields are the Event's properties: the same value under the same key.
-		onContact := condition.Group{Kind: "group", Combinator: "and", Not: not, Rules: marshal(numberLeaf(score, op, want))}
-		onEvent := condition.Group{Kind: "group", Combinator: "and", Not: not, Rules: marshal(numberLeaf("trigger:"+fixtures.CustomFieldWonkaScoreKey, op, want))}
+		onContact := condition.Group{Kind: "group", Combinator: condition.And, Not: not, Rules: marshal(numberLeaf(score, op, want))}
+		onEvent := condition.Group{Kind: "group", Combinator: condition.And, Not: not, Rules: marshal(numberLeaf("trigger:"+fixtures.CustomFieldWonkaScoreKey, op, want))}
 
 		viaSQL := triggerMatches(rt, s, onContact, nil, c.ID)
 		viaGo := triggerMatches(rt, s, onEvent, c.CustomFields, c.ID)

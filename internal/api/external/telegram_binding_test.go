@@ -12,8 +12,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/binding"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -58,7 +59,7 @@ func bindingsOf(t *testing.T, env *testhelper.TestEnv, destination string) []str
 func TestAStartLinkBindsTheChatToItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	token, link := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	posted := env.PostTelegramUpdate(t, bot, startUpdate(900, 555, "/start "+token))
@@ -69,14 +70,14 @@ func TestAStartLinkBindsTheChatToItsContact(t *testing.T) {
 	assert.Equal(t, http.StatusOK, posted.Code)
 	assert.Equal(t, http.StatusOK, redelivered.Code)
 	assert.Equal(t, []string{fmt.Sprintf("contact:%d", fixtures.ContactBobID)}, bindingsOf(t, env, "555"))
-	bound := env.QueuedCount(t, events.NameTelegramBound, map[string]any{"contactId": fixtures.ContactBobID, "integrationId": bot.Integration.ID})
+	bound := env.QueuedCount(t, systemevent.TelegramBound, map[string]any{"contactId": fixtures.ContactBobID, "integrationId": bot.Integration.ID})
 	assert.Equal(t, 1, bound, "a redelivered update records nothing more")
 }
 
 func TestAStartLinkUsesTheDefaultBotWhenNoneIsNamed(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	c := env.ExternalScoped(t, "contacts:write", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeIntegrationsWrite)
 	_, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(externalapi.EntityId(bot.Integration.ID)))), IsDefault: externalapi.NewOptBool(true)},
 		externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(bot.Integration.ID)})
 	require.NoError(t, err)
@@ -90,7 +91,7 @@ func TestAStartLinkLapsesAfterThirtyDays(t *testing.T) {
 	now := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return now }))
 	bot := env.AcmeTelegram(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	token, link := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	assert.WithinDuration(t, now.Add(30*24*time.Hour), time.Time(link.ExpiresAt), time.Second)
 
@@ -98,34 +99,34 @@ func TestAStartLinkLapsesAfterThirtyDays(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, startUpdate(901, 556, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "556"))
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil))
 }
 
 func TestAStartLinkWorksOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	token, _ := issue(t, c, fixtures.ContactBobID, onBot(bot))
 
 	env.PostTelegramUpdate(t, bot, startUpdate(902, 557, "/start "+token))
 	env.PostTelegramUpdate(t, bot, startUpdate(903, 558, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "558"), "the second chat to use the token binds nothing")
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramBound, nil))
 }
 
 func TestAnotherBotsStartLinkBindsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	first := env.AcmeTelegram(t)
 	second := env.AcmeSecondTelegram(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	firstID := int64(first.Integration.ID)
 	token, _ := issue(t, c, fixtures.ContactBobID, &firstID)
 
 	env.PostTelegramUpdate(t, second, startUpdate(904, 559, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "559"))
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil))
 }
 
 func TestABareStartBindsNothing(t *testing.T) {
@@ -136,13 +137,13 @@ func TestABareStartBindsNothing(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, startUpdate(906, 560, "/start not-a-token"))
 
 	assert.Empty(t, bindingsOf(t, env, "560"))
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil))
 }
 
 func TestAStartInAGroupBindsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	token, _ := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	inGroup := fmt.Sprintf(`{"update_id":907,"message":{"message_id":1,"date":1767225600,"chat":{"id":-1001,"type":"supergroup"},"from":{"id":561,"is_bot":false},"text":"/start %s"}}`, token)
 
@@ -150,13 +151,13 @@ func TestAStartInAGroupBindsNothing(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, posted.Code)
 	assert.Empty(t, bindingsOf(t, env, "561"))
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil))
 }
 
 func TestAChatThatStartsWithAnotherContactsTokenMovesToThatContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	bobs, _ := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	carols, _ := issue(t, c, fixtures.ContactCarolID, onBot(bot))
 
@@ -166,14 +167,14 @@ func TestAChatThatStartsWithAnotherContactsTokenMovesToThatContact(t *testing.T)
 	assert.Equal(t, []string{fmt.Sprintf("contact:%d", fixtures.ContactCarolID)}, bindingsOf(t, env, "562"))
 	byBob := map[string]any{"contactId": fixtures.ContactBobID}
 	byCarol := map[string]any{"contactId": fixtures.ContactCarolID}
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnbound, byBob), "the old Contact is told")
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, byCarol))
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramUnbound, byCarol))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramUnbound, byBob), "the old Contact is told")
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramBound, byCarol))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramUnbound, byCarol))
 }
 
 func TestStartLinkRefusals(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	issueOn := func(contactID int64, integrationID *int64) error {
 		in := &externalapi.IssueTelegramStartLinkInput{}
 		if integrationID != nil {

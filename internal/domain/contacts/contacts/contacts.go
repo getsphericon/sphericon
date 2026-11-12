@@ -342,7 +342,7 @@ func (m *Module) recordImport(ctx context.Context, s *ent.Scoped, sum importSumm
 			WorkspaceID: ts.WorkspaceID(),
 			Actor:       s.Actor(),
 			Action:      events.ActionContactImport,
-			TargetType:  "contact",
+			TargetType:  contact.Label,
 			Diff: map[string]any{
 				importDiffCreated: sum.Created,
 				importDiffUpdated: sum.Updated,

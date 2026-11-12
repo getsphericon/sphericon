@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -39,7 +40,7 @@ func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automati
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Telegram welcome", TriggerEvent: events.NameTelegramBound, ExitEvents: []string{}, Steps: steps,
+		Name: "Telegram welcome", TriggerEvent: systemevent.TelegramBound, ExitEvents: []string{}, Steps: steps,
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, created.ID, testhelper.AutomationRevisionIn(ctx, t, s, created.ID))
@@ -81,7 +82,7 @@ func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T)
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
 	assert.Equal(t, channels.Telegram, msg.Channel)
 	assert.Equal(t, "555001", msg.Destination)
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, map[string]any{
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramSent, map[string]any{
 		"contactId": fixtures.ContactBobID, "automationId": automationID, "destination": "555001", "integrationId": bot.Integration.ID,
 	}))
 }
@@ -101,7 +102,7 @@ func TestAContactWithTwoBindingsGetsTwoCallsAndOneOutboundMessage(t *testing.T) 
 	msgs := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).AllX(t.Context())
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "555011", msgs[0].Destination, "the first Binding that accepted it")
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramSent, nil))
 }
 
 func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoBinding(t *testing.T) {
@@ -119,7 +120,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoB
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
 	assert.Equal(t, "no_destination", *skipped.Reason)
 	assert.Equal(t, 1, *skipped.AutomationStep)
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramSent, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramSent, nil))
 }
 
 func TestARenderedTextOverTheLimitFailsThatMessageAlone(t *testing.T) {
@@ -214,15 +215,15 @@ func TestTheUnsubscribeLinkOptsTheChatOutOfTheAutomationOnTelegramOnly(t *testin
 	assert.Equal(t, channels.Telegram, optOut.Channel)
 	assert.Equal(t, eligibility.AutomationSource(automationID), optOut.SendingSource)
 	assert.Equal(t, emailBefore, emailOptOuts(), "email to the same Contact keeps sending")
-	recorded := env.QueuedMessages(t, events.NameTelegramUnsubscribed)
+	recorded := env.QueuedMessages(t, systemevent.TelegramUnsubscribed)
 	require.Len(t, recorded, 1, "the link records telegram.unsubscribed")
 	assert.Equal(t, strconv.Itoa(fixtures.ContactBobID), fmt.Sprint(recorded[0].Data["contactId"]))
 	assert.Equal(t, events.UnsubscribedByLink, recorded[0].Data["via"])
 	assert.Equal(t, strconv.FormatInt(automationID, 10), fmt.Sprint(recorded[0].Data["automationId"]))
-	assert.Zero(t, env.QueuedCount(t, events.NameEmailUnsubscribed, nil), "and no email event")
+	assert.Zero(t, env.QueuedCount(t, systemevent.EmailUnsubscribed, nil), "and no email event")
 
 	err = env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
 
 	require.NoError(t, err)
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, nil), "a second click records nothing")
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramUnsubscribed, nil), "a second click records nothing")
 }

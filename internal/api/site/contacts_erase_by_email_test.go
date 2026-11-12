@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -93,7 +93,7 @@ func TestSiteContactsEraseByEmailRecordsTheUserRequester(t *testing.T) {
 	err := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
 	require.NoError(t, err)
 
-	msgs := env.QueuedMessages(t, events.NameContactErased)
+	msgs := env.QueuedMessages(t, systemevent.ContactErased)
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "user", msgs[0].Data["requesterKind"])
 	assert.NotZero(t, msgs[0].Data["requesterId"])

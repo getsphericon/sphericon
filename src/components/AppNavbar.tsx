@@ -51,6 +51,7 @@ import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index
 import { Route as templatesRoute } from '../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { NavLinkLink } from './RouterLink.tsx'
+import type { WorkspacePage } from './RouterLink.tsx'
 
 // AppNavbar renders the workspace-scoped sidebar: one link per section, active on the
 // section's route or anything under it (the overview only on itself). The router's own active
@@ -67,7 +68,7 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
     icon,
     exact = false,
   }: {
-    route: { to: string }
+    route: { to: WorkspacePage }
     label: string
     icon: ReactNode
     exact?: boolean
@@ -83,7 +84,7 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
   )
 
   // A group is closed by default and open when one of its pages is being viewed.
-  const viewing = (items: { route: { to: string } }[]) =>
+  const viewing = (items: { route: { to: WorkspacePage } }[]) =>
     items.some((item) => matchRoute({ to: item.route.to, params: { workspaceId }, fuzzy: true }))
 
   // Everything that describes or selects the people a workspace talks to.

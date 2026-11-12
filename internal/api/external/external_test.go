@@ -12,8 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -43,7 +45,7 @@ func queuedCollected(t *testing.T, env *testhelper.TestEnv) []collectedRow {
 
 func TestExternalContactsCRUD(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write", "contacts:erase")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite, apitokens.ScopeContactsErase)
 	ctx := context.Background()
 
 	listed, err := c.ContactsList(ctx, externalapi.ContactsListParams{})
@@ -73,14 +75,14 @@ func TestExternalContactsCRUD(t *testing.T) {
 // it publishes contact.created in the same transaction.
 func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	created, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress("published@example.com"),
 	})
 	require.NoError(t, err)
 
-	n := env.QueuedCount(t, "contact.created", map[string]any{"email": "published@example.com", "contactId": created.ID})
+	n := env.QueuedCount(t, systemevent.ContactCreated, map[string]any{"email": "published@example.com", "contactId": created.ID})
 	assert.Equal(t, 1, n, "contact.created published once")
 }
 
@@ -96,7 +98,7 @@ func TestExternalAuthAndScopes(t *testing.T) {
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
 	// Read-only token: can read, cannot create.
-	ro := env.ExternalScoped(t, "contacts:read")
+	ro := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	_, err = ro.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("x@example.com")})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
@@ -109,7 +111,7 @@ func TestExternalAuthAndScopes(t *testing.T) {
 // is what catches the NOT-NULL workspace_id bug (a bare 204 assertion would not).
 func TestExternalEventsCreate(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 	ctx := context.Background()
 
 	occurred := eventsNow.Add(-time.Hour) // inside the live window
@@ -159,14 +161,14 @@ func TestExternalEventsScopes(t *testing.T) {
 	ctx := context.Background()
 
 	// events:read cannot write.
-	ro := env.ExternalScoped(t, "events:read")
+	ro := env.ExternalScoped(t, apitokens.ScopeEventsRead)
 	err := ro.EventsCreate(ctx, &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{SubjectId: "s", Action: "a"}},
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// events:write cannot read actions.
-	wo := env.ExternalScoped(t, "events:write")
+	wo := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 	_, err = wo.EventActionsList(ctx, externalapi.EventActionsListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
@@ -176,7 +178,7 @@ func TestExternalEventsScopes(t *testing.T) {
 // fixture events (page_view, purchase) belong to workspace 1.
 func TestExternalEventActionsList(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "events:read")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsRead)
 
 	res, err := c.EventActionsList(context.Background(), externalapi.EventActionsListParams{})
 	require.NoError(t, err)
@@ -200,7 +202,7 @@ func TestExternalEventsWorkspaceIsolation(t *testing.T) {
 
 	// The Globex tenant has an event carrying an action unique to it (fixture).
 	// Scoped tokens always bind to Acme.
-	c := env.ExternalScoped(t, "events:read", "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsRead, apitokens.ScopeEventsWrite)
 
 	// Listing for workspace 1 must not surface workspace 2's action.
 	res, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{})
@@ -225,7 +227,7 @@ func TestExternalEventsWorkspaceIsolation(t *testing.T) {
 
 func TestExternalRequestValidation(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	// An invalid email is refused by ogen's validation with the documented 400.
 	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("not-an-email")})

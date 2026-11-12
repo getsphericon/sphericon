@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -152,7 +153,7 @@ func TestAClickStoredAfterTheOrderCreditsNothingThoughDatedBeforeIt(t *testing.T
 
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(t.Context(), &events.EmailEngagement{
-			Action: events.NameEmailClicked, WorkspaceID: fixtures.EmporiumID, BroadcastID: fixtures.BroadcastEmporiumID,
+			Action: systemevent.EmailClicked, WorkspaceID: fixtures.EmporiumID, BroadcastID: fixtures.BroadcastEmporiumID,
 			ContactID: fixtures.ContactClickerNoneID, Email: fixtures.ContactClickerNoneEmail, URL: "https://shop.test/",
 		})
 	}))

@@ -46,7 +46,7 @@ func sessionCookie(resp *http.Response) *http.Cookie {
 }
 
 func TestSiteLoginStartsASessionThatAuthorizes(t *testing.T) {
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	env := testhelper.Setup(t)
 

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -26,15 +27,15 @@ import (
 func TestAnSMSOptOutIsDeliveredToTheEndpointsThatSelectIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	account := env.AcmeTwilio(t)
-	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{events.NameSmsUnsubscribed}).ExecX(t.Context())
+	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{systemevent.SmsUnsubscribed}).ExecX(t.Context())
 	textIn(t, env, account, "SM0401", fixtures.ContactTexterPhone, "STOP")
 
 	env.PerformEnqueuedJobs(t, jobs.WebhookEventArgs{})
 
 	d := deliveryTo(t, env, fixtures.WebhookCodebasicsID)
-	assert.Equal(t, events.NameSmsUnsubscribed, d.EventName)
+	assert.Equal(t, systemevent.SmsUnsubscribed, d.EventName)
 	body := bodyOf(t, d)
-	assert.Equal(t, events.NameSmsUnsubscribed, body["type"])
+	assert.Equal(t, systemevent.SmsUnsubscribed, body["type"])
 	assert.EqualValues(t, fixtures.ContactTexterID, body["contactId"])
 	data, ok := body["data"].(map[string]any)
 	require.True(t, ok, "the body carries the Event's data")
@@ -49,10 +50,10 @@ func TestAnAutomationTriggeredByAnSMSOptOutEnrollsItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
-	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationOnSmsUndeliveredVersionID).SetTriggerEvent(events.NameSmsUnsubscribed).ExecX(ctx)
+	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationOnSmsUndeliveredVersionID).SetTriggerEvent(systemevent.SmsUnsubscribed).ExecX(ctx)
 	textIn(t, env, account, "SM0402", fixtures.ContactTexterPhone, "STOP")
-	onlyEnvelope(t, env, events.NameSmsUnsubscribed)
-	triggers := triggersOn(t, env, events.NameSmsUnsubscribed)
+	onlyEnvelope(t, env, systemevent.SmsUnsubscribed)
+	triggers := triggersOn(t, env, systemevent.SmsUnsubscribed)
 	require.Len(t, triggers, 1)
 
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
@@ -61,7 +62,7 @@ func TestAnAutomationTriggeredByAnSMSOptOutEnrollsItsContact(t *testing.T) {
 		Where(automationrun.AutomationID(fixtures.AutomationOnSmsUndeliveredID), automationrun.ContactID(fixtures.ContactTexterID)).
 		Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, events.NameSmsUnsubscribed, *run.EventAction)
+	assert.Equal(t, systemevent.SmsUnsubscribed, *run.EventAction)
 	assert.Equal(t, events.UnsubscribedByKeyword, run.EventProperties["via"])
 }
 
@@ -89,7 +90,7 @@ func TestAnSMSBroadcastsLinkNamesTheBroadcastAndCountsOnce(t *testing.T) {
 	err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: token})
 
 	require.NoError(t, err)
-	unsubscribed := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	unsubscribed := env.QueuedMessages(t, systemevent.SmsUnsubscribed)
 	require.Len(t, unsubscribed, 1)
 	data := unsubscribed[0].Data
 	assert.Equal(t, strconv.Itoa(fixtures.ContactLacunaBeaID), fmt.Sprint(data["contactId"]))
@@ -121,7 +122,7 @@ func TestAnSMSLinkOfANumberNowAnotherContactsNamesNoAutomation(t *testing.T) {
 	err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: token})
 
 	require.NoError(t, err)
-	unsubscribed := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	unsubscribed := env.QueuedMessages(t, systemevent.SmsUnsubscribed)
 	require.Len(t, unsubscribed, 1)
 	data := unsubscribed[0].Data
 	assert.Equal(t, strconv.Itoa(fixtures.ContactTexterID), fmt.Sprint(data["contactId"]), "the number's holder stopped")

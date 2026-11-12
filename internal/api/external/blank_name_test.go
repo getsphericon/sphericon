@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -14,7 +15,7 @@ import (
 func TestExternalBlankNamesAreRefusedWith422(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "segments:write", "broadcasts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsWrite, apitokens.ScopeBroadcastsWrite)
 	const def = `{"kind":"group","combinator":"and","rules":[]}`
 
 	_, segment := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "", Condition: testhelper.ExternalRuleGroup(t, def)})

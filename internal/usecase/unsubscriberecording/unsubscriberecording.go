@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // UseCase records Unsubscribes. Every call receives the Workspace-scoped client (ADR 0017) built
@@ -103,7 +104,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			return nil
 		}
 		return pub.Publish(ctx, &events.EmailEngagement{
-			Action: events.NameEmailUnsubscribed, WorkspaceID: target.WorkspaceID, ContactID: target.ContactID,
+			Action: systemevent.EmailUnsubscribed, WorkspaceID: target.WorkspaceID, ContactID: target.ContactID,
 			Email: dest, BroadcastID: target.BroadcastID, AutomationID: automationID,
 			OutboundMessageID: target.OutboundMessageID,
 		})

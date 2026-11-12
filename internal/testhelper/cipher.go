@@ -14,7 +14,7 @@ import (
 // that builds its modules without one (a race over RealDB, a river runtime, the fixture loader).
 func Cipher(tb testing.TB) *secrets.Cipher {
 	tb.Helper()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(tb, err)
 	c, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(tb, err)

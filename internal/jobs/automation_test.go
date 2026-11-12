@@ -18,8 +18,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -130,7 +130,7 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	// Each automation send publishes email.sent, so an
 	// automation send is segmentable through the same Event log as broadcast sends.
 	// Two email steps mean two send facts for this contact.
-	sent := env.QueuedCount(t, "email.sent", map[string]any{"email": *alice.Email})
+	sent := env.QueuedCount(t, systemevent.EmailSent, map[string]any{"email": *alice.Email})
 	assert.Equal(t, 2, sent)
 }
 
@@ -448,10 +448,10 @@ func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationOnOpenID}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: systemevent.EmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationOnOpenID}))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), "the open of its own email enrolls nobody")
 
-	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationWelcomeSeriesID}))
+	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: systemevent.EmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationWelcomeSeriesID}))
 	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), 1, "the open of another Automation's email starts On open")
 }
 

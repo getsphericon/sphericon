@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -24,7 +25,7 @@ func automationReport(t *testing.T, c *externalapi.Client, params externalapi.Au
 // period under its outcome, and the period before does not move.
 func TestExternalAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:read")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 	params := externalapi.AutomationsReportParams{
 		ID:     entityIDString(fixtures.AutomationTagOnEngagementID),
 		Period: externalapi.NewOptAutomationsReportPeriod(externalapi.AutomationsReportPeriod14d),
@@ -44,7 +45,7 @@ func TestExternalAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *t
 
 func TestExternalAutomationReportReadsThirtyDaysByDefault(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:read")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	report := automationReport(t, c, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
 
@@ -56,8 +57,8 @@ func TestExternalAutomationReportNeedsTheReadScopeAndTheTokensWorkspace(t *testi
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, foreign := env.ExternalScoped(t, "automations:read").AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationGlobexID)})
-	_, denied := env.ExternalScoped(t, "contacts:read").AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
+	_, foreign := env.ExternalScoped(t, apitokens.ScopeAutomationsRead).AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationGlobexID)})
+	_, denied := env.ExternalScoped(t, apitokens.ScopeContactsRead).AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
 
 	testhelper.ExternalRefusal(t, foreign, http.StatusNotFound)
 	testhelper.ExternalRefusal(t, denied, http.StatusForbidden)

@@ -8,6 +8,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -16,7 +17,7 @@ import (
 // *DeletionRefusedError, whose answer names the Workspaces the User solely owns.
 var (
 	// ErrDeletionEmailMismatch: the email typed to confirm is not the User's own.
-	ErrDeletionEmailMismatch = validation.RefuseField("email", "users: the typed email is not the user's", i18n.ErrorsDeleteUserEmailMismatch)
+	ErrDeletionEmailMismatch = validation.RefuseField(fieldname.Email, "users: the typed email is not the user's", i18n.ErrorsDeleteUserEmailMismatch)
 	// ErrDeletionUsePassword: a deletion link asked for a User who has a password, which
 	// confirms the deletion instead.
 	ErrDeletionUsePassword = validation.Refuse("users: the user confirms the deletion with the password", i18n.ErrorsDeleteUserUsePassword)

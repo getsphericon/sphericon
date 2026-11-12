@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -130,17 +131,17 @@ func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
-	for _, trigger := range []string{"email.delivered", "email.delayed", "email.dropped", "email.bounced", "email.complained", "email.sent"} {
+	for _, trigger := range []string{systemevent.EmailDelivered, systemevent.EmailDelayed, systemevent.EmailDropped, systemevent.EmailBounced, systemevent.EmailComplained, systemevent.EmailSent} {
 		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, trigger)
 	}
 
-	for _, trigger := range []string{"email.opened", "email.clicked", "email.unsubscribed"} {
+	for _, trigger := range []string{systemevent.EmailOpened, systemevent.EmailClicked, systemevent.EmailUnsubscribed} {
 		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
 		require.NoError(t, err, trigger)
 	}
 
-	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWinBackID)))), TriggerEvent: siteapi.NewOptString("email.bounced")},
+	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWinBackID)))), TriggerEvent: siteapi.NewOptString(systemevent.EmailBounced)},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWinBackID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

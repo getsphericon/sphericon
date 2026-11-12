@@ -9,11 +9,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func globexClient(t *testing.T, env *testhelper.TestEnv, scopes ...string) *externalapi.Client {
+func globexClient(t *testing.T, env *testhelper.TestEnv, scopes ...apitokens.Scope) *externalapi.Client {
 	t.Helper()
 	return env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, scopes...))
 }

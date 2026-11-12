@@ -5,6 +5,8 @@ import { TelegramContentEditor } from '../../components/telegram/TelegramContent
 import { TelegramUnsubscribeControl } from '../../components/telegram/TelegramUnsubscribeControl.tsx'
 import { EVENT_ACTION_TAG } from '../../utils/mergeTags.ts'
 import { buttonsCodec } from '../../utils/telegramButtons.ts'
+import { OFF, propertySetter } from './nodeProperties.ts'
+import type { ReadProperties } from './nodeProperties.ts'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -17,7 +19,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function TelegramTextControl(props: ControlProps) {
   const { data } = props
   const { core } = useJsonForms()
-  const node: Record<string, unknown> = isRecord(core?.data) ? core.data : {}
+  const node: ReadProperties<'telegram'> = isRecord(core?.data) ? core.data : {}
+  const set = propertySetter<'telegram'>(props)
 
   return (
     <TelegramContentEditor
@@ -26,18 +29,18 @@ export function TelegramTextControl(props: ControlProps) {
         text: typeof data === 'string' ? data : '',
         imageUrl: typeof node.imageUrl === 'string' ? node.imageUrl : '',
         buttons: buttonsCodec.read(node.buttons),
-        linkPreview: node.linkPreview !== 'off',
+        linkPreview: node.linkPreview !== OFF,
       }}
       onChange={(next) => {
         props.handleChange(props.path, next.text)
-        props.handleChange('imageUrl', next.imageUrl)
-        props.handleChange('buttons', buttonsCodec.write(next.buttons))
-        props.handleChange('linkPreview', next.linkPreview ? '' : 'off')
+        set('imageUrl', next.imageUrl)
+        set('buttons', buttonsCodec.write(next.buttons))
+        set('linkPreview', next.linkPreview ? '' : OFF)
       }}
     >
       <TelegramUnsubscribeControl
         label={typeof node.unsubscribeButton === 'string' ? node.unsubscribeButton : ''}
-        onChange={(label) => props.handleChange('unsubscribeButton', label)}
+        onChange={(label) => set('unsubscribeButton', label)}
       />
     </TelegramContentEditor>
   )

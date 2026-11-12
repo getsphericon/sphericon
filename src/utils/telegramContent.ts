@@ -1,6 +1,8 @@
 import type { TelegramButton } from '../generated/site/types.gen.ts'
 import { zTelegramBroadcastContentInput } from '../generated/site/zod.gen.ts'
 import { maxItemsOf, maxLengthOf } from './bounds.ts'
+import { EVENT_ACTION_TAG, TELEGRAM_START_TAG, UNSUBSCRIBE_URL_TAG } from './mergeTags.ts'
+import type { CONTACT_TAGS } from './mergeTags.ts'
 
 // The most characters Telegram takes in a text message, and in the caption of a photo.
 // Telegram's own limits, which the editor counts live; the API refuses a longer text
@@ -31,18 +33,28 @@ export function telegramLimit(imageUrl: string): number {
   return imageUrl.trim() === '' ? TELEGRAM_TEXT_LIMIT : TELEGRAM_CAPTION_LIMIT
 }
 
-// The sample Contact the preview resolves merge tags for.
-const SAMPLE_CONTACT: Record<string, string> = {
+// A merge tag the preview fills in: the Contact's core fields and the tags every Telegram message may
+// carry.
+type SampleTag =
+  | (typeof CONTACT_TAGS)[number]
+  | typeof EVENT_ACTION_TAG
+  | typeof UNSUBSCRIBE_URL_TAG
+  | typeof TELEGRAM_START_TAG
+
+// The sample Contact the preview resolves merge tags for, one value per tag it knows.
+const SAMPLE_CONTACT: Record<SampleTag, string> = {
   first_name: 'Alex',
   last_name: 'Morgan',
   email: 'alex@example.com',
   city: 'Berlin',
   country: 'Germany',
   locale: 'en',
-  'event.action': 'order_placed',
-  unsubscribe_url: 'https://example.com/e/u/…',
-  telegram_start_url: 'https://t.me/your_bot?start=…',
+  [EVENT_ACTION_TAG]: 'order_placed',
+  [UNSUBSCRIBE_URL_TAG]: 'https://example.com/e/u/…',
+  [TELEGRAM_START_TAG]: 'https://t.me/your_bot?start=…',
 }
+
+const isSampleTag = (name: string): name is SampleTag => Object.hasOwn(SAMPLE_CONTACT, name)
 
 const TAG = /\{\{\s*([\w.]+)\s*\}\}/g
 
@@ -52,7 +64,7 @@ const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;'
 // escapes a value; a tag the sample does not know renders empty, as an unbound one does.
 export function resolveTags(text: string): string {
   return text.replace(TAG, (_, name: string) =>
-    (SAMPLE_CONTACT[name] ?? '').replace(/[&<>]/g, (c) => ESCAPES[c] ?? c),
+    (isSampleTag(name) ? SAMPLE_CONTACT[name] : '').replace(/[&<>]/g, (c) => ESCAPES[c] ?? c),
   )
 }
 

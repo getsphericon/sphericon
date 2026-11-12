@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
@@ -57,6 +58,6 @@ func TestSimultaneousTelegramSTOPCallbacksConsumeOneObservation(t *testing.T) {
 	stopped, err := unsubscribes.Get(t.Context(), r.Scope, channels.Telegram, fixtures.BindingLiamDestination, eligibility.SourceEverything)
 	require.NoError(t, err)
 	require.NotNil(t, stopped)
-	transitions := r.Scope.Event().Query().Where(event.Action(events.NameTelegramUnsubscribed), event.ContactID(fixtures.ContactLiamID)).CountX(t.Context())
+	transitions := r.Scope.Event().Query().Where(event.Action(systemevent.TelegramUnsubscribed), event.ContactID(fixtures.ContactLiamID)).CountX(t.Context())
 	assert.Equal(t, 1, transitions)
 }

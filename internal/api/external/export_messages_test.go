@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -81,7 +82,7 @@ func TestExportMessagesDeliversAnErasedDestinationAnonymized(t *testing.T) {
 
 func TestExportMessagesNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	for _, scopes := range [][]string{{}, {"contacts:read"}, {"contacts:read", "events:read", "audit:read"}} {
+	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsRead}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
 		_, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)

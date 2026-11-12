@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -19,7 +20,7 @@ import (
 func publishedTo(t *testing.T, env *testhelper.TestEnv, email string) int {
 	t.Helper()
 	n := 0
-	for _, ev := range env.QueuedEvents(t, events.NameContactCreated) {
+	for _, ev := range env.QueuedEvents(t, systemevent.ContactCreated) {
 		if p, _ := events.ProjectionOf(ev); p.Email == email {
 			n++
 		}

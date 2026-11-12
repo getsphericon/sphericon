@@ -17,9 +17,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -58,11 +59,11 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 			assert.Equal(t, []map[string]any{stepJob(t, env, runID, 0)}, queued, "the held step is asked again later")
 			route, err := env.OutboundModule().Route(ctx, env.DB.Scoped(fixtures.AcmeID), "sms", new(int64(account.Integration.ID)))
 			require.NoError(t, err)
-			assert.Equal(t, outboundmessages.HoldProviderRefused, route.Hold)
+			assert.Equal(t, holdreason.ProviderRefused, route.Hold)
 			attention := attentionOf(t, env)
 			_, named := itemAbout(attention, siteapi.SiteAttentionKindIntegrationProviderRefused, int64(account.Integration.ID))
 			assert.True(t, named, "the attention list names the Integration")
-			sentWhileHeld := env.QueuedCount(t, events.NameSmsSent, nil)
+			sentWhileHeld := env.QueuedCount(t, systemevent.SmsSent, nil)
 			assert.Zero(t, sentWhileHeld)
 
 			env.Twilio.AcceptSends()
@@ -71,7 +72,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 
 			done := env.DB.AutomationRun.GetX(ctx, runID)
 			assert.Equal(t, automationrun.StatusCompleted, done.Status)
-			sent := env.QueuedCount(t, events.NameSmsSent, nil)
+			sent := env.QueuedCount(t, systemevent.SmsSent, nil)
 			assert.Equal(t, 1, sent)
 		})
 	}
@@ -166,7 +167,7 @@ func TestATwilioRateSignalDefersTheStepAndItSendsLater(t *testing.T) {
 			assert.Equal(t, automationrun.StatusCompleted, done.Status)
 			inbox := env.Twilio.Messages()
 			assert.Equal(t, []string{fixtures.ContactTexterConfirmedPhone}, recipientsOf(inbox), "the text went once, after the backoff")
-			sent := env.QueuedCount(t, events.NameSmsSent, nil)
+			sent := env.QueuedCount(t, systemevent.SmsSent, nil)
 			assert.Equal(t, 1, sent)
 		})
 	}
@@ -202,7 +203,7 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 			assert.Empty(t, inbox, "a refusal of the number is not retried, though Twilio would accept it now")
 			suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(channels.SMS)).CountX(ctx)
 			assert.Zero(t, suppressed)
-			sent := env.QueuedCount(t, events.NameSmsSent, nil)
+			sent := env.QueuedCount(t, systemevent.SmsSent, nil)
 			assert.Zero(t, sent)
 		})
 	}

@@ -281,7 +281,7 @@ func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ ti
 		ch          channels.Channel
 		integration int64
 	}
-	holdOf := map[choice]string{}
+	holdOf := map[choice]holdreason.Reason{}
 	var items []Item
 	for _, a := range senders {
 		steps, err := automations.SendSteps(a.Edges.LiveVersion)
@@ -302,7 +302,7 @@ func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ ti
 				}
 				holdOf[key] = hold
 			}
-			reason := holdreason.Reason(hold)
+			reason := hold
 			if !slices.Contains(sourceHolds, reason) {
 				continue
 			}

@@ -17,8 +17,11 @@ export const Route = createFileRoute('/acceptance')({
   // root.
   beforeLoad: async ({ context, search }) => {
     const me = await requireUser(context.queryClient)
+    if (!isGated(me) && search.redirect) {
+      throw redirect({ href: search.redirect })
+    }
     if (!isGated(me)) {
-      throw redirect(search.redirect ? { href: search.redirect } : { to: rootRoute.to })
+      throw redirect({ to: rootRoute.to })
     }
   },
 })

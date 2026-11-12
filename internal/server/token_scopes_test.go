@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -19,7 +20,7 @@ import (
 func TestATokenWithoutTheScopeOfItsOperationAnswers403(t *testing.T) {
 	env := testhelper.Setup(t)
 	var got answer
-	reader := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsRead)), capture(&got))
+	reader := env.ExternalVia(t, env.ScopedBearer(t, apitokens.ScopeContactsRead), capture(&got))
 
 	_, err := reader.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress("scopeless@example.com"),
@@ -35,7 +36,7 @@ func TestATokenWithoutTheScopeOfItsOperationAnswers403(t *testing.T) {
 func TestATokenWithoutEveryScopeOfItsOperationAnswers403NamingThem(t *testing.T) {
 	env := testhelper.Setup(t)
 	var got answer
-	bare := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeTemplatesRead)), capture(&got))
+	bare := env.ExternalVia(t, env.ScopedBearer(t, apitokens.ScopeTemplatesRead), capture(&got))
 
 	_, err := bare.AutomationsDryRunHttpStep(t.Context(), &externalapi.DryRunHttpStepInput{
 		Body: `{}`, ContactId: externalapi.EntityId(fixtures.ContactAliceID),

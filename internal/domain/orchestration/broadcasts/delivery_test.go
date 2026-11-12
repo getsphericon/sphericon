@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -210,7 +209,7 @@ func TestRecipientIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, "no_integration", held.Reason)
+	assert.Equal(t, holdreason.NoIntegration, held.Reason)
 	assert.Empty(t, d.box.sent)
 	assert.True(t, d.pending(id))
 }
@@ -224,11 +223,11 @@ func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, holds.ReasonSuspended, held.Reason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, held.Reason)
 	assert.True(t, d.pending(id))
 	b := d.broadcastRow()
 	require.NotNil(t, b.HoldReason)
-	assert.EqualValues(t, holds.ReasonSuspended, *b.HoldReason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, *b.HoldReason)
 	assert.Equal(t, broadcast.StatusSending, b.Status, "a hold keeps the status")
 }
 

@@ -10,10 +10,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -80,8 +80,8 @@ func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T)
 
 	text := textOf(t, env, fixtures.ContactLacunaAdaPhone)
 	reportStatus(t, env, account, text, "undelivered", "30007")
-	onlyEnvelope(t, env, events.NameSmsUndelivered)
-	triggers := triggersOn(t, env, events.NameSmsUndelivered)
+	onlyEnvelope(t, env, systemevent.SmsUndelivered)
+	triggers := triggersOn(t, env, systemevent.SmsUndelivered)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
 
@@ -89,6 +89,6 @@ func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T)
 		Where(automationrun.AutomationID(fixtures.AutomationLacunaOnSmsUndeliveredID), automationrun.ContactID(fixtures.ContactLacunaAdaID)).
 		Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, events.NameSmsUndelivered, *run.EventAction)
+	assert.Equal(t, systemevent.SmsUndelivered, *run.EventAction)
 	assert.Equal(t, "30007", run.EventProperties["errorCode"])
 }

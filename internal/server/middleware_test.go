@@ -19,6 +19,7 @@ import (
 	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
 	"github.com/getsphericon/sphericon/internal/api/oauth"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/server"
@@ -125,7 +126,7 @@ func TestReadyzIsUnavailableWhenTheDatabaseCannotBePinged(t *testing.T) {
 func TestAnUndecodableBodyIsA400ProblemThatExplainsItself(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	rec := servePost(t, env, "/api/contacts", `{`, map[string]string{"Authorization": "Bearer " + env.ScopedBearer(t, "contacts:write")})
+	rec := servePost(t, env, "/api/contacts", `{`, map[string]string{"Authorization": "Bearer " + env.ScopedBearer(t, apitokens.ScopeContactsWrite)})
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))

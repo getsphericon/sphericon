@@ -10,6 +10,7 @@ import { siteAnalyticsEventsOptions } from '../../../generated/site/@tanstack/re
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as eventsRoute } from '../../../routes/workspaces/$workspaceId/analytics/events.tsx'
+import type { FieldColumn } from '../../../utils/tableColumns.ts'
 import { ReportBoundary } from './ReportBoundary.tsx'
 
 // EventsReportPage is the Events report: every action of the section's window with how often it
@@ -58,12 +59,12 @@ function EventsReport() {
           accessor: 'count',
           title: t(($) => $.analytics.events.count),
           textAlign: 'right',
-        },
+        } satisfies FieldColumn<(typeof actions)[number]>,
         {
           accessor: 'contacts',
           title: t(($) => $.analytics.events.contacts),
           textAlign: 'right',
-        },
+        } satisfies FieldColumn<(typeof actions)[number]>,
         {
           accessor: 'lastAt',
           title: t(($) => $.analytics.events.lastAt),

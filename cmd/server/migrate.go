@@ -20,11 +20,11 @@ func migrateCommand(env string) *cli.Command {
 		Name:  "migrate",
 		Usage: "apply pending migrations and exit",
 		Flags: []cli.Flag{
-			&cli.BoolFlag{Name: "status", Usage: "print the schema's state and the pending migrations; change nothing"},
-			&cli.BoolFlag{Name: "json", Usage: "with --status, print the schema state and the table of Majors as JSON (what `upgrade` reads)"},
+			&cli.BoolFlag{Name: flagStatus, Usage: "print the schema's state and the pending migrations; change nothing"},
+			&cli.BoolFlag{Name: flagJSON, Usage: "with --status, print the schema state and the table of Majors as JSON (what `upgrade` reads)"},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			status, asJSON := cmd.Bool("status"), cmd.Bool("json")
+			status, asJSON := cmd.Bool(flagStatus), cmd.Bool(flagJSON)
 			if cmd.Args().Present() || (asJSON && !status) {
 				return fmt.Errorf("unknown arguments %q (usage: migrate [--status [--json]])", cmd.Args().Slice())
 			}

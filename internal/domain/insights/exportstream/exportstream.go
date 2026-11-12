@@ -122,7 +122,7 @@ func Seek(after Cursor) func(*sql.Selector) {
 		// raw sql: a keyset row-value comparison (updated_at, id) >= (...); ent has no tuple
 		// comparison.
 		s.Where(sql.P(func(b *sql.Builder) {
-			b.WriteString("(" + s.C("updated_at") + ", " + s.C("id") + ") >= (")
+			b.WriteString("(" + s.C(columnUpdatedAt) + ", " + s.C(columnID) + ") >= (")
 			b.Arg(after.At)
 			b.Comma()
 			b.Arg(after.ID)
@@ -131,9 +131,16 @@ func Seek(after Cursor) func(*sql.Selector) {
 	}
 }
 
+// columnUpdatedAt and columnID are the columns every streamed table keys its position by: the
+// change time and the id ent gives every entity.
+const (
+	columnUpdatedAt = "updated_at"
+	columnID        = "id"
+)
+
 // Order is the order of a stream's query: oldest change first, ties by id.
 func Order(s *sql.Selector) {
-	s.OrderBy(sql.Asc(s.C("updated_at")), sql.Asc(s.C("id")))
+	s.OrderBy(sql.Asc(s.C(columnUpdatedAt)), sql.Asc(s.C(columnID)))
 }
 
 // Row is one line of a stream: a flat struct whose JSON is the TypeSpec row schema, and

@@ -13,11 +13,13 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqljson"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // Rate is a numerator over a denominator. Rate is nil when Denominator is zero.
@@ -82,19 +84,19 @@ func (m *Module) Rates(ctx context.Context, s *ent.Scoped, w Window) ([]DomainRa
 			}, extra...)
 			return s.Event().Query().Where(preds...).Count(ctx)
 		}
-		sent, err := count(events.NameEmailSent)
+		sent, err := count(systemevent.EmailSent)
 		if err != nil {
 			return nil, err
 		}
-		hard, err := count(events.NameEmailBounced, hardBounce())
+		hard, err := count(systemevent.EmailBounced, hardBounce())
 		if err != nil {
 			return nil, err
 		}
-		delivered, err := count(events.NameEmailDelivered)
+		delivered, err := count(systemevent.EmailDelivered)
 		if err != nil {
 			return nil, err
 		}
-		complaints, err := count(events.NameEmailComplained)
+		complaints, err := count(systemevent.EmailComplained)
 		if err != nil {
 			return nil, err
 		}
@@ -123,6 +125,6 @@ func onDomain(domain string) predicate.Event {
 
 func hardBounce() predicate.Event {
 	return func(s *sql.Selector) {
-		s.Where(sqljson.ValueEQ(event.FieldProperties, events.BounceKindHard, sqljson.Path("bounceKind")))
+		s.Where(sqljson.ValueEQ(event.FieldProperties, systemevent.BounceKindHard, sqljson.Path(systemevent.BounceKindProperty)))
 	}
 }

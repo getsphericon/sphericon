@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -17,8 +18,8 @@ func TestCollectRefusesReservedActions(t *testing.T) {
 	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{
 			{VisitorId: "v-1", Action: "page_view"},
-			{VisitorId: "v-1", Action: "email.opened"},
-			{VisitorId: "v-1", Action: "telegram.bound"},
+			{VisitorId: "v-1", Action: systemevent.EmailOpened},
+			{VisitorId: "v-1", Action: systemevent.TelegramBound},
 		},
 	})
 	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
@@ -33,7 +34,7 @@ func TestCollectRefusesSMSActions(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
-		Events: []collectapi.CollectEventInput{{VisitorId: "v-1", Action: "sms.received"}},
+		Events: []collectapi.CollectEventInput{{VisitorId: "v-1", Action: systemevent.SmsReceived}},
 	})
 	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "reserved")

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
@@ -73,8 +74,8 @@ func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 		return nil, err
 	}
 	diff := map[string]any{
-		"domain":             events.Became(domain),
-		membership.FieldRole: events.Became(string(joined.Role)),
+		joindomain.FieldDomain: events.Became(domain),
+		membership.FieldRole:   events.Became(string(joined.Role)),
 	}
 	system := events.Actor{Kind: events.ActorSystem}
 	if err := RecordActionOnUserIn(ctx, pub, system, u, events.ActionMembershipDomainJoin, diff, ws.ID); err != nil {

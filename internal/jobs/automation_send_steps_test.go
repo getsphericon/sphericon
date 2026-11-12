@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -25,7 +26,7 @@ import (
 // stepFigures is the Automation's report of its send steps, read through /api.
 func stepFigures(t *testing.T, env *testhelper.TestEnv, automationID int64) []externalapi.AutomationStepFigures {
 	t.Helper()
-	res, err := env.ExternalScoped(t, "automations:read").AutomationsReport(t.Context(), externalapi.AutomationsReportParams{ID: externalapi.EntityId(automationID)})
+	res, err := env.ExternalScoped(t, apitokens.ScopeAutomationsRead).AutomationsReport(t.Context(), externalapi.AutomationsReportParams{ID: externalapi.EntityId(automationID)})
 	require.NoError(t, err)
 	report := res
 	return report.Steps

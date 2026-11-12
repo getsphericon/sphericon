@@ -38,6 +38,7 @@ import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { daysFromNow } from '../../utils/datetime.ts'
 import { can } from '../../utils/permissions.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { ScopePicker } from './ScopePicker.tsx'
 
 // The lifetimes the mint form offers, in days; 'never' mints a token without an expiry.
@@ -68,7 +69,10 @@ function PersonalTokensTable({
       records={records}
       idAccessor="id"
       columns={[
-        { accessor: 'name', title: t(($) => $.settings.personalTokens.nameLabel) },
+        {
+          accessor: 'name',
+          title: t(($) => $.settings.personalTokens.nameLabel),
+        } satisfies FieldColumn<(typeof records)[number]>,
         {
           accessor: 'userName',
           title: t(($) => $.settings.personalTokens.user),

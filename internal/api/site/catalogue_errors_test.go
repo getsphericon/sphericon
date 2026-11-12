@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -24,13 +25,13 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 	missing := idStr(99999)
 
 	t.Run("create", func(t *testing.T) {
-		in := &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "contact.created"}
+		in := &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated}
 		_, err := c.SiteAutomationsCreate(ctx, in, siteapi.SiteAutomationsCreateParams{WorkspaceId: foreign})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 		before, err := env.DB.Automation.Query().Count(ctx)
 		require.NoError(t, err)
-		bad := &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "contact.created", Steps: []siteapi.SiteAutomationStep{
+		bad := &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated, Steps: []siteapi.SiteAutomationStep{
 			{Type: siteapi.SiteAutomationStepTypeApplyTag},
 		}}
 		_, err = c.SiteAutomationsCreate(ctx, bad, siteapi.SiteAutomationsCreateParams{WorkspaceId: acme})
@@ -213,7 +214,7 @@ func TestSiteWebhooksErrorBranches(t *testing.T) {
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	known := idStr(fixtures.WebhookCodebasicsID)
 	missing := idStr(99999)
-	events := []string{"contact.created"}
+	events := []string{systemevent.ContactCreated}
 
 	_, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "https://x.test/h", EventTypes: events}, siteapi.SiteWebhooksCreateParams{WorkspaceId: foreign})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)

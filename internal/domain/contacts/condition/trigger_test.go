@@ -103,11 +103,11 @@ func TestTriggerLeafFoldsIntoTheRestOfTheTree(t *testing.T) {
 
 	assert.True(t, triggerMatches(t, s, opsGroup(hit, annaRow), props, anna))
 	assert.False(t, triggerMatches(t, s, opsGroup(miss, annaRow), props, anna))
-	or := condition.Group{Kind: "group", Combinator: "or", Rules: marshal(miss, annaRow)}
+	or := condition.Group{Kind: "group", Combinator: condition.Or, Rules: marshal(miss, annaRow)}
 	assert.True(t, triggerMatches(t, s, or, props, anna))
-	not := condition.Group{Kind: "group", Combinator: "and", Not: true, Rules: marshal(miss)}
+	not := condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(miss)}
 	assert.True(t, triggerMatches(t, s, not, props, anna), "not of a false leaf holds")
-	notHit := condition.Group{Kind: "group", Combinator: "and", Not: true, Rules: marshal(hit)}
+	notHit := condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(hit)}
 	assert.False(t, triggerMatches(t, s, notHit, props, anna), "not of a true leaf holds for no one")
 	assert.True(t, triggerMatches(t, s, opsGroup(opsGroup(hit)), props, anna), "inside a nested group")
 }

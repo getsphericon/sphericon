@@ -1,0 +1,37 @@
+id: table-field-column-is-typed
+language: Tsx
+severity: error
+message: 'rule 6: a table column with no render names its field unchecked; fix: write it `{ accessor, title } satisfies FieldColumn<Record>` (src/utils/tableColumns.ts)'
+note: >-
+  DataTable takes any string as a column's accessor, so a column that shows a field as it is (no
+  render) with a misspelt accessor compiles and shows an empty column. Checked against the
+  record's type with `satisfies FieldColumn<Record>`, the misspelt field fails to compile; a column
+  with a render names its own accessor (actions, a nested path) and is not read.
+rule:
+  kind: object
+  inside:
+    kind: jsx_attribute
+    has:
+      kind: property_identifier
+      regex: ^columns$
+    stopBy: end
+  has:
+    kind: pair
+    has:
+      field: key
+      regex: ^accessor$
+  all:
+    - not:
+        has:
+          kind: pair
+          has:
+            field: key
+            regex: ^render$
+    - not:
+        inside:
+          kind: satisfies_expression
+          stopBy: neighbor
+files:
+  - 'src/**/*.tsx'
+ignores:
+  - 'src/generated/**'

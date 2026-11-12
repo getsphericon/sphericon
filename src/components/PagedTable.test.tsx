@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react'
 import { expect, test } from 'vitest'
 
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
+import type { FieldColumn } from '../utils/tableColumns.ts'
 import { PagedTable } from './PagedTable.tsx'
 
 interface Row {
@@ -51,7 +52,7 @@ async function renderTable(
       page={1}
       onPageChange={() => undefined}
       options={list.options}
-      columns={[{ accessor: 'id', title: 'Id' }]}
+      columns={[{ accessor: 'id', title: 'Id' } satisfies FieldColumn<Row>]}
       loadErrorTitle="Failed to load"
       collection="Rows"
       empty={empty}
@@ -135,7 +136,7 @@ test('a full-page list is its page header: the title, the actions, the toolbar a
       page={1}
       onPageChange={() => undefined}
       options={list.options}
-      columns={[{ accessor: 'id', title: 'Id' }]}
+      columns={[{ accessor: 'id', title: 'Id' } satisfies FieldColumn<Row>]}
       loadErrorTitle="Failed to load"
       collection="Rows"
       empty={{ title: 'No rows' }}

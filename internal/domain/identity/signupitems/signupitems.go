@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -45,24 +46,24 @@ var (
 	// ErrNotFound: no Sign-up item has this id.
 	ErrNotFound = validation.NotFound("signupitems: not found", i18n.ErrorsSignupItemNotFound)
 	// ErrKeyTaken: another item has the key.
-	ErrKeyTaken = validation.ConflictField("key", "signupitems: key taken", i18n.ErrorsSignupItemKeyTaken)
+	ErrKeyTaken = validation.ConflictField(fieldname.Key, "signupitems: key taken", i18n.ErrorsSignupItemKeyTaken)
 	// ErrTitleBlank: the title is blank once trimmed.
-	ErrTitleBlank = validation.RefuseField("title", "signupitems: title blank", i18n.ErrorsSignupItemTitleBlank)
+	ErrTitleBlank = validation.RefuseField(fieldname.Title, "signupitems: title blank", i18n.ErrorsSignupItemTitleBlank)
 	// ErrMailingsKind: only an optional consent can stand for consent to the operator's mailings.
-	ErrMailingsKind = validation.RefuseField("mailingsConsent", "signupitems: mailings consent on another kind", i18n.ErrorsSignupItemMailingsKind)
+	ErrMailingsKind = validation.RefuseField(fieldname.MailingsConsent, "signupitems: mailings consent on another kind", i18n.ErrorsSignupItemMailingsKind)
 	// ErrMailingsTaken: another item stands for consent to the operator's mailings.
-	ErrMailingsTaken = validation.ConflictField("mailingsConsent", "signupitems: mailings consent taken", i18n.ErrorsSignupItemMailingsTaken)
+	ErrMailingsTaken = validation.ConflictField(fieldname.MailingsConsent, "signupitems: mailings consent taken", i18n.ErrorsSignupItemMailingsTaken)
 	// ErrNoDraft: the item has no draft to publish.
 	ErrNoDraft = validation.Refuse("signupitems: no draft", i18n.ErrorsLegalDocumentNoDraft)
 	// ErrLabelTaken: the item already has a version with the label.
-	ErrLabelTaken = validation.ConflictField("label", "signupitems: label taken", i18n.ErrorsLegalDocumentLabelTaken)
+	ErrLabelTaken = validation.ConflictField(fieldname.Label, "signupitems: label taken", i18n.ErrorsLegalDocumentLabelTaken)
 	// ErrDocumentNotFound: no item in effect has this key, or it has no published version.
 	ErrDocumentNotFound = validation.NotFound("signupitems: no legal document", i18n.ErrorsLegalDocumentNotFound)
 	// ErrDeleteMailings: the item that stands for consent to the operator's mailings is unmarked
 	// before it is deleted, so the mark can move to another item.
-	ErrDeleteMailings = validation.RefuseField("mailingsConsent", "signupitems: deleting the mailings consent", i18n.ErrorsSignupItemDeleteMailings)
+	ErrDeleteMailings = validation.RefuseField(fieldname.MailingsConsent, "signupitems: deleting the mailings consent", i18n.ErrorsSignupItemDeleteMailings)
 	// ErrOrder: a new order that is not the id of every item in use exactly once.
-	ErrOrder = validation.RefuseField("ids", "signupitems: order not every item once", i18n.ErrorsSignupItemOrder)
+	ErrOrder = validation.RefuseField(fieldname.IDs, "signupitems: order not every item once", i18n.ErrorsSignupItemOrder)
 )
 
 // constraints are the unique constraints of the Sign-up items and their Legal documents (ADR 0106).
@@ -166,15 +167,15 @@ func checkedTitle(raw string) (string, error) {
 	if title == "" {
 		return "", ErrTitleBlank
 	}
-	return title, validation.Length("title", title, bounds.SignupItemTitleMinLength, bounds.SignupItemTitleMaxLength)
+	return title, validation.Length(fieldname.Title, title, bounds.SignupItemTitleMinLength, bounds.SignupItemTitleMaxLength)
 }
 
 // checkKey refuses a key outside the contract's length and pattern.
 func checkKey(key string) error {
-	if err := validation.Length("key", key, bounds.SignupItemKeyMinLength, bounds.SignupItemKeyMaxLength); err != nil {
+	if err := validation.Length(fieldname.Key, key, bounds.SignupItemKeyMinLength, bounds.SignupItemKeyMaxLength); err != nil {
 		return err
 	}
-	return validation.Pattern("key", key, bounds.SignupItemKeyPattern)
+	return validation.Pattern(fieldname.Key, key, bounds.SignupItemKeyPattern)
 }
 
 // LockKey is the advisory lock of the Instance's Sign-up items, taken by every write that reads
@@ -510,7 +511,7 @@ func mailingsKind(kind signupitem.Kind, on bool) error {
 // SaveDraft replaces the draft of the item's Legal document. A visitor sees nothing of it until it
 // is published. ErrNotFound for an unknown or a deleted id.
 func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item, error) {
-	if err := validation.MaxLength("markdown", markdown, bounds.LegalDocumentMarkdownMaxLength); err != nil {
+	if err := validation.MaxLength(fieldname.Markdown, markdown, bounds.LegalDocumentMarkdownMaxLength); err != nil {
 		return Item{}, err
 	}
 	if _, err := m.inUse(ctx, id); err != nil {
@@ -534,7 +535,7 @@ func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item
 // unknown or a deleted id, ErrNoDraft for an item without a draft, ErrLabelTaken for a label the
 // item has.
 func (m *Module) Publish(ctx context.Context, id int64, label string, staffID int64) (Item, error) {
-	if err := validation.Length("label", label, bounds.LegalDocumentLabelMinLength, bounds.LegalDocumentLabelMaxLength); err != nil {
+	if err := validation.Length(fieldname.Label, label, bounds.LegalDocumentLabelMinLength, bounds.LegalDocumentLabelMaxLength); err != nil {
 		return Item{}, err
 	}
 	row, err := m.ent.SignupItem.Query().Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).WithDraft().Only(ctx)

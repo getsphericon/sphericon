@@ -274,12 +274,26 @@ func hashSecret(secret string) string {
 }
 
 // The refusals of a registration's redirect URIs (RFC 7591 invalid_redirect_uri).
+
+// The OAuth words of the one client kind this server registers (ADR 0016): a public client, which
+// authenticates at the token endpoint with nothing (AuthMethodNone), takes the authorization code
+// (ResponseTypeCode) and proves it with PKCE's S256 (PKCEMethodS256).
+const (
+	AuthMethodNone   = "none"
+	ResponseTypeCode = "code"
+	PKCEMethodS256   = "S256"
+)
+
+// fieldRedirectURIs is the client metadata field of the redirect URIs (RFC 7591): the dynamic
+// registration is OAuth's endpoint, outside the contract, so its field names are the RFC's.
+const fieldRedirectURIs = "redirect_uris"
+
 var (
 	// ErrRedirectURIsCount is a registration with no redirect URI or more than MaxRedirectURIs.
-	ErrRedirectURIsCount = validation.RefuseField("redirect_uris", "oauthclients: wrong number of redirect URIs",
+	ErrRedirectURIsCount = validation.RefuseField(fieldRedirectURIs, "oauthclients: wrong number of redirect URIs",
 		i18n.ErrorsOauthRedirectUrisCount)
 	// ErrRedirectURIInvalid is a redirect URI ValidRedirectURI refuses.
-	ErrRedirectURIInvalid = validation.RefuseField("redirect_uris", "oauthclients: invalid redirect URI",
+	ErrRedirectURIInvalid = validation.RefuseField(fieldRedirectURIs, "oauthclients: invalid redirect URI",
 		i18n.ErrorsOauthRedirectUriInvalid)
 )
 

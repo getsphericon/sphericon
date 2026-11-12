@@ -1,0 +1,32 @@
+id: token-scope-is-a-constant
+snapshots:
+  "func TestReads(t *testing.T) {\n\tbearer := env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeContactsRead, \"events:read\")\n\t_ = bearer\n}\n":
+    labels:
+      - source: >-
+          env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeContactsRead,
+          "events:read")
+        style: primary
+        start: 42
+        end: 127
+      - source: '"events:read"'
+        style: secondary
+        start: 113
+        end: 126
+      - source: (t, fixtures.GlobexID, apitokens.ScopeContactsRead, "events:read")
+        style: secondary
+        start: 61
+        end: 127
+  "func TestReads(t *testing.T) {\n\tc := env.ExternalScoped(t, \"contacts:read\")\n\t_ = c\n}\n":
+    labels:
+      - source: env.ExternalScoped(t, "contacts:read")
+        style: primary
+        start: 37
+        end: 75
+      - source: '"contacts:read"'
+        style: secondary
+        start: 59
+        end: 74
+      - source: (t, "contacts:read")
+        style: secondary
+        start: 55
+        end: 75

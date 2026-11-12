@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -75,7 +76,7 @@ func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, con
 }
 
 // ErrMalformedRegionalFormat refuses a Regional format that is not a well-formed BCP 47 tag.
-var ErrMalformedRegionalFormat = validation.RefuseField("regionalFormat", "users: malformed regional format", i18n.ErrorsRegionalFormatMalformed)
+var ErrMalformedRegionalFormat = validation.RefuseField(fieldname.RegionalFormat, "users: malformed regional format", i18n.ErrorsRegionalFormatMalformed)
 
 // canonicalRegionalFormat is the Regional format tag in its canonical spelling (`de-de` is
 // `de-DE`), or ErrMalformedRegionalFormat when it is not a well-formed BCP 47 tag. The tag is not
@@ -162,8 +163,8 @@ type Form struct {
 // name and the address again.
 func CheckForm(name, email, password string) (Form, error) {
 	name, nameErr := validation.UserName(name)
-	email, emailErr := validation.AccountEmail(validation.FieldEmail, email)
-	err := validation.Fields(nameErr, emailErr, validation.Password(validation.FieldPassword, password))
+	email, emailErr := validation.AccountEmail(fieldname.Email, email)
+	err := validation.Fields(nameErr, emailErr, validation.Password(fieldname.Password, password))
 	return Form{Name: name, Email: email, Password: password}, err
 }
 
@@ -173,7 +174,7 @@ func (n NewUser) checked() (NewUser, error) {
 	if n.Name, err = validation.UserName(n.Name); err != nil {
 		return n, err
 	}
-	n.Email, err = validation.AccountEmail(validation.FieldEmail, n.Email)
+	n.Email, err = validation.AccountEmail(fieldname.Email, n.Email)
 	return n, err
 }
 
@@ -298,7 +299,7 @@ func proveEmailIn(ctx context.Context, tx *ent.Client, id int64, at time.Time) (
 var ErrAlreadyVerified = errors.New("users: the email is already verified")
 
 // ErrEmailTaken is an address that belongs to a User already: users_email_key refuses a second.
-var ErrEmailTaken = validation.ConflictField(validation.FieldEmail, "users: the address belongs to a user", i18n.ErrorsEmailExists)
+var ErrEmailTaken = validation.ConflictField(fieldname.Email, "users: the address belongs to a user", i18n.ErrorsEmailExists)
 
 // constraints are the unique constraints of the Users, their Linked identities and the pending
 // sign-ups (ADR 0106).
@@ -515,7 +516,7 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 // (ADR 0051) in the same transaction. It returns the saved User; an address taken meanwhile is
 // ErrEmailTaken.
 func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*ent.User, error) {
-	newEmail, err := validation.AccountEmail(validation.FieldNewEmail, newEmail)
+	newEmail, err := validation.AccountEmail(fieldname.NewEmail, newEmail)
 	if err != nil {
 		return nil, err
 	}

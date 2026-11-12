@@ -48,7 +48,8 @@ export function SigninPendingPage() {
 
   const submitMutation = useMutation({
     ...siteAuthSigninPendingSubmitMutation(),
-    onSuccess: async () => navigate(redirect ? { href: redirect } : { to: indexRoute.to }),
+    onSuccess: async () =>
+      redirect ? navigate({ href: redirect }) : navigate({ to: indexRoute.to }),
     onError: (error) => {
       // An expired sign-up says so on the page; a refused box shows under it.
       if (isGone(error) || !form.showFieldErrors(error)) {

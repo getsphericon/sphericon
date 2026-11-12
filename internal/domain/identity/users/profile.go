@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -104,17 +105,17 @@ func (a *Module) ProveIdentity(ctx context.Context, u *ent.User, proof IdentityP
 }
 
 // ErrCurrentPasswordRequired refuses a new password sent without the current one.
-var ErrCurrentPasswordRequired = validation.RefuseField("currentPassword", "users: the current password is required",
+var ErrCurrentPasswordRequired = validation.RefuseField(fieldname.CurrentPassword, "users: the current password is required",
 	i18n.ErrorsCurrentPasswordRequired)
 
 // ErrNewEmailSame refuses an email change to the address the User already has.
-var ErrNewEmailSame = validation.RefuseField("newEmail", "users: the new email is the current one", i18n.ErrorsNewEmailMustDiffer)
+var ErrNewEmailSame = validation.RefuseField(fieldname.NewEmail, "users: the new email is the current one", i18n.ErrorsNewEmailMustDiffer)
 
 // NewEmailFor is the address the User u asks to change their login email to, typed as it was: in
 // its Email case, refused as a *validation.FieldsError when it is no address
 // (validation.AccountEmail), and ErrNewEmailSame when it is the User's own.
 func NewEmailFor(u *ent.User, typed string) (string, error) {
-	email, err := validation.AccountEmail(validation.FieldNewEmail, typed)
+	email, err := validation.AccountEmail(fieldname.NewEmail, typed)
 	if err != nil {
 		return "", validation.Fields(err)
 	}
@@ -181,7 +182,7 @@ func (a *Module) changeProfile(ctx context.Context, u *ent.User, c ProfileChange
 		w.RegionalFormat = &tag
 	}
 	if c.NewPassword != "" {
-		if err := validation.Fields(validation.Password(validation.FieldNewPassword, c.NewPassword)); err != nil {
+		if err := validation.Fields(validation.Password(fieldname.NewPassword, c.NewPassword)); err != nil {
 			return ProfileChanged{}, err
 		}
 		if c.CurrentPassword == "" {

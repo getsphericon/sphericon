@@ -1,0 +1,24 @@
+id: refused-field-is-a-constant
+language: Go
+severity: error
+message: 'rule 6: a refusal names its field by a string literal; fix: name it by its constant in internal/kernel/fieldname (generated from the contract), or by a named constant of the module when no request field holds it'
+note: >-
+  A refusal of a field is reported under the json name of the request field (validation.RefuseField
+  and the checks that take a field), and the app shows it under the field of that name. The names
+  are the contract's, generated into internal/kernel/fieldname, so a misspelt or renamed field fails
+  to compile instead of losing its error. A refusal about something no request field holds (the
+  addressed member, an RFC's field) names it by a constant of the module that refuses.
+rule:
+  pattern:
+    context: 'func _() { validation.$CHECK($FIELD, $$$REST) }'
+    selector: call_expression
+constraints:
+  CHECK:
+    regex: ^(RefuseField|ConflictField|Email|AccountEmail|Password|Length|MaxLength|Range|Items|Pattern)$
+  FIELD:
+    regex: ^["`]
+files:
+  - '**/*.go'
+ignores:
+  - ent/**
+  - gen/**

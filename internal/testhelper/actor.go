@@ -10,6 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	gptoken "github.com/go-pkgz/auth/v2/token"
+	"github.com/golang-jwt/jwt/v5"
+	ht "github.com/ogen-go/ogen/http"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
@@ -22,12 +27,9 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
-	gptoken "github.com/go-pkgz/auth/v2/token"
-	"github.com/golang-jwt/jwt/v5"
-	ht "github.com/ogen-go/ogen/http"
-	"github.com/stretchr/testify/require"
 )
 
 // An actor is a ready typed client for one API surface acting as one identity.
@@ -82,28 +84,28 @@ func (env *TestEnv) ExternalAnchor(t *testing.T) *externalapi.Client {
 
 // ExternalScoped returns an /api client bearing a fresh Acme token that has
 // exactly the given scopes, created through the production token code.
-func (env *TestEnv) ExternalScoped(t *testing.T, scopes ...string) *externalapi.Client {
+func (env *TestEnv) ExternalScoped(t *testing.T, scopes ...apitokens.Scope) *externalapi.Client {
 	t.Helper()
 	return env.ExternalWithToken(t, env.ScopedBearer(t, scopes...))
 }
 
 // ScopedBearer returns the raw bearer value of a fresh Acme token that has
 // exactly the given scopes, for tests that must speak raw HTTP or MCP.
-func (env *TestEnv) ScopedBearer(t *testing.T, scopes ...string) string {
+func (env *TestEnv) ScopedBearer(t *testing.T, scopes ...apitokens.Scope) string {
 	t.Helper()
 	return env.ScopedBearerFor(t, fixtures.AcmeID, scopes...)
 }
 
 // ScopedBearerFor is ScopedBearer for another fixture Workspace (tenant-isolation
 // tests, e.g. fixtures.GlobexID).
-func (env *TestEnv) ScopedBearerFor(t *testing.T, workspaceID int64, scopes ...string) string {
+func (env *TestEnv) ScopedBearerFor(t *testing.T, workspaceID int64, scopes ...apitokens.Scope) string {
 	t.Helper()
 	prefix := credentials.GenerateTokenPrefix()
 	secret := credentials.GenerateTokenSecret()
 	// test writes: a token of exactly the scopes the caller names, through the production hash
 	// (internal/AGENTS.md, Actors): no fixture can hold every scope set a test asks for.
 	_, err := env.DB.ApiToken.Create().
-		SetName("actor-token").SetPrefix(prefix).SetSecretHash(credentials.HashSecret(secret)).SetScopes(scopes).
+		SetName("actor-token").SetPrefix(prefix).SetSecretHash(credentials.HashSecret(secret)).SetScopes(scopeStrings(scopes)).
 		SetWorkspaceID(workspaceID).
 		Save(t.Context())
 	require.NoError(t, err)
@@ -505,4 +507,13 @@ func IntegrationRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id
 	}
 	require.NoError(tb, err)
 	return v.Revision
+}
+
+// scopeStrings is the scopes as the token row stores them.
+func scopeStrings(scopes []apitokens.Scope) []string {
+	out := make([]string, len(scopes))
+	for i, s := range scopes {
+		out[i] = string(s)
+	}
+	return out
 }

@@ -14,4 +14,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	if err := scopegen.FieldNames.Write(); err != nil {
+		log.Fatal(err)
+	}
 }

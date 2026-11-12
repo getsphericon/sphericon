@@ -10,12 +10,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // ErrInvalidEmail means the address of a Privacy request is not a plain email address.
-var ErrInvalidEmail = validation.RefuseField("email", "erasure: invalid email address", i18n.ErrorsPrivacyEmailInvalid)
+var ErrInvalidEmail = validation.RefuseField(fieldname.Email, "erasure: invalid email address", i18n.ErrorsPrivacyEmailInvalid)
 
 // Holdings is what a Workspace holds for one email address, as counts (a Privacy
 // request lookup). Nothing held is the zero value.
@@ -33,7 +34,7 @@ type Holdings struct {
 // refuses anything the rule of a stored address refuses (validation.Email: no display name, no
 // list) with ErrInvalidEmail. Lookup and Erase both read an address through it.
 func normalizeEmail(raw string) (string, error) {
-	email, err := validation.Email(validation.FieldEmail, raw)
+	email, err := validation.Email(fieldname.Email, raw)
 	if err != nil {
 		return "", ErrInvalidEmail
 	}

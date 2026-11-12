@@ -11,9 +11,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,7 +23,7 @@ import (
 func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 
 	send := func() error {
 		_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
@@ -48,7 +49,7 @@ func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	tmpl := variablesTemplate(env.DB)
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
@@ -56,7 +57,7 @@ func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 		TemplateId: templateID(tmpl), Destination: "held@example.com",
 	}, externalapi.EmailsSendParams{})
 	held := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
-	assert.Equal(t, "the message was not sent: "+outboundmessages.Detail(holds.ReasonSuspended), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), held.Detail.Value)
 	assert.Empty(t, env.CustomerMail.Messages())
 	n, err := env.DB.OutboundMessage.Query().Where(outboundmessage.Destination("held@example.com")).Count(ctx)
 	require.NoError(t, err)

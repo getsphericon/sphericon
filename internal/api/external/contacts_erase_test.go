@@ -22,14 +22,15 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // initechClient is an /api client for the Initech Workspace, the tenant that holds the
 // fixture Contact carrying every dependent row (ContactErasable).
-func initechClient(t *testing.T, env *testhelper.TestEnv, scopes ...string) *externalapi.Client {
+func initechClient(t *testing.T, env *testhelper.TestEnv, scopes ...apitokens.Scope) *externalapi.Client {
 	t.Helper()
 	return env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
 }
@@ -217,14 +218,18 @@ func TestExternalContactsEraseDoesNotMoveRatesOrMetering(t *testing.T) {
 	}
 
 	ratesBefore, countsBefore := ratesOf(), countsOf()
-	assert.Equal(t, 2, countsBefore["email.sent"])
+	assert.Equal(t, 2, countsBefore[systemevent.EmailSent])
 
 	err := c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
 	require.NoError(t, err)
 
 	assert.Equal(t, ratesBefore, ratesOf(), "complaint and bounce rates")
 	countsAfter := countsOf()
-	for _, action := range []string{"email.sent", "email.opened", "email.clicked", "email.delivered", "email.delayed", "email.dropped", "email.bounced", "email.complained", "email.unsubscribed", "contact.created"} {
+	for _, action := range []string{
+		systemevent.EmailSent, systemevent.EmailOpened, systemevent.EmailClicked, systemevent.EmailDelivered, systemevent.EmailDelayed,
+		systemevent.EmailDropped, systemevent.EmailBounced, systemevent.EmailComplained, systemevent.EmailUnsubscribed,
+		systemevent.ContactCreated,
+	} {
 		assert.Equalf(t, countsBefore[action], countsAfter[action], "%s count", action)
 	}
 }
@@ -277,7 +282,7 @@ func TestExternalContactsEraseIsWorkspaceScoped(t *testing.T) {
 	ctx := context.Background()
 
 	// An Acme token cannot erase an Initech Contact: it does not exist for Acme.
-	err := env.ExternalScoped(t, "contacts:erase").ContactsDelete(ctx,
+	err := env.ExternalScoped(t, apitokens.ScopeContactsErase).ContactsDelete(ctx,
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
@@ -314,7 +319,7 @@ func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 
 	eraseErasable(t, env)
 
-	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
+	envelopes := env.QueuedEnvelopes(t, systemevent.ContactErased)
 	require.Len(t, envelopes, 1, "once per Erasure")
 	assert.EqualValues(t, fixtures.InitechID, envelopes[0].WorkspaceID)
 
@@ -328,7 +333,7 @@ func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 	assert.NotContains(t, data, "phone")
 
 	// The stored Event holds no PII and no Contact reference.
-	stored, err := env.DB.Event.Query().Where(event.Action(events.NameContactErased)).Only(ctx)
+	stored, err := env.DB.Event.Query().Where(event.Action(systemevent.ContactErased)).Only(ctx)
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.InitechID, stored.WorkspaceID)
 	assert.Nil(t, stored.ContactID)
@@ -350,7 +355,7 @@ func TestExternalContactsEraseFallsBackToTheContactID(t *testing.T) {
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactBystanderID)})
 	require.NoError(t, err)
 
-	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
+	envelopes := env.QueuedEnvelopes(t, systemevent.ContactErased)
 	require.Len(t, envelopes, 1)
 	var data map[string]any
 	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
@@ -361,8 +366,8 @@ func TestExternalContactsEraseFallsBackToTheContactID(t *testing.T) {
 func TestExternalContactsEraseRefusedEmitsNoContactErased(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := env.ExternalScoped(t, "contacts:erase").ContactsDelete(context.Background(),
+	err := env.ExternalScoped(t, apitokens.ScopeContactsErase).ContactsDelete(context.Background(),
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	assert.Empty(t, env.QueuedEnvelopes(t, events.NameContactErased))
+	assert.Empty(t, env.QueuedEnvelopes(t, systemevent.ContactErased))
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // EventConsumers are the Edition's consumers of the domain events (ADR 0101): the Audit log's and
@@ -37,7 +38,7 @@ func EventConsumers() []events.Consumer {
 			},
 		},
 		{
-			Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == events.NameContactErased },
+			Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == systemevent.ContactErased },
 			Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
 				return ErasureEventArgs{events.EventJob{Envelope: env}}
 			},

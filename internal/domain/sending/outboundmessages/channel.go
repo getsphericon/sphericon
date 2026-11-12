@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 )
 
 // Content is a Message content value (GLOSSARY, ADR 0078): what one message on one Channel says,
@@ -63,7 +64,7 @@ type Adapter interface {
 	DeliversOutside() bool
 	// prepare runs the Channel's own checks of a send of content through the adapter, before
 	// anything is claimed: hold says why it cannot go now, else as is who it goes out as.
-	prepare(ctx context.Context, s *ent.Scoped, content Content) (as sendAs, hold string, err error)
+	prepare(ctx context.Context, s *ent.Scoped, content Content) (as sendAs, hold holdreason.Reason, err error)
 	// send hands one message its Channel's renderer made to the provider, for one target. An error
 	// wrapping a holdError holds the send.
 	send(ctx context.Context, as sendAs, msg any, to target, origin messaging.Origin) (messaging.Receipt, error)
@@ -98,12 +99,12 @@ type sentFact struct {
 
 // holdError is a provider adapter's word that the send cannot go now for a reason that clears by
 // itself (a Hold): nothing left, the claim is dropped and the same Request runs again later.
-type holdError struct{ reason string }
+type holdError struct{ reason holdreason.Reason }
 
-func (e holdError) Error() string { return "outbound: held: " + e.reason }
+func (e holdError) Error() string { return "outbound: held: " + string(e.reason) }
 
 // heldBy is the Hold reason err carries, "" when it carries none.
-func heldBy(err error) string {
+func heldBy(err error) holdreason.Reason {
 	if h, ok := errors.AsType[holdError](err); ok {
 		return h.reason
 	}

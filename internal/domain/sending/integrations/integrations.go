@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -46,7 +47,7 @@ const fieldPreset = "preset"
 const detailKey = "Detail"
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
-var ErrDefaultConflict = validation.ConflictField("isDefault", "a default provider already exists for this channel", i18n.ErrorsIntegrationDefaultConflict)
+var ErrDefaultConflict = validation.ConflictField(fieldname.IsDefault, "a default provider already exists for this channel", i18n.ErrorsIntegrationDefaultConflict)
 
 // ErrNotFound means there is no such Integration in this Workspace.
 var ErrNotFound = validation.NotFound("integrations: integration not found", i18n.ErrorsIntegrationNotFound)
@@ -249,18 +250,18 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 	case providers.SES:
 		if presetName == nil {
 			presetName = new(string)
-			*presetName = "ses"
+			*presetName = preset.BuiltinSES
 		}
 	case providers.SMTP, providers.Inbox:
 		// The Preset the caller named, if any.
 	case providers.Telegram:
 		presetName, params = new(string), telegramParams()
-		*presetName = TelegramPreset
+		*presetName = preset.BuiltinTelegram
 		providerPerSecond = new(int)
 		*providerPerSecond = telegramPerSecond
 	case providers.Twilio:
 		presetName = new(string)
-		*presetName = TwilioPreset
+		*presetName = preset.BuiltinTwilio
 	}
 	inb, err := m.sealInbound(nil, inboundChange{preset: patch.FromPtr(presetName), params: params})
 	if err != nil {
@@ -519,10 +520,10 @@ func requireProviderLimit(endpoint string, perSecond, perDay *int) error {
 	}
 	var missing []error
 	if perSecond == nil {
-		missing = append(missing, ErrProviderLimitRequired.On(validation.FieldMaxPerSecond))
+		missing = append(missing, ErrProviderLimitRequired.On(fieldname.MaxPerSecond))
 	}
 	if perDay == nil {
-		missing = append(missing, ErrProviderLimitRequired.On(validation.FieldMaxPerDay))
+		missing = append(missing, ErrProviderLimitRequired.On(fieldname.MaxPerDay))
 	}
 	return validation.Fields(missing...)
 }
@@ -535,11 +536,11 @@ var ErrProviderLimitRequired = validation.Refuse("integrations: the provider lim
 func checkProviderLimit(perSecond, perDay *int) error {
 	var refusals []error
 	if perSecond != nil {
-		refusals = append(refusals, validation.Range(validation.FieldMaxPerSecond, *perSecond,
+		refusals = append(refusals, validation.Range(fieldname.MaxPerSecond, *perSecond,
 			bounds.MaxPerSecondMin, bounds.MaxPerSecondMax))
 	}
 	if perDay != nil {
-		refusals = append(refusals, validation.Range(validation.FieldMaxPerDay, *perDay,
+		refusals = append(refusals, validation.Range(fieldname.MaxPerDay, *perDay,
 			bounds.MaxPerDayMin, bounds.MaxPerDayMax))
 	}
 	return validation.Fields(refusals...)

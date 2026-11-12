@@ -28,7 +28,10 @@ openapi/site (`x-grant-permissions` on each grantable scope enum, from `@grantab
 openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/domain/identity/memberships/permissions_gen.go (`Permission` and its `Perm…` constants)
 openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/domain/identity/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary)
 openapi/service (`ServiceScope` enum) ──cmd/scopegen──▶ ee/domain/identity/servicecredentials/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary, so the Service credentials module never imports gen/service)
-openapi/site (`GrantableScope`, `SendScope`, `SetupScope`, `PersonalScope` enums) ──cmd/scopegen──▶ internal/kernel/tokenscope/user_scopes_gen.go (each type, its constants and its list, so a core package never imports gen/site for them); the files are `scopegen.Tables`
+openapi/site (`GrantableScope`, `SendScope`, `SetupScope`, `PersonalScope` enums) ──cmd/scopegen──▶ internal/kernel/tokenscope/user_scopes_gen.go (each type, its constants and its list, so a core package never imports gen/site for them)
+openapi/* (the request fields: every request body's properties and every operation's parameters) ──cmd/scopegen──▶ internal/kernel/fieldname/fieldnames_gen.go (a constant per json name, which a refusal of a field is reported under; ast-grep `refused-field-is-a-constant`)
+openapi/{site,staff} (`x-rate-limit` per operation, from `@rateLimited`) ──cmd/scopegen──▶ internal/infra/ratelimit/{site,staff}_limits_gen.go (the ServeMux pattern of each limited operation and its `RouteLimit`)
+openapi/site (`SystemEventAction` enum) ──cmd/scopegen──▶ internal/kernel/systemevent/actions_gen.go (an untyped constant per System event action and the `Actions` list, which the bus registry and the ent schema's retention predicate name); the files are `scopegen.Tables`
 openapi/{site,external,service,collect} (the value bounds `boundgen.Bounds` lists: lengths, ranges, item counts, patterns, defaults) ──cmd/boundgen──▶ internal/kernel/bounds/bounds_gen.go (a constant per bound and the owner that checks it, ADR 0107) and packages/analytics/src/bounds.gen.ts (the bounds the tracker owns, which cannot import zod)
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 internal/kernel/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/kernel/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)
@@ -101,6 +104,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   | `@requiresServiceScopes(#[ServiceScope.…])`                                | `x-required-scopes`      | `service/resources/identity.tsp` |
   | `@grantable` on an enum, `@grantedWith(Permission.…)` on a member          | `x-grant-permissions`    | `common/scopes.tsp`              |
   | `@allowedWhileWithheld`, `@allowedWhileAcceptancePending`                  | `x-allowed-while-…`      | `lib/main.tsp`                   |
+  | `@rateLimited("login" \| "forgot_password" \| "human")` on an operation    | `x-rate-limit`           | `lib/main.tsp`                   |
   | `@untrusted`                                                               | `x-untrusted`            | `lib/main.tsp`                   |
   | `@mcp(#{ hidden?, name?, send? })`                                         | `x-mcp`                  | `lib/main.tsp`                   |
   | `@everyOperationDeclares("scopes" \| "workspacePermissions")` on a surface | (a check)                | `lib/main.tsp`                   |

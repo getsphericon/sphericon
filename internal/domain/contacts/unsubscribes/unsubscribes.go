@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -27,9 +28,9 @@ import (
 
 var (
 	// ErrDestinationEmpty: the destination is blank after normalization.
-	ErrDestinationEmpty = validation.RefuseField("destination", "consent: destination must not be empty", i18n.ErrorsDestinationEmpty)
+	ErrDestinationEmpty = validation.RefuseField(fieldname.Destination, "consent: destination must not be empty", i18n.ErrorsDestinationEmpty)
 	// ErrDestinationInvalid: the destination is not what the Channel's Destinations are.
-	ErrDestinationInvalid = validation.RefuseField("destination", "consent: destination is not valid for the channel",
+	ErrDestinationInvalid = validation.RefuseField(fieldname.Destination, "consent: destination is not valid for the channel",
 		i18n.ErrorsDestinationInvalid)
 )
 
@@ -45,7 +46,7 @@ func Destination(channel channels.Channel, raw string) (string, error) {
 		if emailcase.Of(raw) == "" {
 			return "", ErrDestinationEmpty
 		}
-		address, err := validation.Email("destination", raw)
+		address, err := validation.Email(fieldname.Destination, raw)
 		if err != nil {
 			return "", ErrDestinationInvalid
 		}
@@ -56,7 +57,7 @@ func Destination(channel channels.Channel, raw string) (string, error) {
 	if dest == "" {
 		return "", ErrDestinationEmpty
 	}
-	if !suppressions.ValidDestination(string(channel), dest) {
+	if !suppressions.ValidDestination(channel, dest) {
 		return "", ErrDestinationInvalid
 	}
 	return dest, nil

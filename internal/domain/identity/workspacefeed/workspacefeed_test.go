@@ -19,7 +19,7 @@ import (
 // refuses such a change, so every path goes through a transaction.
 func TestPlainClientRefusesAChangeToTheFeed(t *testing.T) {
 	testhelper.Setup(t) // loads the schema into the real database once
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	pool, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)

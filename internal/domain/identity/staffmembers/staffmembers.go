@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -45,7 +46,7 @@ var (
 	// Staff member can sign in and none is created.
 	ErrSignInOff = validation.Conflict("staff: sign-in is off without SPHERICON_STAFF_JWT_SECRET", i18n.ErrorsStaffSignInOff)
 	// ErrDuplicate: a Staff member with this email exists.
-	ErrDuplicate = validation.ConflictField("email", "staff: email already in use", i18n.ErrorsEmailExists)
+	ErrDuplicate = validation.ConflictField(fieldname.Email, "staff: email already in use", i18n.ErrorsEmailExists)
 	// ErrNotFound: no Staff member has this email.
 	ErrNotFound = validation.NotFound("staff: not found", i18n.ErrorsStaffNotFound)
 )
@@ -139,7 +140,7 @@ func (m *Module) Create(ctx context.Context, email string) (password string, err
 	if m.sessions == nil {
 		return "", ErrSignInOff
 	}
-	if email, err = validation.AccountEmail(validation.FieldEmail, email); err != nil {
+	if email, err = validation.AccountEmail(fieldname.Email, email); err != nil {
 		return "", err
 	}
 	password = rand.Text()

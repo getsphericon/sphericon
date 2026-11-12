@@ -45,6 +45,7 @@ import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { can } from '../../utils/permissions.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 
 const MEMBER_ROLES = zSiteMembershipRole.options
 const INVITABLE_ROLES = zSiteInvitableRole.options
@@ -102,8 +103,14 @@ function MembersTabs({
           records={members}
           idAccessor="id"
           columns={[
-            { accessor: 'name', title: t(($) => $.settings.members.nameHeader) },
-            { accessor: 'email', title: t(($) => $.settings.members.emailLabel) },
+            {
+              accessor: 'name',
+              title: t(($) => $.settings.members.nameHeader),
+            } satisfies FieldColumn<(typeof members)[number]>,
+            {
+              accessor: 'email',
+              title: t(($) => $.settings.members.emailLabel),
+            } satisfies FieldColumn<(typeof members)[number]>,
             {
               accessor: 'role',
               title: t(($) => $.settings.members.roleLabel),
@@ -171,8 +178,14 @@ function MembersTabs({
           records={invites}
           idAccessor="id"
           columns={[
-            { accessor: 'email', title: t(($) => $.settings.members.emailLabel) },
-            { accessor: 'role', title: t(($) => $.settings.members.roleLabel) },
+            {
+              accessor: 'email',
+              title: t(($) => $.settings.members.emailLabel),
+            } satisfies FieldColumn<(typeof invites)[number]>,
+            {
+              accessor: 'role',
+              title: t(($) => $.settings.members.roleLabel),
+            } satisfies FieldColumn<(typeof invites)[number]>,
             {
               accessor: 'expiresAt',
               title: t(($) => $.settings.members.expires),

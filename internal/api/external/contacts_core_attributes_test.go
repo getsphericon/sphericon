@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -20,7 +21,7 @@ import (
 func TestExternalUpsertOverwritesCoreAttributes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	_, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
 		Email:     externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail),
@@ -45,7 +46,7 @@ func TestExternalUpsertOverwritesCoreAttributes(t *testing.T) {
 
 func TestExternalContactRefusesACustomFieldNamedAfterACoreAttribute(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
 		Email:        externalapi.NewOptNilEmailAddress("reserved.key@example.com"),
@@ -56,7 +57,7 @@ func TestExternalContactRefusesACustomFieldNamedAfterACoreAttribute(t *testing.T
 
 func TestExternalContactRefusesAPhotoThatIsNotHTTPS(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
 		Email:  externalapi.NewOptNilEmailAddress("plain.http@example.com"),

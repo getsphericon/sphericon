@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -49,7 +50,7 @@ func TestTelegramResumeFailureRollsBackTokenBindingConsentAndReceipt(t *testing.
 	assert.False(t, bound)
 	stopped := optedOut(t, env, optOutUser)
 	assert.True(t, stopped)
-	boundEvents := env.QueuedEnvelopes(t, events.NameTelegramBound)
+	boundEvents := env.QueuedEnvelopes(t, systemevent.TelegramBound)
 	assert.Empty(t, boundEvents)
 	resumes := env.QueuedEnvelopes(t, events.NameTelegramResumeObserved)
 	assert.Empty(t, resumes)
@@ -64,7 +65,7 @@ func TestTelegramResumeFailureRollsBackTokenBindingConsentAndReceipt(t *testing.
 	assert.True(t, bound)
 	stopped = optedOut(t, env, optOutUser)
 	assert.False(t, stopped)
-	boundCount := env.QueuedCount(t, events.NameTelegramBound, map[string]any{"contactId": fixtures.ContactLiamID})
+	boundCount := env.QueuedCount(t, systemevent.TelegramBound, map[string]any{"contactId": fixtures.ContactLiamID})
 	assert.Equal(t, 1, boundCount)
 	stop = env.PostTelegramUpdate(t, bot, said(3, optOutUser, "/stop"))
 	require.Equal(t, http.StatusOK, stop.Code)
@@ -105,7 +106,7 @@ func TestTelegramButtonRollbackRetryAndDuplicateAcknowledgement(t *testing.T) {
 	require.Equal(t, http.StatusInternalServerError, failed.Code)
 	stopped := optedOut(t, env, user)
 	assert.False(t, stopped)
-	transitions := env.QueuedEnvelopes(t, events.NameTelegramUnsubscribed)
+	transitions := env.QueuedEnvelopes(t, systemevent.TelegramUnsubscribed)
 	assert.Empty(t, transitions)
 	attribution := env.JobsOf(t, jobs.BroadcastUnsubscribeEventArgs{}.Kind())
 	assert.Empty(t, attribution)
@@ -118,7 +119,7 @@ func TestTelegramButtonRollbackRetryAndDuplicateAcknowledgement(t *testing.T) {
 	require.Equal(t, http.StatusOK, retry.Code)
 	stopped = optedOut(t, env, user)
 	assert.True(t, stopped)
-	attributed := env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{
+	attributed := env.QueuedCount(t, systemevent.TelegramUnsubscribed, map[string]any{
 		"contactId": fixtures.ContactLiamID, "broadcastId": fixtures.BroadcastArchivedID, "via": events.UnsubscribedByButton,
 	})
 	assert.Equal(t, 1, attributed)
@@ -135,7 +136,7 @@ func TestTelegramButtonRollbackRetryAndDuplicateAcknowledgement(t *testing.T) {
 	require.Equal(t, http.StatusOK, expired.Code)
 	stopped = optedOut(t, env, user)
 	assert.False(t, stopped)
-	transitions = env.QueuedEnvelopes(t, events.NameTelegramUnsubscribed)
+	transitions = env.QueuedEnvelopes(t, systemevent.TelegramUnsubscribed)
 	assert.Len(t, transitions, 1)
 	attribution = env.JobsOf(t, jobs.BroadcastUnsubscribeEventArgs{}.Kind())
 	assert.Len(t, attribution, 1)

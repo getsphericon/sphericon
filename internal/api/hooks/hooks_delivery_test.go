@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -23,8 +24,8 @@ import (
 
 // deliveryNames are every action a Delivery notice becomes.
 var deliveryNames = []string{
-	events.NameEmailDelivered, events.NameEmailDelayed, events.NameEmailDropped,
-	events.NameEmailBounced, events.NameEmailComplained,
+	systemevent.EmailDelivered, systemevent.EmailDelayed, systemevent.EmailDropped,
+	systemevent.EmailBounced, systemevent.EmailComplained,
 }
 
 // sesAliceProviderMessageID is the provider message id of OutboundMessageSesAlice, the one the
@@ -53,7 +54,7 @@ func TestSESDeliveryNoticeLinksAndStampsTheMessage(t *testing.T) {
 
 	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
-	assert.Equal(t, events.NameEmailDelivered, got[0].Action)
+	assert.Equal(t, systemevent.EmailDelivered, got[0].Action)
 	assert.EqualValues(t, fixtures.OutboundMessageSesAliceID, got[0].OutboundMessageID)
 	assert.Equal(t, sesAliceProviderMessageID, got[0].ProviderMessageID)
 	assert.Equal(t, "transactional", got[0].Surface)
@@ -82,7 +83,7 @@ func TestSESDeliveryStampIsSetOnce(t *testing.T) {
 	m := sesAliceMessage(t, env)
 	require.NotNil(t, m.DeliveredAt)
 	assert.True(t, first.Equal(*m.DeliveredAt), "the first stamp is never replaced")
-	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailDelivered + ":sns-msg-20/" + fixtures.ContactAliceEmail)).Count(t.Context())
+	n, err := env.DB.Event.Query().Where(event.SourceID(systemevent.EmailDelivered + ":sns-msg-20/" + fixtures.ContactAliceEmail)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
 }
@@ -99,8 +100,8 @@ func TestSESDelayAndDropAreEventsWithAReasonAndStampNothing(t *testing.T) {
 		byAction[ev.Action] = ev
 	}
 	require.Len(t, byAction, 2)
-	assert.Equal(t, "smtp; 451 4.7.1 try again later", byAction[events.NameEmailDelayed].Reason)
-	assert.Equal(t, "Bad content", byAction[events.NameEmailDropped].Reason)
+	assert.Equal(t, "smtp; 451 4.7.1 try again later", byAction[systemevent.EmailDelayed].Reason)
+	assert.Equal(t, "Bad content", byAction[systemevent.EmailDropped].Reason)
 	for _, ev := range byAction {
 		assert.EqualValues(t, fixtures.OutboundMessageSesAliceID, ev.OutboundMessageID)
 	}
@@ -144,7 +145,7 @@ func TestSESBounceAndComplaintStampTheirKindAndSuppress(t *testing.T) {
 	bounces := queuedNotices(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, bounces, 1)
 	assert.Equal(t, "smtp; 550 5.1.1 user unknown", bounces[0].Reason)
-	assert.Equal(t, events.BounceKindHard, bounces[0].BounceKind)
+	assert.Equal(t, systemevent.BounceKindHard, bounces[0].BounceKind)
 
 	postNotice(t, env, "complaint-for-message")
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})

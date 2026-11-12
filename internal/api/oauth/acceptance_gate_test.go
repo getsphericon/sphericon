@@ -11,6 +11,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -79,7 +80,7 @@ func TestAnAPITokenOfTheWorkspaceIsNeverGated(t *testing.T) {
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 	refused := listContacts(t, env, melsConnection)
 	require.Truef(t, isAcceptancePending(refused), "the member is gated, got %#v", refused)
-	bearer := env.ScopedBearerFor(t, fixtures.VehementID, "contacts:read")
+	bearer := env.ScopedBearerFor(t, fixtures.VehementID, apitokens.ScopeContactsRead)
 
 	api := listContacts(t, env, bearer)
 	status := mcpStatus(t, env, bearer)

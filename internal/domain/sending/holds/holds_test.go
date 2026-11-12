@@ -12,6 +12,7 @@ import (
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -69,7 +70,7 @@ func TestAHoldIsActiveOnlyWhileItsExpiryIsAfterNow(t *testing.T) {
 	reason := st.Reason()
 
 	assert.Equal(t, []string{fixtures.HoldAcmeLapsedKey}, staffKeys)
-	assert.Equal(t, holds.ReasonStaff, reason)
+	assert.Equal(t, holdreason.StaffHold, reason)
 }
 
 func TestASecondActiveHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T) {
@@ -88,7 +89,7 @@ func TestASecondActiveHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T)
 	clearedKeys := keys(cleared.Staff)
 	clearedReason := cleared.Reason()
 	assert.Equal(t, []string{"lapsed-second"}, clearedKeys)
-	assert.Equal(t, holds.ReasonStaff, clearedReason)
+	assert.Equal(t, holdreason.StaffHold, clearedReason)
 }
 
 func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
@@ -100,7 +101,7 @@ func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
 	reason := st.Reason()
 	staffKeys := keys(st.Staff)
 
-	assert.Equal(t, holds.ReasonSuspended, reason, "suspension outranks Staff holds")
+	assert.Equal(t, holdreason.WorkspaceSuspended, reason, "suspension outranks Staff holds")
 	require.NotNil(t, st.SuspendedAt)
 	assert.Equal(t, []string{fixtures.HoldAcmeLapsedKey}, staffKeys, "never merged: the hold stays in its own list")
 }
@@ -115,10 +116,10 @@ func TestDeletionOutranksSuspensionAndStaffHolds(t *testing.T) {
 	reason := st.Reason()
 	listed := keys(st.Holds())
 
-	assert.Equal(t, holds.ReasonPendingDeletion, reason)
+	assert.Equal(t, holdreason.WorkspacePendingDeletion, reason)
 	require.NotNil(t, st.Deletion)
 	assert.Equal(t, holds.KeyPendingDeletion, st.Deletion.Key)
-	assert.Equal(t, holds.Message(holds.ReasonPendingDeletion), st.Deletion.Message)
+	assert.Equal(t, holds.Message(holdreason.WorkspacePendingDeletion), st.Deletion.Message)
 	assert.NotNil(t, st.SuspendedAt)
 	assert.Equal(t, []string{holds.KeyPendingDeletion, fixtures.HoldAcmeLapsedKey}, listed)
 }
@@ -135,12 +136,12 @@ func TestWithoutTheStaffLicenseHoldsAreIgnoredButDeletionAndSuspensionCount(t *t
 	w.env.SuspendWorkspace(w.t.Context(), fixtures.AcmeID, w.now)
 	suspended := w.standing(t, false)
 	suspendedReason := suspended.Reason()
-	assert.Equal(t, holds.ReasonSuspended, suspendedReason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, suspendedReason)
 
 	w.env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(w.now).ExecX(w.t.Context())
 	deleted := w.standing(t, false)
 	deletedReason := deleted.Reason()
-	assert.Equal(t, holds.ReasonPendingDeletion, deletedReason)
+	assert.Equal(t, holdreason.WorkspacePendingDeletion, deletedReason)
 }
 
 // The module's one function decides whether Staff holds count: with it off they are ignored
@@ -151,7 +152,7 @@ func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
 	clock := func() time.Time { return w.now }
 	on := holds.New(func() bool { return true }, clock)
 	off := holds.New(func() bool { return false }, clock)
-	reason := func(h *holds.Holds) string {
+	reason := func(h *holds.Holds) holdreason.Reason {
 		t.Helper()
 		got, err := h.Reason(w.t.Context(), w.s)
 		require.NoError(t, err)
@@ -160,16 +161,16 @@ func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
 
 	onReason := reason(on)
 	offReason := reason(off)
-	assert.Equal(t, holds.ReasonStaff, onReason)
+	assert.Equal(t, holdreason.StaffHold, onReason)
 	assert.Empty(t, offReason)
 
 	w.env.SuspendWorkspace(w.t.Context(), fixtures.AcmeID, w.now)
 	suspendedOff := reason(off)
-	assert.Equal(t, holds.ReasonSuspended, suspendedOff)
+	assert.Equal(t, holdreason.WorkspaceSuspended, suspendedOff)
 
 	w.env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(w.now).ExecX(w.t.Context())
 	deletedOn := reason(on)
 	deletedOff := reason(off)
-	assert.Equal(t, holds.ReasonPendingDeletion, deletedOn)
-	assert.Equal(t, holds.ReasonPendingDeletion, deletedOff)
+	assert.Equal(t, holdreason.WorkspacePendingDeletion, deletedOn)
+	assert.Equal(t, holdreason.WorkspacePendingDeletion, deletedOff)
 }

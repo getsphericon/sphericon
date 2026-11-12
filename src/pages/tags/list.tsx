@@ -9,11 +9,13 @@ import {
   siteTagsDeleteMutation,
   siteTagsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteTagResource } from '../../generated/site/types.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as tagsRoute } from '../../routes/workspaces/$workspaceId/tags/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 
 export function TagsListPage() {
   const { formatDateTime } = useFormat()
@@ -56,7 +58,10 @@ export function TagsListPage() {
           })
         }
         columns={[
-          { accessor: 'name', title: t(($) => $.tags.nameLabel) },
+          {
+            accessor: 'name',
+            title: t(($) => $.tags.nameLabel),
+          } satisfies FieldColumn<SiteTagResource>,
           {
             accessor: 'createdAt',
             title: t(($) => $.tags.createdAtLabel),

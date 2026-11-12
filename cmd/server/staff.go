@@ -19,13 +19,13 @@ func staffCommand(d deps) *cli.Command {
 			Name:      "create",
 			Usage:     "create a Staff member and print their one-time password",
 			ArgsUsage: "<email>",
-			Arguments: []cli.Argument{&cli.StringArg{Name: "email", Required: true}},
+			Arguments: []cli.Argument{&cli.StringArg{Name: flagEmail, Required: true}},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				members, err := c.StaffMembers()
 				if err != nil {
 					return err
 				}
-				email := cmd.StringArg("email")
+				email := cmd.StringArg(flagEmail)
 				password, err := members.Create(ctx, email)
 				return commandline.ReportStaffCreated(out(cmd), email, password, err)
 			}),
@@ -34,13 +34,13 @@ func staffCommand(d deps) *cli.Command {
 			Name:      "reset-totp",
 			Usage:     "clear a Staff member's TOTP and end their sessions",
 			ArgsUsage: "<email>",
-			Arguments: []cli.Argument{&cli.StringArg{Name: "email", Required: true}},
+			Arguments: []cli.Argument{&cli.StringArg{Name: flagEmail, Required: true}},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				members, err := c.StaffMembers()
 				if err != nil {
 					return err
 				}
-				email := cmd.StringArg("email")
+				email := cmd.StringArg(flagEmail)
 				err = members.ResetTOTP(ctx, email)
 				return commandline.ReportTOTPReset(out(cmd), email, err)
 			}),

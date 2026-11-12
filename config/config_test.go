@@ -40,7 +40,7 @@ func TestConfigLoadModeDecidesWhatDiffers(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_MODE", "")
 
-	selfHosted, err := config.Load("test")
+	selfHosted, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, config.ModeSelfHosted, selfHosted.Mode)
 	require.False(t, selfHosted.RequireEmailVerification, "selfhosted does not require email verification")
@@ -72,12 +72,12 @@ func TestConfigLoadSaaSRequiresWhatOnlyADeploymentGives(t *testing.T) {
 		{"SPHERICON_TRACKING_CNAME_TARGET", "edge.example.com"},
 		{"SPHERICON_SMTP_HOST", "smtp.example.com"},
 	} {
-		_, err := config.Load("test")
+		_, err := config.Load(config.EnvTest)
 		require.ErrorContains(t, err, step.name, "a saas Instance without %s must not start", step.name)
 		t.Setenv(step.name, step.value)
 	}
 
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, config.ModeSaaS, cfg.Mode)
 }
@@ -85,12 +85,12 @@ func TestConfigLoadSaaSRequiresWhatOnlyADeploymentGives(t *testing.T) {
 func TestConfigLoadSentryDSNIsOffUnlessSet(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_SENTRY_DSN", "")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Empty(t, cfg.SentryDSN, "browser reporting must be off by default")
 
 	t.Setenv("SPHERICON_SENTRY_DSN", "  https://key@o1.ingest.sentry.io/2 ")
-	cfg, err = config.Load("test")
+	cfg, err = config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, "https://key@o1.ingest.sentry.io/2", cfg.SentryDSN)
 }
@@ -167,7 +167,7 @@ func TestConfigTrackerOrigin(t *testing.T) {
 
 func TestConfigLoadDBPoolDefaults(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	want := config.DBPool{MaxOpenConns: 15, MaxIdleConns: 15, ConnMaxLifetime: 30 * time.Minute, RiverMaxConns: 25}
 	require.Equalf(t, want, cfg.DBPool, "defaults = %+v, want %+v", cfg.DBPool, want)
@@ -179,7 +179,7 @@ func TestConfigLoadDBPoolFromEnv(t *testing.T) {
 	t.Setenv("SPHERICON_DB_MAX_IDLE_CONNS", "3")
 	t.Setenv("SPHERICON_DB_CONN_MAX_LIFETIME", "5m")
 	t.Setenv("SPHERICON_RIVER_DB_MAX_CONNS", "11")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	want := config.DBPool{MaxOpenConns: 7, MaxIdleConns: 3, ConnMaxLifetime: 5 * time.Minute, RiverMaxConns: 11}
 	require.Equalf(t, want, cfg.DBPool, "pool = %+v, want %+v", cfg.DBPool, want)
@@ -188,7 +188,7 @@ func TestConfigLoadDBPoolFromEnv(t *testing.T) {
 func TestConfigLoadDBPoolIdleFollowsOpen(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_DB_MAX_OPEN_CONNS", "9")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, 9, cfg.DBPool.MaxIdleConns, "idle = %d, want 9", cfg.DBPool.MaxIdleConns)
 }
@@ -205,7 +205,7 @@ func TestConfigLoadDBPoolRejectsInvalid(t *testing.T) {
 			for k, v := range env {
 				t.Setenv(k, v)
 			}
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.Error(t, err, "want error")
 		})
 	}
@@ -213,53 +213,53 @@ func TestConfigLoadDBPoolRejectsInvalid(t *testing.T) {
 
 func TestConfigLoadBodyLimitDefaults(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, (config.BodyLimits{Default: 1 << 20, Collect: 500 << 10, CollectEvent: 32 << 10}), cfg.BodyLimits, "defaults = %+v", cfg.BodyLimits)
 }
 
 func TestConfigLoadEventsRetention(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, 400*24*time.Hour, cfg.EventsRetention, "default EventsRetention = %v, want 400 days", cfg.EventsRetention)
 
 	t.Setenv("SPHERICON_EVENTS_RETENTION_DAYS", "0")
-	cfg, err = config.Load("test")
+	cfg, err = config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, time.Duration(0), cfg.EventsRetention, "EventsRetention = %v, want 0 (disabled)", cfg.EventsRetention)
 
 	t.Setenv("SPHERICON_EVENTS_RETENTION_DAYS", "-1")
-	_, err = config.Load("test")
+	_, err = config.Load(config.EnvTest)
 	require.Error(t, err, "a negative retention must be rejected")
 }
 
 func TestConfigLoadUnverifiedUserRetention(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, 7*24*time.Hour, cfg.UnverifiedUserRetention, "default UnverifiedUserRetention = %v, want 7 days", cfg.UnverifiedUserRetention)
 
 	t.Setenv("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS", "0")
-	cfg, err = config.Load("test")
+	cfg, err = config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, time.Duration(0), cfg.UnverifiedUserRetention, "UnverifiedUserRetention = %v, want 0 (disabled)", cfg.UnverifiedUserRetention)
 
 	t.Setenv("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS", "-1")
-	_, err = config.Load("test")
+	_, err = config.Load(config.EnvTest)
 	require.Error(t, err, "a negative retention must be rejected")
 }
 
 func TestConfigLoadTestInboxSettings(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, 7*24*time.Hour, cfg.TestInboxRetention, "default retention is 7 days")
 	require.Equal(t, 200, cfg.TestInboxMaxMessages, "default number kept is 200")
 
 	t.Setenv("SPHERICON_TEST_INBOX_RETENTION_DAYS", "2")
 	t.Setenv("SPHERICON_TEST_INBOX_MAX_MESSAGES", "50")
-	cfg, err = config.Load("test")
+	cfg, err = config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, 2*24*time.Hour, cfg.TestInboxRetention)
 	require.Equal(t, 50, cfg.TestInboxMaxMessages)
@@ -273,7 +273,7 @@ func TestConfigLoadRejectsATestInboxThatKeepsNothing(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv(name, value)
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.ErrorContains(t, err, name)
 		})
 	}
@@ -281,12 +281,12 @@ func TestConfigLoadRejectsATestInboxThatKeepsNothing(t *testing.T) {
 
 func TestConfigLoadSystemEmailReplyTo(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Empty(t, cfg.SystemEmailReplyTo, "unset by default")
 
 	t.Setenv("SPHERICON_SYSTEM_EMAIL_REPLY_TO", " replies@example.com ")
-	cfg, err = config.Load("test")
+	cfg, err = config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, "replies@example.com", cfg.SystemEmailReplyTo)
 }
@@ -296,7 +296,7 @@ func TestConfigLoadRejectsAnInvalidSystemEmailReplyTo(t *testing.T) {
 	for _, value := range []string{"not an address", "Support <help@example.com>", "a@example.com, b@example.com", "help@"} {
 		t.Run(value, func(t *testing.T) {
 			t.Setenv("SPHERICON_SYSTEM_EMAIL_REPLY_TO", value)
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.ErrorContains(t, err, "SPHERICON_SYSTEM_EMAIL_REPLY_TO")
 		})
 	}
@@ -305,12 +305,12 @@ func TestConfigLoadRejectsAnInvalidSystemEmailReplyTo(t *testing.T) {
 // The log level is info unless set, and the level the variable names when it is.
 func TestConfigLoadLogLevel(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, slog.LevelInfo, cfg.LogLevel, "info unless set")
 
 	t.Setenv("SPHERICON_LOG_LEVEL", "warn")
-	cfg, err = config.Load("test")
+	cfg, err = config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, slog.LevelWarn, cfg.LogLevel)
 }
@@ -321,7 +321,7 @@ func TestConfigLoadRejectsAnUnknownLogLevel(t *testing.T) {
 	for _, value := range []string{"warning", "verbose", " info "} {
 		t.Run(value, func(t *testing.T) {
 			t.Setenv("SPHERICON_LOG_LEVEL", value)
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.ErrorContains(t, err, "SPHERICON_LOG_LEVEL: ")
 		})
 	}
@@ -333,7 +333,7 @@ func TestConfigLoadRejectsAnUnknownLogFormat(t *testing.T) {
 	for _, value := range []string{"txt", "logfmt"} {
 		t.Run(value, func(t *testing.T) {
 			t.Setenv("SPHERICON_LOG_FORMAT", value)
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.ErrorContains(t, err, "SPHERICON_LOG_FORMAT: ")
 		})
 	}
@@ -341,13 +341,13 @@ func TestConfigLoadRejectsAnUnknownLogFormat(t *testing.T) {
 
 func TestConfigLoadSystemEmailFromAcceptsADisplayName(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, "noreply@sphericon.localhost", cfg.SystemEmailFrom)
 	require.Empty(t, cfg.SystemEmailFromName, "no name unless one is given")
 
 	t.Setenv("SPHERICON_SYSTEM_EMAIL_FROM", `Example Mail <noreply@example.com>`)
-	cfg, err = config.Load("test")
+	cfg, err = config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, "noreply@example.com", cfg.SystemEmailFrom, "the bare address, for the envelope and identity checks")
 	require.Equal(t, "Example Mail", cfg.SystemEmailFromName)
@@ -358,7 +358,7 @@ func TestConfigLoadRejectsAnInvalidSystemEmailFrom(t *testing.T) {
 	for _, value := range []string{"not an address", "a@example.com, b@example.com", "help@"} {
 		t.Run(value, func(t *testing.T) {
 			t.Setenv("SPHERICON_SYSTEM_EMAIL_FROM", value)
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.ErrorContains(t, err, "SPHERICON_SYSTEM_EMAIL_FROM")
 		})
 	}
@@ -375,7 +375,7 @@ func loadWithMetricsAddr(t *testing.T, tc addrCase) (*config.Config, error) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("PORT", tc.port)
 	t.Setenv("SPHERICON_METRICS_ADDR", tc.addr)
-	return config.Load("test")
+	return config.Load(config.EnvTest)
 }
 
 func TestConfigLoadMetricsAddrAcceptsAnAddressApartFromPORT(t *testing.T) {
@@ -412,11 +412,11 @@ func TestConfigLoadMetricsAddrRefusesACollisionOrAMalformedOne(t *testing.T) {
 
 func TestConfigLoadE2EProfileDisablesRateLimits(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("e2e")
+	cfg, err := config.Load(config.EnvE2E)
 	require.NoError(t, err)
 	require.Equalf(t, (config.RateLimits{}), cfg.RateLimits, "e2e rate limits = %+v, want all disabled", cfg.RateLimits)
 	require.False(t, cfg.IsDev, "e2e must not enable the dev flag (dev DKIM lookup); the harness injects its own")
-	prod, err := config.Load("test")
+	prod, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, config.DefaultRateLimits, prod.RateLimits, "test profile must keep default limits, got %+v", prod.RateLimits)
 }
@@ -424,7 +424,7 @@ func TestConfigLoadE2EProfileDisablesRateLimits(t *testing.T) {
 func TestConfigLoadE2EProfileHonoursExplicitRateLimit(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_RATE_LIMIT_API_PER_MINUTE", "5")
-	cfg, err := config.Load("e2e")
+	cfg, err := config.Load(config.EnvE2E)
 	require.NoError(t, err)
 	require.Equalf(t, 5, cfg.RateLimits.APIPerMinute, "APIPerMinute = %d, want explicit 5", cfg.RateLimits.APIPerMinute)
 }
@@ -432,10 +432,10 @@ func TestConfigLoadE2EProfileHonoursExplicitRateLimit(t *testing.T) {
 func TestConfigLoadE2EProfileIgnoresMetricsAddr(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_METRICS_ADDR", "127.0.0.1:9090")
-	cfg, err := config.Load("e2e")
+	cfg, err := config.Load(config.EnvE2E)
 	require.NoError(t, err)
 	require.Emptyf(t, cfg.MetricsAddr, "e2e MetricsAddr = %q, want empty so runs never collide on a port", cfg.MetricsAddr)
-	dev, err := config.Load("test")
+	dev, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, "127.0.0.1:9090", dev.MetricsAddr, "test profile MetricsAddr = %q, want the configured one", dev.MetricsAddr)
 }
@@ -453,7 +453,7 @@ func loadWithInternalAddr(t *testing.T, tc internalAddrCase) (*config.Config, er
 	t.Setenv("PORT", tc.port)
 	t.Setenv("SPHERICON_METRICS_ADDR", tc.metrics)
 	t.Setenv("SPHERICON_INTERNAL_ADDR", tc.addr)
-	return config.Load("test")
+	return config.Load(config.EnvTest)
 }
 
 func TestConfigLoadInternalAddrAcceptsAnAddressApartFromTheOtherListeners(t *testing.T) {
@@ -490,26 +490,26 @@ func TestConfigLoadInternalAddrRefusesACollisionOrAMalformedOne(t *testing.T) {
 func TestConfigLoadE2EProfileIgnoresInternalAddr(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_INTERNAL_ADDR", "127.0.0.1:3400")
-	cfg, err := config.Load("e2e")
+	cfg, err := config.Load(config.EnvE2E)
 	require.NoError(t, err)
 	require.Emptyf(t, cfg.InternalAddr, "e2e InternalAddr = %q, want empty so runs never collide on a port", cfg.InternalAddr)
 }
 
 func TestConfigLoadSMTPAllowPrivateHostsFollowsTheEnvironmentUnlessSet(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.True(t, cfg.SMTPAllowPrivateHosts, "a non-production environment allows private SMTP hosts by default")
 
 	t.Setenv("SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS", "false")
-	cfg, err = config.Load("test")
+	cfg, err = config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.False(t, cfg.SMTPAllowPrivateHosts, "an explicit false must win over the environment default")
 }
 
 func TestConfigLoadAbuseLimitsDefaultToTheADR(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	assert.Equal(t, 1000, cfg.AbuseVolumeFloor)
 	assert.InDelta(t, 0.1, cfg.AbuseWarnComplaintPercent, 1e-9)
@@ -531,7 +531,7 @@ func TestConfigLoadRejectsAbuseLimitsThatCannotWork(t *testing.T) {
 			for k, v := range env {
 				t.Setenv(k, v)
 			}
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.Error(t, err, "want an error")
 		})
 	}
@@ -539,15 +539,15 @@ func TestConfigLoadRejectsAbuseLimitsThatCannotWork(t *testing.T) {
 
 func TestConfigLoadOutboundAllowIsEmptyByDefaultAndRejectsMalformedValues(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	_, err := config.Load("test")
+	_, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 
 	t.Setenv("SPHERICON_OUTBOUND_ALLOW", "n8n:5678,node-red.lan:1880")
-	_, err = config.Load("test")
+	_, err = config.Load(config.EnvTest)
 	require.NoErrorf(t, err, "a list of host:port pairs must load: %v", err)
 
 	t.Setenv("SPHERICON_OUTBOUND_ALLOW", "n8n")
-	_, err = config.Load("test")
+	_, err = config.Load(config.EnvTest)
 	require.ErrorContains(t, err, "SPHERICON_OUTBOUND_ALLOW", "a malformed value must fail the load naming the variable")
 }
 
@@ -576,7 +576,7 @@ func TestConfigLoadSecretFromFile(t *testing.T) {
 	t.Setenv("SPHERICON_SMTP_PASS_FILE", secretFile(t, "smtp-pass\n"))
 	t.Setenv("SPHERICON_LICENSE_KEY_FILE", secretFile(t, "license.jwt\n"))
 
-	cfg, err := config.Load("e2e")
+	cfg, err := config.Load(config.EnvE2E)
 	require.NoErrorf(t, err, "Load: %v", err)
 	for name, got := range map[string][2]string{
 		"DatabaseURL":        {cfg.DatabaseURL, "postgres://from-file"},
@@ -594,7 +594,7 @@ func TestConfigLoadExplicitSecretWinsOverFile(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://explicit")
 	t.Setenv("SPHERICON_DATABASE_URL_FILE", filepath.Join(t.TempDir(), "missing"))
 
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoErrorf(t, err, "Load: %v", err)
 	assert.Equalf(t, "postgres://explicit", cfg.DatabaseURL, "DatabaseURL = %q, want the explicit value", cfg.DatabaseURL)
 }
@@ -611,7 +611,7 @@ func TestConfigLoadSecretFileMustBeReadableAndNotEmpty(t *testing.T) {
 			t.Setenv("SPHERICON_LICENSE_KEY", "")
 			t.Setenv("SPHERICON_LICENSE_KEY_FILE", path)
 
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.ErrorContains(t, err, "SPHERICON_LICENSE_KEY_FILE")
 		})
 	}
@@ -662,12 +662,12 @@ func TestConfigLoadJWTSecretSecondaryRefusesAWeakOrRepeatedOneInProduction(t *te
 }
 
 func TestConfigLoadEventLiveWindow(t *testing.T) {
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equalf(t, 72*time.Hour, cfg.EventLiveWindow, "default EventLiveWindow = %v, want 72h", cfg.EventLiveWindow)
 
 	t.Setenv("SPHERICON_EVENT_LIVE_WINDOW_HOURS", "0")
-	_, err = config.Load("test")
+	_, err = config.Load(config.EnvTest)
 	require.Error(t, err, "a live window under an hour must be rejected: it cannot be switched off")
 }
 
@@ -693,7 +693,7 @@ func TestEverySecretVariableIsRedacted(t *testing.T) {
 		t.Setenv(name, "value-of-"+name)
 	}
 
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	values := config.SecretValues(cfg)
 	for _, name := range secrets {
@@ -712,7 +712,7 @@ func TestEverySecretVariableAcceptsAFile(t *testing.T) {
 		t.Setenv(name+"_FILE", path)
 	}
 
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	values := config.SecretValues(cfg)
 	for _, name := range secrets {
@@ -764,7 +764,7 @@ func TestConfigLoadRefusesAValueThatBreaksItsRule(t *testing.T) {
 			t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 			name, value, _ := strings.Cut(env, "=")
 			t.Setenv(name, value)
-			_, err := config.Load("test")
+			_, err := config.Load(config.EnvTest)
 			require.ErrorContains(t, err, want)
 		})
 	}
@@ -800,7 +800,7 @@ func TestConfigLoadAVariableReplacesItsProfileDefault(t *testing.T) {
 	t.Setenv("SPHERICON_LOG_FORMAT", "json")
 	t.Setenv("SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS", "false")
 
-	cfg, err := config.Load("e2e")
+	cfg, err := config.Load(config.EnvE2E)
 	require.NoError(t, err)
 	assert.Equal(t, config.RateLimits{LoginIP: 7}, cfg.RateLimits)
 	assert.Equal(t, config.LogFormatJSON, cfg.LogFormat)

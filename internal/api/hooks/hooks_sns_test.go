@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
 )
@@ -69,8 +70,8 @@ func TestSESHookSuppressesAHardBounce(t *testing.T) {
 
 	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
-	assert.Equal(t, events.NameEmailBounced, got[0].Action)
-	assert.Equal(t, events.BounceKindHard, got[0].BounceKind)
+	assert.Equal(t, systemevent.EmailBounced, got[0].Action)
+	assert.Equal(t, systemevent.BounceKindHard, got[0].BounceKind)
 	assert.EqualValues(t, fixtures.ContactAliceID, got[0].ContactID)
 	assert.Equal(t, "codebasics.dev", got[0].SendingDomain)
 	assert.Equal(t, "ses", got[0].Provider)
@@ -88,7 +89,7 @@ func TestSESHookRecordsASoftBounceWithoutSuppressing(t *testing.T) {
 
 	got := queuedNotices(t, env, "soft@example.com")
 	require.Len(t, got, 1)
-	assert.Equal(t, events.BounceKindSoft, got[0].BounceKind)
+	assert.Equal(t, systemevent.BounceKindSoft, got[0].BounceKind)
 	applySuppression(t, env)
 	assert.False(t, suppressed(t, env, "soft@example.com"))
 }
@@ -102,7 +103,7 @@ func TestSESHookSuppressesAComplaintForAnUnknownAddress(t *testing.T) {
 
 	got := queuedNotices(t, env, "stranger@example.com")
 	require.Len(t, got, 1)
-	assert.Equal(t, events.NameEmailComplained, got[0].Action)
+	assert.Equal(t, systemevent.EmailComplained, got[0].Action)
 	assert.Zero(t, got[0].ContactID)
 	applySuppression(t, env)
 	assert.True(t, suppressed(t, env, "stranger@example.com"))
@@ -174,7 +175,7 @@ func TestSESHookCountsOutcomesAndDedupesRedelivery(t *testing.T) {
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, bounce).Code)
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, snsNotification(t, "complaint")).Code)
 
-	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailBounced + ":sns-msg-1/" + fixtures.ContactAliceEmail)).Count(t.Context())
+	n, err := env.DB.Event.Query().Where(event.SourceID(systemevent.EmailBounced + ":sns-msg-1/" + fixtures.ContactAliceEmail)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
 	scrape := metricstest.ScrapeMetrics(t)

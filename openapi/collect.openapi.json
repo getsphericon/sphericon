@@ -142,7 +142,8 @@
           "action": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 255
+            "maxLength": 255,
+            "description": "The customer's own action; one in the namespace of a System event (`SystemEventAction`) is\nrefused"
           },
           "clientEventId": {
             "type": "string",
@@ -502,6 +503,44 @@
           }
         },
         "description": "A Workspace the User is the only Owner of, which blocks User deletion"
+      },
+      "SystemEventAction": {
+        "type": "string",
+        "enum": [
+          "contact.created",
+          "contact.erased",
+          "email.sent",
+          "email.delivered",
+          "email.delayed",
+          "email.dropped",
+          "email.opened",
+          "email.clicked",
+          "email.unsubscribed",
+          "email.bounced",
+          "email.complained",
+          "marketing.confirmed",
+          "contact.tagged",
+          "contact.untagged",
+          "contact.field_changed",
+          "automation.enrolled",
+          "automation.completed",
+          "automation.goal_reached",
+          "automation.exited",
+          "telegram.bound",
+          "telegram.unbound",
+          "telegram.received",
+          "telegram.sent",
+          "telegram.clicked",
+          "telegram.unsubscribed",
+          "sms.received",
+          "sms.sent",
+          "sms.delivered",
+          "sms.undelivered",
+          "sms.confirmed",
+          "sms.clicked",
+          "sms.unsubscribed"
+        ],
+        "description": "The action of a System event: an Event sphericon itself records, never a customer. An Event's\n`action`, an Automation's trigger and a condition carry one of these or a customer's own action,\nwhich may not take a System event's namespace; a webhook's event types may also name the Audit\nlog's `audit.entry`."
       },
       "TimeZoneName": {
         "type": "string"

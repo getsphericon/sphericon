@@ -1,6 +1,7 @@
 import { assign, enqueueActions, fromPromise, setup } from 'xstate'
 
 import { draftState } from '../components/draftState.ts'
+import type { DraftStatus } from '../components/draftState.ts'
 import { isRevisionChangedError } from '../utils/apiErrors.ts'
 
 // The editor session of a saved resource; its rules are docs/standards/ui.md, "Editor sessions".
@@ -95,7 +96,7 @@ export interface EditorEffects<TResource, TOperation extends string> {
 
 // ADR 0065 for a resource with a draft above a live version (Automation, Rule).
 export interface DraftResource {
-  status: string
+  status: DraftStatus
   live: object | null
   draft: object | null
 }

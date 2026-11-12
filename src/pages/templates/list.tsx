@@ -8,11 +8,13 @@ import {
   siteTemplatesDeleteMutation,
   siteTemplatesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteEmailTemplateResource } from '../../generated/site/types.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
 import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as templatesCreateRoute } from '../../routes/workspaces/$workspaceId/templates/new.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 
 export function TemplatesListPage() {
   const { page } = templatesRoute.useSearch()
@@ -54,8 +56,14 @@ export function TemplatesListPage() {
           ),
         }}
         columns={[
-          { accessor: 'name', title: t(($) => $.templates.nameLabel) },
-          { accessor: 'subject', title: t(($) => $.templates.subjectLabel) },
+          {
+            accessor: 'name',
+            title: t(($) => $.templates.nameLabel),
+          } satisfies FieldColumn<SiteEmailTemplateResource>,
+          {
+            accessor: 'subject',
+            title: t(($) => $.templates.subjectLabel),
+          } satisfies FieldColumn<SiteEmailTemplateResource>,
           {
             accessor: 'actions',
             title: t(($) => $.table.actions),

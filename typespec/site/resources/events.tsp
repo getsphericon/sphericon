@@ -20,7 +20,7 @@ model SiteEventResource {
   /** Email associated with the event, if known */
   email?: string | null;
 
-  /** Event action / name */
+  /** Event action: a System event's (`SystemEventAction`) or the customer's own */
   action: string;
 
   /** Arbitrary event properties */

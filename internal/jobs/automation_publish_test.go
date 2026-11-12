@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -54,7 +55,7 @@ func editGreeting(t *testing.T, c *externalapi.Client) {
 func TestAnEditWithoutThePublishScopeChangesNothingThatSends(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	editGreeting(t, env.ExternalScoped(t, "automations:read", "automations:write"))
+	editGreeting(t, env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
 
 	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID), "the draft's Trigger enrolls nobody")
@@ -77,9 +78,9 @@ func TestAfterPublishTheNextEnrollmentFollowsTheNewVersion(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	inFlight := enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
-	editGreeting(t, env.ExternalScoped(t, "automations:read", "automations:write"))
+	editGreeting(t, env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
 
-	publisher := env.ExternalScoped(t, "automations:publish")
+	publisher := env.ExternalScoped(t, apitokens.ScopeAutomationsPublish)
 	_, err := publisher.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(externalapi.EntityId(fixtures.AutomationJobsGreetingID))))}, externalapi.AutomationsPublishParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
 	require.NoError(t, err)
 

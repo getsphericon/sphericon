@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -19,13 +20,13 @@ func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	for _, scopes := range [][]string{{}, {"contacts:read", "events:read", "tokens:read"}} {
+	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeTokensRead}} {
 		c := env.ExternalScoped(t, scopes...)
 		_, err := c.AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 
-	page, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})
+	page, err := env.ExternalScoped(t, apitokens.ScopeAuditRead).AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})
 	require.NoError(t, err)
 	require.Len(t, page.Items, 1, "only the Workspace's own fixture entry")
 	e := page.Items[0]
@@ -39,7 +40,7 @@ func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 
 func TestExternalAuditListIsTenantIsolated(t *testing.T) {
 	env := testhelper.Setup(t)
-	globex := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, "audit:read"))
+	globex := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeAuditRead))
 	page, err := globex.AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
 	require.NoError(t, err)
 	require.Len(t, page.Items, 5, "Globex's own fixture entries, none of Acme's")
@@ -49,7 +50,7 @@ func TestExternalAuditListIsTenantIsolated(t *testing.T) {
 func TestExternalAuditListPaginatesByCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, "audit:read"))
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeAuditRead))
 
 	seen := make([]int64, 0, 6)
 	params := externalapi.AuditEntriesListParams{Limit: externalapi.NewOptInt32(2)}
@@ -69,7 +70,7 @@ func TestExternalAuditListPaginatesByCursor(t *testing.T) {
 
 func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, "audit:read"))
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeAuditRead))
 	str := externalapi.NewOptString
 	day := func(m time.Month) externalapi.OptTimestamp {
 		return externalapi.NewOptTimestamp(externalapi.Timestamp(time.Date(2026, m, 1, 0, 0, 0, 0, time.UTC)))
@@ -107,7 +108,7 @@ func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 func TestExternalAuditStaffIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "audit:read"))
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeAuditRead))
 
 	count := func(p externalapi.AuditEntriesListParams) int {
 		res, err := c.AuditEntriesList(ctx, p)
@@ -121,13 +122,13 @@ func TestExternalAuditStaffIdCannotBeProbed(t *testing.T) {
 
 func TestExternalAuditListWithoutLicenseIsPaymentRequired(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	_, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
+	_, err := env.ExternalScoped(t, apitokens.ScopeAuditRead).AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusPaymentRequired)
 }
 
 func TestExternalAuditListRejectsABadCursor(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(context.Background(),
+	_, err := env.ExternalScoped(t, apitokens.ScopeAuditRead).AuditEntriesList(context.Background(),
 		externalapi.AuditEntriesListParams{Cursor: externalapi.NewOptString("nope")})
 	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }

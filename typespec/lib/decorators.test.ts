@@ -99,6 +99,7 @@ await test('on /site an operation of a Workspace declares its Permissions, and o
   assert.deepEqual(extension(program, 'Fixture.contacts', 'x-required-permissions'), [])
   assert.equal(extension(program, 'Fixture.contacts', 'x-allowed-while-withheld'), true)
   assert.equal(extension(program, 'Fixture.me', 'x-allowed-while-acceptance-pending'), true)
+  assert.equal(extension(program, 'Fixture.login', 'x-rate-limit'), 'login')
 })
 
 await test('on /api every operation declares its scopes, a template its argument', async () => {

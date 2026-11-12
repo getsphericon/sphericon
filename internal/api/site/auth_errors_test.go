@@ -25,7 +25,7 @@ import (
 // address, taken address).
 func signer(t *testing.T) *authtoken.Signer {
 	t.Helper()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	return authtoken.New(cfg.JWTSecret, time.Now)
 }

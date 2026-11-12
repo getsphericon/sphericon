@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -80,7 +81,7 @@ func TestExportAuditNeverReadsAnotherWorkspace(t *testing.T) {
 
 func TestExportAuditNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	for _, scopes := range [][]string{{}, {"audit:read"}} {
+	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, scopes...))
 		_, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)

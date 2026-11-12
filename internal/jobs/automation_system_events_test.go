@@ -12,7 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,8 +22,8 @@ func enrollmentEvents(t *testing.T, env *testhelper.TestEnv, automationID, conta
 	t.Helper()
 	out := map[string]int{}
 	messages := env.QueuedMessages(t,
-		events.NameAutomationEnrolled, events.NameAutomationCompleted,
-		events.NameAutomationGoalReached, events.NameAutomationExited)
+		systemevent.AutomationEnrolled, systemevent.AutomationCompleted,
+		systemevent.AutomationGoalReached, systemevent.AutomationExited)
 	for i := range messages {
 		m := &messages[i]
 		if m.Data["automationId"] == jsonID(automationID) && m.Data["contactId"] == jsonID(contactID) {
@@ -44,8 +44,8 @@ func TestAnEnrollmentRecordsItsBeginningAndItsCompletion(t *testing.T) {
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 	ended := enrollmentEvents(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1}, began)
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationCompleted: 1}, ended)
+	assert.Equal(t, map[string]int{systemevent.AutomationEnrolled: 1}, began)
+	assert.Equal(t, map[string]int{systemevent.AutomationEnrolled: 1, systemevent.AutomationCompleted: 1}, ended)
 }
 
 // The Payment recovery fixture's live version: trigger payment_failed, exit event account_closed,
@@ -66,8 +66,8 @@ func TestAnEnrollmentRecordsReachingItsGoalAndLeaving(t *testing.T) {
 	alice := enrollmentEvents(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactAliceID)
 	bob := enrollmentEvents(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactBobID)
 
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationGoalReached: 1}, alice)
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1, events.NameAutomationExited: 1}, bob)
+	assert.Equal(t, map[string]int{systemevent.AutomationEnrolled: 1, systemevent.AutomationGoalReached: 1}, alice)
+	assert.Equal(t, map[string]int{systemevent.AutomationEnrolled: 1, systemevent.AutomationExited: 1}, bob)
 }
 
 // A failed Enrollment is an operational failure, not something the Contact did: it records no

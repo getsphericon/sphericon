@@ -8,6 +8,7 @@ import { siteAnalyticsDeliverabilityOptions } from '../../../generated/site/@tan
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as deliverabilityRoute } from '../../../routes/workspaces/$workspaceId/analytics/deliverability.tsx'
+import type { FieldColumn } from '../../../utils/tableColumns.ts'
 import { ReportBoundary } from './ReportBoundary.tsx'
 
 // DeliverabilityPage is the Deliverability report: each Sending domain's Complaint and Bounce
@@ -47,7 +48,10 @@ function DeliverabilityReport() {
         records={domains}
         idAccessor="sendingDomainId"
         columns={[
-          { accessor: 'domain', title: t(($) => $.analytics.deliverability.domain) },
+          {
+            accessor: 'domain',
+            title: t(($) => $.analytics.deliverability.domain),
+          } satisfies FieldColumn<(typeof domains)[number]>,
           {
             accessor: 'sent',
             title: t(($) => $.analytics.deliverability.sent),

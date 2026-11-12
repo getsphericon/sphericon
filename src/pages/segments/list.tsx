@@ -11,12 +11,14 @@ import {
   siteSegmentsListOptions,
   siteSegmentsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteSegmentResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 
 export function SegmentsListPage() {
   const { t } = useTranslation()
@@ -81,7 +83,10 @@ export function SegmentsListPage() {
           })
         }
         columns={[
-          { accessor: 'name', title: t(($) => $.segments.nameLabel) },
+          {
+            accessor: 'name',
+            title: t(($) => $.segments.nameLabel),
+          } satisfies FieldColumn<SiteSegmentResource>,
           {
             accessor: 'actions',
             title: t(($) => $.table.actions),

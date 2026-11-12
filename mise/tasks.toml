@@ -589,7 +589,7 @@ description = "config (the environment struct's tags and doc comments) -> docs/c
 run = "go run ./cmd/configdoc"
 
 ["generate:scopes"]
-description = "openapi/{service,external,site} (x-required-scopes, x-required-permissions, x-grant-permissions, the Permission, ApiTokenScope, ServiceScope and user scope enums) -> Go (scopegen.Tables)"
+description = "openapi/{service,external,site,staff} (x-required-scopes, x-required-permissions, x-grant-permissions, the Permission, ApiTokenScope, ServiceScope, user scope and SystemEventAction enums, x-rate-limit; the request field names of every document) -> Go (scopegen.Tables, scopegen.FieldNames)"
 run = "go run ./cmd/scopegen"
 
 ["generate:bounds"]

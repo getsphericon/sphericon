@@ -10,6 +10,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -28,7 +29,7 @@ func TestSiteAutomationExitAndGoalEventsWriteTheDraft(t *testing.T) {
 	}, params)
 	require.NoError(t, err)
 	edited := res
-	assert.Equal(t, []string{"account_closed", "plan_downgraded", "email.clicked"}, edited.Live.Value.ExitEvents)
+	assert.Equal(t, []string{"account_closed", "plan_downgraded", systemevent.EmailClicked}, edited.Live.Value.ExitEvents)
 	assert.Equal(t, "payment_succeeded", edited.Live.Value.GoalEvent.Or(""))
 	assert.Equal(t, []string{"card_removed"}, edited.Draft.Value.ExitEvents)
 	assert.Equal(t, "invoice_paid", edited.Draft.Value.GoalEvent.Or(""))

@@ -13,11 +13,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -43,9 +44,8 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 	assert.Equal(t, []map[string]any{stepJob(t, env, runID, 0)}, queuedSteps(t, env), "the held step is asked again later")
 	route, err := env.OutboundModule().Route(ctx, env.DB.Scoped(fixtures.AcmeID), "telegram", new(int64(bot.Integration.ID)))
 	require.NoError(t, err)
-	assert.Equal(t, outboundmessages.HoldProviderRefused, route.Hold, "the Send route reports the Hold")
-	assert.Equal(t, "provider_refused", outboundmessages.HoldProviderRefused)
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramSent, nil))
+	assert.Equal(t, holdreason.ProviderRefused, route.Hold, "the Send route reports the Hold")
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramSent, nil))
 
 	// While held, the step does not even ask Telegram.
 	asked := len(env.Telegram.RequestsOf(telegramtest.SendMessage))
@@ -64,7 +64,7 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 	env.RunQueuedSteps(t, mod)
 
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramSent, nil))
 }
 
 // A bot Telegram refused at a send and accepts again (the Owner unblocked it on Telegram's side) is
@@ -99,7 +99,7 @@ func TestAHeldTelegramIntegrationSavedWithTheSameTokenSendsAgain(t *testing.T) {
 			env.RunQueuedSteps(t, mod)
 			done := env.DB.AutomationRun.GetX(t.Context(), runID)
 			assert.Equal(t, automationrun.StatusCompleted, done.Status)
-			sent := env.QueuedCount(t, events.NameTelegramSent, nil)
+			sent := env.QueuedCount(t, systemevent.TelegramSent, nil)
 			assert.Equal(t, 1, sent)
 		})
 	}
@@ -118,11 +118,11 @@ func TestAHeldTelegramIntegrationSavedWithATokenTelegramStillRefusesStaysHeld(t 
 	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Errors.Value, "config.token")
 	hold := holdOf(t, env, bot)
-	assert.Equal(t, outboundmessages.HoldProviderRefused, hold)
+	assert.Equal(t, holdreason.ProviderRefused, hold)
 	require.True(t, env.RunNextStep(t, mod))
 	waiting := env.DB.AutomationRun.GetX(t.Context(), runID)
 	assert.Equal(t, automationrun.StatusActive, waiting.Status)
-	sent := env.QueuedCount(t, events.NameTelegramSent, nil)
+	sent := env.QueuedCount(t, systemevent.TelegramSent, nil)
 	assert.Zero(t, sent)
 }
 
@@ -153,12 +153,12 @@ func heldTelegram(t *testing.T, env *testhelper.TestEnv) (testhelper.TelegramBot
 	env.Telegram.Fail(telegramtest.SendMessage, telegramtest.Unauthorized)
 	require.True(t, env.RunNextStep(t, mod))
 	hold := holdOf(t, env, bot)
-	require.Equal(t, outboundmessages.HoldProviderRefused, hold)
+	require.Equal(t, holdreason.ProviderRefused, hold)
 	return bot, runID, mod
 }
 
 // holdOf is the Hold the Send route reports for the bot's Integration, empty when it sends.
-func holdOf(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) string {
+func holdOf(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) holdreason.Reason {
 	t.Helper()
 	route, err := env.OutboundModule().Route(t.Context(), env.DB.Scoped(fixtures.AcmeID), "telegram", new(int64(bot.Integration.ID)))
 	require.NoError(t, err)
@@ -181,7 +181,7 @@ func saveTelegramToken(t *testing.T, env *testhelper.TestEnv, bot testhelper.Tel
 // saveTelegramTokenExternal is saveTelegramToken through the External API.
 func saveTelegramTokenExternal(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) (*externalapi.IntegrationResource, error) {
 	t.Helper()
-	return env.ExternalScoped(t, "integrations:write").IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(externalapi.EntityId(bot.Integration.ID)))),
+	return env.ExternalScoped(t, apitokens.ScopeIntegrationsWrite).IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(externalapi.EntityId(bot.Integration.ID)))),
 		Config: externalapi.NewOptIntegrationConfigInput(externalapi.IntegrationConfigInput{
 			OneOf: externalapi.NewTelegramConfigInputIntegrationConfigInputSum(externalapi.TelegramConfigInput{
 				Kind: externalapi.TelegramConfigInputKindTelegram, Token: bot.Token,
@@ -214,7 +214,7 @@ func TestATelegramTooManyRequestsDefersTheStepAndItSendsLater(t *testing.T) {
 
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
 	assert.Len(t, env.Telegram.RequestsOf(telegramtest.SendMessage), 2)
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramSent, nil))
 }
 
 // A 400 about the content fails that Contact's message with Telegram's description, and no other.
@@ -274,7 +274,7 @@ func TestATelegramForbiddenChatDoesNotKeepTheContactsOtherChatFromTheMessage(t *
 
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, map[string]any{"destination": "555152"}))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramSent, map[string]any{"destination": "555152"}))
 	assert.Equal(t, 2, env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactBobID)).CountX(ctx), "no Binding goes")
 }
 
@@ -320,14 +320,14 @@ func TestATelegramDeadChatLosesItsBinding(t *testing.T) {
 			left := env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactBobID)).AllX(ctx)
 			require.Len(t, left, 1)
 			assert.Equal(t, "555132", left[0].Destination)
-			assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnbound, map[string]any{"contactId": fixtures.ContactBobID}))
-			assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, map[string]any{"destination": "555132"}), "the other chat got it")
+			assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramUnbound, map[string]any{"contactId": fixtures.ContactBobID}))
+			assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramSent, map[string]any{"destination": "555132"}), "the other chat got it")
 
 			env.Telegram.FailChat(telegramtest.SendMessage, 555132, gone)
 			env.RunQueuedSteps(t, mod)
 
 			assert.Zero(t, env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactBobID)).CountX(ctx))
-			assert.Equal(t, 2, env.QueuedCount(t, events.NameTelegramUnbound, nil))
+			assert.Equal(t, 2, env.QueuedCount(t, systemevent.TelegramUnbound, nil))
 			skipped := env.DB.OutboundMessage.Query().
 				Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
 			assert.Equal(t, "no_destination", *skipped.Reason)

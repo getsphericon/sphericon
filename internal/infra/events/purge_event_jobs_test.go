@@ -12,14 +12,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // hardBounce is a hard bounce of email in the Workspace, as a provider's notice publishes it.
 func hardBounce(workspaceID, contactID int64, email, dedupID string) *events.EmailDelivery {
 	return &events.EmailDelivery{
-		Action: events.NameEmailBounced, WorkspaceID: workspaceID, ContactID: contactID, Email: email,
-		BounceKind: events.BounceKindHard, DedupID: dedupID,
+		Action: systemevent.EmailBounced, WorkspaceID: workspaceID, ContactID: contactID, Email: email,
+		BounceKind: systemevent.BounceKindHard, DedupID: dedupID,
 	}
 }
 
@@ -27,7 +28,7 @@ func hardBounce(workspaceID, contactID int64, email, dedupID string) *events.Ema
 func suppressJob(t *testing.T, workspaceID, contactID int64, email, id string) jobs.SuppressEventArgs {
 	t.Helper()
 	return jobs.SuppressEventArgs{
-		ID: id, Name: events.NameEmailBounced, Version: 1, WorkspaceID: workspaceID,
+		ID: id, Name: systemevent.EmailBounced, Version: 1, WorkspaceID: workspaceID,
 		Data: dataFor(t, hardBounce(workspaceID, contactID, email, id)),
 	}
 }

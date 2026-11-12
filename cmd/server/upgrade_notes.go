@@ -17,12 +17,12 @@ func upgradeNotesCommand(text string) *cli.Command {
 	return &cli.Command{
 		Name:  "upgrade-notes",
 		Usage: "print the Upgrade notes of every release after a version",
-		Flags: []cli.Flag{&cli.StringFlag{Name: "since", Usage: "the version you run now", Required: true}},
+		Flags: []cli.Flag{&cli.StringFlag{Name: flagSince, Usage: "the version you run now", Required: true}},
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
 			}
-			releases, err := upgradenote.Since(upgradenote.Parse(text), cmd.String("since"))
+			releases, err := upgradenote.Since(upgradenote.Parse(text), cmd.String(flagSince))
 			if err != nil {
 				return err
 			}

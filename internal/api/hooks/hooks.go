@@ -13,13 +13,14 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 // New is the handler of `POST /hooks/{key}`.
 func New(ingest *callbackinterpretation.UseCase) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /hooks/{key}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST "+paths.Hooks+"{key}", func(w http.ResponseWriter, r *http.Request) {
 		// Bounded to what the engine parses, so an oversized body is never held in memory.
 		body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, preset.MaxBodyBytes))
 		if err != nil {

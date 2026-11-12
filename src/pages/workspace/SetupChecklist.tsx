@@ -3,6 +3,7 @@ import { IconCheck, IconCircle, IconClock } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
+import type { WorkspacePage } from '../../components/RouterLink.tsx'
 import type { SiteSetupProgress, SiteSetupStepStatus } from '../../generated/site/types.gen.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
@@ -21,7 +22,7 @@ const STEPS = [
   { key: 'sendingDomain', to: emailsRoute.to },
   { key: 'contact', to: null },
   { key: 'sentEmail', to: null },
-] as const satisfies readonly { key: StepKey; to: string | null }[]
+] as const satisfies readonly { key: StepKey; to: WorkspacePage | null }[]
 
 const STATUS_ICON = {
   done: { color: 'teal', variant: 'filled', Icon: IconCheck },
@@ -44,7 +45,7 @@ function StepLink({
   workspaceId,
 }: {
   step: LinkedStepKey
-  to: string
+  to: WorkspacePage
   workspaceId: string
 }) {
   const { t } = useTranslation()

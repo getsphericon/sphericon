@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -19,7 +20,7 @@ import (
 func TestExternalEnrollmentsReadAFailedEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "enrollments:read")
+	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
 
 	listed, err := c.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{
 		AutomationId: entityIDString(fixtures.AutomationNotifySlackID),
@@ -48,7 +49,7 @@ func TestExternalEnrollmentsReadAFailedEnrollment(t *testing.T) {
 func TestExternalEnrollmentsAreFilteredByStatusAndScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "enrollments:read")
+	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
 
 	completed, err := c.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{
 		AutomationId: entityIDString(fixtures.AutomationWelcomeSeriesID),
@@ -75,7 +76,7 @@ func TestExternalEnrollmentsAreFilteredByStatusAndScoped(t *testing.T) {
 func TestExternalEnrollmentsNeedTheirOwnScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	denied := env.ExternalScoped(t, "automations:read")
+	denied := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	_, err := denied.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationNotifySlackID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)

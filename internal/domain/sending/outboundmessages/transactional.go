@@ -136,7 +136,7 @@ func (m *Module) SendTransactional(ctx context.Context, s *ent.Scoped, req Trans
 		}
 		return TransactionalResult{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
 	case Held:
-		return TransactionalResult{}, ErrHeld.With(Detail(res.Reason))
+		return TransactionalResult{}, ErrHeld.With(HoldDetail(res.Hold))
 	default:
 		// Deferral, and Refused (a Test send's outcome): a Transactional request is neither
 		// reserved against the Provider limit nor a Test send.

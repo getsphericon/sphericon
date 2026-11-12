@@ -32,7 +32,7 @@ import (
 
 // ErrNothingToReset refuses a reset of a member who has neither an active or pending Second factor
 // nor a Passkey, so it has nothing to clear. It refuses the `member` the reset names.
-var ErrNothingToReset = validation.RefuseField("member", "secondfactor: the member has no second factor or passkey", i18n.ErrorsSecondFactorResetNothing)
+var ErrNothingToReset = validation.RefuseField(memberships.FieldMember, "secondfactor: the member has no second factor or passkey", i18n.ErrorsSecondFactorResetNothing)
 
 // UseCase resets Second factors.
 type UseCase struct {

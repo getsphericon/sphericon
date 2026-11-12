@@ -97,13 +97,13 @@ func agentAttrRule(typ, attr string) AgentAttr {
 		return AgentAttr{Type: "alignment", Allowed: alignments, Rule: "optional; one of " + strings.Join(alignments, ", ")}
 	case attr == "style":
 		return AgentAttr{Type: "css", Rule: "optional CSS declarations like \"color:#333333\"; no script URL, expression(), @import, backslash or tag"}
-	case typ == "heading" && attr == "level":
+	case typ == nodeHeading && attr == "level":
 		return AgentAttr{Type: "integer", Rule: "a whole number from 1 to 6"}
-	case typ == "orderedList" && attr == "start":
+	case typ == nodeOrderedList && attr == "start":
 		return AgentAttr{Type: "integer", Rule: "optional; a whole number of 1 or more"}
-	case typ == "orderedList" && attr == "type":
+	case typ == nodeOrderedList && attr == "type":
 		return AgentAttr{Type: "string", Allowed: orderedTypes, Rule: "optional; one of " + strings.Join(orderedTypes, ", ")}
-	case typ == "button" && attr == "href":
+	case typ == nodeButton && attr == "href":
 		return AgentAttr{Type: "url", Rule: "required: the address the button opens, an absolute URL or a {{ variable }}"}
 	case typ == nodeImage && attr == "src":
 		return AgentAttr{Type: "url", Rule: "required: the image's absolute https URL"}
@@ -113,7 +113,7 @@ func agentAttrRule(typ, attr string) AgentAttr {
 		return AgentAttr{Type: "url", Rule: "optional; an absolute URL or a {{ variable }} the image links to"}
 	case typ == nodeImage && (attr == "width" || attr == "height"):
 		return AgentAttr{Type: "size", Rule: "\"auto\", a number of pixels or a size like \"50%\""}
-	case typ == "link" && attr == "href":
+	case typ == markLink && attr == "href":
 		return AgentAttr{Type: "url", Rule: "required: the address the link opens, an absolute URL, a {{ variable }} or an #anchor"}
 	default:
 		return AgentAttr{Type: "any", Rule: "optional; the editor's default applies when omitted"}

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -20,7 +21,7 @@ func TestExternalTelegramBroadcastIsCreatedEditedAndReportedWithoutOpenOrDeliver
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	bot := env.AcmeTelegram(t)
-	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite)
 
 	made, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name:          "News",
@@ -48,7 +49,7 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	bot := env.AcmeTelegram(t)
-	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send")
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite, apitokens.ScopeBroadcastsSend)
 	create := func(text string, integrationID int64) externalapi.EntityId {
 		in := &externalapi.CreateBroadcastInput{
 			Name: "News", Content: testhelper.ExternalTelegram(text), IntegrationId: externalapi.NewOptNilEntityId(entityIDString(integrationID)),

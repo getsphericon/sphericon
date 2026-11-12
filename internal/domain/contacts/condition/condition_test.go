@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -61,30 +62,30 @@ func TestCompileEvaluatesAgainstContacts(t *testing.T) {
 	match := func(g condition.Group) []string { return emailsIn(t, env, fixtures.MassiveID, g) }
 
 	// Empty group matches everyone.
-	assert.Equal(t, []string{ann, bob, cara}, match(condition.Group{Kind: "group", Combinator: "and"}))
+	assert.Equal(t, []string{ann, bob, cara}, match(condition.Group{Kind: "group", Combinator: condition.And}))
 
 	// custom:plan = pro -> Ann + Cara
-	assert.Equal(t, []string{ann, cara}, match(condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("custom:plan", "eq", "pro"))}))
+	assert.Equal(t, []string{ann, cara}, match(condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 
 	// and: first_name=Ann AND plan=pro -> just Ann
 	assert.Equal(t, []string{ann}, match(condition.Group{
 		Kind:       "group",
-		Combinator: "and",
+		Combinator: condition.And,
 		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("custom:plan", "eq", "pro")),
 	}))
 
 	// or: first_name=Ann OR first_name=Bob
 	assert.Equal(t, []string{ann, bob}, match(condition.Group{
 		Kind:       "group",
-		Combinator: "or",
+		Combinator: condition.Or,
 		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("first_name", "eq", "Bob")),
 	}))
 
 	// custom:plan notNull -> all have it
-	assert.Equal(t, []string{ann, bob, cara}, match(condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("custom:plan", "notNull", ""))}))
+	assert.Equal(t, []string{ann, bob, cara}, match(condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(rule("custom:plan", "notNull", ""))}))
 
 	// not: NOT(plan=pro) -> only Bob (free)
-	assert.Equal(t, []string{bob}, match(condition.Group{Kind: "group", Combinator: "and", Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
+	assert.Equal(t, []string{bob}, match(condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 }
 
 // eventLeaf is an event count leaf; withinDays 0 leaves the window out (all time).
@@ -120,8 +121,8 @@ func TestEventConditions(t *testing.T) {
 		"at most fewer than Ann has":     {eventLeaf("page_view", "atMost", 2, 0), []string{bob, cara}},
 		"at most as many as in a week":   {eventLeaf("page_view", "atMost", 2, 7), []string{ann, bob, cara}},
 		"a window past any Event":        {eventLeaf("page_view", "atLeast", 3, math.MaxInt32), []string{ann}},
-		"software opens are not counted": {eventLeaf("email.opened", "atLeast", 2, 0), []string{cara}},
-		"at most one human open":         {eventLeaf("email.opened", "atMost", 1, 0), []string{ann, bob}},
+		"software opens are not counted": {eventLeaf(systemevent.EmailOpened, "atLeast", 2, 0), []string{cara}},
+		"at most one human open":         {eventLeaf(systemevent.EmailOpened, "atMost", 1, 0), []string{ann, bob}},
 	} {
 		got := emailsIn(t, env, fixtures.MassiveID, opsGroup(tc.leaf))
 		assert.ElementsMatch(t, tc.want, got, name)
@@ -132,7 +133,7 @@ func TestEventConditions(t *testing.T) {
 func TestEventConditionsCompose(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	exactlyOne := opsGroup(eventLeaf("email.opened", "atLeast", 1, 0), eventLeaf("email.opened", "atMost", 1, 0))
+	exactlyOne := opsGroup(eventLeaf(systemevent.EmailOpened, "atLeast", 1, 0), eventLeaf(systemevent.EmailOpened, "atMost", 1, 0))
 	got := emailsIn(t, env, fixtures.MassiveID, exactlyOne)
 
 	assert.Equal(t, []string{fixtures.MassiveBobEmail}, got, "exactly once is a group of atLeast and atMost")
@@ -155,19 +156,19 @@ func TestTagConditions(t *testing.T) {
 		return n
 	}
 	has := func(name string) condition.Group {
-		return condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("tag", "has", name))}
+		return condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(rule("tag", "has", name))}
 	}
 
 	assert.Equal(t, 2, count(has("vip")))
 	assert.Equal(t, 1, count(has("newsletter")))
 	assert.Equal(t, 0, count(has("unused")), "an existing Tag nobody has matches no one")
 	assert.Equal(t, 0, count(has("never-created")))
-	assert.Equal(t, 1, count(condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("tag", "doesNotHave", "vip"))}), "contact 2")
+	assert.Equal(t, 1, count(condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(rule("tag", "doesNotHave", "vip"))}), "contact 2")
 
 	// Composes with other rules: vip AND newsletter -> contact 1 only.
 	assert.Equal(t, 1, count(condition.Group{
 		Kind:       "group",
-		Combinator: "and",
+		Combinator: condition.And,
 		Rules:      marshal(rule("tag", "has", "vip"), rule("tag", "has", "newsletter")),
 	}))
 
@@ -187,7 +188,7 @@ func TestParseAndValidate(t *testing.T) {
 	env := testhelper.Setup(t)
 	g, err := condition.Parse("")
 	require.NoError(t, err)
-	assert.Equal(t, "and", g.Combinator)
+	assert.Equal(t, condition.And, g.Combinator)
 
 	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`))
 
@@ -211,7 +212,7 @@ func TestTelegramConditions(t *testing.T) {
 	const liam, emma, alice = fixtures.ContactLiamID, 101, fixtures.ContactAliceID
 
 	matching := func(op string) []int64 {
-		g := condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("telegram", op, ""))}
+		g := condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(rule("telegram", op, ""))}
 		p, err := condition.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g, time.Now())
 		require.NoError(t, err)
 		ids, err := env.DB.Contact.Query().
@@ -245,7 +246,7 @@ func TestSMSConditions(t *testing.T) {
 
 	matching := func(ws int64, op string) []int64 {
 		t.Helper()
-		g := condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("sms", op, ""))}
+		g := condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(rule("sms", op, ""))}
 		s := env.DB.Scoped(ws)
 		p, err := condition.Compile(ctx, s, g, time.Now())
 		require.NoError(t, err)

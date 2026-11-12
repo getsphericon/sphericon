@@ -11,6 +11,7 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -22,7 +23,7 @@ func TestCollectIdentifyAfterErasureCreatesAFreshContactStillRefusedByTheSurvivi
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "contacts:erase")).
+	err := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeContactsErase)).
 		ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactErasableID)})
 	require.NoError(t, err)
 

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // email reads Delivery notices; email has no Inbound messages or Reachability changes.
@@ -51,9 +52,9 @@ func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice)
 		DedupID:           n.ID + "/" + address,
 	}
 	if n.Kind == preset.Bounce {
-		ev.BounceKind = events.BounceKindSoft
+		ev.BounceKind = systemevent.BounceKindSoft
 		if n.Hard {
-			ev.BounceKind = events.BounceKindHard
+			ev.BounceKind = systemevent.BounceKindHard
 		}
 	}
 	msg, err := outboundmessages.FindByProviderMessageID(ctx, tx.Scoped, n.MessageID)
@@ -80,14 +81,14 @@ func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice)
 func actionOf(k preset.Kind) string {
 	switch k {
 	case preset.Delivery:
-		return events.NameEmailDelivered
+		return systemevent.EmailDelivered
 	case preset.Delay:
-		return events.NameEmailDelayed
+		return systemevent.EmailDelayed
 	case preset.Drop:
-		return events.NameEmailDropped
+		return systemevent.EmailDropped
 	case preset.Complaint:
-		return events.NameEmailComplained
+		return systemevent.EmailComplained
 	default:
-		return events.NameEmailBounced
+		return systemevent.EmailBounced
 	}
 }

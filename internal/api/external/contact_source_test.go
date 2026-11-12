@@ -10,12 +10,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestContactsCreatedThroughTheExternalAPICarryTheAPISource(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	ctx := context.Background()
 
 	_, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("source-single@example.com")})

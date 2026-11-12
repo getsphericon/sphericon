@@ -6,6 +6,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // collectEventLimit enforces the per-event cap inside a /collect/events batch
@@ -18,7 +20,7 @@ import (
 func collectEventLimit(limit int64) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != http.MethodPost || r.URL.Path != collectPrefix+"/events" || r.Body == nil {
+			if r.Method != http.MethodPost || r.URL.Path != paths.Collect+"/events" || r.Body == nil {
 				next.ServeHTTP(w, r)
 				return
 			}

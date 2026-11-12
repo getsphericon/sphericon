@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -55,7 +56,7 @@ func TestEveryOpenIsAnEventAndTheRollupIsStampedOnce(t *testing.T) {
 		assert.Equal(t, http.StatusOK, trackingGet(t, env, path).Code)
 	}
 
-	opened := env.QueuedEvents(t, events.NameEmailOpened)
+	opened := env.QueuedEvents(t, systemevent.EmailOpened)
 	require.Len(t, opened, 3, "one email.opened Event per open")
 	for _, e := range opened {
 		got, ok := e.(*events.EmailEngagement)
@@ -100,7 +101,7 @@ func TestEveryClickIsAnEventWithItsURLAndTheReportListsTheLinks(t *testing.T) {
 		assert.Equal(t, dest, resp.Header().Get("Location"))
 	}
 
-	clicked := env.QueuedEvents(t, events.NameEmailClicked)
+	clicked := env.QueuedEvents(t, systemevent.EmailClicked)
 	require.Len(t, clicked, 3, "one email.clicked Event per click")
 	assert.Equal(t, linkA, clicked[0].(*events.EmailEngagement).URL)
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})

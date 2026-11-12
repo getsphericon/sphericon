@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -29,7 +30,7 @@ func listedAutomationIDs(t *testing.T, c *externalapi.Client, archived bool) []e
 // and their count, and an archived Automation takes no edit.
 func TestExternalAutomationsArchiveAndUnarchive(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:write", "automations:read")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsRead)
 	ctx := context.Background()
 
 	_, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
@@ -58,7 +59,7 @@ func TestExternalAutomationsArchiveAndUnarchive(t *testing.T) {
 // the list, shows in the archived one and is still read by id.
 func TestExternalAutomationsArchiveKeepsOneThatSentMail(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:write", "automations:read")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsRead)
 	ctx := context.Background()
 	id := entityIDString(fixtures.AutomationOnOpenID)
 

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -71,7 +72,7 @@ func TestSenderThatConfirmsOnAcceptanceIsStampedDeliveredOnce(t *testing.T) {
 	assert.NotNil(t, row.DeliveredAt)
 	assert.Nil(t, row.BouncedAt)
 	assert.Nil(t, row.ComplainedAt)
-	assert.Equal(t, 1, env.QueuedCount(t, "email.delivered", map[string]any{"outboundMessageId": res.MessageID}))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.EmailDelivered, map[string]any{"outboundMessageId": res.MessageID}))
 }
 
 func TestSenderThatDoesNotConfirmIsNotStampedDelivered(t *testing.T) {
@@ -83,5 +84,5 @@ func TestSenderThatDoesNotConfirmIsNotStampedDelivered(t *testing.T) {
 
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, res.MessageID).DeliveredAt)
-	assert.Zero(t, env.QueuedCount(t, "email.delivered", map[string]any{"outboundMessageId": res.MessageID}))
+	assert.Zero(t, env.QueuedCount(t, systemevent.EmailDelivered, map[string]any{"outboundMessageId": res.MessageID}))
 }

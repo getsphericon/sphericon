@@ -117,7 +117,7 @@ export function AcceptancePage() {
     },
     onDone: async (me) => {
       queryClient.setQueryData(siteUserGetMeQueryKey(), me)
-      await navigate(redirect ? { href: redirect } : { to: indexRoute.to })
+      await (redirect ? navigate({ href: redirect }) : navigate({ to: indexRoute.to }))
     },
   })
 

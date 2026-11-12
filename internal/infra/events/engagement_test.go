@@ -4,12 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // The send path stamps EmailEngagement with a deterministic DedupID; the publisher
@@ -22,13 +24,13 @@ func TestEmailEngagementDedupIDBecomesDedupKey(t *testing.T) {
 
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		if err := pub.Publish(ctx, &events.EmailEngagement{
-			Action: events.NameEmailSent, WorkspaceID: fixtures.AcmeID,
+			Action: systemevent.EmailSent, WorkspaceID: fixtures.AcmeID,
 			Email: "sent@example.com", BroadcastID: fixtures.BroadcastDraftID, DedupID: "email.sent:42",
 		}); err != nil {
 			return err
 		}
 		return pub.Publish(ctx, &events.EmailEngagement{
-			Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID,
+			Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID,
 			Email: "sent@example.com", BroadcastID: fixtures.BroadcastDraftID,
 		})
 	}))
@@ -40,8 +42,8 @@ func TestEmailEngagementDedupIDBecomesDedupKey(t *testing.T) {
 		return msgs[0].DedupKey
 	}
 
-	assert.Equal(t, "email.sent:42", dedupOf(events.NameEmailSent),
+	assert.Equal(t, "email.sent:42", dedupOf(systemevent.EmailSent),
 		"email.sent carries its DedupID as the envelope DedupKey so a retry persists once")
-	assert.Empty(t, dedupOf(events.NameEmailOpened),
+	assert.Empty(t, dedupOf(systemevent.EmailOpened),
 		"open carries no DedupID → DedupKey stays empty (ULID fallback, unchanged)")
 }

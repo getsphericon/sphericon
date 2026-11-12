@@ -88,9 +88,11 @@ func stringLit(e ast.Expr) (string, bool) {
 
 var (
 	tsString = regexp.MustCompile(`'([^'\\\n]*)'|"([^"\\\n]*)"`)
-	tsArray  = regexp.MustCompile(`\[\s*(?:(?:'[^'\\\n]*'|"[^"\\\n]*")\s*,?\s*)+\]`)
-	tsUnion  = regexp.MustCompile(`(?:'[^'\\\n]*'|"[^"\\\n]*")(?:\s*\|\s*(?:'[^'\\\n]*'|"[^"\\\n]*"))+`)
-	tsLimit  = regexp.MustCompile(`\b((?:MAX|MIN|DEFAULT)_[A-Z_]+|max|min|maxLength|minLength)\s*(?:=|=\{|:)\s*(\d[\d_]*)\b`)
+	// tsArray is an array literal of strings, with spreads among them (`[...ACTIONS, 'email.sent']`):
+	// its strings are read, the spread lists by their own literal.
+	tsArray = regexp.MustCompile(`\[\s*(?:(?:'[^'\\\n]*'|"[^"\\\n]*"|\.\.\.[A-Za-z_$][\w$.]*)\s*,?\s*)+\]`)
+	tsUnion = regexp.MustCompile(`(?:'[^'\\\n]*'|"[^"\\\n]*")(?:\s*\|\s*(?:'[^'\\\n]*'|"[^"\\\n]*"))+`)
+	tsLimit = regexp.MustCompile(`\b((?:MAX|MIN|DEFAULT)_[A-Z_]+|max|min|maxLength|minLength)\s*(?:=|=\{|:)\s*(\d[\d_]*)\b`)
 	// tsOptions is an array literal with no array inside it, and tsOptionValue the `value` of each
 	// of its entries: a Select's options, one per value of an enum.
 	tsOptions     = regexp.MustCompile(`\[[^\[\]]*\]`)
@@ -104,6 +106,9 @@ var (
 	// tsDerived is a generated zod schema a field is read from (`trimmed(zButton.shape.label)`).
 	tsDerived = regexp.MustCompile(`\bz[A-Z]\w*`)
 	tsField   = regexp.MustCompile(`^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*:`)
+	// tsConst is a top-level constant of one string: a file's such constants, read together, may
+	// name the values of an enum one by one (`const EMAIL_NODE_TYPE = 'email'`, ...).
+	tsConst = regexp.MustCompile(`(?m)^(?:export\s+)?const\s+[A-Za-z_$][\w$]*\s*(?::\s*[^=\n]+)?=\s*(?:'([^'\\\n]*)'|"([^"\\\n]*)")\s*$`)
 )
 
 func scanTS(path string, c Contract) ([]string, error) {
@@ -125,6 +130,17 @@ func scanTS(path string, c Contract) ([]string, error) {
 				found = append(found, finding{line, message("a literal list or union repeats a TypeSpec enum")})
 			}
 		}
+	}
+	var constants []string
+	firstConst := 0
+	for _, m := range tsConst.FindAllStringSubmatchIndex(src, -1) {
+		if firstConst == 0 {
+			firstConst = m[0] + 1
+		}
+		constants = append(constants, src[max(m[2], m[4]):max(m[3], m[5])])
+	}
+	if firstConst > 0 && c.copiesEnum(constants) {
+		found = append(found, finding{lineOf(firstConst - 1), message("string constants repeat a TypeSpec enum")})
 	}
 	for _, m := range tsOptions.FindAllStringIndex(src, -1) {
 		var values []string

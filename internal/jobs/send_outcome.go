@@ -6,6 +6,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // RecordSendOutcome counts a provider's bounce or complaint on the send-outcome counter. The bus
@@ -19,9 +20,9 @@ func RecordSendOutcome(ctx context.Context, ev events.DomainEvent) {
 	}
 	var status messaging.SendStatus
 	switch f.Action {
-	case events.NameEmailBounced:
+	case systemevent.EmailBounced:
 		status = messaging.SendBounce
-	case events.NameEmailComplained:
+	case systemevent.EmailComplained:
 		status = messaging.SendComplaint
 	default:
 		return

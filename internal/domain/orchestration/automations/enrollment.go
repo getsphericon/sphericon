@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // Enrollment rules (GLOSSARY: Enrollment). A Contact is enrolled into an Automation
@@ -188,7 +189,7 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 	if err != nil {
 		return 0, false, err
 	}
-	if err := publishEnrollment(ctx, s, pub, events.NameAutomationEnrolled, begun); err != nil {
+	if err := publishEnrollment(ctx, s, pub, systemevent.AutomationEnrolled, begun); err != nil {
 		return 0, false, err
 	}
 	if !ended {

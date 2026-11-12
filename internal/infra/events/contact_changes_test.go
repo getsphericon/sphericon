@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -24,13 +25,13 @@ func TestContactChangeEventsExpireByAge(t *testing.T) {
 		}
 	}
 	changes := []events.DomainEvent{
-		&events.ContactTagChange{Action: events.NameContactTagged, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Tag: "vip"},
-		&events.ContactTagChange{Action: events.NameContactUntagged, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Tag: "vip"},
+		&events.ContactTagChange{Action: systemevent.ContactTagged, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Tag: "vip"},
+		&events.ContactTagChange{Action: systemevent.ContactUntagged, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Tag: "vip"},
 		&events.ContactFieldChanged{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Key: "plan", Value: "pro"},
-		enrollment(events.NameAutomationEnrolled),
-		enrollment(events.NameAutomationCompleted),
-		enrollment(events.NameAutomationGoalReached),
-		enrollment(events.NameAutomationExited),
+		enrollment(systemevent.AutomationEnrolled),
+		enrollment(systemevent.AutomationCompleted),
+		enrollment(systemevent.AutomationGoalReached),
+		enrollment(systemevent.AutomationExited),
 	}
 	actions := make([]string, 0, len(changes))
 	for _, ev := range changes {

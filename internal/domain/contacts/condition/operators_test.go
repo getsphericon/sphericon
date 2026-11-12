@@ -16,7 +16,7 @@ import (
 )
 
 func opsGroup(entries ...any) condition.Group {
-	return condition.Group{Kind: "group", Combinator: "and", Rules: marshal(entries...)}
+	return condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(entries...)}
 }
 
 func TestPlainColumnOperators(t *testing.T) {
@@ -93,8 +93,8 @@ func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 
 	assert.Equal(t, []string{
 		fixtures.InitrodeOneEmail, fixtures.InitrodeQuoteEmail, fixtures.InitrodeThreeEmail, fixtures.InitrodeTwoEmail,
-	}, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: "and"}))
-	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: "and", Not: true}),
+	}, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: condition.And}))
+	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: condition.And, Not: true}),
 		"an empty negated group matches no one")
 }
 
@@ -154,22 +154,22 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	// A rules[] entry that is not an object at all.
-	_, err := condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`42`)}}, time.Now())
+	_, err := condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`42`)}}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// A nested group whose own rules are not a list.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}}, time.Now())
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}}, time.Now())
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// An entry whose kind is missing or unknown is refused, not guessed from its fields.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}}, time.Now())
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}}, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown rule kind")
 

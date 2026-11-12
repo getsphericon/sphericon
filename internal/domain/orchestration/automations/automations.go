@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -281,12 +282,13 @@ func (m *Module) build(ctx context.Context, steps []automationstep.Step) ([]auto
 // engagementTriggers are the `email.` Events an Automation may start from: what a recipient does.
 // The others (sent, delivered, delayed, dropped, bounced, complained) are infrastructure, kept
 // for the figures and the log (ADR 0053).
-var engagementTriggers = []string{events.NameEmailOpened, events.NameEmailClicked, events.NameEmailUnsubscribed}
+var engagementTriggers = []string{systemevent.EmailOpened, systemevent.EmailClicked, systemevent.EmailUnsubscribed}
 
 // telegramTriggers are the `telegram.` Events an Automation may start from or end on: what happens
 // to a Binding and what the person does. `telegram.sent` is infrastructure, like `email.sent`.
 var telegramTriggers = []string{
-	events.NameTelegramBound, events.NameTelegramUnbound, "telegram.received", "telegram.clicked", "telegram.unsubscribed",
+	systemevent.TelegramBound, systemevent.TelegramUnbound, systemevent.TelegramReceived, systemevent.TelegramClicked,
+	systemevent.TelegramUnsubscribed,
 }
 
 // smsTriggers are the `sms.` Events an Automation may start from or end on: a text the person sent,
@@ -294,8 +296,8 @@ var telegramTriggers = []string{
 // (a delivery report, which on SMS says the number works or not, unlike email's infrastructure
 // notices). The acceptance (`sms.sent`) is infrastructure, like `email.sent`.
 var smsTriggers = []string{
-	events.NameSmsReceived, events.NameSmsConfirmed, events.NameSmsClicked, events.NameSmsDelivered, events.NameSmsUndelivered,
-	events.NameSmsUnsubscribed,
+	systemevent.SmsReceived, systemevent.SmsConfirmed, systemevent.SmsClicked, systemevent.SmsDelivered, systemevent.SmsUndelivered,
+	systemevent.SmsUnsubscribed,
 }
 
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.

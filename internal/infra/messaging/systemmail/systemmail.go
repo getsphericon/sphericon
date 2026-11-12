@@ -23,7 +23,7 @@ const defaultFromName = "sphericon"
 func Sender(cfg *config.Config, catalog *messaging.Catalog) (messaging.EmailSender, error) {
 	from := cfg.SystemEmailFrom
 	fromName := cmp.Or(cfg.SystemEmailFromName, defaultFromName)
-	if cfg.SystemEmailProvider == string(providers.SES) {
+	if cfg.SystemEmailProvider == providers.SES {
 		blob, err := json.Marshal(map[string]any{
 			"region":          cfg.SESRegion,
 			"accessKeyId":     cfg.SESAccessKeyID,

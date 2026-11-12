@@ -21,6 +21,9 @@ export const Route = createFileRoute('/login')({
     if (search.error || search.challenge || !(await isSignedIn(context.queryClient))) {
       return
     }
-    throw redirect(search.redirect ? { href: search.redirect } : { to: rootRoute.to })
+    if (search.redirect) {
+      throw redirect({ href: search.redirect })
+    }
+    throw redirect({ to: rootRoute.to })
   },
 })

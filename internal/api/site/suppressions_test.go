@@ -12,6 +12,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -51,7 +52,7 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 	row, err := env.DB.Suppression.Get(ctx, int64(res.ID))
 	require.NoError(t, err)
 	assert.NotNil(t, row.LiftedAt, "the lifted row stays with its lift time")
-	verdict, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
+	verdict, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), channels.Email,
 		"blocked@example.com", eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.True(t, verdict.Eligible, "a lifted destination receives mail again")

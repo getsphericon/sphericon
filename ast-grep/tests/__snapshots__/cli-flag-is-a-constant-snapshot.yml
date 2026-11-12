@@ -1,0 +1,14 @@
+id: cli-flag-is-a-constant
+snapshots:
+  "func action(ctx context.Context, cmd *cli.Command) error {\n\temail := cmd.StringArg(\"email\")\n\treturn run(email)\n}\n":
+    labels:
+      - source: cmd.StringArg("email")
+        style: primary
+        start: 69
+        end: 91
+  "func action(ctx context.Context, cmd *cli.Command) error {\n\treturn run(cmd.String(\"version\"))\n}\n":
+    labels:
+      - source: cmd.String("version")
+        style: primary
+        start: 71
+        end: 92

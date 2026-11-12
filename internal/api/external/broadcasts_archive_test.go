@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -73,7 +74,7 @@ func TestExternalAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 
 func TestExternalBroadcastsArchiveNeedsTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	readOnly := env.ExternalScoped(t, "broadcasts:read")
+	readOnly := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
 	ctx := context.Background()
 	id := entityIDString(fixtures.BroadcastSentID)
 

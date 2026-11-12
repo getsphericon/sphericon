@@ -24,10 +24,6 @@ import (
 // webhook while it is enabled and kept; every write that changes that, or the hook URL, calls
 // Telegram.
 
-// TelegramPreset is the built-in Preset every Telegram Integration reads its bot's updates with.
-// It is fixed: a Telegram Integration takes no other, and no other Integration takes it.
-const TelegramPreset = "telegram"
-
 // telegramPerSecond is Telegram's bulk limit of a bot: about 30 messages a second, stored as the
 // provider's side of the Provider limit (ADR 0023) when the bot connects.
 const telegramPerSecond = 30
@@ -186,7 +182,7 @@ type telegramEdit struct {
 // hold goes.
 func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in UpdateInput) (telegramEdit, error) {
 	params, _ := in.Params.Get()
-	if name := in.Preset.Over(row.Preset); (in.Preset.Changes() && (name == nil || *name != TelegramPreset)) || len(params) > 0 {
+	if name := in.Preset.Over(row.Preset); (in.Preset.Changes() && (name == nil || *name != preset.BuiltinTelegram)) || len(params) > 0 {
 		return telegramEdit{}, refuse(fieldPreset, i18n.ErrorsIntegrationTelegramPresetFixed, nil)
 	}
 	stored, err := m.telegramConfigOf(row)
@@ -292,16 +288,16 @@ func presetFits(provider providers.Provider, name *string, params map[string]any
 		}
 		return nil
 	case providers.Twilio:
-		if name != nil && *name != TwilioPreset {
+		if name != nil && *name != preset.BuiltinTwilio {
 			return refuse(fieldPreset, i18n.ErrorsIntegrationTwilioPresetFixed, nil)
 		}
 		return nil
 	case providers.SMTP, providers.SES, providers.Inbox:
 	}
-	if name != nil && *name == TelegramPreset {
+	if name != nil && *name == preset.BuiltinTelegram {
 		return refuse(fieldPreset, i18n.ErrorsIntegrationPresetTelegramOnly, nil)
 	}
-	if name != nil && *name == TwilioPreset {
+	if name != nil && *name == preset.BuiltinTwilio {
 		return refuse(fieldPreset, i18n.ErrorsIntegrationPresetTwilioOnly, nil)
 	}
 	return nil
@@ -315,7 +311,7 @@ func (m *Module) Choosable() []*preset.Preset {
 	names := m.presets.Names()
 	out := make([]*preset.Preset, 0, len(names))
 	for _, name := range names {
-		if name == TelegramPreset {
+		if name == preset.BuiltinTelegram {
 			continue
 		}
 		p, _ := m.presets.Get(name)

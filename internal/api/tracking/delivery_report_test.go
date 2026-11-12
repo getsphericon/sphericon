@@ -9,6 +9,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -52,7 +53,7 @@ func TestBroadcastReportCountsTheDeliveryResultAndSurvivesEventPruning(t *testin
 
 func TestExternalBroadcastReportCountsTheDeliveryResult(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "broadcasts:read")
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
 
 	pruneAllAnalytical(t, env)
 

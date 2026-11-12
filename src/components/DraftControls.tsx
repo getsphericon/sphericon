@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useConfirmation } from '../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { draftState } from './draftState.ts'
+import type { DraftStatus } from './draftState.ts'
 
 // Publish and Revert act on the stored content the page shows, so they name its revision (ADR 0119).
 interface RevisedPath {
@@ -27,7 +28,7 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   workspaceId: string
   resource: {
     id: string
-    status: string
+    status: DraftStatus
     live: object | null
     draft: object | null
     revision: number

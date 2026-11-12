@@ -9,6 +9,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // ExpirableEventPredicate selects the Events that expire by age (ADR 0019): every
@@ -16,7 +18,10 @@ import (
 // hard bounces). A bounce with no bounceKind counts as soft. It is the
 // single source of truth for both the partial index below and the retention
 // delete (internal/infra/events.PruneEvents), so the delete can always use the index.
-const ExpirableEventPredicate = `action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')`
+const ExpirableEventPredicate = "action NOT IN ('" + systemevent.MarketingConfirmed + "', '" + systemevent.SmsConfirmed +
+	"', '" + systemevent.EmailComplained + "', '" + systemevent.EmailUnsubscribed + "') AND NOT (action = '" +
+	systemevent.EmailBounced + "' AND COALESCE(properties->>'" + systemevent.BounceKindProperty + "', '') = '" +
+	systemevent.BounceKindHard + "')"
 
 type Event struct {
 	ent.Schema

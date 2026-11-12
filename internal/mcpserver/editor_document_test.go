@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -23,7 +24,7 @@ func decode(t *testing.T, raw string) map[string]any {
 
 func TestMCPBrandGetReturnsTheBrandKitAndWrapsItsTextAsUntrusted(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.InitechID, "templates:read"))
+	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeTemplatesRead))
 
 	res := call(t, s, "brand_get", map[string]any{})
 	require.False(t, res.IsError, text(t, res))
@@ -40,7 +41,7 @@ func TestMCPBrandGetReturnsTheBrandKitAndWrapsItsTextAsUntrusted(t *testing.T) {
 
 func TestMCPBrandGetNeedsTheTemplatesReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 	assert.True(t, call(t, s, "brand_get", map[string]any{}).IsError)
 	assert.True(t, call(t, s, "email_schema", map[string]any{}).IsError)
 }
@@ -49,7 +50,7 @@ func TestMCPBrandGetNeedsTheTemplatesReadScope(t *testing.T) {
 // accepted, and the rules it names are the ones the server refuses by.
 func TestMCPEmailSchemaDescribesTheDocumentAnAgentMayWrite(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearer(t, "templates:read", "templates:write"))
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite))
 
 	res := call(t, s, "email_schema", map[string]any{})
 	require.False(t, res.IsError, text(t, res))
@@ -76,7 +77,7 @@ func TestMCPAgentCopiesAStarterTemplateAndEditsItsDocument(t *testing.T) {
 	starters, err := brandkits.New(env.Bus, emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})).RecreateStarterTemplates(ctx, env.DB.Scoped(fixtures.InitechID))
 	require.NoError(t, err)
 	starter := starters[0]
-	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.InitechID, "templates:read", "templates:write"))
+	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite))
 
 	read := call(t, s, "templates_get", map[string]any{"id": strconv.FormatInt(starter.ID, 10)})
 	require.False(t, read.IsError, text(t, read))
@@ -107,7 +108,7 @@ func TestMCPAgentCopiesAStarterTemplateAndEditsItsDocument(t *testing.T) {
 // reason, never repaired, and nothing is stored.
 func TestMCPInvalidAndHostileDocumentsAreRefusedAndStoreNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearer(t, "templates:read", "templates:write", "broadcasts:write"))
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite, apitokens.ScopeBroadcastsWrite))
 	before := env.DB.EmailTemplate.Query().CountX(t.Context())
 
 	hostile := map[string]any{"type": "doc", "content": []any{map[string]any{

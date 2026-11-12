@@ -19,6 +19,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -26,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -61,7 +63,7 @@ func smsStep(account testhelper.TwilioAccount, text string) automationstep.Step 
 // confirmSMS records the Confirmation an API client asserts for the number.
 func confirmSMS(t *testing.T, env *testhelper.TestEnv, number string) {
 	t.Helper()
-	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
 		Channel: externalapi.ConsentChannelSMS, Destination: number,
 		Wording: "Yes, text me offers from Acme. Reply STOP to opt out.", Source: "checkout form", Brand: "Acme",
 	})
@@ -91,7 +93,7 @@ func TestAnSMSStepSendsTheRenderedTextToTheConfirmedPhone(t *testing.T) {
 	assert.Equal(t, channels.SMS, msg.Channel)
 	assert.Equal(t, fixtures.ContactTexterConfirmedPhone, msg.Destination)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID), "Twilio's SID is the provider reference")
-	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{
+	smsSent := env.QueuedCount(t, systemevent.SmsSent, map[string]any{
 		"contactId": fixtures.ContactTexterConfirmedID, "automationId": automationID, "destination": fixtures.ContactTexterConfirmedPhone,
 		"integrationId": account.Integration.ID, "outboundMessageId": msg.ID,
 	})
@@ -150,7 +152,7 @@ func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 			assert.Equal(t, outboundmessage.StatusSkipped, skipped.Status)
 			assert.Equal(t, channels.SMS, skipped.Channel)
 			assert.Equal(t, tc.reason, lo.FromPtr(skipped.Reason))
-			smsSent := env.QueuedCount(t, events.NameSmsSent, nil)
+			smsSent := env.QueuedCount(t, systemevent.SmsSent, nil)
 			assert.Zero(t, smsSent)
 		})
 	}
@@ -197,13 +199,13 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 		unsubscribe.SendingSource(eligibility.SourceEverything)).OnlyX(ctx)
 	assert.Equal(t, channels.SMS, optOut.Channel)
 	assert.Equal(t, unsubscribe.ViaLink, lo.FromPtr(optOut.Via))
-	dec, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, fixtures.ContactTexterConfirmedPhone, eligibility.SourceBroadcasts)
+	dec, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), channels.SMS, fixtures.ContactTexterConfirmedPhone, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason, "a Broadcast's text does not go either")
 	// The link of a received text attributes the opt-out to its Automation (ADR 0115), which the
 	// link itself does not name: an SMS link is for everything.
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunJobsSMSStopLinkConfirmedID)
-	unsubscribed := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	unsubscribed := env.QueuedMessages(t, systemevent.SmsUnsubscribed)
 	require.Len(t, unsubscribed, 1)
 	data := unsubscribed[0].Data
 	assert.Equal(t, strconv.Itoa(fixtures.ContactTexterConfirmedID), fmt.Sprint(data["contactId"]))

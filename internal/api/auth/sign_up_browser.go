@@ -3,6 +3,8 @@ package auth
 import (
 	"net/http"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // SignUpBrowserCookie is the name of the cookie that makes a browser the Sign-up browser
@@ -13,7 +15,7 @@ const SignUpBrowserCookie = "SIGN_UP_BROWSER"
 // signUpBrowserCookiePath is the auth prefix shared by the two operations that read the
 // cookie, verify and resend; a narrower path would hide it from one of them. The cookie
 // is httpOnly and SameSite=Strict, so the browser still sends it to nothing else.
-const signUpBrowserCookiePath = "/site/auth"
+const signUpBrowserCookiePath = paths.Site + "/auth"
 
 // SignUpBrowser is the cookie that carries a Sign-up browser's value (httpOnly,
 // SameSite=Strict, scoped to the auth prefix, living for ttl). The value itself never leaves

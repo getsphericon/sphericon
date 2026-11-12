@@ -120,9 +120,9 @@ func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *e
 	}
 	switch res.Outcome {
 	case Held:
-		return Result{}, ErrHeld.With(Detail(res.Reason))
+		return Result{}, ErrHeld.With(HoldDetail(res.Hold))
 	case Refused:
-		return Result{}, ErrTestRefused.With(Detail(res.Reason))
+		return Result{}, ErrTestRefused.With(RefuseDetail(res.Reason))
 	case Failed: // the content did not render
 		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
 	case Sent, Skipped, Deferral:
@@ -157,7 +157,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 		return Result{}, err
 	}
 	if hold != "" {
-		return Result{Outcome: Held, Reason: hold}, nil
+		return Result{Outcome: Held, Hold: hold}, nil
 	}
 	route, err := m.Route(ctx, s, channels.Email, req.IntegrationID)
 	if err != nil {
@@ -177,7 +177,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 		return Result{}, err
 	}
 	if g.hold != "" {
-		return Result{Outcome: Held, Reason: g.hold}, nil
+		return Result{Outcome: Held, Hold: g.hold}, nil
 	}
 	adapter, ok := route.Sender.(emailAdapter)
 	if !ok {
@@ -234,7 +234,7 @@ func sendTestMessage(ctx context.Context, sender messaging.EmailSender, msg mess
 	msg.From, msg.FromName, msg.To = from, name, to
 	if _, err := sendEmail(ctx, sender, msg); err != nil {
 		if reason := heldBy(err); reason != "" {
-			return Result{Outcome: Held, Reason: reason}, nil
+			return Result{Outcome: Held, Hold: reason}, nil
 		}
 		return Result{}, fmt.Errorf("outbound: test send to %s: %w", to, err)
 	}

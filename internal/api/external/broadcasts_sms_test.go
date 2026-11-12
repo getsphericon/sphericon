@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -22,7 +23,7 @@ func TestExternalSMSBroadcastIsCreatedTestSentScheduledAndKeepsItsIntegrationInU
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
 	twilio := int64(account.Integration.ID)
-	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send", "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite, apitokens.ScopeBroadcastsSend, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 
 	made, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name: "Flash sale", Content: testhelper.ExternalSMS("Hi {{ first_name }}"),

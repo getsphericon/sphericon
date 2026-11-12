@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -128,7 +129,7 @@ func rejected(t *testing.T, err error) string {
 func TestRecordRefusesReservedActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := newModule(env)
-	for _, action := range []string{"email.opened", " Email.Clicked", "marketing.confirmed", "contact.created", "telegram.bound", " Telegram.Unbound"} {
+	for _, action := range []string{systemevent.EmailOpened, " Email.Clicked", systemevent.MarketingConfirmed, systemevent.ContactCreated, systemevent.TelegramBound, " Telegram.Unbound"} {
 		err := m.Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{{SubjectID: "s-1", Action: action}})
 		reason := rejected(t, err)
 		assert.Contains(t, reason, "reserved", action)

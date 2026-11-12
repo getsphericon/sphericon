@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -18,7 +19,7 @@ import (
 func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "broadcasts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsWrite)
 
 	create := func(from string) error {
 		_, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{

@@ -9,8 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -19,7 +21,7 @@ func auditEntry(actorKind string) *events.AuditEntry {
 		WorkspaceID: fixtures.AcmeID,
 		Actor:       events.Actor{Kind: actorKind, ID: "1", Name: "John"},
 		Action:      "membership.update",
-		TargetType:  "membership",
+		TargetType:  membership.Label,
 		TargetID:    "3",
 	}
 }
@@ -42,7 +44,7 @@ func TestAuditEntryIsNotProjectedToAnEvent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, before, after)
 	assert.True(t, events.IsUnprojected(events.NameAuditEntry))
-	assert.False(t, events.IsUnprojected(events.NameContactCreated))
+	assert.False(t, events.IsUnprojected(systemevent.ContactCreated))
 }
 
 // The seam records only human, token, staff member and system actors: ingest (and no

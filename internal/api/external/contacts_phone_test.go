@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -29,7 +30,7 @@ func TestExternalContactsCreateStoresThePhoneInE164(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			c := env.ExternalScoped(t, "contacts:write")
+			c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 			got, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
 				Phone:   externalapi.NewOptNilString(tc.phone),
@@ -44,7 +45,7 @@ func TestExternalContactsCreateStoresThePhoneInE164(t *testing.T) {
 func TestExternalContactsUpdateReadsALocalPhoneWithTheStoredCountry(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	id := entityIDString(fixtures.ContactLiamID) // stored with the country US
 
 	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(id))), Phone: externalapi.NewOptNilString("(415) 555-0101")},
@@ -55,7 +56,7 @@ func TestExternalContactsUpdateReadsALocalPhoneWithTheStoredCountry(t *testing.T
 
 func TestExternalContactsUpdateReadsALocalPhoneWithTheCountryItSets(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	got, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(context.Background(), t, int64(entityIDString(fixtures.ContactAliceID)))),
 		Phone:   externalapi.NewOptNilString("8 999 123-45-67"),
@@ -74,7 +75,7 @@ func TestExternalContactsRefuseAPhoneThatIsNoNumber(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			c := env.ExternalScoped(t, "contacts:write")
+			c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 			_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
 				Email: externalapi.NewOptNilEmailAddress("bad.phone@example.com"),
@@ -95,7 +96,7 @@ func TestExternalContactsRefuseAPhoneThatIsNoNumber(t *testing.T) {
 func TestExternalContactsBatchUpsertReportsARowWithABadPhone(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	got, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
 		{Email: externalapi.NewOptNilEmailAddress("good.row@example.com"), Phone: externalapi.NewOptNilString("+1 415 555 0102")},
@@ -123,7 +124,7 @@ func TestExternalContactsBatchUpsertReportsARowWithABadPhone(t *testing.T) {
 func TestExternalContactsBatchUpsertResolvesAPhoneInAnotherFormat(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	// ContactTexter's phone, +14155550810, written as a US local number.
 	got, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{

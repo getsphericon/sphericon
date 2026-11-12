@@ -1,0 +1,27 @@
+id: audit-diff-key-is-a-constant
+language: Go
+severity: error
+message: "rule 6: an Audit entry's Diff is keyed by a string literal; fix: key it by the ent field constant (workspace.FieldName), or by a named constant when no column holds the value"
+note: >-
+  A Diff entry (events.Change, events.Became, events.ChangeOf) is keyed by the field it changed
+  (CODING_STANDARDS.md): the ent field constant, which the generated Audit diffs of the audited
+  entities use too, so a renamed column renames its key and a misspelt one fails to compile. A key
+  no column holds (a Workspace's deletion) is a named constant of the module that writes it.
+rule:
+  any:
+    - pattern:
+        context: 'var _ = map[string]any{$KEY: events.$HELPER($$$ARGS)}'
+        selector: keyed_element
+    - pattern:
+        context: 'func _() { $DIFF[$KEY] = events.$HELPER($$$ARGS) }'
+        selector: assignment_statement
+constraints:
+  KEY:
+    regex: ^["`]
+  HELPER:
+    regex: ^(Change|Became)$
+files:
+  - '**/*.go'
+ignores:
+  - ent/**
+  - gen/**

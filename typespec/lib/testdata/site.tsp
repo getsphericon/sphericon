@@ -41,3 +41,8 @@ op account(): void;
 @get
 @allowedWhileWithheld
 op session(): void;
+
+@route("/auth/login")
+@post
+@rateLimited("login")
+op login(): void;

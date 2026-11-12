@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteAnalyticsClicksByLinkOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteAnalyticsLinkOwner } from '../../../generated/site/types.gen.ts'
+import type {
+  SiteAnalyticsLinkOwner,
+  SiteAnalyticsRange,
+} from '../../../generated/site/types.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as clicksByLinkRoute } from '../../../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
@@ -14,7 +17,7 @@ import { Route as broadcastReportRoute } from '../../../routes/workspaces/$works
 import { ReportBoundary } from './ReportBoundary.tsx'
 
 // The window is `<days>d`; the retention note compares its days with the instance's retention.
-function windowDays(range: string): number {
+function windowDays(range: SiteAnalyticsRange): number {
   return Number.parseInt(range, 10)
 }
 

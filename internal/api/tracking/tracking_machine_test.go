@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -67,7 +68,7 @@ func TestAScannerOpenIsAMachineEventAndCountsNowhere(t *testing.T) {
 	resp := hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), scannerUA, personAddr)
 	assert.Equal(t, http.StatusOK, resp.Code, "the pixel is served all the same")
 
-	e := onlyEngagement(t, env, events.NameEmailOpened)
+	e := onlyEngagement(t, env, systemevent.EmailOpened)
 	assert.True(t, e.Machine)
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).OpenedAt, "a machine open stamps nothing")
@@ -82,7 +83,7 @@ func TestAScannerClickRedirectsAndCountsNowhere(t *testing.T) {
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, linkA, resp.Header().Get("Location"))
 
-	e := onlyEngagement(t, env, events.NameEmailClicked)
+	e := onlyEngagement(t, env, systemevent.EmailClicked)
 	assert.True(t, e.Machine)
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Nil(t, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID).ClickedAt, "a machine click stamps nothing")
@@ -98,7 +99,7 @@ func TestAHitFromAPrivateRelayRangeIsMachine(t *testing.T) {
 		hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), personUA, addr)
 	}
 
-	opened := env.QueuedEvents(t, events.NameEmailOpened)
+	opened := env.QueuedEvents(t, systemevent.EmailOpened)
 	require.Len(t, opened, 2)
 	for _, o := range opened {
 		assert.True(t, o.(*events.EmailEngagement).Machine)
@@ -113,8 +114,8 @@ func TestAPersonsHitIsUnaffected(t *testing.T) {
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), personUA, personAddr)
 	hit(t, env, clickPathTo(t, env, fixtures.OutboundMessageTrackingSampleID, linkA), personUA, personAddr)
 
-	assert.False(t, onlyEngagement(t, env, events.NameEmailOpened).Machine)
-	assert.False(t, onlyEngagement(t, env, events.NameEmailClicked).Machine)
+	assert.False(t, onlyEngagement(t, env, systemevent.EmailOpened).Machine)
+	assert.False(t, onlyEngagement(t, env, systemevent.EmailClicked).Machine)
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID)
 	assert.NotNil(t, msg.OpenedAt)
@@ -158,13 +159,13 @@ func TestAMachineOpenOrClickIsNoMatchOfASegmentCondition(t *testing.T) {
 
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), scannerUA, personAddr)
 	hit(t, env, clickPathTo(t, env, fixtures.OutboundMessageTrackingSampleID, linkA), scannerUA, personAddr)
-	assert.Zero(t, matching(events.NameEmailOpened), "a machine open is no open")
-	assert.Zero(t, matching(events.NameEmailClicked), "a machine click is no click")
+	assert.Zero(t, matching(systemevent.EmailOpened), "a machine open is no open")
+	assert.Zero(t, matching(systemevent.EmailClicked), "a machine click is no click")
 
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), personUA, personAddr)
 	hit(t, env, clickPathTo(t, env, fixtures.OutboundMessageTrackingSampleID, linkB), personUA, personAddr)
-	assert.EqualValues(t, 1, matching(events.NameEmailOpened))
-	assert.EqualValues(t, 1, matching(events.NameEmailClicked))
+	assert.EqualValues(t, 1, matching(systemevent.EmailOpened))
+	assert.EqualValues(t, 1, matching(systemevent.EmailClicked))
 }
 
 func TestTheEventListLeavesOutMachineEventsUnlessAskedFor(t *testing.T) {
@@ -174,7 +175,7 @@ func TestTheEventListLeavesOutMachineEventsUnlessAskedFor(t *testing.T) {
 		t.Helper()
 		out, err := c.SiteEventsList(t.Context(), siteapi.SiteEventsListParams{
 			WorkspaceId:    fixtures.AcmePublicID,
-			Action:         siteapi.NewOptString(events.NameEmailOpened),
+			Action:         siteapi.NewOptString(systemevent.EmailOpened),
 			ContactId:      siteapi.NewOptEntityId(siteapi.EntityId(fixtures.ContactAliceID)),
 			IncludeMachine: siteapi.NewOptBool(includeMachine),
 		})
@@ -195,7 +196,7 @@ func TestNeitherTheAddressNorTheUserAgentIsStored(t *testing.T) {
 
 	hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), scannerUA, relayAddr)
 
-	for _, e := range env.QueuedEnvelopes(t, events.NameEmailOpened) {
+	for _, e := range env.QueuedEnvelopes(t, systemevent.EmailOpened) {
 		assert.NotContains(t, string(e.Data), relayAddr)
 		assert.NotContains(t, string(e.Data), "Googlebot")
 	}
@@ -213,9 +214,9 @@ func TestRefreshReplacesTheRangesAndAFailedRefreshKeepsThem(t *testing.T) {
 	path := openPath(t, env, fixtures.OutboundMessageTrackingSampleID)
 	machineHit := func(addr string) bool {
 		t.Helper()
-		before := len(env.QueuedEvents(t, events.NameEmailOpened))
+		before := len(env.QueuedEvents(t, systemevent.EmailOpened))
 		hit(t, env, path, personUA, addr)
-		opened := env.QueuedEvents(t, events.NameEmailOpened)
+		opened := env.QueuedEvents(t, systemevent.EmailOpened)
 		require.Len(t, opened, before+1)
 		return opened[before].(*events.EmailEngagement).Machine
 	}

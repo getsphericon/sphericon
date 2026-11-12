@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automation"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -20,7 +21,7 @@ import (
 func TestExternalAutomationsRead(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "automations:read")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	listed, err := c.AutomationsList(ctx, externalapi.AutomationsListParams{})
 	require.NoError(t, err)
@@ -53,7 +54,7 @@ func TestExternalAutomationsRead(t *testing.T) {
 	_, err = c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: 999999})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	denied := env.ExternalScoped(t, "contacts:read")
+	denied := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	_, err = denied.AutomationsList(ctx, externalapi.AutomationsListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
@@ -63,7 +64,7 @@ func TestExternalAutomationsRead(t *testing.T) {
 func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:publish")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsPublish)
 
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "Tag newcomers",
@@ -104,7 +105,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	_, err = c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: a.ID})
 	require.NoError(t, err, "archiving it again changes nothing")
 
-	readOnly := env.ExternalScoped(t, "automations:read")
+	readOnly := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 	_, err = readOnly.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "y"})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
@@ -116,14 +117,14 @@ func TestExternalAutomationsPublishNeedsThePublishScope(t *testing.T) {
 	ctx := context.Background()
 	id := entityIDString(fixtures.AutomationWinBackID)
 
-	authoring := env.ExternalScoped(t, "automations:read", "automations:write")
+	authoring := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	_, err := authoring.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(id)))}, externalapi.AutomationsPublishParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	still, err := authoring.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.AutomationStatusInactive, still.Status)
 
-	c := env.ExternalScoped(t, "automations:read", "automations:publish")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsPublish)
 	on, err := c.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(id)))}, externalapi.AutomationsPublishParams{ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.AutomationStatusActive, on.Status)
@@ -142,11 +143,11 @@ func TestExternalAutomationsDeactivateNeedsOnlyTheWriteScope(t *testing.T) {
 	ctx := context.Background()
 	id := entityIDString(fixtures.AutomationWelcomeSeriesID)
 
-	publisher := env.ExternalScoped(t, "automations:publish")
+	publisher := env.ExternalScoped(t, apitokens.ScopeAutomationsPublish)
 	_, err := publisher.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	authoring := env.ExternalScoped(t, "automations:write")
+	authoring := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite)
 	off, err := authoring.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.AutomationStatusInactive, off.Status)

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -53,7 +54,7 @@ func TestCollectRefusesAutomationActions(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
-		Events: []collectapi.CollectEventInput{{VisitorId: "v-1", Action: "automation.completed"}},
+		Events: []collectapi.CollectEventInput{{VisitorId: "v-1", Action: systemevent.AutomationCompleted}},
 	})
 	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "reserved")

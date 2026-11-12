@@ -5,15 +5,17 @@ import (
 	"strings"
 )
 
-// Enum is the Decls of a file that gives a string enum of the contract a Go type of its own in a
-// core package, so the package reads the contract's vocabulary without importing a surface's
-// generated code (ADR 0061).
+// Enum is the Decls of a file that declares a string enum of the contract in a core package, so the
+// package reads the contract's vocabulary without importing a surface's generated code (ADR 0061).
 type Enum struct {
 	// Schema is the component schema of the enum.
 	Schema string
-	// Doc is the comment over the type, one line per element.
+	// Doc is the comment over the type, or over the constants when there is no type, one line per
+	// element.
 	Doc []string
-	// Type is the Go type; each value is the constant Prefix+valueName, in the contract's order.
+	// Type is the Go type; each value is the constant Prefix+valueName, in the contract's order. With
+	// no Type the constants are untyped, for a vocabulary whose values share their fields with values
+	// outside it (a System event's action and a customer's own), and the list is a []string.
 	Type, Prefix string
 	// List, when set, also declares a slice of every value under that name, commented by ListDoc.
 	List    string
@@ -32,7 +34,14 @@ func (e Enum) Decls(doc Document) (string, error) {
 	}
 	var b strings.Builder
 	writeDoc(&b, e.Doc)
-	fmt.Fprintf(&b, "type %s string\n\n// The values of the contract's %s enum, in its order.\nconst (\n", e.Type, e.Schema)
+	listType := "string"
+	if e.Type != "" {
+		listType = e.Type
+		fmt.Fprintf(&b, "type %s string\n\n", e.Type)
+	} else if len(e.Doc) > 0 {
+		b.WriteString("//\n")
+	}
+	fmt.Fprintf(&b, "// The values of the contract's %s enum, in its order.\nconst (\n", e.Schema)
 	for _, v := range values {
 		fmt.Fprintf(&b, "\t%s%s %s = %q\n", e.Prefix, valueName(v), e.Type, v)
 	}
@@ -40,7 +49,7 @@ func (e Enum) Decls(doc Document) (string, error) {
 	if e.List != "" {
 		b.WriteString("\n")
 		writeDoc(&b, e.ListDoc)
-		fmt.Fprintf(&b, "var %s = []%s{\n", e.List, e.Type)
+		fmt.Fprintf(&b, "var %s = []%s{\n", e.List, listType)
 		for _, v := range values {
 			fmt.Fprintf(&b, "\t%s%s,\n", e.Prefix, valueName(v))
 		}
@@ -49,10 +58,42 @@ func (e Enum) Decls(doc Document) (string, error) {
 	return b.String(), nil
 }
 
+// SystemEventActions is the actions of the System events in the kernel package systemevent, from
+// the contract's SystemEventAction enum: the bus types of the events recorded as System events and
+// the actions their Event rows carry. They are untyped, as an Event's action is a string that may
+// be a customer's own.
+var SystemEventActions = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/systemevent/actions_gen.go",
+	Package: "systemevent",
+	Decls: Enum{
+		Schema: "SystemEventAction",
+		Doc: []string{
+			"The actions of the System events: what sphericon itself records, never a customer, each also",
+			"the bus type of the event that records it (TestEverySystemEventIsTheContracts).",
+		},
+		List:    "Actions",
+		ListDoc: []string{"Actions is every System event action, in the contract's order."},
+	}.Decls,
+}
+
+// ConditionCombinators is how a condition Group joins its rules, in the condition module, from the
+// contract's SiteConditionCombinator enum.
+var ConditionCombinators = Table{
+	Spec:    siteSpec,
+	Out:     "internal/domain/contacts/condition/combinator_gen.go",
+	Package: "condition",
+	Decls: Enum{
+		Schema: "SiteConditionCombinator",
+		Doc:    []string{"Combinator is how a Group joins its rules: And, every rule matches; Or, any rule does."},
+		Type:   "Combinator",
+	}.Decls,
+}
+
 // Permissions is the Permission vocabulary in memberships (ADR 0061): the type a Role's table and
 // every generated access table name, from the contract's Permission enum.
 var Permissions = Table{
-	Spec:    "openapi/site.openapi.json",
+	Spec:    siteSpec,
 	Out:     "internal/domain/identity/memberships/permissions_gen.go",
 	Package: "memberships",
 	Decls: Enum{
@@ -69,7 +110,7 @@ var Permissions = Table{
 // TokenScopes is the API token scope vocabulary in apitokens: what a token may be minted with and
 // the type the external API's scope table names, from the contract's ApiTokenScope enum.
 var TokenScopes = Table{
-	Spec:    "openapi/external.openapi.json",
+	Spec:    externalSpec,
 	Out:     "internal/domain/identity/apitokens/scopes_gen.go",
 	Package: "apitokens",
 	Decls: Enum{
@@ -89,7 +130,7 @@ var TokenScopes = Table{
 // servicecredentials (ADR 0026): what a credential may be issued with, from the service
 // contract's ServiceScope enum, so the module never imports the service surface's generated code.
 var CredentialScopes = Table{
-	Spec:    "openapi/service.openapi.json",
+	Spec:    serviceSpec,
 	Out:     "ee/domain/identity/servicecredentials/scopes_gen.go",
 	Package: "servicecredentials",
 	Decls: Enum{
@@ -111,7 +152,7 @@ var CredentialScopes = Table{
 // is minted from (PersonalScope). A core package reads it from there and never from the /site
 // surface's generated code.
 var UserScopes = Table{
-	Spec:    "openapi/site.openapi.json",
+	Spec:    siteSpec,
 	Out:     "internal/kernel/tokenscope/user_scopes_gen.go",
 	Package: "tokenscope",
 	Decls: Enums(

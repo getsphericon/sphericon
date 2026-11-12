@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -39,7 +40,7 @@ func TestRealProvidersWithoutAVerifiedSendingDomainAreHeld(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, outboundmessages.Held, res.Outcome)
-			assert.Equal(t, outboundmessages.HoldUnverifiedDomain, res.Reason)
+			assert.Equal(t, holdreason.UnverifiedDomain, res.Hold)
 		})
 	}
 }

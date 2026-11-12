@@ -11,7 +11,7 @@ import (
 // declares `x-required-scopes`, an empty list being one any valid token may call, and every scope
 // it names must be an ApiTokenScope.
 var ExternalScopes = Table{
-	Spec:    "openapi/external.openapi.json",
+	Spec:    externalSpec,
 	Out:     "internal/api/auth/external_scopes_gen.go",
 	Package: "auth",
 	Imports: []string{
@@ -61,7 +61,7 @@ func externalRows(doc Document) ([]string, error) {
 // scopes do not already need to be granted declares `x-required-permissions`; one that declares
 // none has no entry. Every Permission named must be in the contract's Permission enum.
 var ExternalPermissions = Table{
-	Spec:    "openapi/external.openapi.json",
+	Spec:    externalSpec,
 	Out:     "internal/api/auth/external_permissions_gen.go",
 	Package: "auth",
 	Imports: []string{

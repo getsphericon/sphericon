@@ -20,12 +20,12 @@ func workspaceCommand(d deps) *cli.Command {
 			Usage:     "freeze outbound sending; the owner is told the reason",
 			ArgsUsage: "<id> <reason...>",
 			Arguments: []cli.Argument{
-				&cli.StringArg{Name: "id", Required: true},
-				&cli.StringArgs{Name: "reason", Max: -1},
+				&cli.StringArg{Name: flagID, Required: true},
+				&cli.StringArgs{Name: flagReason, Max: -1},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
-				id := cmd.StringArg("id")
-				reason := strings.Join(cmd.StringArgs("reason"), " ")
+				id := cmd.StringArg(flagID)
+				reason := strings.Join(cmd.StringArgs(flagReason), " ")
 				suspender, err := c.Suspender()
 				if err != nil {
 					return err
@@ -38,13 +38,13 @@ func workspaceCommand(d deps) *cli.Command {
 			Name:      "unsuspend",
 			Usage:     "resume outbound sending",
 			ArgsUsage: "<id>",
-			Arguments: []cli.Argument{&cli.StringArg{Name: "id", Required: true}},
+			Arguments: []cli.Argument{&cli.StringArg{Name: flagID, Required: true}},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				suspender, err := c.Suspender()
 				if err != nil {
 					return err
 				}
-				id := cmd.StringArg("id")
+				id := cmd.StringArg(flagID)
 				changed, err := suspender.UnsuspendByPublicID(ctx, id, suspension.CLI)
 				return commandline.Unsuspension.Report(out(cmd), id, changed, err)
 			}),

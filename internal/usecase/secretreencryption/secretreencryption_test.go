@@ -42,7 +42,7 @@ func cipherFor(t *testing.T, keyset string) *secrets.Cipher {
 func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 
 	// An Enrollment stands on the first version of the Slack Automation (fixture), so editing its
@@ -164,7 +164,7 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 
 	// The HTTP Rule (fixture) has a live version with one http Action and an older one with two;

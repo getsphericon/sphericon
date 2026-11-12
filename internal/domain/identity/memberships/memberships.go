@@ -107,7 +107,15 @@ func Members(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 
 // ErrResetOwnSecondFactor refuses a caller resetting their own Second factor as a member's: they
 // disable it in their account, which takes a password and a code.
-var ErrResetOwnSecondFactor = validation.RefuseField("member", "memberships: cannot reset your own second factor", i18n.ErrorsSecondFactorResetSelf)
+// FieldMember and FieldWorkspace are what a refusal of the addressed member, or of the Workspace
+// itself, is reported under: no request field holds either (the member is the path's id), so the
+// app shows such a refusal's detail, not a field's error.
+const (
+	FieldMember    = "member"
+	FieldWorkspace = "workspace"
+)
+
+var ErrResetOwnSecondFactor = validation.RefuseField(FieldMember, "memberships: cannot reset your own second factor", i18n.ErrorsSecondFactorResetSelf)
 
 // SecondFactorResetTarget loads the Membership targetID of the Workspace s as the target of a
 // Second factor reset by the User callerID holding callerRole: resetting an Owner's needs

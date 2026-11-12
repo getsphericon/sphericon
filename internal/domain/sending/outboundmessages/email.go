@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // EmailContent is email's Message content (ADR 0078): a subject and a body of email-ready HTML,
@@ -185,10 +186,6 @@ func (m *Module) trackerFor(ctx context.Context, s *ent.Scoped) (*messagetoken.T
 	return tr, nil
 }
 
-// HoldUnverifiedDomain holds an email whose From is on no verified Sending domain of the Workspace
-// (ADR 0015): it lifts once the domain verifies.
-const HoldUnverifiedDomain = string(holdreason.UnverifiedDomain)
-
 // emailAdapter is email's provider adapter over the EmailSender built for the Integration: SMTP and
 // SES in production, a Test inbox, an in-memory one in tests.
 type emailAdapter struct{ sender messaging.EmailSender }
@@ -201,7 +198,7 @@ func (a emailAdapter) DeliversOutside() bool { return messaging.DeliversOutside(
 // signer. Only a sender that delivers outside needs it on a verified Sending domain: nothing a
 // sender that keeps its mail sends can reach anyone under a domain the Workspace does not own
 // (ADR 0058).
-func (a emailAdapter) prepare(ctx context.Context, s *ent.Scoped, content Content) (sendAs, string, error) {
+func (a emailAdapter) prepare(ctx context.Context, s *ent.Scoped, content Content) (sendAs, holdreason.Reason, error) {
 	email, err := emailContentOf(content)
 	if err != nil {
 		return sendAs{}, "", err
@@ -213,7 +210,7 @@ func (a emailAdapter) prepare(ctx context.Context, s *ent.Scoped, content Conten
 			return sendAs{}, "", fmt.Errorf("outbound: check sending domain: %w", err)
 		}
 		if !verified {
-			return sendAs{}, HoldUnverifiedDomain, nil
+			return sendAs{}, holdreason.UnverifiedDomain, nil
 		}
 	}
 	return sendAs{address: from, name: name, sendingDomain: messaging.DomainOf(from)}, "", nil
@@ -233,7 +230,7 @@ func (a emailAdapter) send(ctx context.Context, as sendAs, msg any, to target, o
 func sendEmail(ctx context.Context, sender messaging.EmailSender, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	receipt, err := sender.Send(ctx, msg)
 	if errors.Is(err, messaging.ErrUnverifiedSendingDomain) {
-		return messaging.Receipt{}, fmt.Errorf("%w: %w", holdError{HoldUnverifiedDomain}, err)
+		return messaging.Receipt{}, fmt.Errorf("%w: %w", holdError{holdreason.UnverifiedDomain}, err)
 	}
 	return receipt, err
 }
@@ -242,7 +239,7 @@ func sendEmail(ctx context.Context, sender messaging.EmailSender, msg messaging.
 // Test inbox), email.delivered: the Event a Delivery notice yields.
 func (a emailAdapter) publishSent(ctx context.Context, pub events.Publisher, f sentFact) error {
 	if err := pub.Publish(ctx, &events.EmailEngagement{
-		Action:            events.NameEmailSent,
+		Action:            systemevent.EmailSent,
 		WorkspaceID:       f.workspaceID,
 		ContactID:         f.req.contactID(),
 		Email:             f.dest,
@@ -263,13 +260,13 @@ func (a emailAdapter) publishSent(ctx context.Context, pub events.Publisher, f s
 	}
 	return pub.Publish(ctx, &events.EmailDelivery{
 		ObservedAt:        f.observedAt,
-		Action:            events.NameEmailDelivered,
+		Action:            systemevent.EmailDelivered,
 		WorkspaceID:       f.workspaceID,
 		ContactID:         f.req.contactID(),
 		Email:             f.dest,
 		ProviderMessageID: f.receipt.MessageID,
 		SendingDomain:     f.as.sendingDomain,
-		DedupID:           fmt.Sprintf("%s:%d/%s", events.NameEmailDelivered, f.messageID, f.dest),
+		DedupID:           fmt.Sprintf("%s:%d/%s", systemevent.EmailDelivered, f.messageID, f.dest),
 		OutboundMessageID: f.messageID,
 		Surface:           string(f.req.Kind()),
 		SendingSource:     f.req.Source,

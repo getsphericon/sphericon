@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -36,13 +37,13 @@ func TestAMessageFromABoundContactIsRecordedAsReceived(t *testing.T) {
 
 	assert.Equal(t, 200, posted.Code)
 	assert.Equal(t, 200, redelivered.Code)
-	keys := lo.Map(env.QueuedEnvelopes(t, events.NameTelegramReceived), func(e events.Envelope, _ int) string { return e.DedupKey })
+	keys := lo.Map(env.QueuedEnvelopes(t, systemevent.TelegramReceived), func(e events.Envelope, _ int) string { return e.DedupKey })
 	assert.Equal(t, []string{fmt.Sprintf("telegram:%d:1", bot.Integration.ID)}, keys,
 		"a redelivered update carries the same key, so the Event is stored and published once")
 	asLiam := map[string]any{
 		"contactId": fixtures.ContactLiamID, "integrationId": bot.Integration.ID, "text": "Where is my order?",
 	}
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramReceived, asLiam))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramReceived, asLiam))
 }
 
 func TestAReceivedTextIsCutAtOneKiB(t *testing.T) {
@@ -53,7 +54,7 @@ func TestAReceivedTextIsCutAtOneKiB(t *testing.T) {
 
 	env.PostTelegramUpdate(t, bot, say(2, liamsChat, long))
 
-	got := env.QueuedMessages(t, events.NameTelegramReceived)
+	got := env.QueuedMessages(t, systemevent.TelegramReceived)
 	require.Len(t, got, 1)
 	assert.Equal(t, strings.Repeat("é", 512), got[0].Data["text"])
 }
@@ -66,7 +67,7 @@ func TestAMessageFromAnUnknownSenderRecordsNothing(t *testing.T) {
 	posted := env.PostTelegramUpdate(t, bot, say(3, 9999, "hello?"))
 
 	assert.Equal(t, 200, posted.Code)
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramReceived, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
 	assert.Equal(t, contacts, env.DB.Contact.Query().CountX(t.Context()), "no Contact is created")
 }
 
@@ -77,7 +78,7 @@ func TestAMessageOnAnotherBotIsNotTheBoundContactsWords(t *testing.T) {
 
 	env.PostTelegramUpdate(t, other, say(4, liamsChat, "hi"))
 
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramReceived, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
 }
 
 func TestACommandWithItsOwnMeaningIsNotReceived(t *testing.T) {
@@ -88,7 +89,7 @@ func TestACommandWithItsOwnMeaningIsNotReceived(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, say(6, liamsChat, "/start@"+testhelper.AcmeTelegramUsername+" abc"))
 	env.PostTelegramUpdate(t, bot, say(7, liamsChat, "/STOP"))
 
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramReceived, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
 }
 
 func TestAnotherCommandIsReceivedLikeAnyText(t *testing.T) {
@@ -97,7 +98,7 @@ func TestAnotherCommandIsReceivedLikeAnyText(t *testing.T) {
 
 	env.PostTelegramUpdate(t, bot, say(8, liamsChat, "/help me"))
 
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramReceived, map[string]any{"text": "/help me"}))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramReceived, map[string]any{"text": "/help me"}))
 }
 
 // The received Event reaches the consumers like any Event: it enrolls the Contact in the
@@ -106,18 +107,18 @@ func TestAReceivedEventTriggersAutomationsAndReachesWebhooks(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.PostTelegramUpdate(t, bot, say(9, liamsChat, "yes please"))
-	envelopes := env.QueuedEnvelopes(t, events.NameTelegramReceived)
+	envelopes := env.QueuedEnvelopes(t, systemevent.TelegramReceived)
 	require.Len(t, envelopes, 1)
-	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{events.NameTelegramReceived}).ExecX(t.Context())
+	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{systemevent.TelegramReceived}).ExecX(t.Context())
 
 	env.PerformEventJobOf(t, jobs.WebhookEventArgs{}, envelopes[0])
 
 	triggers := lo.Filter(env.JobsOf(t, jobkind.EvaluateTrigger.Kind), func(args map[string]any, _ int) bool {
-		return args["action"] == events.NameTelegramReceived
+		return args["action"] == systemevent.TelegramReceived
 	})
 	require.Len(t, triggers, 1)
 	assert.EqualValues(t, fixtures.ContactLiamID, triggers[0]["contact_id"])
 	delivered, ok := lo.Find(env.QueuedDeliveries(t), func(d jobs.DeliverWebhookArgs) bool { return d.EndpointID == fixtures.WebhookCodebasicsID })
 	require.True(t, ok, "the subscribed endpoint gets a delivery")
-	assert.Equal(t, events.NameTelegramReceived, delivered.EventName)
+	assert.Equal(t, systemevent.TelegramReceived, delivered.EventName)
 }

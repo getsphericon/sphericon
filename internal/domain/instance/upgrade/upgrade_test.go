@@ -65,7 +65,7 @@ func (s setup) opts(version string) upgrade.Options {
 	return upgrade.Options{
 		Source: upgrade.DirSource(s.dir), Target: s.target, Current: "v0.1.0",
 		Version: version, Platform: linuxArm,
-		Container: func() string { return "" },
+		Container: func() upgrade.Container { return upgrade.BareHost },
 	}
 }
 
@@ -169,11 +169,11 @@ func TestUpgradeWaitsForYesWhenThereAreNotes(t *testing.T) {
 }
 
 func TestUpgradeRefusesInAContainerAndNamesTheCommand(t *testing.T) {
-	for kind, want := range map[string]string{"docker": "docker", "helm": "helm upgrade"} {
+	for kind, want := range map[upgrade.Container]string{upgrade.Docker: "docker", upgrade.Helm: "helm upgrade"} {
 		s := newSetup(t)
 		release(t, s.dir, "0.2.0", "", false)
 		o := s.opts("")
-		o.Container = func() string { return kind }
+		o.Container = func() upgrade.Container { return kind }
 
 		_, err := drain(upgrade.Step(t.Context(), o))
 

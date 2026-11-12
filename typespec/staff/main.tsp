@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/rest";
 import "@typespec/openapi";
 
+import "../lib/main.tsp";
 import "../common/scalars.tsp";
 import "../common/errors.tsp";
 import "../common/limits.tsp";

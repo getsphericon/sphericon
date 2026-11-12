@@ -17,36 +17,37 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/infra/db"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 var (
 	// ErrDestinationEmpty: the destination is blank after normalization. Every surface answers
 	// it alike, on the `destination` field (review rule 15).
-	ErrDestinationEmpty = validation.RefuseField("destination", "suppression: destination must not be empty", i18n.ErrorsDestinationInvalid)
+	ErrDestinationEmpty = validation.RefuseField(fieldname.Destination, "suppression: destination must not be empty", i18n.ErrorsDestinationInvalid)
 	// ErrDestinationInvalid: the destination is not what the Channel's Destinations are.
-	ErrDestinationInvalid = validation.RefuseField("destination", "suppression: destination is not valid for the channel", i18n.ErrorsDestinationInvalid)
+	ErrDestinationInvalid = validation.RefuseField(fieldname.Destination, "suppression: destination is not valid for the channel", i18n.ErrorsDestinationInvalid)
 	// ErrNotFound: no such Suppression in this Workspace.
 	ErrNotFound = validation.NotFound("suppression: not found", i18n.ErrorsSuppressionNotFound)
 )
 
 // ForEvent is the rule that decides whether a delivery event suppresses its address, and
-// why: a complaint (events.NameEmailComplained) always does, a bounce (events.NameEmailBounced)
-// only when hard (bounceKind events.BounceKindHard; a soft one, such as a full mailbox, is
+// why: a complaint (systemevent.EmailComplained) always does, a bounce (systemevent.EmailBounced)
+// only when hard (bounceKind systemevent.BounceKindHard; a soft one, such as a full mailbox, is
 // temporary), anything else never. Unsubscribe is not a Suppression (ADR 0001).
 func ForEvent(name, bounceKind string) (entsuppression.Reason, bool) {
 	switch name {
-	case events.NameEmailComplained:
+	case systemevent.EmailComplained:
 		return entsuppression.ReasonComplaint, true
-	case events.NameEmailBounced:
-		if bounceKind == events.BounceKindHard {
+	case systemevent.EmailBounced:
+		if bounceKind == systemevent.BounceKindHard {
 			return entsuppression.ReasonBounce, true
 		}
 		return "", false
@@ -73,14 +74,17 @@ var e164 = regexp.MustCompile(`^\+[1-9]\d{6,14}$`)
 // ValidDestination reports whether dest, already normalized, can be a Destination on the Channel:
 // anything non-empty on email (the contract checks the address), a Telegram user id on Telegram, a
 // number in E.164 on SMS.
-func ValidDestination(channel, dest string) bool {
+func ValidDestination(channel channels.Channel, dest string) bool {
 	switch channel {
-	case string(channels.Telegram):
+	case channels.Telegram:
 		return telegramUserID.MatchString(dest)
-	case string(channels.SMS):
+	case channels.SMS:
 		return e164.MatchString(dest)
+	case channels.Email:
+		return dest != ""
 	}
-	return dest != ""
+	// A Channel no case names yet has no valid Destination until its rule is written.
+	return false
 }
 
 // The unique constraint of the Suppression's table (ADR 0106): one active entry per (Channel,
@@ -107,7 +111,7 @@ func add(ctx context.Context, s *ent.Scoped, e Entry) (bool, error) {
 	if channel == "" {
 		channel = channels.Email
 	}
-	if !ValidDestination(string(channel), dest) {
+	if !ValidDestination(channel, dest) {
 		return false, ErrDestinationInvalid
 	}
 	create := s.Suppression().Create().
@@ -139,7 +143,7 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, des
 	// providers), and a number is stored in E.164, read with the country code it must carry.
 	switch channel {
 	case channels.Email:
-		address, err := validation.Email("destination", destination)
+		address, err := validation.Email(fieldname.Destination, destination)
 		if err != nil {
 			return nil, ErrDestinationInvalid
 		}

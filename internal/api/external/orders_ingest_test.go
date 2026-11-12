@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -29,7 +30,7 @@ func orderEvent(action string, props map[string]string) externalapi.EventInput {
 
 func TestAnOrderCompletedIsAcceptedUnderItsOwnName(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
 	err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
 		orderEvent("Order Completed", map[string]string{"order_id": `"A-1"`, "total": `19.99`, "currency": `"USD"`}),
@@ -41,7 +42,7 @@ func TestAnOrderCompletedIsAcceptedUnderItsOwnName(t *testing.T) {
 
 func TestAnAmountWithMorePlacesThanItsCurrencyOrAnUnknownCurrencyIsRefusedWithAReason(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
 	for name, tc := range map[string]struct {
 		props  map[string]string
@@ -65,7 +66,7 @@ func TestAnAmountWithMorePlacesThanItsCurrencyOrAnUnknownCurrencyIsRefusedWithAR
 
 func TestAChangeWithoutACurrencyIsCheckedAgainstTheCurrencyOfItsOrder(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
 	// fixture-order-1 is Alice's Order OrderAcme, in USD.
 	err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
@@ -78,7 +79,7 @@ func TestAChangeWithoutACurrencyIsCheckedAgainstTheCurrencyOfItsOrder(t *testing
 
 func TestAChangeWithoutACurrencyBeforeItsOrderIsCheckedAsANumber(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
 	refund := func(total string) error {
 		return c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
@@ -92,7 +93,7 @@ func TestAChangeWithoutACurrencyBeforeItsOrderIsCheckedAsANumber(t *testing.T) {
 
 func TestTheBatchReportsAnOrderRefusalPerItemAndTakesTheOthers(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
 	batch, err := c.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Events: []externalapi.EventInput{
 		orderEvent("Order Completed", map[string]string{"order_id": `"A-1"`, "total": `1.234`, "currency": `"USD"`}),
@@ -110,7 +111,7 @@ func TestTheBatchReportsAnOrderRefusalPerItemAndTakesTheOthers(t *testing.T) {
 
 func TestAnOrderIsRefusedOnlyForWhatSphericonReads(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
 	err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
 		orderEvent("Order Completed", map[string]string{

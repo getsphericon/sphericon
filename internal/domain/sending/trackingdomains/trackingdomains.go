@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -50,9 +51,9 @@ var (
 	// ErrNotFound means no Tracking domain of that id is in the Workspace.
 	ErrNotFound = validation.NotFound("trackingdomains: tracking domain not found", i18n.ErrorsTrackingDomainNotFound)
 	// ErrInvalidHost means the host is not a name below a registrable domain.
-	ErrInvalidHost = validation.RefuseField("host", "trackingdomains: not a valid host", i18n.ErrorsTrackingDomainInvalid)
+	ErrInvalidHost = validation.RefuseField(fieldname.Host, "trackingdomains: not a valid host", i18n.ErrorsTrackingDomainInvalid)
 	// ErrOwnHost means the host is one of the Instance's own.
-	ErrOwnHost = validation.RefuseField("host", "trackingdomains: the host is the instance's own", i18n.ErrorsTrackingDomainOwnHost)
+	ErrOwnHost = validation.RefuseField(fieldname.Host, "trackingdomains: the host is the instance's own", i18n.ErrorsTrackingDomainOwnHost)
 )
 
 // errHostTaken means another Workspace verified the host first: a verified host serves one

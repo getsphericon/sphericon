@@ -11,6 +11,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/doctor"
@@ -21,9 +22,9 @@ import (
 )
 
 func main() {
-	env := os.Getenv("SPHERICON_ENV")
+	env := os.Getenv(config.EnvVar)
 	if env == "" {
-		env = "development"
+		env = config.EnvDevelopment
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

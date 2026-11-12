@@ -17,8 +17,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/maypok86/otter/v2"
+
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 // The `sns` verify kind: the signature of an Amazon SNS message (both signature versions),

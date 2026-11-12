@@ -36,6 +36,7 @@ import {
   siteWebhooksTestMutation,
   siteWebhooksUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { SystemEventAction } from '../../generated/site/types.gen.ts'
 import type {
   CreateWebhookInput,
   SiteWebhookEndpointResource,
@@ -49,27 +50,28 @@ import { useFormat } from '../../hooks/useFormat.ts'
 import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
 import {
+  AUDIT_ENTRY_EVENT,
   CONTACT_CHANGE_ACTIONS,
+  EMAIL_ENGAGEMENT_ACTIONS,
   ENROLLMENT_ACTIONS,
   SMS_ACTIONS,
   TELEGRAM_ACTIONS,
 } from '../../utils/systemEvents.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { HistoryMenuItem } from './AuditLogSection.tsx'
 
 // The domain events an endpoint can subscribe to. An empty selection means all customer
 // events; audit.entry (Enterprise) is never included and must be chosen explicitly.
 const EVENT_OPTIONS = [
-  'contact.created',
-  'contact.erased',
+  SystemEventAction.CONTACT_CREATED,
+  SystemEventAction.CONTACT_ERASED,
   ...CONTACT_CHANGE_ACTIONS,
-  'email.opened',
-  'email.clicked',
-  'email.unsubscribed',
+  ...EMAIL_ENGAGEMENT_ACTIONS,
   ...ENROLLMENT_ACTIONS,
   ...TELEGRAM_ACTIONS,
   ...SMS_ACTIONS,
-  'audit.entry',
-]
+  AUDIT_ENTRY_EVENT,
+] as const
 
 // useFailureSummary says why an endpoint's deliveries fail, how many in a row and since when.
 function useFailureSummary() {
@@ -134,7 +136,7 @@ function WebhookStatus({ record }: { record: SiteWebhookEndpointResource }) {
 }
 
 // A sample can be sent for any customer event; audit.entry is Enterprise and has no sample.
-const TEST_EVENT_OPTIONS = EVENT_OPTIONS.filter((name) => name !== 'audit.entry')
+const TEST_EVENT_OPTIONS = EVENT_OPTIONS.filter((name) => name !== AUDIT_ENTRY_EVENT)
 
 function TestResultAlert({ result }: { result: SiteWebhookTestResult }) {
   const { t } = useTranslation()
@@ -241,7 +243,9 @@ function WebhooksTable({
       records={records}
       idAccessor="id"
       columns={[
-        { accessor: 'url', title: t(($) => $.settings.webhooks.urlColumn) },
+        { accessor: 'url', title: t(($) => $.settings.webhooks.urlColumn) } satisfies FieldColumn<
+          (typeof records)[number]
+        >,
         {
           accessor: 'eventTypes',
           title: t(($) => $.settings.webhooks.eventsLabel),

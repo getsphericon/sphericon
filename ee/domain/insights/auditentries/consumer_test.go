@@ -9,6 +9,7 @@ import (
 	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -21,7 +22,7 @@ func recordEntry(t *testing.T, env *testhelper.TestEnv) {
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
 		return events.RecordAudit(t.Context(), pub, &events.AuditEntry{
 			WorkspaceID: fixtures.InitechID, Actor: events.Actor{Kind: events.ActorUser, ID: "7", Name: "Mary"},
-			Action: "segment.update", TargetType: "segment", TargetID: "11",
+			Action: "segment.update", TargetType: segment.Label, TargetID: "11",
 		})
 	}))
 }

@@ -90,7 +90,7 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 // configuration it answers 404.
 func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, _ siteapi.SiteWorkspacesAccountLinkParams) (*siteapi.SiteAccountLinkResource, error) {
 	s, m := workspaceScope(ctx), callerMembership(ctx)
-	token, expires, err := h.accountLink.Token(accountlink.Subject{UserID: m.UserID, WorkspaceID: s.WorkspaceID(), Role: string(m.Role)}, h.now())
+	token, expires, err := h.accountLink.Token(accountlink.Subject{UserID: m.UserID, WorkspaceID: s.WorkspaceID(), Role: m.Role}, h.now())
 	if err != nil {
 		return nil, err
 	}

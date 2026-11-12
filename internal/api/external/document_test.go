@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -37,7 +38,7 @@ func badHeadingDoc() map[string]jx.Raw {
 
 func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "templates:read", "templates:write")
+	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 	ctx := context.Background()
 
 	res, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
@@ -75,7 +76,7 @@ func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 
 func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "templates:read", "templates:write")
+	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 	ctx := context.Background()
 
 	res, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
@@ -102,7 +103,7 @@ func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 
 func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "templates:read", "templates:write")
+	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 	ctx := context.Background()
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 
@@ -136,7 +137,7 @@ func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t 
 
 func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite)
 	ctx := context.Background()
 
 	res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
@@ -176,7 +177,7 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 // writing the document alone (as the site does) round-trips.
 func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:read", "automations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	ctx := context.Background()
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
@@ -223,7 +224,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 
 func TestExternalEmailLintTakesADocument(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "templates:read")
+	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead)
 	ctx := context.Background()
 
 	res, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hi {{ first_name }}"))})

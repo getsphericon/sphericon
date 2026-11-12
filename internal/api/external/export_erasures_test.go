@@ -13,8 +13,9 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -93,7 +94,7 @@ func TestContactErasedMessageHoldsNoAddressOrPhone(t *testing.T) {
 	env := testhelper.Setup(t)
 	eraseErasable(t, env)
 
-	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
+	envelopes := env.QueuedEnvelopes(t, systemevent.ContactErased)
 
 	require.Len(t, envelopes, 1)
 	body := string(envelopes[0].Data)
@@ -111,7 +112,7 @@ func TestContactErasedMessageOfAnAddressAloneHoldsNoAddress(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
+	envelopes := env.QueuedEnvelopes(t, systemevent.ContactErased)
 
 	require.Len(t, envelopes, 1)
 	assert.NotContains(t, string(envelopes[0].Data), fixtures.OutboundMessageStrangerDestination)
@@ -155,7 +156,7 @@ func TestExportErasuresAnswers404WithoutTheLicense(t *testing.T) {
 
 func TestExportErasuresNeedTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	for _, scopes := range [][]string{{}, {"contacts:erase"}, {"contacts:read", "events:read", "audit:read"}} {
+	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsErase}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
 		_, err := c.ExportErasures(context.Background(), externalapi.ExportErasuresParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)

@@ -55,6 +55,16 @@ func EditorSchema() Schema {
 		if err := json.Unmarshal(schemaJSON, &loadedSchema); err != nil {
 			panic(fmt.Sprintf("emaildoc: the embedded schema.json is not valid: %v", err))
 		}
+		// The rules name these types; an editor update that renames one must fail here, not let
+		// a rule match nothing.
+		for _, node := range []string{nodeDoc, nodeText, nodeHeading, nodeButton, nodeImage, nodeOrderedList, nodeCodeBlock} {
+			if _, ok := loadedSchema.Nodes[node]; !ok {
+				panic(fmt.Sprintf("emaildoc: the editor's schema has no %q node the rules name", node))
+			}
+		}
+		if _, ok := loadedSchema.Marks[markLink]; !ok {
+			panic(fmt.Sprintf("emaildoc: the editor's schema has no %q mark the rules name", markLink))
+		}
 	})
 	return loadedSchema
 }

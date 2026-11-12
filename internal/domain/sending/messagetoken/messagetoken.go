@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -240,7 +241,7 @@ func (t *Tracker) DecodeConfirm(token string) (linktarget.Confirmation, error) {
 
 // OpenURL is the 1x1 pixel URL that records an open.
 func (t *Tracker) OpenURL(token string) string {
-	return t.baseURL + "/e/o/" + token
+	return t.baseURL + paths.LinkOpen + token
 }
 
 // ClickURL wraps a destination link so a click is recorded before redirecting. The
@@ -250,13 +251,13 @@ func (t *Tracker) ClickURL(messageID int64, dest string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return t.baseURL + "/e/c/" + token, nil
+	return t.baseURL + paths.LinkClick + token, nil
 }
 
 // ShortURL is the short tracked link of a Telegram message's link or button (ADR 0083): the token
 // names the URL stored with the Outbound message, so nothing of the destination travels in it.
 func (t *Tracker) ShortURL(token string) string {
-	return t.baseURL + "/c/" + token
+	return t.baseURL + paths.ShortLink + token
 }
 
 // UnsubscribeURL is the public link that records the scoped opt-out in target.
@@ -265,7 +266,7 @@ func (t *Tracker) UnsubscribeURL(target linktarget.Unsubscribe) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	return t.baseURL + "/e/u/" + token, nil
+	return t.baseURL + paths.LinkUnsubscribe + token, nil
 }
 
 // ConfirmURL is the public double-opt-in link (ADR 0013). Like UnsubscribeURL the
@@ -276,7 +277,7 @@ func (t *Tracker) ConfirmURL(target linktarget.Confirmation) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return t.baseURL + "/e/confirm/" + token, nil
+	return t.baseURL + paths.LinkConfirm + token, nil
 }
 
 // UnsubscribeFooter is the email's unsubscribe footer, scoped to target. Shared by

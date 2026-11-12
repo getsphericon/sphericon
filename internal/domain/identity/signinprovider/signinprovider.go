@@ -24,6 +24,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -239,7 +240,7 @@ func (p *Providers) OpenFlow(raw, provider string) (Flow, error) { return p.flow
 // callback operation under the public app URL. It is what an operator registers with the
 // provider.
 func RedirectURL(appURL, name string) string {
-	return strings.TrimRight(appURL, "/") + "/site/auth/signin/" + name + "/callback"
+	return strings.TrimRight(appURL, "/") + paths.Site + "/auth/signin/" + name + "/callback"
 }
 
 // Enabled lists the enabled providers in catalog order.

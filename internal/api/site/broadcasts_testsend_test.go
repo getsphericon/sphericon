@@ -18,9 +18,9 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -48,7 +48,7 @@ func TestSiteTestSendWithoutVerifiedDomainGoesFromTheSystemSenderToTheAskingUser
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	messagesBefore := env.DB.OutboundMessage.Query().CountX(t.Context())
-	sentEventsBefore := env.DB.Event.Query().Where(event.Action(events.NameEmailSent)).CountX(t.Context())
+	sentEventsBefore := env.DB.Event.Query().Where(event.Action(systemevent.EmailSent)).CountX(t.Context())
 
 	res, err := testSendAsJane(env, c, fixtures.OwnerJaneEmail)
 	require.NoError(t, err)
@@ -62,7 +62,7 @@ func TestSiteTestSendWithoutVerifiedDomainGoesFromTheSystemSenderToTheAskingUser
 	assert.Equal(t, testhelper.SystemFrom, sent[0].From)
 	assert.Empty(t, env.CustomerMail.Messages(), "no Integration is involved")
 	assert.Equal(t, messagesBefore, env.DB.OutboundMessage.Query().CountX(t.Context()), "a Test send leaves no Outbound message")
-	assert.Equal(t, sentEventsBefore, env.DB.Event.Query().Where(event.Action(events.NameEmailSent)).CountX(t.Context()), "and no email.sent Event")
+	assert.Equal(t, sentEventsBefore, env.DB.Event.Query().Where(event.Action(systemevent.EmailSent)).CountX(t.Context()), "and no email.sent Event")
 }
 
 func TestSiteTestSendWithoutVerifiedDomainRefusesAnyOtherRecipient(t *testing.T) {

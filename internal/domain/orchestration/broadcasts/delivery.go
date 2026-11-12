@@ -15,11 +15,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 )
 
-// HeldError reports that Outbound send put the source on hold (see outboundmessages.Hold*).
+// HeldError reports that Outbound send put the source on hold, for Reason.
 // Nothing was consumed: the caller defers the same work.
-type HeldError struct{ Reason string }
+type HeldError struct{ Reason holdreason.Reason }
 
-func (e *HeldError) Error() string { return "send held: " + e.Reason }
+func (e *HeldError) Error() string { return "send held: " + string(e.Reason) }
 
 // DeferredError reports that Outbound send found a send limit spent (outboundmessages.Deferral): the
 // Integration's Provider limit, the Workspace's Send cap or the provider's own. Nothing was
@@ -136,10 +136,10 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	if res.Outcome == outboundmessages.Held {
 		// Best effort: the hold is enforced by the send path and the caller retries on the
 		// HeldError either way, so a failed write only leaves the reason unrecorded.
-		if herr := setHold(ctx, s, b.ID, holdreason.Reason(res.Reason)); herr != nil {
+		if herr := setHold(ctx, s, b.ID, res.Hold); herr != nil {
 			slog.WarnContext(ctx, "broadcast hold reason not recorded", "error", herr, "broadcast_id", b.ID)
 		}
-		return &HeldError{Reason: res.Reason}
+		return &HeldError{Reason: res.Hold}
 	}
 	// A send limit is spent, nothing is blocked: the Broadcast stays sending with no hold
 	// reason and this recipient stays pending, retried after the wait. The wait is measured on

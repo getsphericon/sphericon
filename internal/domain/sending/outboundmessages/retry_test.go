@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 )
 
 // Only a Hold and a Deferral want a retry: every other Outcome is final.
@@ -25,9 +25,9 @@ func TestOnlyAHoldOrADeferralWantsARetry(t *testing.T) {
 // A Hold retries after a fixed backoff whatever the source, so a Broadcast recipient and an
 // Automation run held by the same freeze come back on the same schedule.
 func TestAHoldRetriesAfterTheHoldBackoffForEverySource(t *testing.T) {
-	for _, reason := range []string{holds.ReasonSuspended, holds.ReasonStaff, outboundmessages.HoldNoIntegration} {
-		retry := outboundmessages.Result{Outcome: outboundmessages.Held, Reason: reason}.Retry(0)
-		assert.Equal(t, 15*time.Minute, retry.After, reason)
+	for _, reason := range []holdreason.Reason{holdreason.WorkspaceSuspended, holdreason.StaffHold, holdreason.NoIntegration} {
+		retry := outboundmessages.Result{Outcome: outboundmessages.Held, Hold: reason}.Retry(0)
+		assert.Equal(t, 15*time.Minute, retry.After, string(reason))
 	}
 	hold := outboundmessages.HoldRetry()
 	assert.Equal(t, outboundmessages.HoldBackoff, hold.After)

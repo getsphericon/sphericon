@@ -7,25 +7,26 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 func TestDecodeKnowsEveryEventName(t *testing.T) {
 	for _, name := range []string{
-		events.NameContactCreated,
-		events.NameContactErased,
-		events.NameEmailSent,
-		events.NameEmailDelivered,
-		events.NameEmailDelayed,
-		events.NameEmailDropped,
-		events.NameEmailOpened,
-		events.NameEmailClicked,
-		events.NameEmailUnsubscribed,
-		events.NameEmailBounced,
-		events.NameEmailComplained,
-		events.NameMarketingConfirmed,
-		events.NameSmsConfirmed,
-		events.NameSmsDelivered,
-		events.NameSmsUndelivered,
+		systemevent.ContactCreated,
+		systemevent.ContactErased,
+		systemevent.EmailSent,
+		systemevent.EmailDelivered,
+		systemevent.EmailDelayed,
+		systemevent.EmailDropped,
+		systemevent.EmailOpened,
+		systemevent.EmailClicked,
+		systemevent.EmailUnsubscribed,
+		systemevent.EmailBounced,
+		systemevent.EmailComplained,
+		systemevent.MarketingConfirmed,
+		systemevent.SmsConfirmed,
+		systemevent.SmsDelivered,
+		systemevent.SmsUndelivered,
 		events.NameCollected,
 		events.NameAuditEntry,
 		events.NameTrackingDomainChanged,
@@ -59,11 +60,11 @@ func TestDecodeKnowsEveryEventName(t *testing.T) {
 func TestEventsReportTheirEnvelopeMetadata(t *testing.T) {
 	for _, ev := range []events.Projected{
 		&events.ContactCreated{WorkspaceID: 7},
-		&events.EmailEngagement{Action: events.NameEmailOpened, WorkspaceID: 7},
-		&events.EmailDelivery{Action: events.NameEmailBounced, WorkspaceID: 7},
+		&events.EmailEngagement{Action: systemevent.EmailOpened, WorkspaceID: 7},
+		&events.EmailDelivery{Action: systemevent.EmailBounced, WorkspaceID: 7},
 		&events.MarketingConfirmed{WorkspaceID: 7},
 		&events.SmsConfirmed{WorkspaceID: 7},
-		&events.SmsDelivery{Action: events.NameSmsUndelivered, WorkspaceID: 7},
+		&events.SmsDelivery{Action: systemevent.SmsUndelivered, WorkspaceID: 7},
 		&events.CollectedEvent{WorkspaceID: 7, Action: "page_view"},
 	} {
 		assert.EqualValues(t, 7, ev.Workspace(), "%T", ev)

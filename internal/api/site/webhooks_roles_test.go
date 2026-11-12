@@ -10,6 +10,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -41,7 +42,7 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 	_, err = member.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: workspaceID, ID: id})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	_, err = member.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "contact.created"},
+	_, err = member.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: systemevent.ContactCreated},
 		siteapi.SiteWebhooksTestParams{WorkspaceId: workspaceID, ID: id})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 

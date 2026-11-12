@@ -10,8 +10,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -51,8 +51,8 @@ func TestASendThroughASenderThatKeepsItsMailIsMarkedCapturedOnEverySurface(t *te
 
 		assert.True(t, env.DB.OutboundMessage.GetX(ctx, res.MessageID).Captured, surface)
 		match := map[string]any{"outboundMessageId": res.MessageID, "captured": true}
-		assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailSent, match), surface)
-		assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailDelivered, match), surface)
+		assert.Equal(t, 1, env.QueuedCount(t, systemevent.EmailSent, match), surface)
+		assert.Equal(t, 1, env.QueuedCount(t, systemevent.EmailDelivered, match), surface)
 	}
 }
 
@@ -67,6 +67,6 @@ func TestASendThroughASenderThatDeliversOutsideIsNotMarkedCaptured(t *testing.T)
 	require.NoError(t, err)
 
 	assert.False(t, env.DB.OutboundMessage.GetX(ctx, res.MessageID).Captured)
-	assert.Zero(t, env.QueuedCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": res.MessageID, "captured": true}))
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": res.MessageID}))
+	assert.Zero(t, env.QueuedCount(t, systemevent.EmailSent, map[string]any{"outboundMessageId": res.MessageID, "captured": true}))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.EmailSent, map[string]any{"outboundMessageId": res.MessageID}))
 }

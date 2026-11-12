@@ -24,13 +24,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/kernel/clientip"
-	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/go-chi/httprate"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/kernel/clientip"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // Policy names. They are the `policy` label of ratelimit_rejected_total, so they
@@ -357,67 +358,74 @@ func (l *Limiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), exchangeKey{}, &Exchange{w: w, r: r, limiter: l})
 		r = r.WithContext(ctx)
-		if r.Method == http.MethodPost && r.URL.Path == "/site/auth/forgot-password" &&
-			!l.forgotIP.Allow(w, r, httprate.CanonicalizeIP(clientip.FromContext(ctx))) {
-			return
-		}
-		// The per-IP login cap spans accounts (password spraying) and both login
-		// steps; the per-account delay follows in the operations, which know the address.
-		if r.Method == http.MethodPost && loginPath(r.URL.Path) &&
-			!l.loginIP.Allow(w, r, "login|"+httprate.CanonicalizeIP(clientip.FromContext(ctx))) {
-			return
-		}
-		if !exempt(r.URL.Path) {
-			// The per-IP /collect budget needs no credential, so it is applied up front
-			// (CORS has already answered preflights); the Workspace budget follows the
-			// collect key in the security handler.
-			if strings.HasPrefix(r.URL.Path, "/collect/") &&
-				!l.collectIP.Allow(w, r, httprate.CanonicalizeIP(clientip.FromContext(ctx))) {
+		ip := httprate.CanonicalizeIP(clientip.FromContext(ctx))
+		limit, route := limitedRoute(r)
+		switch limit {
+		case RouteLimitForgotPassword:
+			if !l.forgotIP.Allow(w, r, ip) {
 				return
 			}
-			if route := humanRoute(r); route != "" &&
-				!l.human.Allow(w, r, httprate.CanonicalizeIP(clientip.FromContext(ctx))+"|"+route) {
+		case RouteLimitLogin:
+			// The per-IP login cap spans accounts (password spraying) and every login step; the
+			// per-account delay follows in the operations, which know the address.
+			if !l.loginIP.Allow(w, r, "login|"+ip) {
 				return
 			}
+		case RouteLimitHuman:
+			// One bucket per IP and route.
+			if !l.human.Allow(w, r, ip+"|"+route) {
+				return
+			}
+		}
+		// The per-IP /collect budget needs no credential, so it is applied up front (CORS has
+		// already answered preflights); the Workspace budget follows the collect key in the
+		// security handler.
+		if !exempt(r.URL.Path) && strings.HasPrefix(r.URL.Path, paths.Collect+"/") && !l.collectIP.Allow(w, r, ip) {
+			return
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-// loginPath is the steps of a login on either surface, /site and /staff (a Passkey login finishes
-// in one request, on /site only).
-func loginPath(path string) bool {
-	switch path {
-	case "/site/auth/login", "/site/auth/second-factor", "/site/auth/passkey/finish", paths.Staff + "/auth/login", paths.Staff + "/auth/second-factor":
-		return true
+// RouteLimit is how the server limits an operation per client address, as the contract's
+// `@rateLimited` names it.
+type RouteLimit string
+
+// The policies of `@rateLimited`.
+const (
+	// RouteLimitLogin is one budget every step of a login shares, on /site and /staff.
+	RouteLimitLogin RouteLimit = "login"
+	// RouteLimitForgotPassword is the budget of the password reset requests.
+	RouteLimitForgotPassword RouteLimit = "forgot_password"
+	// RouteLimitHuman is a budget of its own for each public form a person submits.
+	RouteLimitHuman RouteLimit = "human"
+)
+
+// limits routes a request to the policy of its operation: the patterns of siteLimits and
+// staffLimits, generated from the contract.
+var limits = func() *http.ServeMux {
+	mux := http.NewServeMux()
+	for _, table := range []map[string]RouteLimit{siteLimits, staffLimits} {
+		for pattern := range table {
+			mux.Handle(pattern, http.NotFoundHandler())
+		}
 	}
-	return false
+	return mux
+}()
+
+// limitedRoute is the limit of the request's operation and the pattern that names it, or "" when
+// the contract limits none.
+func limitedRoute(r *http.Request) (limit RouteLimit, pattern string) {
+	_, pattern = limits.Handler(r)
+	limit, ok := siteLimits[pattern]
+	if !ok {
+		limit = staffLimits[pattern]
+	}
+	return limit, pattern
 }
 
 // exempt lists what is never limited: probes, metrics and the provider hooks
 // (authenticated by their ingest key).
 func exempt(path string) bool {
-	return path == "/healthz" || path == "/readyz" || path == "/metrics" || strings.HasPrefix(path, "/hooks/")
-}
-
-// humanRoute names the public human-facing endpoints (one bucket per IP and
-// route): signup, resend-verification, verify-email, invitation accept and consent confirm. "" means not one.
-func humanRoute(r *http.Request) string {
-	if r.Method != http.MethodPost {
-		return ""
-	}
-	p := r.URL.Path
-	switch {
-	case p == "/site/auth/sign-up":
-		return "signup"
-	case p == "/site/auth/resend-verification":
-		return "resend-verification"
-	case p == "/site/auth/verify-email":
-		return "verify-email"
-	case strings.HasPrefix(p, "/site/invitations/") && strings.HasSuffix(p, "/accept"):
-		return "invitation-accept"
-	case strings.HasPrefix(p, "/site/confirmations/") && !strings.Contains(strings.TrimPrefix(p, "/site/confirmations/"), "/"):
-		return "consent-confirm"
-	}
-	return ""
+	return path == paths.Healthz || path == paths.Readyz || path == paths.Metrics || strings.HasPrefix(path, paths.Hooks)
 }

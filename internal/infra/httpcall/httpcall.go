@@ -16,6 +16,8 @@ import (
 
 	"golang.org/x/net/http/httpguts"
 
+	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
+
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -62,7 +64,8 @@ type Opened struct {
 // reservedHeaders are set by sphericon itself and cannot be overridden by a call.
 var reservedHeaders = map[string]bool{
 	"content-type": true, "content-length": true, "host": true,
-	"webhook-id": true, "webhook-timestamp": true, "webhook-signature": true,
+	standardwebhooks.HeaderWebhookID: true, standardwebhooks.HeaderWebhookTimestamp: true,
+	standardwebhooks.HeaderWebhookSignature: true,
 }
 
 // RenderBody renders a Liquid JSON body against bindings and checks the result is valid JSON

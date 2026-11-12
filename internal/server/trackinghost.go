@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // trackingHostGate serves a verified Tracking host link paths and the first-party tracker
@@ -72,7 +73,7 @@ func isTrackerPath(p string) bool {
 // isLinkPath is the link surface: /e/ open, click, unsubscribe and confirm, and /c/, the short
 // tracked link of a Telegram message.
 func isLinkPath(p string) bool {
-	for _, prefix := range []string{"/e/o/", "/e/c/", "/e/u/", "/e/confirm/", "/c/"} {
+	for _, prefix := range paths.LinkPrefixes {
 		if strings.HasPrefix(p, prefix) {
 			return true
 		}

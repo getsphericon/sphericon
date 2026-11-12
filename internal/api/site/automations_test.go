@@ -9,6 +9,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -20,7 +21,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name:         "Welcome series",
-		TriggerEvent: "contact.created",
+		TriggerEvent: systemevent.ContactCreated,
 		Steps: []siteapi.SiteAutomationStep{
 			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p></p>")},
 			{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(3600)},
@@ -30,7 +31,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	res := created
 	assert.Equal(t, "Welcome series", res.Name)
 	assert.Equal(t, siteapi.SiteAutomationStatusInactive, res.Status)
-	assert.Equal(t, "contact.created", res.Draft.Value.TriggerEvent)
+	assert.Equal(t, systemevent.ContactCreated, res.Draft.Value.TriggerEvent)
 
 	// Steps round-trip through the typed contract (stored as the executor's JSON
 	// string, decoded back into the typed DTO).

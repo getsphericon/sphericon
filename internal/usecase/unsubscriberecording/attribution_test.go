@@ -13,6 +13,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -51,7 +52,7 @@ func TestAcceptedAttributionSurvivesErasureInEitherHandlingOrder(t *testing.T) {
 				assert.NotContains(t, string(encoded), "contactId")
 			}
 			beforeErasure(t, env)
-			client := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "contacts:erase"))
+			client := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeContactsErase))
 			err := client.ContactsDelete(t.Context(), externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactErasableID)})
 			require.NoError(t, err)
 			env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})

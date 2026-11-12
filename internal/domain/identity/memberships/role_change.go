@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -19,9 +20,9 @@ import (
 // owners:manage (ADR 0061), refused as Require refuses it (403).
 var (
 	// ErrDemoteLastOwner refuses giving the last owner another Role, on the role field.
-	ErrDemoteLastOwner = validation.ConflictField("role", "memberships: cannot demote the last owner", i18n.ErrorsKeepOneOwner)
+	ErrDemoteLastOwner = validation.ConflictField(fieldname.Role, "memberships: cannot demote the last owner", i18n.ErrorsKeepOneOwner)
 	// ErrRemoveLastOwner refuses removing the last owner's Membership, on the member it names.
-	ErrRemoveLastOwner = validation.ConflictField("member", "memberships: cannot remove the last owner", i18n.ErrorsKeepOneOwner)
+	ErrRemoveLastOwner = validation.ConflictField(FieldMember, "memberships: cannot remove the last owner", i18n.ErrorsKeepOneOwner)
 	// ErrMemberNotFound means no Membership of that id is in the Workspace.
 	ErrMemberNotFound = validation.NotFound("memberships: member not found", i18n.ErrorsMemberNotFound)
 )
@@ -61,7 +62,7 @@ func (ms *Module) ChangeRole(ctx context.Context, s *ent.Scoped, actor events.Ac
 			WorkspaceID: s.WorkspaceID(),
 			Actor:       actor,
 			Action:      events.ActionMembershipUpdate,
-			TargetType:  "membership",
+			TargetType:  membership.Label,
 			TargetID:    strconv.FormatInt(target.ID, 10),
 			TargetName:  target.Edges.User.Name,
 			Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), string(desired))},
@@ -86,7 +87,7 @@ func (ms *Module) Remove(ctx context.Context, s *ent.Scoped, actor events.Actor,
 
 // ErrOnlyOwnerLeaves refuses the only Owner leaving the Workspace (Leaving, ADR 0050): they make
 // another member an Owner or delete the Workspace first.
-var ErrOnlyOwnerLeaves = validation.ConflictField("workspace", "memberships: the only owner cannot leave", i18n.ErrorsLeaveOnlyOwner)
+var ErrOnlyOwnerLeaves = validation.ConflictField(FieldWorkspace, "memberships: the only owner cannot leave", i18n.ErrorsLeaveOnlyOwner)
 
 // Leave removes User userID's own Membership in the Workspace s (Leaving, ADR 0050) in a
 // transaction of its own. See LeaveIn for the rules; the only Owner is refused with
@@ -155,7 +156,7 @@ func RemovalAudit(workspaceID int64, actor events.Actor, target *ent.Membership)
 		WorkspaceID: workspaceID,
 		Actor:       actor,
 		Action:      events.ActionMembershipDelete,
-		TargetType:  "membership",
+		TargetType:  membership.Label,
 		TargetID:    strconv.FormatInt(target.ID, 10),
 		TargetName:  target.Edges.User.Name,
 		Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), nil)},

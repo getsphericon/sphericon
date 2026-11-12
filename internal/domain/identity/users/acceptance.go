@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -39,8 +40,8 @@ var (
 // The refusals of accepting an Invitation for an address with no Verified User without a name and
 // a password: the invitee sets up the account, so both are required.
 var (
-	ErrNameRequired     = validation.RefuseField(validation.FieldName, "users: name is required", i18n.ErrorsNameRequired)
-	ErrPasswordRequired = validation.RefuseField(validation.FieldPassword, "users: password is required", i18n.ErrorsPasswordRequired)
+	ErrNameRequired     = validation.RefuseField(fieldname.Name, "users: name is required", i18n.ErrorsNameRequired)
+	ErrPasswordRequired = validation.RefuseField(fieldname.Password, "users: password is required", i18n.ErrorsPasswordRequired)
 )
 
 // credentialsRequired refuses the acceptance on both fields.

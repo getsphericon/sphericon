@@ -10,15 +10,18 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // smsDecision is Send-eligibility of a number on sms for a Broadcast in Acme.
 func smsDecision(t *testing.T, env *testhelper.TestEnv, number string) eligibility.Decision {
 	t.Helper()
-	d, err := eligibility.Check(context.Background(), env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, number, eligibility.SourceBroadcasts)
+	d, err := eligibility.Check(context.Background(), env.DB.Scoped(fixtures.AcmeID), channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	return d
 }
@@ -38,7 +41,7 @@ func smsConsent(destination string) *externalapi.CreateConfirmationInput {
 // (ADR 0077).
 func TestAnAPIAssertedSMSConfirmationRecordsItsEvidenceAndMakesTheNumberEligible(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	before := smsDecision(t, env, fixtures.ContactTexterPhone)
 
 	created, err := c.ConfirmationsCreate(t.Context(), smsConsent("+1 (415) 555-0810"))
@@ -50,12 +53,12 @@ func TestAnAPIAssertedSMSConfirmationRecordsItsEvidenceAndMakesTheNumberEligible
 	assert.Equal(t, "Acme", created.Brand.Value)
 	after := smsDecision(t, env, fixtures.ContactTexterPhone)
 	assert.True(t, after.Eligible)
-	evidence := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{
+	evidence := env.QueuedCount(t, systemevent.SmsConfirmed, map[string]any{
 		"phone": fixtures.ContactTexterPhone, "contactId": fixtures.ContactTexterID, "provenance": "imported",
 		"wording": "Yes, text me offers from Acme. Reply STOP to opt out.", "source": "checkout form", "brand": "Acme",
 	})
 	assert.Equal(t, 1, evidence)
-	marketingConfirmed := env.QueuedCount(t, events.NameMarketingConfirmed, nil)
+	marketingConfirmed := env.QueuedCount(t, systemevent.MarketingConfirmed, nil)
 	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 }
 
@@ -63,34 +66,34 @@ func TestAnAPIAssertedSMSConfirmationRecordsItsEvidenceAndMakesTheNumberEligible
 // records no second Event.
 func TestAnImportedSMSConfirmationLeavesAStrongerOneStanding(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	standing, err := c.ConfirmationsCreate(t.Context(), smsConsent(fixtures.ConfirmationSmsKeywordDestination))
 
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.ConfirmationProvenanceKeyword, standing.Provenance)
 	assert.False(t, standing.Wording.Set, "the START carries no wording")
-	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, nil)
+	smsConfirmed := env.QueuedCount(t, systemevent.SmsConfirmed, nil)
 	assert.Equal(t, 0, smsConfirmed)
 }
 
 // A stronger provenance replaces a weaker one with its own evidence.
 func TestAnImportedSMSConfirmationReplacesAGrandfatheredOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	standing, err := c.ConfirmationsCreate(t.Context(), smsConsent(fixtures.ConfirmationSmsGrandfatheredDestination))
 
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, standing.Provenance)
 	assert.Equal(t, "checkout form", standing.Source.Value)
-	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{"phone": fixtures.ConfirmationSmsGrandfatheredDestination})
+	smsConfirmed := env.QueuedCount(t, systemevent.SmsConfirmed, map[string]any{"phone": fixtures.ConfirmationSmsGrandfatheredDestination})
 	assert.Equal(t, 1, smsConfirmed)
 }
 
 func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	onEmail := smsConsent("texter@example.com")
 	onEmail.Channel = externalapi.ConsentChannelEmail
 	blankBrand := smsConsent(fixtures.ContactTexterPhone)
@@ -111,7 +114,7 @@ func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t 
 // even with a Confirmation, and recording consent afterwards does not lift it.
 func TestAnOffChannelSMSOptOutBlocksTheNumber(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	res, err := c.UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
 		Channel:     externalapi.NewOptConsentChannel(externalapi.ConsentChannelSMS),
@@ -127,7 +130,7 @@ func TestAnOffChannelSMSOptOutBlocksTheNumber(t *testing.T) {
 	assert.Equal(t, eligibility.SourceEverything, created.SendingSource)
 	decision := smsDecision(t, env, fixtures.ContactTexterPhone)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, decision.Reason)
-	unsubscribed := env.QueuedCount(t, events.NameSmsUnsubscribed, map[string]any{
+	unsubscribed := env.QueuedCount(t, systemevent.SmsUnsubscribed, map[string]any{
 		"contactId": fixtures.ContactTexterID, "phone": fixtures.ContactTexterPhone, "via": events.UnsubscribedByManual,
 	})
 	assert.Equal(t, 1, unsubscribed, "the Contact whose phone it is records the opt-out")
@@ -137,7 +140,7 @@ func TestAnOffChannelSMSOptOutBlocksTheNumber(t *testing.T) {
 // never reactivates, so an import after it stands instead of the START it would not replace.
 func TestAnSMSOptOutDropsTheNumbersConfirmation(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	_, err := c.UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
 		Channel:     externalapi.NewOptConsentChannel(externalapi.ConsentChannelSMS),
@@ -153,7 +156,7 @@ func TestAnSMSOptOutDropsTheNumbersConfirmation(t *testing.T) {
 
 func TestAnSMSOptOutIsForEverything(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	_, err := c.UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
 		Channel:       externalapi.NewOptConsentChannel(externalapi.ConsentChannelSMS),
@@ -169,7 +172,7 @@ func TestAnSMSOptOutIsForEverything(t *testing.T) {
 // that item alone.
 func TestABatchUpsertRecordsSMSConsentFromItsItems(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	evidence := externalapi.NewOptConsentEvidence(externalapi.ConsentEvidence{
 		Wording: "Text me offers", Source: "store signup sheet", Brand: "Acme",
 	})
@@ -189,8 +192,8 @@ func TestABatchUpsertRecordsSMSConsentFromItsItems(t *testing.T) {
 	assert.True(t, withConsent.Eligible)
 	withoutConsent := smsDecision(t, env, "+14155550831")
 	assert.Equal(t, eligibility.ReasonUnconfirmed, withoutConsent.Reason)
-	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{"phone": "+14155550830", "source": "store signup sheet"})
+	smsConfirmed := env.QueuedCount(t, systemevent.SmsConfirmed, map[string]any{"phone": "+14155550830", "source": "store signup sheet"})
 	assert.Equal(t, 1, smsConfirmed)
-	marketingConfirmed := env.QueuedCount(t, events.NameMarketingConfirmed, nil)
+	marketingConfirmed := env.QueuedCount(t, systemevent.MarketingConfirmed, nil)
 	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 }

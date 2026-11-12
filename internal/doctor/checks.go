@@ -20,6 +20,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	appdb "github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
@@ -83,7 +85,7 @@ func checkSchema(ctx context.Context, r *Report, in Input, st appdb.SchemaStatus
 // Workspace's Integrations.
 func checkSMTP(ctx context.Context, r *Report, in Input) {
 	cfg := in.Config
-	if cfg.SystemEmailProvider == "ses" {
+	if cfg.SystemEmailProvider == providers.SES {
 		if cfg.SESRegion == "" || cfg.SESAccessKeyID == "" || cfg.SESSecretAccessKey == "" {
 			r.add("system mail", Fail, "SPHERICON_SYSTEM_EMAIL_PROVIDER is ses but the SES region or credentials are missing",
 				"Set SPHERICON_SES_REGION, SPHERICON_SES_ACCESS_KEY_ID and SPHERICON_SES_SECRET_ACCESS_KEY.")
@@ -139,7 +141,7 @@ func checkAppURL(ctx context.Context, r *Report, in Input) {
 			"Put the Instance behind an https reverse proxy and set SPHERICON_APP_URL to the https origin.")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String()+"/healthz", http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String()+paths.Healthz, http.NoBody)
 	if err == nil {
 		var resp *http.Response
 		if resp, err = in.HTTP.Do(req); err == nil {

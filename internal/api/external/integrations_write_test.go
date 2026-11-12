@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/integration"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -42,7 +43,7 @@ func createSMTP(t *testing.T, c *externalapi.Client, name string, isDefault bool
 func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	reader := env.ExternalScoped(t, "integrations:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead)
 	id := entityIDString(fixtures.IntegrationAcmeSesID)
 
 	_, err := reader.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "x", Config: smtpInput("smtp.example.com")})
@@ -54,7 +55,7 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 	err = reader.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	writer := env.ExternalScoped(t, "integrations:write")
+	writer := env.ExternalScoped(t, apitokens.ScopeIntegrationsWrite)
 	_, err = writer.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "write does not imply read")
 
@@ -66,7 +67,7 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 func TestExternalIntegrationsCreateNeverReturnsSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 
 	created := createSMTP(t, c, "Acme transactional", false)
 	assert.Equal(t, externalapi.IntegrationProviderSMTP, created.Provider)
@@ -97,7 +98,7 @@ func TestExternalIntegrationsCreateNeverReturnsSecrets(t *testing.T) {
 
 func TestExternalIntegrationsCreateValidates(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsWrite)
 	ctx := context.Background()
 
 	_, err := c.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "  ", Config: smtpInput("smtp.example.com")})
@@ -110,7 +111,7 @@ func TestExternalIntegrationsCreateValidates(t *testing.T) {
 func TestExternalIntegrationsNewDefaultReplacesTheOldOne(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 
 	created := createSMTP(t, c, "New default", true)
 	assert.True(t, created.IsDefault)
@@ -123,7 +124,7 @@ func TestExternalIntegrationsNewDefaultReplacesTheOldOne(t *testing.T) {
 func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	// The relay logs in to smtp.example.com:587 as mailer with smtpSecret.
 	id := entityIDString(fixtures.IntegrationAcmeSmtpLoginID)
 	scoped := env.DB.Scoped(fixtures.AcmeID)
@@ -183,7 +184,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	globex := entityIDString(fixtures.IntegrationGlobexID)
 
 	_, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: globex})
@@ -206,7 +207,7 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	ses := func(topic string) *externalapi.CreateIntegrationInput {
 		return &externalapi.CreateIntegrationInput{
 			Name: externalapi.Name("SES " + topic),

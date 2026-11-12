@@ -24,7 +24,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -60,7 +62,7 @@ func camel(column string) string {
 
 func TestExternalContactsExportByIDReturnsTheFullBundle(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:export")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 
 	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
@@ -79,7 +81,7 @@ func TestExternalContactsExportByIDReturnsTheFullBundle(t *testing.T) {
 	assert.Len(t, doc.Visitors, 2)
 
 	actions := lo.Map(doc.Events, func(e externalapi.ContactExportEvent, _ int) string { return e.Action })
-	assert.ElementsMatch(t, []string{"export_subject_custom", "email.sent", "marketing.confirmed"}, actions)
+	assert.ElementsMatch(t, []string{"export_subject_custom", systemevent.EmailSent, systemevent.MarketingConfirmed}, actions)
 
 	assert.Len(t, doc.Unsubscribes, 1)
 	assert.Len(t, doc.Suppressions, 1)
@@ -125,7 +127,7 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 // No tenant id and no rendered message content reach the document.
 func TestExternalContactsExportLeaksNoInternals(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:export")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 
 	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
@@ -140,7 +142,7 @@ func TestExternalContactsExportLeaksNoInternals(t *testing.T) {
 
 func TestExternalContactsExportByEmailMatchesByID(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:export")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 
 	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		Email: externalapi.NewOptEmailAddress("Export.Subject@Example.com"),
@@ -154,7 +156,7 @@ func TestExternalContactsExportByEmailMatchesByID(t *testing.T) {
 
 func TestExternalContactsExportEmptyMembersAreArrays(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:export")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 
 	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactBobID)),
@@ -176,7 +178,7 @@ func TestExternalContactsExportStreamsLargeContacts(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, stored, 1000)
 
-	c := env.ExternalScoped(t, "contacts:export")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 	res, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportHeavyID)),
 	})
@@ -193,7 +195,7 @@ func TestExternalContactsExportStreamsLargeContacts(t *testing.T) {
 func TestExternalContactsExportNeedsTheExportScope(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.ExternalScoped(t, "contacts:read", "contacts:write").ContactsExport(context.Background(), externalapi.ContactsExportParams{
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite).ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 	})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -202,7 +204,7 @@ func TestExternalContactsExportNeedsTheExportScope(t *testing.T) {
 
 func TestExternalContactsExportIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:export")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 	ctx := context.Background()
 
 	_, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
@@ -218,7 +220,7 @@ func TestExternalContactsExportIsWorkspaceScoped(t *testing.T) {
 
 func TestExternalContactsExportNeedsExactlyOneIdentifier(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:export")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 	ctx := context.Background()
 
 	_, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{})

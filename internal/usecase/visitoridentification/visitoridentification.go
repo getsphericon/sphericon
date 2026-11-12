@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -42,7 +43,7 @@ func New(bus *events.Bus, now func() time.Time) *UseCase { return &UseCase{bus: 
 
 // ErrVisitorIDRequired refuses an identify that names no visitor: there is no device to bind. An
 // identify that names no alias key of the Contact is contacts.ErrIdentityRequired.
-var ErrVisitorIDRequired = validation.RefuseField("visitorId", "identify: visitorId is required", i18n.ErrorsVisitorIdRequired)
+var ErrVisitorIDRequired = validation.RefuseField(fieldname.VisitorID, "identify: visitorId is required", i18n.ErrorsVisitorIdRequired)
 
 // Identify binds a Visitor to a Contact and asserts that Contact's alias keys
 // (subject_id / email / phone) and the core attributes its traits name (ADR 0072). It

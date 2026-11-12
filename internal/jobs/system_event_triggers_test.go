@@ -14,12 +14,14 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -55,8 +57,8 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 
 	_, err := contacts.New(env.Bus).ApplyTag(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
 	require.NoError(t, err)
-	onlyEnvelope(t, env, events.NameContactTagged)
-	triggers := triggersOn(t, env, events.NameContactTagged)
+	onlyEnvelope(t, env, systemevent.ContactTagged)
+	triggers := triggersOn(t, env, systemevent.ContactTagged)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
 
@@ -64,7 +66,7 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 		Where(automationrun.AutomationID(fixtures.AutomationOnContactTaggedID), automationrun.ContactID(fixtures.ContactLiamID)).
 		Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, events.NameContactTagged, *run.EventAction)
+	assert.Equal(t, systemevent.ContactTagged, *run.EventAction)
 	assert.Equal(t, map[string]any{"tag": "onboarding-ready"}, run.EventProperties)
 }
 
@@ -78,9 +80,9 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
-	onlyEnvelope(t, env, events.NameAutomationCompleted)
+	onlyEnvelope(t, env, systemevent.AutomationCompleted)
 	evaluations := lo.Filter(queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind),
-		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == events.NameAutomationCompleted })
+		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == systemevent.AutomationCompleted })
 	require.Len(t, evaluations, 1)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	fired, err := m.Evaluate(ctx, acme, rules.Event{
@@ -90,9 +92,9 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	require.NoError(t, err)
 	require.Len(t, fired, 1)
 	require.NoError(t, m.RunActions(ctx, acme, fired[0].ID, ruleRunners(env)))
-	tagged := onlyEnvelope(t, env, events.NameContactTagged)
+	tagged := onlyEnvelope(t, env, systemevent.ContactTagged)
 	taggedEvaluations := lo.Filter(queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind),
-		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == events.NameContactTagged })
+		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == systemevent.ContactTagged })
 	aliceTags := tagsOf(t, env, fixtures.ContactAliceID)
 
 	assert.EqualValues(t, fixtures.RuleEnrollmentCompletedID, fired[0].RuleID)
@@ -137,7 +139,7 @@ func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *te
 			AllX(ctx)
 	}
 
-	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(ctx, &externalapi.CreateConfirmationInput{
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ConfirmationsCreate(ctx, &externalapi.CreateConfirmationInput{
 		Channel: externalapi.ConsentChannelSMS, Destination: fixtures.ContactTexterPhone,
 		Wording: "Text me offers", Source: "checkout form", Brand: "Acme",
 	})
@@ -151,9 +153,9 @@ func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *te
 	onEmail := router.deliver(t)
 	afterEmail := runs()
 
-	assert.Equal(t, []string{events.NameSmsConfirmed}, onSMS, "the SMS consent is an Event of the Contact")
+	assert.Equal(t, []string{systemevent.SmsConfirmed}, onSMS, "the SMS consent is an Event of the Contact")
 	assert.Empty(t, afterSMS, "an SMS Confirmation starts no welcome email")
-	assert.Equal(t, []string{events.NameMarketingConfirmed}, onEmail)
+	assert.Equal(t, []string{systemevent.MarketingConfirmed}, onEmail)
 	require.Len(t, afterEmail, 1, "the address's confirmation does")
-	assert.Equal(t, events.NameMarketingConfirmed, *afterEmail[0].EventAction)
+	assert.Equal(t, systemevent.MarketingConfirmed, *afterEmail[0].EventAction)
 }

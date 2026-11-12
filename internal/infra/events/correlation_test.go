@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -50,7 +51,7 @@ func publishIn(ctx context.Context, t *testing.T, env *testhelper.TestEnv, email
 // lastCreated is the envelope of the last ContactCreated the test published, as its jobs carry it.
 func lastCreated(t *testing.T, env *testhelper.TestEnv) events.Envelope {
 	t.Helper()
-	envelopes := env.QueuedEnvelopes(t, events.NameContactCreated)
+	envelopes := env.QueuedEnvelopes(t, systemevent.ContactCreated)
 	return envelopes[len(envelopes)-1]
 }
 
@@ -82,7 +83,7 @@ func TestAJobKeepsTheChainItWasQueuedIn(t *testing.T) {
 	_, err = w.WorkJob(ctx, t, tx, queued.Job)
 
 	require.NoError(t, err)
-	published := testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameContactCreated)
+	published := testhelper.QueuedEnvelopesOn(t, sqlDB, systemevent.ContactCreated)
 	require.NotEmpty(t, published)
 	assert.Equal(t, "01JROOT", published[len(published)-1].CorrelationID)
 	assert.Equal(t, "01JPARENT", published[len(published)-1].CausationID)

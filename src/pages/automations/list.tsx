@@ -20,6 +20,7 @@ import {
   siteAutomationsListOptions,
   siteAutomationsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { SiteAutomationsSort } from '../../generated/site/types.gen.ts'
 import type { SiteAutomationResource, SortDirection } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationState } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
@@ -34,7 +35,8 @@ import { AutomationCreateModal } from './create.tsx'
 
 // The direction a column sorts in until the person turns it: by name A to Z, by creation the
 // newest first.
-const defaultDirection = (column: string) => (column === 'name' ? 'asc' : 'desc')
+const defaultDirection = (column: SiteAutomationsSort) =>
+  column === SiteAutomationsSort.NAME ? 'asc' : 'desc'
 
 export function AutomationsListPage() {
   const { t } = useTranslation()
@@ -100,13 +102,16 @@ export function AutomationsListPage() {
 
   // The order on screen: the newest first unless the URL says otherwise, and by name A to Z
   // unless it says Z to A. The default order is the absent params, so the plain URL is the list.
-  const column = sort ?? 'createdAt'
+  const column = sort ?? SiteAutomationsSort.CREATED_AT
   // A column picked anew starts in its own direction; the column already sorted by turns round.
   const changeSort = (nextColumn: string, nextDirection: SortDirection) => {
-    const nextSort = nextColumn === 'name' ? 'name' : 'createdAt'
+    const nextSort =
+      nextColumn === SiteAutomationsSort.NAME
+        ? SiteAutomationsSort.NAME
+        : SiteAutomationsSort.CREATED_AT
     const turned = nextSort === column ? nextDirection : defaultDirection(nextSort)
     changeSearch({
-      sort: nextSort === 'createdAt' ? undefined : nextSort,
+      sort: nextSort === SiteAutomationsSort.CREATED_AT ? undefined : nextSort,
       direction: turned === defaultDirection(nextSort) ? undefined : turned,
     })
   }
@@ -259,7 +264,7 @@ export function AutomationsListPage() {
         }
         columns={[
           {
-            accessor: 'name',
+            accessor: SiteAutomationsSort.NAME,
             title: t(($) => $.automations.nameLabel),
             sortable: true,
             // The name is the link to the automation, so it is reachable by keyboard and opens in
@@ -306,7 +311,7 @@ export function AutomationsListPage() {
             render: (record) => messageRevenueCells(record.revenue, locale).revenue,
           },
           {
-            accessor: 'createdAt',
+            accessor: SiteAutomationsSort.CREATED_AT,
             title: t(($) => $.automations.createdLabel),
             sortable: true,
             render: (record) => <RelativeTime value={record.createdAt} />,

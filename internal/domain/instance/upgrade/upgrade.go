@@ -48,9 +48,9 @@ type Options struct {
 	// Service is the systemd unit the restart hint names; "" = "sphericon".
 	Service string
 
-	// Container names the command to use instead when running inside a container or on
-	// Kubernetes ("docker" or "helm"), "" on a bare host; nil = detect from the environment.
-	Container func() string
+	// Container is where the Instance runs, which names the command to use instead inside a
+	// container or on Kubernetes; nil = detect from the environment.
+	Container func() Container
 	// Run executes a binary and returns its stdout; nil = os/exec with the process environment
 	// and stderr passed through.
 	Run func(ctx context.Context, bin string, args []string) ([]byte, error)
@@ -100,7 +100,7 @@ func (o Options) withDefaults() Options {
 // ("v0.1.0"): what a Step and a Walk both start with.
 func begin(o Options) (Options, string, error) {
 	o = o.withDefaults()
-	if kind := o.Container(); kind != "" {
+	if kind := o.Container(); kind != BareHost {
 		return o, "", containerRefusal(kind)
 	}
 	current := buildinfo.Semver(o.Current)
@@ -320,21 +320,34 @@ func unpack(archive, dst string) error {
 	}
 }
 
-// DetectContainer says "docker" inside a container and "helm" on Kubernetes, "" otherwise.
-func DetectContainer() string {
+// Container is where an Instance runs, as far as replacing its binary goes.
+type Container string
+
+// The places an Instance runs.
+const (
+	// BareHost is a binary on a host of its own: the upgrade replaces it.
+	BareHost Container = ""
+	// Docker is a container (Docker, Podman): the image is pulled again.
+	Docker Container = "docker"
+	// Helm is a pod on Kubernetes: the chart is upgraded.
+	Helm Container = "helm"
+)
+
+// DetectContainer says where the Instance runs, from its environment.
+func DetectContainer() Container {
 	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
-		return "helm"
+		return Helm
 	}
 	for _, marker := range []string{"/.dockerenv", "/run/.containerenv"} {
 		if _, err := os.Stat(marker); err == nil {
-			return "docker"
+			return Docker
 		}
 	}
-	return ""
+	return BareHost
 }
 
-func containerRefusal(kind string) error {
-	if kind == "helm" {
+func containerRefusal(kind Container) error {
+	if kind == Helm {
 		return errors.New("this Instance runs on Kubernetes: upgrade it with `helm upgrade sphericon oci://ghcr.io/getsphericon/charts/sphericon --version <version> --reuse-values`, not by replacing a binary in an image")
 	}
 	return errors.New("this Instance runs in a container: upgrade it with `docker pull ghcr.io/getsphericon/sphericon:<version>` and recreate the container, not by replacing a binary in an image")

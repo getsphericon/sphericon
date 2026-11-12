@@ -23,7 +23,7 @@ func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	}
 	return []secrets.Sweep{
 		{
-			Column: "integrations.config_encrypted",
+			Column: integration.Table + "." + integration.FieldConfigEncrypted,
 			Page:   page(func(e *ent.Integration) string { return e.ConfigEncrypted }),
 			Swap: func(ctx context.Context, id int64, prev, next string) (bool, error) {
 				n, err := c.Integration.Update().Where(integration.ID(id), integration.ConfigEncrypted(prev)).SetConfigEncrypted(next).Save(ctx)
@@ -31,7 +31,7 @@ func SecretSweeps(c *ent.Client) []secrets.Sweep {
 			},
 		},
 		{
-			Column: "integrations.params_encrypted",
+			Column: integration.Table + "." + integration.FieldParamsEncrypted,
 			Page:   page(func(e *ent.Integration) string { return e.ParamsEncrypted }),
 			Swap: func(ctx context.Context, id int64, prev, next string) (bool, error) {
 				n, err := c.Integration.Update().Where(integration.ID(id), integration.ParamsEncrypted(prev)).SetParamsEncrypted(next).Save(ctx)

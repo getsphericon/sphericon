@@ -8,89 +8,89 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AcceptanceRouteImport } from './routes/acceptance'
-import { Route as AccountRouteRouteImport } from './routes/account/route'
-import { Route as ConfirmRouteImport } from './routes/confirm'
-import { Route as ConfirmEmailChangeRouteImport } from './routes/confirm-email-change'
-import { Route as ConsoleRouteRouteImport } from './routes/console/route'
-import { Route as DeleteAccountRouteImport } from './routes/delete-account'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as SignUpRouteImport } from './routes/sign-up'
-import { Route as SigninNotMeRouteImport } from './routes/signin-not-me'
-import { Route as SigninPendingRouteImport } from './routes/signin-pending'
-import { Route as SignupSurveyRouteImport } from './routes/signup-survey'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as UnsubscribedRouteImport } from './routes/unsubscribed'
-import { Route as VerifyEmailRouteImport } from './routes/verify-email'
-import { Route as AccountIndexRouteImport } from './routes/account/index'
-import { Route as AccountSecurityRouteImport } from './routes/account/security'
-import { Route as ConsoleAuthedRouteRouteImport } from './routes/console/_authed/route'
-import { Route as ConsoleLoginRouteImport } from './routes/console/login'
-import { Route as InvitationsTokenRouteImport } from './routes/invitations/$token'
-import { Route as LegalKeyRouteImport } from './routes/legal.$key'
-import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
-import { Route as WorkspacesWorkspaceIdRouteRouteImport } from './routes/workspaces/$workspaceId/route'
-import { Route as WorkspacesNewRouteImport } from './routes/workspaces/new'
-import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed/index'
-import { Route as ConsoleAuthedEnterpriseRouteRouteImport } from './routes/console/_authed/_enterprise/route'
-import { Route as ConsoleAuthedInstanceRouteImport } from './routes/console/_authed/instance'
-import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
-import { Route as WorkspacesWorkspaceIdActivityRouteImport } from './routes/workspaces/$workspaceId/activity'
-import { Route as WorkspacesWorkspaceIdAnalyticsRouteRouteImport } from './routes/workspaces/$workspaceId/analytics/route'
-import { Route as WorkspacesWorkspaceIdBrandKitRouteImport } from './routes/workspaces/$workspaceId/brand-kit'
-import { Route as WorkspacesWorkspaceIdSettingsRouteRouteImport } from './routes/workspaces/$workspaceId/settings/route'
-import { Route as ConsoleAuthedSignupItemsIndexRouteImport } from './routes/console/_authed/signup-items.index'
-import { Route as ConsoleAuthedSignupItemsItemIdRouteImport } from './routes/console/_authed/signup-items.$itemId'
-import { Route as WorkspacesWorkspaceIdAnalyticsIndexRouteImport } from './routes/workspaces/$workspaceId/analytics/index'
-import { Route as WorkspacesWorkspaceIdAnalyticsClicksByLinkRouteImport } from './routes/workspaces/$workspaceId/analytics/clicks-by-link'
-import { Route as WorkspacesWorkspaceIdAnalyticsDeliverabilityRouteImport } from './routes/workspaces/$workspaceId/analytics/deliverability'
-import { Route as WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport } from './routes/workspaces/$workspaceId/analytics/email-metrics'
-import { Route as WorkspacesWorkspaceIdAnalyticsEventsRouteImport } from './routes/workspaces/$workspaceId/analytics/events'
-import { Route as WorkspacesWorkspaceIdAnalyticsNewPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/new-people'
-import { Route as WorkspacesWorkspaceIdAnalyticsOpensByHourRouteImport } from './routes/workspaces/$workspaceId/analytics/opens-by-hour'
-import { Route as WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/subscribed-people'
-import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index'
-import { Route as WorkspacesWorkspaceIdBroadcastsIndexRouteImport } from './routes/workspaces/$workspaceId/broadcasts/index'
-import { Route as WorkspacesWorkspaceIdBroadcastsNewRouteImport } from './routes/workspaces/$workspaceId/broadcasts/new'
-import { Route as WorkspacesWorkspaceIdCapturedMessagesIndexRouteImport } from './routes/workspaces/$workspaceId/captured-messages/index'
-import { Route as WorkspacesWorkspaceIdContactsIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/index'
-import { Route as WorkspacesWorkspaceIdCustomFieldsIndexRouteImport } from './routes/workspaces/$workspaceId/custom-fields/index'
-import { Route as WorkspacesWorkspaceIdRulesIndexRouteImport } from './routes/workspaces/$workspaceId/rules/index'
-import { Route as WorkspacesWorkspaceIdRulesNewRouteImport } from './routes/workspaces/$workspaceId/rules/new'
-import { Route as WorkspacesWorkspaceIdSegmentsIndexRouteImport } from './routes/workspaces/$workspaceId/segments/index'
-import { Route as WorkspacesWorkspaceIdSegmentsNewRouteImport } from './routes/workspaces/$workspaceId/segments/new'
-import { Route as WorkspacesWorkspaceIdSettingsIndexRouteImport } from './routes/workspaces/$workspaceId/settings/index'
-import { Route as WorkspacesWorkspaceIdSettingsApiKeysRouteImport } from './routes/workspaces/$workspaceId/settings/api-keys'
-import { Route as WorkspacesWorkspaceIdSettingsAuditLogRouteImport } from './routes/workspaces/$workspaceId/settings/audit-log'
-import { Route as WorkspacesWorkspaceIdSettingsEmailsRouteImport } from './routes/workspaces/$workspaceId/settings/emails'
-import { Route as WorkspacesWorkspaceIdSettingsMcpRouteImport } from './routes/workspaces/$workspaceId/settings/mcp'
-import { Route as WorkspacesWorkspaceIdSettingsPrivacyRouteImport } from './routes/workspaces/$workspaceId/settings/privacy'
-import { Route as WorkspacesWorkspaceIdSettingsTeamRouteImport } from './routes/workspaces/$workspaceId/settings/team'
-import { Route as WorkspacesWorkspaceIdSettingsTrackingRouteImport } from './routes/workspaces/$workspaceId/settings/tracking'
-import { Route as WorkspacesWorkspaceIdSettingsWebhooksRouteImport } from './routes/workspaces/$workspaceId/settings/webhooks'
-import { Route as WorkspacesWorkspaceIdSuppressionsIndexRouteImport } from './routes/workspaces/$workspaceId/suppressions/index'
-import { Route as WorkspacesWorkspaceIdTagsIndexRouteImport } from './routes/workspaces/$workspaceId/tags/index'
-import { Route as WorkspacesWorkspaceIdTemplatesIndexRouteImport } from './routes/workspaces/$workspaceId/templates/index'
-import { Route as WorkspacesWorkspaceIdTemplatesNewRouteImport } from './routes/workspaces/$workspaceId/templates/new'
-import { Route as WorkspacesWorkspaceIdTransactionalEmailsIndexRouteImport } from './routes/workspaces/$workspaceId/transactional-emails/index'
-import { Route as ConsoleAuthedEnterpriseWorkspacesIndexRouteImport } from './routes/console/_authed/_enterprise/workspaces.index'
-import { Route as ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/_enterprise/workspaces.$workspaceId'
-import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/index'
-import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/edit'
-import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
-import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/report'
-import { Route as WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRouteImport } from './routes/workspaces/$workspaceId/captured-messages/$messageId/index'
-import { Route as WorkspacesWorkspaceIdContactsContactIdIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/index'
-import { Route as WorkspacesWorkspaceIdContactsContactIdEditRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/edit'
-import { Route as WorkspacesWorkspaceIdRulesRuleIdIndexRouteImport } from './routes/workspaces/$workspaceId/rules/$ruleId/index'
-import { Route as WorkspacesWorkspaceIdRulesRuleIdEditRouteImport } from './routes/workspaces/$workspaceId/rules/$ruleId/edit'
-import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/index'
-import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdEditRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/edit'
-import { Route as WorkspacesWorkspaceIdTemplatesTemplateIdEditRouteImport } from './routes/workspaces/$workspaceId/templates/$templateId/edit'
+import { Route as rootRouteImport } from './routes/__root.tsx'
+import { Route as IndexRouteImport } from './routes/index.tsx'
+import { Route as AcceptanceRouteImport } from './routes/acceptance.tsx'
+import { Route as AccountRouteRouteImport } from './routes/account/route.tsx'
+import { Route as ConfirmRouteImport } from './routes/confirm.tsx'
+import { Route as ConfirmEmailChangeRouteImport } from './routes/confirm-email-change.tsx'
+import { Route as ConsoleRouteRouteImport } from './routes/console/route.tsx'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account.tsx'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password.tsx'
+import { Route as LoginRouteImport } from './routes/login.tsx'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password.tsx'
+import { Route as SignUpRouteImport } from './routes/sign-up.tsx'
+import { Route as SigninNotMeRouteImport } from './routes/signin-not-me.tsx'
+import { Route as SigninPendingRouteImport } from './routes/signin-pending.tsx'
+import { Route as SignupSurveyRouteImport } from './routes/signup-survey.tsx'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe.tsx'
+import { Route as UnsubscribedRouteImport } from './routes/unsubscribed.tsx'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email.tsx'
+import { Route as AccountIndexRouteImport } from './routes/account/index.tsx'
+import { Route as AccountSecurityRouteImport } from './routes/account/security.tsx'
+import { Route as ConsoleAuthedRouteRouteImport } from './routes/console/_authed/route.tsx'
+import { Route as ConsoleLoginRouteImport } from './routes/console/login.tsx'
+import { Route as InvitationsTokenRouteImport } from './routes/invitations/$token.tsx'
+import { Route as LegalKeyRouteImport } from './routes/legal.$key.tsx'
+import { Route as OauthConsentRouteImport } from './routes/oauth/consent.tsx'
+import { Route as WorkspacesWorkspaceIdRouteRouteImport } from './routes/workspaces/$workspaceId/route.tsx'
+import { Route as WorkspacesNewRouteImport } from './routes/workspaces/new.tsx'
+import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed/index.tsx'
+import { Route as ConsoleAuthedEnterpriseRouteRouteImport } from './routes/console/_authed/_enterprise/route.tsx'
+import { Route as ConsoleAuthedInstanceRouteImport } from './routes/console/_authed/instance.tsx'
+import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index.tsx'
+import { Route as WorkspacesWorkspaceIdActivityRouteImport } from './routes/workspaces/$workspaceId/activity.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsRouteRouteImport } from './routes/workspaces/$workspaceId/analytics/route.tsx'
+import { Route as WorkspacesWorkspaceIdBrandKitRouteImport } from './routes/workspaces/$workspaceId/brand-kit.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsRouteRouteImport } from './routes/workspaces/$workspaceId/settings/route.tsx'
+import { Route as ConsoleAuthedSignupItemsIndexRouteImport } from './routes/console/_authed/signup-items.index.tsx'
+import { Route as ConsoleAuthedSignupItemsItemIdRouteImport } from './routes/console/_authed/signup-items.$itemId.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsIndexRouteImport } from './routes/workspaces/$workspaceId/analytics/index.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsClicksByLinkRouteImport } from './routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsDeliverabilityRouteImport } from './routes/workspaces/$workspaceId/analytics/deliverability.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport } from './routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsEventsRouteImport } from './routes/workspaces/$workspaceId/analytics/events.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsNewPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/new-people.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsOpensByHourRouteImport } from './routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
+import { Route as WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
+import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index.tsx'
+import { Route as WorkspacesWorkspaceIdBroadcastsIndexRouteImport } from './routes/workspaces/$workspaceId/broadcasts/index.tsx'
+import { Route as WorkspacesWorkspaceIdBroadcastsNewRouteImport } from './routes/workspaces/$workspaceId/broadcasts/new.tsx'
+import { Route as WorkspacesWorkspaceIdCapturedMessagesIndexRouteImport } from './routes/workspaces/$workspaceId/captured-messages/index.tsx'
+import { Route as WorkspacesWorkspaceIdContactsIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/index.tsx'
+import { Route as WorkspacesWorkspaceIdCustomFieldsIndexRouteImport } from './routes/workspaces/$workspaceId/custom-fields/index.tsx'
+import { Route as WorkspacesWorkspaceIdRulesIndexRouteImport } from './routes/workspaces/$workspaceId/rules/index.tsx'
+import { Route as WorkspacesWorkspaceIdRulesNewRouteImport } from './routes/workspaces/$workspaceId/rules/new.tsx'
+import { Route as WorkspacesWorkspaceIdSegmentsIndexRouteImport } from './routes/workspaces/$workspaceId/segments/index.tsx'
+import { Route as WorkspacesWorkspaceIdSegmentsNewRouteImport } from './routes/workspaces/$workspaceId/segments/new.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsIndexRouteImport } from './routes/workspaces/$workspaceId/settings/index.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsApiKeysRouteImport } from './routes/workspaces/$workspaceId/settings/api-keys.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsAuditLogRouteImport } from './routes/workspaces/$workspaceId/settings/audit-log.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsEmailsRouteImport } from './routes/workspaces/$workspaceId/settings/emails.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsMcpRouteImport } from './routes/workspaces/$workspaceId/settings/mcp.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsPrivacyRouteImport } from './routes/workspaces/$workspaceId/settings/privacy.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsTeamRouteImport } from './routes/workspaces/$workspaceId/settings/team.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsTrackingRouteImport } from './routes/workspaces/$workspaceId/settings/tracking.tsx'
+import { Route as WorkspacesWorkspaceIdSettingsWebhooksRouteImport } from './routes/workspaces/$workspaceId/settings/webhooks.tsx'
+import { Route as WorkspacesWorkspaceIdSuppressionsIndexRouteImport } from './routes/workspaces/$workspaceId/suppressions/index.tsx'
+import { Route as WorkspacesWorkspaceIdTagsIndexRouteImport } from './routes/workspaces/$workspaceId/tags/index.tsx'
+import { Route as WorkspacesWorkspaceIdTemplatesIndexRouteImport } from './routes/workspaces/$workspaceId/templates/index.tsx'
+import { Route as WorkspacesWorkspaceIdTemplatesNewRouteImport } from './routes/workspaces/$workspaceId/templates/new.tsx'
+import { Route as WorkspacesWorkspaceIdTransactionalEmailsIndexRouteImport } from './routes/workspaces/$workspaceId/transactional-emails/index.tsx'
+import { Route as ConsoleAuthedEnterpriseWorkspacesIndexRouteImport } from './routes/console/_authed/_enterprise/workspaces.index.tsx'
+import { Route as ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
+import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
+import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
+import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
+import { Route as WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRouteImport } from './routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
+import { Route as WorkspacesWorkspaceIdContactsContactIdIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
+import { Route as WorkspacesWorkspaceIdContactsContactIdEditRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
+import { Route as WorkspacesWorkspaceIdRulesRuleIdIndexRouteImport } from './routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
+import { Route as WorkspacesWorkspaceIdRulesRuleIdEditRouteImport } from './routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
+import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
+import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdEditRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
+import { Route as WorkspacesWorkspaceIdTemplatesTemplateIdEditRouteImport } from './routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -101,23 +101,27 @@ const AcceptanceRoute = AcceptanceRouteImport.update({
   id: '/acceptance',
   path: '/acceptance',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/acceptance.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/acceptance.lazy.tsx').then((d) => d.Route),
+)
 const AccountRouteRoute = AccountRouteRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/account/route.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/account/route.lazy.tsx').then((d) => d.Route),
+)
 const ConfirmRoute = ConfirmRouteImport.update({
   id: '/confirm',
   path: '/confirm',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/confirm.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./routes/confirm.lazy.tsx').then((d) => d.Route))
 const ConfirmEmailChangeRoute = ConfirmEmailChangeRouteImport.update({
   id: '/confirm-email-change',
   path: '/confirm-email-change',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
-  import('./routes/confirm-email-change.lazy').then((d) => d.Route),
+  import('./routes/confirm-email-change.lazy.tsx').then((d) => d.Route),
 )
 const ConsoleRouteRoute = ConsoleRouteRouteImport.update({
   id: '/console',
@@ -129,125 +133,145 @@ const DeleteAccountRoute = DeleteAccountRouteImport.update({
   path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
-  import('./routes/delete-account.lazy').then((d) => d.Route),
+  import('./routes/delete-account.lazy.tsx').then((d) => d.Route),
 )
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
-  import('./routes/forgot-password.lazy').then((d) => d.Route),
+  import('./routes/forgot-password.lazy.tsx').then((d) => d.Route),
 )
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./routes/login.lazy.tsx').then((d) => d.Route))
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
-  import('./routes/reset-password.lazy').then((d) => d.Route),
+  import('./routes/reset-password.lazy.tsx').then((d) => d.Route),
 )
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/sign-up.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./routes/sign-up.lazy.tsx').then((d) => d.Route))
 const SigninNotMeRoute = SigninNotMeRouteImport.update({
   id: '/signin-not-me',
   path: '/signin-not-me',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/signin-not-me.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/signin-not-me.lazy.tsx').then((d) => d.Route),
+)
 const SigninPendingRoute = SigninPendingRouteImport.update({
   id: '/signin-pending',
   path: '/signin-pending',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
-  import('./routes/signin-pending.lazy').then((d) => d.Route),
+  import('./routes/signin-pending.lazy.tsx').then((d) => d.Route),
 )
 const SignupSurveyRoute = SignupSurveyRouteImport.update({
   id: '/signup-survey',
   path: '/signup-survey',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/signup-survey.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/signup-survey.lazy.tsx').then((d) => d.Route),
+)
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/unsubscribe.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/unsubscribe.lazy.tsx').then((d) => d.Route),
+)
 const UnsubscribedRoute = UnsubscribedRouteImport.update({
   id: '/unsubscribed',
   path: '/unsubscribed',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/unsubscribed.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/unsubscribed.lazy.tsx').then((d) => d.Route),
+)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/verify-email.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/verify-email.lazy.tsx').then((d) => d.Route),
+)
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AccountRouteRoute,
-} as any).lazy(() => import('./routes/account/index.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/account/index.lazy.tsx').then((d) => d.Route),
+)
 const AccountSecurityRoute = AccountSecurityRouteImport.update({
   id: '/security',
   path: '/security',
   getParentRoute: () => AccountRouteRoute,
 } as any).lazy(() =>
-  import('./routes/account/security.lazy').then((d) => d.Route),
+  import('./routes/account/security.lazy.tsx').then((d) => d.Route),
 )
 const ConsoleAuthedRouteRoute = ConsoleAuthedRouteRouteImport.update({
   id: '/_authed',
   getParentRoute: () => ConsoleRouteRoute,
 } as any).lazy(() =>
-  import('./routes/console/_authed/route.lazy').then((d) => d.Route),
+  import('./routes/console/_authed/route.lazy.tsx').then((d) => d.Route),
 )
 const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => ConsoleRouteRoute,
-} as any).lazy(() => import('./routes/console/login.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/console/login.lazy.tsx').then((d) => d.Route),
+)
 const InvitationsTokenRoute = InvitationsTokenRouteImport.update({
   id: '/invitations/$token',
   path: '/invitations/$token',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
-  import('./routes/invitations/$token.lazy').then((d) => d.Route),
+  import('./routes/invitations/$token.lazy.tsx').then((d) => d.Route),
 )
 const LegalKeyRoute = LegalKeyRouteImport.update({
   id: '/legal/$key',
   path: '/legal/$key',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/legal.$key.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/legal.$key.lazy.tsx').then((d) => d.Route),
+)
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/oauth/consent.lazy').then((d) => d.Route))
+} as any).lazy(() =>
+  import('./routes/oauth/consent.lazy.tsx').then((d) => d.Route),
+)
 const WorkspacesWorkspaceIdRouteRoute =
   WorkspacesWorkspaceIdRouteRouteImport.update({
     id: '/workspaces/$workspaceId',
     path: '/workspaces/$workspaceId',
     getParentRoute: () => rootRouteImport,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/route.lazy').then((d) => d.Route),
+    import('./routes/workspaces/$workspaceId/route.lazy.tsx').then(
+      (d) => d.Route,
+    ),
   )
 const WorkspacesNewRoute = WorkspacesNewRouteImport.update({
   id: '/workspaces/new',
   path: '/workspaces/new',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
-  import('./routes/workspaces/new.lazy').then((d) => d.Route),
+  import('./routes/workspaces/new.lazy.tsx').then((d) => d.Route),
 )
 const ConsoleAuthedIndexRoute = ConsoleAuthedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ConsoleAuthedRouteRoute,
 } as any).lazy(() =>
-  import('./routes/console/_authed/index.lazy').then((d) => d.Route),
+  import('./routes/console/_authed/index.lazy.tsx').then((d) => d.Route),
 )
 const ConsoleAuthedEnterpriseRouteRoute =
   ConsoleAuthedEnterpriseRouteRouteImport.update({
@@ -259,7 +283,7 @@ const ConsoleAuthedInstanceRoute = ConsoleAuthedInstanceRouteImport.update({
   path: '/instance',
   getParentRoute: () => ConsoleAuthedRouteRoute,
 } as any).lazy(() =>
-  import('./routes/console/_authed/instance.lazy').then((d) => d.Route),
+  import('./routes/console/_authed/instance.lazy.tsx').then((d) => d.Route),
 )
 const WorkspacesWorkspaceIdIndexRoute =
   WorkspacesWorkspaceIdIndexRouteImport.update({
@@ -267,7 +291,9 @@ const WorkspacesWorkspaceIdIndexRoute =
     path: '/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/index.lazy').then((d) => d.Route),
+    import('./routes/workspaces/$workspaceId/index.lazy.tsx').then(
+      (d) => d.Route,
+    ),
   )
 const WorkspacesWorkspaceIdActivityRoute =
   WorkspacesWorkspaceIdActivityRouteImport.update({
@@ -275,7 +301,7 @@ const WorkspacesWorkspaceIdActivityRoute =
     path: '/activity',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/activity.lazy').then(
+    import('./routes/workspaces/$workspaceId/activity.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -285,7 +311,7 @@ const WorkspacesWorkspaceIdAnalyticsRouteRoute =
     path: '/analytics',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/route.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/route.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -295,7 +321,7 @@ const WorkspacesWorkspaceIdBrandKitRoute =
     path: '/brand-kit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/brand-kit.lazy').then(
+    import('./routes/workspaces/$workspaceId/brand-kit.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -311,7 +337,7 @@ const ConsoleAuthedSignupItemsIndexRoute =
     path: '/signup-items/',
     getParentRoute: () => ConsoleAuthedRouteRoute,
   } as any).lazy(() =>
-    import('./routes/console/_authed/signup-items.index.lazy').then(
+    import('./routes/console/_authed/signup-items.index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -321,7 +347,7 @@ const ConsoleAuthedSignupItemsItemIdRoute =
     path: '/signup-items/$itemId',
     getParentRoute: () => ConsoleAuthedRouteRoute,
   } as any).lazy(() =>
-    import('./routes/console/_authed/signup-items.$itemId.lazy').then(
+    import('./routes/console/_authed/signup-items.$itemId.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -337,7 +363,7 @@ const WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute =
     path: '/clicks-by-link',
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/clicks-by-link.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/clicks-by-link.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -347,7 +373,7 @@ const WorkspacesWorkspaceIdAnalyticsDeliverabilityRoute =
     path: '/deliverability',
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/deliverability.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/deliverability.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -357,7 +383,7 @@ const WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute =
     path: '/email-metrics',
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/email-metrics.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/email-metrics.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -367,7 +393,7 @@ const WorkspacesWorkspaceIdAnalyticsEventsRoute =
     path: '/events',
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/events.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/events.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -377,7 +403,7 @@ const WorkspacesWorkspaceIdAnalyticsNewPeopleRoute =
     path: '/new-people',
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/new-people.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/new-people.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -387,7 +413,7 @@ const WorkspacesWorkspaceIdAnalyticsOpensByHourRoute =
     path: '/opens-by-hour',
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/opens-by-hour.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/opens-by-hour.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -397,7 +423,7 @@ const WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute =
     path: '/subscribed-people',
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics/subscribed-people.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/subscribed-people.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -407,7 +433,7 @@ const WorkspacesWorkspaceIdAutomationsIndexRoute =
     path: '/automations/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/automations/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/automations/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -417,7 +443,7 @@ const WorkspacesWorkspaceIdBroadcastsIndexRoute =
     path: '/broadcasts/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/broadcasts/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/broadcasts/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -427,7 +453,7 @@ const WorkspacesWorkspaceIdBroadcastsNewRoute =
     path: '/broadcasts/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/broadcasts/new.lazy').then(
+    import('./routes/workspaces/$workspaceId/broadcasts/new.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -437,7 +463,7 @@ const WorkspacesWorkspaceIdCapturedMessagesIndexRoute =
     path: '/captured-messages/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/captured-messages/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/captured-messages/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -447,7 +473,7 @@ const WorkspacesWorkspaceIdContactsIndexRoute =
     path: '/contacts/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/contacts/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/contacts/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -457,7 +483,7 @@ const WorkspacesWorkspaceIdCustomFieldsIndexRoute =
     path: '/custom-fields/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/custom-fields/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/custom-fields/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -467,7 +493,7 @@ const WorkspacesWorkspaceIdRulesIndexRoute =
     path: '/rules/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/rules/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/rules/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -477,7 +503,7 @@ const WorkspacesWorkspaceIdRulesNewRoute =
     path: '/rules/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/rules/new.lazy').then(
+    import('./routes/workspaces/$workspaceId/rules/new.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -487,7 +513,7 @@ const WorkspacesWorkspaceIdSegmentsIndexRoute =
     path: '/segments/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/segments/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/segments/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -497,7 +523,7 @@ const WorkspacesWorkspaceIdSegmentsNewRoute =
     path: '/segments/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/segments/new.lazy').then(
+    import('./routes/workspaces/$workspaceId/segments/new.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -507,7 +533,7 @@ const WorkspacesWorkspaceIdSettingsIndexRoute =
     path: '/',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -517,7 +543,7 @@ const WorkspacesWorkspaceIdSettingsApiKeysRoute =
     path: '/api-keys',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/api-keys.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/api-keys.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -527,7 +553,7 @@ const WorkspacesWorkspaceIdSettingsAuditLogRoute =
     path: '/audit-log',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/audit-log.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/audit-log.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -537,7 +563,7 @@ const WorkspacesWorkspaceIdSettingsEmailsRoute =
     path: '/emails',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/emails.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/emails.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -547,7 +573,7 @@ const WorkspacesWorkspaceIdSettingsMcpRoute =
     path: '/mcp',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/mcp.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/mcp.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -557,7 +583,7 @@ const WorkspacesWorkspaceIdSettingsPrivacyRoute =
     path: '/privacy',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/privacy.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/privacy.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -567,7 +593,7 @@ const WorkspacesWorkspaceIdSettingsTeamRoute =
     path: '/team',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/team.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/team.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -577,7 +603,7 @@ const WorkspacesWorkspaceIdSettingsTrackingRoute =
     path: '/tracking',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/tracking.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/tracking.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -587,7 +613,7 @@ const WorkspacesWorkspaceIdSettingsWebhooksRoute =
     path: '/webhooks',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/settings/webhooks.lazy').then(
+    import('./routes/workspaces/$workspaceId/settings/webhooks.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -597,7 +623,7 @@ const WorkspacesWorkspaceIdSuppressionsIndexRoute =
     path: '/suppressions/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/suppressions/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/suppressions/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -607,7 +633,7 @@ const WorkspacesWorkspaceIdTagsIndexRoute =
     path: '/tags/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/tags/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/tags/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -617,7 +643,7 @@ const WorkspacesWorkspaceIdTemplatesIndexRoute =
     path: '/templates/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/templates/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/templates/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -627,7 +653,7 @@ const WorkspacesWorkspaceIdTemplatesNewRoute =
     path: '/templates/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/templates/new.lazy').then(
+    import('./routes/workspaces/$workspaceId/templates/new.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -637,7 +663,7 @@ const WorkspacesWorkspaceIdTransactionalEmailsIndexRoute =
     path: '/transactional-emails/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/transactional-emails/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/transactional-emails/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -647,7 +673,7 @@ const ConsoleAuthedEnterpriseWorkspacesIndexRoute =
     path: '/workspaces/',
     getParentRoute: () => ConsoleAuthedEnterpriseRouteRoute,
   } as any).lazy(() =>
-    import('./routes/console/_authed/_enterprise/workspaces.index.lazy').then(
+    import('./routes/console/_authed/_enterprise/workspaces.index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -657,7 +683,7 @@ const ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute =
     path: '/workspaces/$workspaceId',
     getParentRoute: () => ConsoleAuthedEnterpriseRouteRoute,
   } as any).lazy(() =>
-    import('./routes/console/_authed/_enterprise/workspaces.$workspaceId.lazy').then(
+    import('./routes/console/_authed/_enterprise/workspaces.$workspaceId.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -667,7 +693,7 @@ const WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute =
     path: '/automations/$automationId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/automations/$automationId/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/automations/$automationId/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -677,7 +703,7 @@ const WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute =
     path: '/automations/$automationId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/automations/$automationId/edit.lazy').then(
+    import('./routes/workspaces/$workspaceId/automations/$automationId/edit.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -687,7 +713,7 @@ const WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute =
     path: '/broadcasts/$broadcastId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.lazy').then(
+    import('./routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -697,7 +723,7 @@ const WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute =
     path: '/broadcasts/$broadcastId/report',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.lazy').then(
+    import('./routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -707,7 +733,7 @@ const WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute =
     path: '/captured-messages/$messageId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/captured-messages/$messageId/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/captured-messages/$messageId/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -717,7 +743,7 @@ const WorkspacesWorkspaceIdContactsContactIdIndexRoute =
     path: '/contacts/$contactId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/contacts/$contactId/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/contacts/$contactId/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -727,7 +753,7 @@ const WorkspacesWorkspaceIdContactsContactIdEditRoute =
     path: '/contacts/$contactId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/contacts/$contactId/edit.lazy').then(
+    import('./routes/workspaces/$workspaceId/contacts/$contactId/edit.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -737,7 +763,7 @@ const WorkspacesWorkspaceIdRulesRuleIdIndexRoute =
     path: '/rules/$ruleId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/rules/$ruleId/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/rules/$ruleId/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -747,7 +773,7 @@ const WorkspacesWorkspaceIdRulesRuleIdEditRoute =
     path: '/rules/$ruleId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/rules/$ruleId/edit.lazy').then(
+    import('./routes/workspaces/$workspaceId/rules/$ruleId/edit.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -757,7 +783,7 @@ const WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute =
     path: '/segments/$segmentId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/segments/$segmentId/index.lazy').then(
+    import('./routes/workspaces/$workspaceId/segments/$segmentId/index.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -767,7 +793,7 @@ const WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute =
     path: '/segments/$segmentId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/segments/$segmentId/edit.lazy').then(
+    import('./routes/workspaces/$workspaceId/segments/$segmentId/edit.lazy.tsx').then(
       (d) => d.Route,
     ),
   )
@@ -777,7 +803,7 @@ const WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute =
     path: '/templates/$templateId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/templates/$templateId/edit.lazy').then(
+    import('./routes/workspaces/$workspaceId/templates/$templateId/edit.lazy.tsx').then(
       (d) => d.Route,
     ),
   )

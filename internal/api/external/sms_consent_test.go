@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -23,7 +24,7 @@ func smsConsentOf(contactID int64) externalapi.SmsConsentsGetParams {
 func TestAnAPIClientReadsAContactsSMSConfirmationAndOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.KrustyID, "contacts:read"))
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.KrustyID, apitokens.ScopeContactsRead))
 
 	before, err := c.SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactKrustyTexterID))
 	require.NoError(t, err)
@@ -57,8 +58,8 @@ func TestReadingSMSConsentNeedsContactsReadAndStaysInTheWorkspace(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	_, writer := env.ExternalScoped(t, "contacts:write").SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactTexterID))
-	_, foreign := env.ExternalScoped(t, "contacts:read").SmsConsentsGet(ctx, smsConsentOf(fixtures.TyrellMatrixConfirmedID))
+	_, writer := env.ExternalScoped(t, apitokens.ScopeContactsWrite).SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactTexterID))
+	_, foreign := env.ExternalScoped(t, apitokens.ScopeContactsRead).SmsConsentsGet(ctx, smsConsentOf(fixtures.TyrellMatrixConfirmedID))
 
 	testhelper.ExternalRefusal(t, writer, http.StatusForbidden)
 	testhelper.ExternalRefusal(t, foreign, http.StatusNotFound)

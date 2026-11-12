@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -23,9 +24,9 @@ import (
 
 var (
 	// ErrInvalidSource: the sending source is not broadcasts, everything or automation:<id>.
-	ErrInvalidSource = validation.RefuseField("sendingSource", "consent: sendingSource must be broadcasts, everything or automation:<id>", i18n.ErrorsSendingSourceInvalid)
+	ErrInvalidSource = validation.RefuseField(fieldname.SendingSource, "consent: sendingSource must be broadcasts, everything or automation:<id>", i18n.ErrorsSendingSourceInvalid)
 	// ErrUnknownAutomation: the automation:<id> source names no Automation of this Workspace.
-	ErrUnknownAutomation = validation.RefuseField("sendingSource", "consent: unknown automation in sendingSource", i18n.ErrorsSendingSourceAutomationUnknown)
+	ErrUnknownAutomation = validation.RefuseField(fieldname.SendingSource, "consent: unknown automation in sendingSource", i18n.ErrorsSendingSourceAutomationUnknown)
 )
 
 // OptOutInput is an opt-out that reached the Workspace by any route: the Channel, the destination

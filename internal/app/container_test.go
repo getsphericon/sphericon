@@ -23,7 +23,7 @@ import (
 // not build them in this order.
 func TestQueueingWorkNeedsNoJobClient(t *testing.T) {
 	baseline(t)
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	injector := app.Container(cfg)
 	t.Cleanup(func() { cleanup.Shutdown(injector.ShutdownWithContext(context.Background())) })

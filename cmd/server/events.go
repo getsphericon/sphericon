@@ -23,16 +23,16 @@ func eventsCommand(d deps) *cli.Command {
 			MutuallyExclusiveFlags: []cli.MutuallyExclusiveFlags{{
 				Required: true,
 				Flags: [][]cli.Flag{
-					{&cli.StringFlag{Name: "workspace", Usage: "Workspace public id"}},
-					{&cli.BoolFlag{Name: "instance", Usage: "only Instance facts, never Workspace facts"}},
+					{&cli.StringFlag{Name: flagWorkspace, Usage: "Workspace public id"}},
+					{&cli.BoolFlag{Name: flagInstance, Usage: "only Instance facts, never Workspace facts"}},
 				},
 			}},
 			Flags: []cli.Flag{
-				&cli.StringFlag{Name: "name", Usage: "exact domain-event name"},
-				&cli.StringFlag{Name: "event-id", Usage: "exact journal event id"},
-				&cli.TimestampFlag{Name: "from", Usage: "inclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
-				&cli.TimestampFlag{Name: "before", Usage: "exclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
-				&cli.IntFlag{Name: "limit", Value: events.DefaultJournalLimit, Usage: "maximum entries in newest-first output; truncated reports omitted matches"},
+				&cli.StringFlag{Name: flagName, Usage: "exact domain-event name"},
+				&cli.StringFlag{Name: flagEventID, Usage: "exact journal event id"},
+				&cli.TimestampFlag{Name: flagFrom, Usage: "inclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
+				&cli.TimestampFlag{Name: flagBefore, Usage: "exclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
+				&cli.IntFlag{Name: flagLimit, Value: events.DefaultJournalLimit, Usage: "maximum entries in newest-first output; truncated reports omitted matches"},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				history, err := c.EventHistory()
@@ -40,10 +40,10 @@ func eventsCommand(d deps) *cli.Command {
 					return err
 				}
 				query := events.JournalQuery{
-					Name: cmd.String("name"), EventID: cmd.String("event-id"),
-					From: cmd.Timestamp("from"), Before: cmd.Timestamp("before"), Limit: cmd.Int("limit"),
+					Name: cmd.String(flagName), EventID: cmd.String(flagEventID),
+					From: cmd.Timestamp(flagFrom), Before: cmd.Timestamp(flagBefore), Limit: cmd.Int(flagLimit),
 				}
-				of := eventhistory.Of{Instance: cmd.Bool("instance"), Workspace: cmd.String("workspace")}
+				of := eventhistory.Of{Instance: cmd.Bool(flagInstance), Workspace: cmd.String(flagWorkspace)}
 				page, err := history.List(ctx, of, query)
 				if err != nil {
 					return err
@@ -55,19 +55,19 @@ func eventsCommand(d deps) *cli.Command {
 			Name:  "replay",
 			Usage: "queue one report consumer for a bounded recorded-time interval; no publication or external actions",
 			Flags: []cli.Flag{
-				&cli.StringFlag{Name: "workspace", Required: true, Usage: "Workspace public id"},
-				&cli.StringFlag{Name: "consumer", Required: true, Usage: "event_message_observation or event_broadcast_unsubscribe"},
-				&cli.StringFlag{Name: "from", Required: true, Usage: "inclusive recorded time, RFC3339"},
-				&cli.StringFlag{Name: "before", Required: true, Usage: "exclusive recorded time, RFC3339"},
-				&cli.IntFlag{Name: "limit", Value: events.MaxReplayEntries, Usage: "refuse the whole selection when it exceeds this bound"},
-				&cli.BoolFlag{Name: "dry-run", Usage: "validate and count without queuing jobs"},
+				&cli.StringFlag{Name: flagWorkspace, Required: true, Usage: "Workspace public id"},
+				&cli.StringFlag{Name: flagConsumer, Required: true, Usage: "event_message_observation or event_broadcast_unsubscribe"},
+				&cli.StringFlag{Name: flagFrom, Required: true, Usage: "inclusive recorded time, RFC3339"},
+				&cli.StringFlag{Name: flagBefore, Required: true, Usage: "exclusive recorded time, RFC3339"},
+				&cli.IntFlag{Name: flagLimit, Value: events.MaxReplayEntries, Usage: "refuse the whole selection when it exceeds this bound"},
+				&cli.BoolFlag{Name: flagDryRun, Usage: "validate and count without queuing jobs"},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
-				from, err := time.Parse(time.RFC3339Nano, cmd.String("from"))
+				from, err := time.Parse(time.RFC3339Nano, cmd.String(flagFrom))
 				if err != nil {
 					return fmt.Errorf("--from: %w", err)
 				}
-				before, err := time.Parse(time.RFC3339Nano, cmd.String("before"))
+				before, err := time.Parse(time.RFC3339Nano, cmd.String(flagBefore))
 				if err != nil {
 					return fmt.Errorf("--before: %w", err)
 				}
@@ -75,9 +75,9 @@ func eventsCommand(d deps) *cli.Command {
 				if err != nil {
 					return err
 				}
-				result, err := history.Replay(ctx, cmd.String("workspace"), events.ReplayRequest{
-					Consumer: cmd.String("consumer"), From: from, Before: before,
-					Limit: cmd.Int("limit"), DryRun: cmd.Bool("dry-run"),
+				result, err := history.Replay(ctx, cmd.String(flagWorkspace), events.ReplayRequest{
+					Consumer: cmd.String(flagConsumer), From: from, Before: before,
+					Limit: cmd.Int(flagLimit), DryRun: cmd.Bool(flagDryRun),
 				})
 				if err != nil {
 					return err

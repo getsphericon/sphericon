@@ -29,6 +29,7 @@ import type { SiteSendingDomainResource } from '../../generated/site/types.gen.t
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { SendingDomainRecordsModal } from './SendingDomainRecordsModal.tsx'
 import { SendingDomainStatus } from './SendingDomainStatus.tsx'
 
@@ -73,7 +74,7 @@ function SendingDomainsTable({
         idAccessor="id"
         emptyState={<EmptyState title={t(($) => $.settings.sendingDomains.empty)} />}
         columns={[
-          { accessor: 'domain' },
+          { accessor: 'domain' } satisfies FieldColumn<(typeof records)[number]>,
           {
             accessor: 'verified',
             title: t(($) => $.settings.sendingDomains.statusColumn),

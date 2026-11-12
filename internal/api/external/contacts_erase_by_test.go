@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -105,7 +106,7 @@ func TestExternalContactsEraseByNeedsExactlyOneKnownIdentifier(t *testing.T) {
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	err = env.ExternalScoped(t, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err = env.ExternalScoped(t, apitokens.ScopeContactsErase).ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)

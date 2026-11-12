@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // The consumers of the domain events that core owns (ADR 0101). Each is an entry of EventConsumers,
@@ -184,7 +185,7 @@ func (SuppressEventArgs) Kind() string { return "event_suppress" }
 // suppresses wants an event that suppresses its address: a hard bounce or a complaint.
 func suppresses(_ events.Envelope, ev events.DomainEvent) bool {
 	p, _ := events.ProjectionOf(ev)
-	kind, _ := p.Properties["bounceKind"].(string)
+	kind, _ := p.Properties[systemevent.BounceKindProperty].(string)
 	_, ok := suppressions.ForEvent(p.Action, kind)
 	return ok
 }
@@ -215,7 +216,7 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 		return err
 	}
 	p, _ := events.ProjectionOf(ev)
-	kind, _ := p.Properties["bounceKind"].(string)
+	kind, _ := p.Properties[systemevent.BounceKindProperty].(string)
 	reason, ok := suppressions.ForEvent(p.Action, kind)
 	if !ok {
 		return nil

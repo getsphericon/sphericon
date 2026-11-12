@@ -3,6 +3,8 @@ import type { ControlProps } from '@workflowbuilder/sdk'
 
 import { SmsContentEditor } from '../../components/sms/SmsContentEditor.tsx'
 import { EVENT_ACTION_TAG } from '../../utils/mergeTags.ts'
+import { OFF, propertySetter } from './nodeProperties.ts'
+import type { ReadProperties } from './nodeProperties.ts'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -15,17 +17,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function SmsTextControl(props: ControlProps) {
   const { data, path } = props
   const { core } = useJsonForms()
-  const node: Record<string, unknown> = isRecord(core?.data) ? core.data : {}
+  const node: ReadProperties<'sms'> = isRecord(core?.data) ? core.data : {}
+  const set = propertySetter<'sms'>(props)
   return (
     <SmsContentEditor
       extraTags={[EVENT_ACTION_TAG]}
       value={{
         text: typeof data === 'string' ? data : '',
-        linkTracking: node.linkTracking !== 'off',
+        linkTracking: node.linkTracking !== OFF,
       }}
       onChange={(next) => {
         props.handleChange(path, next.text)
-        props.handleChange('linkTracking', next.linkTracking ? '' : 'off')
+        set('linkTracking', next.linkTracking ? '' : OFF)
       }}
     />
   )

@@ -8,6 +8,7 @@ import {
   siteCustomFieldsListOptions,
   siteTagsListOptions,
 } from '../generated/site/@tanstack/react-query.gen.ts'
+import { SystemEventAction } from '../generated/site/types.gen.ts'
 import type { JsonObject, SiteEventResource } from '../generated/site/types.gen.ts'
 import { zSiteTagsListQuery } from '../generated/site/zod.gen.ts'
 import { Route as automationRoute } from '../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
@@ -15,6 +16,7 @@ import { Route as broadcastReportRoute } from '../routes/workspaces/$workspaceId
 import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { maxPageSize } from '../utils/bounds.ts'
 import { shortUrl } from '../utils/shortUrl.ts'
+import { PAGE_VIEW_ACTION } from '../utils/systemEvents.ts'
 import { EventActionName } from './EventActionName.tsx'
 import { AnchorLink } from './RouterLink.tsx'
 
@@ -35,35 +37,35 @@ export function EventSummary({ workspaceId, event }: Row) {
   const { t } = useTranslation()
   const row = { workspaceId, event }
   switch (event.action) {
-    case 'contact.tagged':
+    case SystemEventAction.CONTACT_TAGGED:
       return <TagChange {...row} verb={t(($) => $.eventRows.tagged)} />
-    case 'contact.untagged':
+    case SystemEventAction.CONTACT_UNTAGGED:
       return <TagChange {...row} verb={t(($) => $.eventRows.untagged)} />
-    case 'contact.field_changed':
+    case SystemEventAction.CONTACT_FIELD_CHANGED:
       return <FieldChange {...row} />
-    case 'automation.enrolled':
+    case SystemEventAction.AUTOMATION_ENROLLED:
       return <EnrollmentChange {...row} verb={t(($) => $.eventRows.entered)} />
-    case 'automation.completed':
+    case SystemEventAction.AUTOMATION_COMPLETED:
       return <EnrollmentChange {...row} verb={t(($) => $.eventRows.completed)} />
-    case 'automation.goal_reached':
+    case SystemEventAction.AUTOMATION_GOAL_REACHED:
       return <EnrollmentChange {...row} verb={t(($) => $.eventRows.reachedGoalOf)} />
-    case 'automation.exited':
+    case SystemEventAction.AUTOMATION_EXITED:
       return <EnrollmentChange {...row} verb={t(($) => $.eventRows.left)} />
-    case 'page.view':
+    case PAGE_VIEW_ACTION:
       return <PageView event={event} />
-    case 'email.sent':
+    case SystemEventAction.EMAIL_SENT:
       return <EmailEvent {...row} prefix={t(($) => $.eventRows.wasSent)} />
-    case 'email.delivered':
+    case SystemEventAction.EMAIL_DELIVERED:
       return <EmailEvent {...row} prefix={t(($) => $.eventRows.received)} />
-    case 'email.delayed':
+    case SystemEventAction.EMAIL_DELAYED:
       return <EmailEvent {...row} prefix={t(($) => $.eventRows.delayed)} />
-    case 'email.dropped':
+    case SystemEventAction.EMAIL_DROPPED:
       return <EmailEvent {...row} prefix={t(($) => $.eventRows.dropped)} />
-    case 'email.opened':
+    case SystemEventAction.EMAIL_OPENED:
       return <EmailEvent {...row} prefix={t(($) => $.eventRows.opened)} />
-    case 'email.unsubscribed':
+    case SystemEventAction.EMAIL_UNSUBSCRIBED:
       return <EmailEvent {...row} prefix={t(($) => $.eventRows.unsubscribedFrom)} />
-    case 'email.complained':
+    case SystemEventAction.EMAIL_COMPLAINED:
       return (
         <EmailEvent
           {...row}
@@ -71,11 +73,11 @@ export function EventSummary({ workspaceId, event }: Row) {
           suffix={t(($) => $.eventRows.asSpam)}
         />
       )
-    case 'email.bounced':
+    case SystemEventAction.EMAIL_BOUNCED:
       return <BouncedEmail {...row} />
-    case 'email.clicked':
+    case SystemEventAction.EMAIL_CLICKED:
       return <ClickedLink {...row} />
-    case 'sms.undelivered':
+    case SystemEventAction.SMS_UNDELIVERED:
       return <SmsUndelivered event={event} />
     default:
       return <EventActionName action={event.action} />

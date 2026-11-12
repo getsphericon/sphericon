@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -98,11 +99,11 @@ func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecord
 		resp := follow(t, env, path, browserUA)
 		assert.Equal(t, http.StatusFound, resp.Code)
 		assert.Equal(t, target, resp.Header().Get("Location"))
-		assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramClicked, map[string]any{
+		assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramClicked, map[string]any{
 			"contactId": fixtures.ContactBobID, "url": target, "automationId": automationID, "integrationId": bot.Integration.ID,
 		}), target)
 	}
-	clicks := env.QueuedEvents(t, events.NameTelegramClicked)
+	clicks := env.QueuedEvents(t, systemevent.TelegramClicked)
 	require.Len(t, clicks, 2)
 	assert.NotZero(t, clicks[0].(*events.TelegramClicked).OutboundMessageID)
 	assert.False(t, clicks[0].(*events.TelegramClicked).Machine)
@@ -143,7 +144,7 @@ func TestAnUnknownShortLinkIsNotFoundAndRecordsNothing(t *testing.T) {
 	resp := follow(t, env, "/c/nosuchtoken", browserUA)
 
 	assert.Equal(t, http.StatusNotFound, resp.Code)
-	assert.Zero(t, env.QueuedCount(t, events.NameTelegramClicked, nil))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramClicked, nil))
 }
 
 // Lacuna's draft links its offer in the text and the button URL in its button; Ben is one of its
@@ -174,7 +175,7 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 	assert.Equal(t, 1, report.Clicked, "the Telegram report shows clicked")
 	assert.Nil(t, report.Opened)
 
-	clicks := env.QueuedEvents(t, events.NameTelegramClicked)
+	clicks := env.QueuedEvents(t, systemevent.TelegramClicked)
 	require.Len(t, clicks, 2)
 	assert.True(t, clicks[0].(*events.TelegramClicked).Machine)
 	assert.False(t, clicks[1].(*events.TelegramClicked).Machine)
@@ -192,7 +193,7 @@ func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T)
 	runSteps(t, env)
 	text, _ := shortPaths(t, env, "70001") // Liam's fixture chat
 	consume := func() []jobs.EvaluateTriggerArgs {
-		return triggersOn(t, env, events.NameTelegramClicked)
+		return triggersOn(t, env, systemevent.TelegramClicked)
 	}
 
 	follow(t, env, text[0], telegramUA)
@@ -205,6 +206,6 @@ func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T)
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationOnTelegramClickedID), automationrun.ContactID(fixtures.ContactLiamID)).Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, events.NameTelegramClicked, *run.EventAction)
+	assert.Equal(t, systemevent.TelegramClicked, *run.EventAction)
 	assert.Equal(t, textLink, run.EventProperties["url"])
 }

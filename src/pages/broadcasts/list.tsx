@@ -11,6 +11,7 @@ import {
   siteBroadcastsListOptions,
   siteBroadcastsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
 import { zBroadcastChannel } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -20,6 +21,7 @@ import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/b
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { withPage } from '../../searchSchemas.ts'
 import { messageRevenueCells } from '../../utils/messageRevenue.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { BroadcastHoldBadge } from './BroadcastHold.tsx'
 import { BroadcastStatusBadge } from './BroadcastStatusBadge.tsx'
 
@@ -117,7 +119,10 @@ export function BroadcastsListPage() {
           })
         }
         columns={[
-          { accessor: 'name', title: t(($) => $.broadcasts.nameLabel) },
+          {
+            accessor: 'name',
+            title: t(($) => $.broadcasts.nameLabel),
+          } satisfies FieldColumn<SiteBroadcastResource>,
           {
             accessor: 'channel',
             title: t(($) => $.broadcasts.channelLabel),

@@ -30,6 +30,7 @@ import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as mcpRoute } from '../../../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { DOCS_URL } from '../../../utils/docs.ts'
 import { can } from '../../../utils/permissions.ts'
+import type { FieldColumn } from '../../../utils/tableColumns.ts'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 // The guide with the Bearer token setup the app does not repeat.
@@ -122,7 +123,10 @@ function ConnectionsSection({ workspace }: { workspace: SiteWorkspaceResource })
         records={records}
         idAccessor="id"
         columns={[
-          { accessor: 'name', title: t(($) => $.settings.connections.application) },
+          {
+            accessor: 'name',
+            title: t(($) => $.settings.connections.application),
+          } satisfies FieldColumn<(typeof records)[number]>,
           {
             accessor: 'userName',
             title: t(($) => $.settings.connections.user),

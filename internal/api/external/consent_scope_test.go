@@ -10,6 +10,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -18,7 +19,7 @@ import (
 // Unsubscribe row is written.
 func TestExternalUnsubscribesCreateRejectsForeignAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	before, err := env.DB.Unsubscribe.Query().Count(context.Background())
 	require.NoError(t, err)
 

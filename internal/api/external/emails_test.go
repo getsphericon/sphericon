@@ -13,8 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -31,7 +33,7 @@ func templateID(tmpl *ent.EmailTemplate) externalapi.EntityId {
 // and is accepted by the (capturing) provider.
 func TestExternalEmailsSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 
@@ -67,7 +69,7 @@ func TestExternalEmailsSend(t *testing.T) {
 func TestExternalEmailsSendRejectsUnverifiedDomain(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.CustomerMail.SetErr(messaging.ErrUnverifiedSendingDomain)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 
@@ -87,7 +89,7 @@ func TestExternalEmailsSendRejectsUnverifiedDomain(t *testing.T) {
 // surface) and reported as status "suppressed" — not an error.
 func TestExternalEmailsSendSuppressed(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 
@@ -104,7 +106,7 @@ func TestExternalEmailsSendSuppressed(t *testing.T) {
 // transactional send (you cannot unsubscribe from your own password reset).
 func TestExternalEmailsSendIgnoresUnsubscribe(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 
@@ -125,7 +127,7 @@ func TestExternalEmailsSendCrossWorkspaceTemplate(t *testing.T) {
 	otherTmpl := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateGlobexID)
 
 	// Token belongs to workspace 1; referencing ws2's template id must 404.
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 		TemplateId:  templateID(otherTmpl),
 		Destination: "x@example.com",
@@ -136,7 +138,7 @@ func TestExternalEmailsSendCrossWorkspaceTemplate(t *testing.T) {
 
 func TestExternalEmailsSendMissingTemplate(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 
 	_, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
 		TemplateId:  999999,
@@ -148,7 +150,7 @@ func TestExternalEmailsSendMissingTemplate(t *testing.T) {
 // emails:send is required.
 func TestExternalEmailsSendScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	tmpl := variablesTemplate(env.DB)
 
 	_, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
@@ -163,7 +165,7 @@ func TestExternalEmailsSendScope(t *testing.T) {
 // send is segmentable like broadcast/automation sends.
 func TestExternalEmailsSendRecordsTrace(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 
@@ -186,14 +188,14 @@ func TestExternalEmailsSendRecordsTrace(t *testing.T) {
 	require.NotNil(t, rec.ContactID)
 	assert.Equal(t, contact.ID, *rec.ContactID, "destination resolved to the contact")
 
-	sent := env.QueuedCount(t, "email.sent", map[string]any{"email": fixtures.ContactAliceEmail})
+	sent := env.QueuedCount(t, systemevent.EmailSent, map[string]any{"email": fixtures.ContactAliceEmail})
 	assert.Equal(t, 1, sent, "email.sent published once")
 }
 
 // A repeated Idempotency-Key replays the original outcome without a second send.
 func TestExternalEmailsSendIdempotentReplay(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 
@@ -223,7 +225,7 @@ func TestExternalEmailsSendIdempotentReplay(t *testing.T) {
 // no email and no email.sent event.
 func TestExternalEmailsSendSuppressedRecordsNoEvent(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 
@@ -239,14 +241,14 @@ func TestExternalEmailsSendSuppressedRecordsNoEvent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessage.StatusSkipped, rec.Status)
 
-	events := env.QueuedCount(t, "email.sent", map[string]any{"email": fixtures.SuppressionGhostBounceDestination})
+	events := env.QueuedCount(t, systemevent.EmailSent, map[string]any{"email": fixtures.SuppressionGhostBounceDestination})
 	assert.Zero(t, events, "no send happened, so no email.sent")
 }
 
 // An in-flight key (a pending record) returns 409 rather than sending again.
 func TestExternalEmailsSendConflictOnPending(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
+	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 

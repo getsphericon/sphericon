@@ -8,6 +8,7 @@ import (
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -42,10 +43,10 @@ func TestExternalScopedTokenEnforcesExactlyItsScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	_, err := env.ExternalScoped(t, "contacts:read").AuthTokensList(ctx)
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).AuthTokensList(ctx)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "contacts:read does not grant tokens:read")
 
-	_, err = env.ExternalScoped(t, "tokens:read").AuthTokensList(ctx)
+	_, err = env.ExternalScoped(t, apitokens.ScopeTokensRead).AuthTokensList(ctx)
 	require.NoError(t, err)
 }
 

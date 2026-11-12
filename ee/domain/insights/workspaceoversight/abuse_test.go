@@ -12,10 +12,11 @@ import (
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 
 	"github.com/getsphericon/sphericon/ent/auditentry"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -138,12 +139,12 @@ func TestAWorkspaceFrozenByTheDetectorRefusesSendsOnTheAPI(t *testing.T) {
 	summary, err := h.env.Abuse().Run(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, []int64{fixtures.VandelayID}, summary.Frozen)
-	vandelay := h.env.ExternalWithToken(t, h.env.ScopedBearerFor(t, fixtures.VandelayID, "emails:send"))
+	vandelay := h.env.ExternalWithToken(t, h.env.ScopedBearerFor(t, fixtures.VandelayID, apitokens.ScopeEmailsSend))
 
 	_, err = vandelay.EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId: externalapi.EntityId(int64(fixtures.TemplateVandelayID)), Destination: "held@example.com",
 	}, externalapi.EmailsSendParams{})
 
 	held := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "a send is refused with a 4xx")
-	assert.Equal(t, "the message was not sent: "+outboundmessages.Detail(holds.ReasonSuspended), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), held.Detail.Value)
 }

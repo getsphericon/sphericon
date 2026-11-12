@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -18,7 +19,7 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	twilio := env.AcmeTwilio(t).Integration.ID
-	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:publish", "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsPublish, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "Cart reminder",
@@ -47,7 +48,7 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 
 func TestExternalAnSMSStepWithNoTextIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:read", "automations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 
 	_, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
 		Name: "Blank", TriggerEvent: "cart_abandoned",

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // A domain event reaches its consumers as River jobs inserted by the publish (ADR 0101). No River
@@ -111,7 +112,7 @@ func (env *TestEnv) QueuedCount(t *testing.T, name string, match map[string]any)
 // published; a cleared field's value is nil.
 func (env *TestEnv) FieldChanges(t *testing.T) []map[string]any {
 	t.Helper()
-	return lo.Map(env.QueuedMessages(t, events.NameContactFieldChanged), func(m QueuedMessage, _ int) map[string]any {
+	return lo.Map(env.QueuedMessages(t, systemevent.ContactFieldChanged), func(m QueuedMessage, _ int) map[string]any {
 		return map[string]any{"key": m.Data["key"], "value": m.Data["value"]}
 	})
 }

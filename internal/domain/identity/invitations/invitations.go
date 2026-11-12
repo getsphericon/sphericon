@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -47,7 +48,7 @@ const inviteTokenBytes = 36
 
 var (
 	// ErrEmailEmpty means the invited email is blank.
-	ErrEmailEmpty = validation.RefuseField("email", "invitations: invitation email is empty", i18n.ErrorsEmailEmpty)
+	ErrEmailEmpty = validation.RefuseField(fieldname.Email, "invitations: invitation email is empty", i18n.ErrorsEmailEmpty)
 	// ErrInvitationNotFound means no pending Invitation of that id is in the Workspace.
 	ErrInvitationNotFound = validation.NotFound("invitations: invitation not found", i18n.ErrorsInvitationNotFound)
 	// ErrInvitationLinkNotFound means an Invitation link's token names no pending, unexpired
@@ -140,7 +141,7 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 	if emailcase.Of(in.Email) == "" {
 		return nil, "", ErrEmailEmpty
 	}
-	email, err := validation.AccountEmail(validation.FieldEmail, in.Email)
+	email, err := validation.AccountEmail(fieldname.Email, in.Email)
 	if err != nil {
 		return nil, "", err
 	}

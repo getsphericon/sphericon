@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // A Contact's Tags are its own (GLOSSARY: a Tag is an attribute of a Contact): applying and
@@ -64,7 +65,7 @@ func ApplyTagIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contac
 	if err := touch(ctx, s, contactID); err != nil {
 		return nil, err
 	}
-	return t, publishTagChange(ctx, s, pub, events.NameContactTagged, c, t)
+	return t, publishTagChange(ctx, s, pub, systemevent.ContactTagged, c, t)
 }
 
 // RemoveTagIn takes the named Tag off the Contact and publishes contact.untagged, inside the
@@ -92,7 +93,7 @@ func RemoveTagIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, conta
 	if err := touch(ctx, s, contactID); err != nil {
 		return err
 	}
-	return publishTagChange(ctx, s, pub, events.NameContactUntagged, c, t)
+	return publishTagChange(ctx, s, pub, systemevent.ContactUntagged, c, t)
 }
 
 // SetTagsIn makes the named Tags the Contact's complete set inside the transaction s and pub are

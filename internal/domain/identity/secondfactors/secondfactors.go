@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -45,7 +46,7 @@ var (
 	// Recovery code of the User. It refuses the `code` field of the User's own steps
 	// (confirming an enrollment, disabling); the login adapter answers it as the login
 	// module's ErrInvalidCode.
-	ErrInvalidCode = validation.RefuseField("code", "secondfactor: invalid code", i18n.ErrorsSecondFactorCodeInvalid)
+	ErrInvalidCode = validation.RefuseField(fieldname.Code, "secondfactor: invalid code", i18n.ErrorsSecondFactorCodeInvalid)
 	// ErrNotActive: the User has no confirmed Second factor, so their own step that needs one
 	// (regenerating the Recovery codes, disabling) has nothing to act on.
 	ErrNotActive = validation.Conflict("secondfactor: no active second factor", i18n.ErrorsSecondFactorNotActive)

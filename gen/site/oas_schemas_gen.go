@@ -17955,7 +17955,7 @@ type SiteEventResource struct {
 	SubjectId string `json:"subjectId"`
 	// Email associated with the event, if known.
 	Email OptNilString `json:"email"`
-	// Event action / name.
+	// Event action: a System event's (`SystemEventAction`) or the customer's own.
 	Action string `json:"action"`
 	// Arbitrary event properties.
 	Properties OptNilJsonObject `json:"properties"`

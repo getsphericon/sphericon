@@ -72,3 +72,17 @@ func TestGenerateUserScopesRefusesADocumentWithoutOneOfTheEnums(t *testing.T) {
 
 	require.ErrorContains(t, err, "the document has no SendScope enum")
 }
+
+func TestGenerateSystemEventActionsDeclaresAnUntypedConstantPerActionAndTheirList(t *testing.T) {
+	src, err := scopegen.SystemEventActions.Generate([]byte(`{"components":{"schemas":{
+	 "SystemEventAction":{"type":"string","enum":["contact.field_changed","sms.sent"]}}}}`))
+	require.NoError(t, err)
+
+	out := string(src)
+	require.Contains(t, out, "package systemevent")
+	require.NotContains(t, out, "import")
+	require.NotRegexp(t, `(?m)^type `, out)
+	require.Regexp(t, `ContactFieldChanged\s+= "contact.field_changed"`, out)
+	require.Regexp(t, `SmsSent\s+= "sms.sent"`, out)
+	require.Regexp(t, `var Actions = \[\]string\{\s+ContactFieldChanged,\s+SmsSent,\s+\}`, out)
+}

@@ -21,9 +21,11 @@ import (
 	"unicode"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/joho/godotenv"
+
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/joho/godotenv"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
 // BodyLimits are the request body caps in bytes. /collect is the public tracking
@@ -298,9 +300,9 @@ type Config struct {
 	// customer's per-workspace integration. Dev uses smtp → mailpit (the SMTP_*
 	// values); prod uses ses (the SES_* values). Sent via the same messaging
 	// Catalog, not a separate sender.
-	SystemEmailProvider string // "smtp" | "ses"
-	SystemEmailFrom     string // the bare address; SPHERICON_SYSTEM_EMAIL_FROM may also carry a display name
-	SystemEmailFromName string // that display name, empty when none was given
+	SystemEmailProvider providers.Provider // providers.SMTP or providers.SES
+	SystemEmailFrom     string             // the bare address; SPHERICON_SYSTEM_EMAIL_FROM may also carry a display name
+	SystemEmailFromName string             // that display name, empty when none was given
 	// SystemEmailReplyTo is the Reply-To of the Instance's own mail (verification, reset,
 	// invitations, the System sender's Test send); empty sets no header.
 	SystemEmailReplyTo string
@@ -544,7 +546,7 @@ type environment struct {
 
 	// The provider of the Instance's own mail (verification, password reset, invitations): `smtp`,
 	// through `SPHERICON_SMTP_HOST`, or `ses`, through the `SPHERICON_SES_*` credentials.
-	SystemEmailProvider string `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
+	SystemEmailProvider providers.Provider `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
 	// The From of the Instance's own mail: a bare address or `Name <noreply@example.com>`. An
 	// invalid value stops the start.
 	SystemEmailFrom string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
@@ -929,7 +931,7 @@ func (c *Config) SecureCookies() bool { return strings.HasPrefix(c.AppURL, "http
 // SystemMailConfigured reports whether the Instance has outbound mail, that is, a System
 // sender: the SES provider, or SMTP with a host. Without it there is none (ADR 0041).
 func (c *Config) SystemMailConfigured() bool {
-	return c.SystemEmailProvider == "ses" || c.SMTPHost != ""
+	return c.SystemEmailProvider == providers.SES || c.SMTPHost != ""
 }
 
 // validate enforces invariants that depend on the deployment environment.
@@ -1114,6 +1116,19 @@ func (c *Config) UseListener(addr net.Addr) {
 	}
 }
 
+// EnvVar is the variable that names the environment a process runs as; unset is EnvDevelopment.
+const EnvVar = "SPHERICON_ENV"
+
+// The environments: the profile of defaults Load applies and the .env files it reads.
+const (
+	// EnvProduction is a deployed Instance.
+	EnvProduction = "production"
+	// EnvDevelopment is a developer's checkout, the environment when EnvVar is unset.
+	EnvDevelopment = "development"
+	// EnvTest is the Go test suite's.
+	EnvTest = "test"
+)
+
 // EnvE2E is the end-to-end profile: a non-production env whose per-policy rate
 // limits default to disabled (0), so a polling test client never trips ADR 0018/0025
 // budgets. An explicit RATE_LIMIT_* variable still wins. It tolerates a missing
@@ -1127,7 +1142,7 @@ func isE2E(envName string) bool { return envName == EnvE2E }
 // isDevEnv reports whether the env is a non-production one where missing
 // security secrets are tolerated (so local dev and tests boot without ceremony).
 func isDevEnv(envName string) bool {
-	return envName == "" || envName == "development" || envName == "test"
+	return envName == "" || envName == EnvDevelopment || envName == EnvTest
 }
 
 // envRoot is the directory the .env files are read from: the repository root, found from this
@@ -1144,7 +1159,7 @@ func envRoot() (string, error) {
 // automated profiles (test, e2e) read only their committed .env.<name>: a developer's own
 // (gitignored) .env, .env.local and .env.<name>.local would fill in what a run leaves empty.
 func envFiles(rootDir, envName string) []string {
-	if envName == "test" || isE2E(envName) {
+	if envName == EnvTest || isE2E(envName) {
 		return []string{filepath.Join(rootDir, ".env."+envName)}
 	}
 	return []string{

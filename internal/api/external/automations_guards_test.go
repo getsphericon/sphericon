@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automation"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -21,7 +22,7 @@ const missingAutomation = externalapi.EntityId(999999)
 func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:publish")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsPublish)
 
 	foreign := env.DB.Automation.GetX(ctx, fixtures.AutomationGlobexID)
 

@@ -27,10 +27,8 @@ import (
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
-
-// apiPrefix is where the external ogen server is mounted.
-const apiPrefix = "/api"
 
 const instructions = "Sphericon marketing automation. Tools mirror the Sphericon external API and act on " +
 	"the workspace of the Bearer API token used to connect; results and errors are the API's." + untrustedInstructions
@@ -288,7 +286,7 @@ func (op *operation) request(ctx context.Context, args map[string]any, extra *mc
 		return nil, errors.New("unknown arguments: " + strings.Join(unknown, ", "))
 	}
 
-	target := apiPrefix + path
+	target := paths.API + path
 	if len(query) > 0 {
 		target += "?" + query.Encode()
 	}

@@ -1,0 +1,23 @@
+id: refused-field-is-a-constant
+valid:
+  - |
+    var ErrDomainTaken = validation.ConflictField(fieldname.Domain, "joindomains: taken", i18n.ErrorsDomainTaken)
+  - |
+    func check(perDay int) error {
+    	return validation.Range(fieldname.PerDay, perDay, bounds.PerDayMin, bounds.PerDayMax)
+    }
+  - |
+    func check(field, value string) error {
+    	return validation.Length(field, value, 1, 10)
+    }
+invalid:
+  - |
+    var ErrDomainTaken = validation.ConflictField("domain", "joindomains: taken", i18n.ErrorsDomainTaken)
+  - |
+    func check(perDay int) error {
+    	return validation.Range("perDay", perDay, bounds.PerDayMin, bounds.PerDayMax)
+    }
+  - |
+    func check(raw string) (string, error) {
+    	return validation.Email("email", raw)
+    }

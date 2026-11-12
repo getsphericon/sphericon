@@ -51,11 +51,11 @@ func presetTestCommand() *cli.Command {
 			"the facts it makes (Delivery notices, Inbound messages and Reachability changes), or the\n" +
 			"reason it was refused.",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "payload", Usage: "file holding the raw request body to run the Preset on"},
-			&cli.StringFlag{Name: "url", Usage: "the full URL the sample was posted to, query included"},
-			&cli.StringSliceFlag{Name: "header", Usage: "request header of the sample, name=value"},
-			&cli.StringSliceFlag{Name: "param", Usage: "Integration param of the sample, name=value"},
-			&cli.StringFlag{Name: "now", Usage: "the clock for the sample, an RFC 3339 time (default: now)"},
+			&cli.StringFlag{Name: flagPayload, Usage: "file holding the raw request body to run the Preset on"},
+			&cli.StringFlag{Name: flagURL, Usage: "the full URL the sample was posted to, query included"},
+			&cli.StringSliceFlag{Name: flagHeader, Usage: "request header of the sample, name=value"},
+			&cli.StringSliceFlag{Name: flagParam, Usage: "Integration param of the sample, name=value"},
+			&cli.StringFlag{Name: flagNow, Usage: "the clock for the sample, an RFC 3339 time (default: now)"},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			if cmd.Args().Len() != 1 {
@@ -65,7 +65,7 @@ func presetTestCommand() *cli.Command {
 			if err != nil {
 				return err
 			}
-			if cmd.String("payload") == "" {
+			if cmd.String(flagPayload) == "" {
 				results := p.RunTests(ctx)
 				return commandline.WritePresetTests(out(cmd), p.Name(), results)
 			}
@@ -81,11 +81,11 @@ func presetTestCommand() *cli.Command {
 
 // sample reads the --payload, --header, --param and --now flags of `preset test`.
 func sample(cmd *cli.Command) (preset.Request, preset.Params, time.Time, error) {
-	body, err := os.ReadFile(cmd.String("payload"))
+	body, err := os.ReadFile(cmd.String(flagPayload))
 	if err != nil {
 		return preset.Request{}, nil, time.Time{}, err
 	}
-	headers, err := pairs(cmd.StringSlice("header"))
+	headers, err := pairs(cmd.StringSlice(flagHeader))
 	if err != nil {
 		return preset.Request{}, nil, time.Time{}, fmt.Errorf("--header: %w", err)
 	}
@@ -93,7 +93,7 @@ func sample(cmd *cli.Command) (preset.Request, preset.Params, time.Time, error) 
 	for k, v := range headers {
 		header.Set(k, v)
 	}
-	values, err := pairs(cmd.StringSlice("param"))
+	values, err := pairs(cmd.StringSlice(flagParam))
 	if err != nil {
 		return preset.Request{}, nil, time.Time{}, fmt.Errorf("--param: %w", err)
 	}
@@ -102,12 +102,12 @@ func sample(cmd *cli.Command) (preset.Request, preset.Params, time.Time, error) 
 		params[k] = v
 	}
 	now := time.Now()
-	if raw := cmd.String("now"); raw != "" {
+	if raw := cmd.String(flagNow); raw != "" {
 		if now, err = time.Parse(time.RFC3339, raw); err != nil {
 			return preset.Request{}, nil, time.Time{}, fmt.Errorf("--now is not an RFC 3339 time: %w", err)
 		}
 	}
-	return preset.Request{URL: cmd.String("url"), Header: header, Body: body}, params, now, nil
+	return preset.Request{URL: cmd.String(flagURL), Header: header, Body: body}, params, now, nil
 }
 
 // pairs reads repeated name=value flags.

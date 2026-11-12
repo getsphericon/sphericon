@@ -114,6 +114,7 @@ const extensions = {
   allowedWhileWithheld: 'x-allowed-while-withheld',
   allowedWhileAcceptancePending: 'x-allowed-while-acceptance-pending',
   grantable: 'x-grant-permissions',
+  rateLimited: 'x-rate-limit',
 } as const
 
 type DecoratorName = keyof typeof extensions
@@ -275,6 +276,19 @@ function $allowedWhileAcceptancePending(context: DecoratorContext, target: Opera
   declare(context, target, { decorator: 'allowedWhileAcceptancePending', value: true })
 }
 
+/**
+ * `@rateLimited`: the server limits the operation per client address under the policy: `login`, one
+ * budget every step of a login shares, `forgot_password`, the reset requests', or `human`, a budget
+ * of its own for each public form a person submits.
+ */
+function $rateLimited(
+  context: DecoratorContext,
+  target: Operation,
+  policy: 'login' | 'forgot_password' | 'human',
+) {
+  declare(context, target, { decorator: 'rateLimited', value: policy })
+}
+
 /** The @grantable enums, and the Permission of each member that carries @grantedWith. */
 const grantableKey = Symbol('sphericon.grantable')
 const grantedWithKey = Symbol('sphericon.grantedWith')
@@ -357,6 +371,7 @@ export const $decorators = {
     untrusted: $untrusted,
     allowedWhileWithheld: $allowedWhileWithheld,
     allowedWhileAcceptancePending: $allowedWhileAcceptancePending,
+    rateLimited: $rateLimited,
     grantable: $grantable,
     grantedWith: $grantedWith,
     everyOperationDeclares: $everyOperationDeclares,

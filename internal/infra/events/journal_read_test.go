@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -19,19 +20,19 @@ func TestPublicationCanBeInspectedWithoutPayloadOrNewWork(t *testing.T) {
 	observed := at.Add(-time.Minute)
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
 	err := env.Bus.Publish(t.Context(), &events.EmailEngagement{
-		Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID,
+		Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID,
 		OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, ContactID: fixtures.ContactAliceID,
 		Email: fixtures.ContactAliceEmail, ObservedAt: observed,
 	})
 	require.NoError(t, err)
 	kind := jobs.MessageObservationArgs{}.Kind()
 	before := env.JobsOf(t, kind)
-	page, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.AcmeID, events.JournalQuery{Name: events.NameEmailOpened})
+	page, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.AcmeID, events.JournalQuery{Name: systemevent.EmailOpened})
 	require.NoError(t, err)
 	require.Len(t, page.Entries, 1)
 	entry := page.Entries[0]
 	assert.NotEmpty(t, entry.EventID)
-	assert.Equal(t, events.NameEmailOpened, entry.Name)
+	assert.Equal(t, systemevent.EmailOpened, entry.Name)
 	assert.Equal(t, 1, entry.Version)
 	assert.WithinDuration(t, at, entry.RecordedAt, 0)
 	assert.WithinDuration(t, observed, entry.OccurredAt, 0)

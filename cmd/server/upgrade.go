@@ -22,24 +22,24 @@ func upgradeCommand() *cli.Command {
 		Name:  "upgrade",
 		Usage: "install a release over this binary",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "from", Usage: "directory with a release archive and checksums.txt (default: download from GitHub)"},
-			&cli.StringFlag{Name: "version", Usage: "release to install (default: the latest stable one)"},
-			&cli.BoolFlag{Name: "yes", Usage: "go past the Upgrade notes"},
-			&cli.BoolFlag{Name: "check", Usage: "exit 0 when current, 10 when a newer release exists, 1 on error; change nothing"},
-			&cli.BoolFlag{Name: "restart", Usage: "migrate in a transient unit, then restart the systemd service"},
-			&cli.StringFlag{Name: "service", Value: "sphericon", Usage: "systemd unit that --restart restarts"},
+			&cli.StringFlag{Name: flagFrom, Usage: "directory with a release archive and checksums.txt (default: download from GitHub)"},
+			&cli.StringFlag{Name: flagVersion, Usage: "release to install (default: the latest stable one)"},
+			&cli.BoolFlag{Name: flagYes, Usage: "go past the Upgrade notes"},
+			&cli.BoolFlag{Name: flagCheck, Usage: "exit 0 when current, 10 when a newer release exists, 1 on error; change nothing"},
+			&cli.BoolFlag{Name: flagRestart, Usage: "migrate in a transient unit, then restart the systemd service"},
+			&cli.StringFlag{Name: flagService, Value: "sphericon", Usage: "systemd unit that --restart restarts"},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (%s)", cmd.Args().First(), upgrade.Usage)
 			}
 			progress := upgrade.Run(ctx, upgrade.Request{
-				From:    cmd.String("from"),
-				Version: cmd.String("version"),
-				Yes:     cmd.Bool("yes"),
-				Check:   cmd.Bool("check"),
-				Restart: cmd.Bool("restart"),
-				Service: cmd.String("service"),
+				From:    cmd.String(flagFrom),
+				Version: cmd.String(flagVersion),
+				Yes:     cmd.Bool(flagYes),
+				Check:   cmd.Bool(flagCheck),
+				Restart: cmd.Bool(flagRestart),
+				Service: cmd.String(flagService),
 			})
 			return commandline.WriteUpgrade(out(cmd), progress)
 		},

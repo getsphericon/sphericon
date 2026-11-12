@@ -20,7 +20,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -207,7 +209,7 @@ type telegramAdapter struct{ bot messaging.TelegramBot }
 // DeliversOutside: a bot's messages reach Telegram.
 func (telegramAdapter) DeliversOutside() bool { return true }
 
-func (telegramAdapter) prepare(_ context.Context, _ *ent.Scoped, content Content) (sendAs, string, error) {
+func (telegramAdapter) prepare(_ context.Context, _ *ent.Scoped, content Content) (sendAs, holdreason.Reason, error) {
 	if _, err := telegramContentOf(content); err != nil {
 		return sendAs{}, "", err
 	}
@@ -245,7 +247,7 @@ func classifyTelegram(err error) error {
 	desc := strings.ToLower(te.Description)
 	switch {
 	case te.Code == http.StatusUnauthorized:
-		return holdError{reason: HoldProviderRefused}
+		return holdError{reason: holdreason.ProviderRefused}
 	case te.Code == http.StatusTooManyRequests:
 		return deferError{wait: max(te.RetryAfter, DeferralBackoff), err: err}
 	case te.Code == http.StatusForbidden && strings.Contains(desc, "user is deactivated"),
@@ -265,7 +267,7 @@ func classifyTelegram(err error) error {
 // unreachable removes the Binding of a chat Telegram no longer reaches, and records telegram.unbound:
 // the chat is no Destination any more.
 func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, _ Request, to target, messageID int64) (string, error) {
-	if err := bindings.Remove(ctx, s, pub, integ, to.dest, fmt.Sprintf("%s:gone:%d:%s", events.NameTelegramUnbound, messageID, to.dest)); err != nil {
+	if err := bindings.Remove(ctx, s, pub, integ, to.dest, fmt.Sprintf("%s:gone:%d:%s", systemevent.TelegramUnbound, messageID, to.dest)); err != nil {
 		return "", err
 	}
 	return eligibility.ReasonNoDestination, nil
@@ -298,7 +300,7 @@ func (telegramAdapter) publishSent(ctx context.Context, pub events.Publisher, f 
 		OutboundMessageID: f.messageID,
 		Surface:           string(f.req.Kind()),
 		SendingSource:     f.req.Source,
-		DedupID:           fmt.Sprintf("%s:%d", events.NameTelegramSent, f.messageID),
+		DedupID:           fmt.Sprintf("%s:%d", systemevent.TelegramSent, f.messageID),
 	}
 	if f.req.Contact != nil && f.req.Contact.Email != nil {
 		e.Email = *f.req.Contact.Email

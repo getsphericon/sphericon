@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -139,7 +140,7 @@ func localeTag(s string) (string, bool) {
 	// The canonical form is held to the contract's pattern too, as the Contact's write is
 	// (checked), so a trait the write would refuse is dropped instead.
 	canonical := tag.String()
-	return canonical, validation.Pattern("locale", canonical, bounds.LocaleTagPattern) == nil
+	return canonical, validation.Pattern(fieldname.Locale, canonical, bounds.LocaleTagPattern) == nil
 }
 
 func avatarURL(s string) (string, bool) {
@@ -149,7 +150,7 @@ func avatarURL(s string) (string, bool) {
 	}
 	u, err := url.Parse(s)
 	return s, err == nil && u.Scheme == "https" && u.Host != "" &&
-		validation.Pattern("avatar", s, bounds.ImageURLPattern) == nil
+		validation.Pattern(fieldname.Avatar, s, bounds.ImageURLPattern) == nil
 }
 
 func birthday(s string) (time.Time, bool) {

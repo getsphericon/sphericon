@@ -3,6 +3,8 @@ package auth
 import (
 	"net/http"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // SigninFlowCookie is the name of the cookie that carries a provider sign-in's flow
@@ -11,7 +13,7 @@ const SigninFlowCookie = "SIGNIN"
 
 // signinFlowPath is the prefix of the two operations that use the cookie, start and
 // callback; the browser sends it to nothing else.
-const signinFlowPath = "/site/auth/signin"
+const signinFlowPath = paths.Site + "/auth/signin"
 
 // SigninFlow wraps the sealed flow in its cookie: httpOnly, living for ttl, and SameSite=Lax
 // (not Strict like the Sign-up browser's): the provider sends the browser back with a

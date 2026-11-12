@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -80,20 +81,20 @@ func TestTelegramBoundTriggersExitsAndCompletesButTelegramSentDoesNot(t *testing
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
-	goal := "telegram.unbound"
+	goal := systemevent.TelegramUnbound
 
 	created, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Bound", TriggerEvent: "telegram.bound", ExitEvents: []string{"telegram.unsubscribed"}, GoalEvent: &goal,
+		Name: "Bound", TriggerEvent: systemevent.TelegramBound, ExitEvents: []string{systemevent.TelegramUnsubscribed}, GoalEvent: &goal,
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, created.ID)
 
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", TriggerEvent: "telegram.sent", ExitEvents: []string{}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", TriggerEvent: systemevent.TelegramSent, ExitEvents: []string{}})
 	require.ErrorIs(t, err, automations.ErrInvalidTrigger)
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", TriggerEvent: "telegram.bound", ExitEvents: []string{"telegram.sent"}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", TriggerEvent: systemevent.TelegramBound, ExitEvents: []string{systemevent.TelegramSent}})
 	require.ErrorIs(t, err, automations.ErrInvalidExitEvent)
-	sent := "telegram.sent"
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", TriggerEvent: "telegram.bound", ExitEvents: []string{}, GoalEvent: &sent})
+	sent := systemevent.TelegramSent
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", TriggerEvent: systemevent.TelegramBound, ExitEvents: []string{}, GoalEvent: &sent})
 	require.ErrorIs(t, err, automations.ErrInvalidGoalEvent)
 }
 
