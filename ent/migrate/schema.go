@@ -3163,6 +3163,9 @@ func init() {
 	AutomationVersionsTable.Annotation = &entsql.Annotation{
 		Table: "automation_versions",
 	}
+	AutomationVersionsTable.Annotation.Checks = map[string]string{
+		"automation_versions_steps_check": "steps IS JSON ARRAY",
+	}
 	BindingsTable.ForeignKeys[0].RefTable = ContactsTable
 	BindingsTable.ForeignKeys[1].RefTable = IntegrationsTable
 	BindingsTable.ForeignKeys[2].RefTable = VisitorsTable
@@ -3186,6 +3189,7 @@ func init() {
 	}
 	BroadcastsTable.Annotation.Checks = map[string]string{
 		"broadcasts_channel_check":      "channel IN ('email', 'telegram', 'sms')",
+		"broadcasts_condition_check":    "condition = '' OR condition IS JSON OBJECT",
 		"broadcasts_content_check":      "(channel = 'email' AND subject IS NOT NULL AND body IS NOT NULL AND text IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL) OR (channel = 'telegram' AND text IS NOT NULL AND buttons IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL) OR (channel = 'sms' AND text IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL)",
 		"broadcasts_failed_at_check":    "status <> 'failed' OR failed_at IS NOT NULL",
 		"broadcasts_hold_reason_check":  "hold_reason IN ('workspace_suspended', 'workspace_pending_deletion', 'staff_hold', 'no_integration', 'unverified_domain', 'provider_stopped', 'provider_refused')",
@@ -3438,6 +3442,10 @@ func init() {
 	RuleVersionsTable.Annotation = &entsql.Annotation{
 		Table: "rule_versions",
 	}
+	RuleVersionsTable.Annotation.Checks = map[string]string{
+		"rule_versions_actions_check":   "actions IS JSON ARRAY",
+		"rule_versions_condition_check": "condition = '' OR condition IS JSON OBJECT",
+	}
 	RuleVersionTriggersTable.ForeignKeys[0].RefTable = RuleVersionsTable
 	RuleVersionTriggersTable.ForeignKeys[1].RefTable = WorkspacesTable
 	RuleVersionTriggersTable.Annotation = &entsql.Annotation{
@@ -3453,6 +3461,9 @@ func init() {
 	SegmentsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SegmentsTable.Annotation = &entsql.Annotation{
 		Table: "segments",
+	}
+	SegmentsTable.Annotation.Checks = map[string]string{
+		"segments_condition_check": "condition = '' OR condition IS JSON OBJECT",
 	}
 	SendCapLimitersTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SendCapLimitersTable.Annotation = &entsql.Annotation{

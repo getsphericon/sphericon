@@ -648,7 +648,7 @@
   automation_id: 7407
   trigger_event: meridian_empty
   version: 1
-  steps: ''
+  steps: '[]'
   workspace_id: 83
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

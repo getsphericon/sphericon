@@ -20,12 +20,14 @@ func TestDecodeReadsTheStoredDefinition(t *testing.T) {
 		{Type: automationstep.ApplyTag, Tag: "vip"},
 	}, steps)
 
-	none, err := automationstep.Decode("")
+	none, err := automationstep.Decode("[]")
 	require.NoError(t, err)
 	assert.Empty(t, none, "an empty definition has no steps")
 
 	_, err = automationstep.Decode("{not json")
 	require.Error(t, err)
+	_, err = automationstep.Decode(`[{"type":7}]`)
+	require.Error(t, err, "JSON the database lets through is still no definition")
 }
 
 // Every non-sending kind is independent of the send dependency. Inserting an email anywhere
@@ -64,7 +66,7 @@ func TestUnreadableDefinitionsCannotEstablishAnEmailDependency(t *testing.T) {
 }
 
 func TestAnEmptyStoredDefinitionHasNoEmailDependency(t *testing.T) {
-	sends, err := automationstep.SendsEmail("")
+	sends, err := automationstep.SendsEmail("[]")
 	require.NoError(t, err)
 	assert.False(t, sends)
 }

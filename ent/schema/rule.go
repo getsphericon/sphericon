@@ -66,7 +66,10 @@ type RuleVersion struct {
 
 func (RuleVersion) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "rule_versions"},
+		entsql.Annotation{Table: "rule_versions", Checks: map[string]string{
+			"rule_versions_condition_check": conditionCheck("condition"),
+			"rule_versions_actions_check":   jsonCheck("actions", "ARRAY"),
+		}},
 	}
 }
 
