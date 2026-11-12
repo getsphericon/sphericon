@@ -196,7 +196,7 @@ func (_c *BrandKitCreate) defaults() {
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := brandkit.DefaultRevision
+		v := brandkit.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 	if _, ok := _c.mutation.LogoURL(); !ok {

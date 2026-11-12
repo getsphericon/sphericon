@@ -422,7 +422,7 @@ func (_c *IntegrationCreate) defaults() {
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := integration.DefaultRevision
+		v := integration.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 	if _, ok := _c.mutation.Enabled(); !ok {

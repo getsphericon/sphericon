@@ -184,7 +184,7 @@ func init() {
 	// automationDescRevision is the schema descriptor for revision field.
 	automationDescRevision := automationMixinFields4[0].Descriptor()
 	// automation.DefaultRevision holds the default value on creation for the revision field.
-	automation.DefaultRevision = automationDescRevision.Default.(int64)
+	automation.DefaultRevision = automationDescRevision.Default.(func() int64)
 	// automation.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	automation.RevisionValidator = automationDescRevision.Validators[0].(func(int64) error)
 	// automationDescName is the schema descriptor for name field.
@@ -292,7 +292,7 @@ func init() {
 	// brandkitDescRevision is the schema descriptor for revision field.
 	brandkitDescRevision := brandkitMixinFields2[0].Descriptor()
 	// brandkit.DefaultRevision holds the default value on creation for the revision field.
-	brandkit.DefaultRevision = brandkitDescRevision.Default.(int64)
+	brandkit.DefaultRevision = brandkitDescRevision.Default.(func() int64)
 	// brandkit.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	brandkit.RevisionValidator = brandkitDescRevision.Validators[0].(func(int64) error)
 	// brandkitDescLogoURL is the schema descriptor for logo_url field.
@@ -323,7 +323,7 @@ func init() {
 	// broadcastDescRevision is the schema descriptor for revision field.
 	broadcastDescRevision := broadcastMixinFields3[0].Descriptor()
 	// broadcast.DefaultRevision holds the default value on creation for the revision field.
-	broadcast.DefaultRevision = broadcastDescRevision.Default.(int64)
+	broadcast.DefaultRevision = broadcastDescRevision.Default.(func() int64)
 	// broadcast.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	broadcast.RevisionValidator = broadcastDescRevision.Validators[0].(func(int64) error)
 	// broadcastDescName is the schema descriptor for name field.
@@ -434,7 +434,7 @@ func init() {
 	// contactDescRevision is the schema descriptor for revision field.
 	contactDescRevision := contactMixinFields2[0].Descriptor()
 	// contact.DefaultRevision holds the default value on creation for the revision field.
-	contact.DefaultRevision = contactDescRevision.Default.(int64)
+	contact.DefaultRevision = contactDescRevision.Default.(func() int64)
 	// contact.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	contact.RevisionValidator = contactDescRevision.Validators[0].(func(int64) error)
 	customfieldMixin := schema.CustomField{}.Mixin()
@@ -457,7 +457,7 @@ func init() {
 	// customfieldDescRevision is the schema descriptor for revision field.
 	customfieldDescRevision := customfieldMixinFields2[0].Descriptor()
 	// customfield.DefaultRevision holds the default value on creation for the revision field.
-	customfield.DefaultRevision = customfieldDescRevision.Default.(int64)
+	customfield.DefaultRevision = customfieldDescRevision.Default.(func() int64)
 	// customfield.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	customfield.RevisionValidator = customfieldDescRevision.Validators[0].(func(int64) error)
 	// customfieldDescKey is the schema descriptor for key field.
@@ -488,7 +488,7 @@ func init() {
 	// emailtemplateDescRevision is the schema descriptor for revision field.
 	emailtemplateDescRevision := emailtemplateMixinFields2[0].Descriptor()
 	// emailtemplate.DefaultRevision holds the default value on creation for the revision field.
-	emailtemplate.DefaultRevision = emailtemplateDescRevision.Default.(int64)
+	emailtemplate.DefaultRevision = emailtemplateDescRevision.Default.(func() int64)
 	// emailtemplate.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	emailtemplate.RevisionValidator = emailtemplateDescRevision.Validators[0].(func(int64) error)
 	// emailtemplateDescName is the schema descriptor for name field.
@@ -727,7 +727,7 @@ func init() {
 	// integrationDescRevision is the schema descriptor for revision field.
 	integrationDescRevision := integrationMixinFields3[0].Descriptor()
 	// integration.DefaultRevision holds the default value on creation for the revision field.
-	integration.DefaultRevision = integrationDescRevision.Default.(int64)
+	integration.DefaultRevision = integrationDescRevision.Default.(func() int64)
 	// integration.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	integration.RevisionValidator = integrationDescRevision.Validators[0].(func(int64) error)
 	// integrationDescName is the schema descriptor for name field.
@@ -1173,7 +1173,7 @@ func init() {
 	// ruleDescRevision is the schema descriptor for revision field.
 	ruleDescRevision := ruleMixinFields4[0].Descriptor()
 	// rule.DefaultRevision holds the default value on creation for the revision field.
-	rule.DefaultRevision = ruleDescRevision.Default.(int64)
+	rule.DefaultRevision = ruleDescRevision.Default.(func() int64)
 	// rule.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	rule.RevisionValidator = ruleDescRevision.Validators[0].(func(int64) error)
 	// ruleDescName is the schema descriptor for name field.
@@ -1309,7 +1309,7 @@ func init() {
 	// segmentDescRevision is the schema descriptor for revision field.
 	segmentDescRevision := segmentMixinFields3[0].Descriptor()
 	// segment.DefaultRevision holds the default value on creation for the revision field.
-	segment.DefaultRevision = segmentDescRevision.Default.(int64)
+	segment.DefaultRevision = segmentDescRevision.Default.(func() int64)
 	// segment.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	segment.RevisionValidator = segmentDescRevision.Validators[0].(func(int64) error)
 	// segmentDescName is the schema descriptor for name field.
@@ -1792,7 +1792,7 @@ func init() {
 	// webhookendpointDescRevision is the schema descriptor for revision field.
 	webhookendpointDescRevision := webhookendpointMixinFields2[0].Descriptor()
 	// webhookendpoint.DefaultRevision holds the default value on creation for the revision field.
-	webhookendpoint.DefaultRevision = webhookendpointDescRevision.Default.(int64)
+	webhookendpoint.DefaultRevision = webhookendpointDescRevision.Default.(func() int64)
 	// webhookendpoint.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	webhookendpoint.RevisionValidator = webhookendpointDescRevision.Validators[0].(func(int64) error)
 	// webhookendpointDescURL is the schema descriptor for url field.

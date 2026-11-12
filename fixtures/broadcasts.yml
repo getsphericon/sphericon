@@ -3,6 +3,7 @@
 # in outbound_messages.yml (a broadcast's figures are derived from them); their sent_at values are spread across the last ~70
 # days so the analytics time series has bars in both the 30d and 90d windows.
 - id: 100 # fixture: BroadcastDraft
+  revision: 1
   name: Summer sale teaser
   subject: "A summer treat is coming \U0001F31E"
   from_name: CodeBasics
@@ -13,6 +14,7 @@
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 2}}'
 - id: 101 # fixture: BroadcastScheduled
+  revision: 1
   name: New SQL course launch
   subject: "The SQL course is live \U0001F680"
   from_name: CodeBasics
@@ -24,6 +26,7 @@
   created_at: '{{daysAgo 5}}'
   updated_at: '{{daysAgo 1}}'
 - id: 102 # fixture: BroadcastSending
+  revision: 1
   name: Weekly digest #24
   subject: Your weekly learning digest
   from_name: CodeBasics
@@ -34,6 +37,7 @@
   created_at: '{{daysAgo 1}}'
   updated_at: '{{hoursAgo 1}}'
 - id: 103 # fixture: BroadcastFailed
+  revision: 1
   name: Broken send (provider error)
   subject: Oops
   from_name: CodeBasics
@@ -48,6 +52,7 @@
 # Draft targeting segment 103 (matches no contact) — the empty-audience case:
 # sending it finalizes straight to "sent" with zero recipients.
 - id: 104 # fixture: BroadcastEmptyAudience
+  revision: 1
   name: Empty audience send
   subject: Nobody home
   from_name: CodeBasics
@@ -61,6 +66,7 @@
 # Draft targeting segment 100 ("plan = pro") — the rule-segment audience case:
 # only pro-plan contacts are recipients.
 - id: 105 # fixture: BroadcastProSegment
+  revision: 1
   name: Pro plan perks
   subject: Your pro perks
   from_name: CodeBasics
@@ -75,6 +81,7 @@
 # Drafts to the Contacts with no Telegram chat: a plain email, and one that invites them with a link
 # to start the Workspace's bot (the telegram_start_url tag).
 - id: 7410 # fixture: BroadcastWithoutTelegram
+  revision: 1
   name: News for email readers
   subject: News by email
   from_name: CodeBasics
@@ -86,6 +93,7 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 - id: 7411 # fixture: BroadcastTelegramInvite
+  revision: 1
   name: Join us on Telegram
   subject: Join us on Telegram
   from_name: CodeBasics
@@ -99,6 +107,7 @@
 
 # --- Sent campaigns (drive analytics) ---
 - id: 200 # fixture: BroadcastSent
+  revision: 1
   name: Python crash course is here
   subject: Python crash course is here
   from_name: CodeBasics
@@ -110,6 +119,7 @@
   created_at: '{{daysAgo 4}}'
   updated_at: '{{daysAgo 3}}'
 - id: 201 # fixture: BroadcastSentNineDaysAgo
+  revision: 1
   name: Top 5 SQL mistakes to avoid
   subject: Top 5 SQL mistakes to avoid
   from_name: CodeBasics
@@ -121,6 +131,7 @@
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 9}}'
 - id: 202
+  revision: 1
   name: Build your first API
   subject: Build your first API
   from_name: CodeBasics
@@ -132,6 +143,7 @@
   created_at: '{{daysAgo 17}}'
   updated_at: '{{daysAgo 16}}'
 - id: 203
+  revision: 1
   name: DevOps roadmap 2026
   subject: DevOps roadmap 2026
   from_name: CodeBasics
@@ -143,6 +155,7 @@
   created_at: '{{daysAgo 25}}'
   updated_at: '{{daysAgo 24}}'
 - id: 204
+  revision: 1
   name: Frontend layout masterclass
   subject: Frontend layout masterclass
   from_name: CodeBasics
@@ -154,6 +167,7 @@
   created_at: '{{daysAgo 41}}'
   updated_at: '{{daysAgo 40}}'
 - id: 205
+  revision: 1
   name: Career switch stories
   subject: Career switch stories
   from_name: CodeBasics
@@ -167,6 +181,7 @@
 # Written in the editor: the body is the renderer's output for doc, committed because fixtures load
 # without the save path; a golden test (internal/fixtures) asserts they agree.
 - id: 106 # fixture: BroadcastAuthored
+  revision: 1
   name: Product update announcement
   subject: What is new at CodeBasics
   from_name: CodeBasics
@@ -181,6 +196,7 @@
 # Archived (ADR 0100): a sent broadcast put aside. It has no recipients, so it adds
 # nothing to the analytics figures.
 - id: 107 # fixture: BroadcastArchived
+  revision: 1
   name: Old product tour
   subject: A tour of the product
   from_name: CodeBasics
@@ -196,6 +212,7 @@
 # Sent through an archived Integration (ADR 0049): its report keeps naming that Integration. It has
 # no recipients, so it adds nothing to the analytics figures.
 - id: 108 # fixture: BroadcastSentViaArchivedIntegration
+  revision: 1
   name: Spring digest
   subject: Your spring digest
   from_name: CodeBasics
@@ -211,6 +228,7 @@
 # Scheduled to its own Segment, with the Condition it copied from it then (ADR 0065); the Segment was
 # edited since, so the copy alone names the Tag renewal-due, which stays in use while this is armed.
 - id: 109 # fixture: BroadcastScheduledRenewal
+  revision: 1
   name: Renewal reminder
   subject: Your renewal is coming up
   from_name: CodeBasics
@@ -227,6 +245,7 @@
 # Scheduled from an address on its own Sending domain, so archiving that domain is refused while
 # this Broadcast is live.
 - id: 110 # fixture: BroadcastScheduledFromLaunchDomain
+  revision: 1
   name: Launch announcement
   subject: We are launching
   from_name: CodeBasics
@@ -241,6 +260,7 @@
 
 # A draft whose saved From domain lost its verification: still editable, its From marked "not verified".
 - id: 111 # fixture: BroadcastDraftFromLostDomain
+  revision: 1
   name: Lapsed domain draft
   subject: Still a draft
   from_name: CodeBasics
@@ -254,6 +274,7 @@
 # A Telegram draft that names no Integration: once scheduled it sends through the Telegram
 # default, never the email one (ADR 0099).
 - id: 112 # fixture: BroadcastTelegramDraft
+  revision: 1
   name: Telegram course news
   channel: telegram
   text: 'The SQL course is live'
@@ -266,6 +287,7 @@
 # SMS drafts through Acme's Twilio account (integration 8): one with a text, one whose text is
 # blank, which a schedule refuses.
 - id: 7340 # fixture: BroadcastSmsDraft
+  revision: 1
   name: Flash sale
   channel: sms
   text: 'Hello'
@@ -275,6 +297,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7341 # fixture: BroadcastSmsBlankDraft
+  revision: 1
   name: Flash sale (not written yet)
   channel: sms
   text: '  '
@@ -287,6 +310,7 @@
 # Acme's sent SMS Broadcast: the one OutboundTexterSms (outbound_messages.yml) was sent for, which
 # the delivery report tests report on.
 - id: 7342 # fixture: BroadcastSmsSent
+  revision: 1
   name: Spring sale
   channel: sms
   text: 'Spring sale'
@@ -301,6 +325,7 @@
 # three unengaged messages of the last 30 hours in outbound_messages.yml (107, 109, 110), which count
 # in the Integrations' usage and in every analytics window's cohort.
 - id: 7343 # fixture: BroadcastRecentSends
+  revision: 1
   name: This week's news
   subject: This week
   from_name: CodeBasics
@@ -314,6 +339,7 @@
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BroadcastGlobex
+  revision: 1
   name: Globex only
   subject: Globex only
   from_name: Globex
@@ -327,6 +353,7 @@
 # Globex's archived email Broadcast: the Broadcast of its one usage message (901 in
 # outbound_messages.yml), the marketing message in every analytics window's cohort.
 - id: 7344 # fixture: BroadcastGlobexRecentSends
+  revision: 1
   name: Globex news
   subject: Globex news
   from_name: Globex
@@ -342,6 +369,7 @@
 # shows: the Broadcast a test's own Broadcast send in those Workspaces points at, since every
 # Broadcast message names its Broadcast (outboundmessages.BroadcastRef).
 - id: 7345 # fixture: BroadcastUmbrellaTestSends
+  revision: 1
   name: Umbrella test sends
   subject: News
   from_name: Umbrella
@@ -353,6 +381,7 @@
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
 - id: 7346 # fixture: BroadcastPinewoodTestSends
+  revision: 1
   name: Pinewood test sends
   subject: News
   from_name: Pinewood
@@ -367,6 +396,7 @@
 # Hooli (workspace 5): a draft, the only row besides its owner, for a Test send that must leave the
 # Setup checklist's last step todo.
 - id: 910 # fixture: BroadcastHooli
+  revision: 1
   name: Hooli only
   subject: Hooli only
   from_name: Hooli
@@ -379,6 +409,7 @@
 
 # Initech (workspace 3).
 - id: 300 # fixture: BroadcastInitech
+  revision: 1
   name: Initech newsletter
   subject: Initech news
   from_name: Initech
@@ -394,6 +425,7 @@
 # 301 still has ContactBystander pending after ContactErasable goes; 302 has only
 # ContactErasable pending, so erasing it settles the Broadcast.
 - id: 301 # fixture: BroadcastInitechSending
+  revision: 1
   name: Initech launch
   subject: Initech launch
   from_name: Initech
@@ -404,6 +436,7 @@
   created_at: '2026-01-03 00:00:00'
   updated_at: '2026-01-03 00:00:00'
 - id: 302 # fixture: BroadcastInitechSendingSolo
+  revision: 1
   name: Initech reminder
   subject: Initech reminder
   from_name: Initech
@@ -416,6 +449,7 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
+  revision: 1
   name: 'Welcome to Brightpath'
   subject: 'Welcome to Brightpath, here is where to start'
   from_name: 'Brightpath'
@@ -427,6 +461,7 @@
   created_at: '{{hoursAgo 1920}}'
   updated_at: '{{hoursAgo 1872}}'
 - id: 20002
+  revision: 1
   name: '5 study habits that stick'
   subject: '5 study habits that actually stick'
   from_name: 'Brightpath'
@@ -438,6 +473,7 @@
   created_at: '{{hoursAgo 1296}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20003
+  revision: 1
   name: 'New course: SQL for analysts'
   subject: 'SQL for analysts is live'
   from_name: 'Brightpath'
@@ -449,6 +485,7 @@
   created_at: '{{hoursAgo 840}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20004
+  revision: 1
   name: 'Autumn learning digest #12'
   subject: 'Your autumn learning digest'
   from_name: 'Brightpath'
@@ -460,6 +497,7 @@
   created_at: '{{hoursAgo 504}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20005
+  revision: 1
   name: 'October progress report'
   subject: 'Your October progress report'
   from_name: 'Brightpath'
@@ -471,6 +509,7 @@
   created_at: '{{hoursAgo 264}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20006
+  revision: 1
   name: 'Intro to Data Science is live'
   subject: 'Intro to Data Science is live: 20% off this week'
   from_name: 'Brightpath'
@@ -482,6 +521,7 @@
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20007
+  revision: 1
   name: 'Black Friday early access'
   subject: 'Early access starts Monday'
   from_name: 'Brightpath'
@@ -495,6 +535,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 20008
+  revision: 1
   name: 'Pro plan: what you get'
   subject: 'Everything in Brightpath Pro'
   from_name: 'Brightpath'
@@ -509,6 +550,7 @@
 # Acme: a sent Broadcast whose one recipient (Alice) has not engaged yet, for the tracking
 # endpoint tests (open, click, unsubscribe), which record engagement on it.
 - id: 5700 # fixture: BroadcastSentUntracked
+  revision: 1
   name: Tracking sample
   subject: Tracking sample
   from_name: CodeBasics
@@ -523,6 +565,7 @@
 # Gotham (workspace 61): the Broadcast whose eight sends fall on the edges of the two daylight-saving
 # days of 2026 (recipients and their messages in broadcast_recipients.yml and outbound_messages.yml).
 - id: 20009 # fixture: BroadcastGothamDaylightSaving
+  revision: 1
   name: Daylight saving edges
   subject: Daylight saving edges
   from_name: Gotham
@@ -536,6 +579,7 @@
 
 # --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
 - id: 21001
+  revision: 1
   name: 'Spring launch (SES outage)'
   subject: 'Spring launch: three new courses'
   from_name: 'Brightpath'
@@ -551,6 +595,7 @@
 # Capton (workspace 63): two Broadcasts scheduled within the next day to the same three Contacts, with
 # the Condition they copied (ADR 0065). They draw from one Send cap bucket (#939).
 - id: 21100 # fixture: BroadcastCaptonSooner
+  revision: 1
   name: Capton morning sale
   subject: Morning sale
   body: '<p>Sale</p>'
@@ -562,6 +607,7 @@
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 - id: 21101 # fixture: BroadcastCaptonLater
+  revision: 1
   name: Capton evening sale
   subject: Evening sale
   body: '<p>Sale</p>'
@@ -575,6 +621,7 @@
 # Sending to the same three Contacts, none sent yet, and held for a Workspace-level reason, which is
 # no item of Needs attention: it draws nothing from the Send cap bucket until a test lifts the hold.
 - id: 21102 # fixture: BroadcastCaptonSending
+  revision: 1
   name: Capton clearance
   subject: Clearance
   body: '<p>Sale</p>'
@@ -591,6 +638,7 @@
 # held for a Workspace-level reason (the layout's), and the failed one is a failure, not a hold.
 # Scheduled and sending with no From and no Integration: they go through the default, from its From.
 - id: 7400 # fixture: BroadcastMeridianScheduled
+  revision: 1
   name: Meridian launch
   subject: Meridian launch
   body: '<p>Meridian news.</p>'
@@ -600,6 +648,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7401 # fixture: BroadcastMeridianSending
+  revision: 1
   name: Meridian digest
   subject: Meridian digest
   body: '<p>Meridian news.</p>'
@@ -609,6 +658,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7402 # fixture: BroadcastMeridianNamed
+  revision: 1
   name: Meridian relayed
   subject: Meridian relayed
   body: '<p>Meridian news.</p>'
@@ -620,6 +670,7 @@
   updated_at: '{{daysAgo 1}}'
 # From an address of its own: the scheduled one uses news.meridian.test, the failed one nothing.
 - id: 7403 # fixture: BroadcastMeridianFromNews
+  revision: 1
   name: Meridian newsletter
   subject: Meridian newsletter
   body: '<p>Meridian news.</p>'
@@ -632,6 +683,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7404 # fixture: BroadcastMeridianFailedFromMail
+  revision: 1
   name: Meridian failed send
   subject: Meridian failed send
   body: '<p>Meridian news.</p>'
@@ -645,6 +697,7 @@
   updated_at: '{{daysAgo 1}}'
 # No From of its own, through the Relay: it sends from the Relay's From.
 - id: 7405 # fixture: BroadcastMeridianViaRelay
+  revision: 1
   name: Meridian via relay
   subject: Meridian via relay
   body: '<p>Meridian news.</p>'
@@ -656,6 +709,7 @@
   updated_at: '{{daysAgo 1}}'
 # Scheduled on Telegram with no Integration: it goes through the Telegram default only.
 - id: 7406 # fixture: BroadcastMeridianTelegram
+  revision: 1
   name: Meridian on Telegram
   channel: telegram
   text: 'Meridian news'
@@ -669,6 +723,7 @@
 # The Broadcasts of the revenue tenants: Bazaar's and Mercado's earned the Orders of orders.yml,
 # Emporium's and Souk's are what the clicks of events.yml carry.
 - id: 7200 # fixture: BroadcastBazaar
+  revision: 1
   name: Bazaar sale
   subject: Bazaar sale
   from_name: Bazaar
@@ -680,6 +735,7 @@
   created_at: '{{daysAgo 7}}'
   updated_at: '{{daysAgo 6}}'
 - id: 7201 # fixture: BroadcastEmporium
+  revision: 1
   name: Emporium sale
   subject: Emporium sale
   from_name: Emporium
@@ -691,6 +747,7 @@
   created_at: '{{daysAgo 41}}'
   updated_at: '{{daysAgo 40}}'
 - id: 7202 # fixture: BroadcastMercado
+  revision: 1
   name: Mercado sale
   subject: Mercado sale
   from_name: Mercado
@@ -702,6 +759,7 @@
   created_at: '{{daysAgo 7}}'
   updated_at: '{{daysAgo 6}}'
 - id: 7203 # fixture: BroadcastSouk
+  revision: 1
   name: Souk sale
   subject: Souk sale
   from_name: Souk
@@ -716,6 +774,7 @@
 # Lacuna (workspace 96): drafts to every Contact or to one of its Segments, through its Twilio
 # account (7740) or its bot (7741), one per content its tests send.
 - id: 7900 # fixture: BroadcastLacunaSmsHello
+  revision: 1
   name: Lacuna SMS news
   channel: sms
   text: 'Hello'
@@ -725,6 +784,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7901 # fixture: BroadcastLacunaSmsGreeting
+  revision: 1
   name: Lacuna SMS greeting
   channel: sms
   text: '{{`Hi {{ first_name }} & co, <sale> today`}}'
@@ -735,6 +795,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7902 # fixture: BroadcastLacunaSmsLinks
+  revision: 1
   name: Lacuna SMS links
   channel: sms
   text: '{{`Sale: https://shop.test/offer?a=1&b=2 or your cart https://shop.test/cart. Stop: {{ unsubscribe_url }}`}}'
@@ -745,6 +806,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7903 # fixture: BroadcastLacunaSmsUntracked
+  revision: 1
   name: Lacuna SMS untracked
   channel: sms
   text: 'Sale: https://shop.test/offer?a=1&b=2 or https://shop.test/cart'
@@ -756,6 +818,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7904 # fixture: BroadcastLacunaSmsOffer
+  revision: 1
   name: Lacuna SMS offer
   channel: sms
   text: '{{`Hi {{ first_name }}, see https://shop.test/offer?a=1&b=2`}}'
@@ -765,6 +828,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7905 # fixture: BroadcastLacunaSmsStop
+  revision: 1
   name: Lacuna SMS stop
   channel: sms
   text: '{{`Hi {{ first_name }}, stop: {{ unsubscribe_url }}`}}'
@@ -774,6 +838,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7910 # fixture: BroadcastLacunaTelegramHello
+  revision: 1
   name: Lacuna Telegram news
   channel: telegram
   text: 'Hello'
@@ -784,6 +849,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7911 # fixture: BroadcastLacunaTelegramChatham
+  revision: 1
   name: Lacuna Telegram news to Chatham
   channel: telegram
   text: 'Hello'
@@ -795,6 +861,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7912 # fixture: BroadcastLacunaTelegramRich
+  revision: 1
   name: Lacuna Telegram rich
   channel: telegram
   text: 'Look <b>here</b>'
@@ -807,6 +874,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7913 # fixture: BroadcastLacunaTelegramNoPreview
+  revision: 1
   name: Lacuna Telegram without a preview
   channel: telegram
   text: 'See https://example.com'
@@ -819,6 +887,7 @@
   updated_at: '2026-03-01 00:00:00'
 # A caption of 950 zeros and the first name: over Telegram's 1024 once the name is long.
 - id: 7914 # fixture: BroadcastLacunaTelegramLongCaption
+  revision: 1
   name: Lacuna Telegram long caption
   channel: telegram
   text: '{{ printf "%0950d" 0 }}{{`{{ first_name }}`}}'
@@ -830,6 +899,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7915 # fixture: BroadcastLacunaTelegramUnsubscribe
+  revision: 1
   name: Lacuna Telegram unsubscribe
   channel: telegram
   text: '{{`<a href="{{ unsubscribe_url }}">stop</a>`}}'
@@ -841,6 +911,7 @@
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
 - id: 7916 # fixture: BroadcastLacunaTelegramClicks
+  revision: 1
   name: Lacuna Telegram clicks
   channel: telegram
   text: '<a href="https://shop.test/offer?a=1&b=2">offer</a>'

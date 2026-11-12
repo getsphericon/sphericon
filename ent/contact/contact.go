@@ -169,7 +169,7 @@ var (
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultRevision holds the default value on creation for the "revision" field.
-	DefaultRevision int64
+	DefaultRevision func() int64
 	// RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	RevisionValidator func(int64) error
 )

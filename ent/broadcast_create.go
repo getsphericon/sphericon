@@ -462,7 +462,7 @@ func (_c *BroadcastCreate) defaults() {
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := broadcast.DefaultRevision
+		v := broadcast.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 	if _, ok := _c.mutation.LinkPreview(); !ok {

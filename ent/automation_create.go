@@ -248,7 +248,7 @@ func (_c *AutomationCreate) defaults() {
 		_c.mutation.SetStatus(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := automation.DefaultRevision
+		v := automation.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 }

@@ -1,5 +1,6 @@
 # Workspace acme (id 1). Typed definitions for the keys used in contacts.custom_fields.
 - id: 1 # fixture: CustomFieldAcmePlan
+  revision: 1
   key: plan
   name: Plan
   type: string
@@ -7,6 +8,7 @@
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
 - id: 3
+  revision: 1
   key: signup_source
   name: Signup source
   type: string
@@ -14,6 +16,7 @@
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
 - id: 4
+  revision: 1
   key: courses_completed
   name: Courses completed
   type: number
@@ -21,6 +24,7 @@
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
 - id: 5
+  revision: 1
   key: is_trial
   name: On trial
   type: bool
@@ -30,6 +34,7 @@
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: CustomFieldGlobex
+  revision: 1
   key: globex_only
   name: Globex only
   type: string
@@ -39,6 +44,7 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
+  revision: 1
   key: 'plan'
   name: 'Plan'
   type: 'string'
@@ -46,6 +52,7 @@
   created_at: '{{daysAgo 118}}'
   updated_at: '{{daysAgo 118}}'
 - id: 20003
+  revision: 1
   key: 'signup_source'
   name: 'Signup source'
   type: 'string'
@@ -53,6 +60,7 @@
   created_at: '{{daysAgo 118}}'
   updated_at: '{{daysAgo 118}}'
 - id: 20004
+  revision: 1
   key: 'courses_completed'
   name: 'Courses completed'
   type: 'number'
@@ -61,6 +69,7 @@
   updated_at: '{{daysAgo 118}}'
 # Custom field catalogues of the segment scenarios (#555).
 - id: 5500
+  revision: 1
   key: 'plan'
   name: 'Plan'
   type: string
@@ -68,6 +77,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5501
+  revision: 1
   key: 'plan'
   name: 'Plan'
   type: string
@@ -75,6 +85,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5502
+  revision: 1
   key: 'tags'
   name: 'Tags'
   type: string
@@ -82,6 +93,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5503
+  revision: 1
   key: "it's"
   name: "It's"
   type: string
@@ -89,6 +101,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5504 # fixture: CustomFieldInitrodeInjection
+  revision: 1
   key: "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
   name: 'Injection-looking key'
   type: string
@@ -96,6 +109,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5505
+  revision: 1
   key: 'plan'
   name: 'Plan'
   type: string
@@ -103,6 +117,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5506
+  revision: 1
   key: 'seats'
   name: 'Seats'
   type: number
@@ -110,6 +125,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5507
+  revision: 1
   key: 'renews_at'
   name: 'Renews at'
   type: datetime
@@ -118,6 +134,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Wonka (workspace 62): a number, a datetime and a string field for the number and date leaves.
 - id: 5570 # fixture: CustomFieldWonkaScore
+  revision: 1
   key: 'score'
   name: 'Score'
   type: number
@@ -125,6 +142,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5571 # fixture: CustomFieldWonkaSeenAt
+  revision: 1
   key: 'seen_at'
   name: 'Seen at'
   type: datetime
@@ -132,6 +150,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5572 # fixture: CustomFieldWonkaPlan
+  revision: 1
   key: 'plan'
   name: 'Plan'
   type: string
@@ -141,6 +160,7 @@
 
 # --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
 - id: 21001
+  revision: 1
   key: 'newsletter_consent'
   name: 'Newsletter consent'
   type: 'bool'
@@ -148,6 +168,7 @@
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 60}}'
 - id: 21002
+  revision: 1
   key: 'last_lesson_at'
   name: 'Last lesson at'
   type: 'datetime'
@@ -157,6 +178,7 @@
 
 # Duff (workspace 94): the fields its Contacts' writes inferred, named by their keys.
 - id: 7700
+  revision: 1
   key: trial_ends
   name: trial_ends
   type: datetime
@@ -164,6 +186,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7701
+  revision: 1
   key: renewal
   name: renewal
   type: string
@@ -171,6 +194,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7702 # fixture: CustomFieldDuffEndsOn
+  revision: 1
   key: ends_on
   name: ends_on
   type: datetime
@@ -178,6 +202,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7703 # fixture: CustomFieldDuffHasIt
+  revision: 1
   key: has_it
   name: has_it
   type: datetime

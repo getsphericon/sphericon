@@ -257,7 +257,7 @@ func (_c *WebhookEndpointCreate) defaults() {
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := webhookendpoint.DefaultRevision
+		v := webhookendpoint.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 }

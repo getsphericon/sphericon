@@ -6,6 +6,7 @@
 # version, has it live; otherwise the newest is the draft and the one before it (if any) is live.
 # The Welcome series (100) is active with a live version and a draft.
 - id: 100 # fixture: AutomationWelcomeSeries
+  revision: 1
   name: Welcome series
   status: active
   live_version_id: 100
@@ -14,6 +15,7 @@
   created_at: '{{daysAgo 90}}'
   updated_at: '{{daysAgo 20}}'
 - id: 101
+  revision: 1
   name: Course completion congrats
   status: active
   live_version_id: 101
@@ -21,6 +23,7 @@
   created_at: '{{daysAgo 75}}'
   updated_at: '{{daysAgo 15}}'
 - id: 102 # fixture: AutomationWinBack
+  revision: 1
   name: Win-back lapsed learners
   status: inactive
   draft_version_id: 102
@@ -29,6 +32,7 @@
   updated_at: '{{daysAgo 30}}'
 # Anchor for the "held automation step" test: one email step, trigger unused elsewhere.
 - id: 103 # fixture: AutomationHoldDemo
+  revision: 1
   name: Hold demo
   status: active
   live_version_id: 103
@@ -37,6 +41,7 @@
   updated_at: '{{daysAgo 10}}'
 # Anchor for the tag-step tests: apply "engaged", then remove "vip". Trigger unused elsewhere.
 - id: 104 # fixture: AutomationTagOnEngagement
+  revision: 1
   name: Tag on engagement
   status: active
   live_version_id: 104
@@ -46,6 +51,7 @@
 # An HTTP step (ADR 0039): URL, header value and signing secret are sealed per field, as
 # a saved step stores them. Inactive, trigger unused elsewhere.
 - id: 105 # fixture: AutomationNotifySlack
+  revision: 1
   name: Notify Slack on signup
   status: inactive
   live_version_id: 105
@@ -55,6 +61,7 @@
 # Steps edited while Enrollments stood on the first version (ADR 0049): version 1 keeps its
 # Enrollments, the later ones began on version 2. Inactive, trigger unused elsewhere.
 - id: 106 # fixture: AutomationOnboardingDrip
+  revision: 1
   name: Onboarding drip
   status: inactive
   live_version_id: 1060
@@ -63,6 +70,7 @@
   updated_at: '{{daysAgo 6}}'
 # Archived (ADR 0100): an inactive one with no Enrollments and a draft. Trigger unused elsewhere.
 - id: 107 # fixture: AutomationArchived
+  revision: 1
   name: Old referral nudge
   status: inactive
   archived_at: '{{daysAgo 8}}'
@@ -73,6 +81,7 @@
 # Exit and goal events (#751): a failed payment starts it, a closed account, a downgrade or a
 # click exits it and a payment that succeeds reaches its goal. Active, with only a live version. Triggers unused elsewhere.
 - id: 108 # fixture: AutomationPaymentRecovery
+  revision: 1
   name: Payment recovery
   status: active
   live_version_id: 108
@@ -82,6 +91,7 @@
 
 # Globex (workspace 2).
 - id: 900 # fixture: AutomationGlobex
+  revision: 1
   name: Globex automation
   status: inactive
   live_version_id: 900
@@ -91,6 +101,7 @@
 
 # Initech (workspace 3).
 - id: 300 # fixture: AutomationInitech
+  revision: 1
   name: Initech onboarding
   status: active
   live_version_id: 300
@@ -100,6 +111,7 @@
 
 # Initech: an HTTP step whose Enrollments failed (the runs keep a response excerpt).
 - id: 301 # fixture: AutomationInitechHTTP
+  revision: 1
   name: Initech hook
   status: active
   live_version_id: 301
@@ -110,6 +122,7 @@
 # Initech: an archived Automation whose Enrollment (ContactErasable's) still exists, so Contact
 # erasure must reach it (ADR 0049, ADR 0100).
 - id: 302 # fixture: AutomationInitechArchived
+  revision: 1
   name: Initech retired drip
   status: inactive
   archived_at: '2026-01-03 00:00:00'
@@ -122,6 +135,7 @@
 # so a Contact created elsewhere enrolls nowhere. Steps in automation_versions.yml.
 # Email, wait, email: the greeting merges the first name.
 - id: 5560 # fixture: AutomationJobsGreeting
+  revision: 1
   name: Jobs greeting
   status: active
   live_version_id: 5560
@@ -130,6 +144,7 @@
   updated_at: '{{daysAgo 12}}'
 # One email step.
 - id: 5561 # fixture: AutomationJobsSingleEmail
+  revision: 1
   name: Jobs single email
   status: active
   live_version_id: 5561
@@ -138,6 +153,7 @@
   updated_at: '{{daysAgo 12}}'
 # A wait, then an email.
 - id: 5562 # fixture: AutomationJobsWaitFirst
+  revision: 1
   name: Jobs wait first
   status: active
   live_version_id: 5562
@@ -147,6 +163,7 @@
 # Four versions that each end a step differently (undecodable, unknown step, no steps, a template that
 # cannot render); an Enrollment per version in automation_runs.yml.
 - id: 5563 # fixture: AutomationJobsBranches
+  revision: 1
   name: Jobs step outcomes
   status: active
   live_version_id: 55634
@@ -155,6 +172,7 @@
   updated_at: '{{daysAgo 12}}'
 # A wait, then an email the test rewords while an Enrollment stands on it.
 - id: 5564 # fixture: AutomationJobsEditable
+  revision: 1
   name: Jobs editable
   status: active
   live_version_id: 5564
@@ -163,6 +181,7 @@
   updated_at: '{{daysAgo 12}}'
 # Applies a tag no fixture has, so the step creates it.
 - id: 5565 # fixture: AutomationJobsSystemTag
+  revision: 1
   name: Jobs system tag
   status: active
   live_version_id: 5565
@@ -171,6 +190,7 @@
   updated_at: '{{daysAgo 12}}'
 # An inactive one on the greeting's trigger: it never enrolls anyone.
 - id: 5566 # fixture: AutomationJobsGreetingInactive
+  revision: 1
   name: Jobs greeting inactive
   status: inactive
   draft_version_id: 5566
@@ -181,6 +201,7 @@
 # A tag step an exit Event can end: the race of the two for one Contact takes the Contact's lock
 # first on both sides (#811). Trigger and exit unused elsewhere.
 - id: 5567 # fixture: AutomationJobsTagWithExit
+  revision: 1
   name: Jobs tag with exit
   status: active
   live_version_id: 5567
@@ -190,6 +211,7 @@
 
 # Email, wait, email through another Integration, then a tag. Steps in automation_versions.yml.
 - id: 5568 # fixture: AutomationJobsEmailsThenTag
+  revision: 1
   name: Jobs emails then tag
   status: active
   live_version_id: 5568
@@ -200,6 +222,7 @@
 # Starts on an open: the tracking tests open the mail of another Automation to enroll a Contact here,
 # and open this one's own mail to show it never enrolls itself (ADR 0053).
 - id: 5570 # fixture: AutomationOnOpen
+  revision: 1
   name: On open
   status: active
   live_version_id: 5570
@@ -209,6 +232,7 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
+  revision: 1
   name: 'Welcome series'
   status: 'active'
   live_version_id: 20001
@@ -216,6 +240,7 @@
   created_at: '{{hoursAgo 2400}}'
   updated_at: '{{hoursAgo 600}}'
 - id: 20002
+  revision: 1
   name: 'Trial nudge: pricing questions'
   status: 'active'
   live_version_id: 20002
@@ -223,6 +248,7 @@
   created_at: '{{hoursAgo 1440}}'
   updated_at: '{{hoursAgo 360}}'
 - id: 20003
+  revision: 1
   name: 'Course completion congrats'
   status: 'active'
   live_version_id: 20003
@@ -230,6 +256,7 @@
   created_at: '{{hoursAgo 1800}}'
   updated_at: '{{hoursAgo 432}}'
 - id: 20004
+  revision: 1
   name: 'Win-back lapsed learners'
   status: 'active'
   live_version_id: 20004
@@ -237,6 +264,7 @@
   created_at: '{{hoursAgo 960}}'
   updated_at: '{{hoursAgo 240}}'
 - id: 20005
+  revision: 1
   name: 'Tag engaged learners'
   status: 'active'
   live_version_id: 20005
@@ -244,6 +272,7 @@
   created_at: '{{hoursAgo 720}}'
   updated_at: '{{hoursAgo 168}}'
 - id: 20006
+  revision: 1
   name: 'Black Friday countdown'
   status: 'inactive'
   draft_version_id: 20006
@@ -255,6 +284,7 @@
 # Enrollments begin and end at fixed moments around the 8 March 2026 change to daylight saving
 # (automation_runs.yml), so the Report-day tests do not drift. Inactive, trigger unused elsewhere.
 - id: 6100 # fixture: AutomationGothamResults
+  revision: 1
   name: Gotham results
   status: inactive
   live_version_id: 6100
@@ -264,6 +294,7 @@
 
 # An existing HTTP Enrollment can finish after its Automation is deactivated.
 - id: 5580 # fixture: AutomationHTTPExecution
+  revision: 1
   name: HTTP execution
   status: inactive
   live_version_id: 5580
@@ -277,6 +308,7 @@
 # inactive Automation still runs. Triggers are unique to them.
 # One Telegram step.
 - id: 7500 # fixture: AutomationJobsTelegramHello
+  revision: 1
   name: Jobs telegram hello
   status: inactive
   live_version_id: 7500
@@ -285,6 +317,7 @@
   updated_at: '{{daysAgo 12}}'
 # Two Telegram steps.
 - id: 7501 # fixture: AutomationJobsTelegramHelloAgain
+  revision: 1
   name: Jobs telegram hello again
   status: inactive
   live_version_id: 7501
@@ -293,6 +326,7 @@
   updated_at: '{{daysAgo 12}}'
 # A merge tag, markup Telegram keeps and markup it drops.
 - id: 7502 # fixture: AutomationJobsTelegramEscaped
+  revision: 1
   name: Jobs telegram escaped
   status: inactive
   live_version_id: 7502
@@ -301,6 +335,7 @@
   updated_at: '{{daysAgo 12}}'
 # An email, a Telegram step, an email.
 - id: 7503 # fixture: AutomationJobsTelegramBetweenEmails
+  revision: 1
   name: Jobs telegram between emails
   status: inactive
   live_version_id: 7503
@@ -309,6 +344,7 @@
   updated_at: '{{daysAgo 12}}'
 # An image with a caption and two link buttons.
 - id: 7504 # fixture: AutomationJobsTelegramPhoto
+  revision: 1
   name: Jobs telegram photo
   status: inactive
   live_version_id: 7504
@@ -317,6 +353,7 @@
   updated_at: '{{daysAgo 12}}'
 # The link preview turned off, then the same text with it on.
 - id: 7505 # fixture: AutomationJobsTelegramPreviewOff
+  revision: 1
   name: Jobs telegram preview off
   status: inactive
   live_version_id: 7505
@@ -325,6 +362,7 @@
   updated_at: '{{daysAgo 12}}'
 # The unsubscribe link.
 - id: 7506 # fixture: AutomationJobsTelegramUnsubscribeLink
+  revision: 1
   name: Jobs telegram unsubscribe link
   status: inactive
   live_version_id: 7506
@@ -333,6 +371,7 @@
   updated_at: '{{daysAgo 12}}'
 # A plain text.
 - id: 7507 # fixture: AutomationJobsTelegramWelcomeBack
+  revision: 1
   name: Jobs telegram welcome back
   status: inactive
   live_version_id: 7507
@@ -341,6 +380,7 @@
   updated_at: '{{daysAgo 12}}'
 # The start tag of the default bot.
 - id: 7508 # fixture: AutomationJobsTelegramStartTag
+  revision: 1
   name: Jobs telegram start tag
   status: inactive
   live_version_id: 7508
@@ -349,6 +389,7 @@
   updated_at: '{{daysAgo 12}}'
 # The start tag in brackets.
 - id: 7509 # fixture: AutomationJobsTelegramStartTagJoin
+  revision: 1
   name: Jobs telegram start tag join
   status: inactive
   live_version_id: 7509
@@ -357,6 +398,7 @@
   updated_at: '{{daysAgo 12}}'
 # A text with no start tag.
 - id: 7510 # fixture: AutomationJobsTelegramNoTag
+  revision: 1
   name: Jobs telegram no tag
   status: inactive
   live_version_id: 7510
@@ -365,6 +407,7 @@
   updated_at: '{{daysAgo 12}}'
 # A link in the text and a link button.
 - id: 7511 # fixture: AutomationJobsTelegramLinkAndButton
+  revision: 1
   name: Jobs telegram link and button
   status: inactive
   live_version_id: 7511
@@ -373,6 +416,7 @@
   updated_at: '{{daysAgo 12}}'
 # One URL twice in the text and on a button.
 - id: 7512 # fixture: AutomationJobsTelegramSameURL
+  revision: 1
   name: Jobs telegram same url
   status: inactive
   live_version_id: 7512
@@ -381,6 +425,7 @@
   updated_at: '{{daysAgo 12}}'
 # A tracked link and the unsubscribe link.
 - id: 7513 # fixture: AutomationJobsTelegramOfferAndStop
+  revision: 1
   name: Jobs telegram offer and stop
   status: inactive
   live_version_id: 7513
@@ -389,6 +434,7 @@
   updated_at: '{{daysAgo 12}}'
 # A tracked link.
 - id: 7514 # fixture: AutomationJobsTelegramOffer
+  revision: 1
   name: Jobs telegram offer
   status: inactive
   live_version_id: 7514
@@ -397,6 +443,7 @@
   updated_at: '{{daysAgo 12}}'
 # One SMS step.
 - id: 7515 # fixture: AutomationJobsSMSHello
+  revision: 1
   name: Jobs sms hello
   status: inactive
   live_version_id: 7515
@@ -405,6 +452,7 @@
   updated_at: '{{daysAgo 12}}'
 # Two SMS steps.
 - id: 7516 # fixture: AutomationJobsSMSHelloAgain
+  revision: 1
   name: Jobs sms hello again
   status: inactive
   live_version_id: 7516
@@ -413,6 +461,7 @@
   updated_at: '{{daysAgo 12}}'
 # An SMS step, then a tag.
 - id: 7517 # fixture: AutomationJobsSMSHelloThenTag
+  revision: 1
   name: Jobs sms hello then tag
   status: inactive
   live_version_id: 7517
@@ -421,6 +470,7 @@
   updated_at: '{{daysAgo 12}}'
 # A merge tag and markup that stays as written.
 - id: 7518 # fixture: AutomationJobsSMSRendered
+  revision: 1
   name: Jobs sms rendered
   status: inactive
   live_version_id: 7518
@@ -429,6 +479,7 @@
   updated_at: '{{daysAgo 12}}'
 # An SMS step, then a tag: a Contact it cannot text walks past it.
 - id: 7519 # fixture: AutomationJobsSMSHiThenTag
+  revision: 1
   name: Jobs sms hi then tag
   status: inactive
   live_version_id: 7519
@@ -437,6 +488,7 @@
   updated_at: '{{daysAgo 12}}'
 # An email, an SMS step, an email.
 - id: 7520 # fixture: AutomationJobsSMSBetweenEmails
+  revision: 1
   name: Jobs sms between emails
   status: inactive
   live_version_id: 7520
@@ -445,6 +497,7 @@
   updated_at: '{{daysAgo 12}}'
 # The unsubscribe link.
 - id: 7521 # fixture: AutomationJobsSMSStopLink
+  revision: 1
   name: Jobs sms stop link
   status: inactive
   live_version_id: 7521
@@ -453,6 +506,7 @@
   updated_at: '{{daysAgo 12}}'
 # Two texts.
 - id: 7522 # fixture: AutomationJobsSMSFirstSecond
+  revision: 1
   name: Jobs sms first second
   status: inactive
   live_version_id: 7522
@@ -461,6 +515,7 @@
   updated_at: '{{daysAgo 12}}'
 # A tracked link.
 - id: 7523 # fixture: AutomationJobsSMSCart
+  revision: 1
   name: Jobs sms cart
   status: inactive
   live_version_id: 7523
@@ -469,6 +524,7 @@
   updated_at: '{{daysAgo 12}}'
 # The same link with link tracking off.
 - id: 7524 # fixture: AutomationJobsSMSCartUntracked
+  revision: 1
   name: Jobs sms cart untracked
   status: inactive
   live_version_id: 7524
@@ -479,6 +535,7 @@
 # Meridian (workspace 83): Automations whose Triggers nothing else records. Steps in automation_versions.yml.
 # Active, one email step through the default.
 - id: 7400 # fixture: AutomationMeridianWelcome
+  revision: 1
   name: Meridian welcome
   status: active
   live_version_id: 7400
@@ -487,6 +544,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Active, one email step through the Relay.
 - id: 7401 # fixture: AutomationMeridianViaRelay
+  revision: 1
   name: Meridian relay welcome
   status: active
   live_version_id: 7401
@@ -496,6 +554,7 @@
 # Their email steps through an Integration of their own send nothing: only the draft has one; the
 # live version has HTTP and Tag steps; the Automation is inactive; or it is archived.
 - id: 7402 # fixture: AutomationMeridianDraftOnly
+  revision: 1
   name: Meridian draft only
   status: active
   live_version_id: 7402
@@ -504,6 +563,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7403 # fixture: AutomationMeridianNoEmail
+  revision: 1
   name: Meridian HTTP and Tags
   status: active
   live_version_id: 7404
@@ -512,6 +572,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7404 # fixture: AutomationMeridianInactive
+  revision: 1
   name: Meridian inactive
   status: inactive
   live_version_id: 7406
@@ -520,6 +581,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7405 # fixture: AutomationMeridianArchived
+  revision: 1
   name: Meridian archived
   status: active
   archived_at: '{{daysAgo 1}}'
@@ -530,6 +592,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Inactive, and an unfinished Enrollment stands on its live version.
 - id: 7406 # fixture: AutomationMeridianEnrolled
+  revision: 1
   name: Meridian enrolled
   status: inactive
   live_version_id: 7410
@@ -538,6 +601,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Active with a stored empty definition: no Steps.
 - id: 7407 # fixture: AutomationMeridianEmpty
+  revision: 1
   name: Meridian empty
   status: active
   live_version_id: 7411
@@ -546,6 +610,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Active, with an email step through the stopped relay: it cannot send.
 - id: 7408 # fixture: AutomationMeridianStopped
+  revision: 1
   name: Meridian stopped relay
   status: active
   live_version_id: 7412
@@ -558,6 +623,7 @@
 # one wait step, which sends nothing.
 # Starts when a Tag is applied to a Contact (contact.tagged).
 - id: 7420 # fixture: AutomationOnContactTagged
+  revision: 1
   name: On contact tagged
   status: active
   live_version_id: 7420
@@ -566,6 +632,7 @@
   updated_at: '{{daysAgo 12}}'
 # Starts when a Contact's address confirms (marketing.confirmed).
 - id: 7421 # fixture: AutomationOnMarketingConfirmed
+  revision: 1
   name: On marketing confirmed
   status: active
   live_version_id: 7421
@@ -574,6 +641,7 @@
   updated_at: '{{daysAgo 12}}'
 # Starts when a Contact texts in (sms.received).
 - id: 7422 # fixture: AutomationOnSmsReceived
+  revision: 1
   name: On text received
   status: active
   live_version_id: 7422
@@ -582,6 +650,7 @@
   updated_at: '{{daysAgo 12}}'
 # Starts when a Contact clicks a link in a text (sms.clicked).
 - id: 7423 # fixture: AutomationOnSmsClicked
+  revision: 1
   name: On text link clicked
   status: active
   live_version_id: 7423
@@ -590,6 +659,7 @@
   updated_at: '{{daysAgo 12}}'
 # Starts when a text to a Contact is not delivered (sms.undelivered).
 - id: 7424 # fixture: AutomationOnSmsUndelivered
+  revision: 1
   name: On text undelivered
   status: active
   live_version_id: 7424
@@ -598,6 +668,7 @@
   updated_at: '{{daysAgo 12}}'
 # Starts when a Contact writes to the Workspace's bot (telegram.received).
 - id: 7425 # fixture: AutomationOnTelegramReceived
+  revision: 1
   name: On Telegram message
   status: active
   live_version_id: 7425
@@ -606,6 +677,7 @@
   updated_at: '{{daysAgo 12}}'
 # Starts when a Contact clicks a link the bot sent (telegram.clicked).
 - id: 7426 # fixture: AutomationOnTelegramClicked
+  revision: 1
   name: On Telegram button clicked
   status: active
   live_version_id: 7426
@@ -615,6 +687,7 @@
 
 # Emporium (workspace 76): the Automation its Orders are credited to, and the one its clicks carry.
 - id: 7200 # fixture: AutomationEmporiumRevenue
+  revision: 1
   name: Emporium revenue
   status: inactive
   live_version_id: 7200
@@ -622,6 +695,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7201 # fixture: AutomationEmporiumClicks
+  revision: 1
   name: Emporium clicks
   status: inactive
   live_version_id: 7201
@@ -631,6 +705,7 @@
 # Duff (workspace 94): one Automation in each state its list filters by, created Alpha first: a
 # Draft (never published), an Active one and an Inactive one. Triggers unused elsewhere.
 - id: 7700 # fixture: AutomationDuffDraft
+  revision: 1
   name: List probe Alpha
   status: inactive
   draft_version_id: 7700
@@ -638,6 +713,7 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 - id: 7701 # fixture: AutomationDuffActive
+  revision: 1
   name: List probe Beta
   status: active
   live_version_id: 7701
@@ -645,6 +721,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 2}}'
 - id: 7702 # fixture: AutomationDuffInactive
+  revision: 1
   name: List probe Gamma
   status: inactive
   live_version_id: 7702
@@ -656,6 +733,7 @@
 # unless the name says otherwise), then a tag step. They differ in the body. Inactive, so no Event
 # enrolls anyone; each has one Enrollment in automation_runs.yml, standing on the HTTP step.
 - id: 7650 # fixture: AutomationQuahogHookSigned
+  revision: 1
   name: Hook with the email
   status: inactive
   live_version_id: 7650
@@ -663,6 +741,7 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 - id: 7651 # fixture: AutomationQuahogHookEvent
+  revision: 1
   name: Hook with the Event
   status: inactive
   live_version_id: 7651
@@ -670,6 +749,7 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 - id: 7652 # fixture: AutomationQuahogHookUnsigned
+  revision: 1
   name: Hook unsigned
   status: inactive
   live_version_id: 7652
@@ -677,6 +757,7 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 - id: 7653 # fixture: AutomationQuahogHook
+  revision: 1
   name: Hook
   status: inactive
   live_version_id: 7653
@@ -684,6 +765,7 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 - id: 7654 # fixture: AutomationQuahogHookNumber
+  revision: 1
   name: Hook with a number
   status: inactive
   live_version_id: 7654
@@ -692,6 +774,7 @@
   updated_at: '{{daysAgo 3}}'
 # Lacuna (workspace 96): starts when a text to a Contact is not delivered (sms.undelivered).
 - id: 7740 # fixture: AutomationLacunaOnSmsUndelivered
+  revision: 1
   name: On text undelivered
   status: active
   live_version_id: 7740

@@ -396,7 +396,7 @@ func (_c *ContactCreate) defaults() {
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.Revision(); !ok {
-		v := contact.DefaultRevision
+		v := contact.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
 }
