@@ -160,8 +160,8 @@ type Config struct {
 	MigrateTimeout time.Duration
 	BodyLimits     BodyLimits
 	RateLimits     RateLimits
-	// EventsRetention is the age past which analytical Events are deleted
-	// (SPHERICON_EVENTS_RETENTION_DAYS, default 400, 0 disables; ADR 0019).
+	// EventsRetention is the age past which analytical Events, Rule Firings and the receipts of
+	// external facts are deleted (SPHERICON_EVENTS_RETENTION_DAYS, default 400, 0 disables; ADR 0019).
 	EventsRetention time.Duration
 	// EventLiveWindow is how old a live Event may be before the external API refuses it
 	// as history that belongs in a Backfill (SPHERICON_EVENT_LIVE_WINDOW_HOURS, default 72, at least 1).
@@ -436,7 +436,8 @@ type environment struct {
 
 	// The age, in days, past which analytical Events are deleted by a daily job; `0` disables it
 	// (ADR 0019). Evidentiary Events (`marketing.confirmed`, `sms.confirmed`, `email.complained`,
-	// `email.unsubscribed`, a permanent `email.bounced`) are never deleted by age.
+	// `email.unsubscribed`, a permanent `email.bounced`) are never deleted by age. Rule Firings and
+	// the receipts that reject a redelivered external fact end with the same window.
 	EventsRetentionDays int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400" validate:"gte=0"`
 	// The age, in days, past which an Unverified User with no Membership is deleted by a daily job,
 	// freeing the address; `0` disables it (ADR 0030).

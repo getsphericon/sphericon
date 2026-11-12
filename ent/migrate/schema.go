@@ -1069,6 +1069,13 @@ var (
 		Name:       "event_receipts",
 		Columns:    EventReceiptsColumns,
 		PrimaryKey: []*schema.Column{EventReceiptsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "eventreceipt_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{EventReceiptsColumns[1]},
+			},
+		},
 	}
 	// HeldOrderEventsColumns holds the columns for the "held_order_events" table.
 	HeldOrderEventsColumns = []*schema.Column{

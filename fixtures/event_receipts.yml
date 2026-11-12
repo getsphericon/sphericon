@@ -1,0 +1,10 @@
+# Receipts of external facts (ADR 0114): digests only. One past the Event retention window, one
+# inside it, for the prune by age.
+- id: 1 # fixture: EventReceiptOld
+  receipt_key: fixture-receipt-old
+  created_at: '{{daysAgo 500}}'
+  updated_at: '{{daysAgo 500}}'
+- id: 2 # fixture: EventReceiptRecent
+  receipt_key: fixture-receipt-recent
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

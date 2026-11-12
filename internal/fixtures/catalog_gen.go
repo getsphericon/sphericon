@@ -1873,6 +1873,10 @@ const (
 	EventPaymentFailedEmail = "payment.failed@codebasics.dev"
 	// EventPaymentFailedID is from fixtures/events.
 	EventPaymentFailedID = 20419
+	// EventReceiptOldID is from fixtures/event_receipts.
+	EventReceiptOldID = 1
+	// EventReceiptRecentID is from fixtures/event_receipts.
+	EventReceiptRecentID = 2
 	// EventRecentAnalyticalAction is from fixtures/events.
 	EventRecentAnalyticalAction = "page_view"
 	// EventRecentAnalyticalEmail is from fixtures/events.

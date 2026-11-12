@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/schema"
 )
@@ -56,4 +57,39 @@ func expirable() predicate.Event {
 		// predicate would render differently and miss it.
 		s.Where(sql.P(func(b *sql.Builder) { b.WriteString(schema.ExpirableEventPredicate) }))
 	})
+}
+
+// PruneReceipts deletes the receipts of external facts (ADR 0114) created more than retention ago,
+// in batches of batchSize, and returns how many it removed. A receipt only rejects a redelivered
+// fact, and the Events' own deduplication by source_id ends with the same window, so a fact older
+// than it may be consumed again: a provider redelivers within days, never past the window. A
+// receipt holds a digest and no Workspace, so this age is its only end. A retention of zero or less
+// disables the prune.
+func PruneReceipts(ctx context.Context, client *ent.Client, retention time.Duration, batchSize int, now time.Time) (int64, error) {
+	if retention <= 0 {
+		return 0, nil
+	}
+	cutoff := now.Add(-retention)
+	var total int64
+	for {
+		ids, err := client.EventReceipt.Query().
+			Where(eventreceipt.CreatedAtLT(cutoff)).
+			Order(eventreceipt.ByCreatedAt()).
+			Limit(batchSize).
+			IDs(ctx)
+		if err != nil {
+			return total, fmt.Errorf("select expired receipts batch: %w", err)
+		}
+		if len(ids) == 0 {
+			return total, nil
+		}
+		n, err := client.EventReceipt.Delete().Where(eventreceipt.IDIn(ids...)).Exec(ctx)
+		if err != nil {
+			return total, fmt.Errorf("delete expired receipts batch: %w", err)
+		}
+		total += int64(n)
+		if len(ids) < batchSize {
+			return total, nil
+		}
+	}
 }
