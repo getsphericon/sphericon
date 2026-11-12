@@ -14,6 +14,7 @@ package signupitems
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -175,6 +177,20 @@ func checkKey(key string) error {
 	return validation.Pattern("key", key, bounds.SignupItemKeyPattern)
 }
 
+// LockKey is the advisory lock of the Instance's Sign-up items, taken by every write that reads
+// their positions (Add, Reorder) and held to the end of its transaction: two Adds never take one
+// position, and two Reorders, which write the rows in their callers' orders, queue instead of
+// deadlocking.
+const LockKey = 7_204_003
+
+// lockItems takes LockKey in the transaction tx.
+func lockItems(ctx context.Context, tx *ent.Client) error {
+	if err := postgres.LockTx(ctx, tx, LockKey); err != nil {
+		return fmt.Errorf("sign-up items lock: %w", err)
+	}
+	return nil
+}
+
 // Add makes a Sign-up item after the existing ones. ErrKeyTaken when another item has the key,
 // ErrTitleBlank for a blank title, ErrMailingsKind and ErrMailingsTaken for a mailings consent the
 // item cannot hold. A lost race answers as the refusal it lost to.
@@ -191,6 +207,9 @@ func (m *Module) Add(ctx context.Context, in Input) (Item, error) {
 	}
 	var row *ent.SignupItem
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		if err := lockItems(ctx, tx); err != nil {
+			return err
+		}
 		last, err := tx.SignupItem.Query().Order(ent.Desc(signupitem.FieldPosition)).First(ctx)
 		position := 1
 		switch {
@@ -437,9 +456,12 @@ func (m *Module) Reorder(ctx context.Context, ids []int64) ([]Item, error) {
 	return m.List(ctx)
 }
 
-// reorder writes the positions of ids in the transaction tx, once it has checked they are every
-// item in use exactly once.
+// reorder writes the positions of ids in the transaction tx, under LockKey, once it has checked
+// they are every item in use exactly once.
 func reorder(ctx context.Context, tx *ent.Client, ids []int64) error {
+	if err := lockItems(ctx, tx); err != nil {
+		return err
+	}
 	existing, err := tx.SignupItem.Query().Where(signupitem.DiscardedAtIsNil()).IDs(ctx)
 	if err != nil {
 		return err

@@ -1,9 +1,11 @@
 package signupitems_test
 
 import (
+	"slices"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -65,4 +67,41 @@ func TestPublishRefusesALabelTheItemHas(t *testing.T) {
 	doc, err := m.Document(t.Context(), fixtures.ServiceTermsKey)
 	require.NoError(t, err)
 	assert.NotEqual(t, "a new text", doc.Markdown, "the published version is unchanged")
+}
+
+// The writes that read the items' positions queue behind the items' lock: two Reorders in opposite
+// orders both finish instead of deadlocking, and two Adds take positions of their own.
+func TestPositionWritesQueueBehindTheItemsLock(t *testing.T) {
+	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	m := signupitems.New(testhelper.Clients(t).New(race.DB), race.Bus, time.Now)
+	keys := []string{"privacy", "offers"}
+	ids := make([]int64, 0, len(keys))
+	for _, key := range keys {
+		added, err := m.Add(t.Context(), signupitems.Input{Key: key, Title: key, Kind: signupitem.KindNotice})
+		require.NoError(t, err)
+		ids = append(ids, added.ID)
+	}
+	reversed := slices.Clone(ids)
+	slices.Reverse(reversed)
+
+	errs := race.QueueBehindKey(t, signupitems.LockKey,
+		testhelper.Writer{Name: "in order", Run: func() error { _, err := m.Reorder(t.Context(), ids); return err }},
+		testhelper.Writer{Name: "reversed", Run: func() error { _, err := m.Reorder(t.Context(), reversed); return err }},
+		testhelper.Writer{Name: "first add", Run: func() error {
+			_, err := m.Add(t.Context(), signupitems.Input{Key: "first", Title: "First", Kind: signupitem.KindNotice})
+			return err
+		}},
+		testhelper.Writer{Name: "second add", Run: func() error {
+			_, err := m.Add(t.Context(), signupitems.Input{Key: "second", Title: "Second", Kind: signupitem.KindNotice})
+			return err
+		}},
+	)
+
+	for name, err := range errs {
+		require.NoError(t, err, name)
+	}
+	after, err := m.List(t.Context())
+	require.NoError(t, err)
+	positions := lo.Map(after, func(i signupitems.Item, _ int) int { return i.Position })
+	assert.Len(t, lo.Uniq(positions), len(positions), "no two items share a position")
 }
