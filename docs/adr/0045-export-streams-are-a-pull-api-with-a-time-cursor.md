@@ -30,7 +30,12 @@ endpoints keep their plain JSON; they push single events and are not a bulk tran
   cannot show it. The `erasures` stream carries the keys Erasure matched on (`contact_id`,
   `subject_id`, `visitor_ids`, and SHA-256 hashes of the lowercased address and phone, never the
   address itself), so the consumer deletes the same rows. The hashes are computed before the
-  `contact.erased` message is published, so no address sits in the outbox. Rows live for the
+  `contact.erased` message is published, so no address sits in the outbox. A phone's hash is
+  reversed by trying every number, so the Erasures table stores both hashes sealed with the
+  Instance's cipher, re-encrypted with the other stored secrets when the keyset rotates, and the
+  stream opens them for the consumer. The clear hash stays only in the short-lived copies: the
+  `contact.erased` job and a webhook delivery's body, kept by River a day after they finish and
+  thirty days after they fail. Rows live for the
   instance's Event retention window (ADR 0019; kept for good when retention is off), the age at
   which the Events they refer to are gone from a fresh read anyway: a consumer absent for longer
   re-seeds from an empty cursor. Deletion by retention is not announced: the consumer's copy

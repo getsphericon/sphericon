@@ -559,7 +559,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add[recordedArgs](tb, p, txDB, client, recordedWorker{})
 		add(tb, p, txDB, client, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
 		add(tb, p, txDB, client, eejobs.NewEntryEventWorker(client, lic))
-		add(tb, p, txDB, client, eejobs.NewErasureEventWorker(client, lic))
+		add(tb, p, txDB, client, eejobs.NewErasureEventWorker(client, lic, do.MustInvoke[*secrets.Cipher](injector)))
 		return p
 	}
 

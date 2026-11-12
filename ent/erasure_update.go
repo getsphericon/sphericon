@@ -50,6 +50,46 @@ func (_u *ErasureUpdate) SetNillableWorkspaceID(v *int64) *ErasureUpdate {
 	return _u
 }
 
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (_u *ErasureUpdate) SetEmailHashEncrypted(v string) *ErasureUpdate {
+	_u.mutation.SetEmailHashEncrypted(v)
+	return _u
+}
+
+// SetNillableEmailHashEncrypted sets the "email_hash_encrypted" field if the given value is not nil.
+func (_u *ErasureUpdate) SetNillableEmailHashEncrypted(v *string) *ErasureUpdate {
+	if v != nil {
+		_u.SetEmailHashEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (_u *ErasureUpdate) ClearEmailHashEncrypted() *ErasureUpdate {
+	_u.mutation.ClearEmailHashEncrypted()
+	return _u
+}
+
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (_u *ErasureUpdate) SetPhoneHashEncrypted(v string) *ErasureUpdate {
+	_u.mutation.SetPhoneHashEncrypted(v)
+	return _u
+}
+
+// SetNillablePhoneHashEncrypted sets the "phone_hash_encrypted" field if the given value is not nil.
+func (_u *ErasureUpdate) SetNillablePhoneHashEncrypted(v *string) *ErasureUpdate {
+	if v != nil {
+		_u.SetPhoneHashEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (_u *ErasureUpdate) ClearPhoneHashEncrypted() *ErasureUpdate {
+	_u.mutation.ClearPhoneHashEncrypted()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *ErasureUpdate) SetWorkspace(v *Workspace) *ErasureUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -134,11 +174,17 @@ func (_u *ErasureUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.ContactIDCleared() {
 		_spec.ClearField(erasure.FieldContactID, field.TypeInt64)
 	}
-	if _u.mutation.EmailSha256Cleared() {
-		_spec.ClearField(erasure.FieldEmailSha256, field.TypeString)
+	if value, ok := _u.mutation.EmailHashEncrypted(); ok {
+		_spec.SetField(erasure.FieldEmailHashEncrypted, field.TypeString, value)
 	}
-	if _u.mutation.PhoneSha256Cleared() {
-		_spec.ClearField(erasure.FieldPhoneSha256, field.TypeString)
+	if _u.mutation.EmailHashEncryptedCleared() {
+		_spec.ClearField(erasure.FieldEmailHashEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.PhoneHashEncrypted(); ok {
+		_spec.SetField(erasure.FieldPhoneHashEncrypted, field.TypeString, value)
+	}
+	if _u.mutation.PhoneHashEncryptedCleared() {
+		_spec.ClearField(erasure.FieldPhoneHashEncrypted, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -208,6 +254,46 @@ func (_u *ErasureUpdateOne) SetNillableWorkspaceID(v *int64) *ErasureUpdateOne {
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetEmailHashEncrypted sets the "email_hash_encrypted" field.
+func (_u *ErasureUpdateOne) SetEmailHashEncrypted(v string) *ErasureUpdateOne {
+	_u.mutation.SetEmailHashEncrypted(v)
+	return _u
+}
+
+// SetNillableEmailHashEncrypted sets the "email_hash_encrypted" field if the given value is not nil.
+func (_u *ErasureUpdateOne) SetNillableEmailHashEncrypted(v *string) *ErasureUpdateOne {
+	if v != nil {
+		_u.SetEmailHashEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearEmailHashEncrypted clears the value of the "email_hash_encrypted" field.
+func (_u *ErasureUpdateOne) ClearEmailHashEncrypted() *ErasureUpdateOne {
+	_u.mutation.ClearEmailHashEncrypted()
+	return _u
+}
+
+// SetPhoneHashEncrypted sets the "phone_hash_encrypted" field.
+func (_u *ErasureUpdateOne) SetPhoneHashEncrypted(v string) *ErasureUpdateOne {
+	_u.mutation.SetPhoneHashEncrypted(v)
+	return _u
+}
+
+// SetNillablePhoneHashEncrypted sets the "phone_hash_encrypted" field if the given value is not nil.
+func (_u *ErasureUpdateOne) SetNillablePhoneHashEncrypted(v *string) *ErasureUpdateOne {
+	if v != nil {
+		_u.SetPhoneHashEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearPhoneHashEncrypted clears the value of the "phone_hash_encrypted" field.
+func (_u *ErasureUpdateOne) ClearPhoneHashEncrypted() *ErasureUpdateOne {
+	_u.mutation.ClearPhoneHashEncrypted()
 	return _u
 }
 
@@ -325,11 +411,17 @@ func (_u *ErasureUpdateOne) sqlSave(ctx context.Context) (_node *Erasure, err er
 	if _u.mutation.ContactIDCleared() {
 		_spec.ClearField(erasure.FieldContactID, field.TypeInt64)
 	}
-	if _u.mutation.EmailSha256Cleared() {
-		_spec.ClearField(erasure.FieldEmailSha256, field.TypeString)
+	if value, ok := _u.mutation.EmailHashEncrypted(); ok {
+		_spec.SetField(erasure.FieldEmailHashEncrypted, field.TypeString, value)
 	}
-	if _u.mutation.PhoneSha256Cleared() {
-		_spec.ClearField(erasure.FieldPhoneSha256, field.TypeString)
+	if _u.mutation.EmailHashEncryptedCleared() {
+		_spec.ClearField(erasure.FieldEmailHashEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.PhoneHashEncrypted(); ok {
+		_spec.SetField(erasure.FieldPhoneHashEncrypted, field.TypeString, value)
+	}
+	if _u.mutation.PhoneHashEncryptedCleared() {
+		_spec.ClearField(erasure.FieldPhoneHashEncrypted, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -12,6 +12,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+
 	entgo "entgo.io/ent"
 
 	staffhandlers "github.com/getsphericon/sphericon/ee/api/staff"
@@ -124,6 +127,11 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 func Hooks(lic *licensekey.License, now func() time.Time) (hooks, guards []entgo.Hook) {
 	return []entgo.Hook{usages.Hook(lic, now)}, []entgo.Hook{usages.Guard(lic)}
 }
+
+// SecretSweeps are the Edition's columns of stored secrets, which the Secret re-encryption sweeps
+// with the core's: the Erasures' sealed hashes (ADR 0045), whatever the License key, since a row
+// stored under a license outlives it.
+func (e *Edition) SecretSweeps() []secrets.Sweep { return erasures.SecretSweeps(e.client) }
 
 // StaffSections is the Enterprise part of the /staff API (ADR 0026, ADR 0063) for the
 // composition root to mount behind the core one, or nil without the `staff` license, in

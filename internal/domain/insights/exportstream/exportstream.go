@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
@@ -43,12 +45,13 @@ type License interface {
 type Streams struct {
 	export License
 	audit  *auditlog.Log
+	cipher *secrets.Cipher
 }
 
-// New builds the streams over the `export` license and the Audit log, whose own license gates
-// the Audit stream.
-func New(export License, audit *auditlog.Log) *Streams {
-	return &Streams{export: export, audit: audit}
+// New builds the streams over the `export` license, the Audit log, whose own license gates the
+// Audit stream, and the cipher that opens the Erasures' sealed hashes.
+func New(export License, audit *auditlog.Log, cipher *secrets.Cipher) *Streams {
+	return &Streams{export: export, audit: audit, cipher: cipher}
 }
 
 // offered reports whether the Instance offers the Export streams.

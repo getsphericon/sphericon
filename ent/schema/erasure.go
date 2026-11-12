@@ -55,15 +55,16 @@ func (Erasure) Fields() []ent.Field {
 		// The anonymous devices erased with the Contact.
 		field.JSON("visitor_ids", []string{}).
 			Immutable(),
-		// SHA-256 (hex) of the lowercased address and of the phone, never the value itself.
-		field.String("email_sha256").
+		// SHA-256 (hex) of the lowercased address and of the phone, never the value itself, sealed with
+		// the Instance's cipher (ADR 0045): a phone's hash is reversed by trying every number, so the
+		// database holds only ciphertext, and the stream opens it for the Workspace's consumer. The
+		// keyset's re-encryption sweep is the one writer after the insert.
+		field.String("email_hash_encrypted").
 			Optional().
-			Nillable().
-			Immutable(),
-		field.String("phone_sha256").
+			Nillable(),
+		field.String("phone_hash_encrypted").
 			Optional().
-			Nillable().
-			Immutable(),
+			Nillable(),
 		// When the Erasure happened; the age the prune job reads.
 		field.Time("erased_at").
 			Annotations(Attribute(reasonHistory)).
