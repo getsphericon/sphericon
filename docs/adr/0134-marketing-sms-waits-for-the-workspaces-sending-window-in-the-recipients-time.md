@@ -4,6 +4,9 @@ status: accepted
 
 # Marketing SMS waits for the Workspace's sending window in the recipient's time
 
+> **Amended by [[0137-a-frequency-cap-limits-marketing-messages-per-destination]]:**
+> the cap on messages per person it queued is decided as a frequency cap per Destination.
+
 Marketing text messages are restricted by the hour in several places, by the recipient's local
 time. As law firms and vendors report it: in the United States the TCPA's federal window is 8:00 to
 21:00, Florida and Oklahoma narrow it to 20:00, and whether it applies to messages sent with consent

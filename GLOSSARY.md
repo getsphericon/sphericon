@@ -606,15 +606,16 @@ _Avoid_: Send log, delivery row, email record
 
 **Outcome** (of an Outbound send):
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (no Destination on the
-Channel, Suppression, Unsubscribe, missing Confirmation, or no local time in which a marketing SMS
-may go), or a permanent failure of that one message
+Channel, Suppression, Unsubscribe, missing Confirmation, no local time in which a marketing SMS
+may go, or a Broadcast Recipient over the **Frequency cap**), or a permanent failure of that one message
 (on Telegram, a message the Bot API refuses for its content; on SMS, a number the provider refuses,
 which fails that message alone and lets an Automation go on) — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
 Sending domain, no Integration, a provider that has stopped the customer's account, a provider that
 refuses the Integration's credentials or account (`provider_refused`), or
 a WhatsApp template Meta has paused or disabled) or a **Deferral** (the Integration's Provider
-limit or the Workspace's Send cap is spent, or the provider asks to slow down), after which the
+limit or the Workspace's Send cap is spent, or the provider asks to slow down; per recipient, a
+marketing SMS outside its Sending window or an Automation send over its Frequency cap), after which the
 same messages may still be sent.
 _Avoid_: Status, result (unqualified)
 
@@ -640,13 +641,23 @@ by it. Distinct from the Provider limit, which the customer's provider imposes, 
 suspension, which stops sending outright.
 _Avoid_: Quota, plan limit, allowance, throttle, ceiling (unqualified)
 
+**Frequency cap**:
+The most marketing messages a Workspace lets one Destination receive on a Channel per rolling
+period (three per 24 hours on SMS unless it changes it, none on email and Telegram; with caps of its
+own for countries on a phone Channel). Every Broadcast, series issue and Automation send counts;
+Transactional sends and messages the person asked for do not. Over it a Broadcast Recipient is
+Skipped and an Automation send is deferred. Distinct from the Send cap (per Workspace) and the
+Provider limit (per Integration).
+_Avoid_: Fatigue limit, rate limit, throttle, quota
+
 **Deferral**:
 The reversible, per-source Outcome of an Outbound send that found its Integration's Provider
 limit or its Workspace's Send cap spent: the message is not consumed and is retried when capacity returns. Unlike a _Hold_,
 nothing is wrong with the source — it is simply busy — so it carries no hold reason and a
 Broadcast stays _sending_ with a progress estimate instead of a blocked state. One kind is per
 recipient: a marketing SMS outside the recipient's **Sending window** is deferred until the window
-opens, and an Automation's send step waits with it. A deferred message goes through every check
+opens, and an Automation's send over its Destination's **Frequency cap** is deferred for at most one
+period; an Automation's send step waits with either. A deferred message goes through every check
 again when it is retried.
 _Avoid_: Throttled, rate-limited (as an outcome), delay
 

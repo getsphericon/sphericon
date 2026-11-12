@@ -4,6 +4,10 @@ status: accepted
 
 # Send cap and Provider limit across Channels
 
+> **Amended by [[0137-a-frequency-cap-limits-marketing-messages-per-destination]]:**
+> beside the limits across Channels, a frequency cap per Destination and Channel is set by the
+> Workspace.
+
 ADR 0067 set two limits: the Provider limit, per Integration, mirroring the customer's provider
 account (per second and per rolling 24 hours, the lower of the user's value and the provider's);
 and the Send cap, per Workspace on a `saas` Instance, set by Staff against abuse, a Deferral when

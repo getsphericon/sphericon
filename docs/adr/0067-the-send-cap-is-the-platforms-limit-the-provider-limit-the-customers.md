@@ -4,6 +4,10 @@ status: accepted
 
 # The Send cap is the platform's limit, the Provider limit is the customer's
 
+> **Amended by [[0137-a-frequency-cap-limits-marketing-messages-per-destination]]:**
+> a frequency cap per Destination joins the Send cap and the Provider limit as a third limit; it
+> protects the person, not capacity, and Transactional sends do not count against it.
+
 ADR 0023 gave each Integration a ceiling that mirrors the customer's own provider account, and the
 app showed it as a "Send limit" the customer edits. It read as a limit the platform sets, which it
 is not: it protects the customer's provider account. The SaaS needs a limit of its own that the

@@ -4,6 +4,10 @@ status: accepted
 
 # Outbound send: one module, one message record, two outcome scopes
 
+> **Amended by [[0137-a-frequency-cap-limits-marketing-messages-per-destination]]:**
+> a marketing send over its Destination's frequency cap is checked under an advisory lock in the
+> claim's transaction; a Broadcast Recipient over it is Skipped, an Automation send deferred.
+
 > **Amended by [[0134-marketing-sms-waits-for-the-workspaces-sending-window-in-the-recipients-time]]:**
 > a marketing SMS outside the recipient's sending window is a per-recipient Deferral, checked again
 > in full when it is retried.
