@@ -8,6 +8,11 @@ status: accepted
 > of engagement are unknown for an untracked Destination too, and a Branch holding any engagement
 > test names the path unknown takes.
 
+> **Amended by [[0124-an-automation-chooses-a-path-by-condition-by-weight-or-by-an-awaited-event]]:**
+> a Branch holds an ordered list of paths with Conditions and a last `otherwise`, of which `yes` and
+> `no` are the two-path case; paths have ids. The unknown path is a path of its own, with its own
+> Steps. A Split and a Wait for event fork too.
+
 An Automation version holds a linear array of Steps, and an Enrollment points at one of them. The
 canvas draws a graph, but saving flattens it into a chain and drops whatever is off it. A marketer
 cannot send people down different paths by their data or behaviour, which is what ROADMAP R12 asks

@@ -47,12 +47,14 @@ separate outcomes for subfeatures so a passing subset cannot hide an untested ca
 | --- | ------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
 | R12 | Conditions and branching | A marketer sends Contacts through different paths according to their current data or behaviour. | Start with an if/else decision using the existing Condition language. Specify when it is evaluated, Event-property context, path convergence, versioning, editor validation, restart behaviour and reports. First agree the model and acceptance scenarios; then implement it. | R4, R6     | planned | [Current linear contract](https://github.com/getsphericon/sphericon/blob/main/typespec/external/resources/automations.tsp) |
 
-The following are candidates for the next Automation initiatives. Their priority and scope remain
-to be decided; they are not missing implementations of an already accepted spec.
+The following are candidates for the next Automation initiatives. Their priority remains to be
+decided, and so does their scope unless an entry links the ADR that decided its model; they are not
+missing implementations of an already accepted spec.
 
-- **Wait for an Event or Condition, with a timeout.** Example: wait up to two days for a purchase;
-  choose the next path according to whether it happened. Define observations arriving during a
-  wait, restarts, late Events and the timeout race.
+- **Wait for an Event, with a timeout.** Example: wait up to two days for a purchase; choose the
+  next path according to whether it happened. The model is decided
+  ([ADR 0124](docs/adr/0124-an-automation-chooses-a-path-by-condition-by-weight-or-by-an-awaited-event.md));
+  it is not built.
 - **Repeat Enrollment.** Example: run a post-purchase sequence after each order. Define repeat
   entry after completion or failure, concurrent Enrollment, cooldown and Event deduplication.
 - **Calendar and date-based entry and waits.** Birthdays, anniversaries, recurring schedules and
@@ -63,8 +65,10 @@ to be decided; they are not missing implementations of an already accepted spec.
   as a Rule Action. Define composition and cycle prevention before adding another entry path.
 - **Simulation and diagnostics.** Preview a Contact's path, explain each decision and wait, and
   exercise a scenario before publishing without delivering messages.
-- **Experimentation.** Random splits and A/B variants with stable assignment and meaningful
-  outcome reporting, after deterministic branching is accepted.
+- **Experimentation.** Weighted splits with stable assignment and per-path goal reporting, and
+  Branches with more than two paths. The model is decided
+  ([ADR 0124](docs/adr/0124-an-automation-chooses-a-path-by-condition-by-weight-or-by-an-awaited-event.md));
+  it is not built.
 
 ## Other capability candidates
 

@@ -218,11 +218,13 @@ _Avoid_: TTL, expiry, purge, archive
 
 **Condition**:
 A tree of tests (a combinator over nested groups) on a Contact's fields, custom fields, Tags and
-past Events; when a Rule or a **Branch** evaluates it, on the triggering Event's own properties; and
-in a Branch alone, on whether the Enrollment's own messages were opened or clicked. A test of
-engagement (an open, a click) is unknown for a Destination that is not tracked; a Segment or a Rule
-reads an unknown result as no match, and a Branch routes it. Evaluated live against current data, never materialized. One shared grammar: a Segment is
-a named Condition, and a Rule and a Branch each hold one.
+past Events; when a Rule, a **Branch** or a **Wait for event** evaluates it, on the properties of
+the Event that triggered the Rule or the Enrollment, or that the wait awaits; and in a Branch alone,
+on whether the Enrollment's own messages were opened or clicked. A test of engagement (an open, a
+click) is unknown for a Destination that is not tracked; a Segment or a Rule reads an unknown result
+as no match, and a Branch routes it. Evaluated live against current data, never materialized. One
+shared grammar: a Segment is a named Condition, a Rule holds one, each path of a Branch one, and a
+Wait for event may hold one.
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 
 **Segment**:
@@ -731,19 +733,38 @@ through the Integration the step names or that Channel's default; it holds its _
 Message content, per the marketing copy-at-author-time rule, except on WhatsApp, where it references
 a WhatsApp template), **wait** (a delay before the next
 Step), **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
-nothing and move straight on), **HTTP step** (below), **Branch** (below) and **end** (it finishes the
-path and ends the Enrollment as `completed`). There are no parallel paths: an Enrollment is at one
+nothing and move straight on), **HTTP step**, **Branch**, **Split** and **Wait for event**
+(below) and **end** (it finishes the path and ends the Enrollment as `completed`). There are no parallel paths: an Enrollment is at one
 Step at a time.
 _Avoid_: Action, node, block, stage
 
 **Branch**:
-A Step with a **Condition** and two nested sequences of Steps, `yes` and `no`, which rejoin right
-after it; a path may be empty ("go on") and may hold another Branch. It is evaluated once, when the
-Enrollment reaches it, and the path taken is kept on the Enrollment. Beside the Condition's usual
-tests it can ask whether the message a given send Step sent to this Enrollment was opened or
-clicked: _unknown_ when the message went out untracked, the Step was skipped or the Enrollment never
-passed it, and a Branch that asks says which path unknown takes.
-_Avoid_: Split (an A/B split is something else), decision node, if/else node, filter
+A Step with an ordered list of **paths**, each a **Condition** and a nested sequence of Steps, and a
+last path, `otherwise`, with none; the paths rejoin right after it. The Enrollment takes the first
+path whose Condition holds. A path may be empty ("go on") and may hold another Branch. It is
+evaluated once, when the Enrollment reaches it, and the path taken is kept on the Enrollment. Beside
+the Condition's usual tests it can ask whether the message a given send Step sent to this Enrollment
+was opened or clicked: _unknown_ when the message went out untracked, the Step was skipped or the
+Enrollment never passed it. When the first path whose Condition is not false is unknown, the
+Enrollment takes the unknown path, a path of its own (empty means go on), which a Branch that asks
+must have.
+_Avoid_: Split (that one chooses by weight), decision node, if/else node, filter
+
+**Split**:
+A Step with two or more weighted paths, its weights summing to 100, which rejoin right after it; the
+Contact's path is fixed by the Contact and the Step, so the same Contact always lands on the same
+one, and it is kept on the Enrollment. An empty path is a holdout group. Used to test one path
+against another; no winner is picked for the author.
+_Avoid_: A/B test step, experiment, variant, random branch
+
+**Wait for event**:
+A Step that holds the Enrollment until an Event arrives or a timeout passes, then takes `arrived` or
+`timed_out`, two paths that rejoin after it. It waits for an Event of the actions it names (with an
+optional Condition on the Event), counted from when the Enrollment reached it, or for an open or
+click of the message an earlier send Step sent to this Enrollment, counted whenever it happened.
+Waiting for an open or click has an _unknown_ path of its own, taken when that message went out
+untracked or was never sent to this Enrollment.
+_Avoid_: Wait until (a calendar wait), wait with condition, delay
 
 **HTTP step**:
 A Step kind that **sphericon calls** a third party's URL (a Slack, Zapier or CRM hook) for the
