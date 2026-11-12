@@ -54,7 +54,10 @@ a Webhook endpoint) takes the typed one.
 A form built by `useSchemaForm` (`src/resources/schemaForm.ts`, the one place a schema form is
 made) gets the blur and keystroke validation and the focus on the first invalid field from the hook;
 a form needs no code of its own for them. A form on a bare `useForm` has to be moved to
-`useSchemaForm` to get them; a field outside `getInputProps` gets no focus.
+`useSchemaForm` to get them; a field outside `getInputProps` gets no focus. A refusal from the
+server reaches its fields the same way: the mutation's `onError` hands the error to
+`form.showFieldErrors`, which shows each message under its field and focuses the first one, and
+returns what no field of the form could show, for the page to show as an `ApiErrorAlert` or a toast.
 
 ## Lists and tables
 

@@ -27,12 +27,11 @@ function isGone(error: unknown) {
   return hasErrorStatus(error, [400])
 }
 
-// The screen a Sign-in provider's sign-up lands on while the Instance asks Sign-up items (ADR
-// 0062): no account exists until the person answers them; declining creates nothing.
-
 // The answers to the Sign-up items: the boxes the person ticked.
 const answersSchema = z.object({ signupItems: signupItemTicks })
 
+// The screen a Sign-in provider's sign-up lands on while the Instance asks Sign-up items (ADR
+// 0062): no account exists until the person answers them; declining creates nothing.
 export function SigninPendingPage() {
   const { t } = useTranslation()
   const notify = useNotify()
