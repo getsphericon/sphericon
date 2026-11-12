@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
 // recipientJobTimes returns the scheduled time of every queued recipient job, in
@@ -19,7 +20,7 @@ import (
 func (e *riverEnv) recipientJobTimes(t *testing.T) []time.Time {
 	t.Helper()
 	res, err := e.queue.JobList(e.workCtx(),
-		river.NewJobListParams().Kinds("send_broadcast_recipient").
+		river.NewJobListParams().Kinds(jobkind.SendRecipient.Kind).
 			OrderBy(river.JobListOrderByScheduledAt, river.SortOrderAsc).First(1000))
 	require.NoError(t, err)
 	times := make([]time.Time, 0, len(res.Jobs))

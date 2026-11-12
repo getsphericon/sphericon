@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -125,12 +124,12 @@ func TestPlanHoldsOnUnverifiedFromDomain(t *testing.T) {
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outboundmessages.HoldUnverifiedDomain, held.Reason)
+	assert.Equal(t, holdreason.UnverifiedDomain, held.Reason)
 
 	got := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, got.Status, "a hold is not a failure: the status is unchanged")
 	require.NotNil(t, got.HoldReason)
-	assert.EqualValues(t, outboundmessages.HoldUnverifiedDomain, *got.HoldReason)
+	assert.Equal(t, holdreason.UnverifiedDomain, *got.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID), "no recipient rows while held")
 
 	// Reversible: once the From is on a verified domain the same plan goes through and the
@@ -278,7 +277,7 @@ func TestPlanIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, "no_integration", held.Reason)
+	assert.Equal(t, holdreason.NoIntegration, held.Reason)
 }
 
 // A ceiling discovered from the provider paces a Broadcast just like a manual one: the
@@ -382,11 +381,11 @@ func TestPlanHoldsOnAWorkspaceFreezeAndResumes(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, holds.ReasonSuspended, held.Reason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, held.Reason)
 	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 	require.NotNil(t, b.HoldReason)
-	assert.EqualValues(t, holds.ReasonSuspended, *b.HoldReason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, *b.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
 
 	d.env.UnsuspendWorkspace(d.t.Context(), fixtures.AcmeID)
@@ -406,7 +405,7 @@ func TestPlanHoldsWithNoIntegration(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outboundmessages.HoldNoIntegration, held.Reason)
+	assert.Equal(t, holdreason.NoIntegration, held.Reason)
 	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 	require.NotNil(t, b.HoldReason)

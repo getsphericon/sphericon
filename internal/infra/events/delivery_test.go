@@ -9,6 +9,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -21,11 +23,11 @@ func TestPublishDeliveryFailureWithLongDedupID(t *testing.T) {
 
 	err := env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(ctx, &events.EmailDelivery{
-			Action:      events.NameEmailBounced,
+			Action:      systemevent.EmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "recipient@example.com",
-			BounceKind:  events.BounceKindHard,
-			Provider:    "ses",
+			BounceKind:  systemevent.BounceKindHard,
+			Provider:    string(providers.SES),
 			// SNS messageId (36-char UUID) + "/" + email — well over 36 chars.
 			DedupID: "9c8e1f2a-3b4d-4e5f-8a9b-0c1d2e3f4a5b/recipient@example.com",
 		})

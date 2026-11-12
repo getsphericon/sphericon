@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
@@ -225,8 +226,8 @@ func bounceIn(t *testing.T, env *testhelper.TestEnv, workspaceID int64, address 
 	t.Helper()
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(t.Context(), &events.EmailDelivery{
-			Action: events.NameEmailBounced, WorkspaceID: workspaceID, Email: address,
-			BounceKind: events.BounceKindHard, DedupID: fmt.Sprintf("bounce-%d", workspaceID),
+			Action: systemevent.EmailBounced, WorkspaceID: workspaceID, Email: address,
+			BounceKind: systemevent.BounceKindHard, DedupID: fmt.Sprintf("bounce-%d", workspaceID),
 		})
 	}))
 }
@@ -250,7 +251,7 @@ func TestEraseDueRemovesTheWorkspacesJobs(t *testing.T) {
 	later := now.Add(7 * 24 * time.Hour)
 	for _, ws := range []int64{fixtures.UmbrellaID, fixtures.AcmeID} {
 		bounceIn(t, env, ws, "bounced@example.com")
-		env.EnqueueDiscardedJob(t, jobs.DeliverWebhookArgs{WorkspaceID: ws, EndpointID: 1, EventName: "email.bounced", DeliveryID: "d", Body: []byte(`{"data":{"email":"bounced@example.com"}}`)})
+		env.EnqueueDiscardedJob(t, jobs.DeliverWebhookArgs{WorkspaceID: ws, EndpointID: 1, EventName: systemevent.EmailBounced, DeliveryID: "d", Body: []byte(`{"data":{"email":"bounced@example.com"}}`)})
 		env.EnqueueScheduledJob(t, broadcasts.SendArgs{WorkspaceID: ws, BroadcastID: 1}, later)
 	}
 	env.EnqueueRunningJob(t, automations.RunStepArgs{WorkspaceID: fixtures.UmbrellaID, RunID: 1})
@@ -278,11 +279,11 @@ func TestEraseDueRemovesTheWorkspacesJobs(t *testing.T) {
 func lateBounce(t *testing.T, workspaceID int64, address string) jobs.SuppressEventArgs {
 	t.Helper()
 	data, err := json.Marshal(&events.EmailDelivery{
-		Action: events.NameEmailBounced, WorkspaceID: workspaceID, Email: address, BounceKind: events.BounceKindHard,
+		Action: systemevent.EmailBounced, WorkspaceID: workspaceID, Email: address, BounceKind: systemevent.BounceKindHard,
 	})
 	require.NoError(t, err)
 	return jobs.SuppressEventArgs{
-		ID: fmt.Sprintf("late-%d", workspaceID), Name: events.NameEmailBounced, Version: 1, WorkspaceID: workspaceID, Data: data,
+		ID: fmt.Sprintf("late-%d", workspaceID), Name: systemevent.EmailBounced, Version: 1, WorkspaceID: workspaceID, Data: data,
 	}
 }
 

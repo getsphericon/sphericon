@@ -255,7 +255,7 @@ func holdsCodeBlock(node any) bool {
 	if !ok {
 		return false
 	}
-	if object["type"] == "codeBlock" {
+	if object["type"] == nodeCodeBlock {
 		return true
 	}
 	children, _ := object["content"].([]any)

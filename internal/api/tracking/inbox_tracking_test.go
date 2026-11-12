@@ -12,8 +12,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -57,8 +57,8 @@ func TestOpeningAndFollowingALinkOfACapturedMessageIsTrackedLikeAnyOther(t *test
 
 	assert.Equal(t, http.StatusFound, followed.Code)
 	assert.NotEmpty(t, followed.Header().Get("Location"))
-	assert.Len(t, env.QueuedEvents(t, events.NameEmailOpened), 2, "one email.opened Event per hit")
-	assert.Len(t, env.QueuedEvents(t, events.NameEmailClicked), 1)
+	assert.Len(t, env.QueuedEvents(t, systemevent.EmailOpened), 2, "one email.opened Event per hit")
+	assert.Len(t, env.QueuedEvents(t, systemevent.EmailClicked), 1)
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	got, err := broadcasts.StatsOf(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastGlobexID)
 	require.NoError(t, err)

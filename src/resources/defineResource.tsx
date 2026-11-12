@@ -2,6 +2,7 @@ import { Fieldset, Modal, Stack, Title } from '@mantine/core'
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { Navigate, useNavigate } from '@tanstack/react-router'
+import type { NavigateOptions } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
@@ -119,10 +120,7 @@ export interface ResourceDescription<
   // All user-facing strings, resolved with the i18n `t` so keys stay statically extracted.
   texts: (t: TFunction) => ResourceTexts
   // Where to go after creating: the edit route, expressed with route references.
-  editTarget: (
-    created: TCreated,
-    params: { workspaceId: string },
-  ) => { to: string; params: Record<string, string> }
+  editTarget: (created: TCreated, params: { workspaceId: string }) => NavigateOptions
   // The edited values of a loaded resource whose fields are not at its top level (a Rule keeps
   // its definition in its draft or live version). Without it the resource is edited as it is.
   editedValues?: (loaded: TResource) => ResourceValues<TPayload>
@@ -131,7 +129,7 @@ export interface ResourceDescription<
   readOnlyTarget?: (
     loaded: TResource,
     params: { workspaceId: string; id: string },
-  ) => { to: string; params: Record<string, string> } | undefined
+  ) => NavigateOptions | undefined
 }
 
 export interface ResourceEditPageProps<TResource, TOperation extends string> {

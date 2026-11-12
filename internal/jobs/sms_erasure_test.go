@@ -25,11 +25,13 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -107,11 +109,11 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	textIn(t, env, account, "SM0301", number, "Thanks, my card is 4111")
 	textIn(t, env, account, "SM0302", number, "STOP")
 	env.SuppressNumber(ctx, number)
-	kinds := []string{events.NameSmsClicked, events.NameSmsDelivered, events.NameSmsSent, events.NameSmsUnsubscribed}
+	kinds := []string{systemevent.SmsClicked, systemevent.SmsDelivered, systemevent.SmsSent, systemevent.SmsUnsubscribed}
 	kept := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactTexterID), event.ActionIn(kinds...)).IDsX(ctx)
 	require.Len(t, kept, len(kinds))
 	gone := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactTexterID),
-		event.ActionIn(events.NameSmsReceived, events.NameSmsConfirmed)).IDsX(ctx)
+		event.ActionIn(systemevent.SmsReceived, systemevent.SmsConfirmed)).IDsX(ctx)
 	require.Len(t, gone, 2)
 
 	eraseContact(t, env, fixtures.ContactTexterID)
@@ -125,8 +127,8 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 			NamesSID: strings.Contains(lo.FromPtr(e.SourceID), sent.SID), Properties: len(e.Properties)}
 	})
 	assert.Equal(t, []erasedEvent{
-		{Action: events.NameSmsClicked}, {Action: events.NameSmsDelivered}, {Action: events.NameSmsSent},
-		{Action: events.NameSmsUnsubscribed},
+		{Action: systemevent.SmsClicked}, {Action: systemevent.SmsDelivered}, {Action: systemevent.SmsSent},
+		{Action: systemevent.SmsUnsubscribed},
 	}, keeps, "the facts keep no Contact, phone, provider reference, Destination or url")
 	texts := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationID(automationID)).AllX(ctx)
 	anonymous := lo.Map(texts, func(m *ent.OutboundMessage, _ int) erasedMessage {
@@ -135,7 +137,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	assert.Equal(t, []erasedMessage{{}, {}}, anonymous, "the texts keep no Contact, number or Twilio SID")
 	followed := follow(t, env, paths[0], browserUA)
 	assert.Equal(t, http.StatusNotFound, followed.Code, "the short link answers 404")
-	erased := env.QueuedEvents(t, events.NameContactErased)
+	erased := env.QueuedEvents(t, systemevent.ContactErased)
 	require.Len(t, erased, 1)
 	hash := erased[0].(*events.ContactErased).PhoneHash
 	sum := sha256.Sum256([]byte(number))
@@ -148,12 +150,12 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	require.NoError(t, suppressions.Remove(ctx, s, suppressed.ID, time.Now()))
 
 	// The person is imported again with the same phone and a fresh Confirmation: no text goes.
-	again, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
+	again, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Phone: externalapi.NewOptNilString(number),
 	})
 	require.NoError(t, err)
 	confirmSMS(t, env, number)
-	dec, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, number, eligibility.SourceBroadcasts)
+	dec, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
 	reached := s.Contact().Query().Where(contact.ID(int64(again.ID)),
@@ -166,7 +168,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 
 	// Its START lifts the opt-out the hash keeps.
 	textIn(t, env, account, "SM0303", number, "START")
-	dec, err = eligibility.Check(ctx, s, eligibility.ChannelSMS, number, eligibility.SourceBroadcasts)
+	dec, err = eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.True(t, dec.Eligible, dec.Reason)
 }
@@ -180,7 +182,7 @@ func TestErasingAContactRemovesTheConsentItsNumberGaveBeforeItWasAContact(t *tes
 	const number = "+14155550177"
 	confirmSMS(t, env, number)
 	textIn(t, env, account, "SM0401", number, "START")
-	created, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
+	created, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Phone: externalapi.NewOptNilString(number),
 	})
 	require.NoError(t, err)
@@ -198,7 +200,7 @@ func TestErasingAContactRemovesTheConsentItsNumberGaveBeforeItWasAContact(t *tes
 // SMS Confirmation, and returns its id.
 func reimport(t *testing.T, env *testhelper.TestEnv, number string) int64 {
 	t.Helper()
-	created, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(t.Context(), &externalapi.CreateContactInput{
+	created, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 		Phone: externalapi.NewOptNilString(number),
 	})
 	require.NoError(t, err)
@@ -219,12 +221,12 @@ func TestLiftingTheSuppressionOfANumberThatCameBackLiftsItsErasedTwin(t *testing
 	reimport(t, env, number)
 	again, err := suppressions.AddManual(ctx, s, channels.SMS, number)
 	require.NoError(t, err)
-	before, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, number, eligibility.SourceBroadcasts)
+	before, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 
 	require.NoError(t, suppressions.Remove(ctx, s, again.ID, time.Now()))
 
-	after, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, number, eligibility.SourceBroadcasts)
+	after, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonSuppressed, before.Reason)
 	assert.True(t, after.Eligible, after.Reason)
@@ -239,7 +241,7 @@ func TestTheExportOfAContactWithAnErasedNumberListsTheRefusalsItsHashKeeps(t *te
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	number := fixtures.ContactTexterPhone
-	_, err := env.ExternalScoped(t, "contacts:write").UnsubscribesCreate(ctx, &externalapi.CreateUnsubscribeInput{
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).UnsubscribesCreate(ctx, &externalapi.CreateUnsubscribeInput{
 		Channel: externalapi.NewOptConsentChannel(externalapi.ConsentChannelSMS), Destination: number,
 	})
 	require.NoError(t, err)
@@ -247,7 +249,7 @@ func TestTheExportOfAContactWithAnErasedNumberListsTheRefusalsItsHashKeeps(t *te
 	eraseContact(t, env, fixtures.ContactTexterID)
 	id := reimport(t, env, number)
 
-	res, err := env.ExternalScoped(t, "contacts:export").ContactsExport(ctx, externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(id))})
+	res, err := env.ExternalScoped(t, apitokens.ScopeContactsExport).ContactsExport(ctx, externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(id))})
 	require.NoError(t, err)
 
 	exported, ok := res.(*externalapi.ContactsExportOKApplicationOctetStreamHeaders)

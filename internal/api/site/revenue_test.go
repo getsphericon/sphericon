@@ -14,8 +14,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -27,7 +29,7 @@ type shop struct {
 
 func newShop(t *testing.T, env *testhelper.TestEnv) shop {
 	t.Helper()
-	return shop{t: t, api: env.ExternalScoped(t, "events:write", "contacts:erase")}
+	return shop{t: t, api: env.ExternalScoped(t, apitokens.ScopeEventsWrite, apitokens.ScopeContactsErase)}
 }
 
 func orderInput(subject, action string, props map[string]string) externalapi.EventInput {
@@ -214,7 +216,7 @@ func TestAnOrderOfAnUnknownContactCountsAndCreatesNoContact(t *testing.T) {
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 725, got.Current.Total)
-	assert.Equal(t, 0, env.QueuedCount(t, "contact.created", map[string]any{"email": ""}), "no Contact is created")
+	assert.Equal(t, 0, env.QueuedCount(t, systemevent.ContactCreated, map[string]any{"email": ""}), "no Contact is created")
 	guest := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("G-1")).OnlyX(t.Context())
 	assert.Nil(t, guest.ContactID)
 }

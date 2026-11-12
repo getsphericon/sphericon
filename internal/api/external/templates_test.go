@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -19,7 +20,7 @@ func entityIDString(id int64) externalapi.EntityId {
 
 func TestExternalTemplatesCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "templates:read", "templates:write")
+	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 	ctx := context.Background()
 
 	page, err := c.TemplatesList(ctx, externalapi.TemplatesListParams{})
@@ -63,12 +64,12 @@ func TestExternalTemplatesScopes(t *testing.T) {
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
 	// A contacts-only token reaches no template operation.
-	other := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	other := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 	_, err = other.TemplatesList(ctx, externalapi.TemplatesListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// Read-only token cannot write.
-	ro := env.ExternalScoped(t, "templates:read")
+	ro := env.ExternalScoped(t, apitokens.ScopeTemplatesRead)
 	_, err = ro.TemplatesGet(ctx, externalapi.TemplatesGetParams{ID: entityIDString(fixtures.TemplateWelcomeID)})
 	require.NoError(t, err)
 
@@ -86,7 +87,7 @@ func TestExternalTemplatesAreWorkspaceScoped(t *testing.T) {
 
 	id := entityIDString(fixtures.TemplateGlobexID)
 
-	c := env.ExternalScoped(t, "templates:read", "templates:write")
+	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 
 	list, err := c.TemplatesList(ctx, externalapi.TemplatesListParams{})
 	require.NoError(t, err)

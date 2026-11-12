@@ -12,6 +12,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -21,7 +22,7 @@ import (
 func TestExternalSegmentsRead(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "segments:read")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 
 	list, err := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
 	require.NoError(t, err)
@@ -42,7 +43,7 @@ func TestExternalSegmentsRead(t *testing.T) {
 func TestExternalSegmentsWrite(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "segments:read", "segments:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
 
 	_, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "Bad",
@@ -71,7 +72,7 @@ func TestExternalSegmentsWrite(t *testing.T) {
 func TestExternalSegmentsPreview(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "segments:read")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
 	want, err := segments.New(env.Bus, time.Now).Preview(ctx, env.DB.Scoped(1), segments.PreviewInput{Condition: new(def)})
@@ -88,7 +89,7 @@ func TestExternalSegmentsPreview(t *testing.T) {
 // outside the contract is a 400, atLeast 0 a 422.
 func TestExternalSegmentsPreviewCountsEvents(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "segments:read")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 	preview := func(leaf string) (*externalapi.PreviewSegmentResult, error) {
 		t.Helper()
 		// Liam did rule_url three times yesterday.
@@ -118,7 +119,7 @@ func TestExternalSegmentsPreviewCountsEvents(t *testing.T) {
 func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "segments:read", "segments:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
 	sent := testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"pricing_viewed","operator":"atMost","times":0,"withinDays":30}]}`)
 
 	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Never priced", Condition: sent})
@@ -133,7 +134,7 @@ func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 // courses_completed is a number and plan a string.
 func TestExternalSegmentsPreviewFitsNumberAndDateLeavesToTheFieldType(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "segments:read")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 	preview := func(leaf string) error {
 		t.Helper()
 		_, err := c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
@@ -155,7 +156,7 @@ func TestExternalSegmentsPreviewFitsNumberAndDateLeavesToTheFieldType(t *testing
 func TestExternalSegmentsStoreANumberLeaf(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "segments:read", "segments:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
 	sent := testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"number","field":"custom:courses_completed","operator":"lt","value":1.5}]}`)
 
 	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Barely started", Condition: sent})
@@ -170,14 +171,14 @@ func TestExternalSegmentsScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	none := env.ExternalScoped(t, "contacts:read")
+	none := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	_, err := none.SegmentsList(ctx, externalapi.SegmentsListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	_, err = none.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// Read scope cannot write.
-	ro := env.ExternalScoped(t, "segments:read")
+	ro := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 	_, err = ro.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "x",
 		Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
@@ -189,7 +190,7 @@ func TestExternalSegmentsScopes(t *testing.T) {
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// Write scope cannot read.
-	wo := env.ExternalScoped(t, "segments:write")
+	wo := env.ExternalScoped(t, apitokens.ScopeSegmentsWrite)
 	_, err = wo.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
@@ -201,7 +202,7 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 
 	id := externalapi.EntityId(fixtures.SegmentGlobexID)
 
-	c := env.ExternalScoped(t, "segments:read", "segments:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
 
 	list, err := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
 	require.NoError(t, err)
@@ -222,7 +223,7 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 func TestExternalSegmentsTakeTheCanBeTextedCondition(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "segments:read", "segments:write", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite, apitokens.ScopeContactsWrite)
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"eq","value":"` +
 		fixtures.ContactTexterEmail + `"},{"kind":"rule","field":"sms","operator":"has"}]}`
 	preview := func() *externalapi.PreviewSegmentResult {

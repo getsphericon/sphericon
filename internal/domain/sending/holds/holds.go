@@ -19,25 +19,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 )
 
-// The Workspace-level reasons a send is Held. They describe the Workspace, not one send, so
-// they live with the holds (ADR 0009) and Outbound send reports them. Suspension (ADR 0007)
-// is neither a Hold row nor the pending-deletion Hold: it keeps its own state and fields,
-// and only its reason code is declared here.
-const (
-	ReasonSuspended       = string(holdreason.WorkspaceSuspended)
-	ReasonPendingDeletion = string(holdreason.WorkspacePendingDeletion)
-	ReasonStaff           = string(holdreason.StaffHold)
-)
-
 // Message words a Workspace-level reason for a human, "" for any other reason. Outbound
 // send's Detail reads it, so every surface that reports a Held outcome agrees.
-func Message(reason string) string {
+func Message(reason holdreason.Reason) string {
 	switch reason {
-	case ReasonSuspended:
+	case holdreason.WorkspaceSuspended:
 		return "sending is suspended for this workspace"
-	case ReasonPendingDeletion:
+	case holdreason.WorkspacePendingDeletion:
 		return "this workspace is deleted and pending erasure"
-	case ReasonStaff:
+	case holdreason.StaffHold:
 		return "sending is on hold for this workspace"
 	default:
 		return ""
@@ -66,14 +56,14 @@ type Standing struct {
 }
 
 // Reason is the reason a send is Held, "" when the Workspace may send.
-func (st Standing) Reason() string {
+func (st Standing) Reason() holdreason.Reason {
 	switch {
 	case st.Deletion != nil:
-		return ReasonPendingDeletion
+		return holdreason.WorkspacePendingDeletion
 	case st.SuspendedAt != nil:
-		return ReasonSuspended
+		return holdreason.WorkspaceSuspended
 	case len(st.Staff) > 0:
-		return ReasonStaff
+		return holdreason.StaffHold
 	default:
 		return ""
 	}
@@ -96,8 +86,8 @@ func standingOf(ws *ent.Workspace, staff []*ent.Hold, staffHonoured bool) Standi
 	if ws.DiscardedAt != nil {
 		st.Deletion = &ent.Hold{
 			Key:        KeyPendingDeletion,
-			ReasonCode: ReasonPendingDeletion,
-			Message:    Message(ReasonPendingDeletion),
+			ReasonCode: string(holdreason.WorkspacePendingDeletion),
+			Message:    Message(holdreason.WorkspacePendingDeletion),
 			SetBy:      "system",
 			CreatedAt:  *ws.DiscardedAt,
 			ExpiresAt:  workspaces.EraseDate(*ws.DiscardedAt),
@@ -146,7 +136,7 @@ func (h *Holds) Standing(ctx context.Context, s *ent.Scoped) (Standing, error) {
 }
 
 // Reason is the reason a send is Held for the scope's Workspace, "" when it may send.
-func (h *Holds) Reason(ctx context.Context, s *ent.Scoped) (string, error) {
+func (h *Holds) Reason(ctx context.Context, s *ent.Scoped) (holdreason.Reason, error) {
 	st, err := h.Standing(ctx, s)
 	if err != nil {
 		return "", fmt.Errorf("holds: freeze check: %w", err)

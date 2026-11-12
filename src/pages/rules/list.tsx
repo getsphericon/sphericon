@@ -12,6 +12,7 @@ import {
   siteRulesDeleteMutation,
   siteRulesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
@@ -19,6 +20,7 @@ import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 
 export function RulesListPage() {
   const { t } = useTranslation()
@@ -74,7 +76,10 @@ export function RulesListPage() {
           void navigate({ to: rulesDetailRoute.to, params: { workspaceId, ruleId: record.id } })
         }
         columns={[
-          { accessor: 'name', title: t(($) => $.rules.nameLabel) },
+          {
+            accessor: 'name',
+            title: t(($) => $.rules.nameLabel),
+          } satisfies FieldColumn<SiteRuleResource>,
           {
             // What the Rule reacts to: its live version, else the draft of one never published.
             accessor: 'live',

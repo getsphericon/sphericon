@@ -8,9 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -68,11 +70,11 @@ func TestAnEventIsDeliveredToTheEndpointsThatSelectIt(t *testing.T) {
 	require.Len(t, queued, 1)
 	d := queued[0]
 	assert.EqualValues(t, fixtures.WebhookCodebasicsID, d.EndpointID)
-	assert.Equal(t, events.NameContactCreated, d.EventName)
+	assert.Equal(t, systemevent.ContactCreated, d.EventName)
 	body := bodyOf(t, d)
 	assert.ElementsMatch(t, []string{"id", "type", "occurredAt", "workspaceId", "subject", "contactId", "data"}, lo.Keys(body))
 	assert.Equal(t, published[0].ID, body["id"])
-	assert.Equal(t, events.NameContactCreated, body["type"])
+	assert.Equal(t, systemevent.ContactCreated, body["type"])
 	assert.EqualValues(t, fixtures.AcmeID, body["workspaceId"])
 	assert.Equal(t, fixtures.ContactAliceEmail, body["subject"])
 	assert.EqualValues(t, fixtures.ContactAliceID, body["contactId"])
@@ -82,8 +84,8 @@ func TestAnEventIsDeliveredToTheEndpointsThatSelectIt(t *testing.T) {
 // can distinguish different facts and drop repeats; a repeat is not even published.
 func TestAProviderNotificationKeepsItsSemanticIdentityAcrossRedelivery(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{events.NameEmailBounced}).ExecX(t.Context())
-	bounce := notice(events.NameEmailBounced, events.BounceKindHard, fixtures.ContactAliceEmail)
+	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{systemevent.EmailBounced}).ExecX(t.Context())
+	bounce := notice(systemevent.EmailBounced, systemevent.BounceKindHard, fixtures.ContactAliceEmail)
 	publishEvent(t, env, bounce)
 	publishEvent(t, env, bounce)
 
@@ -91,8 +93,8 @@ func TestAProviderNotificationKeepsItsSemanticIdentityAcrossRedelivery(t *testin
 
 	queued := env.QueuedDeliveries(t)
 	require.Len(t, queued, 1)
-	assert.Equal(t, events.NameEmailBounced+":"+bounce.DedupID, queued[0].DeliveryID)
-	assert.Equal(t, events.NameEmailBounced+":"+bounce.DedupID, bodyOf(t, queued[0])["id"])
+	assert.Equal(t, systemevent.EmailBounced+":"+bounce.DedupID, queued[0].DeliveryID)
+	assert.Equal(t, systemevent.EmailBounced+":"+bounce.DedupID, bodyOf(t, queued[0])["id"])
 }
 
 // The contact.erased webhook payload carries the customer's subject_id; nothing else
@@ -106,7 +108,7 @@ func TestTheErasedContactsDeliveryCarriesItsSubject(t *testing.T) {
 	env.PerformEnqueuedJobs(t, jobs.WebhookEventArgs{})
 
 	d := deliveryTo(t, env, fixtures.WebhookInitechID)
-	assert.Equal(t, events.NameContactErased, d.EventName)
+	assert.Equal(t, systemevent.ContactErased, d.EventName)
 	data, ok := bodyOf(t, d)["data"].(map[string]any)
 	require.True(t, ok)
 	assert.Equal(t, "user-9", data["subjectId"])
@@ -135,7 +137,7 @@ func TestAnAuditEntryReachesOnlyTheEndpointThatSelectsItWithTheStaffMasked(t *te
 	env := testhelper.Setup(t)
 	publishEvent(t, env, &events.AuditEntry{
 		WorkspaceID: fixtures.InitechID, Actor: events.Actor{Kind: events.ActorStaff, ID: "op-42", Name: "Jane Staff"},
-		Action: events.ActionWorkspaceSuspend, TargetType: "workspace",
+		Action: events.ActionWorkspaceSuspend, TargetType: workspace.Label,
 	})
 
 	env.PerformEnqueuedJobs(t, jobs.WebhookEventArgs{})

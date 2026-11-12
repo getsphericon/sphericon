@@ -15,10 +15,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -50,7 +52,7 @@ func TestRedeliveredSTOPCannotUndoLaterSTART(t *testing.T) {
 	assert.False(t, decision.Eligible, "an old START cannot undo a new STOP either")
 	changes := env.QueuedCount(t, events.NameSmsOptOutRecorded, nil)
 	assert.Equal(t, 2, changes, "observations of a standing opt-out do not repeat its transition")
-	public := env.QueuedCount(t, events.NameSmsUnsubscribed, map[string]any{
+	public := env.QueuedCount(t, systemevent.SmsUnsubscribed, map[string]any{
 		"contactId": fixtures.ContactTexterID, "via": events.UnsubscribedByKeyword,
 	})
 	assert.Equal(t, 2, public, "each transition, and only a transition, is the Contact's sms.unsubscribed")
@@ -59,7 +61,7 @@ func TestRedeliveredSTOPCannotUndoLaterSTART(t *testing.T) {
 // confirmNumber records the Confirmation an API client asserts for the number.
 func confirmNumber(t *testing.T, env *testhelper.TestEnv, number string) {
 	t.Helper()
-	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
 		Channel: externalapi.ConsentChannelSMS, Destination: number,
 		Wording: "Text me offers from Acme. Reply STOP to opt out.", Source: "checkout form", Brand: "Acme",
 	})
@@ -69,7 +71,7 @@ func confirmNumber(t *testing.T, env *testhelper.TestEnv, number string) {
 // textable is Send-eligibility's decision for a marketing text to the number.
 func textable(t *testing.T, env *testhelper.TestEnv, number string) eligibility.Decision {
 	t.Helper()
-	dec, err := eligibility.Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, number, eligibility.SourceBroadcasts)
+	dec, err := eligibility.Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	return dec
 }
@@ -116,9 +118,9 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(stop.ContactID))
 	consent := smsConfirmationOf(t, env, knownNumber)
 	assert.Nil(t, consent, "the stop drops the consent it ends")
-	replies := env.QueuedCount(t, events.NameSmsReceived, nil)
+	replies := env.QueuedCount(t, systemevent.SmsReceived, nil)
 	assert.Zero(t, replies, "a STOP is no reply")
-	unsubscribed := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	unsubscribed := env.QueuedMessages(t, systemevent.SmsUnsubscribed)
 	require.Len(t, unsubscribed, 1)
 	data := unsubscribed[0].Data
 	assert.Equal(t, strconv.Itoa(fixtures.ContactTexterID), fmt.Sprint(data["contactId"]))
@@ -144,7 +146,7 @@ func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
 	contactsAfter := env.DB.Contact.Query().CountX(t.Context())
 	assert.Equal(t, contacts, contactsAfter, "a stranger's STOP creates no Contact")
-	unsubscribed := env.QueuedCount(t, events.NameSmsUnsubscribed, nil)
+	unsubscribed := env.QueuedCount(t, systemevent.SmsUnsubscribed, nil)
 	assert.Zero(t, unsubscribed, "nor a Contact's Event")
 }
 
@@ -161,7 +163,7 @@ func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
 	assert.Nil(t, stop)
 	dec := textable(t, env, knownNumber)
 	assert.True(t, dec.Eligible)
-	replies := env.QueuedCount(t, events.NameSmsReceived, map[string]any{"text": "please don't stop"})
+	replies := env.QueuedCount(t, systemevent.SmsReceived, map[string]any{"text": "please don't stop"})
 	assert.Equal(t, 1, replies)
 }
 
@@ -199,13 +201,13 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 	require.NotNil(t, consent)
 	assert.Equal(t, confirmation.ProvenanceKeyword, consent.Provenance)
 	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(consent.ContactID))
-	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{
+	smsConfirmed := env.QueuedCount(t, systemevent.SmsConfirmed, map[string]any{
 		"provenance": "keyword", "contactId": fixtures.ContactTexterID,
 	})
 	assert.Equal(t, 1, smsConfirmed)
-	marketingConfirmed := env.QueuedCount(t, events.NameMarketingConfirmed, nil)
+	marketingConfirmed := env.QueuedCount(t, systemevent.MarketingConfirmed, nil)
 	assert.Zero(t, marketingConfirmed, "SMS consent is not email's")
-	replies := env.QueuedCount(t, events.NameSmsReceived, nil)
+	replies := env.QueuedCount(t, systemevent.SmsReceived, nil)
 	assert.Zero(t, replies, "a START is no reply")
 
 	contact := env.DB.Contact.GetX(t.Context(), int64(fixtures.ContactTexterID))

@@ -10,6 +10,7 @@ import (
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -41,14 +42,14 @@ type Limits struct {
 
 var (
 	// ErrExpiryInPast refuses a hold that would already have lapsed.
-	ErrExpiryInPast = validation.RefuseField("expiresAt", "holds: a hold's expiry must be in the future",
+	ErrExpiryInPast = validation.RefuseField(fieldname.ExpiresAt, "holds: a hold's expiry must be in the future",
 		i18n.ErrorsHoldExpiryInPast)
 	// ErrTooLong refuses a hold whose expiry is beyond the Instance's maximum; the refusal names
 	// the maximum.
-	ErrTooLong = validation.RefuseField("expiresAt", "holds: a hold's expiry is too far ahead", i18n.ErrorsHoldTooLong)
+	ErrTooLong = validation.RefuseField(fieldname.ExpiresAt, "holds: a hold's expiry is too far ahead", i18n.ErrorsHoldTooLong)
 	// ErrActionURL refuses an action URL that is not an absolute https URL: it is shown to the
 	// Workspace's Owners as a link, so no other scheme and no credentials in it.
-	ErrActionURL = validation.RefuseField("actionUrl", "holds: a hold's action URL must be an absolute https URL",
+	ErrActionURL = validation.RefuseField(fieldname.ActionURL, "holds: a hold's action URL must be an absolute https URL",
 		i18n.ErrorsHoldActionUrlInvalid)
 )
 
@@ -56,21 +57,21 @@ var (
 // message and the action URL (package bounds), an action URL that is no absolute https URL without
 // credentials, and an expiry that is not ahead of now or further than the maximum.
 func (in Input) check(lim Limits) error {
-	if err := validation.Length("reasonCode", in.ReasonCode,
+	if err := validation.Length(fieldname.ReasonCode, in.ReasonCode,
 		bounds.HoldReasonCodeMinLength, bounds.HoldReasonCodeMaxLength); err != nil {
 		return err
 	}
-	if err := validation.Pattern("reasonCode", in.ReasonCode, bounds.HoldReasonCodePattern); err != nil {
+	if err := validation.Pattern(fieldname.ReasonCode, in.ReasonCode, bounds.HoldReasonCodePattern); err != nil {
 		return err
 	}
-	if err := validation.Length("message", in.Message, bounds.HoldMessageMinLength, bounds.HoldMessageMaxLength); err != nil {
+	if err := validation.Length(fieldname.Message, in.Message, bounds.HoldMessageMinLength, bounds.HoldMessageMaxLength); err != nil {
 		return err
 	}
 	if in.ActionURL != nil {
-		if err := validation.MaxLength("actionUrl", *in.ActionURL, bounds.HoldActionURLMaxLength); err != nil {
+		if err := validation.MaxLength(fieldname.ActionURL, *in.ActionURL, bounds.HoldActionURLMaxLength); err != nil {
 			return err
 		}
-		if err := validation.Pattern("actionUrl", *in.ActionURL, bounds.HoldActionURLPattern); err != nil {
+		if err := validation.Pattern(fieldname.ActionURL, *in.ActionURL, bounds.HoldActionURLPattern); err != nil {
 			return err
 		}
 		if u, err := url.Parse(*in.ActionURL); err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil {

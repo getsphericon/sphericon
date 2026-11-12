@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -28,7 +29,7 @@ func authToken(token string) externalapi.OptJsonObject {
 // An API client connects, reads, rotates and archives a Twilio account as the app does (ADR 0016).
 func TestExternalTwilioIntegrationLifecycle(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	account := env.Twilio.AddAccount()
 	key := env.Twilio.AddAPIKey(account)
 	number := env.Twilio.AddNumber(account, twilioNumber)

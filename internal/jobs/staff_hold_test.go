@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -53,7 +54,7 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	err := deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, holds.ReasonStaff, held.Reason)
+	assert.Equal(t, holdreason.StaffHold, held.Reason)
 	assert.True(t, stillPending(ctx, env.DB, ids[1]), "the recipient is neither failed nor consumed")
 	assert.Len(t, fs.sent, 1)
 

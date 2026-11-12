@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -23,10 +24,10 @@ func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
-	received, confirmed, sent := "sms.received", "sms.confirmed", "sms.sent"
+	received, confirmed, sent := systemevent.SmsReceived, systemevent.SmsConfirmed, systemevent.SmsSent
 
 	onReply, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Reply", TriggerEvent: received, ExitEvents: []string{"contact.tagged"}, GoalEvent: &confirmed,
+		Name: "Reply", TriggerEvent: received, ExitEvents: []string{systemevent.ContactTagged}, GoalEvent: &confirmed,
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onReply.ID)
@@ -50,7 +51,7 @@ func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
-	delivered, undelivered := "sms.delivered", "sms.undelivered"
+	delivered, undelivered := systemevent.SmsDelivered, systemevent.SmsUndelivered
 
 	onUndelivered, err := m.Create(t.Context(), s, automations.CreateInput{
 		Name: "Undelivered", TriggerEvent: undelivered, ExitEvents: []string{delivered},
@@ -70,7 +71,7 @@ func TestSmsUnsubscribedTriggersAndExits(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
-	unsubscribed, confirmed := "sms.unsubscribed", "sms.confirmed"
+	unsubscribed, confirmed := systemevent.SmsUnsubscribed, systemevent.SmsConfirmed
 
 	onStop, err := m.Create(t.Context(), s, automations.CreateInput{
 		Name: "Unsubscribed", TriggerEvent: unsubscribed, ExitEvents: []string{confirmed},

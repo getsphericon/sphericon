@@ -116,18 +116,6 @@ const ReasonMessageRefused = "message_refused"
 // carry the erased person's address.
 const SkipContactErased = "contact_erased"
 
-// Reasons an Outbound send is Held by its own source-level checks (holdreason). The Workspace-level
-// reasons (suspended, pending deletion, Staff hold) are reported by the holds package, and email's
-// own (HoldUnverifiedDomain) by email's adapter.
-const (
-	HoldNoIntegration   = string(holdreason.NoIntegration)
-	HoldProviderStopped = string(holdreason.ProviderStopped)
-	// HoldProviderRefused: the provider refused the Integration's credentials or account at send
-	// time (a revoked token or key, a suspended account, a sender it cannot use); saving the
-	// Integration lifts it.
-	HoldProviderRefused = string(holdreason.ProviderRefused)
-)
-
 // Reasons a Test send from the System sender is Refused (ADR 0041).
 const (
 	// RefuseOtherRecipient: the Workspace has no verified Sending domain, so a Test send
@@ -138,27 +126,35 @@ const (
 	RefuseNoSystemSender = "no_system_sender"
 )
 
-// Detail words a Hold or Refuse reason for a human (an API problem detail). The single
-// place the wording lives, so every surface that reports a Held or Refused outcome agrees.
-func Detail(reason string) string {
+// HoldDetail words a Hold reason for a human (an API problem detail). The single place the wording
+// lives, so every surface that reports a Held outcome agrees.
+func HoldDetail(reason holdreason.Reason) string {
 	if msg := holds.Message(reason); msg != "" {
 		return msg
 	}
 	switch reason {
-	case HoldNoIntegration:
+	case holdreason.NoIntegration:
 		return "no integration of the channel can send: the one named is disabled, archived or of another channel, or the channel has no default"
-	case HoldUnverifiedDomain:
+	case holdreason.UnverifiedDomain:
 		return "sender domain is not a verified sending domain"
-	case HoldProviderStopped:
+	case holdreason.ProviderStopped:
 		return "the email provider has stopped sending from this account"
-	case HoldProviderRefused:
+	case holdreason.ProviderRefused:
 		return "the provider refused the integration's credentials or account: save the integration again with working ones"
+	default:
+		return "sending is currently on hold for this workspace: " + string(reason)
+	}
+}
+
+// RefuseDetail words the reason a Test send was Refused for a human, as HoldDetail does a Hold's.
+func RefuseDetail(reason string) string {
+	switch reason {
 	case RefuseOtherRecipient:
 		return "until a sending domain is verified, a test send can only go to your own address"
 	case RefuseNoSystemSender:
 		return "outbound mail is not configured on this instance, so a test send needs a verified sending domain"
 	default:
-		return "sending is currently on hold for this workspace: " + reason
+		return "a test send was refused: " + reason
 	}
 }
 
@@ -180,8 +176,10 @@ type Result struct {
 	// Cause is, for a Deferral of a Send, the limit it waits for; empty for every other Outcome
 	// and for a Test send (its cap is Limit).
 	Cause providerlimit.Cause
-	// Reason explains Skipped (eligibility reason), Failed (cause) and Held (hold).
+	// Reason explains Skipped (eligibility reason), Failed (cause) and Refused (the Test send's).
 	Reason string
+	// Hold is why a Held send is held.
+	Hold holdreason.Reason
 	// MessageID is the Outbound message row; zero when Held (nothing was recorded).
 	MessageID int64
 	// Replayed is true when the Outcome was read back from an earlier attempt.
@@ -452,7 +450,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{}, err
 	}
 	if g.hold != "" {
-		return Result{Outcome: Held, Reason: g.hold}, nil
+		return Result{Outcome: Held, Hold: g.hold}, nil
 	}
 
 	msg, replay, err := m.claim(ctx, s, req, dest, g, existing)
@@ -548,7 +546,7 @@ func renderedSubject(rendered any) string {
 // fail-closed: an error is a check that could not be made. When none passes, skip is the first
 // one's reason.
 func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request, targets []target) (eligible []target, skip string, err error) {
-	onChannel := string(req.Channel())
+	onChannel := req.Channel()
 	for _, t := range targets {
 		dec, err := eligibility.Check(ctx, s, onChannel, t.dest, req.Source)
 		if err != nil {
@@ -635,7 +633,7 @@ func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req R
 // remember it.
 func (m *Module) stopOf(ctx context.Context, s *ent.Scoped, g gateResult, req Request, err error) (*Result, error) {
 	if reason := heldBy(err); reason != "" {
-		if reason == HoldProviderRefused {
+		if reason == holdreason.ProviderRefused {
 			// The provider refused the credentials: remember it, so every send through the
 			// Integration holds until it is saved again, and none asks the provider meanwhile.
 			if rerr := m.refuse(ctx, s, g.route.Integration); rerr != nil {
@@ -645,7 +643,7 @@ func (m *Module) stopOf(ctx context.Context, s *ent.Scoped, g gateResult, req Re
 		// The adapter found the source blocked only at the provider (email: the Sending
 		// domain lost verification between prepare and the signer): a hold, not a failure.
 		// The claim is dropped so the same Request can run again.
-		return &Result{Outcome: Held, Reason: reason}, err
+		return &Result{Outcome: Held, Hold: reason}, err
 	}
 	if wait := deferralBackoff(err); wait > 0 && req.Kind() != outboundmessage.KindTransactional {
 		// The provider answered "too fast" or "quota exceeded": it refused the
@@ -675,7 +673,7 @@ func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g g
 }
 
 // refuse records that the provider refused the Integration's credentials (ProviderRefusedAt), which
-// holds the Integration's Send route (HoldProviderRefused).
+// holds the Integration's Send route (holdreason.ProviderRefused).
 func (m *Module) refuse(ctx context.Context, s *ent.Scoped, integ *ent.Integration) error {
 	if integ == nil {
 		return nil
@@ -708,7 +706,7 @@ func (m *Module) contactErased(ctx context.Context, s *ent.Scoped, req Request) 
 // its Channel integrationID names (nil is that Channel's default), without sending or recording
 // anything. Planning code (Broadcast) calls it to fail or pause fast instead of finding out per
 // recipient; the answer is the same Send route and gate Send applies.
-func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, content Content, integrationID *int64) (hold string, err error) {
+func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, content Content, integrationID *int64) (hold holdreason.Reason, err error) {
 	if content == nil {
 		return "", errors.New("outbound: content required")
 	}
@@ -807,7 +805,7 @@ func (m *Module) workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, 
 
 // gateResult is the outcome of the source-level checks plus what they resolved.
 type gateResult struct {
-	hold string
+	hold holdreason.Reason
 	// route is the Send route the message goes through.
 	route Route
 	// as is who the message goes out as, as the route's adapter prepared it.

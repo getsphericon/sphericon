@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -69,7 +69,7 @@ func TestTelegramStopFansOutToTheMessageAndVisitorOwnersOnlyOnTransitions(t *tes
 	stopped := optedOut(t, env, user)
 	assert.False(t, stopped)
 	for _, contactID := range []int64{fixtures.ContactLiamID, fixtures.ContactEmmaID} {
-		transitions := env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{"contactId": contactID})
+		transitions := env.QueuedCount(t, systemevent.TelegramUnsubscribed, map[string]any{"contactId": contactID})
 		assert.Equal(t, 1, transitions)
 	}
 	fresh := env.PostTelegramUpdate(t, botA, pressed(4, user, 77, "cb-4", "unsubscribe"))
@@ -77,7 +77,7 @@ func TestTelegramStopFansOutToTheMessageAndVisitorOwnersOnlyOnTransitions(t *tes
 	stopped = optedOut(t, env, user)
 	assert.True(t, stopped)
 	for _, contactID := range []int64{fixtures.ContactLiamID, fixtures.ContactEmmaID} {
-		transitions := env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{"contactId": contactID})
+		transitions := env.QueuedCount(t, systemevent.TelegramUnsubscribed, map[string]any{"contactId": contactID})
 		assert.Equal(t, 2, transitions)
 	}
 }

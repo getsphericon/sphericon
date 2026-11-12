@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -32,7 +33,7 @@ func getExport(t *testing.T, env *testhelper.TestEnv, bearer, target string) *ht
 
 func TestExportStreamsRefuseALimitOutsideTheContract(t *testing.T) {
 	env := testhelper.Setup(t)
-	bearer := env.ScopedBearerFor(t, fixtures.InitechID, "export:read")
+	bearer := env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeExportRead)
 	for _, path := range exportPaths {
 		for _, limit := range []string{"0", "-5", "10001"} {
 			rec := getExport(t, env, bearer, path+"?limit="+limit)
@@ -47,7 +48,7 @@ func TestExportStreamsRefuseALimitOutsideTheContract(t *testing.T) {
 func TestExportStreamsAreRateLimitedPerWorkspace(t *testing.T) {
 	const limit = 2
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{APIPerMinute: limit}))
-	bearer := env.ScopedBearerFor(t, fixtures.InitechID, "export:read")
+	bearer := env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeExportRead)
 	for i := range limit {
 		rec := getExport(t, env, bearer, "/api/export/events")
 		require.Equal(t, http.StatusOK, rec.Code, "request %d", i+1)

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -152,11 +153,11 @@ func TestDistinctSemanticFactsMayShareAnExternalSource(t *testing.T) {
 
 func TestDistinctProjectedFactsMayShareAnExternalSource(t *testing.T) {
 	env := testhelper.Setup(t)
-	for _, action := range []string{events.NameEmailDelivered, events.NameEmailBounced} {
+	for _, action := range []string{systemevent.EmailDelivered, systemevent.EmailBounced} {
 		fact := &events.EmailDelivery{Action: action, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, DedupID: "shared-notification"}
 		require.NoError(t, env.Bus.Publish(t.Context(), fact))
 		require.NoError(t, env.Bus.Publish(t.Context(), fact))
 	}
-	assert.Equal(t, 2, env.DB.Event.Query().Where(event.ActionIn(events.NameEmailDelivered, events.NameEmailBounced), event.SourceIDContains("shared-notification")).CountX(t.Context()))
+	assert.Equal(t, 2, env.DB.Event.Query().Where(event.ActionIn(systemevent.EmailDelivered, systemevent.EmailBounced), event.SourceIDContains("shared-notification")).CountX(t.Context()))
 	assert.Len(t, env.JobsOf(t, jobs.MessageObservationArgs{}.Kind()), 2)
 }

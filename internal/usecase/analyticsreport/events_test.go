@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 )
@@ -68,11 +69,11 @@ func TestEventsReportListsReservedActionsAndLeavesMachineOpensOut(t *testing.T) 
 	env := testhelper.Setup(t)
 	rows := eventActions(t, env, fixtures.AcmeID, analyticsreport.Window7Days)
 
-	opened := actionRow(t, rows, "email.opened")
+	opened := actionRow(t, rows, systemevent.EmailOpened)
 	// Two opens in the report fixtures and EventOpenedKeptSubject, all of one Contact.
 	assert.Equal(t, 3, opened.Count)
 	assert.Equal(t, 1, opened.Contacts)
-	sent := actionRow(t, rows, "email.sent")
+	sent := actionRow(t, rows, systemevent.EmailSent)
 	assert.Positive(t, sent.Count)
 }
 

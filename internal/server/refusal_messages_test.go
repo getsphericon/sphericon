@@ -9,6 +9,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -131,7 +132,7 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			env := testhelper.Setup(t)
 			err := tc.site(env.SiteActor(t, fixtures.OwnerJohnEmail))
 			assert.Equal(t, tc.want, problemDetail(t, err), "site")
-			err = tc.ext(env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send"))
+			err = tc.ext(env.ExternalScoped(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite, apitokens.ScopeBroadcastsSend))
 			assert.Equal(t, tc.want, problemDetail(t, err), "external")
 		})
 	}
@@ -151,7 +152,7 @@ func TestBroadcastUnknownIntegrationReadsWithoutAPrefix(t *testing.T) {
 // The site has no way to unschedule a Broadcast, so only the external API can refuse it.
 func TestBroadcastNotScheduledReadsWithoutAPrefix(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.ExternalScoped(t, "broadcasts:send").BroadcastsUnschedule(t.Context(),
+	_, err := env.ExternalScoped(t, apitokens.ScopeBroadcastsSend).BroadcastsUnschedule(t.Context(),
 		externalapi.BroadcastsUnscheduleParams{ID: fixtures.BroadcastDraftID})
 	assert.Equal(t, "only scheduled broadcasts can be unscheduled", problemDetail(t, err))
 }
@@ -210,7 +211,7 @@ func TestTemplateRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			env := testhelper.Setup(t)
 			err := tc.site(env.SiteActor(t, fixtures.OwnerJohnEmail))
 			assert.Equal(t, tc.want, problemDetail(t, err), "site")
-			err = tc.ext(env.ExternalScoped(t, "templates:read", "templates:write"))
+			err = tc.ext(env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite))
 			assert.Equal(t, tc.want, problemDetail(t, err), "external")
 		})
 	}
@@ -220,7 +221,7 @@ func TestTemplateRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 func TestInvalidContentReadsTheSameOnBothSurfaces(t *testing.T) {
 	env := testhelper.Setup(t)
 	site := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ext := env.ExternalScoped(t, "templates:write", "broadcasts:write")
+	ext := env.ExternalScoped(t, apitokens.ScopeTemplatesWrite, apitokens.ScopeBroadcastsWrite)
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	_, err1 := site.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{

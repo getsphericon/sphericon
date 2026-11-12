@@ -19,6 +19,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -84,7 +85,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	assert.Equal(t, fixtures.AnchorTokenName, got.Name)
 	assert.Contains(t, got.Scopes, "contacts:read")
 
-	scoped := env.ScopedBearerFor(t, fixtures.GlobexID, "events:read")
+	scoped := env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeEventsRead)
 	ctx, err = h.Authenticate(context.Background(), externalapi.BearerAuth{Token: scoped})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.GlobexID, auth.GetTokenAuth(ctx).WorkspaceID, "the token's own workspace, whichever it is")
@@ -97,14 +98,14 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 	ctx := context.Background()
 	valid := credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)
 
-	revoked := env.ScopedBearer(t, "contacts:read")
+	revoked := env.ScopedBearer(t, apitokens.ScopeContactsRead)
 	parsed := credentials.ParseToken(revoked)
 	require.NotNil(t, parsed)
 	n, err := env.DB.ApiToken.Update().Where(apitoken.Prefix(parsed.Prefix)).SetRevokedAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, n)
 
-	expired := env.ScopedBearer(t, "contacts:read")
+	expired := env.ScopedBearer(t, apitokens.ScopeContactsRead)
 	parsed = credentials.ParseToken(expired)
 	require.NotNil(t, parsed)
 	n, err = env.DB.ApiToken.Update().Where(apitoken.Prefix(parsed.Prefix)).SetExpiresAt(time.Now().Add(-time.Minute)).Save(ctx)
@@ -133,7 +134,7 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 	env := testhelper.Setup(t)
 	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: env.Admission})
-	reader := externalapi.BearerAuth{Token: env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsRead))}
+	reader := externalapi.BearerAuth{Token: env.ScopedBearer(t, apitokens.ScopeContactsRead)}
 
 	ctx, err := h.HandleBearerAuth(t.Context(), externalapi.ContactsListOperation, reader)
 	require.NoError(t, err)
@@ -183,7 +184,7 @@ func TestCollectKeyResolvesTheOwningWorkspace(t *testing.T) {
 
 func TestSiteAuthResolvesTheDashboardUserByTheIDInTheToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	h := auth.NewSiteSecurityHandler(cfg.JWTSecret, env.DB, time.Now)
 
@@ -206,7 +207,7 @@ func TestSiteAuthResolvesTheDashboardUserByTheIDInTheToken(t *testing.T) {
 
 func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
 	env := testhelper.Setup(t)
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	h := auth.NewSiteSecurityHandler(cfg.JWTSecret, env.DB, time.Now)
 	other := auth.NewSiteSecurityHandler("a-different-secret", env.DB, time.Now)
@@ -251,7 +252,7 @@ func collectWorkspaceID(ctx context.Context) int64 {
 // stop once it is removed.
 func TestSiteAuthAcceptsASessionSignedWithTheSecondarySecretOnlyWhileItIsConfigured(t *testing.T) {
 	env := testhelper.Setup(t)
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	old := env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
 	const rotated = "the-new-secret-the-new-secret-0123"

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -38,9 +39,9 @@ type Route struct {
 	// Limits are the Integration's effective Provider limit (ADR 0023): none without an Integration
 	// row.
 	Limits providerlimit.Limits
-	// Hold is why nothing can go through the route (HoldNoIntegration, HoldProviderStopped); ""
+	// Hold is why nothing can go through the route (holdreason.NoIntegration, holdreason.ProviderStopped); ""
 	// when it can send.
-	Hold string
+	Hold holdreason.Reason
 }
 
 // Held reports whether nothing can go through the route.
@@ -51,12 +52,12 @@ func (r Route) Held() bool { return r.Hold != "" }
 func (r Route) Interval() time.Duration { return r.Limits.Interval() }
 
 // Armable refuses to arm a send through a route with no Integration that can send, with
-// ErrRouteHeld. A provider that has stopped the account (HoldProviderStopped) or refused the
-// credentials (HoldProviderRefused) does not refuse it: that standing lifts once a quota read finds
+// ErrRouteHeld. A provider that has stopped the account (holdreason.ProviderStopped) or refused the
+// credentials (holdreason.ProviderRefused) does not refuse it: that standing lifts once a quota read finds
 // the account sending again or the Integration is saved with working credentials, and the sends
 // wait for it.
 func (r Route) Armable() error {
-	if r.Hold == HoldNoIntegration {
+	if r.Hold == holdreason.NoIntegration {
 		return ErrRouteHeld
 	}
 	return nil
@@ -64,11 +65,11 @@ func (r Route) Armable() error {
 
 // Route resolves the Send route on ch of the Integration integrationID names, else of ch's
 // default. A named Integration that is disabled, archived, of another Workspace or of another
-// Channel holds the route (HoldNoIntegration) and never falls back to the default; so does a
+// Channel holds the route (holdreason.NoIntegration) and never falls back to the default; so does a
 // Channel with no default, or an Integration the provider adapter cannot be built for
 // (messaging.ErrNoProvider). An Integration whose provider has stopped its account holds it too
-// (HoldProviderStopped), and so does one whose credentials the provider refused at send time
-// (HoldProviderRefused). It says nothing of the Workspace freeze or the Channel's own check (the
+// (holdreason.ProviderStopped), and so does one whose credentials the provider refused at send time
+// (holdreason.ProviderRefused). It says nothing of the Workspace freeze or the Channel's own check (the
 // From's Sending domain on email): those are the send's own checks (gate).
 func (m *Module) Route(ctx context.Context, s *ent.Scoped, ch channels.Channel, integrationID *int64) (Route, error) {
 	part, err := m.channel(ch)
@@ -80,18 +81,18 @@ func (m *Module) Route(ctx context.Context, s *ent.Scoped, ch channels.Channel, 
 		return Route{}, fmt.Errorf("outbound: load integration: %w", err)
 	}
 	if integ == nil && integrationID != nil {
-		return Route{Hold: HoldNoIntegration}, nil
+		return Route{Hold: holdreason.NoIntegration}, nil
 	}
 	if integ != nil && providerlimit.Stopped(integ) {
-		return Route{Integration: integ, Limits: providerlimit.EffectiveOf(integ).Limits(), Hold: HoldProviderStopped}, nil
+		return Route{Integration: integ, Limits: providerlimit.EffectiveOf(integ).Limits(), Hold: holdreason.ProviderStopped}, nil
 	}
 	if integ != nil && integ.ProviderRefusedAt != nil {
-		return Route{Integration: integ, Limits: providerlimit.EffectiveOf(integ).Limits(), Hold: HoldProviderRefused}, nil
+		return Route{Integration: integ, Limits: providerlimit.EffectiveOf(integ).Limits(), Hold: holdreason.ProviderRefused}, nil
 	}
 	// Without a default row the sender is still asked: a test double sends for any Workspace.
 	adapter, err := part.adapter(ctx, s, integ)
 	if errors.Is(err, messaging.ErrNoProvider) {
-		return Route{Hold: HoldNoIntegration}, nil
+		return Route{Hold: holdreason.NoIntegration}, nil
 	}
 	if err != nil {
 		return Route{}, fmt.Errorf("outbound: resolve sender: %w", err)

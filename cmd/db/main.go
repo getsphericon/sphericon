@@ -50,9 +50,9 @@ func newRoot() *cli.Command {
 				Name:      "generate",
 				Usage:     "write the next migration from the ent schema",
 				ArgsUsage: "<migration-name>",
-				Arguments: []cli.Argument{&cli.StringArg{Name: "name", Required: true}},
+				Arguments: []cli.Argument{&cli.StringArg{Name: flagName, Required: true}},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return devdb.GenerateMigration(ctx, "migrations", os.Getenv("SPHERICON_DIFF_DATABASE_URL"), cmd.StringArg("name"))
+					return devdb.GenerateMigration(ctx, "migrations", os.Getenv("SPHERICON_DIFF_DATABASE_URL"), cmd.StringArg(flagName))
 				},
 			},
 		},
@@ -62,9 +62,9 @@ func newRoot() *cli.Command {
 // onDatabase runs task on the database SPHERICON_DATABASE_URL of this environment points at and logs what
 // it did.
 func onDatabase(ctx context.Context, task func(ctx context.Context, dsn string) (string, error)) error {
-	envName := os.Getenv("SPHERICON_ENV")
+	envName := os.Getenv(config.EnvVar)
 	if envName == "" {
-		envName = "development"
+		envName = config.EnvDevelopment
 	}
 	cfg, err := config.Load(envName)
 	if err != nil {

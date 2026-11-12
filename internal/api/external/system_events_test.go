@@ -10,8 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -19,7 +20,7 @@ import (
 // Fixtures: Bob has no Tags.
 func TestTagChangesRecordSystemEvents(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 	ctx := context.Background()
 	bob := entityIDString(fixtures.ContactBobID)
 	vip := map[string]any{"contactId": fixtures.ContactBobID, "tag": "vip"}
@@ -35,13 +36,13 @@ func TestTagChangesRecordSystemEvents(t *testing.T) {
 	}
 
 	apply()
-	taggedOnce := env.QueuedCount(t, events.NameContactTagged, vip)
+	taggedOnce := env.QueuedCount(t, systemevent.ContactTagged, vip)
 	apply()
-	taggedAgain := env.QueuedCount(t, events.NameContactTagged, vip)
+	taggedAgain := env.QueuedCount(t, systemevent.ContactTagged, vip)
 	remove()
-	untaggedOnce := env.QueuedCount(t, events.NameContactUntagged, vip)
+	untaggedOnce := env.QueuedCount(t, systemevent.ContactUntagged, vip)
 	remove()
-	untaggedAgain := env.QueuedCount(t, events.NameContactUntagged, vip)
+	untaggedAgain := env.QueuedCount(t, systemevent.ContactUntagged, vip)
 
 	assert.Equal(t, 1, taggedOnce, "applying a Tag the Contact lacks records contact.tagged")
 	assert.Equal(t, 1, taggedAgain, "applying it again records nothing")
@@ -53,7 +54,7 @@ func TestTagChangesRecordSystemEvents(t *testing.T) {
 // set, one it repeats (a number written another way included) records nothing.
 func TestContactUpdateRecordsFieldChanges(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 	ctx := context.Background()
 	bob := entityIDString(fixtures.ContactBobID)
 	update := func(fields externalapi.JsonObject) {
@@ -81,7 +82,7 @@ func TestContactUpdateRecordsFieldChanges(t *testing.T) {
 // creates.
 func TestBatchImportRecordsNoFieldChanges(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	_, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
 		{
@@ -96,7 +97,7 @@ func TestBatchImportRecordsNoFieldChanges(t *testing.T) {
 	require.NoError(t, err)
 
 	changes := env.FieldChanges(t)
-	created := env.QueuedEnvelopes(t, events.NameContactCreated)
+	created := env.QueuedEnvelopes(t, systemevent.ContactCreated)
 
 	assert.Empty(t, changes)
 	assert.Len(t, created, 1, "the import still records the Contact it creates")

@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -130,7 +131,7 @@ func CheckSendCap(sendCap *int) error {
 	if sendCap == nil {
 		return nil
 	}
-	return validation.Range("perDay", *sendCap, bounds.MaxPerDayMin, bounds.MaxPerDayMax)
+	return validation.Range(fieldname.PerDay, *sendCap, bounds.MaxPerDayMin, bounds.MaxPerDayMax)
 }
 
 // MarkAbuseFreezeNotified stamps, at `at`, that the Owners of the Workspace id were told of its

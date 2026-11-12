@@ -8,6 +8,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -98,7 +99,7 @@ func TestBeforeTheFirstOrderThereIsNoFigureAndItsOrderCountsAtOnce(t *testing.T)
 	in := orderInput(fixtures.ContactSoukBuyerEmail, "Order Completed", orderProps("S-1", "20.00"))
 	in.Email = externalapi.NewOptNilEmailAddress(fixtures.ContactSoukBuyerEmail)
 	in.OccurredAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(noonDaysAgo(3)))
-	shop := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.SoukID, "events:write"))
+	shop := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.SoukID, apitokens.ScopeEventsWrite))
 	_, err := shop.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
 	require.NoError(t, err)
 

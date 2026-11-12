@@ -13,10 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 )
 
 // runQueued runs the plan job queued for a Broadcast (at the schedule given, nil for a send now)
@@ -132,7 +132,7 @@ func TestAQueuedPlanOfAHeldBroadcastWaitsTheHoldBackoff(t *testing.T) {
 	assert.Equal(t, outboundmessages.HoldBackoff, out.Wait, "a hold asks again after the hold backoff")
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, out.Err, &held)
-	assert.Equal(t, holds.ReasonSuspended, held.Reason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, held.Reason)
 	assert.Empty(t, sched.sends)
 }
 

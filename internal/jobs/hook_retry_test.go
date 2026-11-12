@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -105,7 +106,7 @@ func newHookRetryHarnessAt(t *testing.T, status int, retryAfter string, now time
 func (h *hookRetryHarness) work(maxAttempts int) (*rivertest.WorkResult, error) {
 	h.t.Helper()
 	inserted, err := h.env.queue.InsertTx(context.Background(), h.tx, jobs.DeliverWebhookArgs{
-		WorkspaceID: fixtures.AcmeID, EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`),
+		WorkspaceID: fixtures.AcmeID, EndpointID: fixtures.WebhookCodebasicsID, EventName: systemevent.EmailOpened, DeliveryID: "msg_1", Body: []byte(`{}`),
 	}, &river.InsertOpts{MaxAttempts: maxAttempts})
 	require.NoError(h.t, err)
 	// The clock moves only after the insert, so a test can age the job.

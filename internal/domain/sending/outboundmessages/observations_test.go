@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // Measurements require a delivery reference, retain the observation time and never turn
@@ -29,18 +30,18 @@ func checkObservationSelection(t *rapid.T) {
 		humanOnly bool
 	}
 	cases := []sample{
-		{&events.EmailEngagement{Action: events.NameEmailOpened, OutboundMessageID: id, Machine: machine}, events.NameEmailOpened, true},
-		{&events.EmailEngagement{Action: events.NameEmailClicked, OutboundMessageID: id, Machine: machine}, events.NameEmailClicked, true},
-		{&events.SmsClicked{OutboundMessageID: id, Machine: machine}, events.NameSmsClicked, true},
-		{&events.TelegramClicked{OutboundMessageID: id, Machine: machine}, events.NameTelegramClicked, true},
-		{&events.EmailDelivery{Action: events.NameEmailDelivered, OutboundMessageID: id}, events.NameEmailDelivered, false},
-		{&events.EmailDelivery{Action: events.NameEmailBounced, OutboundMessageID: id}, events.NameEmailBounced, false},
-		{&events.EmailDelivery{Action: events.NameEmailComplained, OutboundMessageID: id}, events.NameEmailComplained, false},
+		{&events.EmailEngagement{Action: systemevent.EmailOpened, OutboundMessageID: id, Machine: machine}, systemevent.EmailOpened, true},
+		{&events.EmailEngagement{Action: systemevent.EmailClicked, OutboundMessageID: id, Machine: machine}, systemevent.EmailClicked, true},
+		{&events.SmsClicked{OutboundMessageID: id, Machine: machine}, systemevent.SmsClicked, true},
+		{&events.TelegramClicked{OutboundMessageID: id, Machine: machine}, systemevent.TelegramClicked, true},
+		{&events.EmailDelivery{Action: systemevent.EmailDelivered, OutboundMessageID: id}, systemevent.EmailDelivered, false},
+		{&events.EmailDelivery{Action: systemevent.EmailBounced, OutboundMessageID: id}, systemevent.EmailBounced, false},
+		{&events.EmailDelivery{Action: systemevent.EmailComplained, OutboundMessageID: id}, systemevent.EmailComplained, false},
 		{&events.EmailEngagement{Action: noise, OutboundMessageID: id}, "", false},
 		{&events.EmailDelivery{Action: noise, OutboundMessageID: id}, "", false},
-		{&events.EmailDelivery{Action: events.NameEmailDelayed, OutboundMessageID: id}, "", false},
-		{&events.EmailDelivery{Action: events.NameEmailDropped, OutboundMessageID: id}, "", false},
-		{&events.SmsDelivery{Action: events.NameSmsDelivered, OutboundMessageID: id}, "", false},
+		{&events.EmailDelivery{Action: systemevent.EmailDelayed, OutboundMessageID: id}, "", false},
+		{&events.EmailDelivery{Action: systemevent.EmailDropped, OutboundMessageID: id}, "", false},
+		{&events.SmsDelivery{Action: systemevent.SmsDelivered, OutboundMessageID: id}, "", false},
 		{&events.SmsStopObserved{OutboundMessageID: id}, "", false},
 	}
 	selected := rapid.SampledFrom(cases).Draw(t, "event")

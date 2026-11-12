@@ -25,7 +25,7 @@ func main() {
 }
 
 func run() error {
-	cfg, err := config.Load("development")
+	cfg, err := config.Load(config.EnvDevelopment)
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}

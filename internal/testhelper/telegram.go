@@ -12,7 +12,9 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // TelegramBot is a fixture Telegram Integration and its bot, as the fake Bot API
@@ -45,7 +47,7 @@ func (env *TestEnv) AcmeTelegram(t *testing.T) TelegramBot {
 	t.Helper()
 	return env.fixtureTelegram(t, fixtures.IntegrationAcmeTelegramID, TelegramBot{
 		ID: AcmeTelegramBotID, Username: AcmeTelegramUsername, Token: AcmeTelegramToken,
-		HookPath: "/hooks/" + fixtures.IntegrationAcmeTelegramIngestKey, Secret: AcmeTelegramSecret,
+		HookPath: paths.Hooks + fixtures.IntegrationAcmeTelegramIngestKey, Secret: AcmeTelegramSecret,
 	})
 }
 
@@ -65,7 +67,7 @@ func (env *TestEnv) AcmeSecondTelegram(t *testing.T) TelegramBot {
 	t.Helper()
 	return env.fixtureTelegram(t, fixtures.IntegrationAcmeSecondTelegramID, TelegramBot{
 		ID: AcmeSecondTelegramBotID, Username: AcmeSecondTelegramUsername, Token: AcmeSecondTelegramToken,
-		HookPath: "/hooks/" + fixtures.IntegrationAcmeSecondTelegramIngestKey, Secret: AcmeSecondTelegramSecret,
+		HookPath: paths.Hooks + fixtures.IntegrationAcmeSecondTelegramIngestKey, Secret: AcmeSecondTelegramSecret,
 	})
 }
 
@@ -86,7 +88,7 @@ func (env *TestEnv) LacunaTelegram(t *testing.T) TelegramBot {
 	return TelegramBot{
 		Integration: env.fixtureIntegration(t, fixtures.LacunaOwnerLenaEmail, fixtures.LacunaPublicID, fixtures.IntegrationLacunaTelegramID),
 		ID:          LacunaTelegramBotID, Username: LacunaTelegramUsername, Token: LacunaTelegramToken,
-		HookPath: "/hooks/" + fixtures.IntegrationLacunaTelegramIngestKey, Secret: LacunaTelegramSecret,
+		HookPath: paths.Hooks + fixtures.IntegrationLacunaTelegramIngestKey, Secret: LacunaTelegramSecret,
 	}
 }
 
@@ -132,7 +134,7 @@ func (env *TestEnv) PostTelegramUpdate(t *testing.T, bot TelegramBot, update str
 func (env *TestEnv) BindTelegram(t *testing.T, bot TelegramBot, contactID, userID, updateID int64) {
 	t.Helper()
 	botID := externalapi.EntityId(bot.Integration.ID)
-	link, err := env.ExternalScoped(t, "contacts:write").TelegramStartLinksIssue(t.Context(),
+	link, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).TelegramStartLinksIssue(t.Context(),
 		&externalapi.IssueTelegramStartLinkInput{IntegrationId: externalapi.NewOptNilEntityId(botID)},
 		externalapi.TelegramStartLinksIssueParams{ContactId: externalapi.EntityId(contactID)})
 	require.NoError(t, err)

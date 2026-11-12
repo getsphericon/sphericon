@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -18,7 +19,7 @@ import (
 func TestExternalRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "automations:read", "automations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 
 	for _, rule := range []int64{fixtures.RuleTagClickedID, fixtures.RuleInactiveID} {
 		id := entityIDString(rule)
@@ -39,7 +40,7 @@ func TestExternalRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 func TestExternalRulesDeleteNeedsTheAutomationsWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	reader := env.ExternalScoped(t, "automations:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	err := reader.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleInactiveID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)

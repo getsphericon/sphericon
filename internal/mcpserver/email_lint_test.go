@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -17,7 +18,7 @@ type lintResult struct {
 	Warnings []map[string]any `json:"warnings"`
 }
 
-func lint(t *testing.T, env *testhelper.TestEnv, args map[string]any, scopes ...string) lintResult {
+func lint(t *testing.T, env *testhelper.TestEnv, args map[string]any, scopes ...apitokens.Scope) lintResult {
 	t.Helper()
 	s := env.MCPClient(t, env.ScopedBearer(t, scopes...))
 	res := call(t, s, "email_lint", args)
@@ -67,7 +68,7 @@ func TestMCPEmailLintReportsWhatCannotRenderAsAnError(t *testing.T) {
 
 func TestMCPEmailLintNeedsTheTemplatesReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 	res := call(t, s, "email_lint", map[string]any{"body": "<p>x</p>"})
 	assert.True(t, res.IsError)
 }
@@ -92,7 +93,7 @@ func TestMCPEmailLintWrapsQuotedTextAsUntrusted(t *testing.T) {
 
 func TestMCPEmailLintWithoutABrandKitHasNoBrandWarnings(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.VandelayID, "templates:read"))
+	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.VandelayID, apitokens.ScopeTemplatesRead))
 	res := call(t, s, "email_lint", map[string]any{"body": `<p style="color:#cc0000;font-family:Georgia">x</p>`})
 	require.False(t, res.IsError, text(t, res))
 	var got lintResult

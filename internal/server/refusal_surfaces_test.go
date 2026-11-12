@@ -14,6 +14,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -56,7 +57,7 @@ func TestARefusedInputAnswers422AlikeOnBothSurfaces(t *testing.T) {
 	env := testhelper.Setup(t)
 	var site, ext answer
 	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
-	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeTokensWrite), string(externalapi.ApiTokenScopeContactsRead)), capture(&ext))
+	extClient := env.ExternalVia(t, env.ScopedBearer(t, apitokens.ScopeTokensWrite, apitokens.ScopeContactsRead), capture(&ext))
 
 	_, err := siteClient.SiteTokensCreate(t.Context(), &siteapi.SiteCreateTokenInput{Name: "   ", Scopes: []siteapi.ApiTokenScope{siteapi.ApiTokenScopeContactsRead}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -75,7 +76,7 @@ func TestARemovalOfARowInUseAnswers409AlikeOnBothSurfaces(t *testing.T) {
 	env := testhelper.Setup(t)
 	var site, ext answer
 	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
-	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsWrite)), capture(&ext))
+	extClient := env.ExternalVia(t, env.ScopedBearer(t, apitokens.ScopeContactsWrite), capture(&ext))
 
 	err := siteClient.SiteTagsDelete(t.Context(), siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.TagVipID})
 	testhelper.SiteRefusal(t, err, http.StatusConflict)
@@ -141,9 +142,9 @@ func newKindSurfaces(t *testing.T) kindSurfaces {
 	k := kindSurfaces{siteAnswer: &answer{}, extAnswer: &answer{}}
 	k.site = env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(k.siteAnswer))
 	k.ext = env.ExternalVia(t, env.ScopedBearer(t,
-		string(externalapi.ApiTokenScopeTemplatesWrite), string(externalapi.ApiTokenScopeTemplatesRead),
-		string(externalapi.ApiTokenScopeBroadcastsWrite), string(externalapi.ApiTokenScopeAutomationsWrite),
-		string(externalapi.ApiTokenScopeWebhooksWrite), string(externalapi.ApiTokenScopeIntegrationsWrite),
+		apitokens.ScopeTemplatesWrite, apitokens.ScopeTemplatesRead,
+		apitokens.ScopeBroadcastsWrite, apitokens.ScopeAutomationsWrite,
+		apitokens.ScopeWebhooksWrite, apitokens.ScopeIntegrationsWrite,
 	), capture(k.extAnswer))
 	return k
 }
@@ -305,7 +306,7 @@ func TestAConflictOnAFieldAnswers409UnderTheFieldAlikeOnBothSurfaces(t *testing.
 	env := testhelper.Setup(t)
 	var site, ext answer
 	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
-	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsWrite)), capture(&ext))
+	extClient := env.ExternalVia(t, env.ScopedBearer(t, apitokens.ScopeContactsWrite), capture(&ext))
 
 	_, err := siteClient.SiteContactsCreate(t.Context(), &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
 		siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -328,7 +329,7 @@ func TestAHeldTestSendAnswers422AlikeOnBothSurfaces(t *testing.T) {
 	var site, ext answer
 	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
 	extClient := env.ExternalVia(t, env.ScopedBearer(t,
-		string(externalapi.ApiTokenScopeBroadcastsRead), string(externalapi.ApiTokenScopeBroadcastsWrite)), capture(&ext))
+		apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite), capture(&ext))
 
 	_, err := siteClient.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress(fixtures.OwnerJohnEmail)},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID})

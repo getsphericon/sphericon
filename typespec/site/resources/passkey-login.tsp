@@ -67,6 +67,7 @@ namespace SitePasskeyLogin {
   @useAuth(NoAuth)
   @post
   @route("/finish")
+  @rateLimited("login")
   op finish(
     @body body: SitePasskeyLoginInput,
 

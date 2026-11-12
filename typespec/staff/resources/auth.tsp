@@ -66,6 +66,7 @@ namespace StaffAuth {
   @useAuth(NoAuth)
   @post
   @route("/login")
+  @rateLimited("login")
   op login(@body body: StaffLoginInput):
     | {
         @statusCode statusCode: 200;
@@ -80,6 +81,7 @@ namespace StaffAuth {
   @useAuth(NoAuth)
   @post
   @route("/second-factor")
+  @rateLimited("login")
   op secondFactor(@body body: StaffSecondFactorInput):
     | {
         @statusCode statusCode: 200;

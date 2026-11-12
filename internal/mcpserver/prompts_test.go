@@ -5,10 +5,12 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // Independent literal: the prompts sphericon ships.
@@ -37,7 +39,7 @@ func promptText(t *testing.T, s *mcp.ClientSession, name string) string {
 
 func TestMCPShippedPromptsAreListedAndRetrievable(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 
 	prompts := listedPrompts(t, s)
 	for _, name := range shippedPrompts {
@@ -58,11 +60,11 @@ func TestMCPShippedPromptsAreListedAndRetrievable(t *testing.T) {
 func TestMCPPromptsOnlyReferenceAuthoringTools(t *testing.T) {
 	env := testhelper.Setup(t)
 	// mcp:send lists the whole generated surface, send-class tools included.
-	surface := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "mcp:send")))
+	surface := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeMcpSend)))
 	for _, name := range sendTools {
 		require.Contains(t, surface, name)
 	}
-	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 	ref := regexp.MustCompile("`([a-z][a-z0-9_]*)\\(\\)`")
 
 	for _, name := range shippedPrompts {
@@ -83,7 +85,7 @@ func TestMCPPromptsOnlyReferenceAuthoringTools(t *testing.T) {
 // where the Brand kit, the schema and the lint are (ADR 0040).
 func TestMCPPromptsThatWriteMailNameTheEditorTools(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 
 	for _, name := range []string{"welcome", "win-back"} {
 		body := promptText(t, s, name)

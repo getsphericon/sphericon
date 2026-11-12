@@ -17,6 +17,8 @@ import (
 
 	"github.com/itchyny/gojq"
 	"github.com/samber/lo"
+
+	kernelchannels "github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 const (
@@ -201,7 +203,7 @@ type rawNotice struct {
 
 // emailChannel is the Channel of a Delivery notice that names none: notices were email's alone
 // before the other Channels.
-const emailChannel Channel = "email"
+const emailChannel = Channel(kernelchannels.Email)
 
 func validateNotice(raw []byte) (DeliveryNotice, error) {
 	var r rawNotice

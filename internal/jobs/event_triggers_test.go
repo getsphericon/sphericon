@@ -11,12 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -31,7 +33,7 @@ func publishIn(ctx context.Context, t *testing.T, env *testhelper.TestEnv, ev ev
 // aliceOpened is a person's open of an email by Alice.
 func aliceOpened() *events.EmailEngagement {
 	return &events.EmailEngagement{
-		Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail,
+		Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail,
 	}
 }
 
@@ -45,12 +47,12 @@ func TestALiveEventOfAContactQueuesItsAutomationAndRuleEvaluations(t *testing.T)
 	require.Len(t, triggers, 1)
 	assert.EqualValues(t, fixtures.AcmeID, triggers[0][jobkind.WorkspaceArg])
 	assert.EqualValues(t, fixtures.ContactAliceID, triggers[0]["contact_id"])
-	assert.Equal(t, events.NameEmailOpened, triggers[0]["action"])
+	assert.Equal(t, systemevent.EmailOpened, triggers[0]["action"])
 	evaluations := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 	require.Len(t, evaluations, 1)
 	assert.EqualValues(t, fixtures.AcmeID, evaluations[0][jobkind.WorkspaceArg])
 	assert.EqualValues(t, fixtures.ContactAliceID, evaluations[0]["contact_id"])
-	assert.Equal(t, events.NameEmailOpened, evaluations[0]["action"])
+	assert.Equal(t, systemevent.EmailOpened, evaluations[0]["action"])
 }
 
 // When the Event occurred travels with the job: an Event older than an Enrollment ends nothing
@@ -88,7 +90,7 @@ func TestAnEventThatTriggersNothingQueuesNoAutomationOrRuleJob(t *testing.T) {
 	machine := aliceOpened()
 	machine.Machine = true
 	machineClick := aliceOpened()
-	machineClick.Action, machineClick.Machine = events.NameEmailClicked, true
+	machineClick.Action, machineClick.Machine = systemevent.EmailClicked, true
 	for name, ev := range map[string]events.DomainEvent{
 		"machine open":  machine,
 		"machine click": machineClick,
@@ -96,7 +98,7 @@ func TestAnEventThatTriggersNothingQueuesNoAutomationOrRuleJob(t *testing.T) {
 		"history": &events.CollectedEvent{
 			WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "purchase", Backfill: true,
 		},
-		"audit entry": &events.AuditEntry{WorkspaceID: fixtures.AcmeID, Actor: events.Actor{Kind: events.ActorUser}, Action: "membership.update", TargetType: "membership"},
+		"audit entry": &events.AuditEntry{WorkspaceID: fixtures.AcmeID, Actor: events.Actor{Kind: events.ActorUser}, Action: "membership.update", TargetType: membership.Label},
 	} {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)

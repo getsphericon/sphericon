@@ -28,7 +28,7 @@ type scopeRule struct {
 // Permission of the contract's Permission enum or none; a missing, unknown or misplaced
 // declaration fails generation. The map holds the scopes that need a Permission.
 var GrantPermissions = Table{
-	Spec:    "openapi/site.openapi.json",
+	Spec:    siteSpec,
 	Out:     "internal/domain/identity/memberships/grant_permissions_gen.go",
 	Package: "memberships",
 	Doc: []string{

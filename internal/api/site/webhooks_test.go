@@ -10,6 +10,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -27,12 +28,12 @@ func TestSiteWebhooksCRUD(t *testing.T) {
 	// Create with an event filter.
 	created, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{
 		URL:        "https://example.com/hook",
-		EventTypes: []string{"contact.created"},
+		EventTypes: []string{systemevent.ContactCreated},
 	}, siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res := created
 	assert.Equal(t, "https://example.com/hook", res.URL)
-	assert.Equal(t, []string{"contact.created"}, res.EventTypes)
+	assert.Equal(t, []string{systemevent.ContactCreated}, res.EventTypes)
 	assert.True(t, res.Enabled)
 	assert.NotEmpty(t, res.Secret, "signing secret is returned for verification")
 

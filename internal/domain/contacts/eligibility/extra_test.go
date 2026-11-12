@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -19,11 +20,11 @@ func TestCheckEmptyDestinationIsEligible(t *testing.T) {
 
 	for name, tc := range map[string]struct {
 		ws      int64
-		channel string
+		channel channels.Channel
 	}{
-		"email":                    {fixtures.AcmeID, eligibility.ChannelEmail},
-		"email under confirmation": {fixtures.LumonID, eligibility.ChannelEmail},
-		"sms":                      {fixtures.TyrellID, eligibility.ChannelSMS},
+		"email":                    {fixtures.AcmeID, channels.Email},
+		"email under confirmation": {fixtures.LumonID, channels.Email},
+		"sms":                      {fixtures.TyrellID, channels.SMS},
 	} {
 		d, err := eligibility.Check(context.Background(), env.DB.Scoped(tc.ws), tc.channel, "   ", eligibility.SourceBroadcasts)
 
@@ -37,11 +38,11 @@ func TestCheckFailsClosedOnStoreErrorAndUnknownWorkspace(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail, "a@example.com", eligibility.SourceBroadcasts)
+	_, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), channels.Email, "a@example.com", eligibility.SourceBroadcasts)
 	require.ErrorContains(t, err, "eligibility check")
 	require.ErrorIs(t, err, context.Canceled, "the store's error is wrapped, not replaced")
 
-	_, err = eligibility.Check(context.Background(), env.DB.Scoped(987654), eligibility.ChannelEmail, "a@example.com", eligibility.SourceBroadcasts)
+	_, err = eligibility.Check(context.Background(), env.DB.Scoped(987654), channels.Email, "a@example.com", eligibility.SourceBroadcasts)
 	assert.ErrorContains(t, err, "workspace 987654 not found")
 }
 
@@ -51,7 +52,7 @@ func TestGloballyOptedOut(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	emails, err := env.DB.Scoped(fixtures.TyrellID).Contact().Query().
-		Where(eligibility.GloballyOptedOut(eligibility.ChannelEmail)).
+		Where(eligibility.GloballyOptedOut(channels.Email)).
 		Select("email").Strings(context.Background())
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []string{

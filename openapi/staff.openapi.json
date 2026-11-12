@@ -58,7 +58,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "login"
       }
     },
     "/auth/logout": {
@@ -140,7 +141,8 @@
             }
           }
         },
-        "security": [{}]
+        "security": [{}],
+        "x-rate-limit": "login"
       }
     },
     "/instance": {

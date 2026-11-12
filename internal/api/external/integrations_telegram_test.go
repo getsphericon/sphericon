@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestExternalTelegramConnectsABot(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsWrite)
 	token := env.Telegram.AddBot(7000000002, "acme_api_bot")
 
 	res, err := c.IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
@@ -36,7 +37,7 @@ func TestExternalTelegramConnectsABot(t *testing.T) {
 func TestExternalPresetsLeaveOutTheFixedTelegramPreset(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.ExternalScoped(t, "integrations:read").PresetsList(context.Background())
+	res, err := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead).PresetsList(context.Background())
 	require.NoError(t, err)
 
 	page := res

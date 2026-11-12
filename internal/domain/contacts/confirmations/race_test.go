@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -48,7 +49,7 @@ func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) 
 	require.NotNil(t, second)
 	assert.Equal(t, first.ID, second.ID, "the second request answers with the Confirmation that stands")
 	logged, err := entclient.Core.New(race.DB).Event.Query().Where(
-		event.WorkspaceID(fixtures.AcmeID), event.Action(events.NameSmsConfirmed), event.Phone(number),
+		event.WorkspaceID(fixtures.AcmeID), event.Action(systemevent.SmsConfirmed), event.Phone(number),
 	).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 1, logged, "only the request that wrote the Confirmation publishes its proof")

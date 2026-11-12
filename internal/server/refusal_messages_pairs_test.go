@@ -9,7 +9,9 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -28,12 +30,12 @@ func headOf(text string, n int) string {
 func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 	const missing = 99999
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	scopes := []string{
-		string(externalapi.ApiTokenScopeAutomationsRead), string(externalapi.ApiTokenScopeAutomationsWrite),
-		string(externalapi.ApiTokenScopeSegmentsRead), string(externalapi.ApiTokenScopeWebhooksRead),
-		string(externalapi.ApiTokenScopeWebhooksWrite), string(externalapi.ApiTokenScopeWebhooksTest),
-		string(externalapi.ApiTokenScopeIntegrationsRead), string(externalapi.ApiTokenScopeContactsRead),
-		string(externalapi.ApiTokenScopeContactsWrite),
+	scopes := []apitokens.Scope{
+		apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite,
+		apitokens.ScopeSegmentsRead, apitokens.ScopeWebhooksRead,
+		apitokens.ScopeWebhooksWrite, apitokens.ScopeWebhooksTest,
+		apitokens.ScopeIntegrationsRead, apitokens.ScopeContactsRead,
+		apitokens.ScopeContactsWrite,
 	}
 
 	cases := []pairCase{
@@ -78,11 +80,11 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "invalid trigger", want: "invalid trigger: ", head: len("invalid trigger: "),
 			site: func(c *siteapi.Client) error {
-				return refusalOf(c.SiteAutomationsCreate(t.Context(), &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "email.sent"},
+				return refusalOf(c.SiteAutomationsCreate(t.Context(), &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: systemevent.EmailSent},
 					siteapi.SiteAutomationsCreateParams{WorkspaceId: ws}))
 			},
 			ext: func(c *externalapi.Client) error {
-				return refusalOf(c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "email.sent"}))
+				return refusalOf(c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.EmailSent}))
 			},
 		},
 		{
@@ -126,11 +128,11 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "webhook url", want: "url must be an absolute http or https URL",
 			site: func(c *siteapi.Client) error {
-				return refusalOf(c.SiteWebhooksCreate(t.Context(), &siteapi.CreateWebhookInput{URL: "not a url", EventTypes: []string{"contact.created"}},
+				return refusalOf(c.SiteWebhooksCreate(t.Context(), &siteapi.CreateWebhookInput{URL: "not a url", EventTypes: []string{systemevent.ContactCreated}},
 					siteapi.SiteWebhooksCreateParams{WorkspaceId: ws}))
 			},
 			ext: func(c *externalapi.Client) error {
-				return refusalOf(c.WebhooksCreate(t.Context(), &externalapi.CreateWebhookInput{URL: "not a url", EventTypes: []string{"contact.created"}}))
+				return refusalOf(c.WebhooksCreate(t.Context(), &externalapi.CreateWebhookInput{URL: "not a url", EventTypes: []string{systemevent.ContactCreated}}))
 			},
 		},
 		{
@@ -185,7 +187,7 @@ type pairCase struct {
 
 // runPairs asks each case of an Acme owner on /site and of an Acme token holding scopes on /api,
 // and compares both messages with the one the case wants.
-func runPairs(t *testing.T, scopes []string, cases []pairCase) {
+func runPairs(t *testing.T, scopes []apitokens.Scope, cases []pairCase) {
 	t.Helper()
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -205,13 +207,13 @@ func runPairs(t *testing.T, scopes []string, cases []pairCase) {
 func TestContactAndSendingRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 	const missing = 99999
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	scopes := []string{
-		string(externalapi.ApiTokenScopeContactsRead), string(externalapi.ApiTokenScopeContactsWrite),
-		string(externalapi.ApiTokenScopeContactsErase), string(externalapi.ApiTokenScopeContactsExport),
-		string(externalapi.ApiTokenScopeCapturedMessagesRead), string(externalapi.ApiTokenScopeTokensWrite),
-		string(externalapi.ApiTokenScopeSendingDomainsRead), string(externalapi.ApiTokenScopeSendingDomainsWrite),
-		string(externalapi.ApiTokenScopeEnrollmentsRead), string(externalapi.ApiTokenScopeAutomationsRead),
-		string(externalapi.ApiTokenScopeAuditRead),
+	scopes := []apitokens.Scope{
+		apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite,
+		apitokens.ScopeContactsErase, apitokens.ScopeContactsExport,
+		apitokens.ScopeCapturedMessagesRead, apitokens.ScopeTokensWrite,
+		apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite,
+		apitokens.ScopeEnrollmentsRead, apitokens.ScopeAutomationsRead,
+		apitokens.ScopeAuditRead,
 	}
 
 	cases := []pairCase{

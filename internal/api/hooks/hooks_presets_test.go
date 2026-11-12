@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -123,8 +124,8 @@ func TestPostmarkIntegrationSuppressesHardBouncesAndComplaintsOnly(t *testing.T)
 
 	hard := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, hard, 1)
-	assert.Equal(t, events.NameEmailBounced, hard[0].Action)
-	assert.Equal(t, events.BounceKindHard, hard[0].BounceKind)
+	assert.Equal(t, systemevent.EmailBounced, hard[0].Action)
+	assert.Equal(t, systemevent.BounceKindHard, hard[0].BounceKind)
 	assert.EqualValues(t, fixtures.ContactAliceID, hard[0].ContactID)
 	assert.Equal(t, "postmark", hard[0].Provider)
 	assert.Equal(t, "codebasics.dev", hard[0].SendingDomain)
@@ -132,10 +133,10 @@ func TestPostmarkIntegrationSuppressesHardBouncesAndComplaintsOnly(t *testing.T)
 
 	soft := failuresFor(t, env, "soft@example.com")
 	require.Len(t, soft, 1, "a soft bounce is published: the deliverability rates read it")
-	assert.Equal(t, events.BounceKindSoft, soft[0].BounceKind)
+	assert.Equal(t, systemevent.BounceKindSoft, soft[0].BounceKind)
 	complaint := failuresFor(t, env, "angry@example.com")
 	require.Len(t, complaint, 1)
-	assert.Equal(t, events.NameEmailComplained, complaint[0].Action)
+	assert.Equal(t, systemevent.EmailComplained, complaint[0].Action)
 	assert.Empty(t, failuresFor(t, env, "gone@example.com"), "an unsubscribe request is not a delivery failure")
 
 	applySuppression(t, env)
@@ -183,7 +184,7 @@ func TestMailgunIntegrationSuppressesPermanentFailuresAndComplaintsOnly(t *testi
 
 	hard := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, hard, 1)
-	assert.Equal(t, events.BounceKindHard, hard[0].BounceKind)
+	assert.Equal(t, systemevent.BounceKindHard, hard[0].BounceKind)
 	assert.EqualValues(t, fixtures.ContactAliceID, hard[0].ContactID)
 	assert.Equal(t, "mailgun", hard[0].Provider)
 	assert.Equal(t, "codebasics.dev", hard[0].SendingDomain)
@@ -191,13 +192,13 @@ func TestMailgunIntegrationSuppressesPermanentFailuresAndComplaintsOnly(t *testi
 
 	soft := failuresFor(t, env, "soft@example.com")
 	require.Len(t, soft, 1, "a temporary failure is Mailgun retrying: a delay")
-	assert.Equal(t, events.NameEmailDelayed, soft[0].Action)
+	assert.Equal(t, systemevent.EmailDelayed, soft[0].Action)
 	complaint := failuresFor(t, env, "angry@example.com")
 	require.Len(t, complaint, 1)
-	assert.Equal(t, events.NameEmailComplained, complaint[0].Action)
+	assert.Equal(t, systemevent.EmailComplained, complaint[0].Action)
 	fine := failuresFor(t, env, "fine@example.com")
 	require.Len(t, fine, 1, "a delivered event is a delivery notice")
-	assert.Equal(t, events.NameEmailDelivered, fine[0].Action)
+	assert.Equal(t, systemevent.EmailDelivered, fine[0].Action)
 
 	applySuppression(t, env)
 	assert.True(t, suppressed(t, env, fixtures.ContactAliceEmail))
@@ -241,7 +242,7 @@ func TestPostmarkDeliveryNoticeLinksAndStampsTheMessage(t *testing.T) {
 
 	got := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
-	assert.Equal(t, events.NameEmailDelivered, got[0].Action)
+	assert.Equal(t, systemevent.EmailDelivered, got[0].Action)
 	assert.Equal(t, "postmark", got[0].Provider)
 	assert.Equal(t, "pm-msg-alice-1", got[0].ProviderMessageID)
 	assert.EqualValues(t, fixtures.OutboundMessagePostmarkAliceID, got[0].OutboundMessageID)
@@ -261,7 +262,7 @@ func TestPostmarkTransientIsADelayAndBounceAndComplaintStamp(t *testing.T) {
 	require.Equal(t, http.StatusOK, postmarkPost(t, env, key, postmarkUser, postmarkToken, postmarkBodyFor("Bounce", "401", "Transient", fixtures.ContactAliceEmail, "pm-msg-alice-1")).Code)
 	got := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
-	assert.Equal(t, events.NameEmailDelayed, got[0].Action)
+	assert.Equal(t, systemevent.EmailDelayed, got[0].Action)
 	assert.EqualValues(t, fixtures.OutboundMessagePostmarkAliceID, got[0].OutboundMessageID)
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	m := messageOf(t, env, fixtures.OutboundMessagePostmarkAliceID)
@@ -297,7 +298,7 @@ func TestMailgunNoticesLinkToTheMessageByItsMessageIDAndStampIt(t *testing.T) {
 	require.Equal(t, http.StatusOK, mailgunPost(t, env, key, mailgunKey, mailgunEventFor("delivered", "evt-d", "", fixtures.ContactAliceEmail, mid)).Code)
 	got := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
-	assert.Equal(t, events.NameEmailDelivered, got[0].Action)
+	assert.Equal(t, systemevent.EmailDelivered, got[0].Action)
 	assert.Equal(t, "mailgun", got[0].Provider)
 	assert.Equal(t, "<"+mid+">", got[0].ProviderMessageID)
 	assert.EqualValues(t, fixtures.OutboundMessageMailgunAliceID, got[0].OutboundMessageID)
@@ -327,8 +328,8 @@ func TestMailgunDelayAndDropAreEventsAndStampNothing(t *testing.T) {
 		byAction[ev.Action] = ev
 	}
 	require.Len(t, byAction, 2)
-	assert.Contains(t, byAction, events.NameEmailDelayed)
-	assert.Contains(t, byAction, events.NameEmailDropped)
+	assert.Contains(t, byAction, systemevent.EmailDelayed)
+	assert.Contains(t, byAction, systemevent.EmailDropped)
 	for _, ev := range byAction {
 		assert.EqualValues(t, fixtures.OutboundMessageMailgunAliceID, ev.OutboundMessageID)
 	}

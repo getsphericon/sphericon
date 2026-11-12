@@ -8,8 +8,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,8 +22,8 @@ func TestAnAutomationTriggeredByATelegramMessageEnrollsItsSender(t *testing.T) {
 	env.BindTelegram(t, bot, fixtures.ContactLiamID, 4101, 1000)
 
 	env.PostTelegramUpdate(t, bot, `{"update_id":1,"message":{"message_id":1,"date":1767225600,"chat":{"id":4101,"type":"private"},"from":{"id":4101,"is_bot":false},"text":"hi"}}`)
-	onlyEnvelope(t, env, events.NameTelegramReceived)
-	triggers := triggersOn(t, env, events.NameTelegramReceived)
+	onlyEnvelope(t, env, systemevent.TelegramReceived)
+	triggers := triggersOn(t, env, systemevent.TelegramReceived)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
 
@@ -31,6 +31,6 @@ func TestAnAutomationTriggeredByATelegramMessageEnrollsItsSender(t *testing.T) {
 		Where(automationrun.AutomationID(fixtures.AutomationOnTelegramReceivedID), automationrun.ContactID(fixtures.ContactLiamID)).
 		Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, events.NameTelegramReceived, *run.EventAction)
+	assert.Equal(t, systemevent.TelegramReceived, *run.EventAction)
 	assert.Equal(t, "hi", run.EventProperties["text"])
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -17,7 +18,7 @@ import (
 func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:write", "integrations:write", "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeIntegrationsWrite, apitokens.ScopeSendingDomainsWrite)
 
 	err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(fixtures.TagVipID)})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusConflict)

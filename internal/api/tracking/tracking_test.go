@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -58,7 +59,7 @@ func confirmPath(t *testing.T, tr *messagetoken.Tracker, target linktarget.Confi
 func TestConfirmEndpoint(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
@@ -118,7 +119,7 @@ func TestConfirmEndpoint(t *testing.T) {
 	assert.Equal(t, 1, n, "repeated POST does not duplicate the confirmation")
 
 	// Exactly one marketing.confirmed event was published.
-	count := env.QueuedCount(t, "marketing.confirmed", map[string]any{"email": *c.Email})
+	count := env.QueuedCount(t, systemevent.MarketingConfirmed, map[string]any{"email": *c.Email})
 	assert.Equal(t, 1, count, "one confirmation event, published once")
 }
 
@@ -128,7 +129,7 @@ func TestConfirmEndpoint(t *testing.T) {
 func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
@@ -169,7 +170,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
@@ -259,9 +260,9 @@ func TestTrackingEndpoints(t *testing.T) {
 	// three events were published for this recipient.
 	forRecipient := lo.Filter(env.QueuedMessages(t), func(m testhelper.QueuedMessage, _ int) bool { return m.Data["email"] == *c.Email })
 	names := lo.Map(forRecipient, func(m testhelper.QueuedMessage, _ int) string { return m.Envelope.Name })
-	assert.Contains(t, names, "email.opened")
-	assert.Contains(t, names, "email.clicked")
-	assert.Contains(t, names, "email.unsubscribed")
+	assert.Contains(t, names, systemevent.EmailOpened)
+	assert.Contains(t, names, systemevent.EmailClicked)
+	assert.Contains(t, names, systemevent.EmailUnsubscribed)
 }
 
 // The unsubscribe link names the email it sits in, so the email.unsubscribed Event is about that
@@ -270,7 +271,7 @@ func TestTrackingEndpoints(t *testing.T) {
 func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
@@ -288,7 +289,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	env.Server.ServeHTTP(w, req)
 	require.Equal(t, http.StatusNoContent, w.Code)
 
-	unsubscribed := env.QueuedMessages(t, "email.unsubscribed")
+	unsubscribed := env.QueuedMessages(t, systemevent.EmailUnsubscribed)
 	require.Len(t, unsubscribed, 1)
 	assert.Equal(t, json.Number(strconv.Itoa(fixtures.OutboundMessageWelcomeID)), unsubscribed[0].Data["outboundMessageId"])
 }
@@ -298,7 +299,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 
@@ -340,7 +341,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 

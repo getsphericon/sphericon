@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -18,7 +20,7 @@ import (
 func TestExternalRulesReadAnEnrollAction(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	reader := env.ExternalScoped(t, "automations:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	rule, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleEnrollGreetingID)})
 	require.NoError(t, err)
@@ -32,7 +34,7 @@ func TestExternalRulesReadAnEnrollAction(t *testing.T) {
 func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	reader := env.ExternalScoped(t, "automations:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	rule, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleVipOnlyID)})
 	require.NoError(t, err)
@@ -56,7 +58,7 @@ func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	_, err = reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleGlobexID)})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	denied := env.ExternalScoped(t, "contacts:read")
+	denied := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	_, err = denied.RulesList(ctx, externalapi.RulesListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
@@ -67,12 +69,12 @@ func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	author := env.ExternalScoped(t, "automations:read", "automations:write")
-	publisher := env.ExternalScoped(t, "automations:publish")
+	author := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
+	publisher := env.ExternalScoped(t, apitokens.ScopeAutomationsPublish)
 
 	res, err := author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Tag who clicks",
-		TriggerEvents: []string{"email.clicked"},
+		TriggerEvents: []string{systemevent.EmailClicked},
 		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("clicker")}},
 	})
 	require.NoError(t, err)
@@ -87,7 +89,7 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 
 	_, err = author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Typo",
-		TriggerEvents: []string{"email.clicked"},
+		TriggerEvents: []string{systemevent.EmailClicked},
 		Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t,
 			`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:no_such_field","operator":"eq","value":"x"}]}`)),
 	})
@@ -95,7 +97,7 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 
 	_, err = author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Clicked twice this week",
-		TriggerEvents: []string{"email.clicked"},
+		TriggerEvents: []string{systemevent.EmailClicked},
 		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("keen")}},
 		Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t,
 			`{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"email.clicked","operator":"atLeast","times":2,"withinDays":7}]}`)),

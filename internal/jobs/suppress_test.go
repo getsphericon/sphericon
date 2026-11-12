@@ -16,6 +16,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -42,7 +44,7 @@ func envelopeOf(name, data string) events.Envelope {
 func TestSuppressRejectsUndecodableEnvelopes(t *testing.T) {
 	ctx := t.Context()
 	require.ErrorContains(t, suppressEvent(ctx, nil, envelopeOf("no.such.event", "{}")), "unknown event")
-	require.ErrorContains(t, suppressEvent(ctx, nil, envelopeOf(events.NameContactCreated, `"scalar"`)), "decode")
+	require.ErrorContains(t, suppressEvent(ctx, nil, envelopeOf(systemevent.ContactCreated, `"scalar"`)), "decode")
 }
 
 // An unsubscribe is NOT a suppression (ADR 0001): it is a separate, per-source
@@ -53,12 +55,12 @@ func TestSuppressIgnoresUnsubscribe(t *testing.T) {
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000000",
-		Name:        events.NameEmailUnsubscribed,
+		Name:        systemevent.EmailUnsubscribed,
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
 		Data: dataFor(t, &events.EmailEngagement{
-			Action:      events.NameEmailUnsubscribed,
+			Action:      systemevent.EmailUnsubscribed,
 			WorkspaceID: fixtures.AcmeID,
 			ContactID:   7,
 			Email:       "Unsub@Example.com",
@@ -82,12 +84,12 @@ func TestSuppressIgnoresNonSuppressingActions(t *testing.T) {
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000001",
-		Name:        events.NameEmailOpened,
+		Name:        systemevent.EmailOpened,
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
 		Data: dataFor(t, &events.EmailEngagement{
-			Action:      events.NameEmailOpened,
+			Action:      systemevent.EmailOpened,
 			WorkspaceID: fixtures.AcmeID,
 			ContactID:   7,
 			Email:       "open@example.com",
@@ -109,16 +111,16 @@ func TestSuppressOnHardBounce(t *testing.T) {
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000010",
-		Name:        events.NameEmailBounced,
+		Name:        systemevent.EmailBounced,
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
 		Data: dataFor(t, &events.EmailDelivery{
-			Action:      events.NameEmailBounced,
+			Action:      systemevent.EmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "hardbounce@example.com",
-			BounceKind:  events.BounceKindHard,
-			Provider:    "ses",
+			BounceKind:  systemevent.BounceKindHard,
+			Provider:    string(providers.SES),
 		}),
 	}
 	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
@@ -139,16 +141,16 @@ func TestSuppressIgnoresSoftBounce(t *testing.T) {
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000011",
-		Name:        events.NameEmailBounced,
+		Name:        systemevent.EmailBounced,
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
 		Data: dataFor(t, &events.EmailDelivery{
-			Action:      events.NameEmailBounced,
+			Action:      systemevent.EmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "softbounce@example.com",
-			BounceKind:  events.BounceKindSoft,
-			Provider:    "ses",
+			BounceKind:  systemevent.BounceKindSoft,
+			Provider:    string(providers.SES),
 		}),
 	}
 	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
@@ -167,15 +169,15 @@ func TestSuppressOnComplaint(t *testing.T) {
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000012",
-		Name:        events.NameEmailComplained,
+		Name:        systemevent.EmailComplained,
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
 		Data: dataFor(t, &events.EmailDelivery{
-			Action:      events.NameEmailComplained,
+			Action:      systemevent.EmailComplained,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "complaint@example.com",
-			Provider:    "ses",
+			Provider:    string(providers.SES),
 		}),
 	}
 	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
@@ -196,12 +198,12 @@ func TestSuppressIsIdempotent(t *testing.T) {
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000002",
-		Name:        events.NameEmailComplained,
+		Name:        systemevent.EmailComplained,
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
 		Data: dataFor(t, &events.EmailDelivery{
-			Action:      events.NameEmailComplained,
+			Action:      systemevent.EmailComplained,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "dupe@example.com",
 		}),

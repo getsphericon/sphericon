@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 	"unicode/utf8"
+
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // The System events of what happens to a Contact rather than what it does (#897): its Tags, its
@@ -42,7 +44,7 @@ type ContactFieldChanged struct {
 	Value       any    `json:"value,omitempty"`
 }
 
-func (*ContactFieldChanged) EventName() string  { return NameContactFieldChanged }
+func (*ContactFieldChanged) EventName() string  { return systemevent.ContactFieldChanged }
 func (*ContactFieldChanged) EventVersion() int  { return 1 }
 func (e *ContactFieldChanged) Workspace() int64 { return e.WorkspaceID }
 func (e *ContactFieldChanged) Project() Projection {
@@ -51,7 +53,7 @@ func (e *ContactFieldChanged) Project() Projection {
 		props["value"] = e.Value
 	}
 	return Projection{
-		Subject: e.Email, Action: NameContactFieldChanged, Email: e.Email, ContactID: e.ContactID,
+		Subject: e.Email, Action: systemevent.ContactFieldChanged, Email: e.Email, ContactID: e.ContactID,
 		Properties: props,
 	}
 }
@@ -136,13 +138,13 @@ type TelegramReceived struct {
 	DedupID       string `json:"dedupId,omitempty"`
 }
 
-func (*TelegramReceived) EventName() string  { return NameTelegramReceived }
+func (*TelegramReceived) EventName() string  { return systemevent.TelegramReceived }
 func (*TelegramReceived) EventVersion() int  { return 1 }
 func (e *TelegramReceived) Workspace() int64 { return e.WorkspaceID }
 func (e *TelegramReceived) EventID() string  { return e.DedupID }
 func (e *TelegramReceived) Project() Projection {
 	return Projection{
-		Subject: e.Email, Action: NameTelegramReceived, Email: e.Email, ContactID: e.ContactID,
+		Subject: e.Email, Action: systemevent.TelegramReceived, Email: e.Email, ContactID: e.ContactID,
 		Properties: map[string]any{"integrationId": e.IntegrationID, "text": e.Text},
 	}
 }
@@ -164,7 +166,7 @@ type TelegramSent struct {
 	DedupID           string `json:"dedupId,omitempty"`
 }
 
-func (*TelegramSent) EventName() string  { return NameTelegramSent }
+func (*TelegramSent) EventName() string  { return systemevent.TelegramSent }
 func (*TelegramSent) EventVersion() int  { return 1 }
 func (e *TelegramSent) Workspace() int64 { return e.WorkspaceID }
 func (e *TelegramSent) EventID() string  { return e.DedupID }
@@ -186,7 +188,7 @@ func (e *TelegramSent) Project() Projection {
 		props["sendingSource"] = e.SendingSource
 	}
 	return Projection{
-		Subject: e.Email, Action: NameTelegramSent, Email: e.Email, ContactID: e.ContactID,
+		Subject: e.Email, Action: systemevent.TelegramSent, Email: e.Email, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
 	}
 }
@@ -208,7 +210,7 @@ type SmsSent struct {
 	DedupID           string `json:"dedupId,omitempty"`
 }
 
-func (*SmsSent) EventName() string  { return NameSmsSent }
+func (*SmsSent) EventName() string  { return systemevent.SmsSent }
 func (*SmsSent) EventVersion() int  { return 1 }
 func (e *SmsSent) Workspace() int64 { return e.WorkspaceID }
 func (e *SmsSent) EventID() string  { return e.DedupID }
@@ -230,7 +232,7 @@ func (e *SmsSent) Project() Projection {
 		props["sendingSource"] = e.SendingSource
 	}
 	return Projection{
-		Subject: e.Email, Action: NameSmsSent, Email: e.Email, ContactID: e.ContactID,
+		Subject: e.Email, Action: systemevent.SmsSent, Email: e.Email, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
 	}
 }
@@ -324,21 +326,23 @@ func (e *LinkClick) project(action string) Projection {
 // SmsClicked is a click on a short tracked link of an SMS (sms.clicked).
 type SmsClicked LinkClick
 
-func (*SmsClicked) EventName() string     { return NameSmsClicked }
+func (*SmsClicked) EventName() string     { return systemevent.SmsClicked }
 func (*SmsClicked) EventVersion() int     { return 1 }
 func (e *SmsClicked) Workspace() int64    { return e.WorkspaceID }
 func (e *SmsClicked) EventID() string     { return e.DedupID }
-func (e *SmsClicked) Project() Projection { return (*LinkClick)(e).project(NameSmsClicked) }
+func (e *SmsClicked) Project() Projection { return (*LinkClick)(e).project(systemevent.SmsClicked) }
 
 // TelegramClicked is a click on a short tracked link of a Telegram message (telegram.clicked);
 // Telegram's link-preview fetcher is among the machine hits.
 type TelegramClicked LinkClick
 
-func (*TelegramClicked) EventName() string     { return NameTelegramClicked }
-func (*TelegramClicked) EventVersion() int     { return 1 }
-func (e *TelegramClicked) Workspace() int64    { return e.WorkspaceID }
-func (e *TelegramClicked) EventID() string     { return e.DedupID }
-func (e *TelegramClicked) Project() Projection { return (*LinkClick)(e).project(NameTelegramClicked) }
+func (*TelegramClicked) EventName() string  { return systemevent.TelegramClicked }
+func (*TelegramClicked) EventVersion() int  { return 1 }
+func (e *TelegramClicked) Workspace() int64 { return e.WorkspaceID }
+func (e *TelegramClicked) EventID() string  { return e.DedupID }
+func (e *TelegramClicked) Project() Projection {
+	return (*LinkClick)(e).project(systemevent.TelegramClicked)
+}
 
 // Ways a Contact stops marketing on a Channel, the `via` property of telegram.unsubscribed and
 // sms.unsubscribed.
@@ -373,7 +377,7 @@ type TelegramUnsubscribed struct {
 	DedupID       string `json:"dedupId,omitempty"`
 }
 
-func (*TelegramUnsubscribed) EventName() string  { return NameTelegramUnsubscribed }
+func (*TelegramUnsubscribed) EventName() string  { return systemevent.TelegramUnsubscribed }
 func (*TelegramUnsubscribed) EventVersion() int  { return 1 }
 func (e *TelegramUnsubscribed) Workspace() int64 { return e.WorkspaceID }
 func (e *TelegramUnsubscribed) EventID() string  { return e.DedupID }
@@ -389,7 +393,7 @@ func (e *TelegramUnsubscribed) Project() Projection {
 		props["automationId"] = e.AutomationID
 	}
 	return Projection{
-		Subject: e.Email, Action: NameTelegramUnsubscribed, Email: e.Email, ContactID: e.ContactID,
+		Subject: e.Email, Action: systemevent.TelegramUnsubscribed, Email: e.Email, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
 	}
 }
@@ -411,7 +415,7 @@ type SmsUnsubscribed struct {
 	DedupID      string `json:"dedupId,omitempty"`
 }
 
-func (*SmsUnsubscribed) EventName() string  { return NameSmsUnsubscribed }
+func (*SmsUnsubscribed) EventName() string  { return systemevent.SmsUnsubscribed }
 func (*SmsUnsubscribed) EventVersion() int  { return 1 }
 func (e *SmsUnsubscribed) Workspace() int64 { return e.WorkspaceID }
 func (e *SmsUnsubscribed) EventID() string  { return e.DedupID }
@@ -424,7 +428,7 @@ func (e *SmsUnsubscribed) Project() Projection {
 		props["automationId"] = e.AutomationID
 	}
 	return Projection{
-		Subject: e.Email, Action: NameSmsUnsubscribed, Email: e.Email, Phone: e.Phone, ContactID: e.ContactID,
+		Subject: e.Email, Action: systemevent.SmsUnsubscribed, Email: e.Email, Phone: e.Phone, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
 	}
 }

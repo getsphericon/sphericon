@@ -10,7 +10,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -31,7 +32,7 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 		Wording: "Text me about orders and offers", Source: "phone call", Brand: "Acme",
 	}, siteapi.SiteSmsConsentsConfirmParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactTexterID)})
 	require.NoError(t, err)
-	eligible, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, fixtures.ContactTexterPhone, eligibility.SourceBroadcasts)
+	eligible, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), channels.SMS, fixtures.ContactTexterPhone, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	stopped, err := member.SiteSmsConsentsOptOut(ctx, siteapi.SiteSmsConsentsOptOutParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactTexterID)})
 	require.NoError(t, err)
@@ -44,11 +45,11 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	assert.Equal(t, siteapi.ConfirmationProvenanceImported, after.Confirmation.Value.Provenance)
 	assert.Equal(t, "phone call", after.Confirmation.Value.Source.Value)
 	assert.True(t, eligible.Eligible)
-	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{
+	smsConfirmed := env.QueuedCount(t, systemevent.SmsConfirmed, map[string]any{
 		"phone": fixtures.ContactTexterPhone, "contactId": fixtures.ContactTexterID, "source": "phone call",
 	})
 	assert.Equal(t, 1, smsConfirmed)
-	marketingConfirmed := env.QueuedCount(t, events.NameMarketingConfirmed, nil)
+	marketingConfirmed := env.QueuedCount(t, systemevent.MarketingConfirmed, nil)
 	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 
 	require.True(t, stopped.OptOut.Set, "opted out")

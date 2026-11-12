@@ -6,9 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samber/lo"
-
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -132,16 +131,12 @@ func idGuardCases() []guardCase {
 	}
 }
 
-func allScopes() []string {
-	return lo.Map(externalapi.ApiTokenScope("").AllValues(), func(s externalapi.ApiTokenScope, _ int) string { return string(s) })
-}
-
 // An id that is not an int64 is refused by the contract (a 400 problem) before any
 // handler runs, for every id-addressed operation. The typed client cannot spell one, so
 // each call carries a sentinel id that is swapped on the wire.
 func TestExternalMalformedIDIsABadRequest(t *testing.T) {
 	env := testhelper.Setup(t)
-	bearer := env.ScopedBearer(t, allScopes()...)
+	bearer := env.ScopedBearer(t, apitokens.Scopes...)
 	for _, bad := range []string{"abc", "99999999999999999999", "1.5", "-"} {
 		c := env.ExternalVia(t, bearer, testhelper.RewriteURL("123456789", bad))
 		for _, tc := range idGuardCases() {
@@ -157,7 +152,7 @@ func TestExternalMalformedIDIsABadRequest(t *testing.T) {
 // operation before the id is even looked at.
 func TestExternalIDOperationsRequireTheirScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "tokens:read")
+	c := env.ExternalScoped(t, apitokens.ScopeTokensRead)
 	for _, tc := range idGuardCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.call(c, 1)

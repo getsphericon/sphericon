@@ -35,7 +35,7 @@ func workspacesStatus(t *testing.T, env *testhelper.TestEnv, session string) int
 }
 
 func TestSiteSessionEndsAfterTheConfiguredLifetime(t *testing.T) {
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, 24*time.Hour, cfg.SessionTTL, "default session lifetime")
 	c := &movableClock{t: time.Now()}

@@ -111,7 +111,7 @@ func presetNameOf(row *ent.Integration) string {
 	case row.Preset != nil:
 		return *row.Preset
 	case row.Provider == providers.SES:
-		return "ses"
+		return preset.BuiltinSES
 	}
 	return ""
 }

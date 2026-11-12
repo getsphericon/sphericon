@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -52,7 +53,7 @@ func (u *UseCase) Restore(ctx context.Context, in RestoreInput) (View, error) {
 		if err != nil {
 			return err
 		}
-		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, in.Actor, events.ActionWorkspaceRestore, map[string]any{"deleted": events.Change(true, false)}))
+		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, in.Actor, events.ActionWorkspaceRestore, map[string]any{workspaces.DiffDeleted: events.Change(true, false)}))
 	})
 	if err != nil {
 		return View{}, err

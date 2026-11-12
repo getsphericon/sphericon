@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
@@ -100,10 +101,10 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		}
 		diff := map[string]any{}
 		if before.Name != updated.Name {
-			diff["name"] = events.Change(before.Name, updated.Name)
+			diff[workspace.FieldName] = events.Change(before.Name, updated.Name)
 		}
 		if before.PostalAddress != updated.PostalAddress {
-			diff["postal_address"] = events.Change(before.PostalAddress, updated.PostalAddress)
+			diff[workspace.FieldPostalAddress] = events.Change(before.PostalAddress, updated.PostalAddress)
 		}
 		if len(diff) == 0 {
 			return nil
@@ -128,7 +129,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 // made on revision, as Update is.
 func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor events.Actor, revision int64, days *int) (*ent.Workspace, error) {
 	if days != nil {
-		if err := validation.Range("retentionDays", *days, bounds.RetentionDaysMin, bounds.RetentionDaysMax); err != nil {
+		if err := validation.Range(fieldname.RetentionDays, *days, bounds.RetentionDaysMin, bounds.RetentionDaysMax); err != nil {
 			return nil, err
 		}
 	}
@@ -158,7 +159,7 @@ func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor eve
 			TargetType:  workspace.Label,
 			TargetID:    strconv.FormatInt(before.ID, 10),
 			TargetName:  before.Name,
-			Diff:        map[string]any{"retention_days": events.Change(before.RetentionDays, days)},
+			Diff:        map[string]any{workspace.FieldRetentionDays: events.Change(before.RetentionDays, days)},
 		})
 	})
 	return updated, err
@@ -204,11 +205,11 @@ func (m *Module) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.Ac
 }
 
 // ErrUnknownCurrency refuses a Reporting currency code that is not in ISO 4217.
-var ErrUnknownCurrency = validation.RefuseField("reportingCurrency", "workspaces: unknown currency code", i18n.ErrorsCurrencyUnknown)
+var ErrUnknownCurrency = validation.RefuseField(fieldname.ReportingCurrency, "workspaces: unknown currency code", i18n.ErrorsCurrencyUnknown)
 
 // ErrUnknownZone refuses a Workspace or a User time zone the zone database does not know. It
 // wraps reportday.ErrUnknownZone.
-var ErrUnknownZone = validation.RefuseField("timezone", "workspaces: unknown time zone", i18n.ErrorsTimezoneUnknown)
+var ErrUnknownZone = validation.RefuseField(fieldname.Timezone, "workspaces: unknown time zone", i18n.ErrorsTimezoneUnknown)
 
 // CheckZone refuses with ErrUnknownZone an IANA name the zone database does not know.
 func CheckZone(name string) error {
@@ -228,7 +229,7 @@ func CheckZone(name string) error {
 // It is made on revision, as Update is.
 func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor events.Actor, revision int64, code *string, windowDays *int) (*ent.Workspace, error) {
 	if windowDays != nil {
-		if err := validation.Range("attributionWindowDays", *windowDays,
+		if err := validation.Range(fieldname.AttributionWindowDays, *windowDays,
 			bounds.AttributionWindowDaysMin, bounds.AttributionWindowDaysMax); err != nil {
 			return nil, err
 		}
@@ -367,7 +368,7 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 			TargetType:  workspace.Label,
 			TargetID:    strconv.FormatInt(before.ID, 10),
 			TargetName:  before.Name,
-			Diff:        map[string]any{"second_factor_required_at": events.Change(before.SecondFactorRequiredAt, updated.SecondFactorRequiredAt)},
+			Diff:        map[string]any{workspace.FieldSecondFactorRequiredAt: events.Change(before.SecondFactorRequiredAt, updated.SecondFactorRequiredAt)},
 		}); err != nil || !required {
 			return err
 		}
@@ -500,7 +501,7 @@ func (m *Module) SetDomainJoin(ctx context.Context, s *ent.Scoped, actor events.
 			TargetType:  workspace.Label,
 			TargetID:    strconv.FormatInt(before.ID, 10),
 			TargetName:  before.Name,
-			Diff:        map[string]any{"domain_join_enabled": events.Change(before.DomainJoinEnabled, enabled)},
+			Diff:        map[string]any{workspace.FieldDomainJoinEnabled: events.Change(before.DomainJoinEnabled, enabled)},
 		})
 	})
 	return updated, err

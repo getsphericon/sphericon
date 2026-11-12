@@ -1,0 +1,20 @@
+id: audit-target-is-a-label
+language: Go
+severity: error
+message: "rule 6: an Audit entry names its target type by a string literal; fix: name it by the ent entity's Label (membership.Label), or by a named constant when no entity is the target"
+note: >-
+  An Audit entry's TargetType is the entity it is about, as the generated Audit entries of the
+  audited entities name it (their ent Label), and the Audit log filters by it. A literal can drift
+  from the entity's name and the filter then misses the entry.
+rule:
+  pattern:
+    context: 'var _ = events.AuditEntry{TargetType: $TYPE}'
+    selector: keyed_element
+constraints:
+  TYPE:
+    regex: ^["`]
+files:
+  - '**/*.go'
+ignores:
+  - ent/**
+  - gen/**

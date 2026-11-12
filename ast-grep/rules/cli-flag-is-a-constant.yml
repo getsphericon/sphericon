@@ -1,0 +1,19 @@
+id: cli-flag-is-a-constant
+language: Go
+severity: error
+message: 'rule 6: a command reads a flag or argument by a string literal; fix: name it by the constant its declaration uses (flags.go)'
+note: >-
+  urfave/cli answers a lookup of a name no flag declares with the zero value, so a lookup by a
+  misspelt name reads nothing without an error. A command declares each flag and argument with a
+  constant of flags.go and reads it back by the same constant, so the two cannot drift.
+rule:
+  pattern:
+    context: 'func _() { cmd.$LOOKUP($NAME) }'
+    selector: call_expression
+constraints:
+  LOOKUP:
+    regex: ^(Bool|String|Int|Int64|Uint|Float64|Duration|Timestamp|StringSlice|StringArg|StringArgs|IntArg|IntArgs|Int64Arg|Int64Args|IsSet)$
+  NAME:
+    regex: ^["`]
+files:
+  - 'cmd/**/*.go'

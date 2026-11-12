@@ -185,6 +185,7 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @post
   @route("/sign-up")
+  @rateLimited("human")
   op signUp(@body body: SiteSignUpInput):
     | {
         @statusCode statusCode: 202;
@@ -205,6 +206,7 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @post
   @route("/login")
+  @rateLimited("login")
   op login(@body body: SiteLoginInput):
     | {
         @statusCode statusCode: 200;
@@ -224,6 +226,7 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @post
   @route("/second-factor")
+  @rateLimited("login")
   op secondFactor(@body body: SiteLoginSecondFactorInput):
     | {
         @statusCode statusCode: 200;
@@ -380,6 +383,7 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @post
   @route("/forgot-password")
+  @rateLimited("forgot_password")
   op forgotPassword(@body body: SiteForgotPasswordInput):
     | AcceptedResponse
     | Problem;
@@ -404,6 +408,7 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @post
   @route("/verify-email")
+  @rateLimited("human")
   op verifyEmail(
     /** The Sign-up browser cookie of the browser that signed up, if any. Its path is the
      * auth prefix shared with resend, and it is SameSite=Strict: not sent on the
@@ -429,6 +434,7 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @post
   @route("/resend-verification")
+  @rateLimited("human")
   op resendVerification(
     /** The Sign-up browser cookie of the browser asking, if any: the new link binds to
      * whatever cookie the caller holds and then signs that browser in without a

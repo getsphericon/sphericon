@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // HourCell is the human opens of one weekday and hour of day in the Workspace time zone.
@@ -37,7 +39,7 @@ func (m *UseCase) OpensByHour(ctx context.Context, s *ent.Scoped, w Window) (*Op
 	}
 	err = s.Event().Query().
 		Where(
-			event.ActionEQ(events.NameEmailOpened), events.HumanOnly(),
+			event.ActionEQ(systemevent.EmailOpened), events.HumanOnly(),
 			event.OccurredAtGTE(days.Since), event.OccurredAtLT(days.Until),
 		).
 		Modify(func(sel *sql.Selector) {

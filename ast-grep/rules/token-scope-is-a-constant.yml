@@ -1,0 +1,26 @@
+id: token-scope-is-a-constant
+language: Go
+severity: error
+message: "rule 6: a test's token names a scope by a string literal; fix: name it by its generated constant (apitokens.ScopeContactsRead)"
+note: >-
+  The scopes a test token holds are the contract's ApiTokenScope, generated into apitokens
+  (CODING_STANDARDS.md: tests use the generated constants). A misspelt literal still compiles into
+  the typed scope list, and a test that expects a refusal for a missing scope then passes without
+  testing anything.
+rule:
+  pattern:
+    context: 'func _() { $ENV.$HELPER($$$ARGS) }'
+    selector: call_expression
+  has:
+    kind: argument_list
+    has:
+      kind: interpreted_string_literal
+      regex: '^"[a-z_]+:[a-z_]+"$'
+constraints:
+  HELPER:
+    regex: ^(ExternalScoped|ScopedBearer|ScopedBearerFor)$
+files:
+  - '**/*.go'
+ignores:
+  - gen/**
+  - ent/**

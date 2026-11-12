@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -48,13 +49,13 @@ func notice(action, bounceKind, email string) *events.EmailDelivery {
 // back.
 func TestABounceOrAComplaintQueuesOneSuppressionJob(t *testing.T) {
 	env := testhelper.Setup(t)
-	publishEvent(t, env, notice(events.NameEmailBounced, events.BounceKindHard, "hard@example.com"))
-	publishEvent(t, env, notice(events.NameEmailComplained, "", "complained@example.com"))
-	publishEvent(t, env, notice(events.NameEmailBounced, events.BounceKindSoft, "soft@example.com"))
-	publishEvent(t, env, notice(events.NameEmailDelivered, "", "delivered@example.com"))
+	publishEvent(t, env, notice(systemevent.EmailBounced, systemevent.BounceKindHard, "hard@example.com"))
+	publishEvent(t, env, notice(systemevent.EmailComplained, "", "complained@example.com"))
+	publishEvent(t, env, notice(systemevent.EmailBounced, systemevent.BounceKindSoft, "soft@example.com"))
+	publishEvent(t, env, notice(systemevent.EmailDelivered, "", "delivered@example.com"))
 	boom := errors.New("boom")
 	err := env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
-		if err := pub.Publish(t.Context(), notice(events.NameEmailBounced, events.BounceKindHard, "rolled-back@example.com")); err != nil {
+		if err := pub.Publish(t.Context(), notice(systemevent.EmailBounced, systemevent.BounceKindHard, "rolled-back@example.com")); err != nil {
 			return err
 		}
 		return boom
@@ -78,8 +79,8 @@ func TestABounceOrAComplaintQueuesOneSuppressionJob(t *testing.T) {
 // job worked again as river retries it, keep the first entry and its reason.
 func TestTheSuppressionJobSuppressesTheAddressOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	publishEvent(t, env, notice(events.NameEmailBounced, events.BounceKindHard, "twice@example.com"))
-	publishEvent(t, env, notice(events.NameEmailComplained, "", "twice@example.com"))
+	publishEvent(t, env, notice(systemevent.EmailBounced, systemevent.BounceKindHard, "twice@example.com"))
+	publishEvent(t, env, notice(systemevent.EmailComplained, "", "twice@example.com"))
 
 	env.PerformEnqueuedJobs(t, jobs.SuppressEventArgs{})
 	env.RetryJobs(t, jobs.SuppressEventArgs{})
@@ -110,7 +111,7 @@ func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = tx.Rollback() })
-	handled := events.Envelope{ID: "01JHANDLED", Name: events.NameContactCreated, WorkspaceID: fixtures.AcmeID, CorrelationID: "01JROOT", Data: []byte(`{}`)}
+	handled := events.Envelope{ID: "01JHANDLED", Name: systemevent.ContactCreated, WorkspaceID: fixtures.AcmeID, CorrelationID: "01JROOT", Data: []byte(`{}`)}
 	// The publisher of the handled event ran while handling another: the job's metadata records
 	// that chain, one link up.
 	publishing := events.Handling(ctx, events.Envelope{ID: "01JPUBLISHER", CorrelationID: "01JROOT"})
@@ -125,7 +126,7 @@ func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	_, err = w.WorkJob(ctx, t, tx, queued.Job)
 
 	require.NoError(t, err)
-	published := testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameContactCreated)
+	published := testhelper.QueuedEnvelopesOn(t, sqlDB, systemevent.ContactCreated)
 	require.NotEmpty(t, published)
 	last := published[len(published)-1]
 	assert.Equal(t, "01JROOT", last.CorrelationID)
@@ -146,7 +147,7 @@ func TestAnOrderEventQueuesOneOrdersJob(t *testing.T) {
 	publishEvent(t, env, orderEvent(orders.ActionCompleted, map[string]any{"order_id": "Q-1", "total": 20.0, "currency": "USD"}, false))
 	publishEvent(t, env, orderEvent(orders.ActionRefunded, map[string]any{"order_id": "Q-0", "total": 5.0}, true))
 	publishEvent(t, env, orderEvent("page_view", nil, false))
-	publishEvent(t, env, notice(events.NameEmailBounced, events.BounceKindHard, "order-less@example.com"))
+	publishEvent(t, env, notice(systemevent.EmailBounced, systemevent.BounceKindHard, "order-less@example.com"))
 
 	orderJobs := env.EventJobs(t, jobs.OrderEventArgs{}.Kind())
 	actions := collectedActions(t, orderJobs)

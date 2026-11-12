@@ -78,7 +78,7 @@ type Decision struct {
 // It is anchored on the Workspace's Suppression query so it runs through the scoped
 // client; HAVING TRUE turns the select into a single-group one, so exactly one row
 // comes back whether or not the Workspace has any Suppression.
-func Check(ctx context.Context, s *ent.Scoped, channel, dest, source string) (Decision, error) {
+func Check(ctx context.Context, s *ent.Scoped, channel channels.Channel, dest, source string) (Decision, error) {
 	d := emailcase.Of(dest)
 	if d == "" {
 		return Decision{Eligible: true}, nil
@@ -129,7 +129,7 @@ const workspaceMissing = "!workspace"
 // at each of its Bindings on the routed Integration, and its Destination adds itself here.
 type Destination interface {
 	// channel is the Channel whose stores the layers read.
-	channel() string
+	channel() channels.Channel
 	// reach narrows the outer contacts query to the Contacts that have a Destination for which
 	// eligible holds, given the Destination as a ref.
 	reach(s *sql.Selector, eligible func(ref) *sql.Predicate)
@@ -140,7 +140,7 @@ func EmailDestination() Destination { return emailDestination{} }
 
 type emailDestination struct{}
 
-func (emailDestination) channel() string { return ChannelEmail }
+func (emailDestination) channel() channels.Channel { return channels.Email }
 
 func (emailDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
 	s.Where(sql.And(sql.NotNull(s.C(contact.FieldEmail)), eligible(contactRef(s))))
@@ -154,7 +154,7 @@ func PhoneDestination() Destination { return phoneDestination{} }
 
 type phoneDestination struct{}
 
-func (phoneDestination) channel() string { return ChannelSMS }
+func (phoneDestination) channel() channels.Channel { return channels.SMS }
 
 func (phoneDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
 	r := ref{
@@ -168,16 +168,16 @@ func (phoneDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate
 // at each Binding on the Integration, its own and its Visitors', and each one's Destination is
 // checked on its own, so a Contact with one eligible Binding is in the audience however many it
 // has. An Integration of 0 names none and reaches nobody.
-func BindingDestination(channel string, integrationID int64) Destination {
+func BindingDestination(channel channels.Channel, integrationID int64) Destination {
 	return bindingDestination{ch: channel, integration: integrationID}
 }
 
 type bindingDestination struct {
-	ch          string
+	ch          channels.Channel
 	integration int64
 }
 
-func (d bindingDestination) channel() string { return d.ch }
+func (d bindingDestination) channel() channels.Channel { return d.ch }
 
 func (d bindingDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
 	b := sql.Table(entbinding.Table)
@@ -239,11 +239,11 @@ func BroadcastAudience(ctx context.Context, s *ent.Scoped, channel channels.Chan
 		integ, err := messaging.Integration(ctx, s, channels.Telegram, integrationID)
 		switch {
 		case errors.Is(err, messaging.ErrNoProvider):
-			dest = BindingDestination(ChannelTelegram, 0)
+			dest = BindingDestination(channels.Telegram, 0)
 		case err != nil:
 			return nil, fmt.Errorf("integration: %w", err)
 		default:
-			dest = BindingDestination(ChannelTelegram, integ.ID)
+			dest = BindingDestination(channels.Telegram, integ.ID)
 		}
 	default:
 		return nil, fmt.Errorf("channel %q has no destination", channel)
@@ -257,7 +257,7 @@ func BroadcastAudience(ctx context.Context, s *ent.Scoped, channel channels.Chan
 // "fully opted out", since there is no stored contact status (ADR 0001). A
 // per-source opt-out is deliberately not counted: that contact may still be
 // mailable from other sources.
-func GloballyOptedOut(channel string) predicate.Contact {
+func GloballyOptedOut(channel channels.Channel) predicate.Contact {
 	return func(s *sql.Selector) {
 		r := contactRef(s)
 		var preds []*sql.Predicate
@@ -312,7 +312,7 @@ var (
 // layers is the single definition of the eligibility rule, in precedence order
 // (negatives first, the positive confirmation gate last so the negatives always
 // dominate). source "" is a transactional send.
-func layers(r ref, channel, source string) []layer {
+func layers(r ref, channel channels.Channel, source string) []layer {
 	suppressed := layer{
 		reason: ReasonSuppressed,
 		blocks: sql.Exists(match(r, suppressionStore, channel)),
@@ -332,27 +332,30 @@ func layers(r ref, channel, source string) []layer {
 		})
 	unconfirmed := sql.NotExists(match(r, confirmations, channel))
 	switch channel {
-	case ChannelTelegram:
+	case channels.Telegram:
 		// A Binding is the opt-in of a Channel of Bindings: there is no Confirmation to ask for.
 		return out
-	case ChannelSMS:
+	case channels.SMS:
 		// A text asks for a Confirmation always (ADR 0077): the Workspace's confirmed-opt-in
 		// setting is about email only, and turning it off never relaxes sms.
 		return append(out, layer{reason: ReasonUnconfirmed, blocks: unconfirmed})
+	case channels.Email:
+		return append(out, layer{
+			reason: ReasonUnconfirmed,
+			// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
+			// read in SQL so the default single-opt-in path never touches the
+			// confirmation store and no caller can forget to pass it.
+			blocks: sql.And(requireConfirmed(r), unconfirmed),
+		})
 	}
-	return append(out, layer{
-		reason: ReasonUnconfirmed,
-		// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
-		// read in SQL so the default single-opt-in path never touches the
-		// confirmation store and no caller can forget to pass it.
-		blocks: sql.And(requireConfirmed(r), unconfirmed),
-	})
+	// A Channel no case names yet asks for a Confirmation always: closed until its rule is written.
+	return append(out, layer{reason: ReasonUnconfirmed, blocks: unconfirmed})
 }
 
 // match builds SELECT id FROM store WHERE workspace/destination/channel equal the
 // ref [AND extraCol = extraVal]. Columns of the store's own table are qualified
 // eagerly; the ref (outer) side is rendered lazily so the dialect is applied.
-func match(r ref, st store, channel string, extra ...string) *sql.Selector {
+func match(r ref, st store, channel channels.Channel, extra ...string) *sql.Selector {
 	sub := sql.Select(st.id).From(sql.Table(st.table))
 	conds := []*sql.Predicate{
 		// raw sql: the right side is a column of the outer query (or a bound value) rendered at build
@@ -360,9 +363,9 @@ func match(r ref, st store, channel string, extra ...string) *sql.Selector {
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.workspace)).WriteString(" = "); r.workspace(b) }),
 		// raw sql: the same correlation, on the destination.
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.destination)).WriteString(" = "); r.destination(b) }),
-		sql.EQ(sub.C(st.channel), channel),
+		sql.EQ(sub.C(st.channel), string(channel)),
 	}
-	if channel == ChannelSMS {
+	if channel == channels.SMS {
 		// On sms a row is keyed by the number or, once its Contact was erased, by the number's hash
 		// (phone.Hash, here in SQL), so an erased person's refusal holds when the number comes back.
 		// raw sql: the destination correlation, matched against the number or its SHA-256 hex.

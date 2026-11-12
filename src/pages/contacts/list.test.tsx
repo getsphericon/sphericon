@@ -22,7 +22,7 @@ const openFilter = async (screen: Screen, column: string) =>
 type Navigate = Awaited<ReturnType<typeof renderWithRouter>>['navigate']
 const searches = (navigate: Navigate, from: Record<string, unknown>) =>
   navigate.mock.calls.map(([options]) =>
-    typeof options?.search === 'function' ? options.search(from) : options?.search,
+    typeof options.search === 'function' ? options.search(from) : options.search,
   )
 
 const ALICE = {

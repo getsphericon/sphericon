@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/getsphericon/sphericon/internal/infra/sidelistener"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // MetricsServer is the opt-in Prometheus listener (ADR 0018): the only place
@@ -14,6 +15,6 @@ type MetricsServer = sidelistener.Server
 // NewMetricsServer builds a server for addr (host:port) serving only /metrics.
 func NewMetricsServer(addr string) *MetricsServer {
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", MetricsHandler())
+	mux.Handle(paths.Metrics, MetricsHandler())
 	return sidelistener.New("metrics", addr, mux)
 }

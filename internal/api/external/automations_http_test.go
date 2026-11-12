@@ -9,13 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:read", "automations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	ctx := context.Background()
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
@@ -41,10 +42,10 @@ func TestExternalHTTPStepDryRunNeedsAutomationsWriteAndContactsRead(t *testing.T
 	ctx := context.Background()
 	in := &externalapi.DryRunHttpStepInput{Body: `{"name":"{{ first_name }}"}`, ContactId: externalapi.EntityId(fixtures.ContactAliceID)}
 
-	_, err := env.ExternalScoped(t, "automations:write").AutomationsDryRunHttpStep(ctx, in)
+	_, err := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite).AutomationsDryRunHttpStep(ctx, in)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	res, err := env.ExternalScoped(t, "automations:write", "contacts:read").AutomationsDryRunHttpStep(ctx, in)
+	res, err := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite, apitokens.ScopeContactsRead).AutomationsDryRunHttpStep(ctx, in)
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"name":"Alice"}`, res.Body.Or(""))
 }

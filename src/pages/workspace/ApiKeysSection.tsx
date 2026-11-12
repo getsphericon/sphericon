@@ -35,6 +35,7 @@ import { zApiTokenScope } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { ScopePicker } from './ScopePicker.tsx'
 
 // Scopes offered in the UI: the contract's ApiTokenScope vocabulary.
@@ -63,7 +64,7 @@ function ApiKeysTable({
       records={records}
       idAccessor="id"
       columns={[
-        { accessor: 'name' },
+        { accessor: 'name' } satisfies FieldColumn<(typeof records)[number]>,
         {
           accessor: 'scopes',
           title: t(($) => $.settings.tokens.scopesLabel),

@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -20,7 +21,7 @@ var (
 	// ErrNotOptional: a required acceptance or a notice is not the User's to change.
 	ErrNotOptional = validation.Refuse("consentrecords: not an optional consent", i18n.ErrorsOptionalConsentNotOptional)
 	// ErrStaleVersion: the page showed a version that is no longer the current one.
-	ErrStaleVersion = validation.RefuseField("version", "consentrecords: stale version", i18n.ErrorsOptionalConsentStale)
+	ErrStaleVersion = validation.RefuseField(fieldname.Version, "consentrecords: stale version", i18n.ErrorsOptionalConsentStale)
 )
 
 // OptionalConsent is an optional consent in effect with the User's current answer to it.

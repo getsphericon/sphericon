@@ -1,9 +1,24 @@
 import { Anchor, Button, Menu, NavLink, useMantineTheme } from '@mantine/core'
-import type { AnchorProps, ButtonProps, MenuItemProps, NavLinkProps } from '@mantine/core'
+import type {
+  AnchorProps,
+  ButtonProps,
+  ElementProps,
+  MenuItemProps,
+  NavLinkProps,
+} from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { createLink } from '@tanstack/react-router'
 import type { LinkComponent } from '@tanstack/react-router'
 import { forwardRef } from 'react'
+
+import type { FileRoutesByTo } from '../routeTree.gen.ts'
+
+// A page of a Workspace that takes no params but the Workspace's: what a link with only
+// `params={{ workspaceId }}` may lead to.
+export type WorkspacePage = Exclude<
+  Extract<keyof FileRoutesByTo, '/workspaces/$workspaceId' | `/workspaces/$workspaceId/${string}`>,
+  `/workspaces/$workspaceId/${string}$${string}`
+>
 
 // Typed TanStack Router links rendered as Mantine controls. Mantine's
 // polymorphic `component={Link}` loses the router's `to`/`params` inference, so
@@ -43,7 +58,7 @@ export const NavLinkLink: LinkComponent<typeof NavLinkBase> = (props) => {
   return <NavLinkCreated preload="intent" viewTransition={!drawer} {...props} />
 }
 
-type AnchorLinkProps = Omit<AnchorProps, 'href'>
+type AnchorLinkProps = Omit<AnchorProps, 'href'> & ElementProps<'a', keyof AnchorProps | 'href'>
 
 const AnchorLinkBase = forwardRef<HTMLAnchorElement, AnchorLinkProps>(
   function AnchorLinkBase(props, ref) {

@@ -11,7 +11,7 @@ import (
 func TestCheckFlagsEveryCopyAndUndeclaredFixtureScope(t *testing.T) {
 	findings, err := contractcopy.Check("testdata/bad", "openapi")
 	require.NoError(t, err)
-	require.Len(t, findings, 11)
+	require.Len(t, findings, 13)
 	require.Contains(t, findings[0], "a.go:3")
 	require.Contains(t, findings[1], "a.go:7")
 	require.Contains(t, findings[2], "b.ts:1")
@@ -27,8 +27,12 @@ func TestCheckFlagsEveryCopyAndUndeclaredFixtureScope(t *testing.T) {
 	require.Contains(t, findings[8], "pageSize = 250")
 	require.Contains(t, findings[9], "c.ts:12")
 	require.Contains(t, findings[9], "pageSize = 250")
-	require.Contains(t, findings[10], "t.yml:1")
-	require.Contains(t, findings[10], "contacts:erase")
+	require.Contains(t, findings[10], "d.ts:1")
+	require.Contains(t, findings[10], "string constants repeat a TypeSpec enum")
+	require.Contains(t, findings[11], "d.ts:4")
+	require.Contains(t, findings[11], "repeats a TypeSpec enum")
+	require.Contains(t, findings[12], "t.yml:1")
+	require.Contains(t, findings[12], "contacts:erase")
 	require.Regexp(t, `rule 6: .*; fix: generate it from TypeSpec$`, findings[0])
 }
 

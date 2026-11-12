@@ -16,13 +16,18 @@ import {
   siteIntegrationsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteAutomationStepType } from '../../generated/site/types.gen.ts'
-import type { SiteAutomationStep, SiteAutomationVersion } from '../../generated/site/types.gen.ts'
+import type {
+  SiteAutomationStep,
+  SiteAutomationVersion,
+  SiteEnrollmentResource,
+} from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { AutomationReport } from './AutomationReport.tsx'
 import { AutomationStatusBadge } from './AutomationStatusBadge.tsx'
 import { automationDraftActions } from './draftActions.ts'
@@ -190,7 +195,10 @@ function AutomationDetail() {
         collection={t(($) => $.automations.enrollmentsTitle)}
         empty={{ title: t(($) => $.automations.noEnrollments) }}
         columns={[
-          { accessor: 'contactId', title: t(($) => $.automations.failedEnrollmentContact) },
+          {
+            accessor: 'contactId',
+            title: t(($) => $.automations.failedEnrollmentContact),
+          } satisfies FieldColumn<SiteEnrollmentResource>,
           {
             accessor: 'status',
             title: t(($) => $.automations.statusLabel),

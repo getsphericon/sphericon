@@ -229,6 +229,18 @@ func yamlErrorLine(err error) int {
 	return 1
 }
 
+// The built-in Presets the core names in code, each the name of a builtin/<name>.yaml.
+const (
+	// BuiltinSES reads Amazon SES's notices; an SES Integration with no Preset of its own reads
+	// its bounces with it.
+	BuiltinSES = "ses"
+	// BuiltinTelegram reads a Telegram bot's updates, the only Preset of a Telegram Integration.
+	BuiltinTelegram = "telegram"
+	// BuiltinTwilio reads Twilio's status callbacks and inbound texts, the only Preset of a Twilio
+	// Integration.
+	BuiltinTwilio = "twilio"
+)
+
 // Registry holds every Preset of an Instance: the built-in ones and the Self-hoster's.
 type Registry struct {
 	byName map[string]*Preset

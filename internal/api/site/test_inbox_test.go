@@ -16,12 +16,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -54,7 +56,7 @@ func makeDefault(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId,
 
 func sendGlobexTransactional(t *testing.T, env *testhelper.TestEnv, to string) (*externalapi.SendTransactionalEmailResponse, error) {
 	t.Helper()
-	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, "emails:send"))
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeEmailsSend))
 	return c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
 		TemplateId: externalapi.EntityId(fixtures.TemplateGlobexID), Destination: externalapi.EmailAddress(to),
 	}, externalapi.EmailsSendParams{})
@@ -195,9 +197,9 @@ func TestTheOutboundMessageOfACapturedSendIsStampedDeliveredOnceAndNothingBounce
 	assert.NotNil(t, row.DeliveredAt)
 	assert.Nil(t, row.BouncedAt)
 	assert.Nil(t, row.ComplainedAt)
-	assert.Equal(t, 1, env.QueuedCount(t, "email.delivered", map[string]any{"outboundMessageId": sent.ID}))
-	assert.Zero(t, env.QueuedCount(t, "email.bounced", map[string]any{"outboundMessageId": sent.ID}))
-	assert.Zero(t, env.QueuedCount(t, "email.complained", map[string]any{"outboundMessageId": sent.ID}))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.EmailDelivered, map[string]any{"outboundMessageId": sent.ID}))
+	assert.Zero(t, env.QueuedCount(t, systemevent.EmailBounced, map[string]any{"outboundMessageId": sent.ID}))
+	assert.Zero(t, env.QueuedCount(t, systemevent.EmailComplained, map[string]any{"outboundMessageId": sent.ID}))
 }
 
 func TestABroadcastThroughTheTestInboxWithoutAVerifiedDomainIsCaptured(t *testing.T) {
@@ -235,7 +237,7 @@ func TestABroadcastThroughSMTPWithoutAVerifiedDomainIsHeldAndNothingIsCaptured(t
 	require.NoError(t, err)
 	delivered := env.TryDeliverQueuedBroadcasts(t)
 
-	require.ErrorContains(t, delivered, outboundmessages.HoldUnverifiedDomain)
+	require.ErrorContains(t, delivered, string(holdreason.UnverifiedDomain))
 	assert.Equal(t, before, env.DB.CapturedMessage.Query().CountX(t.Context()))
 	status := env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastGlobexID).Status
 	assert.NotEqual(t, broadcast.StatusSent, status, "held, not sent")
@@ -259,7 +261,7 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 
 	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, suppressedResult.Status)
 	heldResult := testhelper.ExternalRefusal(t, frozen, http.StatusUnprocessableEntity)
-	assert.Equal(t, "the message was not sent: "+outboundmessages.Detail(holds.ReasonSuspended), heldResult.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), heldResult.Detail.Value)
 	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(ctx)
 	assert.Equal(t, before, after, "neither message reached the inbox")
 }

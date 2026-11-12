@@ -45,7 +45,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -92,7 +94,7 @@ func TestTheJobRunnerRefusesToStartWithoutTheInstanceClock(t *testing.T) {
 
 func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEnv {
 	t.Helper()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	cipher := env.Cipher
 	fs := &fakeSender{}
@@ -177,8 +179,8 @@ func TestDispatchFansOutToMatchingEnabledEndpoints(t *testing.T) {
 	e := newRiverEnv(t)
 
 	// Endpoint 100 filters to three event types; 101 is disabled.
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), "email.opened", "d-1", []byte(`{}`)))
-	assert.Equal(t, []string{"deliver_webhook"}, e.queued(t))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), systemevent.EmailOpened, "d-1", []byte(`{}`)))
+	assert.Equal(t, []string{jobkind.DeliverWebhook.Kind}, e.queued(t))
 
 	// Filtered out: no endpoint of the workspace subscribes to it.
 	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), "segment.created", "d-2", []byte(`{}`)))
@@ -226,7 +228,7 @@ func TestDispatchSendsAuditEntriesOnlyToEndpointsThatSelectThem(t *testing.T) {
 	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
 
 	e.clearQueue(t)
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameContactCreated, "d-contact", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, systemevent.ContactCreated, "d-contact", []byte(`{}`)))
 	assert.Equal(t, []int64{fixtures.WebhookInitechID}, e.queuedEndpoints(t), "an empty filter still receives customer events")
 }
 
@@ -302,7 +304,7 @@ func TestDeliverWebhookWorker(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	args := func(id int64) jobs.DeliverWebhookArgs {
-		return jobs.DeliverWebhookArgs{EndpointID: id, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{"a":1}`)}
+		return jobs.DeliverWebhookArgs{EndpointID: id, EventName: systemevent.EmailOpened, DeliveryID: "msg_1", Body: []byte(`{"a":1}`)}
 	}
 	rcv := newWebhookReceiver(t)
 	worker := func(allow webhook.Allowlist) *jobs.DeliverWebhookWorker {
@@ -350,7 +352,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 		return jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(timeout, allow), func() time.Time { return clock }, lowestDraw, env.Bus)
 	}
 	deliver := func(w *jobs.DeliverWebhookWorker) error {
-		return w.Work(ctx, job(jobs.DeliverWebhookArgs{EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`)}))
+		return w.Work(ctx, job(jobs.DeliverWebhookArgs{EndpointID: fixtures.WebhookCodebasicsID, EventName: systemevent.EmailOpened, DeliveryID: "msg_1", Body: []byte(`{}`)}))
 	}
 	state := func() *ent.WebhookEndpoint {
 		return ws.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).OnlyX(ctx)
@@ -437,7 +439,7 @@ func newDisableHarness(t *testing.T) *disableHarness {
 
 func (h *disableHarness) deliver() error {
 	return h.w.Work(context.Background(), job(jobs.DeliverWebhookArgs{
-		EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`),
+		EndpointID: fixtures.WebhookCodebasicsID, EventName: systemevent.EmailOpened, DeliveryID: "msg_1", Body: []byte(`{}`),
 	}))
 }
 
@@ -616,7 +618,7 @@ func TestBroadcastWorkers(t *testing.T) {
 	kinds := e.queued(t)
 	require.NotEmpty(t, kinds)
 	for _, k := range kinds {
-		assert.Equal(t, "send_broadcast_recipient", k)
+		assert.Equal(t, jobkind.SendRecipient.Kind, k)
 	}
 	recs := e.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID)).AllX(ctx)
 	require.Len(t, recs, len(kinds))

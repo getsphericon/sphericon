@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -53,7 +54,7 @@ func (m *Module) HookURL(row *ent.Integration) string { return m.hookURL(row.Ing
 
 // hookURL is the hook URL of an ingest key.
 func (m *Module) hookURL(key string) string {
-	return strings.TrimRight(m.appURL, "/") + "/hooks/" + key
+	return strings.TrimRight(m.appURL, "/") + paths.Hooks + key
 }
 
 // RawOf renders params as the opaque object of a response.

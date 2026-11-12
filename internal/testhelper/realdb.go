@@ -138,7 +138,7 @@ func openBaseline() baselineHandle {
 	if err != nil {
 		return baselineHandle{err: err}
 	}
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	if err != nil {
 		return baselineHandle{err: err}
 	}
@@ -272,7 +272,7 @@ func Listeners(ctx context.Context, db *sql.DB) (int, error) {
 // SPHERICON_DATABASE_URL names it before initBaseline points the process at its own leased database.
 // It is read once, so it never depends on whether a test in the process has called Setup yet.
 var sharedDatabaseURL = sync.OnceValues(func() (string, error) {
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	if err != nil {
 		return "", err
 	}

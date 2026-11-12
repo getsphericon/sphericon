@@ -25,75 +25,14 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-// Bus event names — the stable type discriminators (registry keys). These are
-// OURS and finite. A customer's action name is NOT one of these; it lives inside
-// CollectedEvent.Action.
-const (
-	NameContactCreated     = "contact.created"
-	NameContactErased      = "contact.erased"
-	NameEmailSent          = "email.sent"
-	NameEmailDelivered     = "email.delivered"
-	NameEmailDelayed       = "email.delayed"
-	NameEmailDropped       = "email.dropped"
-	NameEmailOpened        = "email.opened"
-	NameEmailClicked       = "email.clicked"
-	NameEmailUnsubscribed  = "email.unsubscribed"
-	NameEmailBounced       = "email.bounced"
-	NameEmailComplained    = "email.complained"
-	NameMarketingConfirmed = "marketing.confirmed"
-	NameCollected          = "event.collected"
-
-	// NameContactTagged and the two below are what happened to a Contact's Tags and Custom
-	// fields, recorded only on a real change.
-	NameContactTagged       = "contact.tagged"
-	NameContactUntagged     = "contact.untagged"
-	NameContactFieldChanged = "contact.field_changed"
-
-	// NameAutomationEnrolled and the three below are an Enrollment's beginning and its ends, all
-	// but `failed`: an operational failure, not something the Contact did.
-	NameAutomationEnrolled    = "automation.enrolled"
-	NameAutomationCompleted   = "automation.completed"
-	NameAutomationGoalReached = "automation.goal_reached"
-	NameAutomationExited      = "automation.exited"
-
-	// NameTelegramBound and the one below are a Telegram chat Bound to a Contact and a Binding
-	// moved away from one (ADR 0076).
-	NameTelegramBound   = "telegram.bound"
-	NameTelegramUnbound = "telegram.unbound"
-	// NameTelegramReceived is a message a bound Contact sent a bot (ADR 0076).
-	NameTelegramReceived = "telegram.received"
-	// NameTelegramSent is a message a bot's Telegram accepted for a Contact. Telegram reports
-	// nothing after that, so no delivered or read Event follows.
-	NameTelegramSent = "telegram.sent"
-	// NameTelegramClicked is a click on a short tracked link of a Telegram message (ADR 0083).
-	NameTelegramClicked = "telegram.clicked"
-	// NameTelegramUnsubscribed is a Contact stopping all of the Workspace's Telegram marketing in
-	// Telegram: a STOP keyword, the unsubscribe button, or blocking the bot (ADR 0077).
-	NameTelegramUnsubscribed = "telegram.unsubscribed"
-
-	// NameSmsReceived is a text a Contact sent from its phone to an SMS Integration's sender
-	// (ADR 0076).
-	NameSmsReceived = "sms.received"
-	// NameSmsSent is a text the SMS provider accepted for a Contact (ADR 0079): handed to the
-	// provider, not delivered; a delivery report says that.
-	NameSmsSent = "sms.sent"
-	// NameSmsDelivered and the one below are the SMS provider's final report of a text it accepted
-	// (ADR 0079): it reached the handset, or it did not, with the provider's error code.
-	NameSmsDelivered   = "sms.delivered"
-	NameSmsUndelivered = "sms.undelivered"
-	// NameSmsConfirmed is a phone number's SMS Confirmation (ADR 0077), the proof of its consent;
-	// marketing.confirmed is email's alone.
-	NameSmsConfirmed = "sms.confirmed"
-	// NameSmsClicked is a click on a short tracked link of an SMS (ADR 0083).
-	NameSmsClicked = "sms.clicked"
-	// NameSmsUnsubscribed is a Contact's number opting out of all of the Workspace's SMS marketing
-	// (ADR 0077): a STOP keyword, the unsubscribe link, a send the provider refused because the
-	// number had stopped, or by hand. Only a new opt-out records it, never a repeated stop (ADR 0114).
-	NameSmsUnsubscribed = "sms.unsubscribed"
-)
+// NameCollected is the bus type of a customer's own Event: its action is the customer's, inside
+// CollectedEvent.Action. The bus type of a System event is its action (package systemevent); the
+// bus types of the events no Event row records are declared next to their events.
+const NameCollected = "event.collected"
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
 // (`email.*`), consent (`marketing.*`), the Contact's lifecycle, Tags and Custom fields
@@ -139,13 +78,6 @@ func CheckAction(action string) error {
 	}
 	return nil
 }
-
-// Bounce kinds carried by EmailDelivery. Only a hard bounce suppresses; a soft one, such as a
-// full mailbox, is temporary. What each means for Suppression is the suppression module's rule.
-const (
-	BounceKindHard = "hard"
-	BounceKindSoft = "soft"
-)
 
 // Envelope is the generic bus message. It carries transport metadata plus the
 // typed event as Data; subscribers decode Data via the registry.
@@ -295,49 +227,49 @@ func IsBackfill(ev DomainEvent) bool {
 // serialized envelope can be decoded back into the right Go type. All variants
 // are ours and finite — there is no catch-all.
 var registry = map[string]func() DomainEvent{
-	NameTelegramResumeObserved:    func() DomainEvent { return &TelegramResumeObserved{} },
-	NameTelegramStopObserved:      func() DomainEvent { return &TelegramStopObserved{} },
-	NameSmsStopObserved:           func() DomainEvent { return &SmsStopObserved{} },
-	NameSmsStartObserved:          func() DomainEvent { return &SmsStartObserved{} },
-	NameSmsDestinationUnreachable: func() DomainEvent { return &SmsDestinationUnreachable{} },
-	NameSmsOptOutRecorded:         func() DomainEvent { return &SmsOptOutRecorded{} },
-	NameSmsSuppressionRecorded:    func() DomainEvent { return &SmsSuppressionRecorded{} },
-	NameMessageUnsubscribed:       func() DomainEvent { return &MessageUnsubscribed{} },
-	NameContactCreated:            func() DomainEvent { return &ContactCreated{} },
-	NameContactErased:             func() DomainEvent { return &ContactErased{} },
-	NameEmailSent:                 func() DomainEvent { return &EmailEngagement{} },
-	NameEmailOpened:               func() DomainEvent { return &EmailEngagement{} },
-	NameEmailClicked:              func() DomainEvent { return &EmailEngagement{} },
-	NameEmailUnsubscribed:         func() DomainEvent { return &EmailEngagement{} },
-	NameEmailDelivered:            func() DomainEvent { return &EmailDelivery{} },
-	NameEmailDelayed:              func() DomainEvent { return &EmailDelivery{} },
-	NameEmailDropped:              func() DomainEvent { return &EmailDelivery{} },
-	NameEmailBounced:              func() DomainEvent { return &EmailDelivery{} },
-	NameEmailComplained:           func() DomainEvent { return &EmailDelivery{} },
-	NameMarketingConfirmed:        func() DomainEvent { return &MarketingConfirmed{} },
-	NameSmsConfirmed:              func() DomainEvent { return &SmsConfirmed{} },
-	NameCollected:                 func() DomainEvent { return &CollectedEvent{} },
-	NameContactTagged:             func() DomainEvent { return &ContactTagChange{} },
-	NameContactUntagged:           func() DomainEvent { return &ContactTagChange{} },
-	NameContactFieldChanged:       func() DomainEvent { return &ContactFieldChanged{} },
-	NameAutomationEnrolled:        func() DomainEvent { return &EnrollmentChange{} },
-	NameAutomationCompleted:       func() DomainEvent { return &EnrollmentChange{} },
-	NameAutomationGoalReached:     func() DomainEvent { return &EnrollmentChange{} },
-	NameAutomationExited:          func() DomainEvent { return &EnrollmentChange{} },
-	NameTelegramBound:             func() DomainEvent { return &BindingChange{} },
-	NameTelegramUnbound:           func() DomainEvent { return &BindingChange{} },
-	NameTelegramReceived:          func() DomainEvent { return &TelegramReceived{} },
-	NameTelegramSent:              func() DomainEvent { return &TelegramSent{} },
-	NameTelegramClicked:           func() DomainEvent { return &TelegramClicked{} },
-	NameTelegramUnsubscribed:      func() DomainEvent { return &TelegramUnsubscribed{} },
-	NameSmsReceived:               func() DomainEvent { return &SmsReceived{} },
-	NameSmsSent:                   func() DomainEvent { return &SmsSent{} },
-	NameSmsDelivered:              func() DomainEvent { return &SmsDelivery{} },
-	NameSmsUndelivered:            func() DomainEvent { return &SmsDelivery{} },
-	NameSmsClicked:                func() DomainEvent { return &SmsClicked{} },
-	NameSmsUnsubscribed:           func() DomainEvent { return &SmsUnsubscribed{} },
-	NameAuditEntry:                func() DomainEvent { return &AuditEntry{} },
-	NameTrackingDomainChanged:     func() DomainEvent { return &TrackingDomainChanged{} },
+	NameTelegramResumeObserved:        func() DomainEvent { return &TelegramResumeObserved{} },
+	NameTelegramStopObserved:          func() DomainEvent { return &TelegramStopObserved{} },
+	NameSmsStopObserved:               func() DomainEvent { return &SmsStopObserved{} },
+	NameSmsStartObserved:              func() DomainEvent { return &SmsStartObserved{} },
+	NameSmsDestinationUnreachable:     func() DomainEvent { return &SmsDestinationUnreachable{} },
+	NameSmsOptOutRecorded:             func() DomainEvent { return &SmsOptOutRecorded{} },
+	NameSmsSuppressionRecorded:        func() DomainEvent { return &SmsSuppressionRecorded{} },
+	NameMessageUnsubscribed:           func() DomainEvent { return &MessageUnsubscribed{} },
+	systemevent.ContactCreated:        func() DomainEvent { return &ContactCreated{} },
+	systemevent.ContactErased:         func() DomainEvent { return &ContactErased{} },
+	systemevent.EmailSent:             func() DomainEvent { return &EmailEngagement{} },
+	systemevent.EmailOpened:           func() DomainEvent { return &EmailEngagement{} },
+	systemevent.EmailClicked:          func() DomainEvent { return &EmailEngagement{} },
+	systemevent.EmailUnsubscribed:     func() DomainEvent { return &EmailEngagement{} },
+	systemevent.EmailDelivered:        func() DomainEvent { return &EmailDelivery{} },
+	systemevent.EmailDelayed:          func() DomainEvent { return &EmailDelivery{} },
+	systemevent.EmailDropped:          func() DomainEvent { return &EmailDelivery{} },
+	systemevent.EmailBounced:          func() DomainEvent { return &EmailDelivery{} },
+	systemevent.EmailComplained:       func() DomainEvent { return &EmailDelivery{} },
+	systemevent.MarketingConfirmed:    func() DomainEvent { return &MarketingConfirmed{} },
+	systemevent.SmsConfirmed:          func() DomainEvent { return &SmsConfirmed{} },
+	NameCollected:                     func() DomainEvent { return &CollectedEvent{} },
+	systemevent.ContactTagged:         func() DomainEvent { return &ContactTagChange{} },
+	systemevent.ContactUntagged:       func() DomainEvent { return &ContactTagChange{} },
+	systemevent.ContactFieldChanged:   func() DomainEvent { return &ContactFieldChanged{} },
+	systemevent.AutomationEnrolled:    func() DomainEvent { return &EnrollmentChange{} },
+	systemevent.AutomationCompleted:   func() DomainEvent { return &EnrollmentChange{} },
+	systemevent.AutomationGoalReached: func() DomainEvent { return &EnrollmentChange{} },
+	systemevent.AutomationExited:      func() DomainEvent { return &EnrollmentChange{} },
+	systemevent.TelegramBound:         func() DomainEvent { return &BindingChange{} },
+	systemevent.TelegramUnbound:       func() DomainEvent { return &BindingChange{} },
+	systemevent.TelegramReceived:      func() DomainEvent { return &TelegramReceived{} },
+	systemevent.TelegramSent:          func() DomainEvent { return &TelegramSent{} },
+	systemevent.TelegramClicked:       func() DomainEvent { return &TelegramClicked{} },
+	systemevent.TelegramUnsubscribed:  func() DomainEvent { return &TelegramUnsubscribed{} },
+	systemevent.SmsReceived:           func() DomainEvent { return &SmsReceived{} },
+	systemevent.SmsSent:               func() DomainEvent { return &SmsSent{} },
+	systemevent.SmsDelivered:          func() DomainEvent { return &SmsDelivery{} },
+	systemevent.SmsUndelivered:        func() DomainEvent { return &SmsDelivery{} },
+	systemevent.SmsClicked:            func() DomainEvent { return &SmsClicked{} },
+	systemevent.SmsUnsubscribed:       func() DomainEvent { return &SmsUnsubscribed{} },
+	NameAuditEntry:                    func() DomainEvent { return &AuditEntry{} },
+	NameTrackingDomainChanged:         func() DomainEvent { return &TrackingDomainChanged{} },
 
 	NameUserVerificationRequested:  func() DomainEvent { return &LinkRequested{} },
 	NameUserPasswordResetRequested: func() DomainEvent { return &LinkRequested{} },
@@ -387,11 +319,11 @@ type ContactCreated struct {
 	Email       string `json:"email"`
 }
 
-func (*ContactCreated) EventName() string  { return NameContactCreated }
+func (*ContactCreated) EventName() string  { return systemevent.ContactCreated }
 func (*ContactCreated) EventVersion() int  { return 1 }
 func (e *ContactCreated) Workspace() int64 { return e.WorkspaceID }
 func (e *ContactCreated) Project() Projection {
-	return Projection{Subject: e.Email, Action: NameContactCreated, Email: e.Email, ContactID: e.ContactID}
+	return Projection{Subject: e.Email, Action: systemevent.ContactCreated, Email: e.Email, ContactID: e.ContactID}
 }
 
 // ContactErased is emitted once per Erasure (ADR 0021): the PII-free accountability
@@ -417,11 +349,11 @@ type ContactErased struct {
 	PhoneHash  string   `json:"phoneHash,omitempty"`
 }
 
-func (*ContactErased) EventName() string  { return NameContactErased }
+func (*ContactErased) EventName() string  { return systemevent.ContactErased }
 func (*ContactErased) EventVersion() int  { return 1 }
 func (e *ContactErased) Workspace() int64 { return e.WorkspaceID }
 func (e *ContactErased) Project() Projection {
-	return Projection{Action: NameContactErased, Properties: map[string]any{
+	return Projection{Action: systemevent.ContactErased, Properties: map[string]any{
 		"identifierKind": e.IdentifierKind,
 		"requesterKind":  e.RequesterKind,
 		"requesterId":    e.RequesterID,
@@ -548,13 +480,13 @@ func (e *EmailDelivery) EventID() string   { return e.DedupID }
 func (e *EmailDelivery) Project() Projection {
 	props := map[string]any{}
 	for k, v := range map[string]string{
-		"bounceKind":        e.BounceKind,
-		"provider":          e.Provider,
-		"sendingDomain":     e.SendingDomain,
-		"reason":            e.Reason,
-		"providerMessageId": e.ProviderMessageID,
-		"surface":           e.Surface,
-		"sendingSource":     e.SendingSource,
+		systemevent.BounceKindProperty: e.BounceKind,
+		"provider":                     e.Provider,
+		"sendingDomain":                e.SendingDomain,
+		"reason":                       e.Reason,
+		"providerMessageId":            e.ProviderMessageID,
+		"surface":                      e.Surface,
+		"sendingSource":                e.SendingSource,
 	} {
 		if v != "" {
 			props[k] = v
@@ -596,7 +528,7 @@ type MarketingConfirmed struct {
 	IP          string `json:"ip,omitempty"` // confirming client IP (double_opt_in only)
 }
 
-func (*MarketingConfirmed) EventName() string  { return NameMarketingConfirmed }
+func (*MarketingConfirmed) EventName() string  { return systemevent.MarketingConfirmed }
 func (*MarketingConfirmed) EventVersion() int  { return 1 }
 func (e *MarketingConfirmed) Workspace() int64 { return e.WorkspaceID }
 func (e *MarketingConfirmed) Project() Projection {
@@ -607,7 +539,7 @@ func (e *MarketingConfirmed) Project() Projection {
 	if e.IP != "" {
 		props["ip"] = e.IP
 	}
-	return Projection{Subject: e.Email, Action: NameMarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID}
+	return Projection{Subject: e.Email, Action: systemevent.MarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID}
 }
 
 // SmsConfirmed is emitted when a phone number's SMS Confirmation is recorded (ADR 0077): consent
@@ -628,7 +560,7 @@ type SmsConfirmed struct {
 	Brand   string `json:"brand,omitempty"`
 }
 
-func (*SmsConfirmed) EventName() string  { return NameSmsConfirmed }
+func (*SmsConfirmed) EventName() string  { return systemevent.SmsConfirmed }
 func (*SmsConfirmed) EventVersion() int  { return 1 }
 func (e *SmsConfirmed) Workspace() int64 { return e.WorkspaceID }
 func (e *SmsConfirmed) Project() Projection {
@@ -638,7 +570,7 @@ func (e *SmsConfirmed) Project() Projection {
 			props[k] = v
 		}
 	}
-	return Projection{Action: NameSmsConfirmed, Phone: e.Phone, Properties: props, ContactID: e.ContactID}
+	return Projection{Action: systemevent.SmsConfirmed, Phone: e.Phone, Properties: props, ContactID: e.ContactID}
 }
 
 // CollectedEvent wraps a customer's own event ingested via the collect or external

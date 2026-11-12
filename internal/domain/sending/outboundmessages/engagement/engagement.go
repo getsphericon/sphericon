@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // ErrInvalidToken means the token of an open or a click does not decode.
@@ -71,7 +72,7 @@ func (r *Recorder) Open(ctx context.Context, token string, hit Hit) error {
 		return ErrInvalidToken
 	}
 	return r.record(ctx, messageID, hit, func(e engaged, machine bool, at time.Time) events.DomainEvent {
-		return e.engagement(events.NameEmailOpened, "", machine, at)
+		return e.engagement(systemevent.EmailOpened, "", machine, at)
 	})
 }
 
@@ -219,7 +220,7 @@ func clickOn(dest string) func(e engaged, machine bool, at time.Time) events.Dom
 		case channels.SMS:
 			return new(events.SmsClicked(click))
 		default:
-			return e.engagement(events.NameEmailClicked, dest, machine, at)
+			return e.engagement(systemevent.EmailClicked, dest, machine, at)
 		}
 	}
 }

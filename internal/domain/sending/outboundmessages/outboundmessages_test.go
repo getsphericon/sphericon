@@ -12,12 +12,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -135,7 +136,7 @@ func byKey(t *testing.T, env *testhelper.TestEnv, key string) *ent.OutboundMessa
 
 func sentEvents(t *testing.T, env *testhelper.TestEnv, messageID int64) int {
 	t.Helper()
-	return env.QueuedCount(t, "email.sent", map[string]any{"outboundMessageId": messageID})
+	return env.QueuedCount(t, systemevent.EmailSent, map[string]any{"outboundMessageId": messageID})
 }
 
 func TestTransactionalSendRecordsMessageAndEvent(t *testing.T) {
@@ -265,7 +266,7 @@ func TestSuspendedWorkspaceIsHeldNotConsumed(t *testing.T) {
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:held", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
-	assert.Equal(t, holds.ReasonSuspended, res.Reason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, res.Hold)
 	assert.Zero(t, res.MessageID, "nothing is recorded for a hold")
 	assert.Empty(t, env.CustomerMail.Messages())
 
@@ -287,7 +288,7 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:deleted", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
-	assert.Equal(t, holds.ReasonPendingDeletion, res.Reason)
+	assert.Equal(t, holdreason.WorkspacePendingDeletion, res.Hold)
 	assert.Zero(t, res.MessageID)
 	assert.Empty(t, env.CustomerMail.Messages())
 
@@ -296,8 +297,8 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	require.NoError(t, err)
 	owner := standing.Holds()
 	require.Len(t, owner, 1)
-	assert.Equal(t, res.Reason, owner[0].ReasonCode)
-	assert.Equal(t, outboundmessages.Detail(res.Reason), owner[0].Message)
+	assert.Equal(t, string(res.Hold), owner[0].ReasonCode)
+	assert.Equal(t, outboundmessages.HoldDetail(res.Hold), owner[0].Message)
 
 	tx, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:deleted", "a@example.com"))
 	require.NoError(t, err)
@@ -317,7 +318,7 @@ func TestUnverifiedFromDomainIsHeld(t *testing.T) {
 	res, err := newModule(env, time.Now).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
-	assert.Equal(t, outboundmessages.HoldUnverifiedDomain, res.Reason)
+	assert.Equal(t, holdreason.UnverifiedDomain, res.Hold)
 	assert.Empty(t, env.CustomerMail.Messages())
 }
 
@@ -344,7 +345,7 @@ func TestNoIntegrationIsHeld(t *testing.T) {
 	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:noint", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
-	assert.Equal(t, outboundmessages.HoldNoIntegration, res.Reason)
+	assert.Equal(t, holdreason.NoIntegration, res.Hold)
 }
 
 func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
@@ -357,7 +358,7 @@ func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:stopped", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
-	assert.Equal(t, outboundmessages.HoldProviderStopped, res.Reason)
+	assert.Equal(t, holdreason.ProviderStopped, res.Hold)
 	assert.Empty(t, env.CustomerMail.Messages(), "nothing is handed to a stopped account")
 
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).ClearProviderEnforcement().ExecX(ctx)
@@ -442,7 +443,7 @@ func TestPreflightReportsHoldsWithoutRecording(t *testing.T) {
 	assert.Empty(t, hold)
 	hold, err = m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), outboundmessages.EmailContent{FromEmail: "x@news.acme.com"}, nil)
 	require.NoError(t, err)
-	assert.Equal(t, outboundmessages.HoldUnverifiedDomain, hold)
+	assert.Equal(t, holdreason.UnverifiedDomain, hold)
 	assert.Equal(t, before, env.DB.OutboundMessage.Query().CountX(ctx), "a preflight records nothing")
 }
 
@@ -485,7 +486,7 @@ func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.
 		Content: outboundmessages.EmailContent{Subject: "s", Body: htmlBody}})
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
-	assert.Equal(t, holds.ReasonSuspended, res.Reason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, res.Hold)
 	assert.Len(t, env.CustomerMail.Messages(), 1)
 }
 

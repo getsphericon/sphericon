@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -47,7 +48,7 @@ func TestTheRouteOfANamedIntegrationThatCannotSendIsHeld(t *testing.T) {
 			route, err := newModule(env, time.Now).Route(context.Background(), acme(env), channels.Email, &id)
 
 			require.NoError(t, err)
-			assert.Equal(t, outboundmessages.HoldNoIntegration, route.Hold)
+			assert.Equal(t, holdreason.NoIntegration, route.Hold)
 			assert.Nil(t, route.Integration, "not the default in its place")
 			assert.Zero(t, route.Interval())
 			assert.ErrorIs(t, route.Armable(), outboundmessages.ErrRouteHeld)
@@ -69,7 +70,7 @@ func TestASendThroughADisabledNamedIntegrationIsHeld(t *testing.T) {
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
 	route, err := m.Route(context.Background(), acme(env), channels.Email, req.IntegrationID)
 	require.NoError(t, err)
-	assert.Equal(t, route.Hold, res.Reason, "the send holds for the reason its route gives")
+	assert.Equal(t, route.Hold, res.Hold, "the send holds for the reason its route gives")
 	assert.Zero(t, res.MessageID)
 	assert.Empty(t, env.CustomerMail.Messages())
 	hold, err := m.Preflight(context.Background(), acme(env), outboundmessages.EmailContent{}, req.IntegrationID)
@@ -123,8 +124,8 @@ func TestTheInstancesOutboundSendRunsOnTheInstanceClock(t *testing.T) {
 // standing lifts by itself, and the sends wait for it. A route with no Integration that can send is
 // refused.
 func TestAStoppedProviderHoldsTheRouteButArmingStillPasses(t *testing.T) {
-	require.NoError(t, outboundmessages.Route{Hold: outboundmessages.HoldProviderStopped}.Armable())
-	assert.ErrorIs(t, outboundmessages.Route{Hold: outboundmessages.HoldNoIntegration}.Armable(), outboundmessages.ErrRouteHeld)
+	require.NoError(t, outboundmessages.Route{Hold: holdreason.ProviderStopped}.Armable())
+	assert.ErrorIs(t, outboundmessages.Route{Hold: holdreason.NoIntegration}.Armable(), outboundmessages.ErrRouteHeld)
 }
 
 // The Send route resolves an Integration of the send's own Channel: an Integration of another
@@ -141,11 +142,11 @@ func TestTheRouteNeverGoesThroughAnotherChannelsIntegration(t *testing.T) {
 	res, err := m.Send(context.Background(), acme(env), req)
 	require.NoError(t, err)
 
-	assert.Equal(t, outboundmessages.HoldNoIntegration, route.Hold)
+	assert.Equal(t, holdreason.NoIntegration, route.Hold)
 	assert.Nil(t, route.Integration, "not the email default in its place")
 	require.ErrorIs(t, route.Armable(), outboundmessages.ErrRouteHeld)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
-	assert.Equal(t, outboundmessages.HoldNoIntegration, res.Reason)
+	assert.Equal(t, holdreason.NoIntegration, res.Hold)
 	assert.Zero(t, res.MessageID)
 	assert.Empty(t, env.CustomerMail.Messages())
 }

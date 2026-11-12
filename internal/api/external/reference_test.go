@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -19,10 +20,10 @@ func TestExternalCustomFieldsList(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := env.ExternalScoped(t, "contacts:read").CustomFieldsList(ctx)
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).CustomFieldsList(ctx)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "custom_fields:read is required")
 
-	c := env.ExternalScoped(t, "custom_fields:read")
+	c := env.ExternalScoped(t, apitokens.ScopeCustomFieldsRead)
 	res, err := c.CustomFieldsList(ctx)
 	require.NoError(t, err)
 
@@ -30,9 +31,9 @@ func TestExternalCustomFieldsList(t *testing.T) {
 	for _, f := range res.Items {
 		types[f.Key] = f.Type
 	}
-	assert.Equal(t, externalapi.CustomFieldType("string"), types["plan"])
-	assert.Equal(t, externalapi.CustomFieldType("number"), types["courses_completed"])
-	assert.Equal(t, externalapi.CustomFieldType("bool"), types["is_trial"])
+	assert.Equal(t, externalapi.CustomFieldTypeString, types["plan"])
+	assert.Equal(t, externalapi.CustomFieldTypeNumber, types["courses_completed"])
+	assert.Equal(t, externalapi.CustomFieldTypeBool, types["is_trial"])
 }
 
 func TestExternalReferenceDataIsWorkspaceScoped(t *testing.T) {
@@ -40,7 +41,7 @@ func TestExternalReferenceDataIsWorkspaceScoped(t *testing.T) {
 	ctx := context.Background()
 
 	// The Globex tenant has its own field and domain; the acme token must not see them.
-	c := env.ExternalScoped(t, "custom_fields:read", "sending_domains:read")
+	c := env.ExternalScoped(t, apitokens.ScopeCustomFieldsRead, apitokens.ScopeSendingDomainsRead)
 
 	fields, err := c.CustomFieldsList(ctx)
 	require.NoError(t, err)
@@ -65,16 +66,16 @@ func TestExternalReferenceDataIsWorkspaceScoped(t *testing.T) {
 func TestExternalCustomFieldsUpdateNeedsTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	list, err := env.ExternalScoped(t, "custom_fields:read").CustomFieldsList(ctx)
+	list, err := env.ExternalScoped(t, apitokens.ScopeCustomFieldsRead).CustomFieldsList(ctx)
 	require.NoError(t, err)
 	plan, found := lo.Find(list.Items, func(f externalapi.CustomFieldResource) bool { return f.Key == "plan" })
 	require.True(t, found)
 	rename := &externalapi.UpdateCustomFieldInput{Revision: plan.Revision, Name: externalapi.NewOptName("Subscription plan")}
 	params := externalapi.CustomFieldsUpdateParams{ID: plan.ID}
 
-	_, err = env.ExternalScoped(t, "custom_fields:read").CustomFieldsUpdate(ctx, rename, params)
+	_, err = env.ExternalScoped(t, apitokens.ScopeCustomFieldsRead).CustomFieldsUpdate(ctx, rename, params)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
-	renamed, err := env.ExternalScoped(t, "custom_fields:write").CustomFieldsUpdate(ctx, rename, params)
+	renamed, err := env.ExternalScoped(t, apitokens.ScopeCustomFieldsWrite).CustomFieldsUpdate(ctx, rename, params)
 	require.NoError(t, err)
 
 	assert.Equal(t, "Subscription plan", renamed.Name)
@@ -85,11 +86,11 @@ func TestExternalSendingDomainsList(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := env.ExternalScoped(t, "contacts:read").
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).
 		SendingDomainsList(ctx, externalapi.SendingDomainsListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	c := env.ExternalScoped(t, "sending_domains:read")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead)
 	res, err := c.SendingDomainsList(ctx, externalapi.SendingDomainsListParams{})
 	require.NoError(t, err)
 
@@ -115,11 +116,11 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := env.ExternalScoped(t, "contacts:read").
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).
 		SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	c := env.ExternalScoped(t, "sending_domains:read")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead)
 
 	// Default 7-day window: mail.acme.com has 8 sent, 1 hard bounce (the soft one is
 	// excluded), 6 delivered, 1 complaint; the 40-day-old events fall outside.

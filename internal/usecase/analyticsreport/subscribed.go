@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // SubscribedPeople is the Subscribed people report: the flow of subscriptions per Report day and
@@ -37,7 +39,7 @@ func (m *UseCase) SubscribedPeople(ctx context.Context, s *ent.Scoped, w Window)
 	if err != nil {
 		return nil, err
 	}
-	optedOut, err := s.Contact().Query().Where(eligibility.GloballyOptedOut(eligibility.ChannelEmail)).Count(ctx)
+	optedOut, err := s.Contact().Query().Where(eligibility.GloballyOptedOut(channels.Email)).Count(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +65,11 @@ func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Windo
 			moment := sel.C(event.FieldOccurredAt)
 			action := sel.C(event.FieldAction)
 			sel.Select(
-				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+events.NameMarketingConfirmed+"')", "subscribed"),
-				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+events.NameEmailUnsubscribed+"')", "unsubscribed"),
+				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+systemevent.MarketingConfirmed+"')", "subscribed"),
+				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+systemevent.EmailUnsubscribed+"')", "unsubscribed"),
 			)
 			sel.AppendSelectExprAs(reportday.Label(moment, days.Loc), "day").
-				Where(sql.In(action, events.NameMarketingConfirmed, events.NameEmailUnsubscribed)).
+				Where(sql.In(action, systemevent.MarketingConfirmed, systemevent.EmailUnsubscribed)).
 				GroupBy("day")
 		}).
 		Scan(ctx, &rows)

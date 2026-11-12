@@ -14,8 +14,10 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -26,14 +28,14 @@ func eventsClock() time.Time { return eventsNow }
 
 func contactsCreatedFor(t *testing.T, env *testhelper.TestEnv, email string) int {
 	t.Helper()
-	return env.QueuedCount(t, "contact.created", map[string]any{"email": email})
+	return env.QueuedCount(t, systemevent.ContactCreated, map[string]any{"email": email})
 }
 
 // A batch mixing new, existing and unidentifiable contacts reports each item and
 // lets the valid ones through; only new contacts publish contact.created.
 func TestExternalContactsBatchUpsertMixedItems(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	ok, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{
@@ -71,7 +73,7 @@ func TestExternalContactsBatchUpsertChecksAddresses(t *testing.T) {
 		"mailinator.com.": {MX: []net.MX{{Host: "mail.mailinator.com.", Pref: 10}}},
 	})
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock), testhelper.WithMailResolver(r))
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	ok, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{
@@ -98,7 +100,7 @@ func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	ctx := context.Background()
 
-	writer := env.ExternalScoped(t, "contacts:write")
+	writer := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	tooMany := make([]externalapi.UpsertContactInput, 1001)
 	for i := range tooMany {
 		tooMany[i] = externalapi.UpsertContactInput{SubjectId: externalapi.NewOptNilString("limit")}
@@ -106,7 +108,7 @@ func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
 	_, err := writer.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: tooMany})
 	testhelper.ExternalRefusal(t, err, http.StatusBadRequest, "more than 1000 items is rejected as a whole")
 
-	reader := env.ExternalScoped(t, "contacts:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	_, err = reader.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{{SubjectId: externalapi.NewOptNilString("x")}},
 	})
@@ -115,7 +117,7 @@ func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
 
 func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
 	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{
@@ -150,7 +152,7 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 
 func TestExternalEventsBatchSubmitScope(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:read")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsRead)
 	_, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{{SubjectId: "u", Action: "a"}},
 	})
@@ -161,7 +163,7 @@ func TestExternalEventsBatchSubmitScope(t *testing.T) {
 // client event id rides along as the Event's source id.
 func TestExternalEventsBatchBackfill(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
 	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Backfill: externalapi.NewOptBool(true),
@@ -189,7 +191,7 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 // answers 422 with the reason, and the batch reports it per item.
 func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "events:write")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 	old := externalapi.NewOptNilTimestamp(externalapi.Timestamp(eventsNow.AddDate(-2, 0, 0)))
 
 	err := c.EventsCreate(context.Background(), &externalapi.RecordEventsInput{
@@ -202,7 +204,7 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{
 			{SubjectId: "s-1", Action: "order_paid", OccurredAt: old},
-			{SubjectId: "s-1", Action: "email.opened"},
+			{SubjectId: "s-1", Action: systemevent.EmailOpened},
 			{SubjectId: "s-1", Action: "order_paid"},
 		},
 	})
@@ -220,8 +222,8 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 func TestExternalEventsRefuseSMSActions(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 
-	err := env.ExternalScoped(t, "events:write").EventsCreate(context.Background(), &externalapi.RecordEventsInput{
-		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: "sms.delivered"}},
+	err := env.ExternalScoped(t, apitokens.ScopeEventsWrite).EventsCreate(context.Background(), &externalapi.RecordEventsInput{
+		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: systemevent.SmsDelivered}},
 	})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "reserved")

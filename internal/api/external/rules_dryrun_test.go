@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -17,7 +18,7 @@ import (
 func TestExternalRulesDryRunNeedsOnlyTheReadScopeAndWritesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	reader := env.ExternalScoped(t, "automations:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 	firings := env.DB.RuleFiring.Query().CountX(ctx)
 	params := externalapi.RulesDryRunParams{ID: entityIDString(fixtures.RuleTagClickedID)}
 	body := &externalapi.DryRunRuleInput{EventId: entityIDString(fixtures.EventRuleClickLiamID)}
@@ -30,6 +31,6 @@ func TestExternalRulesDryRunNeedsOnlyTheReadScopeAndWritesNothing(t *testing.T) 
 	assert.Equal(t, "apply_tag", res.Actions[0].Type)
 	assert.Equal(t, firings, env.DB.RuleFiring.Query().CountX(ctx))
 
-	_, err = env.ExternalScoped(t, "contacts:read").RulesDryRun(ctx, body, params)
+	_, err = env.ExternalScoped(t, apitokens.ScopeContactsRead).RulesDryRun(ctx, body, params)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }

@@ -3,6 +3,8 @@ package auth
 import (
 	"net/http"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // PasskeyCeremonyCookie is the name of the cookie that carries a Passkey ceremony's challenge
@@ -11,13 +13,13 @@ const PasskeyCeremonyCookie = "PASSKEY"
 
 // PasskeyRegistrationPath is the prefix of the registration operations that use the cookie;
 // the browser sends it to nothing else.
-const PasskeyRegistrationPath = "/site/me/passkeys/registration"
+const PasskeyRegistrationPath = paths.Site + "/me/passkeys/registration"
 
 // PasskeyCheckPath is the prefix of the Passkey check operations that use the cookie.
-const PasskeyCheckPath = "/site/me/passkeys/check"
+const PasskeyCheckPath = paths.Site + "/me/passkeys/check"
 
 // PasskeyLoginPath is the prefix of the login operations that use the cookie.
-const PasskeyLoginPath = "/site/auth/passkey"
+const PasskeyLoginPath = paths.Site + "/auth/passkey"
 
 // PasskeyCeremony wraps the sealed ceremony in its cookie: httpOnly, SameSite=Strict (a
 // ceremony begins and finishes in one page), living for ttl and sent only to path.

@@ -93,7 +93,7 @@ func TestRetiringAServingHostLogsNothing(t *testing.T) {
 // crash between the two loses the change. The plain client refuses such a change.
 func TestPlainClientRefusesAChangeToAVerifiedHost(t *testing.T) {
 	testhelper.Setup(t) // loads the schema into the real database once
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	pool, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)

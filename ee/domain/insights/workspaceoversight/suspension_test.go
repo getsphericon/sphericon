@@ -13,10 +13,11 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -51,7 +52,7 @@ func (h *harness) unsuspend(t *testing.T, c *staffeeapi.Client, id string) *staf
 // trySendOnAPI sends the welcome template to on /api.
 func (h *harness) trySendOnAPI(t *testing.T, to string) (*externalapi.SendTransactionalEmailResponse, error) {
 	t.Helper()
-	return h.env.ExternalScoped(t, "emails:send").EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
+	return h.env.ExternalScoped(t, apitokens.ScopeEmailsSend).EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId: externalapi.EntityId(int64(fixtures.TemplateWelcomeID)), Destination: externalapi.EmailAddress(to),
 	}, externalapi.EmailsSendParams{})
 }
@@ -152,7 +153,7 @@ func TestSuspendingFreezesSendsThroughOutboundAndNothingElse(t *testing.T) {
 	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
 
 	held := h.refusedSendOnAPI(t, "held@example.com", "a send is refused with a 4xx")
-	assert.Equal(t, "the message was not sent: "+outboundmessages.Detail(holds.ReasonSuspended), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), held.Detail.Value)
 	assert.Empty(t, h.env.CustomerMail.Messages())
 
 	err := h.env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{})

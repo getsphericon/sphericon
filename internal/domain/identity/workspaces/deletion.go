@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -50,6 +51,10 @@ const (
 	TriggerRestore DeletionTrigger = "restore"
 	TriggerErase   DeletionTrigger = "erase"
 )
+
+// DiffDeleted is the Diff key of a Workspace's deletion and restore in its Audit log: whether it is
+// deleted, which no one column holds (the deletion cycle's state).
+const DiffDeleted = "deleted"
 
 // pendingDeletion is a Workspace deleted and not yet erased, whatever the window says.
 func pendingDeletion() predicate.Workspace {
@@ -124,7 +129,7 @@ func deleteStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[Del
 }
 
 // ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
-var ErrNameMismatch = validation.RefuseField("name", "workspaces: the typed name does not match the workspace name", i18n.ErrorsWorkspaceNameMismatch)
+var ErrNameMismatch = validation.RefuseField(fieldname.Name, "workspaces: the typed name does not match the workspace name", i18n.ErrorsWorkspaceNameMismatch)
 
 // Delete deletes the scoped Workspace (ADR 0043): it moves it from active to pending deletion,
 // setting discarded_at, which the send path reads as the pending-deletion Hold and the lookups
@@ -153,7 +158,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		if deleted, err = tx.Workspace.Get(ctx, ws.ID); err != nil {
 			return err
 		}
-		diff := map[string]any{"deleted": events.Change(false, true)}
+		diff := map[string]any{DiffDeleted: events.Change(false, true)}
 		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceDelete, diff))
 	})
 	return deleted, err

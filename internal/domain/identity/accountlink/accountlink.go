@@ -21,6 +21,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -91,7 +92,7 @@ func (l *Link) JWKS() []byte { return l.jwks }
 type Subject struct {
 	UserID      int64
 	WorkspaceID int64
-	Role        string
+	Role        membership.Role
 }
 
 // Token signs a token for the subject at time now; it expires TTL later. The Link of an

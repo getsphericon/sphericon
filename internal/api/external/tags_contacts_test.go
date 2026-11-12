@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -17,7 +18,7 @@ import (
 func TestExternalTagsRemoveForAnUnknownOrForeignContactIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	for name, id := range map[string]externalapi.EntityId{
 		"unknown": 999999,
@@ -33,7 +34,7 @@ func TestExternalTagsRemoveForAnUnknownOrForeignContactIsNotFound(t *testing.T) 
 func TestExternalContactsCreatePersistsCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	created, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress("fields@example.com"),

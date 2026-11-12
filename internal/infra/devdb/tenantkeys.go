@@ -4,10 +4,15 @@ import (
 	"slices"
 
 	atlas "ariga.io/atlas/sql/schema"
+
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // workspaceColumn is the column every Workspace-owned table carries (the workspace mixin).
 const workspaceColumn = "workspace_id"
+
+// idColumn is the primary key ent gives every table.
+const idColumn = "id"
 
 // tenantKeys makes every reference between two Workspace-owned tables carry the Workspace, so the
 // database refuses a row of one Workspace that points at a row of another (ADR 0017): the foreign
@@ -57,7 +62,7 @@ func tenantKeys(s *atlas.Schema) map[string]atlas.ReferenceOption {
 	}
 	for p := range parents {
 		ws, _ := p.Column(workspaceColumn)
-		id, _ := p.Column("id")
+		id, _ := p.Column(idColumn)
 		p.AddIndexes(atlas.NewUniqueIndex(p.Name+"_workspace_id_id").AddColumns(ws, id))
 	}
 	return setNull
@@ -83,7 +88,7 @@ func withSetNullColumns(s *atlas.Schema, actions map[string]atlas.ReferenceOptio
 // workspaceOwned is the workspace_id column of t when t is Workspace-owned: it has one and it is
 // NOT NULL. The workspaces table itself is not.
 func workspaceOwned(t *atlas.Table) (*atlas.Column, bool) {
-	if t == nil || t.Name == "workspaces" {
+	if t == nil || t.Name == workspace.Table {
 		return nil, false
 	}
 	c, ok := t.Column(workspaceColumn)

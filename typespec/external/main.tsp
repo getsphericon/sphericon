@@ -5,6 +5,7 @@ import "@typespec/versioning";
 
 import "../common/scalars.tsp";
 import "../common/audit.tsp";
+import "../common/system-events.tsp";
 import "../common/money.tsp";
 import "../common/pagination.tsp";
 import "../common/errors.tsp";

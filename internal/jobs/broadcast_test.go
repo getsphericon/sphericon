@@ -15,14 +15,15 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -108,7 +109,7 @@ func TestSendBroadcastDeliversToEligibleContacts(t *testing.T) {
 
 	// Each send publishes an email.sent event, so the send fact reaches the Event log (Events
 	// are the source of truth). One per sent recipient, no more (exactly-once).
-	assert.Equal(t, sent, countPublished(t, env, "email.sent", fixtures.BroadcastDraftID))
+	assert.Equal(t, sent, countPublished(t, env, systemevent.EmailSent, fixtures.BroadcastDraftID))
 }
 
 // countPublished returns how many events of the given name for the given broadcast the
@@ -137,7 +138,7 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 	err := deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, holds.ReasonSuspended, held.Reason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, held.Reason)
 	assert.True(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[1]), broadcasts.Pending()).ExistX(ctx))
 	require.NotNil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSendingID).HoldReason)
 	assert.Len(t, fs.sent, 1)
@@ -316,7 +317,7 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 		require.NotNil(t, m.Reason)
 	}
 
-	assert.Zero(t, countPublished(t, env, "email.sent", fixtures.BroadcastScheduledID), "no email.sent event when the send fails")
+	assert.Zero(t, countPublished(t, env, systemevent.EmailSent, fixtures.BroadcastScheduledID), "no email.sent event when the send fails")
 }
 
 func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
@@ -328,7 +329,7 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 	err := jobs.SendBroadcast(ctx, env.DB, newMod(env, failingResolver(messaging.ErrNoProvider), time.Now), fixtures.BroadcastDraftID)
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outboundmessages.HoldNoIntegration, held.Reason)
+	assert.Equal(t, holdreason.NoIntegration, held.Reason)
 
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.NotEqual(t, broadcast.StatusFailed, got.Status)

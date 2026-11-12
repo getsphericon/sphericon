@@ -9,9 +9,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,7 +23,7 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	sms := env.AcmeTwilio(t)
-	res, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
+	res, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Phone: externalapi.NewOptNilString("+14155550188"),
 	})
 	require.NoError(t, err)
@@ -32,8 +33,8 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 		"MessageSid": {"SM0100"}, "AccountSid": {sms.Account.SID}, "From": {"+14155550188"},
 		"To": {testhelper.TwilioNumber}, "Body": {"YES"},
 	})
-	onlyEnvelope(t, env, events.NameSmsReceived)
-	triggers := triggersOn(t, env, events.NameSmsReceived)
+	onlyEnvelope(t, env, systemevent.SmsReceived)
+	triggers := triggersOn(t, env, systemevent.SmsReceived)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
 
@@ -41,6 +42,6 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 		Where(automationrun.AutomationID(fixtures.AutomationOnSmsReceivedID), automationrun.ContactID(int64(texter.ID))).
 		Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, events.NameSmsReceived, *run.EventAction)
+	assert.Equal(t, systemevent.SmsReceived, *run.EventAction)
 	assert.Equal(t, "YES", run.EventProperties["text"])
 }

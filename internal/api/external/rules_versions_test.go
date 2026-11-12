@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -21,7 +22,7 @@ import (
 func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	author := env.ExternalScoped(t, string(externalapi.ApiTokenScopeAutomationsRead), string(externalapi.ApiTokenScopeAutomationsWrite))
+	author := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	id := entityIDString(fixtures.RuleVipOnlyID)
 
 	res, err := author.RulesUpdate(ctx, &externalapi.UpdateRuleInput{Revision: externalapi.Revision(env.RuleRevision(ctx, t, int64(id))),
@@ -53,7 +54,7 @@ func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 	_, err = author.RulesPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.RuleRevision(ctx, t, int64(id)))}, externalapi.RulesPublishParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	publisher := env.ExternalScoped(t, string(externalapi.ApiTokenScopeAutomationsPublish))
+	publisher := env.ExternalScoped(t, apitokens.ScopeAutomationsPublish)
 	now, err := publisher.RulesPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.RuleRevision(ctx, t, int64(id)))}, externalapi.RulesPublishParams{ID: id})
 	require.NoError(t, err)
 	newLive, _ := now.Live.Get()
@@ -69,11 +70,11 @@ func TestExternalRevertDropsTheDraft(t *testing.T) {
 	ctx := context.Background()
 	id := entityIDString(fixtures.RuleTagClickedID)
 
-	reader := env.ExternalScoped(t, string(externalapi.ApiTokenScopeAutomationsRead))
+	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 	_, err := reader.RulesRevert(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.RuleRevision(ctx, t, int64(id)))}, externalapi.RulesRevertParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	author := env.ExternalScoped(t, string(externalapi.ApiTokenScopeAutomationsWrite))
+	author := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite)
 	res, err := author.RulesRevert(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.RuleRevision(ctx, t, int64(id)))}, externalapi.RulesRevertParams{ID: id})
 	require.NoError(t, err)
 	assert.True(t, res.Draft.Null)

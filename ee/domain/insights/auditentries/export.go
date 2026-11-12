@@ -24,15 +24,22 @@ var exportHeader = []string{
 	"target_type", "target_id", "target_name", "diff", "request_id", "ip", "user_agent",
 }
 
+// targetAuditLog is the target of an export of the Audit log, which no entity holds, and diffFilter
+// the Diff key of the filters it is narrowed by.
+const (
+	targetAuditLog = "audit_log"
+	diffFilter     = "filter"
+)
+
 // Export records the export of the scoped Workspace's Audit log as an `audit_log.export`
 // entry of the scope's actor, whose diff names the filters it is narrowed by (story 19), and
 // returns the entries matching the filter as CSV, yielded in chunks the driver streams
 // (ADR 0111). The entry is recorded before any row leaves: an error here means nothing was
 // exported. The caller has already checked Licensed and the reader's role.
 func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (iter.Seq2[[]byte, error], error) {
-	entry := &events.AuditEntry{Action: events.ActionAuditLogExport, TargetType: "audit_log"}
+	entry := &events.AuditEntry{Action: events.ActionAuditLogExport, TargetType: targetAuditLog}
 	if filters := exportFilters(f); len(filters) > 0 {
-		entry.Diff = map[string]any{"filter": filters}
+		entry.Diff = map[string]any{diffFilter: filters}
 	}
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		entry.WorkspaceID, entry.Actor = ts.WorkspaceID(), ts.Actor()

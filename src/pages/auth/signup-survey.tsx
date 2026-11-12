@@ -9,6 +9,12 @@ import {
   siteSignupSurveySubmitMutation,
   siteUserGetMeQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  SiteSignupCompanySize,
+  SiteSignupGoal,
+  SiteSignupRole,
+  SiteSignupSource,
+} from '../../generated/site/types.gen.ts'
 import type { SiteSignupSurveyInput } from '../../generated/site/types.gen.ts'
 import { zSiteSignupSurveyInput } from '../../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -32,9 +38,14 @@ function otherMaxLength(question: Question) {
   return zSiteSignupSurveyInput.shape[`${question}Other`].unwrap().maxLength ?? undefined
 }
 
-function choices(labels: Record<string, string>) {
-  return Object.entries(labels).map(([value, label]) => ({ value, label }))
+// The options of a question, one per value of its contract enum in the contract's order, each
+// worded by labels: a value without its words fails to compile.
+function choices<T extends string>(values: Record<string, T>, labels: Record<T, string>) {
+  return Object.values(values).map((value) => ({ value, label: labels[value] }))
 }
+
+// The `other` choice every question offers, which asks for a text of its own.
+const OTHER: SiteSignupRole & SiteSignupCompanySize & SiteSignupGoal & SiteSignupSource = 'other'
 
 // The answers as the contract takes them: an `…Other` text is sent only with its `other` choice,
 // and an unanswered optional question is left out.
@@ -46,7 +57,7 @@ function toInput(answers: Answers, others: Answers): SiteSignupSurveyInput {
     }
     return {
       [question]: answer,
-      ...(answer === 'other' ? { [`${question}Other`]: (others[question] ?? '').trim() } : {}),
+      ...(answer === OTHER ? { [`${question}Other`]: (others[question] ?? '').trim() } : {}),
     }
   }
   return zSiteSignupSurveyInput.parse({
@@ -72,7 +83,7 @@ export function SignupSurveyPage() {
       question: 'role',
       required: true,
       title: t(($) => $.signupSurvey.role.title),
-      options: choices({
+      options: choices(SiteSignupRole, {
         founder: t(($) => $.signupSurvey.role.founder),
         marketer: t(($) => $.signupSurvey.role.marketer),
         developer: t(($) => $.signupSurvey.role.developer),
@@ -84,7 +95,7 @@ export function SignupSurveyPage() {
       question: 'companySize',
       required: true,
       title: t(($) => $.signupSurvey.companySize.title),
-      options: choices({
+      options: choices(SiteSignupCompanySize, {
         '1': t(($) => $.signupSurvey.companySize.size1),
         '2_10': t(($) => $.signupSurvey.companySize.size2to10),
         '11_50': t(($) => $.signupSurvey.companySize.size11to50),
@@ -98,7 +109,7 @@ export function SignupSurveyPage() {
       question: 'mainGoal',
       required: true,
       title: t(($) => $.signupSurvey.mainGoal.title),
-      options: choices({
+      options: choices(SiteSignupGoal, {
         broadcasts: t(($) => $.signupSurvey.mainGoal.broadcasts),
         automations: t(($) => $.signupSurvey.mainGoal.automations),
         tracking: t(($) => $.signupSurvey.mainGoal.tracking),
@@ -110,7 +121,7 @@ export function SignupSurveyPage() {
       question: 'heardFrom',
       required: false,
       title: t(($) => $.signupSurvey.heardFrom.title),
-      options: choices({
+      options: choices(SiteSignupSource, {
         search: t(($) => $.signupSurvey.heardFrom.search),
         github: t(($) => $.signupSurvey.heardFrom.github),
         social: t(($) => $.signupSurvey.heardFrom.social),
@@ -147,7 +158,7 @@ export function SignupSurveyPage() {
   const otherText = others[step.question] ?? ''
   const isLast = index === steps.length - 1
   const complete =
-    answer === undefined ? !step.required : answer !== 'other' || otherText.trim().length > 0
+    answer === undefined ? !step.required : answer !== OTHER || otherText.trim().length > 0
 
   const next = () => {
     if (isLast) {
@@ -178,7 +189,7 @@ export function SignupSurveyPage() {
               ))}
             </Stack>
           </Radio.Group>
-          {answer === 'other' && (
+          {answer === OTHER && (
             <TextInput
               label={t(($) => $.signupSurvey.otherLabel)}
               maxLength={otherMaxLength(step.question)}

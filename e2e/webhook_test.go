@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // A tracked click reaches the Workspace's Webhook endpoint: the tracker publishes email.clicked,
@@ -17,7 +19,7 @@ func TestATrackedClickReachesAWebhook(t *testing.T) {
 	w := env.NewWorkspace(t).Ready()
 	to := w.NewRecipient()
 	w.ImportContacts(to)
-	hook := w.SubscribeWebhook("email.clicked")
+	hook := w.SubscribeWebhook(systemevent.EmailClicked)
 	w.SendBroadcast(Broadcast{
 		Subject: "Clicked " + uniq(),
 		Body:    HTML(`See the <a href="https://example.com/offer">offer</a>`),
@@ -37,7 +39,7 @@ func TestATrackedClickReachesAWebhook(t *testing.T) {
 	}
 	require.NoError(t, json.Unmarshal([]byte(call.Body), &body))
 	assert.NotEmpty(t, body.ID)
-	assert.Equal(t, "email.clicked", body.Type)
+	assert.Equal(t, systemevent.EmailClicked, body.Type)
 	assert.Equal(t, to, body.Subject)
 	assert.Equal(t, "https://example.com/offer", body.Data.URL)
 }

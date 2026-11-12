@@ -16,6 +16,7 @@ namespace SitePublicConfirmations {
   @useAuth(NoAuth)
   @post
   @route("/{token}")
+  @rateLimited("human")
   op perform(@path token: string): NoContentResponse | Problem;
 }
 

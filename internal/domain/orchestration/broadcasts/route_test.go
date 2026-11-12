@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -46,10 +47,10 @@ func TestPlanHoldsABroadcastWhoseNamedIntegrationCannotSend(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outboundmessages.HoldNoIntegration, held.Reason)
+	assert.Equal(t, holdreason.NoIntegration, held.Reason)
 	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	require.NotNil(t, b.HoldReason)
-	assert.EqualValues(t, outboundmessages.HoldNoIntegration, *b.HoldReason)
+	assert.Equal(t, holdreason.NoIntegration, *b.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
 	assert.Empty(t, d.box.sent)
 }
@@ -70,7 +71,7 @@ func TestPaceHoldsABroadcastWhoseRouteCannotSend(t *testing.T) {
 	assert.Equal(t, route.Hold, held.Reason, "the pace holds for the reason the route gives")
 	hold := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).HoldReason
 	require.NotNil(t, hold)
-	assert.EqualValues(t, outboundmessages.HoldNoIntegration, *hold)
+	assert.Equal(t, holdreason.NoIntegration, *hold)
 }
 
 // A sending Broadcast whose route cannot send has no estimate: it is blocked, not busy.

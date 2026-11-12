@@ -23,7 +23,7 @@ func serve(env *testhelper.TestEnv, req *http.Request) *httptest.ResponseRecorde
 
 func appURL(t *testing.T) string {
 	t.Helper()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	return cfg.AppURL
 }

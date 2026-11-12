@@ -17,10 +17,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -41,7 +43,7 @@ func TestReplayQueueFailureRollsBackEvenAnInsertedPrefix(t *testing.T) {
 	at := time.Date(2026, 11, 8, 2, 0, 0, 0, time.UTC)
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
 	s := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID}))
+	require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID}))
 	removeReportJobs(t, env.Bus, s, jobs.MessageObservationArgs{})
 	queue, err := river.NewClient(riverdatabasesql.New(env.SQLDB), &river.Config{})
 	require.NoError(t, err)
@@ -72,16 +74,16 @@ func TestReplayReappliesOnlyTheSelectedReportWithItsOriginalObservation(t *testi
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return now }))
 	s := env.DB.Scoped(fixtures.AcmeID)
 	for _, fact := range []*events.EmailEngagement{
-		{Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail, ObservedAt: at.Add(-time.Minute)},
-		{Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, ObservedAt: at.Add(-2 * time.Minute)},
-		{Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, Machine: true},
-		{Action: events.NameEmailClicked, WorkspaceID: fixtures.InitechID, OutboundMessageID: fixtures.OutboundMessageErasableBroadcastID},
+		{Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail, ObservedAt: at.Add(-time.Minute)},
+		{Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, ObservedAt: at.Add(-2 * time.Minute)},
+		{Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, Machine: true},
+		{Action: systemevent.EmailClicked, WorkspaceID: fixtures.InitechID, OutboundMessageID: fixtures.OutboundMessageErasableBroadcastID},
 	} {
 		require.NoError(t, env.Bus.Publish(t.Context(), fact))
 	}
 	// A later recording belongs to neither the requested half-open interval nor its replay.
 	now = at.Add(time.Hour)
-	require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: events.NameEmailClicked, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID}))
+	require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: systemevent.EmailClicked, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID}))
 	removeReportJobs(t, env.Bus, s, jobs.MessageObservationArgs{})
 	beforeJournal := env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).Order(eventjournalentry.ByID()).IDsX(t.Context())
 	beforeWebhooks := len(env.JobsOf(t, jobs.WebhookEventArgs{}.Kind()))
@@ -103,7 +105,7 @@ func TestReplayReappliesOnlyTheSelectedReportWithItsOriginalObservation(t *testi
 	assert.Nil(t, msg.ClickedAt, "the later recording was not replayed")
 	assert.Equal(t, beforeJournal, env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).Order(eventjournalentry.ByID()).IDsX(t.Context()), "replay does not republish")
 	assert.Len(t, env.JobsOf(t, jobs.WebhookEventArgs{}.Kind()), beforeWebhooks, "no general fan-out")
-	assert.NotContains(t, string(env.DB.EventJournalEntry.Query().Where(eventjournalentry.Name(events.NameEmailOpened)).FirstX(t.Context()).Inputs), fixtures.ContactAliceEmail)
+	assert.NotContains(t, string(env.DB.EventJournalEntry.Query().Where(eventjournalentry.Name(systemevent.EmailOpened)).FirstX(t.Context()).Inputs), fixtures.ContactAliceEmail)
 }
 
 func TestReplayRefusesUnsupportedConsumersVersionsAndOversizedRangesWithoutPartialJobs(t *testing.T) {
@@ -111,7 +113,7 @@ func TestReplayRefusesUnsupportedConsumersVersionsAndOversizedRangesWithoutParti
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
 	s := env.DB.Scoped(fixtures.AcmeID)
 	for range 2 {
-		require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID}))
+		require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID}))
 	}
 	removeReportJobs(t, env.Bus, s, jobs.MessageObservationArgs{})
 	in := events.ReplayRequest{Consumer: jobs.MessageObservationArgs{}.Kind(), From: at, Before: at.Add(time.Minute), Limit: 1}
@@ -153,11 +155,11 @@ func TestReplayMeasurementsSurviveContactErasureAndNeverRestoreIdentity(t *testi
 			at := time.Date(2026, 11, 8, 2, 0, 0, 0, time.UTC)
 			env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
 			s := env.DB.Scoped(fixtures.InitechID)
-			require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: events.NameEmailOpened, WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Email: fixtures.ContactErasableEmail, OutboundMessageID: fixtures.OutboundMessageErasableBroadcastID}))
+			require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: systemevent.EmailOpened, WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Email: fixtures.ContactErasableEmail, OutboundMessageID: fixtures.OutboundMessageErasableBroadcastID}))
 			require.NoError(t, env.Bus.Publish(t.Context(), &events.MessageUnsubscribed{WorkspaceID: fixtures.InitechID, OutboundMessageID: fixtures.OutboundMessageErasableBroadcastID, ObservedAt: at}))
 			removeReportJobs(t, env.Bus, s, jobs.MessageObservationArgs{}, jobs.BroadcastUnsubscribeEventArgs{})
 			erase := func() {
-				client := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "contacts:erase"))
+				client := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeContactsErase))
 				require.NoError(t, client.ContactsDelete(t.Context(), externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactErasableID)}))
 			}
 			replay := func() {

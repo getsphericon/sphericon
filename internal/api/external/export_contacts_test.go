@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -23,7 +24,7 @@ func readExportContacts(t *testing.T, c *externalapi.Client, cursor string, limi
 // its Tags through the same API a customer uses.
 func exportContactsClient(t *testing.T, env *testhelper.TestEnv, workspaceID int64) *externalapi.Client {
 	t.Helper()
-	return env.ExternalWithToken(t, env.ScopedBearerFor(t, workspaceID, "export:read", "contacts:read", "contacts:write"))
+	return env.ExternalWithToken(t, env.ScopedBearerFor(t, workspaceID, apitokens.ScopeExportRead, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite))
 }
 
 func TestExportContactsRowCarriesColumnsCustomFieldsAndTags(t *testing.T) {
@@ -98,7 +99,7 @@ func TestExportContactsPagingLosesNothing(t *testing.T) {
 
 func TestExportContactsNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	for _, scopes := range [][]string{{}, {"contacts:read"}, {"contacts:read", "events:read", "audit:read"}} {
+	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsRead}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.AcmeID, scopes...))
 		_, err := c.ExportContacts(context.Background(), externalapi.ExportContactsParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)

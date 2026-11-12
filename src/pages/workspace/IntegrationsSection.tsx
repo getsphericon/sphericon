@@ -54,6 +54,7 @@ import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
 import { can } from '../../utils/permissions.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { HistoryMenuItem } from './AuditLogSection.tsx'
 import { CredentialsModal } from './CredentialsModal.tsx'
 import { InboundModal } from './InboundModal.tsx'
@@ -228,7 +229,7 @@ function IntegrationsList({
             records={rows}
             idAccessor="id"
             columns={[
-              { accessor: 'name' },
+              { accessor: 'name' } satisfies FieldColumn<(typeof records)[number]>,
               {
                 accessor: 'provider',
                 title: t(($) => $.settings.integrations.providerLabel),

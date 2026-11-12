@@ -26,13 +26,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // Field is the json name of the form field that carries the answers: a refusal of the answers as a
 // whole is reported against it, and a required acceptance left unticked against ItemField(key).
-const Field = validation.FieldSignupItems
+const Field = fieldname.SignupItems
 
 // ItemField is the field a refusal of the item with key is reported under.
 func ItemField(key string) string { return validation.Nested(Field, key) }

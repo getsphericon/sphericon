@@ -1,0 +1,38 @@
+id: audit-diff-key-is-a-constant
+valid:
+  - |
+    func diff(before, after *ent.Workspace) map[string]any {
+    	return map[string]any{workspace.FieldName: events.Change(before.Name, after.Name)}
+    }
+  - |
+    func diff(before, after *ent.Workspace) map[string]any {
+    	d := map[string]any{}
+    	d[workspace.FieldPostalAddress] = events.Change(before.PostalAddress, after.PostalAddress)
+    	return d
+    }
+  - |
+    func diff() map[string]any {
+    	return map[string]any{DiffDeleted: events.Change(false, true)}
+    }
+  - |
+    func props() map[string]any {
+    	return map[string]any{"provider": provider}
+    }
+invalid:
+  - |
+    func diff(before, after *ent.Workspace) map[string]any {
+    	return map[string]any{"retention_days": events.Change(before.RetentionDays, after.RetentionDays)}
+    }
+  - |
+    func diff(before, after *ent.Workspace) map[string]any {
+    	d := map[string]any{}
+    	d["name"] = events.Change(before.Name, after.Name)
+    	return d
+    }
+  - |
+    func diff(domain string) map[string]any {
+    	return map[string]any{
+    		membership.FieldRole: events.Became("member"),
+    		"domain":             events.Became(domain),
+    	}
+    }

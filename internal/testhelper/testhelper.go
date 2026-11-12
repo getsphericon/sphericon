@@ -96,7 +96,7 @@ func initBaseline() {
 		_, file, _, _ := runtime.Caller(0)
 		projectRoot := filepath.Join(filepath.Dir(file), "..", "..")
 
-		cfg, err := config.Load("test")
+		cfg, err := config.Load(config.EnvTest)
 		if err != nil {
 			errLoad = err
 			return
@@ -453,7 +453,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		cfg.AbuseVolumeFloor = st.volumeFloor
 	}
 	if st.noSystemSender {
-		cfg.SMTPHost, cfg.SystemEmailProvider = "", "smtp"
+		cfg.SMTPHost, cfg.SystemEmailProvider = "", providers.SMTP
 	}
 	lic := st.license(t)
 

@@ -26,7 +26,9 @@ built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
   (`internal/kernel/narrow`), which caps at the bounds instead of wrapping.
 - **A change to a field in an Audit entry's diff is `events.Change(from, to)` or
   `events.Became(to)`, or `events.ChangeOf(from, to)` for an optional field (a nil pointer is no
-  value)**, keyed by the ent field constant (`membership.FieldRole`), not a literal.
+  value)**, keyed by the ent field constant (`membership.FieldRole`), or by a named constant when no
+  column holds the value (`workspaces.DiffDeleted`), never a literal (ast-grep
+  `audit-diff-key-is-a-constant`).
 - **A linter is off only when it is harmful here, and the reason is in `.golangci.yml`.** An
   exclusion there is scoped to the files it concerns and says why; there is no `//nolint`.
 
@@ -64,8 +66,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   its reason, assigned by the handler after the call, and a value of the request outside the mapped part (a
   batch's flag on each of its Events) is a `goverter:context` argument.
 - **Rule 6, `check:copies` (`cmd/contractcopy`, in `check`).** It reads the generated `openapi/*.openapi.json`
-  and fails on a hand-written copy of its values: a Go list, `case` list or TypeScript array or union of
-  literals that restates an enum (all of its values, or three or more that are a quarter of a larger one),
+  and fails on a hand-written copy of its values: a Go list, `case` list or TypeScript array (its
+  spreads aside) or union of literals, or a TypeScript file's top-level string constants together, that
+  restates an enum (all of its values, or three or more that are a quarter of a larger one),
   the `value`s of a TypeScript list of options (a Select's `data`) that restate an enum, a TypeScript
   `MAX_*`/`MIN_*`/`DEFAULT_*` constant or a request's `query: { pageSize }` equal to a declared length,
   range or default, a TypeScript interface, object type or `z.object` whose fields are exactly those of a

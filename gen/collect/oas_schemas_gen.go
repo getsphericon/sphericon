@@ -42,7 +42,8 @@ func (s *ApiKeyAuth) SetRoles(val []string) {
 // Ref: #/components/schemas/CollectEventInput
 type CollectEventInput struct {
 	VisitorId string `json:"visitorId"`
-	Action    string `json:"action"`
+	// The customer's own action; one in the namespace of a System event (`SystemEventAction`) is refused.
+	Action string `json:"action"`
 	// A client-chosen id that makes a retry safe. It is unique within the Workspace: sending an event
 	// again with the same id changes nothing, so a client that did not see the answer (a network error, a
 	// `503`) resends the whole batch. Generate it once per event, when the event happens (a UUID), and

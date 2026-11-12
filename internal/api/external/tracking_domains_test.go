@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -16,7 +17,7 @@ import (
 // CNAME to publish at the Instance's edge host.
 func TestExternalTrackingDomainLifecycle(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "tracking_domains:read", "tracking_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeTrackingDomainsRead, apitokens.ScopeTrackingDomainsWrite)
 	ctx := context.Background()
 
 	set, err := c.TrackingDomainsSet(ctx, &externalapi.SetTrackingDomainInput{Host: "links.acme.com"})
@@ -42,11 +43,11 @@ func TestExternalTrackingDomainsNeedTheirScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	reader := env.ExternalScoped(t, "tracking_domains:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeTrackingDomainsRead)
 	_, err := reader.TrackingDomainsSet(ctx, &externalapi.SetTrackingDomainInput{Host: "links.acme.com"})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	writer := env.ExternalScoped(t, "tracking_domains:write")
+	writer := env.ExternalScoped(t, apitokens.ScopeTrackingDomainsWrite)
 	_, err = writer.TrackingDomainsList(ctx)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "write does not imply read")
 }

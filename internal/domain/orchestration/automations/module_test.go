@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -30,7 +31,7 @@ func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 	_, err = m.Archive(ctx, acme, fixtures.AutomationGlobexID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
 
-	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "New", TriggerEvent: "contact.created"})
+	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "New", TriggerEvent: systemevent.ContactCreated})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, created.WorkspaceID)
 

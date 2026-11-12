@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -39,14 +40,14 @@ const recordLabel = "_sphericon-join."
 
 var (
 	// ErrAlreadyExists means the Workspace already has this domain.
-	ErrAlreadyExists = validation.ConflictField("domain", "joindomains: this domain is already added", i18n.ErrorsJoinDomainExists)
+	ErrAlreadyExists = validation.ConflictField(fieldname.Domain, "joindomains: this domain is already added", i18n.ErrorsJoinDomainExists)
 	// ErrInvalid is a domain that is no domain name.
-	ErrInvalid = validation.RefuseField("domain", "joindomains: invalid domain", i18n.ErrorsJoinDomainInvalid)
+	ErrInvalid = validation.RefuseField(fieldname.Domain, "joindomains: invalid domain", i18n.ErrorsJoinDomainInvalid)
 	// ErrRecordNotFound means the TXT record is not published (or carries another value).
 	ErrRecordNotFound = validation.Refuse("joindomains: the TXT record was not found", i18n.ErrorsJoinDomainRecordMissing)
 	// ErrHeldElsewhere means another Workspace has the domain verified and still publishes
 	// its record.
-	ErrHeldElsewhere = validation.ConflictField("domain", "joindomains: another workspace has verified this domain", i18n.ErrorsJoinDomainHeld)
+	ErrHeldElsewhere = validation.ConflictField(fieldname.Domain, "joindomains: another workspace has verified this domain", i18n.ErrorsJoinDomainHeld)
 	// ErrNotFound means no Join domain of that id is in the Workspace.
 	ErrNotFound = validation.NotFound("joindomains: join domain not found", i18n.ErrorsJoinDomainNotFound)
 )

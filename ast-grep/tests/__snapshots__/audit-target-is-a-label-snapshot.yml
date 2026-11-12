@@ -1,0 +1,14 @@
+id: audit-target-is-a-label
+snapshots:
+  "func entry(m *ent.Membership) *events.AuditEntry {\n\treturn &events.AuditEntry{Action: events.ActionMembershipUpdate, TargetType: \"membership\", TargetID: m.ID}\n}\n":
+    labels:
+      - source: 'TargetType: "membership"'
+        style: primary
+        start: 117
+        end: 141
+  "var entry = &events.AuditEntry{Action: events.ActionAuditLogExport, TargetType: \"audit_log\"}\n":
+    labels:
+      - source: 'TargetType: "audit_log"'
+        style: primary
+        start: 68
+        end: 91

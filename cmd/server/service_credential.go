@@ -21,7 +21,7 @@ import (
 func serviceCredentialCommand(d deps) *cli.Command {
 	expiresIn := func() cli.Flag {
 		return &cli.DurationFlag{
-			Name:  "expires-in",
+			Name:  flagExpiresIn,
 			Usage: "expire the credential this long from now (default: never)",
 			Validator: func(v time.Duration) error {
 				if v < 0 {
@@ -33,7 +33,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 	}
 	// expiry is the flag's deadline, nil when it was not given.
 	expiry := func(cmd *cli.Command) *time.Time {
-		in := cmd.Duration("expires-in")
+		in := cmd.Duration(flagExpiresIn)
 		if in == 0 {
 			return nil
 		}
@@ -48,8 +48,8 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Description: "scopes: usage:read, workspaces:read, users:read, domains:read, holds:write",
 			Flags:       []cli.Flag{expiresIn()},
 			Arguments: []cli.Argument{
-				&cli.StringArg{Name: "name", Required: true},
-				&cli.StringArg{Name: "scopes", Required: true},
+				&cli.StringArg{Name: flagName, Required: true},
+				&cli.StringArg{Name: flagScopes, Required: true},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				credentials, err := c.ServiceCredentials()
@@ -57,8 +57,8 @@ func serviceCredentialCommand(d deps) *cli.Command {
 					return err
 				}
 				issued, err := credentials.IssueServiceCredential(ctx, servicecredentials.IssueInput{
-					Name:      cmd.StringArg("name"),
-					Scopes:    parseScopes(cmd.StringArg("scopes")),
+					Name:      cmd.StringArg(flagName),
+					Scopes:    parseScopes(cmd.StringArg(flagScopes)),
 					ExpiresAt: expiry(cmd),
 				})
 				return commandline.ReportCredentialIssued(out(cmd), issued, err)
@@ -69,7 +69,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Usage:     "issue a second credential with the same name and scopes",
 			ArgsUsage: "<id>",
 			Flags:     []cli.Flag{expiresIn()},
-			Arguments: []cli.Argument{&cli.IntArg{Name: "id", Required: true}},
+			Arguments: []cli.Argument{&cli.IntArg{Name: flagID, Required: true}},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				id, err := credentialID(cmd)
 				if err != nil {
@@ -87,7 +87,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Name:      "revoke",
 			Usage:     "refuse a credential from now on",
 			ArgsUsage: "<id>",
-			Arguments: []cli.Argument{&cli.IntArg{Name: "id", Required: true}},
+			Arguments: []cli.Argument{&cli.IntArg{Name: flagID, Required: true}},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				id, err := credentialID(cmd)
 				if err != nil {
@@ -105,13 +105,13 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Name:      "list",
 			Usage:     "list the credentials, optionally of one name",
 			ArgsUsage: "[<name>]",
-			Arguments: []cli.Argument{&cli.StringArg{Name: "name"}},
+			Arguments: []cli.Argument{&cli.StringArg{Name: flagName}},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
 				credentials, err := c.ServiceCredentials()
 				if err != nil {
 					return err
 				}
-				list, err := credentials.ServiceCredentials(ctx, cmd.StringArg("name"))
+				list, err := credentials.ServiceCredentials(ctx, cmd.StringArg(flagName))
 				return commandline.ReportCredentials(out(cmd), list, d.now(), err)
 			}),
 		},
@@ -130,7 +130,7 @@ func parseScopes(list string) []servicecredentials.Scope {
 
 // credentialID is the `<id>` argument of rotate and revoke.
 func credentialID(cmd *cli.Command) (int64, error) {
-	id := int64(cmd.IntArg("id"))
+	id := int64(cmd.IntArg(flagID))
 	if id < 1 {
 		return 0, fmt.Errorf("%d is not a service credential id (see `list`)", id)
 	}

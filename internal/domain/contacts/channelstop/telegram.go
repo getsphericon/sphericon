@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -120,7 +121,7 @@ func contactsOf(ctx context.Context, s *ent.Scoped, destination string) ([]int64
 
 // ErrTelegramSource refuses a hand-recorded Telegram opt-out of a narrower source: it is
 // Channel-wide.
-var ErrTelegramSource = validation.RefuseField("sendingSource", "consent: a telegram opt-out is for everything", i18n.ErrorsSendingSourceTelegram)
+var ErrTelegramSource = validation.RefuseField(fieldname.SendingSource, "consent: a telegram opt-out is for everything", i18n.ErrorsSendingSourceTelegram)
 
 // TelegramUnsubscribe records the Channel-wide opt-out of a Telegram user id, with the effects of
 // the user stopping in Telegram (StopTelegram): the row and telegram.unsubscribed for every

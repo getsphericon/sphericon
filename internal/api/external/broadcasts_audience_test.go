@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -24,11 +25,11 @@ const (
 )
 
 // audienceScopes is what these tests' token holds: it reads what it writes (ADR 0119), and sends.
-var audienceScopes = lo.Map([]externalapi.ApiTokenScope{
-	externalapi.ApiTokenScopeBroadcastsRead, externalapi.ApiTokenScopeBroadcastsWrite, externalapi.ApiTokenScopeBroadcastsSend,
-	externalapi.ApiTokenScopeSegmentsRead, externalapi.ApiTokenScopeSegmentsWrite,
-	externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeContactsWrite,
-}, func(s externalapi.ApiTokenScope, _ int) string { return string(s) })
+var audienceScopes = []apitokens.Scope{
+	apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite, apitokens.ScopeBroadcastsSend,
+	apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite,
+	apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite,
+}
 
 // recipientEmails is the addresses of the Broadcast's Recipients.
 func recipientEmails(t *testing.T, env *testhelper.TestEnv, broadcastID int64) []string {
@@ -96,7 +97,7 @@ func TestExternalScheduledBroadcastSendsToTheConditionCopiedAtSchedule(t *testin
 // Broadcast, while its Segment of origin is free to archive (ADR 0065).
 func TestExternalTagNamedInAScheduledBroadcastsCopyIsInDefinitionUse(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write", "segments:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeSegmentsWrite)
 
 	err := c.TagsDelete(t.Context(), externalapi.TagsDeleteParams{ID: entityIDString(fixtures.TagRenewalDueID)})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusConflict)

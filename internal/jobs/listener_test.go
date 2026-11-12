@@ -33,7 +33,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	listener, err := appdb.OpenRiverListener(ctx, url)
 	require.NoError(t, err)
 	t.Cleanup(listener.Close)
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	cipher := testhelper.Cipher(t)
 	entClient := entclient.Core.New(pool)

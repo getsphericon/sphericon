@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -40,7 +40,7 @@ func TestAnEmailWithTheStartTagCarriesALinkThatBindsItsRecipient(t *testing.T) {
 	bound := env.DB.Binding.Query().Where(binding.Destination("6100")).OnlyX(t.Context())
 	require.NotNil(t, bound.ContactID)
 	assert.Equal(t, int64(fixtures.ContactAliceID), *bound.ContactID)
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, map[string]any{"contactId": fixtures.ContactAliceID}))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramBound, map[string]any{"contactId": fixtures.ContactAliceID}))
 }
 
 func TestAnEmailWithoutTheStartTagIssuesNoToken(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -271,7 +271,7 @@ func TestTheSendVolumeIsTheCountOfSentEventsInTheWindow(t *testing.T) {
 	c, _ := h.staffSession(t)
 	ctx := t.Context()
 	s := h.env.DB.Scoped(fixtures.SoylentID)
-	sent := s.Event().Query().Where(event.Action(events.NameEmailSent))
+	sent := s.Event().Query().Where(event.Action(systemevent.EmailSent))
 	inWindow := sent.Clone().Where(event.OccurredAtGTE(time.Now().Add(-abusedetector.Window))).CountX(ctx)
 	require.Greater(t, sent.CountX(ctx), inWindow, "the fixtures hold a send older than the window")
 

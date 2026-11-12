@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -16,7 +17,7 @@ import (
 // /api refuses a stale revision as /site does: a 409 revision_changed, nothing written (ADR 0119).
 func TestExternalTemplateUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "templates:read", "templates:write")
+	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 	ctx := context.Background()
 	id := entityIDString(fixtures.TemplateWelcomeID)
 	read, err := c.TemplatesGet(ctx, externalapi.TemplatesGetParams{ID: id})
@@ -36,7 +37,7 @@ func TestExternalTemplateUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 // /api requires the revision as /site does: an update without one is refused and writes nothing.
 func TestExternalTemplateUpdateWithoutARevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	bearer := env.ScopedBearer(t, "templates:read", "templates:write")
+	bearer := env.ScopedBearer(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 	c := env.ExternalVia(t, bearer, testhelper.DropField("revision"))
 	ctx := context.Background()
 	before := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)

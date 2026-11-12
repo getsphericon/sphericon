@@ -35,7 +35,7 @@ runner calls the function, and easement forbids river's `WorkerDefaults`,
 `AddWorker` and `NewPeriodicJob` below them. A new wiring package is added to the `wiring` component, never to a
 baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
 packages that import none of ours, such as the vocabulary every tier shares (`channels`,
-`providers`, `holdreason`, `tokenscope`, `jobkind`) and the helpers that know no domain module
+`providers`, `holdreason`, `tokenscope`, `systemevent`, `jobkind`) and the helpers that know no domain module
 (`i18n`, `validation`, `pagination`, `patch`, `secrets`, `credentials`, the renderers `emaildoc`,
 `emailrender`, `smsrender` and `telegramrender`). Every component may import it, and easement fails
 its import of any package of ours outside `internal/kernel`, the generated `ent` and `gen` trees

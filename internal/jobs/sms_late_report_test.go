@@ -13,8 +13,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
@@ -65,7 +65,7 @@ func TestADeliveryReportThatComesBeforeItsTextIsCommittedIsReadAgainLater(t *tes
 	assert.Empty(t, deferred[0].Notice.Destination, "the job holds no number")
 	settled := env.DB.OutboundMessage.GetX(ctx, msg.ID)
 	assert.NotNil(t, settled.DeliveredAt, "the report stamps the text once it is there")
-	delivered := env.QueuedCount(t, events.NameSmsDelivered, map[string]any{"contactId": fixtures.ContactTexterConfirmedID})
+	delivered := env.QueuedCount(t, systemevent.SmsDelivered, map[string]any{"contactId": fixtures.ContactTexterConfirmedID})
 	assert.Equal(t, 1, delivered)
 }
 
@@ -90,6 +90,6 @@ func TestADeliveryReportOfNoTextIsReadAgainABoundedNumberOfTimes(t *testing.T) {
 	queued := lateNotices(t, env)
 	attempts := lo.Map(queued, func(a callbackinterpretation.LateNoticeArgs, _ int) int { return a.Attempt })
 	assert.Equal(t, []int{1, 2}, attempts, "the first reading again queues the second; the last queues none")
-	delivered := env.QueuedCount(t, events.NameSmsDelivered, nil)
+	delivered := env.QueuedCount(t, systemevent.SmsDelivered, nil)
 	assert.Zero(t, delivered)
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -65,11 +66,11 @@ func (s cancelingSenders) EmailSender(context.Context, *ent.Scoped, *ent.Integra
 }
 
 func TestDetailWordsEveryHold(t *testing.T) {
-	assert.Equal(t, "sending is suspended for this workspace", outboundmessages.Detail(holds.ReasonSuspended))
-	assert.Equal(t, "no integration of the channel can send: the one named is disabled, archived or of another channel, or the channel has no default", outboundmessages.Detail(outboundmessages.HoldNoIntegration))
-	assert.Equal(t, "sender domain is not a verified sending domain", outboundmessages.Detail(outboundmessages.HoldUnverifiedDomain))
-	assert.Equal(t, "the email provider has stopped sending from this account", outboundmessages.Detail(outboundmessages.HoldProviderStopped))
-	assert.Equal(t, "sending is currently on hold for this workspace: custom_reason", outboundmessages.Detail("custom_reason"))
+	assert.Equal(t, "sending is suspended for this workspace", outboundmessages.HoldDetail(holdreason.WorkspaceSuspended))
+	assert.Equal(t, "no integration of the channel can send: the one named is disabled, archived or of another channel, or the channel has no default", outboundmessages.HoldDetail(holdreason.NoIntegration))
+	assert.Equal(t, "sender domain is not a verified sending domain", outboundmessages.HoldDetail(holdreason.UnverifiedDomain))
+	assert.Equal(t, "the email provider has stopped sending from this account", outboundmessages.HoldDetail(holdreason.ProviderStopped))
+	assert.Equal(t, "sending is currently on hold for this workspace: custom_reason", outboundmessages.HoldDetail("custom_reason"))
 }
 
 func TestSendRejectsIncompleteRequests(t *testing.T) {
@@ -143,7 +144,7 @@ func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := newModule(env, time.Now)
-	agree := func(key, want string) {
+	agree := func(key string, want holdreason.Reason) {
 		t.Helper()
 		hold, err := m.Preflight(ctx, s, outboundmessages.EmailContent{}, nil)
 		require.NoError(t, err)
@@ -155,13 +156,13 @@ func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 			return
 		}
 		assert.Equal(t, outboundmessages.Held, res.Outcome, "Send")
-		assert.Equal(t, want, res.Reason, "Send")
+		assert.Equal(t, want, res.Hold, "Send")
 		assert.Zero(t, res.MessageID, "a hold records nothing")
 	}
 
 	agree("tx:lapsed", "")
 	liftHold(t, env, time.Now().Add(time.Hour))
-	agree("tx:active", holds.ReasonStaff)
+	agree("tx:active", holdreason.StaffHold)
 	assert.Len(t, env.CustomerMail.Messages(), 1, "only the lapsed-hold send went out")
 	liftHold(t, env, time.Now().Add(-time.Hour))
 	agree("tx:active", "")
@@ -176,13 +177,13 @@ func TestDeletionIsReportedBeforeSuspensionAndStaffHolds(t *testing.T) {
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 	res, err := m.Send(ctx, s, transactional("tx:susp", "a@example.com"))
 	require.NoError(t, err)
-	assert.Equal(t, holds.ReasonSuspended, res.Reason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, res.Hold)
 
 	liftHold(t, env, time.Now().Add(time.Hour))
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
 	res, err = m.Send(ctx, s, transactional("tx:both", "a@example.com"))
 	require.NoError(t, err)
-	assert.Equal(t, holds.ReasonPendingDeletion, res.Reason)
+	assert.Equal(t, holdreason.WorkspacePendingDeletion, res.Hold)
 	assert.Empty(t, env.CustomerMail.Messages())
 }
 
@@ -208,12 +209,12 @@ func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *tes
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 	res, err = m.Send(ctx, s, transactional("tx:core-susp", "a@example.com"))
 	require.NoError(t, err)
-	assert.Equal(t, holds.ReasonSuspended, res.Reason)
+	assert.Equal(t, holdreason.WorkspaceSuspended, res.Hold)
 
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
 	res, err = m.Send(ctx, s, transactional("tx:core-del", "a@example.com"))
 	require.NoError(t, err)
-	assert.Equal(t, holds.ReasonPendingDeletion, res.Reason)
+	assert.Equal(t, holdreason.WorkspacePendingDeletion, res.Hold)
 }
 
 func TestWithLeaseControlsWhenAClaimCanBeTakenOver(t *testing.T) {
@@ -694,7 +695,7 @@ func TestSendTestOutcomes(t *testing.T) {
 		res, err := newModule(env, time.Now).SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 		require.NoError(t, err)
 		assert.Equal(t, outboundmessages.Held, res.Outcome)
-		assert.Equal(t, outboundmessages.HoldUnverifiedDomain, res.Reason)
+		assert.Equal(t, holdreason.UnverifiedDomain, res.Hold)
 	})
 
 	t.Run("provider error is returned", func(t *testing.T) {
@@ -731,7 +732,7 @@ func TestSendBroadcastTestRefusesEveryOutcomeButSent(t *testing.T) {
 		env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"})
 		require.ErrorIs(t, err, outboundmessages.ErrHeld)
-		assert.Equal(t, "the message was not sent: "+outboundmessages.Detail(holds.ReasonSuspended), validation.Message(err))
+		assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), validation.Message(err))
 	})
 
 	t.Run("send error", func(t *testing.T) {

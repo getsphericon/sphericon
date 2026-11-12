@@ -5,6 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // MachineProperty is the key of the Event property that marks an open or click made by software
@@ -14,11 +15,11 @@ const MachineProperty = "machine"
 
 // ClickActions are the Events of a click on a link of a message, one per Channel that tracks them
 // (ADR 0083): what a link report counts and what Attribution credits.
-var ClickActions = []string{NameEmailClicked, NameTelegramClicked, NameSmsClicked}
+var ClickActions = []string{systemevent.EmailClicked, systemevent.TelegramClicked, systemevent.SmsClicked}
 
 // IsEngagement reports whether action is an open or a click, the Events a machine can make.
 func IsEngagement(action string) bool {
-	return action == NameEmailOpened || slices.Contains(ClickActions, action)
+	return action == systemevent.EmailOpened || slices.Contains(ClickActions, action)
 }
 
 // HumanOnly narrows a query of Events to the ones not made by software, for every figure that

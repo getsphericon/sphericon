@@ -73,7 +73,7 @@ const (
 // is either a nested Group or a Leaf, as its `kind` says.
 type Group struct {
 	Kind       string            `json:"kind"`
-	Combinator string            `json:"combinator"`
+	Combinator Combinator        `json:"combinator"`
 	Not        bool              `json:"not,omitempty"`
 	Rules      []json.RawMessage `json:"rules"`
 }
@@ -157,7 +157,7 @@ var birthdaySides = map[operator]func(time.Time) predicate.Contact{
 // "match everyone" group.
 func Parse(def string) (Group, error) {
 	if strings.TrimSpace(def) == "" {
-		return Group{Kind: kindGroup, Combinator: "and"}, nil
+		return Group{Kind: kindGroup, Combinator: And}, nil
 	}
 	var g Group
 	if err := json.Unmarshal([]byte(def), &g); err != nil {
@@ -213,7 +213,7 @@ func (c *compiler) group(ctx context.Context, g Group) (predicate.Contact, error
 	if g.Kind != kindGroup {
 		return nil, fmt.Errorf("unknown group kind %q", g.Kind)
 	}
-	if g.Combinator != "and" && g.Combinator != "or" {
+	if g.Combinator != And && g.Combinator != Or {
 		return nil, fmt.Errorf("unknown combinator %q", g.Combinator)
 	}
 	preds := make([]predicate.Contact, 0, len(g.Rules))
@@ -233,7 +233,7 @@ func (c *compiler) group(ctx context.Context, g Group) (predicate.Contact, error
 	}
 
 	p := contact.And(preds...)
-	if g.Combinator == "or" {
+	if g.Combinator == Or {
 		p = contact.Or(preds...)
 	}
 	if g.Not {

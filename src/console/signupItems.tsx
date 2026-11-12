@@ -38,6 +38,7 @@ import {
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { trimmed, useSchemaForm } from '../resources/schemaForm.ts'
 import { Route as consoleSignupItemRoute } from '../routes/console/_authed/signup-items.$itemId.tsx'
+import type { FieldColumn } from '../utils/tableColumns.ts'
 
 const KINDS = zSignupItemKind.options
 
@@ -221,7 +222,7 @@ function SignupItemsTable() {
           accessor: 'key',
           title: t(($) => $.console.signupItems.columns.key),
           visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.sm})`,
-        },
+        } satisfies FieldColumn<(typeof items)[number]>,
         {
           accessor: 'kind',
           title: t(($) => $.console.signupItems.columns.kind),

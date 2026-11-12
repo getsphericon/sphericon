@@ -5,14 +5,17 @@ import (
 	"testing"
 	"time"
 
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -23,14 +26,14 @@ func TestMessageProjectionsKeepEarliestObservationsDespiteHandlingOrderAndWorker
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return now }))
 	publish := func(observed time.Time) {
 		t.Helper()
-		for _, action := range []string{events.NameEmailOpened, events.NameEmailClicked} {
+		for _, action := range []string{systemevent.EmailOpened, systemevent.EmailClicked} {
 			require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{
 				Action: action, WorkspaceID: fixtures.AcmeID,
 				ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail,
 				OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, ObservedAt: observed,
 			}))
 		}
-		for _, action := range []string{events.NameEmailDelivered, events.NameEmailBounced, events.NameEmailComplained} {
+		for _, action := range []string{systemevent.EmailDelivered, systemevent.EmailBounced, systemevent.EmailComplained} {
 			require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailDelivery{
 				Action: action, WorkspaceID: fixtures.AcmeID,
 				ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail,
@@ -75,11 +78,11 @@ func TestAnonymousObservationsSurviveErasureInEitherHandlingOrder(t *testing.T) 
 				msg := env.DB.OutboundMessage.GetX(t.Context(), id)
 				contactID := lo.FromPtr(msg.ContactID)
 				require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{
-					Action: events.NameEmailOpened, WorkspaceID: fixtures.InitechID, ContactID: contactID,
+					Action: systemevent.EmailOpened, WorkspaceID: fixtures.InitechID, ContactID: contactID,
 					Email: msg.Destination, OutboundMessageID: id,
 				}))
 				require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailDelivery{
-					Action: events.NameEmailBounced, WorkspaceID: fixtures.InitechID, ContactID: contactID,
+					Action: systemevent.EmailBounced, WorkspaceID: fixtures.InitechID, ContactID: contactID,
 					Email: msg.Destination, OutboundMessageID: id,
 				}))
 			}
@@ -90,7 +93,7 @@ func TestAnonymousObservationsSurviveErasureInEitherHandlingOrder(t *testing.T) 
 				assert.NotContains(t, string(encoded), "contactId")
 			}
 			beforeErasure(t, env)
-			client := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "contacts:erase"))
+			client := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeContactsErase))
 			err := client.ContactsDelete(t.Context(), externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactErasableID)})
 			require.NoError(t, err)
 			env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
@@ -110,7 +113,7 @@ func TestAnonymousObservationsSurviveErasureInEitherHandlingOrder(t *testing.T) 
 func TestMessageObservationCannotUpdateAnotherWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{
-		Action: events.NameEmailOpened, WorkspaceID: fixtures.GlobexID,
+		Action: systemevent.EmailOpened, WorkspaceID: fixtures.GlobexID,
 		OutboundMessageID: fixtures.OutboundMessageTrackingSampleID,
 	}))
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})

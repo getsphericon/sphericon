@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -61,7 +62,7 @@ func healthy(t *testing.T) doctor.Input {
 			SMTPHost:                 "smtp.example.test",
 			SMTPPort:                 587,
 			SMTPUser:                 "mailer",
-			SystemEmailProvider:      "smtp",
+			SystemEmailProvider:      providers.SMTP,
 			RequireEmailVerification: true,
 		},
 		DB:       sqlDB,

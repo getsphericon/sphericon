@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -47,7 +48,7 @@ func TestExternalBatchUpsertRecordsOneImportEntry(t *testing.T) {
 // deleting the Contact (erasure) leaves the entry as it was: it holds no personal data.
 func TestExternalContactEditIsAuditedWithNamesOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write", "contacts:erase")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsErase)
 	ctx := context.Background()
 
 	_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(entityIDString(fixtures.ContactBobID)))), FirstName: externalapi.NewOptNilString("Renamed")},

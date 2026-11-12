@@ -31,8 +31,18 @@ var (
 	controlsInURL = regexp.MustCompile(`[\x00-\x20\x7f]`)
 )
 
-// nodeImage is the type of the image node, which the rules and the schema listing both single out.
-const nodeImage = "image"
+// The node and mark types of the editor's schema the rules and the schema listing single out
+// (EditorSchema refuses a schema without one).
+const (
+	nodeDoc         = "doc"
+	nodeText        = "text"
+	nodeHeading     = "heading"
+	nodeButton      = "button"
+	nodeImage       = "image"
+	nodeOrderedList = "orderedList"
+	nodeCodeBlock   = "codeBlock"
+	markLink        = "link"
+)
 
 // checkRules returns an *InvalidError for the first thing wrong with the document, or nil.
 func checkRules(root any) error {
@@ -40,14 +50,14 @@ func checkRules(root any) error {
 	if !ok {
 		return invalidf("The document must be a JSON object: {\"type\":\"doc\",\"content\":[...]}.")
 	}
-	if object["type"] != "doc" {
+	if object["type"] != nodeDoc {
 		return invalidf("The document's root must have type \"doc\", got %s.", show(object["type"]))
 	}
 	content, ok := object["content"].([]any)
 	if !ok || len(content) == 0 {
 		return invalidf("The document has no content: \"content\" must be a non-empty array of nodes.")
 	}
-	return checkChildren(object, "doc")
+	return checkChildren(object, nodeDoc)
 }
 
 func checkChildren(parent map[string]any, path string) error {
@@ -75,7 +85,7 @@ func checkNode(value any, path string) error {
 	where := fmt.Sprintf("%s (%s)", path, name)
 	schema := EditorSchema()
 	def, known := schema.Nodes[name]
-	if !known || name == "doc" {
+	if !known || name == nodeDoc {
 		return invalidf("%s: unknown node type %q. Use one of %s.", where, name, quoted(nodeNames()))
 	}
 	for _, prop := range slices.Sorted(maps.Keys(node)) {
@@ -83,7 +93,7 @@ func checkNode(value any, path string) error {
 			return invalidf("%s: unknown property %q on a node. A node has only %s; put %s inside \"attrs\".", where, prop, quoted(nodeProps), show(prop))
 		}
 	}
-	if name == "text" {
+	if name == nodeText {
 		if err := checkText(node, where); err != nil {
 			return err
 		}
@@ -155,15 +165,15 @@ func checkNodeAttrs(name string, attrs, node map[string]any, where string) error
 		}
 	}
 	switch name {
-	case "heading":
+	case nodeHeading:
 		if v, ok := attrs["level"]; ok && !wholeBetween(v, 1, 6) {
 			return invalidf("%s: attribute \"level\" must be a whole number from 1 to 6, got %s.", where, show(v))
 		}
-	case "button":
+	case nodeButton:
 		return checkButton(attrs, node, where)
 	case nodeImage:
 		return checkImage(attrs, where)
-	case "orderedList":
+	case nodeOrderedList:
 		if v, ok := attrs["start"]; ok && v != nil && !wholeBetween(v, 1, 1<<30) {
 			return invalidf("%s: attribute \"start\" must be a whole number of 1 or more, got %s.", where, show(v))
 		}
@@ -260,7 +270,7 @@ func checkMarks(value any, where string) error {
 				return err
 			}
 		}
-		if name == "link" {
+		if name == markLink {
 			href, _ := attrs["href"].(string)
 			if href == "" {
 				return invalidf("%s: a link needs attrs.href, the address it opens, like {\"type\":\"link\",\"attrs\":{\"href\":\"https://example.com\"}}.", here)
@@ -331,7 +341,7 @@ func validSize(value any) bool {
 
 func nodeNames() []string {
 	names := slices.Sorted(maps.Keys(EditorSchema().Nodes))
-	return slices.DeleteFunc(names, func(n string) bool { return n == "doc" })
+	return slices.DeleteFunc(names, func(n string) bool { return n == nodeDoc })
 }
 
 func quoted(names []string) string {

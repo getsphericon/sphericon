@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -62,7 +63,7 @@ func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID external
 func TestExternalIntegrationWritesAreAuditedUnderTheToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	scoped := env.DB.Scoped(fixtures.AcmeID)
 
 	created := createSMTP(t, c, "Audited mailer", false)
@@ -89,7 +90,7 @@ func TestExternalIntegrationWritesAreAuditedUnderTheToken(t *testing.T) {
 func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite)
 	scoped := env.DB.Scoped(fixtures.AcmeID)
 
 	created := createDomain(t, c, externalapi.CreateSendingDomainInput{Domain: "audited.example.com"})

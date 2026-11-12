@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -128,7 +129,7 @@ func TestSitePublicConfirmationsPerformRecordsClientIP(t *testing.T) {
 	env.Server.ServeHTTP(w, req)
 	require.Equal(t, http.StatusNoContent, w.Code)
 
-	confirmed := env.QueuedMessages(t, "marketing.confirmed")
+	confirmed := env.QueuedMessages(t, systemevent.MarketingConfirmed)
 	require.Len(t, confirmed, 1)
 	ip := confirmed[0].Data["ip"]
 	assert.Equal(t, "203.0.113.7", ip)

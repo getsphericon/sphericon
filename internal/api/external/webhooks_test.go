@@ -13,30 +13,32 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestExternalWebhooksCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "webhooks:read", "webhooks:write")
+	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRead, apitokens.ScopeWebhooksWrite)
 	ctx := context.Background()
 
 	hook, err := c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
 	assert.Equal(t, "https://codebasics.dev/webhooks/sphericon", hook.URL)
-	assert.Equal(t, []string{"contact.created", "email.opened", "email.clicked"}, hook.EventTypes)
+	assert.Equal(t, []string{systemevent.ContactCreated, systemevent.EmailOpened, systemevent.EmailClicked}, hook.EventTypes)
 
 	_, err = c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "not-a-url"})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	created, err := c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{
-		URL: "https://example.com/hook", EventTypes: []string{"contact.created"},
+		URL: "https://example.com/hook", EventTypes: []string{systemevent.ContactCreated},
 	})
 	require.NoError(t, err)
 	res := created
 	assert.True(t, res.Enabled)
-	assert.Equal(t, []string{"contact.created"}, res.EventTypes)
+	assert.Equal(t, []string{systemevent.ContactCreated}, res.EventTypes)
 
 	// A signing secret was generated and stored encrypted, just not exposed.
 	row, err := env.DB.WebhookEndpoint.Query().Where(webhookendpoint.URL("https://example.com/hook")).Only(ctx)
@@ -67,7 +69,7 @@ func TestExternalWebhooksCRUD(t *testing.T) {
 // create or update, neither in clear nor sealed.
 func TestExternalWebhooksNeverReturnSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := env.ScopedBearer(t, "webhooks:read", "webhooks:write")
+	token := env.ScopedBearer(t, apitokens.ScopeWebhooksRead, apitokens.ScopeWebhooksWrite)
 	doer := env.Transport(map[string]string{"Authorization": "Bearer " + token})
 
 	cases := []struct{ name, method, path, body string }{
@@ -101,11 +103,11 @@ func TestExternalWebhooksScopes(t *testing.T) {
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
 	// Template scopes do not grant webhooks.
-	other := env.ExternalScoped(t, "templates:read", "templates:write")
+	other := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 	_, err = other.WebhooksList(ctx, externalapi.WebhooksListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	ro := env.ExternalScoped(t, "webhooks:read")
+	ro := env.ExternalScoped(t, apitokens.ScopeWebhooksRead)
 	_, err = ro.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
 
@@ -123,7 +125,7 @@ func TestExternalWebhooksAreWorkspaceScoped(t *testing.T) {
 
 	id := entityIDString(fixtures.WebhookGlobexID)
 
-	c := env.ExternalScoped(t, "webhooks:read", "webhooks:write")
+	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRead, apitokens.ScopeWebhooksWrite)
 	list, err := c.WebhooksList(ctx, externalapi.WebhooksListParams{})
 	require.NoError(t, err)
 	for _, it := range list.Items {
@@ -143,12 +145,12 @@ func TestExternalWebhookSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
 	ctx := context.Background()
 	auditTypes := []string{"audit.entry"}
 
-	licensed := testhelper.Setup(t).ExternalScoped(t, "webhooks:write")
+	licensed := testhelper.Setup(t).ExternalScoped(t, apitokens.ScopeWebhooksWrite)
 	_, err := licensed.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: auditTypes})
 	require.NoError(t, err)
 
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	c := env.ExternalScoped(t, "webhooks:write")
+	c := env.ExternalScoped(t, apitokens.ScopeWebhooksWrite)
 	_, err = c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: auditTypes})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 

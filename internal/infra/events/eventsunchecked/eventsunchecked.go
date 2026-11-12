@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // eraseChunk bounds how many ids go into one IN (...) list of an Erasure, well below the driver's
@@ -27,7 +27,7 @@ const eraseChunk = 10_000
 // (ADR 0011). Everything else a system Event carries (urls, provider and message ids,
 // provenance) is dropped, and so are the columns that copy them (url, broadcast_id,
 // automation_id); machine and captured stay, facts about the send and not the person.
-var anonymousKeep = []string{"sendingDomain", "bounceKind"}
+var anonymousKeep = []string{"sendingDomain", systemevent.BounceKindProperty}
 
 // anonymized reports whether an Event action is a reserved system action that
 // Erasure keeps as an anonymous row. Every other action is customer-tracked and is
@@ -39,13 +39,13 @@ var anonymousKeep = []string{"sendingDomain", "bounceKind"}
 // sms.undelivered like email's delivery notices, and sms.unsubscribed like email.unsubscribed.
 func anonymized(action string) bool {
 	switch action {
-	case events.NameEmailSent, events.NameEmailOpened, events.NameEmailClicked,
-		events.NameEmailDelivered, events.NameEmailDelayed, events.NameEmailDropped,
-		events.NameEmailBounced, events.NameEmailComplained, events.NameEmailUnsubscribed,
-		events.NameContactCreated,
-		events.NameTelegramSent, events.NameTelegramClicked, events.NameTelegramUnsubscribed,
-		events.NameTelegramBound, events.NameTelegramUnbound,
-		events.NameSmsSent, events.NameSmsDelivered, events.NameSmsUndelivered, events.NameSmsClicked, events.NameSmsUnsubscribed:
+	case systemevent.EmailSent, systemevent.EmailOpened, systemevent.EmailClicked,
+		systemevent.EmailDelivered, systemevent.EmailDelayed, systemevent.EmailDropped,
+		systemevent.EmailBounced, systemevent.EmailComplained, systemevent.EmailUnsubscribed,
+		systemevent.ContactCreated,
+		systemevent.TelegramSent, systemevent.TelegramClicked, systemevent.TelegramUnsubscribed,
+		systemevent.TelegramBound, systemevent.TelegramUnbound,
+		systemevent.SmsSent, systemevent.SmsDelivered, systemevent.SmsUndelivered, systemevent.SmsClicked, systemevent.SmsUnsubscribed:
 		return true
 	}
 	return false
@@ -65,7 +65,7 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 	}
 	if phone != "" {
 		matches = append(matches, event.And(
-			event.ContactIDIsNil(), event.Action(events.NameSmsConfirmed), event.Phone(phone)))
+			event.ContactIDIsNil(), event.Action(systemevent.SmsConfirmed), event.Phone(phone)))
 	}
 	if len(visitorIDs) > 0 {
 		matches = append(matches, event.VisitorIDIn(visitorIDs...))
@@ -89,7 +89,7 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 			doomed = append(doomed, e.ID)
 			continue
 		}
-		if e.Action == events.NameSmsDelivered || e.Action == events.NameSmsUndelivered {
+		if e.Action == systemevent.SmsDelivered || e.Action == systemevent.SmsUndelivered {
 			reported = append(reported, e.ID)
 		}
 		props := map[string]any{}

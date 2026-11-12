@@ -11,12 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
+
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // credentialRoutes are the routes that carry a credential in the path: the signed tracking,
 // unsubscribe and confirm tokens, the invitation token and the ingest hook key.
 var credentialRoutes = []string{
-	"/e/o/", "/e/c/", "/e/u/", "/e/confirm/", "/hooks/",
+	paths.LinkOpen, paths.LinkClick, paths.LinkUnsubscribe, paths.LinkConfirm, paths.ShortLink, paths.Hooks,
 	"/site/confirmations/", "/site/unsubscribes/", "/site/invitations/",
 }
 

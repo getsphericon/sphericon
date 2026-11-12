@@ -10,8 +10,8 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -37,8 +37,8 @@ func TestATransactionalSendThroughTheTestInboxIsMarkedCapturedAndAnotherIsNot(t 
 	assert.True(t, captured[int64(kept.ID)])
 	assert.Equal(t, 1, lo.CountBy(page.Items, func(item siteapi.SiteTransactionalEmailResource) bool { return item.Captured }),
 		"a message sent any other way is not captured")
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": kept.ID, "captured": true}), "Activity says so too")
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailDelivered, map[string]any{"outboundMessageId": kept.ID, "captured": true}))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.EmailSent, map[string]any{"outboundMessageId": kept.ID, "captured": true}), "Activity says so too")
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.EmailDelivered, map[string]any{"outboundMessageId": kept.ID, "captured": true}))
 }
 
 func TestTheBroadcastReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {

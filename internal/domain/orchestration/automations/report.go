@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // Report is an Automation's engagement figures and its Results over a period. Every open and
@@ -50,7 +51,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 		return Report{}, err
 	}
 	opens, err := s.Event().Query().
-		Where(event.ActionEQ(events.NameEmailOpened), events.HumanOnly(), event.AutomationID(id)).
+		Where(event.ActionEQ(systemevent.EmailOpened), events.HumanOnly(), event.AutomationID(id)).
 		Count(ctx)
 	if err != nil {
 		return Report{}, err

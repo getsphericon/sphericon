@@ -15,7 +15,7 @@ import (
 // use it for nothing else (docs/architecture/workspace-scoping.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	return []secrets.Sweep{{
-		Column: "webhook_endpoints.secret_encrypted",
+		Column: webhookendpoint.Table + "." + webhookendpoint.FieldSecretEncrypted,
 		Page: func(ctx context.Context, after int64, n int) ([]secrets.Stored, error) {
 			rs, err := c.WebhookEndpoint.Query().Where(webhookendpoint.IDGT(after)).Order(ent.Asc(webhookendpoint.FieldID)).Limit(n).All(ctx)
 			return lo.Map(rs, func(e *ent.WebhookEndpoint, _ int) secrets.Stored {

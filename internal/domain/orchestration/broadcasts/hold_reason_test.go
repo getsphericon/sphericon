@@ -11,9 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/schema"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -24,10 +23,7 @@ func TestTheBroadcastHoldReasonIsEveryReasonASendIsHeldFor(t *testing.T) {
 	require.True(t, ok)
 	declared := lo.Map(field.Descriptor().Enums, func(e struct{ N, V string }, _ int) string { return e.V })
 
-	assert.ElementsMatch(t, []string{
-		holds.ReasonSuspended, holds.ReasonPendingDeletion, holds.ReasonStaff,
-		outboundmessages.HoldNoIntegration, outboundmessages.HoldUnverifiedDomain, outboundmessages.HoldProviderStopped, outboundmessages.HoldProviderRefused,
-	}, declared)
+	assert.ElementsMatch(t, holdreason.Reason("").Values(), declared)
 }
 
 func TestABroadcastHoldReasonOutsideTheDeclaredOnesIsRefused(t *testing.T) {

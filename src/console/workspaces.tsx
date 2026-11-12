@@ -13,6 +13,7 @@ import { staffWorkspacesListOptions } from '../generated/staffee/@tanstack/react
 import type { StaffWorkspaceReview } from '../generated/staffee/types.gen.ts'
 import { zStaffWorkspaceReview } from '../generated/staffee/zod.gen.ts'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
+import type { FieldColumn } from '../utils/tableColumns.ts'
 import { formatDateTime } from './format.ts'
 
 const PAGE_SIZE = 25
@@ -91,8 +92,12 @@ export function ConsoleWorkspacesPage() {
           records={workspacesQuery.data?.items ?? []}
           idAccessor="id"
           columns={[
-            { accessor: 'id', title: t(($) => $.console.workspaces.id) },
-            { accessor: 'name', title: t(($) => $.console.workspaces.name) },
+            { accessor: 'id', title: t(($) => $.console.workspaces.id) } satisfies FieldColumn<
+              NonNullable<typeof workspacesQuery.data>['items'][number]
+            >,
+            { accessor: 'name', title: t(($) => $.console.workspaces.name) } satisfies FieldColumn<
+              NonNullable<typeof workspacesQuery.data>['items'][number]
+            >,
             {
               accessor: 'createdAt',
               title: t(($) => $.console.workspaces.createdAt),

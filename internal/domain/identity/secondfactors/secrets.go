@@ -15,7 +15,7 @@ import (
 // (docs/architecture/workspace-scoping.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	return []secrets.Sweep{{
-		Column: "second_factors.secret_encrypted",
+		Column: secondfactor.Table + "." + secondfactor.FieldSecretEncrypted,
 		Page: func(ctx context.Context, after int64, n int) ([]secrets.Stored, error) {
 			rs, err := c.SecondFactor.Query().Where(secondfactor.IDGT(after)).Order(ent.Asc(secondfactor.FieldID)).Limit(n).All(ctx)
 			return lo.Map(rs, func(e *ent.SecondFactor, _ int) secrets.Stored {

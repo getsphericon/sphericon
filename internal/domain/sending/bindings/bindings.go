@@ -30,8 +30,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -43,14 +45,14 @@ var (
 	ErrContactNotFound = validation.NotFound("bindings: contact not found", i18n.ErrorsContactNotFound)
 	// ErrNoIntegration: no Integration to issue the link for: the Workspace has no default
 	// Telegram Integration.
-	ErrNoIntegration = validation.RefuseField("integrationId", "bindings: no default Telegram integration", i18n.ErrorsTelegramStartNoIntegration)
+	ErrNoIntegration = validation.RefuseField(fieldname.IntegrationID, "bindings: no default Telegram integration", i18n.ErrorsTelegramStartNoIntegration)
 	// ErrIntegrationNotFound: the named Integration is not one of the Workspace's.
 	ErrIntegrationNotFound = validation.NotFound("bindings: integration not found", i18n.ErrorsIntegrationNotFound)
 	// ErrNotTelegram: the named Integration is not a Telegram bot.
-	ErrNotTelegram = validation.RefuseField("integrationId", "bindings: not a Telegram integration", i18n.ErrorsTelegramStartNotTelegram)
+	ErrNotTelegram = validation.RefuseField(fieldname.IntegrationID, "bindings: not a Telegram integration", i18n.ErrorsTelegramStartNotTelegram)
 	// ErrBotOff: the named bot holds no webhook (disabled or archived), so a link to it would
 	// bind nothing.
-	ErrBotOff = validation.RefuseField("integrationId", "bindings: the bot is off", i18n.ErrorsTelegramStartBotOff)
+	ErrBotOff = validation.RefuseField(fieldname.IntegrationID, "bindings: the bot is off", i18n.ErrorsTelegramStartBotOff)
 )
 
 // tokenPattern is what a Start token may be: Telegram's limit on a deep-link parameter.
@@ -300,7 +302,7 @@ func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Int
 			case err != nil:
 				return err
 			case created:
-				return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
+				return announce(ctx, s, pub, bot, systemevent.TelegramBound, tok.ContactID, r.DedupKey+"/bound")
 			}
 			// Another redemption bound the chat since the read: read its Binding.
 			continue
@@ -339,10 +341,10 @@ func rebind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 	if err := move.Exec(ctx); err != nil {
 		return fmt.Errorf("move binding: %w", err)
 	}
-	if err := announce(ctx, s, pub, bot, events.NameTelegramUnbound, ownerOf(existing), r.DedupKey+"/unbound"); err != nil {
+	if err := announce(ctx, s, pub, bot, systemevent.TelegramUnbound, ownerOf(existing), r.DedupKey+"/unbound"); err != nil {
 		return err
 	}
-	return announce(ctx, s, pub, bot, events.NameTelegramBound, tok.ContactID, r.DedupKey+"/bound")
+	return announce(ctx, s, pub, bot, systemevent.TelegramBound, tok.ContactID, r.DedupKey+"/bound")
 }
 
 // createBinding writes the Binding of the chat; false, with nothing written, when the chat already
@@ -387,7 +389,7 @@ func Remove(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 	if err := s.Binding().DeleteOneID(b.ID).Exec(ctx); err != nil {
 		return fmt.Errorf("delete binding: %w", err)
 	}
-	return announce(ctx, s, pub, bot, events.NameTelegramUnbound, ownerOf(b), dedup)
+	return announce(ctx, s, pub, bot, systemevent.TelegramUnbound, ownerOf(b), dedup)
 }
 
 // ownerOf is the Contact a Binding reaches: its own, or the one its Visitor was identified as. b
@@ -492,7 +494,7 @@ func AnnounceVisitor(ctx context.Context, s *ent.Scoped, pub events.Publisher, v
 	}
 	for _, b := range rows {
 		err := pub.Publish(ctx, &events.BindingChange{
-			Action: events.NameTelegramBound, WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
+			Action: systemevent.TelegramBound, WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
 			IntegrationID: b.IntegrationID, DedupID: fmt.Sprintf("telegram:binding:%d:contact:%d/bound", b.ID, c.ID),
 		})
 		if err != nil {

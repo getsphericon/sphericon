@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,7 +23,7 @@ func TestEraseContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {
 	row, err := s.Suppression().Get(ctx, fixtures.SuppressionErasableID)
 	require.NoError(t, err)
 	assert.Nil(t, row.LiftedAt)
-	verdict, err := eligibility.Check(ctx, s, eligibility.ChannelEmail, row.Destination, eligibility.SourceBroadcasts)
+	verdict, err := eligibility.Check(ctx, s, channels.Email, row.Destination, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.False(t, verdict.Eligible)
 }

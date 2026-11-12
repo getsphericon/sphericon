@@ -29,15 +29,15 @@ func telemetryHost(cfg *config.Config, version string, licenseExpiredAt time.Tim
 	}
 }
 
-// deployShapeOf maps what upgrade.DetectContainer found ("helm" on Kubernetes, "docker" in a
-// container, "" otherwise) to the schema's deploy shape.
-func deployShapeOf(container string) telemetryapi.TelemetryDeployShape {
+// deployShapeOf maps where upgrade.DetectContainer found the Instance runs to the schema's deploy
+// shape.
+func deployShapeOf(container upgrade.Container) telemetryapi.TelemetryDeployShape {
 	switch container {
-	case "helm":
+	case upgrade.Helm:
 		return telemetryapi.TelemetryDeployShapeKubernetes
-	case "docker":
+	case upgrade.Docker:
 		return telemetryapi.TelemetryDeployShapeContainer
-	case "":
+	case upgrade.BareHost:
 		return telemetryapi.TelemetryDeployShapeBinary
 	}
 	return telemetryapi.TelemetryDeployShapeUnknown

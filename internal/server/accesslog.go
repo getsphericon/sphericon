@@ -6,8 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // accessLog writes one line per finished request: method, path (logging.RedactedPath, so a credential in
@@ -20,7 +22,7 @@ import (
 // debug, and the probes are not logged at all.
 func accessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+		if r.URL.Path == paths.Healthz || r.URL.Path == paths.Readyz {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -48,7 +50,7 @@ func accessLevel(path string, status int) slog.Level {
 		return slog.LevelError
 	case status >= http.StatusBadRequest:
 		return slog.LevelWarn
-	case path == "/t.js" || strings.HasPrefix(path, "/e/o/") || isCollectPath(path):
+	case path == "/t.js" || strings.HasPrefix(path, paths.LinkOpen) || isCollectPath(path):
 		return slog.LevelDebug
 	default:
 		return slog.LevelInfo

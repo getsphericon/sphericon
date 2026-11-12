@@ -12,9 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -53,12 +53,12 @@ func TestADeliveredReportStampsTheTextAndRecordsSmsDelivered(t *testing.T) {
 	got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
 	assert.NotNil(t, got.DeliveredAt)
 	assert.Nil(t, got.UndeliveredAt)
-	delivered := env.QueuedCount(t, events.NameSmsDelivered, map[string]any{
+	delivered := env.QueuedCount(t, systemevent.SmsDelivered, map[string]any{
 		"contactId": fixtures.ContactTexterID, "outboundMessageId": msg.ID, "integrationId": account.Integration.ID,
 		"destination": fixtures.ContactTexterPhone,
 	})
 	assert.Equal(t, 1, delivered, "a redelivered report records nothing more")
-	undelivered := env.QueuedCount(t, events.NameSmsUndelivered, nil)
+	undelivered := env.QueuedCount(t, systemevent.SmsUndelivered, nil)
 	assert.Zero(t, undelivered)
 }
 
@@ -75,11 +75,11 @@ func TestAnUndeliveredOrFailedReportStampsTheTextWithTheErrorCodeAndRecordsSmsUn
 			assert.Equal(t, "30003", lo.FromPtr(got.UndeliveredCode))
 			assert.Nil(t, got.DeliveredAt)
 			assert.Equal(t, outboundmessage.StatusSent, got.Status, "Twilio accepted it: it stays Sent")
-			undelivered := env.QueuedCount(t, events.NameSmsUndelivered, map[string]any{
+			undelivered := env.QueuedCount(t, systemevent.SmsUndelivered, map[string]any{
 				"contactId": fixtures.ContactTexterID, "outboundMessageId": msg.ID, "errorCode": "30003",
 			})
 			assert.Equal(t, 1, undelivered)
-			delivered := env.QueuedCount(t, events.NameSmsDelivered, nil)
+			delivered := env.QueuedCount(t, systemevent.SmsDelivered, nil)
 			assert.Zero(t, delivered)
 			suppressions := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(channels.SMS)).CountX(t.Context())
 			assert.Zero(t, suppressions, "an unreachable handset is no dead number")
@@ -112,7 +112,7 @@ func TestAReportNeverMovesATextBackwards(t *testing.T) {
 			got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
 			state := finalState{Delivered: got.DeliveredAt != nil, Undelivered: got.UndeliveredAt != nil, Code: lo.FromPtr(got.UndeliveredCode)}
 			assert.Equal(t, c.want, state)
-			reports := env.QueuedEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
+			reports := env.QueuedEnvelopes(t, systemevent.SmsDelivered, systemevent.SmsUndelivered)
 			assert.Len(t, reports, 1)
 		})
 	}
@@ -136,7 +136,7 @@ func TestAReportOfAnUnknownTextChangesNothing(t *testing.T) {
 	got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
 	assert.Nil(t, got.DeliveredAt)
 	assert.Nil(t, got.UndeliveredAt)
-	reports := env.QueuedEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
+	reports := env.QueuedEnvelopes(t, systemevent.SmsDelivered, systemevent.SmsUndelivered)
 	assert.Empty(t, reports)
 	suppressions := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(channels.SMS)).CountX(t.Context())
 	assert.Zero(t, suppressions)
@@ -156,7 +156,7 @@ func TestAnUndeliveredReportOfADeadNumberSuppressesIt(t *testing.T) {
 			assert.Equal(t, fixtures.ContactTexterPhone, suppressed.Destination)
 			assert.Equal(t, entsuppression.ReasonBounce, suppressed.Reason)
 			assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(suppressed.ContactID))
-			undelivered := env.QueuedCount(t, events.NameSmsUndelivered, map[string]any{"errorCode": code})
+			undelivered := env.QueuedCount(t, systemevent.SmsUndelivered, map[string]any{"errorCode": code})
 			assert.Equal(t, 1, undelivered)
 		})
 	}

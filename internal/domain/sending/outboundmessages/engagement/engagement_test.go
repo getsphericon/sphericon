@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -48,7 +49,7 @@ func TestAnOpenPublishesTheOpenOfItsMessage(t *testing.T) {
 	err := recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(0))
 
 	require.NoError(t, err)
-	got := env.QueuedEvents(t, events.NameEmailOpened)
+	got := env.QueuedEvents(t, systemevent.EmailOpened)
 	require.Len(t, got, 1)
 	e, ok := got[0].(*events.EmailEngagement)
 	require.True(t, ok)
@@ -64,7 +65,7 @@ func TestAnOpenByAScannerIsAMachineOpen(t *testing.T) {
 
 	require.NoError(t, recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), hit))
 
-	got := env.QueuedEvents(t, events.NameEmailOpened)
+	got := env.QueuedEvents(t, systemevent.EmailOpened)
 	require.Len(t, got, 1)
 	e, ok := got[0].(*events.EmailEngagement)
 	require.True(t, ok)
@@ -78,7 +79,7 @@ func TestAnOpenOnAnotherWorkspacesTrackingHostIsNotFoundAndRecordsNothing(t *tes
 	err := recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(fixtures.GlobexID))
 
 	require.ErrorIs(t, err, engagement.ErrNotFound)
-	assert.Empty(t, env.QueuedEvents(t, events.NameEmailOpened))
+	assert.Empty(t, env.QueuedEvents(t, systemevent.EmailOpened))
 }
 
 func TestAnOpenOnItsOwnWorkspacesTrackingHostIsRecorded(t *testing.T) {
@@ -87,7 +88,7 @@ func TestAnOpenOnItsOwnWorkspacesTrackingHostIsRecorded(t *testing.T) {
 	err := recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(fixtures.AcmeID))
 
 	require.NoError(t, err)
-	assert.Len(t, env.QueuedEvents(t, events.NameEmailOpened), 1)
+	assert.Len(t, env.QueuedEvents(t, systemevent.EmailOpened), 1)
 }
 
 // Over the per-IP tracking guard a hit is answered all the same and recorded nowhere (ADR 0025),
@@ -102,14 +103,14 @@ func TestAHitOverTheTrackingBudgetRecordsNothing(t *testing.T) {
 
 	require.NoError(t, recorder(env).Open(t.Context(), token, hit))
 	require.ErrorIs(t, recorder(env).Open(t.Context(), token, off), engagement.ErrNotFound)
-	assert.Empty(t, env.QueuedEvents(t, events.NameEmailOpened))
+	assert.Empty(t, env.QueuedEvents(t, systemevent.EmailOpened))
 }
 
 func TestAnOpenWithATokenThatDoesNotDecodeIsInvalid(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	require.ErrorIs(t, recorder(env).Open(t.Context(), "not-a-token", person(0)), engagement.ErrInvalidToken)
-	assert.Empty(t, env.QueuedEvents(t, events.NameEmailOpened))
+	assert.Empty(t, env.QueuedEvents(t, systemevent.EmailOpened))
 }
 
 func TestAClickPublishesTheClickAndReturnsTheLinkItSigns(t *testing.T) {
@@ -120,7 +121,7 @@ func TestAClickPublishesTheClickAndReturnsTheLinkItSigns(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "https://dest.test/a", dest)
-	got := env.QueuedEvents(t, events.NameEmailClicked)
+	got := env.QueuedEvents(t, systemevent.EmailClicked)
 	require.Len(t, got, 1)
 	e, ok := got[0].(*events.EmailEngagement)
 	require.True(t, ok)
@@ -143,7 +144,7 @@ func TestAShortLinkPublishesTheClickOfItsMessageAndReturnsItsURL(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.TrackedLinkAcmeURL, dest)
-	got := env.QueuedEvents(t, events.NameEmailClicked)
+	got := env.QueuedEvents(t, systemevent.EmailClicked)
 	require.Len(t, got, 1, "the click of the link's email is published")
 	e, ok := got[0].(*events.EmailEngagement)
 	require.True(t, ok)

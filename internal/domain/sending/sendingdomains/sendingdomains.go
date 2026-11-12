@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -43,13 +44,13 @@ const DefaultSelector = "sphericon"
 // The refusals of the module, one per meaning.
 var (
 	// ErrAlreadyExists means the Workspace already has this domain (Create).
-	ErrAlreadyExists = validation.ConflictField("domain", "sendingdomains: this domain is already added", i18n.ErrorsSendingDomainExists)
+	ErrAlreadyExists = validation.ConflictField(fieldname.Domain, "sendingdomains: this domain is already added", i18n.ErrorsSendingDomainExists)
 	// ErrNotFound means no Sending domain of that id is in the Workspace.
 	ErrNotFound = validation.NotFound("sendingdomains: sending domain not found", i18n.ErrorsSendingDomainNotFound)
 	// ErrInvalidDomain is a domain that is no domain name.
-	ErrInvalidDomain = validation.RefuseField("domain", "sendingdomains: invalid domain", i18n.ErrorsSendingDomainInvalid)
+	ErrInvalidDomain = validation.RefuseField(fieldname.Domain, "sendingdomains: invalid domain", i18n.ErrorsSendingDomainInvalid)
 	// ErrInvalidSelector is a DKIM selector that is no DNS label sequence.
-	ErrInvalidSelector = validation.RefuseField("dkimSelector", "sendingdomains: invalid DKIM selector", i18n.ErrorsDkimSelectorInvalid)
+	ErrInvalidSelector = validation.RefuseField(fieldname.DKIMSelector, "sendingdomains: invalid DKIM selector", i18n.ErrorsDkimSelectorInvalid)
 )
 
 // The unique constraint of the Sending domains (ADR 0106): a domain is added once per Workspace.

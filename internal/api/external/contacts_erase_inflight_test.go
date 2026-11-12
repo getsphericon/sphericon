@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -68,9 +69,9 @@ func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 	var erasedID, bystanderID int64 = fixtures.ContactErasableID, fixtures.ContactBystanderID
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		for _, ev := range []events.DomainEvent{
-			&events.EmailEngagement{Action: events.NameEmailSent, WorkspaceID: fixtures.InitechID, ContactID: erasedID, Email: "erin@initech.test"},
+			&events.EmailEngagement{Action: systemevent.EmailSent, WorkspaceID: fixtures.InitechID, ContactID: erasedID, Email: "erin@initech.test"},
 			&events.ContactCreated{WorkspaceID: fixtures.InitechID, Email: "Erin@Initech.test"}, // by address only
-			&events.EmailEngagement{Action: events.NameEmailSent, WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Email: "ben@initech.test"},
+			&events.EmailEngagement{Action: systemevent.EmailSent, WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Email: "ben@initech.test"},
 		} {
 			if err := pub.Publish(ctx, ev); err != nil {
 				return err
@@ -78,7 +79,7 @@ func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 		}
 		return nil
 	}))
-	require.Len(t, env.QueuedMessages(t, events.NameEmailSent, events.NameContactCreated), 3)
+	require.Len(t, env.QueuedMessages(t, systemevent.EmailSent, systemevent.ContactCreated), 3)
 
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: erasedID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Action: "x"})
@@ -88,7 +89,7 @@ func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 
 	eraseErasable(t, env)
 
-	left := env.QueuedMessages(t, events.NameEmailSent, events.NameContactCreated)
+	left := env.QueuedMessages(t, systemevent.EmailSent, systemevent.ContactCreated)
 	require.Len(t, left, 1, "only the bystander's envelope is left")
 	assert.Equal(t, strconv.FormatInt(bystanderID, 10), fmt.Sprint(left[0].Data["contactId"]))
 
@@ -108,7 +109,7 @@ func TestExternalContactsEraseClearsQueuedWebhookDeliveries(t *testing.T) {
 
 	delivery := func(endpoint int64, id, body string) {
 		env.EnqueueJob(t, jobs.DeliverWebhookArgs{
-			EndpointID: endpoint, EventName: "email.sent", DeliveryID: id, Body: []byte(body),
+			EndpointID: endpoint, EventName: systemevent.EmailSent, DeliveryID: id, Body: []byte(body),
 		})
 	}
 	// Queued deliveries of the erased Contact's events, by contact id and by address

@@ -12,9 +12,11 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -25,10 +27,10 @@ func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T
 	before, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)
 
-	_, err = env.ExternalScoped(t, "webhooks:read", "webhooks:write").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
+	_, err = env.ExternalScoped(t, apitokens.ScopeWebhooksRead, apitokens.ScopeWebhooksWrite).WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	hook, err := env.ExternalScoped(t, "webhooks:regenerate").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
+	hook, err := env.ExternalScoped(t, apitokens.ScopeWebhooksRegenerate).WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, "https://codebasics.dev/webhooks/sphericon", hook.URL)
 
@@ -36,7 +38,7 @@ func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T
 	require.NoError(t, err)
 	assert.NotEqual(t, before.SecretEncrypted, after.SecretEncrypted)
 
-	_, err = env.ExternalScoped(t, "webhooks:regenerate").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: entityIDString(fixtures.WebhookGlobexID)})
+	_, err = env.ExternalScoped(t, apitokens.ScopeWebhooksRegenerate).WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: entityIDString(fixtures.WebhookGlobexID)})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
@@ -55,12 +57,12 @@ func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
 	before, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsFailingID)
 	require.NoError(t, err)
 	params := externalapi.WebhooksTestParams{ID: entityIDString(fixtures.WebhookCodebasicsFailingID)}
-	input := &externalapi.TestWebhookInput{EventType: "contact.created"}
+	input := &externalapi.TestWebhookInput{EventType: systemevent.ContactCreated}
 
-	_, err = env.ExternalScoped(t, "webhooks:write").WebhooksTest(ctx, input, params)
+	_, err = env.ExternalScoped(t, apitokens.ScopeWebhooksWrite).WebhooksTest(ctx, input, params)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	c := env.ExternalScoped(t, "webhooks:test")
+	c := env.ExternalScoped(t, apitokens.ScopeWebhooksTest)
 	res, err := c.WebhooksTest(ctx, input, params)
 	require.NoError(t, err)
 	ok := res
@@ -86,12 +88,12 @@ func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
 func TestExternalWebhookActionsAreAuditedAsTheAPIToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "webhooks:regenerate", "webhooks:test")
+	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRegenerate, apitokens.ScopeWebhooksTest)
 	id := entityIDString(fixtures.WebhookCodebasicsID)
 
 	_, err := c.WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
 	require.NoError(t, err)
-	_, err = c.WebhooksTest(ctx, &externalapi.TestWebhookInput{EventType: "contact.created"}, externalapi.WebhooksTestParams{ID: id})
+	_, err = c.WebhooksTest(ctx, &externalapi.TestWebhookInput{EventType: systemevent.ContactCreated}, externalapi.WebhooksTestParams{ID: id})
 	require.NoError(t, err)
 
 	actions := map[string]*events.AuditEntry{}

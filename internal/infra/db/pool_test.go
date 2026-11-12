@@ -25,7 +25,7 @@ import (
 
 func testConfig(t *testing.T) *config.Config {
 	t.Helper()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	return cfg
 }

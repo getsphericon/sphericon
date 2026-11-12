@@ -32,7 +32,7 @@ type documentedVariable struct {
 // from Load, so the environment struct does not hold them.
 var outsideVariables = []documentedVariable{
 	{
-		name: "SPHERICON_ENV",
+		name: EnvVar,
 		doc: "The profile the process runs under, read before anything else: it picks the `.env` files and the defaults " +
 			"that depend on it. `development` (also when empty), `test` and `e2e` tolerate a missing `SPHERICON_JWT_SECRET` " +
 			"and let a Workspace's SMTP Integration reach a private host; `development` and `test` log as text, and `e2e`, " +
@@ -54,7 +54,7 @@ func Reference() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	production, development := profileDefaults("production"), profileDefaults("development")
+	production, development := profileDefaults(EnvProduction), profileDefaults(EnvDevelopment)
 	vars, err := documentedFields(reflect.TypeFor[environment](), reflect.ValueOf(production), reflect.ValueOf(development), docs)
 	if err != nil {
 		return nil, err

@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -36,10 +37,10 @@ import (
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrInvalidURL: the URL is not an absolute http(s) URL (a 422 on `url`).
-	ErrInvalidURL = validation.RefuseField("url", "webhooks: url must be an absolute http or https URL", i18n.ErrorsWebhookUrlInvalid)
+	ErrInvalidURL = validation.RefuseField(fieldname.URL, "webhooks: url must be an absolute http or https URL", i18n.ErrorsWebhookUrlInvalid)
 	// ErrAuditNeedsLicense: audit.entry was selected without an Enterprise license
 	// (a 422 on `eventTypes`).
-	ErrAuditNeedsLicense = validation.RefuseField("eventTypes", "webhooks: audit.entry needs an Enterprise license", i18n.ErrorsWebhookAuditNeedsLicense)
+	ErrAuditNeedsLicense = validation.RefuseField(fieldname.EventTypes, "webhooks: audit.entry needs an Enterprise license", i18n.ErrorsWebhookAuditNeedsLicense)
 	// ErrNotFound: no such endpoint in this Workspace.
 	ErrNotFound = validation.NotFound("webhooks: webhook not found", i18n.ErrorsWebhookNotFound)
 	// ErrRevisionChanged: the update was made on a revision the endpoint has moved past (ADR 0119):
@@ -104,7 +105,7 @@ type TestResult struct {
 }
 
 // ErrInvalidEventType means the event type to send a sample of is blank or too long.
-var ErrInvalidEventType = validation.RefuseField("eventType", "webhooks: the event type must be 1 to 100 characters", i18n.ErrorsWebhookEventTypeInvalid)
+var ErrInvalidEventType = validation.RefuseField(fieldname.EventType, "webhooks: the event type must be 1 to 100 characters", i18n.ErrorsWebhookEventTypeInvalid)
 
 // RegenerateSecret replaces the signing secret at once: the old one stops verifying
 // with the next delivery. The row update is audited by the scoped client
@@ -184,7 +185,7 @@ func (m *Module) recordTest(ctx context.Context, s *ent.Scoped, e Endpoint, even
 			WorkspaceID: ts.WorkspaceID(),
 			Actor:       s.Actor(),
 			Action:      events.ActionWebhookEndpointTest,
-			TargetType:  "webhook_endpoint",
+			TargetType:  webhookendpoint.Label,
 			TargetID:    strconv.FormatInt(e.ID, 10),
 			TargetName:  urlName(e.URL),
 			Diff:        diff,

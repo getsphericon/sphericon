@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -136,7 +137,7 @@ func TestBroadcastTestSendOfAnIntegrationThatCannotSendIsHeldNotSentThroughTheDe
 			_, err := broadcastTestVia(env, via, id)
 
 			require.ErrorIs(t, err, outboundmessages.ErrHeld)
-			require.ErrorContains(t, err, outboundmessages.Detail(outboundmessages.HoldNoIntegration))
+			require.ErrorContains(t, err, outboundmessages.HoldDetail(holdreason.NoIntegration))
 			assert.Empty(t, env.CustomerMail.Messages())
 			assert.Empty(t, env.SystemMail.Messages())
 		})
@@ -156,7 +157,7 @@ func TestBroadcastTestSendWithoutAVerifiedDomainKeepsTheSystemSenderForARealInte
 
 	_, err = globexBroadcastTestVia(env, "stranger@example.com", via, own)
 	require.ErrorIs(t, err, outboundmessages.ErrTestRefused, "only the asker's own address")
-	require.ErrorContains(t, err, outboundmessages.Detail(outboundmessages.RefuseOtherRecipient))
+	require.ErrorContains(t, err, outboundmessages.RefuseDetail(outboundmessages.RefuseOtherRecipient))
 }
 
 func TestBroadcastTestSendWithoutAVerifiedDomainIsCapturedByATestInboxOfTheBroadcast(t *testing.T) {
@@ -178,6 +179,6 @@ func TestBroadcastTestSendWithoutAVerifiedDomainDoesNotFallBackToTheSystemSender
 	_, err := globexBroadcastTestVia(env, fixtures.OwnerJaneEmail, perIntegration{}, idOf(missingIntegrationID))
 
 	require.ErrorIs(t, err, outboundmessages.ErrHeld)
-	require.ErrorContains(t, err, outboundmessages.Detail(outboundmessages.HoldNoIntegration))
+	require.ErrorContains(t, err, outboundmessages.HoldDetail(holdreason.NoIntegration))
 	assert.Empty(t, env.SystemMail.Messages())
 }

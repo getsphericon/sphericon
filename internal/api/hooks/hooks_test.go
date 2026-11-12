@@ -19,9 +19,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
 )
@@ -125,8 +127,8 @@ func TestTwoIntegrationsOfAWorkspaceEachAcceptOnlyTheirOwnSecret(t *testing.T) {
 	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 2)
 	for _, f := range got {
-		assert.Equal(t, events.NameEmailBounced, f.Action)
-		assert.Equal(t, events.BounceKindHard, f.BounceKind)
+		assert.Equal(t, systemevent.EmailBounced, f.Action)
+		assert.Equal(t, systemevent.BounceKindHard, f.BounceKind)
 		assert.EqualValues(t, fixtures.ContactAliceID, f.ContactID)
 		assert.Equal(t, "generic", f.Provider, "the Preset's name is the provider")
 		assert.Equal(t, "codebasics.dev", f.SendingDomain)
@@ -220,7 +222,7 @@ func TestHookSuppressesAHardBounceAndOnlyRecordsASoftOne(t *testing.T) {
 
 	soft := queuedNotices(t, env, "soft@example.com")
 	require.Len(t, soft, 1)
-	assert.Equal(t, events.BounceKindSoft, soft[0].BounceKind)
+	assert.Equal(t, systemevent.BounceKindSoft, soft[0].BounceKind)
 
 	applySuppression(t, env)
 	assert.True(t, suppressed(t, env, "hard@example.com"))
@@ -254,7 +256,7 @@ func TestHookRedeliveryHasTheEffectOfOnce(t *testing.T) {
 	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
 	applySuppression(t, env)
 
-	n, err := env.DB.Event.Query().Where(event.SourceID(events.NameEmailBounced + ":evt_1/" + fixtures.ContactAliceEmail)).Count(t.Context())
+	n, err := env.DB.Event.Query().Where(event.SourceID(systemevent.EmailBounced + ":evt_1/" + fixtures.ContactAliceEmail)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
 	assert.True(t, suppressed(t, env, fixtures.ContactAliceEmail))
@@ -283,7 +285,7 @@ func secretParam(secret string) externalapi.OptJsonObject {
 // returns either value.
 func TestRotatingASecretKeepsTheOldOneValidUntilItIsRetired(t *testing.T) {
 	env := setupHooks(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	id := int64(fixtures.IntegrationAcmeGenericAID)
 	key := fixtures.IntegrationAcmeGenericAIngestKey
 	rotated := newSecret("rotated-0123456789")
@@ -307,7 +309,7 @@ func TestRotatingASecretKeepsTheOldOneValidUntilItIsRetired(t *testing.T) {
 // Regenerating the key invalidates the old URL; the new one works, with the same secret.
 func TestRegeneratingTheKeyInvalidatesTheOldURL(t *testing.T) {
 	env := setupHooks(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	old := fixtures.IntegrationAcmeGenericAIngestKey
 
 	got, err := c.IntegrationsRegenerateKey(t.Context(), externalapi.IntegrationsRegenerateKeyParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)})
@@ -324,7 +326,7 @@ func TestRegeneratingTheKeyInvalidatesTheOldURL(t *testing.T) {
 // Params that violate the Preset's schema are refused, and an unknown Preset too.
 func TestIntegrationParamsAreValidatedAgainstThePresetSchema(t *testing.T) {
 	env := setupHooks(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	id := externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)
 
 	for name, in := range map[string]externalapi.UpdateIntegrationInput{
@@ -344,7 +346,7 @@ func TestIntegrationParamsAreValidatedAgainstThePresetSchema(t *testing.T) {
 // choosing it again needs its params in full, secret included, and the old URL goes quiet.
 func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	env := setupHooks(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	id := int64(fixtures.IntegrationAcmeGenericAID)
 	key := fixtures.IntegrationAcmeGenericAIngestKey
 
@@ -376,7 +378,7 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 // An agent learns what an Integration's params take from presets_list.
 func TestPresetsListCarriesTheParamsSchemaOfEachPreset(t *testing.T) {
 	env := setupHooks(t)
-	c := env.ExternalScoped(t, "integrations:read")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead)
 
 	list, err := c.PresetsList(t.Context())
 	require.NoError(t, err)
@@ -388,7 +390,7 @@ func TestPresetsListCarriesTheParamsSchemaOfEachPreset(t *testing.T) {
 // Choosing a Preset and rotating a secret are audited, and the secret never reaches the log.
 func TestChoosingAPresetAndRotatingASecretAreAuditedWithoutTheSecret(t *testing.T) {
 	env := setupHooks(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	id := int64(fixtures.IntegrationAcmeGenericAID)
 	rotated := newSecret("audited-0123456789")
 
@@ -412,7 +414,7 @@ func TestChoosingAPresetAndRotatingASecretAreAuditedWithoutTheSecret(t *testing.
 // The hook URL rides every read of an Integration.
 func TestEveryReadOfAnIntegrationCarriesItsHookURL(t *testing.T) {
 	env := setupHooks(t)
-	c := env.ExternalScoped(t, "integrations:read")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead)
 
 	got, err := c.IntegrationsGet(t.Context(), externalapi.IntegrationsGetParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -26,7 +27,7 @@ func listedIntegrationIDs(t *testing.T, c *externalapi.Client) []externalapi.Ent
 // still readable by id.
 func TestExternalIntegrationsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	ctx := context.Background()
 
 	err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeDefaultID)})
@@ -53,7 +54,7 @@ func TestExternalIntegrationsDelete(t *testing.T) {
 // and Get still answers.
 func TestExternalIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	ctx := context.Background()
 	id := entityIDString(fixtures.IntegrationAcmeArchivedID)
 
@@ -86,7 +87,7 @@ func automationUsers(users []externalapi.UsedBy, id int64) []externalapi.UsedBy 
 // sends through the Mailgun relay.
 func TestExternalIntegrationDeleteIsRefusedWhileAnAutomationNamesIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	ctx := context.Background()
 	del := func(id int64) error {
 		return c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(id)})
@@ -102,7 +103,7 @@ func TestExternalIntegrationDeleteIsRefusedWhileAnAutomationNamesIt(t *testing.T
 // Fixtures: Meridian's welcome names no Integration; its relay welcome names its relay in every step.
 func TestExternalDefaultIntegrationIsNotUsedByAnAutomationThatNamesAnother(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.MeridianID, "integrations:read", "integrations:write"))
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.MeridianID, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite))
 
 	err := c.IntegrationsDelete(t.Context(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationMeridianDefaultID)})
 	users := usersOfRefusal(t, err)
@@ -113,7 +114,7 @@ func TestExternalDefaultIntegrationIsNotUsedByAnAutomationThatNamesAnother(t *te
 
 func TestExternalIntegrationsDeleteNeedsTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	reader := env.ExternalScoped(t, "integrations:read")
+	reader := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead)
 
 	err := reader.IntegrationsDelete(context.Background(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeSesID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)

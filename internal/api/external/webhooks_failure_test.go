@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestExternalWebhooksShowTheFailureState(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "webhooks:read")
+	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRead)
 
 	got, err := c.WebhooksGet(context.Background(), externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsFailingID)})
 	require.NoError(t, err)
@@ -28,7 +29,7 @@ func TestExternalWebhooksShowTheFailureState(t *testing.T) {
 
 func TestExternalWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "webhooks:read")
+	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRead)
 
 	got, err := c.WebhooksGet(context.Background(), externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsGoneID)})
 	require.NoError(t, err)

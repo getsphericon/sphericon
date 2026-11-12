@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // A page of the distinct actions holds the ones at its place in the ascending order.
 func TestExternalEventActionsListPagesTheActionsAscending(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "events:read")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsRead)
 	ctx := context.Background()
 
 	all, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{PageSize: externalapi.NewOptInt32(100)})
@@ -34,7 +35,7 @@ func TestExternalEventActionsListPagesTheActionsAscending(t *testing.T) {
 // A page past the end is an empty page that still reports the true totals.
 func TestExternalEventActionsListPageBeyondTheTotal(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "events:read")
+	c := env.ExternalScoped(t, apitokens.ScopeEventsRead)
 	ctx := context.Background()
 
 	first, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{})

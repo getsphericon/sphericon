@@ -13,14 +13,14 @@ export const Route = createFileRoute('/console/_authed')({
     if (!data) {
       throw redirect({ to: consoleLoginRoute.to })
     }
-    const enterprise = await context.queryClient.ensureQueryData({
+    const enterprise = await context.queryClient.query({
+      staleTime: 'static',
       queryKey: ['console', 'enterpriseSections'],
       queryFn: async () => {
         const { staffWorkspacesList } = await import('../../../generated/staffee/sdk.gen.ts')
         const { response } = await staffWorkspacesList({ query: { pageSize: 1 } })
         return response?.status !== 404
       },
-      staleTime: Infinity,
     })
     return { staff: data, enterprise }
   },

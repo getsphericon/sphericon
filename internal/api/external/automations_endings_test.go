@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -17,7 +19,7 @@ import (
 // or that is also an exit event, is a 422.
 func TestExternalAutomationExitAndGoalEvents(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:read", "automations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	ctx := context.Background()
 
 	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
@@ -43,7 +45,7 @@ func TestExternalAutomationExitAndGoalEvents(t *testing.T) {
 // live version, which new Enrollments begin on, keeps its own until a Publish.
 func TestExternalAutomationEndingsEditOfAPublishedAutomationWritesTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:read", "automations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	ctx := context.Background()
 
 	res, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(entityIDString(fixtures.AutomationPaymentRecoveryID)))),
@@ -53,7 +55,7 @@ func TestExternalAutomationEndingsEditOfAPublishedAutomationWritesTheDraft(t *te
 
 	edited := res
 	live, draft := edited.Live.Value, edited.Draft.Value
-	assert.Equal(t, []string{"account_closed", "plan_downgraded", "email.clicked"}, live.ExitEvents)
+	assert.Equal(t, []string{"account_closed", "plan_downgraded", systemevent.EmailClicked}, live.ExitEvents)
 	assert.Equal(t, "payment_succeeded", live.GoalEvent.Or(""))
 	assert.Equal(t, []string{"card_removed"}, draft.ExitEvents)
 	assert.Equal(t, "invoice_paid", draft.GoalEvent.Or(""))

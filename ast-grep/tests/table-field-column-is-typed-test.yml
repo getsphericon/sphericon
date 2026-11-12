@@ -1,0 +1,20 @@
+id: table-field-column-is-typed
+valid:
+  - |
+    const table = (
+      <DataTable
+        records={records}
+        columns={[
+          { accessor: 'name', title: 'Name' } satisfies FieldColumn<SiteTagResource>,
+          { accessor: 'actions', title: '', render: (record) => <Menu record={record} /> },
+        ]}
+      />
+    )
+invalid:
+  - |
+    const table = (
+      <DataTable
+        records={records}
+        columns={[{ accessor: 'name', title: 'Name' }]}
+      />
+    )

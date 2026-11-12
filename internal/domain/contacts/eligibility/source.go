@@ -6,16 +6,6 @@ import (
 	"strings"
 )
 
-// ChannelEmail identifies the email channel.
-const ChannelEmail = "email"
-
-// ChannelSMS identifies the SMS channel, whose Destination is the Contact's phone in E.164 and
-// which always asks for a Confirmation (ADR 0077).
-const ChannelSMS = "sms"
-
-// ChannelTelegram identifies the Telegram channel, whose Destinations are Bindings.
-const ChannelTelegram = "telegram"
-
 // Sending sources — the unit a destination unsubscribes from. A source is
 // automatic, never hand-authored: it IS the sender. All broadcasts share one
 // scope; each automation is its own; "everything" is the reserved deliberate

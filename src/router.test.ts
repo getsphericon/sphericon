@@ -323,3 +323,18 @@ test('a signed-out visitor at the acceptance screen is sent to the login', async
 
   expect(router.state.location.pathname).toBe(loginRoute.to)
 })
+
+// The route tree is typed: a path no route has, or a route without its params, fails to compile.
+// A tree whose imports do not resolve (the generator writing them without their extension, which
+// module nodenext refuses and the tree's @ts-nocheck hides) types every route as any; then the
+// expectations below stop being errors and tsc fails on them. The navigations are never run.
+test('navigation is checked against the route tree', () => {
+  const router = newRouter()
+  const unchecked = () => [
+    // @ts-expect-error a path no route has
+    router.navigate({ to: '/no-such-page' }),
+    // @ts-expect-error the route's workspaceId is missing
+    router.navigate({ to: workspaceRoute.to, params: {} }),
+  ]
+  expect(unchecked).toBeTypeOf('function')
+})

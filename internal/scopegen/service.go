@@ -8,7 +8,7 @@ const scopesExtension = "x-required-scopes"
 // ServiceScopes is the Service operation-to-scopes map (ADR 0026): every operation declares
 // `x-required-scopes`, an empty list being one any valid credential may call.
 var ServiceScopes = Table{
-	Spec:    "openapi/service.openapi.json",
+	Spec:    serviceSpec,
 	Out:     "ee/api/staff/service_scopes_gen.go",
 	Package: "staff",
 	Imports: []string{`serviceapi "github.com/getsphericon/sphericon/gen/service"`},

@@ -1,0 +1,15 @@
+id: audit-target-is-a-label
+valid:
+  - |
+    func entry(m *ent.Membership) *events.AuditEntry {
+    	return &events.AuditEntry{Action: events.ActionMembershipUpdate, TargetType: membership.Label, TargetID: m.ID}
+    }
+  - |
+    var change = ent.AuditChange{TargetType: targetAuditLog}
+invalid:
+  - |
+    func entry(m *ent.Membership) *events.AuditEntry {
+    	return &events.AuditEntry{Action: events.ActionMembershipUpdate, TargetType: "membership", TargetID: m.ID}
+    }
+  - |
+    var entry = &events.AuditEntry{Action: events.ActionAuditLogExport, TargetType: "audit_log"}

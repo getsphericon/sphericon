@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -37,11 +37,11 @@ func TestAReplyFromAKnownNumberIsRecordedAsSmsReceivedOnItsContact(t *testing.T)
 
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
 	require.Equal(t, http.StatusOK, redelivered.Code, redelivered.Body.String())
-	got := env.QueuedMessages(t, events.NameSmsReceived)
+	got := env.QueuedMessages(t, systemevent.SmsReceived)
 	require.Len(t, got, 1, "a redelivered message carries the same key, so the Event is stored and published once")
 	key := fmt.Sprintf("sms:%d:SM0001", sms.Integration.ID)
 	assert.Equal(t, key, got[0].Envelope.DedupKey)
-	received := env.QueuedCount(t, events.NameSmsReceived, map[string]any{
+	received := env.QueuedCount(t, systemevent.SmsReceived, map[string]any{
 		"contactId": fixtures.ContactTexterID, "integrationId": sms.Integration.ID, "text": "Is the sale still on?",
 	})
 	assert.Equal(t, 1, received)
@@ -58,7 +58,7 @@ func TestAReplyFromAKnownNumberInALocalFormatIsRecordedOnItsContact(t *testing.T
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken, form)
 
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
-	received := env.QueuedCount(t, events.NameSmsReceived, map[string]any{
+	received := env.QueuedCount(t, systemevent.SmsReceived, map[string]any{
 		"contactId": fixtures.ContactTexterID, "phone": fixtures.ContactTexterPhone, "text": "See you at 5",
 	})
 	assert.Equal(t, 1, received)

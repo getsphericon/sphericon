@@ -2,6 +2,7 @@ import { NodeType } from '@workflowbuilder/sdk'
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import * as z from 'zod'
 
+import { SiteAutomationStepType } from '../../generated/site/types.gen.ts'
 import type {
   SiteAutomationHttpHeader,
   SiteAutomationStep,
@@ -12,22 +13,17 @@ import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import { buttonsCodec } from '../../utils/telegramButtons.ts'
 import { completeButtons } from '../../utils/telegramContent.ts'
+import { OFF } from './nodeProperties.ts'
+import type { NodeProperties, ReadProperties } from './nodeProperties.ts'
 import {
-  APPLY_TAG_NODE_TYPE,
   EMAIL_NODE_ICON,
-  EMAIL_NODE_TYPE,
   HTTP_NODE_ICON,
-  HTTP_NODE_TYPE,
-  REMOVE_TAG_NODE_TYPE,
   SMS_NODE_ICON,
-  SMS_NODE_TYPE,
   TAG_NODE_ICON,
   TELEGRAM_NODE_ICON,
-  TELEGRAM_NODE_TYPE,
   TRIGGER_NODE_ICON,
   TRIGGER_NODE_TYPE,
   WAIT_NODE_ICON,
-  WAIT_NODE_TYPE,
 } from './nodes.ts'
 
 // A step is the generated contract type (typed in TypeSpec; no hand-rolled
@@ -62,53 +58,57 @@ const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
 }
 
 // A Telegram step's content, as the form holds it: every value a string.
-function telegramProperties(step: AutomationStep): Record<string, unknown> {
+function telegramProperties(step: AutomationStep): NodeProperties['telegram'] {
   return {
     integrationId: step.integrationId ?? '',
     text: step.text ?? '',
     unsubscribeButton: step.unsubscribeButton ?? '',
     imageUrl: step.imageUrl ?? '',
     buttons: buttonsCodec.write(step.buttons ?? []),
-    // 'off' is a preview turned off, '' the default.
-    linkPreview: step.linkPreview === false ? 'off' : '',
+    linkPreview: step.linkPreview === false ? OFF : '',
   }
 }
 
 // The server never returns an HTTP step's URL, header values or signing secret, so the
 // canvas holds them blank: a blank field is "keep what is stored". The headers come back as
 // names only, held as JSON text (headersText) for the same reason.
-function stepProperties(step: AutomationStep): Record<string, unknown> {
+function stepProperties(step: AutomationStep): NodeProperties[keyof NodeProperties] {
   if (step.type === 'http') {
-    return {
+    const http: NodeProperties['http'] = {
       stepId: step.id ?? '',
       url: '',
       headers: headersText((step.headers ?? []).map(({ name }) => ({ name }))),
       body: step.body ?? '',
       secret: '',
     }
+    return http
   }
   if (step.type === 'wait') {
-    return { seconds: step.seconds ?? 0 }
+    const wait: NodeProperties['wait'] = { seconds: step.seconds ?? 0 }
+    return wait
   }
   if (step.type === 'apply_tag' || step.type === 'remove_tag') {
-    return { tag: step.tag ?? '' }
+    const tag: NodeProperties['tag'] = { tag: step.tag ?? '' }
+    return tag
   }
   if (step.type === 'telegram') {
     return telegramProperties(step)
   }
   if (step.type === 'sms') {
-    return {
+    const sms: NodeProperties['sms'] = {
       integrationId: step.integrationId ?? '',
       text: step.text ?? '',
-      linkTracking: step.linkTracking === false ? 'off' : '',
+      linkTracking: step.linkTracking === false ? OFF : '',
     }
+    return sms
   }
-  return {
+  const email: NodeProperties['email'] = {
     integrationId: step.integrationId ?? '',
     subject: step.subject ?? '',
     body: step.body ?? '',
     doc: step.doc ? z.encode(docCodec, step.doc) : '',
   }
+  return email
 }
 
 const TRIGGER_NODE_ID = 'trigger'
@@ -219,7 +219,7 @@ function stepHeaders(text: string): SiteAutomationHttpHeader[] {
 }
 
 // The Telegram step a node holds: what is left blank is left out.
-function telegramStep(props: Record<string, unknown>): AutomationStep {
+function telegramStep(props: ReadProperties<'telegram'>): AutomationStep {
   const integrationId = asText(props.integrationId)
   const unsubscribeButton = asText(props.unsubscribeButton)
   const imageUrl = asText(props.imageUrl).trim()
@@ -231,63 +231,73 @@ function telegramStep(props: Record<string, unknown>): AutomationStep {
     ...(unsubscribeButton === '' ? {} : { unsubscribeButton }),
     ...(imageUrl === '' ? {} : { imageUrl }),
     ...(buttons.length === 0 ? {} : { buttons }),
-    ...(props.linkPreview === 'off' ? { linkPreview: false } : {}),
+    ...(props.linkPreview === OFF ? { linkPreview: false } : {}),
   }
 }
 
 // The SMS step a node holds. A step that names no Integration ('') leaves it out: it sends
 // through the SMS default. Link tracking is on unless the node turned it 'off'.
-function smsStep(props: Record<string, unknown>): AutomationStep {
+function smsStep(props: ReadProperties<'sms'>): AutomationStep {
   const integrationId = asText(props.integrationId)
   return {
     type: 'sms',
     text: asText(props.text),
     ...(integrationId === '' ? {} : { integrationId }),
-    ...(props.linkTracking === 'off' ? { linkTracking: false } : {}),
+    ...(props.linkTracking === OFF ? { linkTracking: false } : {}),
   }
 }
 
 function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   const props: Record<string, unknown> = node.data.properties
-  if (node.data.type === HTTP_NODE_TYPE) {
-    const id = asText(props.stepId)
-    const url = asText(props.url).trim()
-    const secret = asText(props.secret)
+  if (node.data.type === SiteAutomationStepType.HTTP) {
+    const http: ReadProperties<'http'> = props
+    const id = asText(http.stepId)
+    const url = asText(http.url).trim()
+    const secret = asText(http.secret)
     return {
       type: 'http',
-      body: asText(props.body),
-      headers: stepHeaders(asText(props.headers)),
+      body: asText(http.body),
+      headers: stepHeaders(asText(http.headers)),
       ...(id === '' ? {} : { id }),
       ...(url === '' ? {} : { url }),
       ...(secret === '' ? {} : { secret }),
     }
   }
-  if (node.data.type === WAIT_NODE_TYPE) {
-    return { type: 'wait', seconds: Math.trunc(Number(props.seconds)) || 0 }
+  if (node.data.type === SiteAutomationStepType.WAIT) {
+    const wait: ReadProperties<'wait'> = props
+    return { type: 'wait', seconds: Math.trunc(Number(wait.seconds)) || 0 }
   }
-  if (node.data.type === APPLY_TAG_NODE_TYPE || node.data.type === REMOVE_TAG_NODE_TYPE) {
+  if (
+    node.data.type === SiteAutomationStepType.APPLY_TAG ||
+    node.data.type === SiteAutomationStepType.REMOVE_TAG
+  ) {
+    const tag: ReadProperties<'tag'> = props
     return {
-      type: node.data.type === APPLY_TAG_NODE_TYPE ? 'apply_tag' : 'remove_tag',
-      tag: asText(props.tag),
+      type:
+        node.data.type === SiteAutomationStepType.APPLY_TAG
+          ? SiteAutomationStepType.APPLY_TAG
+          : SiteAutomationStepType.REMOVE_TAG,
+      tag: asText(tag.tag),
     }
   }
-  if (node.data.type === TELEGRAM_NODE_TYPE) {
+  if (node.data.type === SiteAutomationStepType.TELEGRAM) {
     return telegramStep(props)
   }
-  if (node.data.type === SMS_NODE_TYPE) {
+  if (node.data.type === SiteAutomationStepType.SMS) {
     return smsStep(props)
   }
-  if (node.data.type === EMAIL_NODE_TYPE) {
+  if (node.data.type === SiteAutomationStepType.EMAIL) {
     // A message written in the editor is saved as its document alone (the server builds the
     // body; sending both is a 422), and one written as HTML as its body alone. A step that names
     // no Integration ('') leaves it out: it sends through the email default.
-    const subject = asText(props.subject)
-    const integrationId = asText(props.integrationId)
+    const email: ReadProperties<'email'> = props
+    const subject = asText(email.subject)
+    const integrationId = asText(email.integrationId)
     const via = integrationId === '' ? {} : { integrationId }
-    const doc = docCodec.safeParse(asText(props.doc))
+    const doc = docCodec.safeParse(asText(email.doc))
     return doc.success
       ? { type: 'email', ...via, subject, doc: doc.data }
-      : { type: 'email', ...via, subject, body: asText(props.body) }
+      : { type: 'email', ...via, subject, body: asText(email.body) }
   }
   return null
 }

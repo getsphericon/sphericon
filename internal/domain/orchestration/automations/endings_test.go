@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -210,11 +211,11 @@ func TestAnEnrollmentIsMadeEndedByAnExitOrGoalEventRecordedSinceTheTrigger(t *te
 		wantEvents []string // the System events the Enrollment records (#897)
 	}{
 		{"the first since the trigger is an exit", 6 * day, automationrun.StatusExited, 0,
-			[]string{events.NameAutomationEnrolled, events.NameAutomationExited}},
+			[]string{systemevent.AutomationEnrolled, systemevent.AutomationExited}},
 		{"the first since the trigger is the goal", 4 * day, automationrun.StatusGoalReached, 0,
-			[]string{events.NameAutomationEnrolled, events.NameAutomationGoalReached}},
+			[]string{systemevent.AutomationEnrolled, systemevent.AutomationGoalReached}},
 		{"only a machine click and loaded history since", 2 * day, automationrun.StatusActive, 1,
-			[]string{events.NameAutomationEnrolled}},
+			[]string{systemevent.AutomationEnrolled}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -230,7 +231,7 @@ func TestAnEnrollmentIsMadeEndedByAnExitOrGoalEventRecordedSinceTheTrigger(t *te
 			assert.Equal(t, tc.wantStatus, status)
 			assert.Len(t, runs, 1, "enrolled once ever: no second Enrollment is made")
 			recorded := lo.Map(env.QueuedEnvelopes(t,
-				events.NameAutomationEnrolled, events.NameAutomationExited, events.NameAutomationGoalReached),
+				systemevent.AutomationEnrolled, systemevent.AutomationExited, systemevent.AutomationGoalReached),
 				func(e events.Envelope, _ int) string { return e.Name })
 			assert.Equal(t, tc.wantEvents, recorded, "entered, and left at once when made ended")
 		})
@@ -306,13 +307,13 @@ func TestCreateKeepsExitAndGoalEventsInTheDraft(t *testing.T) {
 
 	created, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
 		Name: "Upsell", TriggerEvent: "plan_limit_reached",
-		ExitEvents: []string{"account_closed", " account_closed", "email.unsubscribed"}, GoalEvent: &goal,
+		ExitEvents: []string{"account_closed", " account_closed", systemevent.EmailUnsubscribed}, GoalEvent: &goal,
 	})
 	require.NoError(t, err)
 
 	_, draft := automations.LiveAndDraft(created)
 	require.NotNil(t, draft)
-	assert.Equal(t, []string{"account_closed", "email.unsubscribed"}, draft.ExitEvents, "trimmed, a repeat kept once")
+	assert.Equal(t, []string{"account_closed", systemevent.EmailUnsubscribed}, draft.ExitEvents, "trimmed, a repeat kept once")
 	assert.Equal(t, new("subscription_expanded"), draft.GoalEvent)
 }
 
@@ -324,9 +325,9 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 	}{
 		{"an exit equal to the trigger", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{"payment_failed"}}, automations.ErrInvalidExitEvent},
 		{"an empty exit", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{" "}}, automations.ErrInvalidExitEvent},
-		{"an infrastructure exit", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{"email.sent"}}, automations.ErrInvalidExitEvent},
+		{"an infrastructure exit", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{systemevent.EmailSent}}, automations.ErrInvalidExitEvent},
 		{"a goal equal to the trigger", automations.CreateInput{TriggerEvent: "payment_failed", GoalEvent: new("payment_failed")}, automations.ErrInvalidGoalEvent},
-		{"an infrastructure goal", automations.CreateInput{TriggerEvent: "payment_failed", GoalEvent: new("email.delivered")}, automations.ErrInvalidGoalEvent},
+		{"an infrastructure goal", automations.CreateInput{TriggerEvent: "payment_failed", GoalEvent: new(systemevent.EmailDelivered)}, automations.ErrInvalidGoalEvent},
 		{"a goal that is also an exit", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{"paid"}, GoalEvent: new("paid")}, automations.ErrInvalidGoalEvent},
 	}
 	for _, tc := range cases {
@@ -372,7 +373,7 @@ func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	require.NotNil(t, draft)
 	assert.Empty(t, draft.ExitEvents)
 	assert.Equal(t, new("invoice_paid"), draft.GoalEvent)
-	assert.Equal(t, []string{recoveryExit, "plan_downgraded", "email.clicked"}, live.ExitEvents)
+	assert.Equal(t, []string{recoveryExit, "plan_downgraded", systemevent.EmailClicked}, live.ExitEvents)
 	assert.Equal(t, new(recoveryGoal), live.GoalEvent)
 
 	cleared, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID), GoalEvent: patch.Clear[string]()})

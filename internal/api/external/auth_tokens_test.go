@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -66,7 +67,7 @@ func TestExternalAuthTokensListIsWorkspaceScoped(t *testing.T) {
 		}
 	}
 
-	_, err = env.ExternalScoped(t, "contacts:read").AuthTokensList(ctx)
+	_, err = env.ExternalScoped(t, apitokens.ScopeContactsRead).AuthTokensList(ctx)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
@@ -114,7 +115,7 @@ func TestExternalAuthTokensCreate(t *testing.T) {
 	_, err = minted.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("x@example.com")})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	_, err = env.ExternalScoped(t, "tokens:read").AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{Name: "n"})
+	_, err = env.ExternalScoped(t, apitokens.ScopeTokensRead).AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{Name: "n"})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
@@ -137,7 +138,7 @@ func TestExternalAuthTokensDelete(t *testing.T) {
 	err = c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: 999999})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	err = env.ExternalScoped(t, "tokens:read").AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: victim})
+	err = env.ExternalScoped(t, apitokens.ScopeTokensRead).AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: victim})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
@@ -185,7 +186,7 @@ func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T
 func TestExternalAuthTokensCreateCannotGrantAScopeTheCallerLacks(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "tokens:write", "contacts:read")
+	c := env.ExternalScoped(t, apitokens.ScopeTokensWrite, apitokens.ScopeContactsRead)
 
 	before, err := env.DB.ApiToken.Query().Count(ctx)
 	require.NoError(t, err)

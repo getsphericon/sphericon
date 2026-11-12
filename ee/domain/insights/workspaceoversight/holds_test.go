@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -64,7 +65,7 @@ func (h *harness) listHolds(t *testing.T) []serviceapi.HoldResource {
 func (h *harness) requireHeld(t *testing.T, to string) {
 	t.Helper()
 	held := h.refusedSendOnAPI(t, to, "a send is refused with a 4xx")
-	assert.Equal(t, "the message was not sent: "+outboundmessages.Detail(holds.ReasonStaff), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.StaffHold), held.Detail.Value)
 }
 
 func TestAHoldFreezesSendingAndClearingItResumes(t *testing.T) {
@@ -169,7 +170,7 @@ func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	items := h.listHolds(t)
 	require.Len(t, items, 2)
 	assert.Equal(t, holds.KeyPendingDeletion, items[0].Key)
-	assert.Equal(t, holds.ReasonPendingDeletion, items[0].ReasonCode)
+	assert.Equal(t, string(holdreason.WorkspacePendingDeletion), items[0].ReasonCode)
 	assert.Equal(t, fixtures.HoldAcmeLapsedKey, items[1].Key)
 
 	h.env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(t.Context())

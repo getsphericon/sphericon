@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -27,13 +28,13 @@ import (
 
 var (
 	// ErrConfirmationChannel: a Confirmation is recorded by hand or by the API only on sms.
-	ErrConfirmationChannel = validation.RefuseField("channel", "consent: only sms takes a recorded confirmation", i18n.ErrorsConfirmationChannel)
+	ErrConfirmationChannel = validation.RefuseField(fieldname.Channel, "consent: only sms takes a recorded confirmation", i18n.ErrorsConfirmationChannel)
 	// ErrWordingEmpty, ErrSourceEmpty, ErrBrandEmpty: the evidence lacks a part.
-	ErrWordingEmpty = validation.RefuseField("wording", "consent: wording must not be empty", i18n.ErrorsConsentWordingEmpty)
-	ErrSourceEmpty  = validation.RefuseField("source", "consent: source must not be empty", i18n.ErrorsConsentSourceEmpty)
-	ErrBrandEmpty   = validation.RefuseField("brand", "consent: brand must not be empty", i18n.ErrorsConsentBrandEmpty)
+	ErrWordingEmpty = validation.RefuseField(fieldname.Wording, "consent: wording must not be empty", i18n.ErrorsConsentWordingEmpty)
+	ErrSourceEmpty  = validation.RefuseField(fieldname.Source, "consent: source must not be empty", i18n.ErrorsConsentSourceEmpty)
+	ErrBrandEmpty   = validation.RefuseField(fieldname.Brand, "consent: brand must not be empty", i18n.ErrorsConsentBrandEmpty)
 	// ErrNoPhone: SMS consent or an SMS opt-out for a Contact that has no phone.
-	ErrNoPhone = validation.RefuseField("phone", "consent: the contact has no phone", i18n.ErrorsContactPhoneMissing)
+	ErrNoPhone = validation.RefuseField(fieldname.Phone, "consent: the contact has no phone", i18n.ErrorsContactPhoneMissing)
 	// ErrContactNotFound: no such Contact in the Workspace.
 	ErrContactNotFound = validation.NotFound("consent: contact not found", i18n.ErrorsContactNotFound)
 )

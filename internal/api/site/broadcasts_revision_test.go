@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -26,7 +27,7 @@ func TestSiteSendNowFromAnEditorLoadedBeforeASegmentChangeIsRefused(t *testing.T
 	shown, err := c.SiteBroadcastsGet(ctx, params)
 	require.NoError(t, err)
 
-	api := env.ExternalScoped(t, "broadcasts:write")
+	api := env.ExternalScoped(t, apitokens.ScopeBroadcastsWrite)
 	_, err = api.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{
 		Revision: externalapi.Revision(shown.Revision), SegmentId: externalapi.NewNilEntityId(externalapi.EntityId(fixtures.SegmentProPlanID)),
 	}, externalapi.BroadcastsSetSegmentParams{ID: externalapi.EntityId(fixtures.BroadcastDraftID)})

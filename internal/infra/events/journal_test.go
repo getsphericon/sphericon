@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -112,8 +113,8 @@ func TestJournalFailureRollsBackTheProducerAndItsQueuedWork(t *testing.T) {
 	})
 	require.ErrorIs(t, err, boom, "even an ignored publication failure prevents commit")
 	assert.Equal(t, before.FirstName, env.DB.Contact.GetX(t.Context(), fixtures.ContactAliceID).FirstName)
-	assert.Empty(t, env.QueuedEvents(t, events.NameContactCreated))
-	assert.Empty(t, env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID), eventjournalentry.Name(events.NameContactCreated)).IDsX(t.Context()))
+	assert.Empty(t, env.QueuedEvents(t, systemevent.ContactCreated))
+	assert.Empty(t, env.DB.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID), eventjournalentry.Name(systemevent.ContactCreated)).IDsX(t.Context()))
 }
 
 func TestJournalErasureIsBatchedAndConfinedToItsWorkspace(t *testing.T) {

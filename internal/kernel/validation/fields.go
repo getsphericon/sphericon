@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
 
@@ -71,39 +72,24 @@ func Fields(refusals ...error) error {
 	return &FieldsError{Fields: fields}
 }
 
-// The json names of the form fields a refusal is reported against and a person is shown by
-// label.
-const (
-	FieldName        = "name"
-	FieldEmail       = "email"
-	FieldNewEmail    = "newEmail"
-	FieldPassword    = "password"
-	FieldNewPassword = "newPassword"
-	// FieldSignupItems carries the answers to the Sign-up items (ADR 0062); a refusal of one item
-	// is reported under Nested(FieldSignupItems, key).
-	FieldSignupItems = "signupItems"
-	// FieldMaxPerSecond and FieldMaxPerDay are an Integration's Provider limit.
-	FieldMaxPerSecond = "maxPerSecond"
-	FieldMaxPerDay    = "maxPerDay"
-)
-
-// fieldOrder is the order fields appear in on the forms, which a detail naming them follows: the
-// Sign-up items' answers come last.
+// fieldOrder is the order the fields a person is shown by label appear in on the forms, which a
+// detail naming them follows: the Sign-up items' answers (fieldname.SignupItems, a refusal of one
+// item reported under Nested(fieldname.SignupItems, key)) come last.
 var fieldOrder = []string{
-	FieldName, FieldEmail, FieldNewEmail, FieldPassword, FieldNewPassword, FieldSignupItems,
-	FieldMaxPerSecond, FieldMaxPerDay,
+	fieldname.Name, fieldname.Email, fieldname.NewEmail, fieldname.Password, fieldname.NewPassword, fieldname.SignupItems,
+	fieldname.MaxPerSecond, fieldname.MaxPerDay,
 }
 
 // fieldLabels words a field for a person, by its json name.
 var fieldLabels = map[string]i18n.ID{
-	FieldName:         i18n.FieldsName,
-	FieldEmail:        i18n.FieldsEmail,
-	FieldNewEmail:     i18n.FieldsNewEmail,
-	FieldPassword:     i18n.FieldsPassword,
-	FieldNewPassword:  i18n.FieldsNewPassword,
-	FieldSignupItems:  i18n.FieldsSignupItems,
-	FieldMaxPerSecond: i18n.FieldsMaxPerSecond,
-	FieldMaxPerDay:    i18n.FieldsMaxPerDay,
+	fieldname.Name:         i18n.FieldsName,
+	fieldname.Email:        i18n.FieldsEmail,
+	fieldname.NewEmail:     i18n.FieldsNewEmail,
+	fieldname.Password:     i18n.FieldsPassword,
+	fieldname.NewPassword:  i18n.FieldsNewPassword,
+	fieldname.SignupItems:  i18n.FieldsSignupItems,
+	fieldname.MaxPerSecond: i18n.FieldsMaxPerSecond,
+	fieldname.MaxPerDay:    i18n.FieldsMaxPerDay,
 }
 
 // Nested is the name a refusal of the entry key of the request field parent is reported under

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
@@ -28,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
@@ -180,7 +182,7 @@ func contactCounts(ctx context.Context, s *ent.Scoped) (Contacts, error) {
 	if err != nil {
 		return Contacts{}, err
 	}
-	unsub, err := s.Contact().Query().Where(eligibility.GloballyOptedOut(eligibility.ChannelEmail)).Count(ctx)
+	unsub, err := s.Contact().Query().Where(eligibility.GloballyOptedOut(channels.Email)).Count(ctx)
 	if err != nil {
 		return Contacts{}, err
 	}

@@ -9,6 +9,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -38,7 +39,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	_, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
-		Name: "Broken", TriggerEvent: "contact.created",
+		Name: "Broken", TriggerEvent: systemevent.ContactCreated,
 		Steps: []siteapi.SiteAutomationStep{
 			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>hi</p></div>")},
 		},

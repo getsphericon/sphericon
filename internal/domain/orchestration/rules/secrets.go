@@ -19,7 +19,7 @@ import (
 // (docs/architecture/workspace-scoping.md, Workspace scoping).
 func SecretSweeps(c *ent.Client) []secrets.Sweep {
 	return []secrets.Sweep{{
-		Column: "rule_versions.actions",
+		Column: ruleversion.Table + "." + ruleversion.FieldActions,
 		Page: func(ctx context.Context, after int64, n int) ([]secrets.Stored, error) {
 			rs, err := c.RuleVersion.Query().Where(ruleversion.IDGT(after)).Order(ent.Asc(ruleversion.FieldID)).Limit(n).All(ctx)
 			return lo.Map(rs, func(e *ent.RuleVersion, _ int) secrets.Stored { return secrets.Stored{ID: e.ID, Value: e.Actions} }), err

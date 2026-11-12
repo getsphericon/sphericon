@@ -62,7 +62,7 @@ func hostReq(env *testhelper.TestEnv, method, host, path string) *httptest.Respo
 func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
 	host := fixtures.TrackingDomainServingHost
@@ -156,7 +156,7 @@ func TestTrackingHostServesTheFirstPartyTracker(t *testing.T) {
 // The probe is served on a dns_verified host as well, with a value tied to the host.
 func TestTrackingHostServesTheProbeValue(t *testing.T) {
 	env := testhelper.Setup(t)
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 
 	for _, host := range []string{fixtures.TrackingDomainServingHost, fixtures.TrackingDomainDNSVerifiedHost, fixtures.TrackingDomainRetiredHost} {

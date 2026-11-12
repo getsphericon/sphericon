@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -235,7 +236,7 @@ func (m *Module) SetDefaultSendCap(ctx context.Context, by *ent.StaffMember, per
 		return DefaultSendCapChange{}, err
 	}
 	if perDay != nil {
-		if err := validation.Range("perDay", *perDay, bounds.MaxPerDayMin, bounds.MaxPerDayMax); err != nil {
+		if err := validation.Range(fieldname.PerDay, *perDay, bounds.MaxPerDayMin, bounds.MaxPerDayMax); err != nil {
 			return DefaultSendCapChange{}, err
 		}
 	}

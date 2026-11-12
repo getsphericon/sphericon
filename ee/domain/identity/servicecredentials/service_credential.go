@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -41,7 +42,7 @@ var (
 	// ErrUnauthorized is the service security handler's refusal of a missing or bad credential.
 	ErrUnauthorized = errors.New("staff: unauthorized")
 	// ErrInvalidScope: a scope that no Service credential may carry, or none at all.
-	ErrInvalidScope = validation.RefuseField("scopes", "staff: a service credential needs one or more known scopes",
+	ErrInvalidScope = validation.RefuseField(fieldname.Scopes, "staff: a service credential needs one or more known scopes",
 		i18n.ErrorsServiceCredentialScope)
 	// ErrInvalidCredential: a Service credential with an expiry that is already past; its name is
 	// held to the name rule (validation.Name).

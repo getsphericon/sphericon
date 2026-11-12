@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // The Enrollment's lifecycle (ADR 0046): it starts `active` and leaves it exactly once, for
@@ -89,9 +90,9 @@ func machine(s *ent.Scoped, runID int64, endedAt time.Time, extra func(*ent.Auto
 // endingEvents is the System event each end of an Enrollment records (#897). A `failed` Enrollment
 // records none: it is an operational failure, not something the Contact did.
 var endingEvents = map[trigger]string{
-	triggerComplete:  events.NameAutomationCompleted,
-	triggerExit:      events.NameAutomationExited,
-	triggerReachGoal: events.NameAutomationGoalReached,
+	triggerComplete:  systemevent.AutomationCompleted,
+	triggerExit:      systemevent.AutomationExited,
+	triggerReachGoal: systemevent.AutomationGoalReached,
 }
 
 // move fires t on one Enrollment, making the move out of `active` a conditional update that

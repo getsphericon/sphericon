@@ -153,7 +153,7 @@ func (d *metadataDocument) validate(clientID string) error {
 		return ErrInvalidRequest.With("client_id in the metadata document does not match its URL")
 	case len(d.RedirectURIs) == 0 || len(d.RedirectURIs) > MaxRedirectURIs:
 		return ErrInvalidRequest.With(fmt.Sprintf("the metadata document needs between 1 and %d redirect_uris", MaxRedirectURIs))
-	case d.TokenEndpointAuthMethod != "" && d.TokenEndpointAuthMethod != "none":
+	case d.TokenEndpointAuthMethod != "" && d.TokenEndpointAuthMethod != AuthMethodNone:
 		return ErrInvalidRequest.With("only token_endpoint_auth_method none is supported")
 	}
 	for _, u := range d.RedirectURIs {

@@ -4207,7 +4207,7 @@ export type SiteEventResource = {
    */
   email?: string | null;
   /**
-   * Event action / name
+   * Event action: a System event's (`SystemEventAction`) or the customer's own
    */
   action: string;
   /**
@@ -7349,6 +7349,55 @@ export const SortDirection = { ASC: 'asc', DESC: 'desc' } as const;
  * others do not carry an unused schema.
  */
 export type SortDirection = typeof SortDirection[keyof typeof SortDirection];
+
+/**
+ * The action of a System event: an Event sphericon itself records, never a customer. An Event's
+ * `action`, an Automation's trigger and a condition carry one of these or a customer's own action,
+ * which may not take a System event's namespace; a webhook's event types may also name the Audit
+ * log's `audit.entry`.
+ */
+export const SystemEventAction = {
+  CONTACT_CREATED: 'contact.created',
+  CONTACT_ERASED: 'contact.erased',
+  EMAIL_SENT: 'email.sent',
+  EMAIL_DELIVERED: 'email.delivered',
+  EMAIL_DELAYED: 'email.delayed',
+  EMAIL_DROPPED: 'email.dropped',
+  EMAIL_OPENED: 'email.opened',
+  EMAIL_CLICKED: 'email.clicked',
+  EMAIL_UNSUBSCRIBED: 'email.unsubscribed',
+  EMAIL_BOUNCED: 'email.bounced',
+  EMAIL_COMPLAINED: 'email.complained',
+  MARKETING_CONFIRMED: 'marketing.confirmed',
+  CONTACT_TAGGED: 'contact.tagged',
+  CONTACT_UNTAGGED: 'contact.untagged',
+  CONTACT_FIELD_CHANGED: 'contact.field_changed',
+  AUTOMATION_ENROLLED: 'automation.enrolled',
+  AUTOMATION_COMPLETED: 'automation.completed',
+  AUTOMATION_GOAL_REACHED: 'automation.goal_reached',
+  AUTOMATION_EXITED: 'automation.exited',
+  TELEGRAM_BOUND: 'telegram.bound',
+  TELEGRAM_UNBOUND: 'telegram.unbound',
+  TELEGRAM_RECEIVED: 'telegram.received',
+  TELEGRAM_SENT: 'telegram.sent',
+  TELEGRAM_CLICKED: 'telegram.clicked',
+  TELEGRAM_UNSUBSCRIBED: 'telegram.unsubscribed',
+  SMS_RECEIVED: 'sms.received',
+  SMS_SENT: 'sms.sent',
+  SMS_DELIVERED: 'sms.delivered',
+  SMS_UNDELIVERED: 'sms.undelivered',
+  SMS_CONFIRMED: 'sms.confirmed',
+  SMS_CLICKED: 'sms.clicked',
+  SMS_UNSUBSCRIBED: 'sms.unsubscribed'
+} as const;
+
+/**
+ * The action of a System event: an Event sphericon itself records, never a customer. An Event's
+ * `action`, an Automation's trigger and a condition carry one of these or a customer's own action,
+ * which may not take a System event's namespace; a webhook's event types may also name the Audit
+ * log's `audit.entry`.
+ */
+export type SystemEventAction = typeof SystemEventAction[keyof typeof SystemEventAction];
 
 /**
  * Telegram's content of a Broadcast as stored

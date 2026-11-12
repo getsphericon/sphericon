@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -25,7 +26,7 @@ func emailStepVia(id externalapi.OptNilEntityId) externalapi.AutomationStep {
 // it, none for the default, refused with a 422 when it is not the Workspace's (ADR 0081).
 func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "automations:read", "automations:write")
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	ctx := context.Background()
 	mailgun := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationAcmeMailgunID))
 

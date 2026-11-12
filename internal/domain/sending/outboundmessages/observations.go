@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // Observation is the anonymous report measurement carried to its owner after publication.
@@ -23,12 +24,12 @@ func ObservationOf(env events.Envelope, ev events.DomainEvent) (Observation, boo
 	o := Observation{ObservedAt: env.OccurredAt}
 	switch e := ev.(type) {
 	case *events.EmailEngagement:
-		if e.Machine || (e.Action != events.NameEmailOpened && e.Action != events.NameEmailClicked) {
+		if e.Machine || (e.Action != systemevent.EmailOpened && e.Action != systemevent.EmailClicked) {
 			return o, false
 		}
 		o.MessageID, o.Action = e.OutboundMessageID, e.Action
 	case *events.EmailDelivery:
-		if e.Action != events.NameEmailDelivered && e.Action != events.NameEmailBounced && e.Action != events.NameEmailComplained {
+		if e.Action != systemevent.EmailDelivered && e.Action != systemevent.EmailBounced && e.Action != systemevent.EmailComplained {
 			return o, false
 		}
 		o.MessageID, o.Action = e.OutboundMessageID, e.Action
@@ -36,12 +37,12 @@ func ObservationOf(env events.Envelope, ev events.DomainEvent) (Observation, boo
 		if e.Machine {
 			return o, false
 		}
-		o.MessageID, o.Action = e.OutboundMessageID, events.NameSmsClicked
+		o.MessageID, o.Action = e.OutboundMessageID, systemevent.SmsClicked
 	case *events.TelegramClicked:
 		if e.Machine {
 			return o, false
 		}
-		o.MessageID, o.Action = e.OutboundMessageID, events.NameTelegramClicked
+		o.MessageID, o.Action = e.OutboundMessageID, systemevent.TelegramClicked
 	default:
 		return o, false
 	}
@@ -52,17 +53,17 @@ func ObservationOf(env events.Envelope, ev events.DomainEvent) (Observation, boo
 // An anonymous Outbound message is still a report record; this updates no personal field.
 func RecordObservation(ctx context.Context, s *ent.Scoped, o Observation) error {
 	switch o.Action {
-	case events.NameEmailOpened:
+	case systemevent.EmailOpened:
 		_, err := StampOpened(ctx, s, o.MessageID, o.ObservedAt)
 		return err
-	case events.NameEmailClicked, events.NameSmsClicked, events.NameTelegramClicked:
+	case systemevent.EmailClicked, systemevent.SmsClicked, systemevent.TelegramClicked:
 		_, err := StampClicked(ctx, s, o.MessageID, o.ObservedAt)
 		return err
-	case events.NameEmailDelivered:
+	case systemevent.EmailDelivered:
 		return StampDelivery(ctx, s, o.MessageID, ResultDelivered, o.ObservedAt)
-	case events.NameEmailBounced:
+	case systemevent.EmailBounced:
 		return StampDelivery(ctx, s, o.MessageID, ResultBounced, o.ObservedAt)
-	case events.NameEmailComplained:
+	case systemevent.EmailComplained:
 		return StampDelivery(ctx, s, o.MessageID, ResultComplained, o.ObservedAt)
 	default:
 		return fmt.Errorf("unknown message observation %q", o.Action)

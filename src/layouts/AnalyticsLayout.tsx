@@ -2,6 +2,7 @@ import { SegmentedControl, Stack } from '@mantine/core'
 import { Outlet, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import type { SiteAnalyticsRange } from '../generated/site/types.gen.ts'
 import { zSiteAnalyticsRange } from '../generated/site/zod.gen.ts'
 import { useAnalyticsRange } from '../hooks/useAnalyticsRange.ts'
 
@@ -18,7 +19,7 @@ export function AnalyticsLayout() {
   // centers its CenteredEmptyState in what is left below the window.
   return (
     <Stack flex={1}>
-      <SegmentedControl
+      <SegmentedControl<SiteAnalyticsRange>
         w={{ base: '100%', sm: 'fit-content' }}
         value={range}
         onChange={(next) =>
@@ -26,7 +27,7 @@ export function AnalyticsLayout() {
           // be its index, which redirects to the first report.
           void navigate({
             to: '.',
-            search: (prev: Record<string, unknown>) => ({ ...prev, range: next }),
+            search: (prev) => ({ ...prev, range: next }),
           })
         }
         data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}

@@ -25,6 +25,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -242,7 +244,7 @@ func TestATelegramBroadcastsUnsubscribeLinkAndButtonOptTheChatOutOfBroadcasts(t 
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(benChat)).OnlyX(ctx)
 	assert.Equal(t, channels.Telegram, optOut.Channel)
 	assert.Equal(t, eligibility.SourceBroadcasts, optOut.SendingSource)
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{"broadcastId": id, "via": events.UnsubscribedByLink}))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramUnsubscribed, map[string]any{"broadcastId": id, "via": events.UnsubscribedByLink}))
 }
 
 // A bot whose token Telegram refuses holds the Broadcast with provider_refused: the recipient waits
@@ -263,9 +265,9 @@ func TestATelegramBroadcastIsHeldWhileItsBotIsRefusedAndResumesWhenTheTokenIsSav
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outboundmessages.HoldProviderRefused, held.Reason)
+	assert.Equal(t, holdreason.ProviderRefused, held.Reason)
 	assert.True(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[0]), broadcasts.Pending()).ExistX(ctx))
-	assert.Equal(t, outboundmessages.HoldProviderRefused, string(*env.DB.Broadcast.GetX(ctx, id).HoldReason))
+	assert.Equal(t, holdreason.ProviderRefused, *env.DB.Broadcast.GetX(ctx, id).HoldReason)
 	c := env.SiteActor(t, fixtures.LacunaOwnerLenaEmail)
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.LacunaPublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hook"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -22,7 +23,7 @@ import (
 func TestExternalContactsUpdatePersistsAttributesAndCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(entityIDString(fixtures.ContactAliceID)))),
 		FirstName: externalapi.NewOptNilString("Alicia"),
@@ -47,7 +48,7 @@ func TestExternalContactsUpdatePersistsAttributesAndCustomFields(t *testing.T) {
 // Isolated: the unique violation aborts this test's transaction.
 func TestExternalContactsUpdateConflictNamesTheField(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	_, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(context.Background(), t, int64(entityIDString(fixtures.ContactAliceID)))),
 		Email: externalapi.NewOptNilEmailAddress(fixtures.ContactBobEmail),
@@ -60,7 +61,7 @@ func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	foreign := entityIDString(fixtures.ContactGlobexID)
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write", "contacts:erase")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite, apitokens.ScopeContactsErase)
 	before := env.DB.Contact.GetX(ctx, int64(foreign))
 
 	_, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: foreign})
@@ -84,10 +85,10 @@ func TestExternalContactsListRequiresReadScopeAndPaginates(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := env.ExternalScoped(t, "contacts:write").ContactsList(ctx, externalapi.ContactsListParams{})
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsList(ctx, externalapi.ContactsListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	p1, err := c.ContactsList(ctx, externalapi.ContactsListParams{PageSize: externalapi.NewOptInt32(1)})
 	require.NoError(t, err)
 	require.Len(t, p1.Items, 1)
@@ -103,7 +104,7 @@ func TestExternalContactsListRequiresReadScopeAndPaginates(t *testing.T) {
 func TestExternalContactsBatchUpsertCarriesCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	out, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
 		Email: externalapi.NewOptNilEmailAddress("batch.cf@example.com"),
@@ -126,7 +127,7 @@ func TestABatchItemFailureIsWordedForTheCaller(t *testing.T) {
 	taken := env.DB.Contact.GetX(t.Context(), fixtures.ContactExportSubjectID).Phone
 	require.NotNil(t, taken)
 
-	out, err := env.ExternalScoped(t, "contacts:write").ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
+	out, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{
 			{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail), Phone: externalapi.NewOptNilString(*taken)},
 			{FirstName: externalapi.NewOptNilString("Nobody")},
@@ -151,7 +152,7 @@ func TestABatchItemStorageFailureHidesTheCause(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.Bus.Use(hook.If(hook.FixedError(errStorageDown), isContact))
 
-	out, err := env.ExternalScoped(t, "contacts:write").ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
+	out, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{{Email: externalapi.NewOptNilEmailAddress("batch.down@example.com")}},
 	})
 	require.NoError(t, err)
@@ -166,7 +167,7 @@ func TestABatchItemStorageFailureHidesTheCause(t *testing.T) {
 func TestExternalContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	var null externalapi.OptNilString
 	null.SetToNull()

@@ -3,8 +3,10 @@ import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { SiteAutomationStepType, SystemEventAction } from '../../generated/site/types.gen.ts'
 import {
   CONTACT_CHANGE_ACTIONS,
+  EMAIL_ENGAGEMENT_ACTIONS,
   ENROLLMENT_ACTIONS,
   SMS_ACTIONS,
   TELEGRAM_ACTIONS,
@@ -12,19 +14,13 @@ import {
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
 import { integrationFormat } from './integrationFormat.ts'
 import { MESSAGE_FORMAT } from './messageFormat.ts'
+import type { NodeProperties } from './nodeProperties.ts'
 import { SMS_TEXT_FORMAT } from './smsFormat.ts'
 import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
-// The palette `type` of each node, stored on `node.data.type` and used by the
-// graph ↔ definition converters to tell email steps from wait steps.
-export const EMAIL_NODE_TYPE = 'email'
-export const TELEGRAM_NODE_TYPE = 'telegram'
-export const SMS_NODE_TYPE = 'sms'
-export const WAIT_NODE_TYPE = 'wait'
-export const APPLY_TAG_NODE_TYPE = 'apply_tag'
-export const REMOVE_TAG_NODE_TYPE = 'remove_tag'
-export const HTTP_NODE_TYPE = 'http'
+// The palette `type` of a Step's node is its SiteAutomationStepType, stored on `node.data.type`
+// and read by the graph ↔ definition converters to tell the steps apart.
 // The Trigger is not a Step: it is the canvas's start node and is saved as the automation's
 // trigger event, never in the steps.
 export const TRIGGER_NODE_TYPE = 'trigger'
@@ -39,11 +35,9 @@ export const HTTP_NODE_ICON: WBIcon = 'WebhooksLogo'
 export const TRIGGER_NODE_ICON: WBIcon = 'Lightning'
 
 export const TRIGGER_EVENTS = [
-  'contact.created',
+  SystemEventAction.CONTACT_CREATED,
   ...CONTACT_CHANGE_ACTIONS,
-  'email.opened',
-  'email.clicked',
-  'email.unsubscribed',
+  ...EMAIL_ENGAGEMENT_ACTIONS,
   ...ENROLLMENT_ACTIONS,
   ...TELEGRAM_ACTIONS,
   ...SMS_ACTIONS,
@@ -104,14 +98,19 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: EMAIL_NODE_TYPE,
+        type: SiteAutomationStepType.EMAIL,
         icon: EMAIL_NODE_ICON,
         label: t(($) => $.automations.stepEmail),
         description: t(($) => $.automations.emailNodeDescription),
         // `doc` is the editor's document as JSON text ('' for a step written as HTML); the
         // message control edits it and the body together. `integrationId` is the Integration the
         // step sends through, '' for the email default (ADR 0081).
-        defaultPropertiesData: { integrationId: '', subject: '', body: '', doc: '' },
+        defaultPropertiesData: {
+          integrationId: '',
+          subject: '',
+          body: '',
+          doc: '',
+        } satisfies NodeProperties['email'],
         schema: {
           type: 'object',
           required: ['subject'],
@@ -156,7 +155,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: TELEGRAM_NODE_TYPE,
+        type: SiteAutomationStepType.TELEGRAM,
         icon: TELEGRAM_NODE_ICON,
         label: t(($) => $.automations.stepTelegram),
         description: t(($) => $.automations.telegramNodeDescription),
@@ -168,7 +167,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
           buttons: '',
           linkPreview: '',
           unsubscribeButton: '',
-        },
+        } satisfies NodeProperties['telegram'],
         schema: {
           type: 'object',
           required: ['text'],
@@ -210,14 +209,18 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: SMS_NODE_TYPE,
+        type: SiteAutomationStepType.SMS,
         icon: SMS_NODE_ICON,
         label: t(($) => $.automations.stepSms),
         description: t(($) => $.automations.smsNodeDescription),
         // `integrationId` is the SMS Integration the step sends through, '' for the SMS default
         // (ADR 0081). `linkTracking` is the text control's sibling, 'off' when the step keeps its
         // links as written (the form holds only strings).
-        defaultPropertiesData: { integrationId: '', text: '', linkTracking: '' },
+        defaultPropertiesData: {
+          integrationId: '',
+          text: '',
+          linkTracking: '',
+        } satisfies NodeProperties['sms'],
         schema: {
           type: 'object',
           required: ['text'],
@@ -255,11 +258,11 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: WAIT_NODE_TYPE,
+        type: SiteAutomationStepType.WAIT,
         icon: WAIT_NODE_ICON,
         label: t(($) => $.automations.stepWait),
         description: t(($) => $.automations.waitNodeDescription),
-        defaultPropertiesData: { seconds: 3600 },
+        defaultPropertiesData: { seconds: 3600 } satisfies NodeProperties['wait'],
         schema: {
           type: 'object',
           required: ['seconds'],
@@ -286,11 +289,17 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: HTTP_NODE_TYPE,
+        type: SiteAutomationStepType.HTTP,
         icon: HTTP_NODE_ICON,
         label: t(($) => $.automations.stepHttp),
         description: t(($) => $.automations.httpNodeDescription),
-        defaultPropertiesData: { stepId: '', url: '', headers: '[]', body: '{}', secret: '' },
+        defaultPropertiesData: {
+          stepId: '',
+          url: '',
+          headers: '[]',
+          body: '{}',
+          secret: '',
+        } satisfies NodeProperties['http'],
         schema: {
           type: 'object',
           required: ['body'],
@@ -342,12 +351,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
       },
       ...[
         {
-          type: APPLY_TAG_NODE_TYPE,
+          type: SiteAutomationStepType.APPLY_TAG,
           label: t(($) => $.automations.stepApplyTag),
           description: t(($) => $.automations.applyTagNodeDescription),
         },
         {
-          type: REMOVE_TAG_NODE_TYPE,
+          type: SiteAutomationStepType.REMOVE_TAG,
           label: t(($) => $.automations.stepRemoveTag),
           description: t(($) => $.automations.removeTagNodeDescription),
         },
@@ -356,7 +365,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         icon: TAG_NODE_ICON,
         label,
         description,
-        defaultPropertiesData: { tag: '' },
+        defaultPropertiesData: { tag: '' } satisfies NodeProperties['tag'],
         schema: {
           type: 'object' as const,
           required: ['tag'],

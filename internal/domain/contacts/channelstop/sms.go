@@ -14,12 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // ErrSMSSource refuses a hand-recorded SMS opt-out of a narrower source: it is Channel-wide.
-var ErrSMSSource = validation.RefuseField("sendingSource", "consent: an sms opt-out is for everything", i18n.ErrorsSendingSourceSms)
+var ErrSMSSource = validation.RefuseField(fieldname.SendingSource, "consent: an sms opt-out is for everything", i18n.ErrorsSendingSourceSms)
 
 // stopSMS records the Channel-wide opt-out of a phone number in E.164 (scope `everything`, Channel
 // `sms`): no text of the Workspace goes to it, whichever sender, Broadcast or Automation (ADR 0077).

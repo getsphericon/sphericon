@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -88,8 +89,8 @@ func TestSuccessfulResponsesCarryTheRateLimitHeaders(t *testing.T) {
 func TestTokensOfOneWorkspaceShareTheBudgetAndAnotherWorkspaceIsUnaffected(t *testing.T) {
 	const limit = 2
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{APIPerMinute: limit}))
-	second := env.ScopedBearer(t, "contacts:read")
-	globex := env.ScopedBearerFor(t, fixtures.GlobexID, "contacts:read")
+	second := env.ScopedBearer(t, apitokens.ScopeContactsRead)
+	globex := env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeContactsRead)
 
 	require.Equal(t, http.StatusOK, getAPI(t, env, anchorBearer(), nil).Code)
 	require.Equal(t, http.StatusOK, getAPI(t, env, second, nil).Code)
@@ -106,7 +107,7 @@ func whoami(session *mcp.ClientSession) error {
 
 func TestMCPAndAPIDrawFromOneBudgetAndAnMCPCallCostsOne(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{APIPerMinute: 30}))
-	session := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+	session := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 
 	before := getAPI(t, env, anchorBearer(), nil)
 	require.Equal(t, http.StatusOK, before.Code)
@@ -134,7 +135,7 @@ func spendBudget(t *testing.T, env *testhelper.TestEnv, attempts int) *httptest.
 
 func TestMCPAnswers429WhenTheWorkspaceBudgetIsSpent(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{APIPerMinute: 8}))
-	session := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+	session := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 
 	rec := spendBudget(t, env, 20)
 	require.Equal(t, http.StatusTooManyRequests, rec.Code)

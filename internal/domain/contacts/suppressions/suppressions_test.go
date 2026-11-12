@@ -13,10 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -30,7 +30,7 @@ func TestAddNormalizesAndSuppressesInEligibility(t *testing.T) {
 	assert.Equal(t, "blocked@example.com", got.Destination)
 	assert.Equal(t, entsuppression.ReasonManual, got.Reason)
 
-	verdict, err := eligibility.Check(ctx, s, eligibility.ChannelEmail, "BLOCKED@example.com", eligibility.SourceBroadcasts)
+	verdict, err := eligibility.Check(ctx, s, channels.Email, "BLOCKED@example.com", eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.False(t, verdict.Eligible)
 	assert.Equal(t, eligibility.ReasonSuppressed, verdict.Reason)
@@ -115,17 +115,17 @@ func TestNormalizeDestinationProperties(t *testing.T) {
 }
 
 func TestForEventSuppressesAComplaintAndAHardBounceOnly(t *testing.T) {
-	complaint, ok := suppressions.ForEvent(events.NameEmailComplained, "")
+	complaint, ok := suppressions.ForEvent(systemevent.EmailComplained, "")
 	assert.True(t, ok)
 	assert.Equal(t, entsuppression.ReasonComplaint, complaint)
 
-	hard, ok := suppressions.ForEvent(events.NameEmailBounced, events.BounceKindHard)
+	hard, ok := suppressions.ForEvent(systemevent.EmailBounced, systemevent.BounceKindHard)
 	assert.True(t, ok)
 	assert.Equal(t, entsuppression.ReasonBounce, hard)
 
-	_, soft := suppressions.ForEvent(events.NameEmailBounced, events.BounceKindSoft)
+	_, soft := suppressions.ForEvent(systemevent.EmailBounced, systemevent.BounceKindSoft)
 	assert.False(t, soft)
-	_, other := suppressions.ForEvent("email.opened", "")
+	_, other := suppressions.ForEvent(systemevent.EmailOpened, "")
 	assert.False(t, other)
 }
 
@@ -141,7 +141,7 @@ func TestAManualSMSSuppressionStoresTheNumberInE164(t *testing.T) {
 	assert.Equal(t, "+14155550132", got.Destination)
 	assert.Equal(t, channels.SMS, got.Channel)
 
-	verdict, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, "+14155550132", eligibility.SourceBroadcasts)
+	verdict, err := eligibility.Check(ctx, s, channels.SMS, "+14155550132", eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonSuppressed, verdict.Reason)
 

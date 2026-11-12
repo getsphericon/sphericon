@@ -15,13 +15,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // ErrReasonRequired refuses a suspension with no reason, whoever asks for it: the owners are told
 // why their sending stopped.
-var ErrReasonRequired = validation.RefuseField("reason", "suspension: a suspension needs a reason", i18n.ErrorsSuspensionReasonRequired)
+var ErrReasonRequired = validation.RefuseField(fieldname.Reason, "suspension: a suspension needs a reason", i18n.ErrorsSuspensionReasonRequired)
 
 // Actor is who suspends or lifts a suspension (ADR 0026): the automated abuse detector
 // (System), the staff member command (CLI) or a platform Staff member, whose real id is kept on
@@ -105,7 +106,7 @@ func suspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Ac
 		}
 		changed = true
 		if err := recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceSuspend,
-			map[string]any{"suspended": events.Change(false, true), "reason": events.Became(reason)}); err != nil {
+			map[string]any{diffSuspended: events.Change(false, true), workspace.FieldSuspensionReason: events.Became(reason)}); err != nil {
 			return err
 		}
 		return pub.Publish(ctx, &events.WorkspaceSuspended{WorkspaceID: workspaceID})
@@ -143,7 +144,7 @@ func unsuspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by 
 		}
 		changed = true
 		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceUnsuspend,
-			map[string]any{"suspended": events.Change(true, false)})
+			map[string]any{diffSuspended: events.Change(true, false)})
 	})
 	return changed, err
 }
@@ -182,7 +183,7 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 		}
 		changed = true
 		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, action,
-			map[string]any{"abuse_exempt": events.Change(!exempt, exempt)})
+			map[string]any{workspace.FieldAbuseExempt: events.Change(!exempt, exempt)})
 	})
 	if err != nil {
 		return false, fmt.Errorf("set abuse exemption of workspace %d: %w", workspaceID, err)
@@ -225,6 +226,10 @@ func SetSendCap(ctx context.Context, bus *events.Bus, workspaceID int64, by Acto
 	return changed, nil
 }
 
+// diffSuspended is the Diff key of a suspension and its lift in the Audit log: whether the Workspace
+// is suspended, which no one column holds (its suspension is three).
+const diffSuspended = "suspended"
+
 // recordWorkspaceAudit publishes the Audit entry of a change to the Workspace's sending standing.
 func recordWorkspaceAudit(ctx context.Context, tx *ent.Client, pub events.Publisher, workspaceID int64, by Actor, action string, diff map[string]any) error {
 	ws, err := tx.Workspace.Get(ctx, workspaceID)
@@ -235,7 +240,7 @@ func recordWorkspaceAudit(ctx context.Context, tx *ent.Client, pub events.Publis
 		WorkspaceID: workspaceID,
 		Actor:       by.auditActor(),
 		Action:      action,
-		TargetType:  "workspace",
+		TargetType:  workspace.Label,
 		TargetID:    strconv.FormatInt(workspaceID, 10),
 		TargetName:  ws.Name,
 		Diff:        diff,

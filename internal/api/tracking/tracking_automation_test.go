@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -40,7 +41,7 @@ func TestAutomationOpensAndClicksAreEventsCarryingTheAutomation(t *testing.T) {
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, linkA, resp.Header().Get("Location"))
 
-	for _, name := range []string{events.NameEmailOpened, events.NameEmailClicked} {
+	for _, name := range []string{systemevent.EmailOpened, systemevent.EmailClicked} {
 		got := env.QueuedEvents(t, name)
 		require.Len(t, got, 1, name)
 		e, ok := got[0].(*events.EmailEngagement)

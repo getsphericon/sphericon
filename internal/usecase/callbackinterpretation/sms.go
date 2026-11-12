@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // sms reads the texts people send an SMS Integration's sender (ADR 0076, ADR 0077). The sender's
@@ -42,11 +43,11 @@ type sms struct{ ignore }
 // number like a hard bounce, as the same answer at send time does. A report of a text whose Contact
 // was erased records nothing: Erasure dropped the provider's id the report names the text by.
 func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
-	result, action := outboundmessages.ResultDelivered, events.NameSmsDelivered
+	result, action := outboundmessages.ResultDelivered, systemevent.SmsDelivered
 	switch n.Kind {
 	case preset.Delivery:
 	case preset.Undelivered:
-		result, action = outboundmessages.ResultUndelivered, events.NameSmsUndelivered
+		result, action = outboundmessages.ResultUndelivered, systemevent.SmsUndelivered
 	case preset.Bounce, preset.Complaint, preset.Delay, preset.Drop:
 		return nil // email's kinds: a Preset that names one on sms reports no final state
 	}

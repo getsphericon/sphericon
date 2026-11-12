@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // A collected Event enrolls its Contact in the Automation it triggers: the ingest publishes it,
@@ -88,7 +90,7 @@ func TestOpenedAutomationEmailStartsAnotherAutomation(t *testing.T) {
 		Body:         HTML("Welcome"),
 	})
 	w.PublishAutomation(Automation{
-		TriggerEvent: "email.opened",
+		TriggerEvent: systemevent.EmailOpened,
 		Subject:      "Second email",
 		Body:         HTML("Thanks for reading"),
 	})
@@ -101,7 +103,7 @@ func TestOpenedAutomationEmailStartsAnotherAutomation(t *testing.T) {
 	// The second Automation's own email is opened: that Event starts a third Automation, not the
 	// second again.
 	w.PublishAutomation(Automation{
-		TriggerEvent: "email.opened",
+		TriggerEvent: systemevent.EmailOpened,
 		Subject:      "Third email",
 		Body:         HTML("Still reading"),
 	})

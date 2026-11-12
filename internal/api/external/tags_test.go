@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -22,7 +23,7 @@ func tagNames(items []externalapi.TagResource) []string {
 // nobody; contact 2 has none.
 func TestExternalTagsListAndPerContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	ctx := context.Background()
 
 	listed, err := c.TagsList(ctx, externalapi.TagsListParams{})
@@ -39,7 +40,7 @@ func TestExternalTagsListAndPerContact(t *testing.T) {
 
 func TestExternalTagsApplyAndRemove(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 	ctx := context.Background()
 
 	// First use creates the Tag and applies it.
@@ -83,20 +84,20 @@ func TestExternalTagsRequireScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	readOnly := env.ExternalScoped(t, "contacts:read")
+	readOnly := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	_, err := readOnly.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "x"}, externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactAliceID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	err = readOnly.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: entityIDString(fixtures.ContactAliceID), Name: "vip"})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	writeOnly := env.ExternalScoped(t, "contacts:write")
+	writeOnly := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	_, err = writeOnly.TagsList(ctx, externalapi.TagsListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 func TestExternalTagsApplyRefusesAForeignContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 	ctx := context.Background()
 
 	_, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "brand-new"}, externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactGlobexID)})

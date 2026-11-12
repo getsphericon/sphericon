@@ -19,7 +19,7 @@ import (
 func TestTrackingRecordsItsFactBeforeTheReportProjection(t *testing.T) {
 	at := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, func() time.Time { return at })
 	token, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)

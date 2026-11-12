@@ -7,16 +7,17 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 func TestSourceIdentitySeparatesSemanticFactsAndIsStableAcrossRedelivery(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		upstream := rapid.StringMatching(`[a-zA-Z0-9:._/@-]{1,80}`).Draw(t, "upstream")
-		first := events.Envelope{ID: "first-envelope", Name: events.NameEmailDelivered, DedupKey: upstream}
+		first := events.Envelope{ID: "first-envelope", Name: systemevent.EmailDelivered, DedupKey: upstream}
 		retry := first
 		retry.ID = "retry-envelope"
 		anotherFact := first
-		anotherFact.Name = events.NameEmailBounced
+		anotherFact.Name = systemevent.EmailBounced
 		assert.Equal(t, first.SourceID(), retry.SourceID())
 		assert.NotEqual(t, first.SourceID(), anotherFact.SourceID())
 		assert.Equal(t, "unidentified-envelope", (events.Envelope{ID: "unidentified-envelope"}).SourceID())

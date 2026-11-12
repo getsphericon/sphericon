@@ -17,7 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
-	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
@@ -127,7 +126,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		return nil, fmt.Errorf("preflight broadcast %d: %w", b.ID, err)
 	}
 	if hold != "" {
-		if err := setHold(ctx, s, b.ID, holdreason.Reason(hold)); err != nil {
+		if err := setHold(ctx, s, b.ID, hold); err != nil {
 			return nil, err
 		}
 		return nil, &HeldError{Reason: hold}
@@ -344,7 +343,7 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, recipientI
 		return nil, err
 	}
 	if route.Held() {
-		if err := setHold(ctx, s, b.ID, holdreason.Reason(route.Hold)); err != nil {
+		if err := setHold(ctx, s, b.ID, route.Hold); err != nil {
 			return nil, err
 		}
 		return nil, &HeldError{Reason: route.Hold}

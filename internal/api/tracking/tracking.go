@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 
@@ -71,7 +72,7 @@ func New(d Deps) http.Handler {
 	mux := http.NewServeMux()
 	appURL := strings.TrimRight(d.AppURL, "/")
 
-	mux.HandleFunc("GET /e/o/{token}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET "+paths.LinkOpen+"{token}", func(w http.ResponseWriter, r *http.Request) {
 		err := d.Engagement.Open(r.Context(), r.PathValue("token"), hit(r, d.Limiter))
 		switch {
 		case errors.Is(err, engagement.ErrNotFound):
@@ -87,7 +88,7 @@ func New(d Deps) http.Handler {
 		_, _ = w.Write(pixelGIF)
 	})
 
-	mux.HandleFunc("GET /e/c/{token}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET "+paths.LinkClick+"{token}", func(w http.ResponseWriter, r *http.Request) {
 		dest, err := d.Engagement.Click(r.Context(), r.PathValue("token"), hit(r, d.Limiter))
 		switch {
 		case errors.Is(err, engagement.ErrInvalidToken):
@@ -102,7 +103,7 @@ func New(d Deps) http.Handler {
 		}
 	})
 
-	mux.HandleFunc("GET /c/{token}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET "+paths.ShortLink+"{token}", func(w http.ResponseWriter, r *http.Request) {
 		dest, err := d.Engagement.ShortLink(r.Context(), r.PathValue("token"), hit(r, d.Limiter))
 		switch {
 		case errors.Is(err, engagement.ErrNotFound):
@@ -115,7 +116,7 @@ func New(d Deps) http.Handler {
 		}
 	})
 
-	mux.HandleFunc("GET /e/u/{token}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET "+paths.LinkUnsubscribe+"{token}", func(w http.ResponseWriter, r *http.Request) {
 		tokenStr := r.PathValue("token")
 		target, err := d.Tracker.DecodeUnsub(tokenStr)
 		if err != nil {
@@ -133,7 +134,7 @@ func New(d Deps) http.Handler {
 		http.Redirect(w, r, confirmRedirect(d.Tracker, appURL, tokenStr, target), http.StatusSeeOther)
 	})
 
-	mux.HandleFunc("POST /e/u/{token}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST "+paths.LinkUnsubscribe+"{token}", func(w http.ResponseWriter, r *http.Request) {
 		target, err := d.Tracker.DecodeUnsub(r.PathValue("token"))
 		if err != nil {
 			http.Error(w, "invalid token", http.StatusBadRequest)
@@ -156,7 +157,7 @@ func New(d Deps) http.Handler {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	mux.HandleFunc("GET /e/confirm/{token}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET "+paths.LinkConfirm+"{token}", func(w http.ResponseWriter, r *http.Request) {
 		tokenStr := r.PathValue("token")
 		target, err := d.Tracker.DecodeConfirm(tokenStr)
 		if err == nil && !onHost(r, target.WorkspaceID) {

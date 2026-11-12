@@ -137,6 +137,7 @@ namespace SitePublicInvitations {
   @useAuth(ApiKeyAuth<ApiKeyLocation.cookie, "JWT"> | NoAuth)
   @post
   @route("/{token}/accept")
+  @rateLimited("human")
   op accept(@path token: string, @body body: SiteAcceptInvitationInput):
     | OkResponse
     | Problem;

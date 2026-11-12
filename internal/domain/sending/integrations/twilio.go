@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -19,10 +20,6 @@ import (
 // signs its callbacks with is the twilio Preset's auth_token param, so that either is rotated
 // alone. Saving it reads the sender with the credentials before the save commits (a wrong or
 // revoked key refuses the save) and points the sender's callbacks at the Integration's hook.
-
-// TwilioPreset is the built-in Preset every Twilio Integration reads its callbacks with. It is
-// fixed: a Twilio Integration takes no other, and no other Integration takes it.
-const TwilioPreset = "twilio"
 
 // twilioTimeout bounds the Twilio calls of one write.
 const twilioTimeout = 30 * time.Second
@@ -135,7 +132,7 @@ func twilioRefusal(err error, from string) error {
 // Account SID and the API key stay the same. It returns the sealed config to store, nil when the
 // edit leaves it.
 func (m *Module) editTwilio(ctx context.Context, row *ent.Integration, in UpdateInput) (*string, error) {
-	if name := in.Preset.Over(row.Preset); in.Preset.Changes() && (name == nil || *name != TwilioPreset) {
+	if name := in.Preset.Over(row.Preset); in.Preset.Changes() && (name == nil || *name != preset.BuiltinTwilio) {
 		return nil, refuse(fieldPreset, i18n.ErrorsIntegrationTwilioPresetFixed, nil)
 	}
 	cfg, ok := in.Config.Get()

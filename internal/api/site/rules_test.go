@@ -11,6 +11,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -28,7 +29,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 
 	created, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name:          "Tag the vips who clicked",
-		TriggerEvents: []string{"email.clicked", "link_followed", "email.clicked"},
+		TriggerEvents: []string{systemevent.EmailClicked, "link_followed", systemevent.EmailClicked},
 		Condition:     siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, vipCondition)),
 		Actions:       []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "clicker"), tagAction(siteapi.SiteRuleActionTypeRemoveTag, "cold")},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
@@ -39,7 +40,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	draft, drafted := res.Draft.Get()
 	require.True(t, drafted)
 	assert.EqualValues(t, 1, draft.Number)
-	assert.Equal(t, []string{"email.clicked", "link_followed"}, draft.TriggerEvents, "a repeated Trigger event is kept once")
+	assert.Equal(t, []string{systemevent.EmailClicked, "link_followed"}, draft.TriggerEvents, "a repeated Trigger event is kept once")
 	require.Len(t, draft.Actions, 2)
 	assert.Equal(t, siteapi.SiteRuleActionTypeApplyTag, draft.Actions[0].Type)
 	assert.Equal(t, "clicker", draft.Actions[0].Tag.Or(""))
@@ -63,7 +64,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 
 	upd, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(res.ID))),
 		Name:          siteapi.NewOptName("Tag the clickers"),
-		TriggerEvents: []string{"email.clicked"},
+		TriggerEvents: []string{systemevent.EmailClicked},
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	updRes := upd
@@ -71,10 +72,10 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	edited, drafted := updRes.Draft.Get()
 	require.True(t, drafted, "an edit of a live Rule is a draft")
 	assert.EqualValues(t, 2, edited.Number)
-	assert.Equal(t, []string{"email.clicked"}, edited.TriggerEvents)
+	assert.Equal(t, []string{systemevent.EmailClicked}, edited.TriggerEvents)
 	assert.Len(t, edited.Actions, 2, "an update that leaves the actions out keeps them")
 	stillLive, _ := updRes.Live.Get()
-	assert.Equal(t, []string{"email.clicked", "link_followed"}, stillLive.TriggerEvents, "the live version is untouched")
+	assert.Equal(t, []string{systemevent.EmailClicked, "link_followed"}, stillLive.TriggerEvents, "the live version is untouched")
 	assert.Equal(t, siteapi.SiteRuleStatusActive, updRes.Status)
 
 	deact, err := c.SiteRulesDeactivate(ctx, siteapi.SiteRulesDeactivateParams{WorkspaceId: workspaceID, ID: res.ID})

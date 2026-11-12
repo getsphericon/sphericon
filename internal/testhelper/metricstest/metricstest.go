@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // Scrape is one Prometheus exposition body taken from the real /metrics handler.
@@ -36,7 +37,7 @@ func StartMetrics(t *testing.T) {
 func ScrapeMetrics(t *testing.T) Scrape {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	telemetry.MetricsHandler().ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", nil))
+	telemetry.MetricsHandler().ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, paths.Metrics, nil))
 	body, err := io.ReadAll(rec.Result().Body)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, rec.Code, string(body))

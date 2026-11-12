@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // Content that cannot render is refused where it is saved, with the reason (ADR 0040).
 func TestExternalRefusesContentThatCannotRender(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "templates:write", "broadcasts:write")
+	c := env.ExternalScoped(t, apitokens.ScopeTemplatesWrite, apitokens.ScopeBroadcastsWrite)
 	ctx := context.Background()
 
 	_, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{

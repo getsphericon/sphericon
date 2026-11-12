@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -69,7 +70,7 @@ func (m *Module) Bootstrap(ctx context.Context, presented string, in Input) (Min
 }
 
 // ErrUnknownScope is a scope that is not in the vocabulary (Scopes).
-var ErrUnknownScope = validation.RefuseField("scopes", "apitokens: unknown scope", i18n.ErrorsTokenScopeUnknown)
+var ErrUnknownScope = validation.RefuseField(fieldname.Scopes, "apitokens: unknown scope", i18n.ErrorsTokenScopeUnknown)
 
 // unknownScope refuses the scope named scope.
 func unknownScope(scope string) error {

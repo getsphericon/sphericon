@@ -6,12 +6,14 @@ import {
   siteCapturedMessagesDeleteAllMutation,
   siteCapturedMessagesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteCapturedMessageSummary } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
 import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspaceId/captured-messages/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 
 export function CapturedMessagesListPage() {
   const { formatDateTime } = useFormat()
@@ -65,7 +67,10 @@ export function CapturedMessagesListPage() {
           })
         }
         columns={[
-          { accessor: 'recipient', title: t(($) => $.capturedMessages.recipient) },
+          {
+            accessor: 'recipient',
+            title: t(($) => $.capturedMessages.recipient),
+          } satisfies FieldColumn<SiteCapturedMessageSummary>,
           {
             accessor: 'subject',
             title: t(($) => $.capturedMessages.subject),

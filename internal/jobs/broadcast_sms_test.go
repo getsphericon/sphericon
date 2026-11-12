@@ -15,10 +15,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -49,7 +49,7 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).OnlyX(ctx)
 	assert.Equal(t, channels.SMS, msg.Channel)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID))
-	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactLacunaBeaID})
+	smsSent := env.QueuedCount(t, systemevent.SmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactLacunaBeaID})
 	assert.Equal(t, 1, smsSent)
 	figures := figuresOf(t, env, id)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, figures)

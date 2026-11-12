@@ -4,10 +4,14 @@ import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { siteTransactionalEmailsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteTransactionalEmailStatus } from '../../generated/site/types.gen.ts'
+import type {
+  SiteTransactionalEmailResource,
+  SiteTransactionalEmailStatus,
+} from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 
 const STATUS_COLORS: Record<SiteTransactionalEmailStatus, string> = {
   pending: 'yellow',
@@ -46,7 +50,10 @@ export function TransactionalEmailsListPage() {
         collection={t(($) => $.transactionalEmails.title)}
         empty={{ title: t(($) => $.transactionalEmails.noRecords) }}
         columns={[
-          { accessor: 'destination', title: t(($) => $.transactionalEmails.destinationLabel) },
+          {
+            accessor: 'destination',
+            title: t(($) => $.transactionalEmails.destinationLabel),
+          } satisfies FieldColumn<SiteTransactionalEmailResource>,
           {
             accessor: 'status',
             title: t(($) => $.transactionalEmails.statusLabel),

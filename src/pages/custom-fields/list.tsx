@@ -15,6 +15,7 @@ import {
 import type { SiteCustomFieldResource } from '../../generated/site/types.gen.ts'
 import { Route as customFieldsRoute } from '../../routes/workspaces/$workspaceId/custom-fields/index.tsx'
 import { can } from '../../utils/permissions.ts'
+import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { customFieldEditor } from './customFieldEditor.ts'
 
 // The catalogue is small and the server returns it whole (the segment builder needs all of it),
@@ -72,8 +73,12 @@ function CustomFieldsTable({
         withTableBorder
         records={records}
         columns={[
-          { accessor: 'name', title: t(($) => $.customFields.nameLabel) },
-          { accessor: 'key', title: t(($) => $.customFields.keyLabel) },
+          { accessor: 'name', title: t(($) => $.customFields.nameLabel) } satisfies FieldColumn<
+            (typeof records)[number]
+          >,
+          { accessor: 'key', title: t(($) => $.customFields.keyLabel) } satisfies FieldColumn<
+            (typeof records)[number]
+          >,
           {
             accessor: 'type',
             title: t(($) => $.customFields.typeLabel),

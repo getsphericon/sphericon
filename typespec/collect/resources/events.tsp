@@ -7,6 +7,8 @@ model CollectEventInput {
   @maxLength(255)
   visitorId: string;
 
+  /** The customer's own action; one in the namespace of a System event (`SystemEventAction`) is
+   * refused */
   @minLength(1)
   @maxLength(255)
   action: string;

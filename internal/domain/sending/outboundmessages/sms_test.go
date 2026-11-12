@@ -14,12 +14,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -47,7 +49,7 @@ func textTo(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAcco
 func connectConfirmedTexter(t *testing.T, env *testhelper.TestEnv) testhelper.TwilioAccount {
 	t.Helper()
 	account := env.AcmeTwilio(t)
-	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
 		Channel: externalapi.ConsentChannelSMS, Destination: fixtures.ContactTexterPhone,
 		Wording: "Text me offers from Acme. Reply STOP to opt out.", Source: "checkout form", Brand: "Acme",
 	})
@@ -100,7 +102,7 @@ func TestATextTwilioRefusesAsOptedOutRecordsTheOptOutAndIsSkipped(t *testing.T) 
 	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(stop.ContactID))
 	consented := env.DB.Confirmation.Query().Where(confirmation.ChannelEQ(channels.SMS), confirmation.DestinationEQ(fixtures.ContactTexterPhone)).ExistX(ctx)
 	assert.False(t, consented, "the refused number's consent ends with its stop")
-	unsubscribed := env.QueuedMessages(t, events.NameSmsUnsubscribed)
+	unsubscribed := env.QueuedMessages(t, systemevent.SmsUnsubscribed)
 	require.Len(t, unsubscribed, 1)
 	assert.Equal(t, strconv.Itoa(fixtures.ContactTexterID), fmt.Sprint(unsubscribed[0].Data["contactId"]))
 	assert.Equal(t, events.UnsubscribedByRefusedSend, unsubscribed[0].Data["via"])

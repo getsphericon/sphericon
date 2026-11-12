@@ -10,6 +10,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // timeout bounds a probe: a server that does not answer within it is not healthy.
@@ -21,7 +23,7 @@ func Probe(ctx context.Context, client *http.Client, port string) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	url := "http://" + net.JoinHostPort("127.0.0.1", port) + "/healthz"
+	url := "http://" + net.JoinHostPort("127.0.0.1", port) + paths.Healthz
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return err

@@ -99,10 +99,10 @@ func (s *Server) authServerMetadata(w http.ResponseWriter, r *http.Request) {
 		TokenEndpoint:                     s.issuer + tokenPath,
 		RegistrationEndpoint:              s.issuer + registerPath,
 		ScopesSupported:                   oauthclients.SupportedScopes(),
-		ResponseTypesSupported:            []string{"code"},
+		ResponseTypesSupported:            []string{oauthclients.ResponseTypeCode},
 		GrantTypesSupported:               []string{grantAuthorizationCode, grantRefreshToken},
-		TokenEndpointAuthMethodsSupported: []string{"none"},
-		CodeChallengeMethodsSupported:     []string{"S256"},
+		TokenEndpointAuthMethodsSupported: []string{oauthclients.AuthMethodNone},
+		CodeChallengeMethodsSupported:     []string{oauthclients.PKCEMethodS256},
 		ClientIDMetadataDocumentSupported: true,
 	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -113,34 +113,34 @@ func (s *Server) authServerMetadata(w http.ResponseWriter, r *http.Request) {
 func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	var meta oauthex.ClientRegistrationMetadata
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&meta); err != nil {
-		registrationError(r.Context(), w, "invalid_client_metadata", "body must be a JSON object")
+		registrationError(r.Context(), w, errInvalidClientMetadata, "body must be a JSON object")
 		return
 	}
-	if m := meta.TokenEndpointAuthMethod; m != "" && m != "none" {
-		registrationError(r.Context(), w, "invalid_client_metadata", "only token_endpoint_auth_method none is supported (public clients with PKCE)")
+	if m := meta.TokenEndpointAuthMethod; m != "" && m != oauthclients.AuthMethodNone {
+		registrationError(r.Context(), w, errInvalidClientMetadata, "only token_endpoint_auth_method none is supported (public clients with PKCE)")
 		return
 	}
 	if len(meta.GrantTypes) > 0 && !slices.Contains(meta.GrantTypes, grantAuthorizationCode) {
-		registrationError(r.Context(), w, "invalid_client_metadata", "grant_types must include authorization_code")
+		registrationError(r.Context(), w, errInvalidClientMetadata, "grant_types must include authorization_code")
 		return
 	}
 
 	row, err := s.clients.Register(r.Context(), meta.ClientName, meta.RedirectURIs)
 	if errors.Is(err, oauthclients.ErrRedirectURIsCount) || errors.Is(err, oauthclients.ErrRedirectURIInvalid) {
 		// RFC 7591 names the error of a refused redirect URI; the module's message says why.
-		registrationError(r.Context(), w, "invalid_redirect_uri", validation.Message(err))
+		registrationError(r.Context(), w, errInvalidRedirectURI, validation.Message(err))
 		return
 	}
 	if err != nil {
-		writeOAuthError(r.Context(), w, http.StatusInternalServerError, "server_error", "")
+		writeOAuthError(r.Context(), w, http.StatusInternalServerError, errServerError, "")
 		return
 	}
 
 	resp := oauthex.ClientRegistrationResponse{
 		RedirectURIs:            row.RedirectUris,
-		TokenEndpointAuthMethod: "none",
+		TokenEndpointAuthMethod: oauthclients.AuthMethodNone,
 		GrantTypes:              []string{grantAuthorizationCode, grantRefreshToken},
-		ResponseTypes:           []string{"code"},
+		ResponseTypes:           []string{oauthclients.ResponseTypeCode},
 		ClientName:              row.Name,
 		ClientID:                row.ClientID,
 		ClientIDIssuedAt:        row.CreatedAt,
@@ -158,14 +158,14 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 	// Until the client and redirect URI check out, errors must not redirect.
 	if _, err := s.clients.Client(r.Context(), q.Get("client_id"), redirectURI); err != nil {
 		if errors.Is(err, oauthclients.ErrUnknownClient) || errors.Is(err, oauthclients.ErrInvalidRequest) {
-			writeOAuthError(r.Context(), w, http.StatusBadRequest, "invalid_request", err.Error())
+			writeOAuthError(r.Context(), w, http.StatusBadRequest, errInvalidRequest, err.Error())
 			return
 		}
-		writeOAuthError(r.Context(), w, http.StatusInternalServerError, "server_error", "")
+		writeOAuthError(r.Context(), w, http.StatusInternalServerError, errServerError, "")
 		return
 	}
 	if kind, msg := checkAuthorizeParams(q, s.resource); msg != "" {
-		target, err := oauthclients.RedirectWith(redirectURI, url.Values{"error": {kind}, "error_description": {msg}}, q.Get("state"))
+		target, err := oauthclients.RedirectWith(redirectURI, url.Values{"error": {string(kind)}, "error_description": {msg}}, q.Get("state"))
 		if err != nil {
 			writeOAuthError(r.Context(), w, http.StatusBadRequest, kind, msg)
 			return
@@ -179,14 +179,14 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 // checkAuthorizeParams returns the OAuth error code and description for an
 // invalid authorization request. A resource indicator (RFC 8707), when sent,
 // must name the MCP resource this server protects; an absent one is accepted.
-func checkAuthorizeParams(q url.Values, resource string) (kind, msg string) {
+func checkAuthorizeParams(q url.Values, resource string) (kind errorCode, msg string) {
 	switch {
-	case q.Get("response_type") != "code":
-		return "invalid_request", "response_type must be code"
-	case q.Get("code_challenge_method") != "S256" || !oauthclients.ValidPKCE(q.Get("code_challenge")):
-		return "invalid_request", "PKCE with code_challenge_method S256 is required"
+	case q.Get("response_type") != oauthclients.ResponseTypeCode:
+		return errInvalidRequest, "response_type must be code"
+	case q.Get("code_challenge_method") != oauthclients.PKCEMethodS256 || !oauthclients.ValidPKCE(q.Get("code_challenge")):
+		return errInvalidRequest, "PKCE with code_challenge_method S256 is required"
 	case q.Get("resource") != "" && q.Get("resource") != resource:
-		return "invalid_target", "unknown resource"
+		return errInvalidTarget, "unknown resource"
 	}
 	return "", ""
 }
@@ -195,11 +195,11 @@ func checkAuthorizeParams(q url.Values, resource string) (kind, msg string) {
 // refresh_token grant rotates it.
 func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		writeOAuthError(r.Context(), w, http.StatusBadRequest, "invalid_request", "body must be form encoded")
+		writeOAuthError(r.Context(), w, http.StatusBadRequest, errInvalidRequest, "body must be form encoded")
 		return
 	}
 	if res := r.PostForm.Get("resource"); res != "" && res != s.resource {
-		writeOAuthError(r.Context(), w, http.StatusBadRequest, "invalid_target", "unknown resource")
+		writeOAuthError(r.Context(), w, http.StatusBadRequest, errInvalidTarget, "unknown resource")
 		return
 	}
 
@@ -218,7 +218,7 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 			RefreshToken: r.PostForm.Get("refresh_token"), ClientID: r.PostForm.Get("client_id"), Scope: r.PostForm.Get("scope"),
 		})
 	default:
-		writeOAuthError(r.Context(), w, http.StatusBadRequest, "unsupported_grant_type", "only authorization_code and refresh_token are supported")
+		writeOAuthError(r.Context(), w, http.StatusBadRequest, errUnsupportedGrantType, "only authorization_code and refresh_token are supported")
 		return
 	}
 	if code, ok := exchangeRefusal(err); ok {
@@ -226,7 +226,7 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeOAuthError(r.Context(), w, http.StatusInternalServerError, "server_error", "")
+		writeOAuthError(r.Context(), w, http.StatusInternalServerError, errServerError, "")
 		return
 	}
 
@@ -250,25 +250,41 @@ func writeJSON(ctx context.Context, w http.ResponseWriter, code int, body any) {
 
 // exchangeRefusal is the RFC 6749 section 5.2 error code of a refused exchange: a scope beyond the
 // grant is invalid_scope, any other refusal invalid_grant. An error that is no refusal is not one.
-func exchangeRefusal(err error) (string, bool) {
+func exchangeRefusal(err error) (errorCode, bool) {
 	switch {
 	case errors.Is(err, apitokens.ErrScopeExceedsGrant):
-		return "invalid_scope", true
+		return errInvalidScope, true
 	case errors.Is(err, oauthclients.ErrInvalidGrant):
-		return "invalid_grant", true
+		return errInvalidGrant, true
 	}
 	return "", false
 }
 
+// errorCode is the `error` of an OAuth error response: RFC 6749 section 5.2's, RFC 7591's for a
+// registration and RFC 8707's for a resource.
+type errorCode string
+
+// The error codes this server answers with.
+const (
+	errInvalidRequest        errorCode = "invalid_request"
+	errInvalidClientMetadata errorCode = "invalid_client_metadata"
+	errInvalidRedirectURI    errorCode = "invalid_redirect_uri"
+	errInvalidTarget         errorCode = "invalid_target"
+	errInvalidScope          errorCode = "invalid_scope"
+	errInvalidGrant          errorCode = "invalid_grant"
+	errUnsupportedGrantType  errorCode = "unsupported_grant_type"
+	errServerError           errorCode = "server_error"
+)
+
 // writeOAuthError renders an RFC 6749 section 5.2 error response.
-func writeOAuthError(ctx context.Context, w http.ResponseWriter, code int, kind, description string) {
-	body := map[string]string{"error": kind}
+func writeOAuthError(ctx context.Context, w http.ResponseWriter, code int, kind errorCode, description string) {
+	body := map[string]string{"error": string(kind)}
 	if description != "" {
 		body["error_description"] = description
 	}
 	writeJSON(ctx, w, code, body)
 }
 
-func registrationError(ctx context.Context, w http.ResponseWriter, kind, description string) {
+func registrationError(ctx context.Context, w http.ResponseWriter, kind errorCode, description string) {
 	writeOAuthError(ctx, w, http.StatusBadRequest, kind, description)
 }

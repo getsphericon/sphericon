@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // A valid Standard Webhooks secret (whsec_ + base64), from the spec's test vectors.
@@ -70,10 +71,10 @@ func TestClientReachesAnAllowlistedReceiverAndItVerifiesTheSignature(t *testing.
 		w.WriteHeader(http.StatusAccepted)
 	})
 
-	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "contact.created", "evt_1", body, time.Now())
+	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, systemevent.ContactCreated, "evt_1", body, time.Now())
 	require.NoError(t, err)
 	require.NoError(t, verifyErr)
-	assert.Equal(t, "contact.created", gotEvent)
+	assert.Equal(t, systemevent.ContactCreated, gotEvent)
 }
 
 // The allowlist names a port too: the same host on another port stays refused.

@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -28,7 +29,7 @@ var (
 	sentBroadcast  = entityIDString(fixtures.BroadcastSentID)
 )
 
-var authorScopes = []string{"broadcasts:read", "broadcasts:write"}
+var authorScopes = []apitokens.Scope{apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite}
 
 func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -161,8 +162,8 @@ func TestExternalBroadcastReport(t *testing.T) {
 func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	readOnly := env.ExternalScoped(t, "broadcasts:read")
-	noScope := env.ExternalScoped(t, "contacts:read")
+	readOnly := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
+	noScope := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 
 	// read scope reads...
 	_, err := readOnly.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: draftBroadcast})
@@ -205,12 +206,12 @@ func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
 	assert.Equal(t, broadcast.StatusScheduled, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastScheduledID).Status)
 
 	// emails:send is a different lock.
-	emailer := env.ExternalScoped(t, "emails:send")
+	emailer := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	_, err = emailer.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// broadcasts:send alone schedules and unschedules.
-	sender := env.ExternalScoped(t, "broadcasts:send")
+	sender := env.ExternalScoped(t, apitokens.ScopeBroadcastsSend)
 	b, err := sender.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.BroadcastStatusScheduled, b.Status)
@@ -227,7 +228,7 @@ func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
 func TestExternalBroadcastScheduleRefusesWhatCannotBeScheduled(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "broadcasts:send")
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsSend)
 	body := &externalapi.ScheduleBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(sentBroadcast))), ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))}
 
 	_, err := c.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: sentBroadcast})
@@ -300,7 +301,7 @@ func TestExternalBroadcastSegmentRefusesAnArchivedSegment(t *testing.T) {
 // A Broadcast that already points at an archived Segment keeps showing it.
 func TestExternalBroadcastKeepsShowingItsArchivedSegment(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "broadcasts:read")
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
 	ctx := context.Background()
 
 	b, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: entityIDString(fixtures.BroadcastArchivedID)})

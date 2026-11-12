@@ -16,6 +16,7 @@ import (
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -165,7 +166,7 @@ func readExportEvents(t *testing.T, c *externalapi.Client, cursor string, limit 
 
 func exportClient(t *testing.T, env *testhelper.TestEnv, workspaceID int64) *externalapi.Client {
 	t.Helper()
-	return env.ExternalWithToken(t, env.ScopedBearerFor(t, workspaceID, "export:read"))
+	return env.ExternalWithToken(t, env.ScopedBearerFor(t, workspaceID, apitokens.ScopeExportRead))
 }
 
 func TestExportEventsReadsTheWholeHistoryFromAnEmptyCursor(t *testing.T) {
@@ -235,7 +236,7 @@ func TestExportEventsDeliversAnAnonymizedSystemEventAgain(t *testing.T) {
 
 func TestExportEventsNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	for _, scopes := range [][]string{{}, {"contacts:read"}, {"contacts:read", "events:read", "audit:read"}} {
+	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsRead}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
 		_, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)

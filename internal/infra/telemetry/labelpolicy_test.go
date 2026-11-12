@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -56,7 +57,7 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	env := testhelper.Setup(t)
 	// Loaded after Setup: it points SPHERICON_DATABASE_URL at this process's database, where river's
 	// tables are, and the job runtime below opens its own pool on it.
-	cfg, err := config.Load("test")
+	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	workspace := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
 	contactEmail := fixtures.ContactAliceEmail
@@ -132,12 +133,12 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	// soft bounce is one the suppression consumer turns down without a write, so nothing commits to
 	// this process's database.
 	data, err := json.Marshal(&events.EmailDelivery{
-		Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
-		Email: contactEmail, BounceKind: events.BounceKindSoft,
+		Action: systemevent.EmailBounced, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
+		Email: contactEmail, BounceKind: systemevent.BounceKindSoft,
 	})
 	require.NoError(t, err)
 	_, err = admin.Insert(ctx, jobs.SuppressEventArgs{
-		ID: "01JLABELPOLICY", Name: events.NameEmailBounced, Version: 1, WorkspaceID: fixtures.AcmeID, Data: data,
+		ID: "01JLABELPOLICY", Name: systemevent.EmailBounced, Version: 1, WorkspaceID: fixtures.AcmeID, Data: data,
 	}, nil)
 	require.NoError(t, err)
 	worked := `kind="` + jobs.SuppressEventArgs{}.Kind() + `"`

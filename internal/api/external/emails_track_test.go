@@ -11,8 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -28,7 +30,7 @@ var (
 
 func sendLinked(t *testing.T, env *testhelper.TestEnv, dest string, track externalapi.OptBool) *externalapi.SendTransactionalEmailResponse {
 	t.Helper()
-	res, err := env.ExternalScoped(t, "emails:send").EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
+	res, err := env.ExternalScoped(t, apitokens.ScopeEmailsSend).EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId:  externalapi.EntityId(fixtures.TemplateWithLinkID),
 		Destination: externalapi.EmailAddress(dest),
 		Track:       track,
@@ -78,10 +80,10 @@ func TestTrackedTransactionalSendRecordsOpenAndClickAndStaysTransactional(t *tes
 	assert.Equal(t, http.StatusFound, redirect.Code)
 	assert.Equal(t, orderLink, redirect.Header().Get("Location"))
 
-	opened := env.QueuedEvents(t, events.NameEmailOpened)
+	opened := env.QueuedEvents(t, systemevent.EmailOpened)
 	require.Len(t, opened, 1)
 	assert.EqualValues(t, fixtures.ContactLiamID, opened[0].(*events.EmailEngagement).ContactID)
-	clicked := env.QueuedEvents(t, events.NameEmailClicked)
+	clicked := env.QueuedEvents(t, systemevent.EmailClicked)
 	require.Len(t, clicked, 1)
 	assert.Equal(t, orderLink, clicked[0].(*events.EmailEngagement).URL)
 }
@@ -95,7 +97,7 @@ func TestTrackedTransactionalSendToAnAddressWithNoContactRecordsByAddress(t *tes
 	require.NotEmpty(t, pixel)
 	assert.Equal(t, http.StatusOK, get(t, env, pixel).Code)
 
-	opened := env.QueuedEvents(t, events.NameEmailOpened)
+	opened := env.QueuedEvents(t, systemevent.EmailOpened)
 	require.Len(t, opened, 1)
 	got := opened[0].(*events.EmailEngagement)
 	assert.Zero(t, got.ContactID)

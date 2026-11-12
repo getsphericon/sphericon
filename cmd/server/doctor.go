@@ -16,12 +16,12 @@ func doctorCommand(d deps) *cli.Command {
 	return &cli.Command{
 		Name:  "doctor",
 		Usage: "check this Instance's configuration and say how to fix what is wrong",
-		Flags: []cli.Flag{&cli.BoolFlag{Name: "json", Usage: "print the report as JSON, for monitoring"}},
+		Flags: []cli.Flag{&cli.BoolFlag{Name: flagJSON, Usage: "print the report as JSON, for monitoring"}},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
 			}
-			return doctor.Diagnose(ctx, d.env, d.doctor, out(cmd), cmd.Bool("json"))
+			return doctor.Diagnose(ctx, d.env, d.doctor, out(cmd), cmd.Bool(flagJSON))
 		},
 	}
 }

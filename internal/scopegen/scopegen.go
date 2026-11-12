@@ -1,7 +1,8 @@
 // Package scopegen writes the access tables of the API surfaces (ADR 0026, ADR 0061) from what
 // the TypeSpec contract declares on each operation of an OpenAPI document, and the Go types of
 // the contract's access vocabularies (Permission, API token scope, the scopes a User may give, the
-// Service credential scope) in the packages that read them. A Table is one generated Go file; Tables lists every file `cmd/scopegen` writes. Every
+// Service credential scope) in the packages that read them, with the other contract vocabulary the
+// core shares (the System event actions). A Table is one generated Go file; Tables lists every file `cmd/scopegen` writes. Every
 // operation of a table's document must carry the declaration the table reads, and a missing or
 // misplaced one fails generation, so an operation is never open by omission: a surface refuses an
 // operation its table has no entry for.
@@ -114,10 +115,18 @@ func PerOperation(row func(Operation) (string, error)) func(Document) ([]string,
 	}
 }
 
+// The OpenAPI documents the tables read.
+const (
+	siteSpec     = "openapi/site.openapi.json"
+	externalSpec = "openapi/external.openapi.json"
+	serviceSpec  = "openapi/service.openapi.json"
+)
+
 // Tables are the files `cmd/scopegen` writes.
 var Tables = []Table{
 	ServiceScopes, ExternalScopes, ExternalPermissions, SitePermissions, GrantPermissions,
-	Permissions, TokenScopes, CredentialScopes, UserScopes,
+	Permissions, TokenScopes, CredentialScopes, UserScopes, SystemEventActions, ConditionCombinators, SiteRateLimits,
+	StaffRateLimits,
 }
 
 // Write reads the table's document and writes its Go file.
@@ -232,9 +241,10 @@ func Pascal(s string, sep func(rune) bool) string {
 	return b.String()
 }
 
-// valueName is the Go name of an enum value written `resource:verb` (a scope, a Permission).
+// valueName is the Go name of an enum value written `resource:verb` (a scope, a Permission) or
+// `resource.verb` (a System event's action).
 func valueName(v string) string {
-	return Pascal(v, func(r rune) bool { return r == ':' || r == '_' })
+	return Pascal(v, func(r rune) bool { return r == ':' || r == '.' || r == '_' })
 }
 
 // names renders values as a Go slice literal of the identifiers prefix+valueName, or nil.

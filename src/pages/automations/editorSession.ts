@@ -4,6 +4,7 @@ import {
   siteAutomationsRevert,
   siteAutomationsUpdate,
 } from '../../generated/site/sdk.gen.ts'
+import { SiteAutomationStepType } from '../../generated/site/types.gen.ts'
 import type {
   SiteAutomationResource,
   SiteAutomationsUpdateData,
@@ -11,7 +12,6 @@ import type {
 import { graphToSteps, linearGraphNodes, stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
-import { HTTP_NODE_TYPE } from './nodes.ts'
 
 type Path = SiteAutomationsUpdateData['path']
 export interface AutomationContent {
@@ -61,7 +61,7 @@ export function applyHttpIdentities(nodes: AutomationGraph['nodes'], identities:
     const identity = byNode.get(node.id)
     if (
       !identity ||
-      node.data.type !== HTTP_NODE_TYPE ||
+      node.data.type !== SiteAutomationStepType.HTTP ||
       node.data.properties.stepId !== identity.previous
     ) {
       return node
@@ -77,7 +77,7 @@ function acknowledge(submission: Submission, resource: SiteAutomationResource) {
   const version = resource.draft ?? resource.live
   const httpSteps = version?.steps.filter((step) => step.type === 'http') ?? []
   const httpNodes = linearGraphNodes(submission.graph).filter(
-    (node) => node.data.type === HTTP_NODE_TYPE,
+    (node) => node.data.type === SiteAutomationStepType.HTTP,
   )
   const identities = httpNodes.flatMap((node, index): HttpIdentity[] => {
     const assigned = httpSteps[index]?.id

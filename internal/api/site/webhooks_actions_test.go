@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -54,7 +55,7 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteWebhooksTestParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 
-	got, err := owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "email.opened"}, params)
+	got, err := owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: systemevent.EmailOpened}, params)
 	require.NoError(t, err)
 	assert.False(t, got.Delivered)
 	assert.Equal(t, siteapi.SiteWebhookErrorKindHTTPStatus, got.Kind.Value)

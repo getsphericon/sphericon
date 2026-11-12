@@ -73,14 +73,14 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	siteSrv, err := siteapi.NewServer(
 		siteHandlers,
 		apiauth.NewSiteSecurityHandler(cfg.JWTSecret, client, site.Clock, cfg.JWTVerifySecrets()...),
-		siteapi.WithPathPrefix("/site"),
+		siteapi.WithPathPrefix(paths.Site),
 		siteapi.WithMiddleware(siteHandlers.Access),
 		siteapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
 		return nil, err
 	}
-	mux.Handle("/site/", problem.Middleware(siteSrv))
+	mux.Handle(paths.Site+"/", problem.Middleware(siteSrv))
 
 	// The Account link's public key set: published only when the link is configured.
 	if site.AccountLink != nil {
@@ -103,7 +103,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// External API — /api (Bearer token auth via ogen SecurityHandler); built by
 	// NewExternalAPI so the MCP surface dispatches through the same server.
-	mux.Handle("/api/", external)
+	mux.Handle(paths.API+"/", external)
 
 	// MCP — /mcp (ADR 0016): tools projected from the external contract and
 	// dispatched in-process through the handler above with the caller's own token.
@@ -117,28 +117,28 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	colSrv, err := collectapi.NewServer(
 		collect,
 		apiauth.NewCollectSecurityHandler(client),
-		collectapi.WithPathPrefix(collectPrefix),
+		collectapi.WithPathPrefix(paths.Collect),
 		collectapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
 		return nil, err
 	}
-	mux.Handle(collectPrefix+"/", problem.Middleware(colSrv))
+	mux.Handle(paths.Collect+"/", problem.Middleware(colSrv))
 
 	// Liveness/readiness probes (no auth) for orchestrators and load balancers.
-	mux.Handle("/healthz", healthzHandler())
-	mux.Handle("/readyz", readyzHandler(db))
+	mux.Handle(paths.Healthz, healthzHandler())
+	mux.Handle(paths.Readyz, readyzHandler(db))
 
 	// Public tracking snippet (no auth) — embedded IIFE bundle.
 	mux.Handle("/t.js", trackerHandler())
 
 	// Public engagement endpoints (open pixel, click redirect, unsubscribe, a short tracked link).
-	mux.Handle("/e/", links)
-	mux.Handle("/c/", links)
+	mux.Handle(paths.Links, links)
+	mux.Handle(paths.ShortLink, links)
 
 	// Inbound provider callbacks (ADR 0037): POST /hooks/{key}, the key of one
 	// Integration, read with that Integration's Preset.
-	mux.Handle("/hooks/", hooks)
+	mux.Handle(paths.Hooks, hooks)
 
 	// Catch-all: the embedded SPA (release builds with -tags embed_spa). Most
 	// specific pattern wins, so this never shadows the API prefixes above.
@@ -186,7 +186,7 @@ func NewExternalAPI(deps apiexternal.Deps, security *apiauth.ExternalSecurityHan
 	srv, err := externalapi.NewServer(
 		apiexternal.NewHandlers(deps),
 		security,
-		externalapi.WithPathPrefix("/api"),
+		externalapi.WithPathPrefix(paths.API),
 		externalapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
@@ -285,7 +285,7 @@ type PendingMigrations interface {
 
 // applyMigrationsPath is the error page's button that runs the migrations (SiteSchema in the
 // contract), which SchemaGuard lets through.
-const applyMigrationsPath = "/site/schema/migrations"
+const applyMigrationsPath = paths.Site + "/schema/migrations"
 
 // SchemaGuard answers 503 with a problem (code migrations_pending) that names the migrate
 // command while the database lacks migrations this binary needs, instead of letting every
@@ -295,7 +295,7 @@ const applyMigrationsPath = "/site/schema/migrations"
 func SchemaGuard(watch PendingMigrations) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" ||
+			if r.URL.Path == paths.Healthz || r.URL.Path == paths.Readyz ||
 				(r.Method == http.MethodPost && r.URL.Path == applyMigrationsPath) {
 				next.ServeHTTP(w, r)
 				return
@@ -342,11 +342,9 @@ func recoverer(next http.Handler) http.Handler {
 	})
 }
 
-// collectPrefix mounts the public tracking ingestion; it is cut off from the rest
-// of the app by its own CORS policy, auth scheme and body cap.
-const collectPrefix = "/collect"
-
-func isCollectPath(path string) bool { return strings.HasPrefix(path, collectPrefix+"/") }
+// isCollectPath is the public tracking ingestion, cut off from the rest of the app by its own
+// CORS policy, auth scheme and body cap.
+func isCollectPath(path string) bool { return strings.HasPrefix(path, paths.Collect+"/") }
 
 // bodyLimit caps every request body before a handler or the ogen decoder reads it:
 // collect gets its own (smaller) caps (a batch of events, or a single event), everything else the default. An oversized
@@ -356,7 +354,7 @@ func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			limit := limits.Default
 			switch {
-			case r.URL.Path == collectPrefix+"/events":
+			case r.URL.Path == paths.Collect+"/events":
 				limit = limits.Collect // a batch
 			case isCollectPath(r.URL.Path):
 				limit = limits.CollectEvent // one event
@@ -383,7 +381,7 @@ func requestID(next http.Handler) http.Handler {
 // cookiePath reports whether a path is authenticated by a session cookie (the SPA
 // API and the Staff member API), the only surfaces exposed to CSRF.
 func cookiePath(path string) bool {
-	return strings.HasPrefix(path, "/site/") || strings.HasPrefix(path, staffPrefix+"/")
+	return strings.HasPrefix(path, paths.Site+"/") || strings.HasPrefix(path, staffPrefix+"/")
 }
 
 // corsMiddleware applies three rs/cors policies by path:

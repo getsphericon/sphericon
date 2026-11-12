@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -56,7 +57,7 @@ func TestCreateReturnsTheEndpointWithItsDecryptedStandardWebhooksSecret(t *testi
 	ctx := context.Background()
 
 	got, err := module(env, license(true)).Create(ctx, acme, webhookendpoints.CreateInput{
-		URL: "https://example.com/hook", EventTypes: []string{"contact.created"},
+		URL: "https://example.com/hook", EventTypes: []string{systemevent.ContactCreated},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "https://example.com/hook", got.URL)
@@ -139,9 +140,9 @@ func TestUpdateChangesOnlyTheGivenFieldsAndKeepsTheSecret(t *testing.T) {
 	assert.Equal(t, before.EventTypes, got.EventTypes, "nil event types leave the filter alone")
 	assert.Equal(t, before.Secret, got.Secret)
 
-	got, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), EventTypes: patch.Set([]string{"email.opened"})})
+	got, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), EventTypes: patch.Set([]string{systemevent.EmailOpened})})
 	require.NoError(t, err)
-	assert.Equal(t, []string{"email.opened"}, got.EventTypes)
+	assert.Equal(t, []string{systemevent.EmailOpened}, got.EventTypes)
 }
 
 func TestAuditEntryNeedsALicenseOnCreateAndUpdate(t *testing.T) {
@@ -269,11 +270,11 @@ func TestRegenerateSecretSignsWithTheNewSecretOnly(t *testing.T) {
 
 	rcv := newReceiver(t, got.Secret, http.StatusOK)
 	pointAt(t, env, fixtures.WebhookCodebasicsID, rcv.srv.URL)
-	_, err = moduleAllowing(t, env, rcv).TestSend(ctx, acme, fixtures.WebhookCodebasicsID, "contact.created")
+	_, err = moduleAllowing(t, env, rcv).TestSend(ctx, acme, fixtures.WebhookCodebasicsID, systemevent.ContactCreated)
 	require.NoError(t, err)
 	oldRcv := newReceiver(t, oldSecret, http.StatusOK)
 	pointAt(t, env, fixtures.WebhookCodebasicsID, oldRcv.srv.URL)
-	_, err = moduleAllowing(t, env, oldRcv).TestSend(ctx, acme, fixtures.WebhookCodebasicsID, "contact.created")
+	_, err = moduleAllowing(t, env, oldRcv).TestSend(ctx, acme, fixtures.WebhookCodebasicsID, systemevent.ContactCreated)
 	require.NoError(t, err)
 
 	require.Len(t, rcv.deliveries(), 1)
@@ -294,7 +295,7 @@ func TestTestSendDeliversASignedSampleOfTheChosenTypeAndReportsTheStatus(t *test
 	rcv := newReceiver(t, "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", http.StatusAccepted)
 	pointAt(t, env, fixtures.WebhookCodebasicsID, rcv.srv.URL)
 
-	res, err := moduleAllowing(t, env, rcv).TestSend(context.Background(), acme, fixtures.WebhookCodebasicsID, "email.opened")
+	res, err := moduleAllowing(t, env, rcv).TestSend(context.Background(), acme, fixtures.WebhookCodebasicsID, systemevent.EmailOpened)
 	require.NoError(t, err)
 	assert.True(t, res.Delivered)
 	assert.Equal(t, http.StatusAccepted, res.Status)
@@ -303,7 +304,7 @@ func TestTestSendDeliversASignedSampleOfTheChosenTypeAndReportsTheStatus(t *test
 	got := rcv.deliveries()
 	require.Len(t, got, 1)
 	require.NoError(t, got[0].verified)
-	assert.Equal(t, "email.opened", got[0].event)
+	assert.Equal(t, systemevent.EmailOpened, got[0].event)
 	assert.Contains(t, string(got[0].body), `"type":"email.opened"`)
 }
 
@@ -317,14 +318,14 @@ func TestTestSendReportsTheErrorKindAndLeavesTheFailureStateAlone(t *testing.T) 
 	require.NoError(t, err)
 	require.NotNil(t, before.ConsecutiveFailures)
 
-	res, err := moduleAllowing(t, env, rcv).TestSend(ctx, acme, fixtures.WebhookCodebasicsFailingID, "email.opened")
+	res, err := moduleAllowing(t, env, rcv).TestSend(ctx, acme, fixtures.WebhookCodebasicsFailingID, systemevent.EmailOpened)
 	require.NoError(t, err)
 	assert.False(t, res.Delivered)
 	assert.Equal(t, webhook.KindHTTPStatus, res.Kind)
 	assert.Equal(t, http.StatusGone, res.Status)
 
 	// Without the allowlist the loopback receiver is a blocked address.
-	res, err = module(env, nil).TestSend(ctx, acme, fixtures.WebhookCodebasicsFailingID, "email.opened")
+	res, err = module(env, nil).TestSend(ctx, acme, fixtures.WebhookCodebasicsFailingID, systemevent.EmailOpened)
 	require.NoError(t, err)
 	assert.Equal(t, webhook.KindBlockedAddress, res.Kind)
 	assert.Zero(t, res.Status)
@@ -346,13 +347,13 @@ func TestTestSendWorksOnADisabledEndpointAndRefusesABlankType(t *testing.T) {
 	pointAt(t, env, fixtures.WebhookCodebasicsDisabledID, rcv.srv.URL)
 	m := moduleAllowing(t, env, rcv)
 
-	res, err := m.TestSend(ctx, acme, fixtures.WebhookCodebasicsDisabledID, "contact.created")
+	res, err := m.TestSend(ctx, acme, fixtures.WebhookCodebasicsDisabledID, systemevent.ContactCreated)
 	require.NoError(t, err)
 	assert.True(t, res.Delivered)
 
 	_, err = m.TestSend(ctx, acme, fixtures.WebhookCodebasicsDisabledID, " ")
 	require.ErrorIs(t, err, webhookendpoints.ErrInvalidEventType)
-	_, err = m.TestSend(ctx, acme, fixtures.WebhookGlobexID, "contact.created")
+	_, err = m.TestSend(ctx, acme, fixtures.WebhookGlobexID, systemevent.ContactCreated)
 	require.ErrorIs(t, err, webhookendpoints.ErrNotFound)
 }
 
@@ -363,7 +364,7 @@ func TestTestSendIsAuditedAsAWebhookEndpointTest(t *testing.T) {
 	pointAt(t, env, fixtures.WebhookCodebasicsID, rcv.srv.URL)
 	before := len(env.QueuedEvents(t, events.NameAuditEntry))
 
-	_, err := moduleAllowing(t, env, rcv).TestSend(context.Background(), acting, fixtures.WebhookCodebasicsID, "email.opened")
+	_, err := moduleAllowing(t, env, rcv).TestSend(context.Background(), acting, fixtures.WebhookCodebasicsID, systemevent.EmailOpened)
 	require.NoError(t, err)
 
 	all := env.QueuedEvents(t, events.NameAuditEntry)
@@ -372,7 +373,7 @@ func TestTestSendIsAuditedAsAWebhookEndpointTest(t *testing.T) {
 	assert.Equal(t, events.ActionWebhookEndpointTest, e.Action)
 	assert.Equal(t, "webhook_endpoint", e.TargetType)
 	assert.Equal(t, "John", e.Actor.Name)
-	assert.Equal(t, "email.opened", e.Diff["eventType"])
+	assert.Equal(t, systemevent.EmailOpened, e.Diff["eventType"])
 }
 
 // Enabling an endpoint that turned itself off starts it fresh: the reason and the failure

@@ -13,7 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
@@ -50,7 +50,7 @@ func TestACallbackIsInterpretedInTheWorkspaceItsIngestKeyNames(t *testing.T) {
 	err := receiver(env).Receive(t.Context(), bounce(t, fixtures.IntegrationAcmeGenericAIngestKey, secretGenericA, fixtures.ContactAliceEmail))
 
 	require.NoError(t, err)
-	got := env.QueuedEnvelopes(t, events.NameEmailBounced)
+	got := env.QueuedEnvelopes(t, systemevent.EmailBounced)
 	require.Len(t, got, 1)
 	assert.Equal(t, int64(fixtures.AcmeID), got[0].WorkspaceID)
 }
@@ -71,7 +71,7 @@ func TestACallbackToADeletedWorkspacesKeyHasNoHook(t *testing.T) {
 	err := receiver(env).Receive(t.Context(), bounce(t, fixtures.IntegrationAcmeGenericAIngestKey, secretGenericA, fixtures.ContactAliceEmail))
 
 	require.ErrorIs(t, err, callbackinterpretation.ErrNoHook)
-	assert.Empty(t, env.QueuedEnvelopes(t, events.NameEmailBounced))
+	assert.Empty(t, env.QueuedEnvelopes(t, systemevent.EmailBounced))
 }
 
 // An Integration accepts only its own secret: the Preset's refusal comes back as it is.
@@ -81,5 +81,5 @@ func TestACallbackSignedForAnotherIntegrationIsNotAuthentic(t *testing.T) {
 	err := receiver(env).Receive(t.Context(), bounce(t, fixtures.IntegrationAcmeGenericBIngestKey, secretGenericA, fixtures.ContactAliceEmail))
 
 	require.ErrorIs(t, err, preset.ErrUnauthentic)
-	assert.Empty(t, env.QueuedEnvelopes(t, events.NameEmailBounced))
+	assert.Empty(t, env.QueuedEnvelopes(t, systemevent.EmailBounced))
 }
