@@ -977,10 +977,11 @@ _Avoid_: Raw write, internal write, unsafe
 
 **Live use**:
 Work that will still send or act through a row: a scheduled or sending Broadcast, the live
-version of an active Automation, any version an unfinished Enrollment stands on, and an active
-Rule. A Broadcast or step uses the Integration it sends through (its own, or its Channel's
+version of an active Automation, any version an unfinished Enrollment stands on, an active Rule, and
+an active Broadcast series. A Broadcast or step uses the Integration it sends through (its own, or its Channel's
 default) and the Sending domain of the From address it actually sends from. A row in Live use
-cannot be archived or discarded.
+cannot be archived or discarded, and, the other way round, a write that arms such work refuses when
+the Integration or the Sending domain it would use is already gone.
 _Avoid_: Dependency, reference, in use
 
 **Definition use**:

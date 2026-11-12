@@ -4,6 +4,10 @@ status: accepted
 
 # A write that moves Live use holds the lock its check holds
 
+> **Amended by [[0140-a-write-that-arms-live-use-refuses-a-row-already-discarded]]:**
+> each Live use reader gains its inverse, called under the lock's type by every write that moves
+> Live use.
+
 > Refines [[0099-live-use-is-what-will-still-send-and-upkeep-skips-a-deleted-row]]: it listed the
 > writes that take the Workspace lock; this defines them and makes the lock part of their types.
 

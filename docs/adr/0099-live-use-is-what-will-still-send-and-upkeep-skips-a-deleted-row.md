@@ -4,6 +4,10 @@ status: accepted
 
 # Live use is what will still send, and upkeep skips a deleted row
 
+> **Amended by [[0140-a-write-that-arms-live-use-refuses-a-row-already-discarded]]:**
+> a write that creates Live use also reads, under the lock, every row its work will use and refuses
+> a discarded one.
+
 > **Refined by [[0108-a-write-that-moves-live-use-holds-the-lock-its-check-holds]]:** the writes that
 > move Live use include an Integration's default and From, and the lock is part of their types.
 

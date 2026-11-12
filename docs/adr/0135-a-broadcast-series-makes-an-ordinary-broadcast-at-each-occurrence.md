@@ -4,6 +4,10 @@ status: accepted
 
 # A Broadcast series makes an ordinary Broadcast at each occurrence
 
+> **Amended by [[0140-a-write-that-arms-live-use-refuses-a-row-already-discarded]]:**
+> a series making an issue reads its rows under the lock and skips the occurrence when one is
+> discarded.
+
 A Broadcast is a one-off send: authored, scheduled once and sent once. A weekly digest or a
 newsletter built from a blog's feed is a send that repeats on a schedule, and today it is a new
 Broadcast authored by hand each week. An Automation is the wrong home for it: it would enroll the
