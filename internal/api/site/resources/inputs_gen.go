@@ -374,6 +374,7 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 func (c *InputsImpl) CustomFieldUpdate(source *site.SiteUpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
 	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
 	if source != nil {
+		contactsCustomFieldUpdateInput.Revision = revisionIn((*source).Revision)
 		contactsCustomFieldUpdateInput.Name = namePatch((*source).Name)
 		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
 	}
@@ -925,6 +926,7 @@ func (c *InputsImpl) WebhookCreate(source *site.CreateWebhookInput) webhookendpo
 func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhookendpoints.UpdateInput {
 	var webhookendpointsUpdateInput webhookendpoints.UpdateInput
 	if source != nil {
+		webhookendpointsUpdateInput.Revision = revisionIn((*source).Revision)
 		webhookendpointsUpdateInput.URL = stringPatch((*source).URL)
 		webhookendpointsUpdateInput.EventTypes = listPatch((*source).EventTypes)
 		webhookendpointsUpdateInput.Enabled = boolPatch((*source).Enabled)

@@ -1003,6 +1003,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) site.Site
 		siteapiSiteCustomFieldResource.Name = (*source).Name
 		siteapiSiteCustomFieldResource.Type = c.CustomFieldTypeToResource((*source).Type)
 		siteapiSiteCustomFieldResource.RuleOperators = customFieldRuleOperators((*source).Type)
+		siteapiSiteCustomFieldResource.Revision = revision((*source).Revision)
 		siteapiSiteCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -2650,6 +2651,7 @@ func (c *ConverterImpl) WebhookEndpointToResource(source *ent.WebhookEndpoint) s
 		siteapiSiteWebhookEndpointResource.DisabledAt = optTimestamp((*source).DisabledAt)
 		siteapiSiteWebhookEndpointResource.DisabledReason = optWebhookDisabledReason(c, (*source).DisabledReason)
 		siteapiSiteWebhookEndpointResource.Failure = webhookFailure(c, (*source))
+		siteapiSiteWebhookEndpointResource.Revision = revision((*source).Revision)
 		siteapiSiteWebhookEndpointResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteWebhookEndpointResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

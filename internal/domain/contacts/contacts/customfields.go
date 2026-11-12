@@ -63,12 +63,17 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 var (
 	// ErrCustomFieldNotFound means no such Custom field in this Workspace.
 	ErrCustomFieldNotFound = validation.NotFound("contacts: custom field not found", i18n.ErrorsCustomFieldNotFound)
+	// ErrCustomFieldRevisionChanged: the edit was made on a revision the Custom field has moved past
+	// (ADR 0119): someone wrote it since the client read it. Nothing is written.
+	ErrCustomFieldRevisionChanged = validation.RevisionChanged("contacts: custom field changed since it was read", i18n.ErrorsCustomFieldRevisionChanged)
 )
 
 // CustomFieldUpdateInput is an edit of a Custom field: its display name and its type. The key never
 // changes: Contacts' values and Condition leaves address the field by it.
 type CustomFieldUpdateInput struct {
-	Name patch.Field[string]
+	// Revision is the Custom field's revision the edit was made on (ADR 0119).
+	Revision int64
+	Name     patch.Field[string]
 	// Type is a value of the contract's enum, which is ent's: a type a field cannot have is refused
 	// at the edge and never reaches the module.
 	Type patch.Field[string]
@@ -84,10 +89,16 @@ func CustomField(ctx context.Context, s *ent.Scoped, id int64) (*ent.CustomField
 	return field, err
 }
 
-// Check refuses an edit whose new name the name rule refuses (validation.Name).
-func (in CustomFieldUpdateInput) Check() error {
-	_, err := validation.NamePatch(in.Name)
-	return err
+// Check refuses an edit whose new name the name rule refuses (validation.Name), and one made on a
+// revision field has moved past (ErrCustomFieldRevisionChanged).
+func (in CustomFieldUpdateInput) Check(field *ent.CustomField) error {
+	if _, err := validation.NamePatch(in.Name); err != nil {
+		return err
+	}
+	if field.Revision != in.Revision {
+		return ErrCustomFieldRevisionChanged
+	}
+	return nil
 }
 
 // Retype returns the type the edit changes field to, and false when the edit keeps its type.

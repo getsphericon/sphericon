@@ -980,6 +980,7 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.CustomField().Create()
+				b.SetRevision(src.Revision)
 				b.SetKey(src.Key)
 				b.SetName(src.Name)
 				b.SetType(src.Type)
@@ -2636,6 +2637,7 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.WebhookEndpoint().Create()
+				b.SetRevision(src.Revision)
 				b.SetURL(src.URL)
 				b.SetSecretEncrypted(src.SecretEncrypted)
 				if !reflect.ValueOf(src.EventTypes).IsZero() {

@@ -2340,6 +2340,10 @@ export type CustomFieldResource = {
    */
   ruleOperators: Array<ConditionOperator>;
   /**
+   * The revision of the state this answer shows (ADR 0119): an update names it
+   */
+  revision: Revision;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -3792,7 +3796,9 @@ export type RecordEventsInput = {
 export type RegionalFormat = string;
 
 /**
- * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The revision of a resource a person edits (ADR 0119), starting at 1: every write of what it
+ * shows moves it, a background job's record of its own (a delivery failure, a provider's reading)
+ * does not.
  * The resource carries the one of the state it shows, and an update names the one it was made on:
  * a stale one is a 409 with code `revision_changed`, and nothing is written.
  */
@@ -5095,6 +5101,10 @@ export type UpdateContactInput = {
  */
 export type UpdateCustomFieldInput = {
   /**
+   * The custom field's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
    * Display name
    */
   name?: Name;
@@ -5215,6 +5225,10 @@ export type UpdateTemplateInput = {
  * Request body for updating a webhook endpoint
  */
 export type UpdateWebhookInput = {
+  /**
+   * The webhook's `revision` the edit was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
   /**
    * Destination URL (absolute http or https)
    */
@@ -5460,6 +5474,10 @@ export type WebhookResource = {
    * Present while deliveries are failing; cleared by the next 2xx
    */
   failure?: WebhookFailure;
+  /**
+   * The revision of the state this answer shows (ADR 0119): an update names it
+   */
+  revision: Revision;
   /**
    * Creation timestamp
    */

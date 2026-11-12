@@ -41,13 +41,17 @@ export interface ResourceFormProps<TPayload, TValues extends object> {
   onCancel?: () => void
 }
 
-interface ResourceTexts {
-  createTitle: string
+// The strings of an edit: its title, the toast of a Save, and the titles of a failed load and Save.
+interface EditTexts {
   editTitle: string
-  created: string
   updated: string
   loadErrorTitle: string
   saveErrorTitle: string
+}
+
+interface ResourceTexts extends EditTexts {
+  createTitle: string
+  created: string
 }
 
 // An operation of the edit page besides Save, with the toasts of its outcome.
@@ -151,15 +155,7 @@ export function defineResource<
     TOperation
   >,
 ) {
-  const { operations } = resource
-  const adapter = resourceEditorAdapter({
-    id: `${resource.idParam}Editor`,
-    schema: resource.schema,
-    editedValues: resource.editedValues,
-    update: resource.update,
-    operations,
-  })
-  const editorSession = defineEditorSession(adapter)
+  const EditForm = editFormOf({ ...resource, editorId: `${resource.idParam}Editor` })
 
   function CreatePage() {
     const { t } = useTranslation()
@@ -228,6 +224,86 @@ export function defineResource<
     )
   }
 
+  // The loaded resource; the edit page's boundary shows its load and a failed load.
+  function LoadedEditForm({ children }: ResourceEditPageProps<TResource, TOperation>) {
+    const { workspaceId } = workspaceRoute.useParams()
+    const id = resource.editRoute.useParams()[resource.idParam]
+    const { data } = useSuspenseQuery(resource.getOptions({ path: { workspaceId, id } }))
+
+    const readOnly = resource.readOnlyTarget?.(data, { workspaceId, id })
+    if (readOnly) {
+      return <Navigate {...readOnly} replace />
+    }
+
+    return (
+      <EditForm
+        key={id}
+        workspaceId={workspaceId}
+        id={id}
+        loaded={data}
+        {...(children && { children })}
+      />
+    )
+  }
+
+  function EditPage({ children }: ResourceEditPageProps<TResource, TOperation>) {
+    const { t } = useTranslation()
+    return (
+      <QueryBoundary fallback={<PageSkeleton />} errorTitle={resource.texts(t).loadErrorTitle}>
+        <LoadedEditForm {...(children && { children })} />
+      </QueryBoundary>
+    )
+  }
+
+  return { CreatePage, CreateModal, EditPage }
+}
+
+// What an edit needs of a resource: a subset of ResourceDescription, and the id of its editor
+// session.
+type EditDescription<
+  TPayload,
+  TValues extends object,
+  TResource extends ResourceValues<TPayload>,
+  TError extends ApiErrorLike,
+  TGetKey extends QueryKey,
+  TOperation extends string,
+> = Pick<
+  ResourceDescription<
+    TPayload,
+    TValues,
+    TResource,
+    { id: string },
+    TError,
+    TGetKey,
+    string,
+    TOperation
+  >,
+  'schema' | 'Form' | 'getOptions' | 'update' | 'operations' | 'editedValues'
+> & {
+  texts: (t: TFunction) => EditTexts
+  editorId: string
+}
+
+// editFormOf builds the edit form of a resource, the one implementation of an edit in an editor
+// session (docs/standards/ui.md, "Editor sessions"): an edit page's and an edit modal's.
+function editFormOf<
+  TPayload,
+  TValues extends object,
+  TResource extends ResourceValues<TPayload>,
+  TError extends ApiErrorLike,
+  TGetKey extends QueryKey,
+  TOperation extends string,
+>(resource: EditDescription<TPayload, TValues, TResource, TError, TGetKey, TOperation>) {
+  const { operations } = resource
+  const adapter = resourceEditorAdapter({
+    id: resource.editorId,
+    schema: resource.schema,
+    editedValues: resource.editedValues,
+    update: resource.update,
+    operations,
+  })
+  const editorSession = defineEditorSession(adapter)
+
   // Mounted only once the resource is loaded, so the form is created with the hydrated values
   // (the schema's encode direction) and never renders blank. It is keyed by resource id by the
   // caller and not by the fetched data: a refetch updates the session's metadata only, never the
@@ -238,10 +314,16 @@ export function defineResource<
     id,
     loaded,
     children,
+    titled = true,
+    onSaved,
   }: ResourceEditPageProps<TResource, TOperation> & {
     workspaceId: string
     id: string
     loaded: TResource
+    // False in a modal, which carries the title itself.
+    titled?: boolean
+    // Called once a Save is acknowledged: a modal closes.
+    onSaved?: () => void
   }) {
     const { t } = useTranslation()
     const texts = resource.texts(t)
@@ -289,6 +371,13 @@ export function defineResource<
       }
     }
 
+    // A Save the session acknowledges closes a modal (onSaved).
+    const submit = async () => {
+      if ((await save((submission) => submission !== null)) === 'success') {
+        onSaved?.()
+      }
+    }
+
     // Subscribed: the page re-renders on every edit.
     const current = form.values
     const editor: ResourceEditor<TOperation> = {
@@ -301,7 +390,7 @@ export function defineResource<
 
     return (
       <Stack>
-        <Title order={4}>{texts.editTitle}</Title>
+        {titled && <Title order={4}>{texts.editTitle}</Title>}
         {session.context.changed && (
           <ChangedNotice
             isDirty={() => dirty(form.getValues())}
@@ -321,7 +410,7 @@ export function defineResource<
             form={form}
             isPending={session.matches('saving')}
             onSubmit={() => {
-              void save((submission) => submission !== null)
+              void submit()
             }}
           />
         </Fieldset>
@@ -331,36 +420,66 @@ export function defineResource<
     )
   }
 
-  // The loaded resource; the edit page's boundary shows its load and a failed load.
-  function LoadedEditForm({ children }: ResourceEditPageProps<TResource, TOperation>) {
+  return EditForm
+}
+
+// What an edit modal receives besides its resource's id. `children` renders what it shows of the
+// stored resource besides the form (a key that never changes).
+export interface ResourceEditModalProps<TResource> {
+  onClose: () => void
+  children?: (loaded: TResource) => ReactNode
+}
+
+// The edit of a resource that is listed rather than given its own page (a Custom field, a Webhook):
+// an edit modal over the list, running the same editor session as an edit page, that closes once a
+// Save is acknowledged. `id` is the resource's, or null while the modal is closed.
+export function defineModalEditor<
+  TPayload,
+  TValues extends object,
+  TResource extends ResourceValues<TPayload>,
+  TError extends ApiErrorLike,
+  TGetKey extends QueryKey,
+  TOperation extends string,
+>(resource: EditDescription<TPayload, TValues, TResource, TError, TGetKey, TOperation>) {
+  const EditForm = editFormOf(resource)
+
+  function LoadedEditForm({
+    id,
+    onClose,
+    children,
+  }: ResourceEditModalProps<TResource> & { id: string }) {
     const { workspaceId } = workspaceRoute.useParams()
-    const id = resource.editRoute.useParams()[resource.idParam]
     const { data } = useSuspenseQuery(resource.getOptions({ path: { workspaceId, id } }))
-
-    const readOnly = resource.readOnlyTarget?.(data, { workspaceId, id })
-    if (readOnly) {
-      return <Navigate {...readOnly} replace />
-    }
-
     return (
       <EditForm
         key={id}
         workspaceId={workspaceId}
         id={id}
         loaded={data}
+        titled={false}
+        onSaved={onClose}
         {...(children && { children })}
       />
     )
   }
 
-  function EditPage({ children }: ResourceEditPageProps<TResource, TOperation>) {
+  function EditModal({
+    id,
+    onClose,
+    children,
+  }: ResourceEditModalProps<TResource> & { id: string | null }) {
     const { t } = useTranslation()
+    const texts = resource.texts(t)
     return (
-      <QueryBoundary fallback={<PageSkeleton />} errorTitle={resource.texts(t).loadErrorTitle}>
-        <LoadedEditForm {...(children && { children })} />
-      </QueryBoundary>
+      <Modal opened={id !== null} onClose={onClose} title={texts.editTitle}>
+        {id !== null && (
+          <QueryBoundary fallback={<PageSkeleton />} errorTitle={texts.loadErrorTitle}>
+            <LoadedEditForm id={id} onClose={onClose} {...(children && { children })} />
+          </QueryBoundary>
+        )}
+      </Modal>
     )
   }
 
-  return { CreatePage, CreateModal, EditPage }
+  return { EditModal }
 }

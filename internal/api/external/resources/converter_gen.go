@@ -689,6 +689,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.
 		externalapiCustomFieldResource.Name = (*source).Name
 		externalapiCustomFieldResource.Type = c.CustomFieldTypeToResource((*source).Type)
 		externalapiCustomFieldResource.RuleOperators = customFieldRuleOperators((*source).Type)
+		externalapiCustomFieldResource.Revision = revision((*source).Revision)
 		externalapiCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1750,6 +1751,7 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 		externalapiWebhookResource.DisabledAt = optTimestamp((*source).DisabledAt)
 		externalapiWebhookResource.DisabledReason = optWebhookDisabledReason(c, (*source).DisabledReason)
 		externalapiWebhookResource.Failure = webhookFailure(c, (*source))
+		externalapiWebhookResource.Revision = revision((*source).Revision)
 		externalapiWebhookResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiWebhookResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

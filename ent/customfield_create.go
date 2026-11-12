@@ -57,6 +57,20 @@ func (_c *CustomFieldCreate) SetWorkspaceID(v int64) *CustomFieldCreate {
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *CustomFieldCreate) SetRevision(v int64) *CustomFieldCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *CustomFieldCreate) SetNillableRevision(v *int64) *CustomFieldCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetKey sets the "key" field.
 func (_c *CustomFieldCreate) SetKey(v string) *CustomFieldCreate {
 	_c.mutation.SetKey(v)
@@ -137,6 +151,10 @@ func (_c *CustomFieldCreate) defaults() {
 		v := customfield.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := customfield.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		v := customfield.DefaultType
 		_c.mutation.SetType(v)
@@ -153,6 +171,14 @@ func (_c *CustomFieldCreate) check() error {
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "CustomField.workspace_id"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "CustomField.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := customfield.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "CustomField.revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Key(); !ok {
 		return &ValidationError{Name: "key", err: errors.New(`ent: missing required field "CustomField.key"`)}
@@ -221,6 +247,10 @@ func (_c *CustomFieldCreate) createSpec() (*CustomField, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(customfield.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(customfield.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.Key(); ok {
 		_spec.SetField(customfield.FieldKey, field.TypeString, value)
@@ -327,6 +357,24 @@ func (u *CustomFieldUpsert) UpdateWorkspaceID() *CustomFieldUpsert {
 	return u
 }
 
+// SetRevision sets the "revision" field.
+func (u *CustomFieldUpsert) SetRevision(v int64) *CustomFieldUpsert {
+	u.Set(customfield.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *CustomFieldUpsert) UpdateRevision() *CustomFieldUpsert {
+	u.SetExcluded(customfield.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *CustomFieldUpsert) AddRevision(v int64) *CustomFieldUpsert {
+	u.Add(customfield.FieldRevision, v)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *CustomFieldUpsert) SetName(v string) *CustomFieldUpsert {
 	u.Set(customfield.FieldName, v)
@@ -430,6 +478,27 @@ func (u *CustomFieldUpsertOne) SetWorkspaceID(v int64) *CustomFieldUpsertOne {
 func (u *CustomFieldUpsertOne) UpdateWorkspaceID() *CustomFieldUpsertOne {
 	return u.Update(func(s *CustomFieldUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *CustomFieldUpsertOne) SetRevision(v int64) *CustomFieldUpsertOne {
+	return u.Update(func(s *CustomFieldUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *CustomFieldUpsertOne) AddRevision(v int64) *CustomFieldUpsertOne {
+	return u.Update(func(s *CustomFieldUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *CustomFieldUpsertOne) UpdateRevision() *CustomFieldUpsertOne {
+	return u.Update(func(s *CustomFieldUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -706,6 +775,27 @@ func (u *CustomFieldUpsertBulk) SetWorkspaceID(v int64) *CustomFieldUpsertBulk {
 func (u *CustomFieldUpsertBulk) UpdateWorkspaceID() *CustomFieldUpsertBulk {
 	return u.Update(func(s *CustomFieldUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *CustomFieldUpsertBulk) SetRevision(v int64) *CustomFieldUpsertBulk {
+	return u.Update(func(s *CustomFieldUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *CustomFieldUpsertBulk) AddRevision(v int64) *CustomFieldUpsertBulk {
+	return u.Update(func(s *CustomFieldUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *CustomFieldUpsertBulk) UpdateRevision() *CustomFieldUpsertBulk {
+	return u.Update(func(s *CustomFieldUpsert) {
+		s.UpdateRevision()
 	})
 }
 

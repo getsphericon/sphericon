@@ -100,7 +100,9 @@ export const zProblemDebug = z.object({
 export const zRegionalFormat = z.string().max(35);
 
 /**
- * The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.
+ * The revision of a resource a person edits (ADR 0119), starting at 1: every write of what it
+ * shows moves it, a background job's record of its own (a delivery failure, a provider's reading)
+ * does not.
  * The resource carries the one of the state it shows, and an update names the one it was made on:
  * a stale one is a 409 with code `revision_changed`, and nothing is written.
  */

@@ -42,7 +42,7 @@ func TestSiteWebhooksCRUD(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update: disable and broaden to all events.
-	updRes, err := c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{
+	updRes, err := c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{Revision: siteapi.Revision(env.WebhookRevision(ctx, t, int64(res.ID))),
 		Enabled:    siteapi.NewOptBool(false),
 		EventTypes: []string{},
 	}, siteapi.SiteWebhooksUpdateParams{WorkspaceId: workspaceID, ID: res.ID})

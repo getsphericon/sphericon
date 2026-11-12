@@ -46,11 +46,11 @@ func newRetypeRace(t *testing.T) *retypeRace {
 	segs, ruleset, retyping := segments.New(bus, time.Now), rules.New(cipher, bus, nil, time.Now), customfieldretyping.New(bus, check)
 	r := &retypeRace{WorkspaceRace: race, savedID: new(int64)}
 	r.rename = testhelper.Writer{Name: "rename", Run: func() error {
-		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Name: patch.Set("Has it since")})
+		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Revision: testhelper.CustomFieldRevisionIn(ctx, t, s, fixtures.CustomFieldDuffHasItID), Name: patch.Set("Has it since")})
 		return err
 	}}
 	r.retype = testhelper.Writer{Name: "retype", Run: func() error {
-		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Type: patch.Set(string(customfield.TypeString))})
+		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Revision: testhelper.CustomFieldRevisionIn(ctx, t, s, fixtures.CustomFieldDuffHasItID), Type: patch.Set(string(customfield.TypeString))})
 		return err
 	}}
 	r.saveSegment = testhelper.Writer{Name: "save", Run: func() error {

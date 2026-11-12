@@ -351,6 +351,32 @@ func (env *TestEnv) ContactRevision(ctx context.Context, tb testing.TB, id int64
 	return v.Revision
 }
 
+// CustomFieldRevision is the stored revision of the CustomField id (ADR 0119): what an editor that read it
+// now names in an edit.
+func (env *TestEnv) CustomFieldRevision(ctx context.Context, tb testing.TB, id int64) int64 {
+	tb.Helper()
+	v, err := env.DB.CustomField.Get(ctx, id)
+	if ent.IsNotFound(err) {
+		// An id the call is refused for (another Workspace's, none at all): any revision does.
+		return 1
+	}
+	require.NoError(tb, err)
+	return v.Revision
+}
+
+// WebhookRevision is the stored revision of the Webhook id (ADR 0119): what an editor that read it
+// now names in an edit.
+func (env *TestEnv) WebhookRevision(ctx context.Context, tb testing.TB, id int64) int64 {
+	tb.Helper()
+	v, err := env.DB.WebhookEndpoint.Get(ctx, id)
+	if ent.IsNotFound(err) {
+		// An id the call is refused for (another Workspace's, none at all): any revision does.
+		return 1
+	}
+	require.NoError(tb, err)
+	return v.Revision
+}
+
 // AutomationRevisionIn is AutomationRevision read through the scope s, for a test with no TestEnv
 // at hand.
 func AutomationRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
@@ -406,4 +432,27 @@ func ContactRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int
 	}
 	require.NoError(tb, err)
 	return c.Revision
+}
+
+// CustomFieldRevisionIn is CustomFieldRevision read through the scope s, for a test with no TestEnv
+// at hand.
+func CustomFieldRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
+	tb.Helper()
+	v, err := s.CustomField().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return 1
+	}
+	require.NoError(tb, err)
+	return v.Revision
+}
+
+// WebhookRevisionIn is WebhookRevision read through the scope s, for a test with no TestEnv at hand.
+func WebhookRevisionIn(ctx context.Context, tb testing.TB, s *ent.Scoped, id int64) int64 {
+	tb.Helper()
+	v, err := s.WebhookEndpoint().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return 1
+	}
+	require.NoError(tb, err)
+	return v.Revision
 }

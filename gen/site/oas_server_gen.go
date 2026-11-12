@@ -517,6 +517,12 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/contacts/{id}
 	SiteContactsUpdate(ctx context.Context, req *SiteUpdateContactInput, params SiteContactsUpdateParams) (*SiteContactResource, error)
+	// SiteCustomFieldsGet implements SiteCustomFields_get operation.
+	//
+	// Get one custom field definition: what its editor opens with and reloads.
+	//
+	// GET /workspaces/{workspaceId}/custom-fields/{id}
+	SiteCustomFieldsGet(ctx context.Context, params SiteCustomFieldsGetParams) (*SiteCustomFieldResource, error)
 	// SiteCustomFieldsList implements SiteCustomFields_list operation.
 	//
 	// List the workspace's custom field definitions.

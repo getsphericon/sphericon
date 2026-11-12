@@ -14408,6 +14408,18 @@ func (x *CustomFieldScopedCreate) SetNillableUpdatedAt(v *time.Time) *CustomFiel
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *CustomFieldScopedCreate) SetRevision(v int64) *CustomFieldScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *CustomFieldScopedCreate) SetNillableRevision(v *int64) *CustomFieldScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetKey sets the "key" field.
 func (x *CustomFieldScopedCreate) SetKey(v string) *CustomFieldScopedCreate {
 	x.b.SetKey(v)
@@ -14544,6 +14556,24 @@ func (u *CustomFieldScopedUpsert) SetUpdatedAt(v time.Time) *CustomFieldScopedUp
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *CustomFieldScopedUpsert) UpdateUpdatedAt() *CustomFieldScopedUpsert {
 	u.u.SetExcluded(customfield.FieldUpdatedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *CustomFieldScopedUpsert) SetRevision(v int64) *CustomFieldScopedUpsert {
+	u.u.Set(customfield.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *CustomFieldScopedUpsert) AddRevision(v int64) *CustomFieldScopedUpsert {
+	u.u.Add(customfield.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *CustomFieldScopedUpsert) UpdateRevision() *CustomFieldScopedUpsert {
+	u.u.SetExcluded(customfield.FieldRevision)
 	return u
 }
 
@@ -14755,6 +14785,24 @@ func (x *CustomFieldScopedUpdateOne) SetUpdatedAt(v time.Time) *CustomFieldScope
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *CustomFieldScopedUpdateOne) SetRevision(v int64) *CustomFieldScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *CustomFieldScopedUpdateOne) SetNillableRevision(v *int64) *CustomFieldScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *CustomFieldScopedUpdateOne) AddRevision(v int64) *CustomFieldScopedUpdateOne {
+	x.b.AddRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *CustomFieldScopedUpdateOne) SetName(v string) *CustomFieldScopedUpdateOne {
 	x.b.SetName(v)
@@ -14854,6 +14902,24 @@ func (x *CustomFieldScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Cu
 // SetUpdatedAt sets the "updated_at" field.
 func (x *CustomFieldScopedUpdate) SetUpdatedAt(v time.Time) *CustomFieldScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *CustomFieldScopedUpdate) SetRevision(v int64) *CustomFieldScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *CustomFieldScopedUpdate) SetNillableRevision(v *int64) *CustomFieldScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *CustomFieldScopedUpdate) AddRevision(v int64) *CustomFieldScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 
@@ -39462,6 +39528,18 @@ func (x *WebhookEndpointScopedCreate) SetNillableUpdatedAt(v *time.Time) *Webhoo
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *WebhookEndpointScopedCreate) SetRevision(v int64) *WebhookEndpointScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableRevision(v *int64) *WebhookEndpointScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetURL sets the "url" field.
 func (x *WebhookEndpointScopedCreate) SetURL(v string) *WebhookEndpointScopedCreate {
 	x.b.SetURL(v)
@@ -39688,6 +39766,24 @@ func (u *WebhookEndpointScopedUpsert) SetUpdatedAt(v time.Time) *WebhookEndpoint
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *WebhookEndpointScopedUpsert) UpdateUpdatedAt() *WebhookEndpointScopedUpsert {
 	u.u.SetExcluded(webhookendpoint.FieldUpdatedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *WebhookEndpointScopedUpsert) SetRevision(v int64) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *WebhookEndpointScopedUpsert) AddRevision(v int64) *WebhookEndpointScopedUpsert {
+	u.u.Add(webhookendpoint.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateRevision() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldRevision)
 	return u
 }
 
@@ -40079,6 +40175,24 @@ func (x *WebhookEndpointScopedUpdateOne) SetUpdatedAt(v time.Time) *WebhookEndpo
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *WebhookEndpointScopedUpdateOne) SetRevision(v int64) *WebhookEndpointScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableRevision(v *int64) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *WebhookEndpointScopedUpdateOne) AddRevision(v int64) *WebhookEndpointScopedUpdateOne {
+	x.b.AddRevision(v)
+	return x
+}
+
 // SetURL sets the "url" field.
 func (x *WebhookEndpointScopedUpdateOne) SetURL(v string) *WebhookEndpointScopedUpdateOne {
 	x.b.SetURL(v)
@@ -40358,6 +40472,24 @@ func (x *WebhookEndpointScopedUpdate) Modify(modifiers ...func(a *ScopedAssign))
 // SetUpdatedAt sets the "updated_at" field.
 func (x *WebhookEndpointScopedUpdate) SetUpdatedAt(v time.Time) *WebhookEndpointScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *WebhookEndpointScopedUpdate) SetRevision(v int64) *WebhookEndpointScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableRevision(v *int64) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *WebhookEndpointScopedUpdate) AddRevision(v int64) *WebhookEndpointScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 

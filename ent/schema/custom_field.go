@@ -25,7 +25,7 @@ func (CustomField) Annotations() []schema.Annotation {
 }
 
 func (CustomField) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "custom_fields"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "custom_fields"}, RevisionMixin{}}
 }
 
 func (CustomField) Fields() []ent.Field {

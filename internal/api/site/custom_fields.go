@@ -23,6 +23,16 @@ func (h *Handlers) SiteCustomFieldsList(ctx context.Context, _ siteapi.SiteCusto
 	return mapper.CustomFieldsListPage(pagination.Whole(items)), nil
 }
 
+// SiteCustomFieldsGet returns one Custom field of the Workspace; an unknown id is a 404.
+func (h *Handlers) SiteCustomFieldsGet(ctx context.Context, params siteapi.SiteCustomFieldsGetParams) (*siteapi.SiteCustomFieldResource, error) {
+	field, err := contacts.CustomField(ctx, workspaceScope(ctx), int64(params.ID))
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.CustomFieldToResource(field)
+	return &res, nil
+}
+
 // SiteCustomFieldsUpdate renames a Custom field or changes its type through the Custom field
 // retyping use case (owners and admins: the operation's Permission).
 func (h *Handlers) SiteCustomFieldsUpdate(ctx context.Context, req *siteapi.SiteUpdateCustomFieldInput, params siteapi.SiteCustomFieldsUpdateParams) (*siteapi.SiteCustomFieldResource, error) {

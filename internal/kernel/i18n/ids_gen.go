@@ -143,6 +143,7 @@ var (
 	ErrorsCurrentPasswordRequired               = ID{key: "errors.current_password_required"}
 	ErrorsCustomFieldKeyReserved                = ID{key: "errors.custom_field_key_reserved"}
 	ErrorsCustomFieldNotFound                   = ID{key: "errors.custom_field_not_found"}
+	ErrorsCustomFieldRevisionChanged            = ID{key: "errors.custom_field_revision_changed"}
 	ErrorsDeleteUserEmailMismatch               = ID{key: "errors.delete_user_email_mismatch"}
 	ErrorsDeleteUserOnlyOwner                   = ID{key: "errors.delete_user_only_owner"}
 	ErrorsDeleteUserProofStale                  = ID{key: "errors.delete_user_proof_stale"}
@@ -366,6 +367,7 @@ var (
 	ErrorsWebhookAuditNeedsLicense              = ID{key: "errors.webhook_audit_needs_license"}
 	ErrorsWebhookEventTypeInvalid               = ID{key: "errors.webhook_event_type_invalid"}
 	ErrorsWebhookNotFound                       = ID{key: "errors.webhook_not_found"}
+	ErrorsWebhookRevisionChanged                = ID{key: "errors.webhook_revision_changed"}
 	ErrorsWebhookUrlInvalid                     = ID{key: "errors.webhook_url_invalid"}
 	ErrorsWorkspaceNameMismatch                 = ID{key: "errors.workspace_name_mismatch"}
 	ErrorsWorkspaceNotFound                     = ID{key: "errors.workspace_not_found"}

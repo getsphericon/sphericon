@@ -201,7 +201,11 @@ Revert, Send now, …). Whether the editor is unsaved, and whether an operation 
 the session, never from the page. The Automation editor runs one, with its canvas adapter in
 `src/pages/automations/editorSession.ts`; so does the edit page of every resource described with
 `defineResource`, with the schema-form adapter in `src/resources/resourceEditor.ts`, whose content is
-the form's values. A create page or modal has no session.
+the form's values, and the edit modal of a resource edited from its list (`defineModalEditor`: a
+Custom field), which runs the same edit form and closes once its Save is acknowledged. A create page
+or modal has no session. A list action that writes one field of a row (turning a Webhook on or off)
+is no editor: it sends that field alone with the revision the row shows, and a refusal says why and
+reads the list again.
 
 - **Three contents.** The current content belongs to the editor: the form or the canvas. The
   submitted content is what a Save captured before its request. The acknowledged content is what

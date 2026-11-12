@@ -28,7 +28,7 @@ func TestWebhookEndpointSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
 
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksUpdate(ctx,
-		&siteapi.UpdateWebhookInput{EventTypes: []string{"audit.entry"}},
+		&siteapi.UpdateWebhookInput{Revision: siteapi.Revision(env.WebhookRevision(ctx, t, int64(idStr(fixtures.WebhookCodebasicsID)))), EventTypes: []string{"audit.entry"}},
 		siteapi.SiteWebhooksUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

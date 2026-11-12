@@ -18,7 +18,7 @@ import {
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -46,7 +46,7 @@ import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
 import {
   CONTACT_CHANGE_ACTIONS,
@@ -327,9 +327,16 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
     },
   })
 
+  const queryClient = useQueryClient()
   const updateMutation = useResourceMutation({
     mutation: siteWebhooksUpdateMutation(),
     errorTitle: t(($) => $.settings.webhooks.saveError),
+    // A refused toggle (the row changed since the list read it) still says why, and reads the list
+    // again so the next one is made on what is stored.
+    handleError: async () => {
+      await invalidateOwn(queryClient, siteWebhooksUpdateMutation().mutationKey)
+      return false
+    },
   })
 
   const deleteMutation = useResourceMutation({
@@ -356,10 +363,12 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
     })
   }
 
+  // Turning an endpoint on or off from the list writes that alone, on the revision the row shows
+  // (ADR 0119): a row someone changed meanwhile is refused, and the list refetches.
   const onToggle = (record: SiteWebhookEndpointResource) =>
     updateMutation.mutate({
       path: { workspaceId, id: record.id },
-      body: { url: record.url, eventTypes: record.eventTypes, enabled: !record.enabled },
+      body: { revision: record.revision, enabled: !record.enabled },
     })
 
   const onDelete = ({ id, url }: { id: string; url: string }) =>

@@ -9,6 +9,7 @@ package entclient
 import (
 	"context"
 	"database/sql"
+	"slices"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -71,12 +72,42 @@ type revised interface {
 
 // Revision is the hook that moves a row's revision on every update of a type that has one (ADR
 // 0119), on every client of the application, so no writer can forget it: an editor's write names
-// the revision it was made on, and any other write in between makes it stale.
+// the revision it was made on, and any other write in between makes it stale. An update that writes
+// Bookkeeping columns alone (ent.Bookkeeping) leaves it: no editor shows them, so a background job
+// that keeps them does not refuse a person's save.
 func Revision(next ent.Mutator) ent.Mutator {
 	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-		if r, ok := m.(revised); ok && m.Op().Is(ent.OpUpdate|ent.OpUpdateOne) {
+		if r, ok := m.(revised); ok && m.Op().Is(ent.OpUpdate|ent.OpUpdateOne) && !bookkeepingOnly(m) {
 			r.AddRevision(1)
 		}
 		return next.Mutate(ctx, m)
 	})
 }
+
+// bookkeepingOnly reports whether m writes at least one column, updated_at aside, and only
+// Bookkeeping ones. An update that writes no column (a touch of updated_at, as a Contact's Tag
+// change does) is a write of what an editor shows and moves the revision.
+func bookkeepingOnly(m ent.Mutation) bool {
+	kept := ent.Bookkeeping[m.Type()]
+	if kept == nil {
+		return false
+	}
+	written := 0
+	for _, column := range slices.Concat(m.Fields(), m.AddedFields(), m.ClearedFields()) {
+		if column == updatedAt || column == revision {
+			continue
+		}
+		if !kept[column] {
+			return false
+		}
+		written++
+	}
+	return written > 0
+}
+
+// updatedAt is the column schema.TimeMixin moves on every update, and revision the one this hook
+// moves.
+const (
+	updatedAt = "updated_at"
+	revision  = "revision"
+)

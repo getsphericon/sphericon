@@ -32,6 +32,7 @@ function serve(previewBodies: unknown[] = []) {
             SiteConditionOperator.CONTAINS,
             SiteConditionOperator.NOT_NULL,
           ],
+          revision: 1,
           ...TIMESTAMPS,
         },
         {
@@ -44,6 +45,7 @@ function serve(previewBodies: unknown[] = []) {
             SiteConditionOperator.NEQ,
             SiteConditionOperator.NOT_NULL,
           ],
+          revision: 1,
           ...TIMESTAMPS,
         },
       ]),

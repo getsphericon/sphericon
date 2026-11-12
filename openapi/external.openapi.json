@@ -8778,7 +8778,16 @@
       },
       "CustomFieldResource": {
         "type": "object",
-        "required": ["id", "key", "name", "type", "ruleOperators", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "key",
+          "name",
+          "type",
+          "ruleOperators",
+          "revision",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -8812,6 +8821,14 @@
               "$ref": "#/components/schemas/ConditionOperator"
             },
             "description": "The operators a rule leaf on this field takes, by its type"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the state this answer shows (ADR 0119): an update names it"
           },
           "createdAt": {
             "allOf": [
@@ -10874,7 +10891,7 @@
       "Revision": {
         "type": "integer",
         "minimum": 1,
-        "description": "The revision of a resource a person edits (ADR 0119): the count of its writes, starting at 1.\nThe resource carries the one of the state it shows, and an update names the one it was made on:\na stale one is a 409 with code `revision_changed`, and nothing is written."
+        "description": "The revision of a resource a person edits (ADR 0119), starting at 1: every write of what it\nshows moves it, a background job's record of its own (a delivery failure, a provider's reading)\ndoes not.\nThe resource carries the one of the state it shows, and an update names the one it was made on:\na stale one is a 409 with code `revision_changed`, and nothing is written."
       },
       "RevisionInput": {
         "type": "object",
@@ -12693,7 +12710,16 @@
       },
       "UpdateCustomFieldInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The custom field's `revision` the edit was made on (ADR 0119): the one it was read with"
+          },
           "name": {
             "allOf": [
               {
@@ -12886,7 +12912,16 @@
       },
       "UpdateWebhookInput": {
         "type": "object",
+        "required": ["revision"],
         "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The webhook's `revision` the edit was made on (ADR 0119): the one it was read with"
+          },
           "url": {
             "type": "string",
             "description": "Destination URL (absolute http or https)"
@@ -13135,7 +13170,7 @@
       },
       "WebhookResource": {
         "type": "object",
-        "required": ["id", "url", "eventTypes", "enabled", "createdAt", "updatedAt"],
+        "required": ["id", "url", "eventTypes", "enabled", "revision", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -13183,6 +13218,14 @@
               }
             ],
             "description": "Present while deliveries are failing; cleared by the next 2xx"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The revision of the state this answer shows (ADR 0119): an update names it"
           },
           "createdAt": {
             "allOf": [

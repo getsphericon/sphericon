@@ -726,6 +726,15 @@ func (UnimplementedHandler) SiteContactsUpdate(ctx context.Context, req *SiteUpd
 	return r, ht.ErrNotImplemented
 }
 
+// SiteCustomFieldsGet implements SiteCustomFields_get operation.
+//
+// Get one custom field definition: what its editor opens with and reloads.
+//
+// GET /workspaces/{workspaceId}/custom-fields/{id}
+func (UnimplementedHandler) SiteCustomFieldsGet(ctx context.Context, params SiteCustomFieldsGetParams) (r *SiteCustomFieldResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteCustomFieldsList implements SiteCustomFields_list operation.
 //
 // List the workspace's custom field definitions.
