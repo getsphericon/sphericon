@@ -19078,6 +19078,18 @@ func (x *IntegrationScopedCreate) SetNillableDiscardedAt(v *time.Time) *Integrat
 	return x
 }
 
+// SetRevision sets the "revision" field.
+func (x *IntegrationScopedCreate) SetRevision(v int64) *IntegrationScopedCreate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillableRevision(v *int64) *IntegrationScopedCreate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *IntegrationScopedCreate) SetName(v string) *IntegrationScopedCreate {
 	x.b.SetName(v)
@@ -19496,6 +19508,24 @@ func (u *IntegrationScopedUpsert) UpdateDiscardedAt() *IntegrationScopedUpsert {
 // ClearDiscardedAt clears the value of the "discarded_at" field.
 func (u *IntegrationScopedUpsert) ClearDiscardedAt() *IntegrationScopedUpsert {
 	u.u.SetNull(integration.FieldDiscardedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *IntegrationScopedUpsert) SetRevision(v int64) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldRevision, v)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *IntegrationScopedUpsert) AddRevision(v int64) *IntegrationScopedUpsert {
+	u.u.Add(integration.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdateRevision() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldRevision)
 	return u
 }
 
@@ -19998,6 +20028,24 @@ func (x *IntegrationScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *Integ
 // ClearDiscardedAt clears the value of the "discarded_at" field.
 func (x *IntegrationScopedUpdateOne) ClearDiscardedAt() *IntegrationScopedUpdateOne {
 	x.b.ClearDiscardedAt()
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *IntegrationScopedUpdateOne) SetRevision(v int64) *IntegrationScopedUpdateOne {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableRevision(v *int64) *IntegrationScopedUpdateOne {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *IntegrationScopedUpdateOne) AddRevision(v int64) *IntegrationScopedUpdateOne {
+	x.b.AddRevision(v)
 	return x
 }
 
@@ -20520,6 +20568,24 @@ func (x *IntegrationScopedUpdate) SetNillableDiscardedAt(v *time.Time) *Integrat
 // ClearDiscardedAt clears the value of the "discarded_at" field.
 func (x *IntegrationScopedUpdate) ClearDiscardedAt() *IntegrationScopedUpdate {
 	x.b.ClearDiscardedAt()
+	return x
+}
+
+// SetRevision sets the "revision" field.
+func (x *IntegrationScopedUpdate) SetRevision(v int64) *IntegrationScopedUpdate {
+	x.b.SetRevision(v)
+	return x
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableRevision(v *int64) *IntegrationScopedUpdate {
+	x.b.SetNillableRevision(v)
+	return x
+}
+
+// AddRevision adds value to the "revision" field.
+func (x *IntegrationScopedUpdate) AddRevision(v int64) *IntegrationScopedUpdate {
+	x.b.AddRevision(v)
 	return x
 }
 

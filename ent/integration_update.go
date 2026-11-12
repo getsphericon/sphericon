@@ -76,6 +76,27 @@ func (_u *IntegrationUpdate) ClearDiscardedAt() *IntegrationUpdate {
 	return _u
 }
 
+// SetRevision sets the "revision" field.
+func (_u *IntegrationUpdate) SetRevision(v int64) *IntegrationUpdate {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableRevision(v *int64) *IntegrationUpdate {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *IntegrationUpdate) AddRevision(v int64) *IntegrationUpdate {
+	_u.mutation.AddRevision(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *IntegrationUpdate) SetName(v string) *IntegrationUpdate {
 	_u.mutation.SetName(v)
@@ -603,6 +624,11 @@ func (_u *IntegrationUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *IntegrationUpdate) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := integration.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Integration.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := integration.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Integration.name": %w`, err)}
@@ -675,6 +701,12 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.DiscardedAtCleared() {
 		_spec.ClearField(integration.FieldDiscardedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(integration.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(integration.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(integration.FieldName, field.TypeString, value)
@@ -1024,6 +1056,27 @@ func (_u *IntegrationUpdateOne) SetNillableDiscardedAt(v *time.Time) *Integratio
 // ClearDiscardedAt clears the value of the "discarded_at" field.
 func (_u *IntegrationUpdateOne) ClearDiscardedAt() *IntegrationUpdateOne {
 	_u.mutation.ClearDiscardedAt()
+	return _u
+}
+
+// SetRevision sets the "revision" field.
+func (_u *IntegrationUpdateOne) SetRevision(v int64) *IntegrationUpdateOne {
+	_u.mutation.ResetRevision()
+	_u.mutation.SetRevision(v)
+	return _u
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableRevision(v *int64) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetRevision(*v)
+	}
+	return _u
+}
+
+// AddRevision adds value to the "revision" field.
+func (_u *IntegrationUpdateOne) AddRevision(v int64) *IntegrationUpdateOne {
+	_u.mutation.AddRevision(v)
 	return _u
 }
 
@@ -1567,6 +1620,11 @@ func (_u *IntegrationUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *IntegrationUpdateOne) check() error {
+	if v, ok := _u.mutation.Revision(); ok {
+		if err := integration.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Integration.revision": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := integration.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Integration.name": %w`, err)}
@@ -1656,6 +1714,12 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 	}
 	if _u.mutation.DiscardedAtCleared() {
 		_spec.ClearField(integration.FieldDiscardedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Revision(); ok {
+		_spec.SetField(integration.FieldRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRevision(); ok {
+		_spec.AddField(integration.FieldRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(integration.FieldName, field.TypeString, value)

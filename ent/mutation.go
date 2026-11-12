@@ -27162,6 +27162,8 @@ type IntegrationMutation struct {
 	created_at                 *time.Time
 	updated_at                 *time.Time
 	discarded_at               *time.Time
+	revision                   *int64
+	addrevision                *int64
 	name                       *string
 	channel                    *channels.Channel
 	provider                   *providers.Provider
@@ -27462,6 +27464,62 @@ func (m *IntegrationMutation) DiscardedAtCleared() bool {
 func (m *IntegrationMutation) ResetDiscardedAt() {
 	m.discarded_at = nil
 	delete(m.clearedFields, integration.FieldDiscardedAt)
+}
+
+// SetRevision sets the "revision" field.
+func (m *IntegrationMutation) SetRevision(i int64) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *IntegrationMutation) Revision() (r int64, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the Integration entity.
+// If the Integration object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationMutation) OldRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *IntegrationMutation) AddRevision(i int64) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *IntegrationMutation) AddedRevision() (r int64, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *IntegrationMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
 }
 
 // SetName sets the "name" field.
@@ -28588,7 +28646,7 @@ func (m *IntegrationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *IntegrationMutation) Fields() []string {
-	fields := make([]string, 0, 22)
+	fields := make([]string, 0, 23)
 	if m.created_at != nil {
 		fields = append(fields, integration.FieldCreatedAt)
 	}
@@ -28600,6 +28658,9 @@ func (m *IntegrationMutation) Fields() []string {
 	}
 	if m.discarded_at != nil {
 		fields = append(fields, integration.FieldDiscardedAt)
+	}
+	if m.revision != nil {
+		fields = append(fields, integration.FieldRevision)
 	}
 	if m.name != nil {
 		fields = append(fields, integration.FieldName)
@@ -28671,6 +28732,8 @@ func (m *IntegrationMutation) Field(name string) (ent.Value, bool) {
 		return m.WorkspaceID()
 	case integration.FieldDiscardedAt:
 		return m.DiscardedAt()
+	case integration.FieldRevision:
+		return m.Revision()
 	case integration.FieldName:
 		return m.Name()
 	case integration.FieldChannel:
@@ -28724,6 +28787,8 @@ func (m *IntegrationMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldWorkspaceID(ctx)
 	case integration.FieldDiscardedAt:
 		return m.OldDiscardedAt(ctx)
+	case integration.FieldRevision:
+		return m.OldRevision(ctx)
 	case integration.FieldName:
 		return m.OldName(ctx)
 	case integration.FieldChannel:
@@ -28796,6 +28861,13 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDiscardedAt(v)
+		return nil
+	case integration.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
 		return nil
 	case integration.FieldName:
 		v, ok := value.(string)
@@ -28931,6 +29003,9 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *IntegrationMutation) AddedFields() []string {
 	var fields []string
+	if m.addrevision != nil {
+		fields = append(fields, integration.FieldRevision)
+	}
 	if m.addmax_per_second != nil {
 		fields = append(fields, integration.FieldMaxPerSecond)
 	}
@@ -28951,6 +29026,8 @@ func (m *IntegrationMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *IntegrationMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case integration.FieldRevision:
+		return m.AddedRevision()
 	case integration.FieldMaxPerSecond:
 		return m.AddedMaxPerSecond()
 	case integration.FieldMaxPerDay:
@@ -28968,6 +29045,13 @@ func (m *IntegrationMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *IntegrationMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case integration.FieldRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
 	case integration.FieldMaxPerSecond:
 		v, ok := value.(int)
 		if !ok {
@@ -29103,6 +29187,9 @@ func (m *IntegrationMutation) ResetField(name string) error {
 		return nil
 	case integration.FieldDiscardedAt:
 		m.ResetDiscardedAt()
+		return nil
+	case integration.FieldRevision:
+		m.ResetRevision()
 		return nil
 	case integration.FieldName:
 		m.ResetName()

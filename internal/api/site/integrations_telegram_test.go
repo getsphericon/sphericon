@@ -39,6 +39,10 @@ func createTelegram(t *testing.T, c *siteapi.Client, token string) (*siteapi.Sit
 
 func updateTelegram(t *testing.T, c *siteapi.Client, id siteapi.EntityId, in *siteapi.UpdateIntegrationInput) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
+	// An edit names the revision it was made on (ADR 0119), so the client reads the Integration first.
+	read, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	in.Revision = read.Revision
 	return c.SiteIntegrationsUpdate(context.Background(), in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 }
 

@@ -69,7 +69,7 @@ func TestExternalIntegrationWritesAreAuditedUnderTheToken(t *testing.T) {
 	row, err := scoped.Integration().Get(ctx, int64(created.ID))
 	require.NoError(t, err)
 
-	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(smtpInput("smtp2.example.com"))},
+	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(created.ID))), Config: externalapi.NewOptIntegrationConfigInput(smtpInput("smtp2.example.com"))},
 		externalapi.IntegrationsUpdateParams{ID: created.ID})
 	require.NoError(t, err)
 	updated, err := scoped.Integration().Get(ctx, row.ID)

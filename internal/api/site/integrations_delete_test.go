@@ -94,10 +94,10 @@ func TestSiteIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 	id := idStr(fixtures.IntegrationAcmeArchivedID)
 	path := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id}
 
-	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptName("Renamed")}, path)
+	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(path.ID))), Name: siteapi.NewOptName("Renamed")}, path)
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)}, path)
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(path.ID))), IsDefault: siteapi.NewOptBool(true)}, path)
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	_, err = c.SiteIntegrationsRegenerateKey(ctx, siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})

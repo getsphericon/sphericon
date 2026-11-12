@@ -57,7 +57,7 @@ func TestExternalIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 	ctx := context.Background()
 	id := entityIDString(fixtures.IntegrationAcmeArchivedID)
 
-	_, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptName("Renamed")},
+	_, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(id))), Name: externalapi.NewOptName("Renamed")},
 		externalapi.IntegrationsUpdateParams{ID: id})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 

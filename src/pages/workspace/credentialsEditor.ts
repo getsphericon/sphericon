@@ -3,6 +3,7 @@ import { siteIntegrationsUpdate } from '../../generated/site/sdk.gen.ts'
 import type { SiteIntegrationProvider } from '../../generated/site/types.gen.ts'
 import { zSiteIntegrationProvider } from '../../generated/site/zod.gen.ts'
 import { defineModalEditor } from '../../resources/defineResource.tsx'
+import { withRevision } from '../../resources/resourceEditor.ts'
 import { CredentialsForm } from './CredentialsForm.tsx'
 import { credentialsSchema, INITIAL_VALUES, storedValues } from './integrationForm.ts'
 import type { CredentialsVariant } from './integrationForm.ts'
@@ -21,7 +22,7 @@ function credentialsEditorOf(variant: CredentialsVariant) {
     valuesOf: storedValues,
     Form: CredentialsForm,
     getOptions: siteIntegrationsGetOptions,
-    update: siteIntegrationsUpdate,
+    update: withRevision(siteIntegrationsUpdate),
     operations: {},
     texts: (t) => ({
       editTitle: t(($) => $.settings.integrations.credentials.open),

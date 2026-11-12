@@ -27,7 +27,7 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 	assert.True(t, def.MaxPerDay.Null)
 
 	upd := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: def.ID}
-	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(upd.ID))),
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(14),
 		MaxPerDay:    siteapi.NewOptNilMaxPerDay(50000),
 	}, upd)
@@ -37,7 +37,7 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 	assert.Equal(t, int32(50000), res.MaxPerDay.Or(0))
 
 	// Omitting a limit keeps it; null clears it.
-	partial, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	partial, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(upd.ID))),
 		MaxPerDay: siteapi.OptNilMaxPerDay{Set: true, Null: true},
 	}, upd)
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestSiteIntegrationsProviderLimitIsBounded(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, got.MaxPerSecond.Null, "a rejected update changed nothing")
 
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(upd.ID))),
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(10000),
 		MaxPerDay:    siteapi.NewOptNilMaxPerDay(100000000),
 	}, upd)
@@ -103,7 +103,7 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	assert.Equal(t, int32(2), status.SentLast24h)
 
 	// A manual limit is the effective one, sourced "manual", and the warning goes.
-	upd, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	upd, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(1))),
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(14),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
 	require.NoError(t, err)
@@ -189,24 +189,24 @@ func TestSiteIntegrationsSesCompatibleKeepsTheProviderLimit(t *testing.T) {
 	// The fixture's AWS SES Integration has no endpoint and no limit.
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeSesID}
 
-	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(postboxInput()),
 	}, params)
 	assert.Equal(t, []string{"maxPerDay", "maxPerSecond"}, refusedFields(t, err))
 
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 		Config:       siteapi.NewOptIntegrationConfigInput(postboxInput()),
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(1),
 		MaxPerDay:    siteapi.NewOptNilMaxPerDay(200),
 	}, params)
 	require.NoError(t, err)
 
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 		MaxPerDay: siteapi.OptNilMaxPerDay{Set: true, Null: true},
 	}, params)
 	assert.Equal(t, []string{"maxPerDay"}, refusedFields(t, err))
 
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(params.ID))),
 		Name: siteapi.NewOptName("Postbox (prod)"),
 	}, params)
 	require.NoError(t, err, "the stored values still apply")

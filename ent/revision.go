@@ -5,6 +5,15 @@ package ent
 // Bookkeeping is, per type, the columns schema.Bookkeeping marks (ADR 0119): an update that writes
 // only these, updated_at aside, leaves the row's revision as it was.
 var Bookkeeping = map[string]map[string]bool{
+	"Integration": {
+		"provider_max_per_second":   true,
+		"provider_max_per_day":      true,
+		"provider_enforcement":      true,
+		"provider_sandbox":          true,
+		"provider_refused_at":       true,
+		"provider_quota_checked_at": true,
+		"provider_quota_failed_at":  true,
+	},
 	"WebhookEndpoint": {
 		"consecutive_failures": true,
 		"failing_since":        true,

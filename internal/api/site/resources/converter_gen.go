@@ -1343,6 +1343,7 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) site.Site
 		// siteapiSiteIntegrationResource.SecretsRetiring: ignore
 		// siteapiSiteIntegrationResource.HookUrl: ignore
 		siteapiSiteIntegrationResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteIntegrationResource.Revision = revision((*source).Revision)
 		siteapiSiteIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

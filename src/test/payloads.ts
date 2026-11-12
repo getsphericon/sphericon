@@ -54,6 +54,7 @@ export function emailIntegration(
     preset: null,
     params: {},
     secretsRetiring: [],
+    revision: 1,
     hookUrl: `https://app.test/hooks/omik_${id}`,
     ...TIMESTAMPS,
     ...extra,

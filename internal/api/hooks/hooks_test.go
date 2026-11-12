@@ -264,6 +264,10 @@ func TestHookRedeliveryHasTheEffectOfOnce(t *testing.T) {
 
 func updateParams(t *testing.T, c *externalapi.Client, id int64, update *externalapi.UpdateIntegrationInput) *externalapi.IntegrationResource {
 	t.Helper()
+	// An edit names the revision it was made on (ADR 0119), so the client reads the Integration first.
+	read, err := c.IntegrationsGet(t.Context(), externalapi.IntegrationsGetParams{ID: externalapi.EntityId(id)})
+	require.NoError(t, err)
+	update.Revision = read.Revision
 	out, err := c.IntegrationsUpdate(t.Context(), update, externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
 	require.NoError(t, err)
 	return out
@@ -330,6 +334,7 @@ func TestIntegrationParamsAreValidatedAgainstThePresetSchema(t *testing.T) {
 		})},
 		"a Preset that does not exist": {Preset: externalapi.NewOptNilString("nope")},
 	} {
+		in.Revision = externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(id)))
 		_, err := c.IntegrationsUpdate(t.Context(), &in, externalapi.IntegrationsUpdateParams{ID: id})
 		testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, name)
 	}
@@ -348,7 +353,7 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_1", "a@example.com", true)).Code,
 		"an SMTP Integration with no Preset receives nothing")
 
-	_, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic")},
+	_, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(externalapi.EntityId(id)))), Preset: externalapi.NewOptNilString("generic")},
 		externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 

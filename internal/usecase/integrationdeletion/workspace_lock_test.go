@@ -123,7 +123,7 @@ func TestAPromotionQueuedBehindTheDeleteOfItsIntegrationLeavesTheChannelItsDefau
 			return deletion.Delete(ctx, s, fixtures.IntegrationAcmeSesID)
 		}},
 		testhelper.Writer{Name: "promote", Run: func() error {
-			_, err := integs.Update(ctx, s, fixtures.IntegrationAcmeSesID, integrations.UpdateInput{IsDefault: patch.Set(true)})
+			_, err := integs.Update(ctx, s, fixtures.IntegrationAcmeSesID, integrations.UpdateInput{Revision: testhelper.IntegrationRevisionIn(ctx, t, s, fixtures.IntegrationAcmeSesID), IsDefault: patch.Set(true)})
 			return err
 		}},
 	)

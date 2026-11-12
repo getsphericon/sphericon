@@ -25,6 +25,8 @@ const (
 	FieldWorkspaceID = "workspace_id"
 	// FieldDiscardedAt holds the string denoting the discarded_at field in the database.
 	FieldDiscardedAt = "discarded_at"
+	// FieldRevision holds the string denoting the revision field in the database.
+	FieldRevision = "revision"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldChannel holds the string denoting the channel field in the database.
@@ -117,6 +119,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldWorkspaceID,
 	FieldDiscardedAt,
+	FieldRevision,
 	FieldName,
 	FieldChannel,
 	FieldProvider,
@@ -154,6 +157,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultRevision holds the default value on creation for the "revision" field.
+	DefaultRevision int64
+	// RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	RevisionValidator func(int64) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// PresetValidator is a validator for the "preset" field. It is called by the builders before save.
@@ -228,6 +235,11 @@ func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 // ByDiscardedAt orders the results by the discarded_at field.
 func ByDiscardedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDiscardedAt, opts...).ToFunc()
+}
+
+// ByRevision orders the results by the revision field.
+func ByRevision(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRevision, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

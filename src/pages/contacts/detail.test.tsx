@@ -429,6 +429,7 @@ const BOT: SiteIntegrationResource = {
   preset: 'telegram',
   params: {},
   secretsRetiring: [],
+  revision: 1,
   hookUrl: 'https://app.test/hooks/omik_nine',
   createdAt: NOW,
   updatedAt: NOW,

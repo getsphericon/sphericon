@@ -77,7 +77,7 @@ func TestAStartLinkUsesTheDefaultBotWhenNoneIsNamed(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write", "integrations:write")
-	_, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{IsDefault: externalapi.NewOptBool(true)},
+	_, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(externalapi.EntityId(bot.Integration.ID)))), IsDefault: externalapi.NewOptBool(true)},
 		externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(bot.Integration.ID)})
 	require.NoError(t, err)
 

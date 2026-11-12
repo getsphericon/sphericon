@@ -62,7 +62,7 @@ func TestExternalTwilioIntegrationLifecycle(t *testing.T) {
 	assert.NotContains(t, readBody(t, read), key.Secret)
 	assert.NotContains(t, readBody(t, read), account.AuthToken)
 
-	rotated, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Params: authToken("rotatedauthtoken")},
+	rotated, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(row.ID))), Params: authToken("rotatedauthtoken")},
 		externalapi.IntegrationsUpdateParams{ID: row.ID})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"auth_token"}, rotated.SecretsRetiring)

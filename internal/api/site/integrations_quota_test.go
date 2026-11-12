@@ -75,7 +75,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 
 	// A manual value takes over as the only ceiling, and the warning stays.
 	upd := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID}
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(upd.ID))),
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(5),
 	}, upd)
 	require.NoError(t, err)
@@ -86,7 +86,8 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 
 	// The permission is granted and the Integration is saved again: the warning clears.
 	resave := &siteapi.UpdateIntegrationInput{
-		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA1234", "")),
+		Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(res.ID))),
+		Config:   siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA1234", "")),
 	}
 	env.SES.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	_, err = c.SiteIntegrationsUpdate(ctx, resave, upd)
@@ -99,6 +100,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 
 	// A later failed lookup keeps the last known provider values and only warns.
 	env.SES.SetQuotaErr(errors.New("timeout"))
+	resave.Revision = siteapi.Revision(env.IntegrationRevision(ctx, t, int64(res.ID)))
 	_, err = c.SiteIntegrationsUpdate(ctx, resave, upd)
 	require.NoError(t, err)
 	status = reread(t, env, c, res.ID)
@@ -128,7 +130,7 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 	// New credentials may name another account: what the old ones read goes with them, so a
 	// read that then fails holds nothing.
 	env.SES.SetQuotaErr(errors.New("AccessDenied: ses:GetAccount"))
-	_, err = c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(context.Background(), t, int64(id))),
 		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA5678", "other")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)

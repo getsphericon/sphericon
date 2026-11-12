@@ -107,7 +107,7 @@ func TestAHeldTwilioIntegrationSendsNothingUntilItIsSavedAgain(t *testing.T) {
 // saveTwilioKey saves the Integration with key, as an Owner fixing its credentials does.
 func saveTwilioKey(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAccount, key twiliotest.APIKey) {
 	t.Helper()
-	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(t.Context(), t, int64(account.Integration.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(testhelper.SiteTwilio(account.Account.SID, key.SID, key.Secret, testhelper.TwilioNumber)),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: account.Integration.ID})
 	require.NoError(t, err)
@@ -215,7 +215,7 @@ func TestATwilioRefusalOfAnAlphanumericSenderFailsThatMessageOnly(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
-	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(account.Integration.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(testhelper.SiteTwilio(account.Account.SID, account.Key.SID, account.Key.Secret, "Acme Shop")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: account.Integration.ID})
 	require.NoError(t, err)

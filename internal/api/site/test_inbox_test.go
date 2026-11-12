@@ -43,7 +43,10 @@ func createInbox(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId)
 // makeDefault picks an Integration as its Workspace's default, the way any Integration is chosen.
 func makeDefault(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId, id int64) {
 	t.Helper()
-	_, err := c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{
+	// The choice names the revision it was made on (ADR 0119), so the client reads the Integration first.
+	read, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: workspace, ID: idStr(id)})
+	require.NoError(t, err)
+	_, err = c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{Revision: read.Revision,
 		IsDefault: siteapi.NewOptBool(true),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: workspace, ID: idStr(id)})
 	require.NoError(t, err)
@@ -271,7 +274,7 @@ func TestDisablingTheTestInboxStopsCapturingAndKeepsWhatWasCaptured(t *testing.T
 	kept := env.DB.CapturedMessage.Query().Where(capturedmessage.OutboundMessageID(int64(sent.ID))).OnlyX(t.Context())
 	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
 
-	_, err = jane.SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
+	_, err = jane.SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(t.Context(), t, int64(idStr(fixtures.IntegrationGlobexInboxID)))),
 		Enabled: siteapi.NewOptBool(false),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.IntegrationGlobexInboxID)})
 	require.NoError(t, err)

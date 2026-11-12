@@ -52,7 +52,7 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 	require.True(t, env.RunNextStep(t, mod))
 	assert.Len(t, env.Telegram.RequestsOf(telegramtest.SendMessage), asked)
 
-	_, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(bot.Integration.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(siteapi.IntegrationConfigInput{
 			OneOf: siteapi.NewTelegramConfigInputIntegrationConfigInputSum(siteapi.TelegramConfigInput{
 				Kind: siteapi.TelegramConfigInputKindTelegram, Token: rotated,
@@ -169,7 +169,7 @@ func holdOf(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) s
 // does once the bot works again, and returns the answer.
 func saveTelegramToken(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
-	return env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
+	return env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(t.Context(), t, int64(bot.Integration.ID))),
 		Config: siteapi.NewOptIntegrationConfigInput(siteapi.IntegrationConfigInput{
 			OneOf: siteapi.NewTelegramConfigInputIntegrationConfigInputSum(siteapi.TelegramConfigInput{
 				Kind: siteapi.TelegramConfigInputKindTelegram, Token: bot.Token,
@@ -181,7 +181,7 @@ func saveTelegramToken(t *testing.T, env *testhelper.TestEnv, bot testhelper.Tel
 // saveTelegramTokenExternal is saveTelegramToken through the External API.
 func saveTelegramTokenExternal(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) (*externalapi.IntegrationResource, error) {
 	t.Helper()
-	return env.ExternalScoped(t, "integrations:write").IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{
+	return env.ExternalScoped(t, "integrations:write").IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(externalapi.EntityId(bot.Integration.ID)))),
 		Config: externalapi.NewOptIntegrationConfigInput(externalapi.IntegrationConfigInput{
 			OneOf: externalapi.NewTelegramConfigInputIntegrationConfigInputSum(externalapi.TelegramConfigInput{
 				Kind: externalapi.TelegramConfigInputKindTelegram, Token: bot.Token,

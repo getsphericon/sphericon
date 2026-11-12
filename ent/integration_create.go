@@ -77,6 +77,20 @@ func (_c *IntegrationCreate) SetNillableDiscardedAt(v *time.Time) *IntegrationCr
 	return _c
 }
 
+// SetRevision sets the "revision" field.
+func (_c *IntegrationCreate) SetRevision(v int64) *IntegrationCreate {
+	_c.mutation.SetRevision(v)
+	return _c
+}
+
+// SetNillableRevision sets the "revision" field if the given value is not nil.
+func (_c *IntegrationCreate) SetNillableRevision(v *int64) *IntegrationCreate {
+	if v != nil {
+		_c.SetRevision(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *IntegrationCreate) SetName(v string) *IntegrationCreate {
 	_c.mutation.SetName(v)
@@ -407,6 +421,10 @@ func (_c *IntegrationCreate) defaults() {
 		v := integration.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		v := integration.DefaultRevision
+		_c.mutation.SetRevision(v)
+	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		v := integration.DefaultEnabled
 		_c.mutation.SetEnabled(v)
@@ -431,6 +449,14 @@ func (_c *IntegrationCreate) check() error {
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "Integration.workspace_id"`)}
+	}
+	if _, ok := _c.mutation.Revision(); !ok {
+		return &ValidationError{Name: "revision", err: errors.New(`ent: missing required field "Integration.revision"`)}
+	}
+	if v, ok := _c.mutation.Revision(); ok {
+		if err := integration.RevisionValidator(v); err != nil {
+			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Integration.revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Integration.name"`)}
@@ -543,6 +569,10 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DiscardedAt(); ok {
 		_spec.SetField(integration.FieldDiscardedAt, field.TypeTime, value)
 		_node.DiscardedAt = &value
+	}
+	if value, ok := _c.mutation.Revision(); ok {
+		_spec.SetField(integration.FieldRevision, field.TypeInt64, value)
+		_node.Revision = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(integration.FieldName, field.TypeString, value)
@@ -788,6 +818,24 @@ func (u *IntegrationUpsert) UpdateDiscardedAt() *IntegrationUpsert {
 // ClearDiscardedAt clears the value of the "discarded_at" field.
 func (u *IntegrationUpsert) ClearDiscardedAt() *IntegrationUpsert {
 	u.SetNull(integration.FieldDiscardedAt)
+	return u
+}
+
+// SetRevision sets the "revision" field.
+func (u *IntegrationUpsert) SetRevision(v int64) *IntegrationUpsert {
+	u.Set(integration.FieldRevision, v)
+	return u
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdateRevision() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldRevision)
+	return u
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *IntegrationUpsert) AddRevision(v int64) *IntegrationUpsert {
+	u.Add(integration.FieldRevision, v)
 	return u
 }
 
@@ -1188,6 +1236,27 @@ func (u *IntegrationUpsertOne) UpdateDiscardedAt() *IntegrationUpsertOne {
 func (u *IntegrationUpsertOne) ClearDiscardedAt() *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.ClearDiscardedAt()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *IntegrationUpsertOne) SetRevision(v int64) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *IntegrationUpsertOne) AddRevision(v int64) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdateRevision() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateRevision()
 	})
 }
 
@@ -1804,6 +1873,27 @@ func (u *IntegrationUpsertBulk) UpdateDiscardedAt() *IntegrationUpsertBulk {
 func (u *IntegrationUpsertBulk) ClearDiscardedAt() *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.ClearDiscardedAt()
+	})
+}
+
+// SetRevision sets the "revision" field.
+func (u *IntegrationUpsertBulk) SetRevision(v int64) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetRevision(v)
+	})
+}
+
+// AddRevision adds v to the "revision" field.
+func (u *IntegrationUpsertBulk) AddRevision(v int64) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.AddRevision(v)
+	})
+}
+
+// UpdateRevision sets the "revision" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdateRevision() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateRevision()
 	})
 }
 

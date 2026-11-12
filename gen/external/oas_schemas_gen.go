@@ -10164,6 +10164,9 @@ type IntegrationResource struct {
 	// names it; it is never the default, takes no new work, and its hook still reads the provider's
 	// callbacks.
 	DiscardedAt OptNilTimestamp `json:"discardedAt"`
+	// The revision of the state this answer shows (ADR 0119): an update names it. A provider's reading of
+	// the integration (its quota, standing and refusal) does not move it.
+	Revision Revision `json:"revision"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -10243,6 +10246,11 @@ func (s *IntegrationResource) GetHookUrl() string {
 // GetDiscardedAt returns the value of DiscardedAt.
 func (s *IntegrationResource) GetDiscardedAt() OptNilTimestamp {
 	return s.DiscardedAt
+}
+
+// GetRevision returns the value of Revision.
+func (s *IntegrationResource) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -10328,6 +10336,11 @@ func (s *IntegrationResource) SetHookUrl(val string) {
 // SetDiscardedAt sets the value of DiscardedAt.
 func (s *IntegrationResource) SetDiscardedAt(val OptNilTimestamp) {
 	s.DiscardedAt = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *IntegrationResource) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -19223,9 +19236,11 @@ func (s *UpdateCustomFieldInput) SetType(val OptCustomFieldType) {
 // the stored secret.
 // Ref: #/components/schemas/UpdateIntegrationInput
 type UpdateIntegrationInput struct {
-	Name      OptName `json:"name"`
-	Enabled   OptBool `json:"enabled"`
-	IsDefault OptBool `json:"isDefault"`
+	// The integration's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision  Revision `json:"revision"`
+	Name      OptName  `json:"name"`
+	Enabled   OptBool  `json:"enabled"`
+	IsDefault OptBool  `json:"isDefault"`
 	// Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES
 	// Integration with an `endpoint` cannot be left without it.
 	MaxPerSecond OptNilMaxPerSecond `json:"maxPerSecond"`
@@ -19242,6 +19257,11 @@ type UpdateIntegrationInput struct {
 	Params OptJsonObject `json:"params"`
 	// Stop accepting the retiring value of every rotating secret.
 	RetireSecrets OptBool `json:"retireSecrets"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateIntegrationInput) GetRevision() Revision {
+	return s.Revision
 }
 
 // GetName returns the value of Name.
@@ -19287,6 +19307,11 @@ func (s *UpdateIntegrationInput) GetParams() OptJsonObject {
 // GetRetireSecrets returns the value of RetireSecrets.
 func (s *UpdateIntegrationInput) GetRetireSecrets() OptBool {
 	return s.RetireSecrets
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateIntegrationInput) SetRevision(val Revision) {
+	s.Revision = val
 }
 
 // SetName sets the value of Name.

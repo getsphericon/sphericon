@@ -29167,6 +29167,10 @@ func (s *SiteIntegrationResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -29176,7 +29180,7 @@ func (s *SiteIntegrationResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteIntegrationResource = [17]string{
+var jsonFieldsNameOfSiteIntegrationResource = [18]string{
 	0:  "id",
 	1:  "name",
 	2:  "channel",
@@ -29192,8 +29196,9 @@ var jsonFieldsNameOfSiteIntegrationResource = [17]string{
 	12: "secretsRetiring",
 	13: "hookUrl",
 	14: "discardedAt",
-	15: "createdAt",
-	16: "updatedAt",
+	15: "revision",
+	16: "createdAt",
+	17: "updatedAt",
 }
 
 // Decode decodes SiteIntegrationResource from json.
@@ -29373,8 +29378,18 @@ func (s *SiteIntegrationResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"discardedAt\"")
 			}
-		case "createdAt":
+		case "revision":
 			requiredBitSet[1] |= 1 << 7
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "createdAt":
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -29384,7 +29399,7 @@ func (s *SiteIntegrationResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -29405,7 +29420,7 @@ func (s *SiteIntegrationResource) Decode(d *jx.Decoder) error {
 	for i, mask := range [3]uint8{
 		0b11111111,
 		0b10111111,
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -51771,6 +51786,10 @@ func (s *UpdateIntegrationInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *UpdateIntegrationInput) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
 		if s.Name.Set {
 			e.FieldStart("name")
 			s.Name.Encode(e)
@@ -51826,16 +51845,17 @@ func (s *UpdateIntegrationInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUpdateIntegrationInput = [9]string{
-	0: "name",
-	1: "enabled",
-	2: "isDefault",
-	3: "maxPerSecond",
-	4: "maxPerDay",
-	5: "config",
-	6: "preset",
-	7: "params",
-	8: "retireSecrets",
+var jsonFieldsNameOfUpdateIntegrationInput = [10]string{
+	0: "revision",
+	1: "name",
+	2: "enabled",
+	3: "isDefault",
+	4: "maxPerSecond",
+	5: "maxPerDay",
+	6: "config",
+	7: "preset",
+	8: "params",
+	9: "retireSecrets",
 }
 
 // Decode decodes UpdateIntegrationInput from json.
@@ -51843,9 +51863,20 @@ func (s *UpdateIntegrationInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode UpdateIntegrationInput to nil")
 	}
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
 		case "name":
 			if err := func() error {
 				s.Name.Reset()
@@ -51942,6 +51973,39 @@ func (s *UpdateIntegrationInput) Decode(d *jx.Decoder) error {
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode UpdateIntegrationInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00000001,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfUpdateIntegrationInput) {
+					name = jsonFieldsNameOfUpdateIntegrationInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 
 	return nil

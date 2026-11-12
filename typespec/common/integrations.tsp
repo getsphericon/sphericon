@@ -106,6 +106,9 @@ model CreateIntegrationInput {
 
 /** Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret. */
 model UpdateIntegrationInput {
+  /** The integration's `revision` the edit was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
   name?: Name;
   enabled?: boolean;
   isDefault?: boolean;
