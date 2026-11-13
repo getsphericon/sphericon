@@ -38,6 +38,7 @@ require (
 	github.com/itchyny/gojq v0.12.20
 	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
 	github.com/jackc/pgx/v5 v5.12.0
+	github.com/jackc/puddle/v2 v2.2.3
 	github.com/jmattheis/goverter v1.11.1
 	github.com/joho/godotenv v1.5.1
 	github.com/jpillora/backoff v1.1.0
@@ -162,7 +163,6 @@ require (
 	github.com/itchyny/timefmt-go v0.1.9 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/jessevdk/go-flags v1.6.1 // indirect
 	github.com/jonbaldie/go-mutesting/v2 v2.10.43 // indirect
 	github.com/klauspost/compress v1.20.4 // indirect

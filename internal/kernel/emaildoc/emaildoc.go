@@ -29,6 +29,10 @@ import (
 	"slices"
 	"sync/atomic"
 	"time"
+
+	"github.com/jackc/puddle/v2"
+
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
 
 // Errors a call can end with, to be told apart with errors.Is. An invalid document is an
@@ -63,10 +67,11 @@ type Limits struct {
 	MaxNodes int
 	// Timeout is how long one call may run once a runtime is ready.
 	Timeout time.Duration
-	// StartTimeout is how long a call waits for a runtime to start (the first call of a process,
-	// or the first after one was discarded) and, before the first code block a runtime renders,
-	// for the code block's languages to register, on top of Timeout. Each takes seconds, many more
-	// on a busy machine; a call that gives up leaves the work running for the next one.
+	// StartTimeout is how long a call waits for a runtime, on top of Timeout: its turn when every
+	// runtime is busy, the start of one (the first call of a process, or the first after one was
+	// discarded) and, before the first code block a runtime renders, the code block's languages to
+	// register. A start and a registration take seconds, many more on a busy machine; a call that
+	// gives up leaves the work running for the next one.
 	StartTimeout time.Duration
 	// MemoryGrowth is how many bytes the process heap may grow during one call. The heap counter is
 	// process-wide, so another goroutine's allocations count too; the call is stopped only when the
@@ -101,11 +106,11 @@ type Rendered struct {
 // usable: build one with New.
 type Renderer struct {
 	limits Limits
-	// slots holds one entry per runtime a Renderer may have; nil is a runtime not started (or one
-	// discarded). A call takes a slot, so calls queue when every runtime is busy.
-	slots chan *vm
+	// runtimes holds the runtimes a Renderer may have, each started by the first call that finds
+	// none idle while there is room for another. A call acquires one, so calls queue when every
+	// runtime is busy.
+	runtimes *puddle.Pool[*vm]
 
-	started atomic.Bool
 	// languages is set once a runtime has registered the code block's languages before a call.
 	languages atomic.Bool
 	// engine, when set, stands in for the runtime: the editor's schema check and export run there,
@@ -140,15 +145,24 @@ func New(opts ...Option) *Renderer {
 	for _, opt := range opts {
 		opt(r, &runtimes)
 	}
-	r.slots = make(chan *vm, runtimes)
-	for range runtimes {
-		r.slots <- nil
-	}
+	pool, err := puddle.NewPool(&puddle.Config[*vm]{
+		// The start cannot be interrupted, so the constructor ignores its context: puddle keeps
+		// the start running for a caller that gave up on it and hands the runtime to the next.
+		Constructor: func(context.Context) (*vm, error) { return startVM() },
+		// A runtime holds nothing but memory, which the collector takes back.
+		Destructor: func(*vm) {},
+		MaxSize:    narrow.Int32(runtimes),
+	})
+	must(err) // only a MaxSize under 1, which WithRuntimes rules out
+	r.runtimes = pool
 	return r
 }
 
-// Started reports whether a runtime has been started yet.
-func (r *Renderer) Started() bool { return r.started.Load() }
+// Started reports whether a runtime is ready: started, and not discarded since.
+func (r *Renderer) Started() bool {
+	stat := r.runtimes.Stat()
+	return stat.TotalResources() > stat.ConstructingResources()
+}
 
 // LanguagesRegistered reports whether a runtime has registered the languages a code block
 // highlights yet, which it does before the first code block it renders (outside the render's time
@@ -262,104 +276,96 @@ func holdsCodeBlock(node any) bool {
 	return slices.ContainsFunc(children, holdsCodeBlock)
 }
 
-// startResult is a runtime start that finished.
-type startResult struct {
-	rt  *vm
-	err error
-}
-
-// readyWithin readies the runtime of the slot the caller holds: it starts one when the slot has
-// none (rt is nil) and registers the code block's languages when the call needs them and the
-// runtime has not yet. It waits no longer than ctx and the Renderer's StartTimeout (this work has a
-// bound of its own, apart from the call's time limit). The work itself cannot be interrupted, so a
-// call that gives up leaves it running: the slot is handed back when it finishes, with the runtime
-// when it is ready, so the work is not lost and the next call finds the slot busy only for as long
-// as it takes. On error the caller no longer holds the slot.
-func (r *Renderer) readyWithin(ctx context.Context, rt *vm, languages bool) (*vm, error) {
-	finished := make(chan startResult, 1)
-	go func() {
-		rt, err := r.ready(rt, languages)
-		finished <- startResult{rt: rt, err: err}
-	}()
-	timer := time.NewTimer(r.limits.StartTimeout)
-	defer timer.Stop()
-
-	var abandoned error
-	select {
-	case res := <-finished:
-		if res.err != nil {
-			r.slots <- nil
-			return nil, fmt.Errorf("ready the document runtime: %w", res.err)
-		}
-		r.started.Store(true)
-		return res.rt, nil
-	case <-ctx.Done():
-		abandoned = ctx.Err()
-	case <-timer.C:
-		abandoned = ErrTimeout
-	}
-	go func() {
-		res := <-finished
-		if res.err == nil {
-			r.started.Store(true)
-		}
-		r.slots <- res.rt
-	}()
-	return nil, abandoned
-}
-
-// ready starts a runtime when rt is nil and registers the code block's languages on it when
-// languages asks for them. A runtime whose registration failed is discarded.
-func (r *Renderer) ready(rt *vm, languages bool) (*vm, error) {
-	if rt == nil {
-		started, err := startVM()
-		if err != nil {
-			return nil, err
-		}
-		rt = started
-	}
-	if languages && !rt.languages {
-		if err := rt.loadLanguages(); err != nil {
-			return nil, err
-		}
-		r.languages.Store(true)
-	}
-	return rt, nil
-}
-
 // withRuntime runs fn on a runtime under the call's limits, after the code block's languages are
-// registered on it when languages asks for them. A runtime that was stopped, or whose state is
-// unknown after an error, is discarded.
+// registered on it when languages asks for them. Readying the runtime (waiting for one, starting
+// one, registering the languages) waits no longer than ctx and the Renderer's StartTimeout. A
+// runtime that was stopped, or whose state is unknown after an error, is discarded.
 func (r *Renderer) withRuntime(ctx context.Context, cfg callConfig, languages bool, fn func(*vm) error) error {
-	// A call whose context has ended takes no slot, even when one is free.
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	var rt *vm
-	select {
-	case rt = <-r.slots:
-	case <-ctx.Done():
+	readyCtx, cancel := context.WithTimeout(ctx, r.limits.StartTimeout)
+	res, err := r.acquire(readyCtx, languages)
+	// Read before cancel, which would end readyCtx whatever became of the call.
+	timedOut := errors.Is(readyCtx.Err(), context.DeadlineExceeded)
+	cancel()
+	switch {
+	case err == nil:
+	case ctx.Err() != nil:
 		return ctx.Err()
+	case timedOut:
+		return ErrTimeout
+	default:
+		return fmt.Errorf("ready the document runtime: %w", err)
 	}
-	if rt == nil || (languages && !rt.languages) {
-		ready, err := r.readyWithin(ctx, rt, languages)
-		if err != nil {
-			return err
-		}
-		rt = ready
-	}
-	defer func() { r.slots <- rt }()
 
+	// The runtime goes back to the pool only when the call ended cleanly; a panic discards it too.
+	keep := false
+	defer func() { settle(res, keep) }()
+	rt := res.Value()
 	stop := rt.guard(ctx, cfg)
-	err := fn(rt)
+	err = fn(rt)
 	reason := stop()
 	switch {
 	case reason != stopNone:
-		rt = nil
 		return reason.err(ctx)
 	case err != nil && !errors.Is(err, ErrInvalid):
-		rt = nil
 		return err
 	}
+	keep = true
 	return err
+}
+
+// settle hands a runtime back to the pool when keep says it is fit for the next call, and
+// discards it otherwise.
+func settle(res *puddle.Resource[*vm], keep bool) {
+	if keep {
+		res.Release()
+		return
+	}
+	res.Destroy()
+}
+
+// acquire takes a runtime from the pool, which starts one when none is idle and the Renderer may
+// have another, and registers the code block's languages on it when languages asks for them and
+// the runtime has not yet. A call whose ctx has ended takes no runtime, even an idle one. Neither
+// the start nor the registration can be interrupted, so a call that gives up leaves them running:
+// puddle hands a started runtime to the next call, and the registration below hands its runtime
+// back once it finishes, so the work is not lost.
+func (r *Renderer) acquire(ctx context.Context, languages bool) (*puddle.Resource[*vm], error) {
+	res, err := r.runtimes.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rt := res.Value()
+	if !languages || rt.languages {
+		return res, nil
+	}
+	registered := make(chan error, 1)
+	go func() { registered <- rt.loadLanguages() }()
+	select {
+	case err := <-registered:
+		if err := r.settleLanguages(res, err); err != nil {
+			return nil, err
+		}
+		return res, nil
+	case <-ctx.Done():
+		go func() {
+			err := r.settleLanguages(res, <-registered)
+			if err != nil {
+				slog.WarnContext(ctx, "document runtime discarded after a registration nobody waited for", "error", err)
+				return
+			}
+			res.Release()
+		}()
+		return nil, ctx.Err()
+	}
+}
+
+// settleLanguages records a registration of the code block's languages that ended: a runtime whose
+// registration failed is discarded, and the error returned.
+func (r *Renderer) settleLanguages(res *puddle.Resource[*vm], err error) error {
+	if err != nil {
+		res.Destroy()
+		return err
+	}
+	r.languages.Store(true)
+	return nil
 }
