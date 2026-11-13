@@ -133,11 +133,11 @@ func (c *checker) add(p Problem) { c.problems = append(c.problems, p) }
 // classify reads the kind of n from its markers and its structure.
 func (c *checker) classify(n *gen.Type) *entity {
 	e := &entity{node: n}
-	e.kind.WorkspaceOwned = c.marked(n, schema.WorkspaceOwned{})
-	e.kind.Archivable = c.marked(n, schema.Archivable{})
-	e.kind.Discardable = c.marked(n, schema.Discardable{})
-	e.kind.Versioned = c.marked(n, schema.Versioned{})
-	e.kind.Revised = c.marked(n, schema.Revised{})
+	e.kind.WorkspaceOwned = marked(n, schema.WorkspaceOwned{})
+	e.kind.Archivable = marked(n, schema.Archivable{})
+	e.kind.Discardable = marked(n, schema.Discardable{})
+	e.kind.Versioned = marked(n, schema.Versioned{})
+	e.kind.Revised = marked(n, schema.Revised{})
 	for _, f := range n.Fields {
 		mixedIn := f.Position != nil && f.Position.MixedIn
 		switch {
@@ -156,7 +156,7 @@ func (c *checker) classify(n *gen.Type) *entity {
 }
 
 // marked reports whether n carries the marker.
-func (c *checker) marked(n *gen.Type, marker entschema.Annotation) bool {
+func marked(n *gen.Type, marker entschema.Annotation) bool {
 	_, ok := n.Annotations[marker.Name()]
 	return ok
 }

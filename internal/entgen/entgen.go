@@ -35,7 +35,7 @@ func Hook(templateDir string) gen.Hook {
 				for i, p := range problems {
 					errs[i] = errors.New(p.String())
 				}
-				return fmt.Errorf("ent/schema breaks %d rule(s) of generation:\n%w", len(problems), errors.Join(errs...))
+				return fmt.Errorf("checking ent/schema against the rules of generation: %w", errors.Join(errs...))
 			}
 			t, err := gen.NewTemplate("scoped").Funcs(s.Funcs()).ParseDir(templateDir)
 			if err != nil {
