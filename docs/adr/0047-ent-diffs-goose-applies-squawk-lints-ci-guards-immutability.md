@@ -19,6 +19,12 @@ the binary, the start guard and the tests (`goose_db_version`). The CLI also own
 - **CI guards immutability.** `cmd/upgradecheck immutable` fails a PR that modifies or deletes a
   migration already on `main`, replacing the checksum's job; only a PR body line
   `History-Collapse: <reason>` may rewrite history.
+- **A migration that touches rows is tested over rows.** One that reads or rewrites rows (an
+  `UPDATE`, `INSERT` or `DELETE`, a `DO` block that raises, a Go migration, a `VALIDATE` over rows a
+  backfill fixed) comes with a test that loads rows in the shape of the schema before it
+  (`testhelper.SchemaBefore`), migrates and reads the result. A migration of DDL alone needs none,
+  and none is run twice: goose records each version and never applies it again. The rule holds
+  from 2026-11-12 on; migrations already on `main` are not tested after the fact.
 - The Atlas CLI, `atlas.hcl` and `migrations/atlas.sum` are removed. A developer with an older
   dev database runs `mise run db:reset` once.
 
