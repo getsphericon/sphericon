@@ -17,7 +17,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"{{ $.Config.Package }}/predicate"
-	{{- range $n := scopedNodes $ }}
+	{{- range $n := scopedNodes }}
 	"{{ $.Config.Package }}/{{ $n.Package }}"
 	{{- end }}
 )
@@ -87,7 +87,7 @@ func uniqueIDs(ids []int64) []int64 {
 	return slices.Compact(s)
 }
 
-{{ range $n := scopedNodes $ }}{{ if $n.HasOneFieldID }}
+{{ range $n := scopedNodes }}{{ if $n.HasOneFieldID }}
 // verify{{ $n.Name }} fails with ErrNotInWorkspace unless every id is a {{ $n.Name }} of the Workspace.
 func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
@@ -105,13 +105,14 @@ func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 }
 {{ end }}{{ end }}
 
-{{ range $n := scopedNodes $ }}
+{{ range $n := scopedNodes }}
 {{ $N := $n.Name }}
 {{ $P := $n.Package }}
 {{ $A := auditOf $n }}
 {{ $D := discardable $n }}
 {{ $R := archivable $n }}
-{{ $Del := "Delete" }}{{ if or $D $R }}{{ $Del = "Purge" }}{{ end }}
+{{ $Aside := (kindOf $n).PutAside }}
+{{ $Del := "Delete" }}{{ if $Aside }}{{ $Del = "Purge" }}{{ end }}
 
 // {{ $N }}Scoped reaches {{ $N }} entities of one Workspace.
 type {{ $N }}Scoped struct{ s *Scoped }
@@ -232,7 +233,7 @@ type {{ $N }}ScopedDeleteOne struct {
 	b *{{ $N }}DeleteOne
 }
 
-// {{ $Del }}OneID {{ if or $D $R }}physically removes{{ else }}deletes{{ end }} the {{ $N }} with the id; a row of another Workspace is not found.
+// {{ $Del }}OneID {{ if $Aside }}physically removes{{ else }}deletes{{ end }} the {{ $N }} with the id; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) {{ $Del }}OneID(id int64) *{{ $N }}ScopedDeleteOne {
 	return &{{ $N }}ScopedDeleteOne{s: t.s, b: t.s.c.{{ $N }}.DeleteOneID(id).Where({{ $P }}.WorkspaceID(t.s.ws))}
 }
@@ -270,7 +271,7 @@ type {{ $N }}ScopedDelete struct {
 	b *{{ $N }}Delete
 }
 
-// {{ $Del }} {{ if or $D $R }}physically removes{{ else }}deletes{{ end }} the {{ $N }} entities of the Workspace that match the predicates.
+// {{ $Del }} {{ if $Aside }}physically removes{{ else }}deletes{{ end }} the {{ $N }} entities of the Workspace that match the predicates.
 func (t *{{ $N }}Scoped) {{ $Del }}() *{{ $N }}ScopedDelete {
 	return &{{ $N }}ScopedDelete{s: t.s, b: t.s.c.{{ $N }}.Delete().Where({{ $P }}.WorkspaceID(t.s.ws))}
 }
@@ -321,11 +322,11 @@ func (t *{{ $N }}Scoped) Create() *{{ $N }}ScopedCreate {
 	return &{{ $N }}ScopedCreate{s: t.s, b: t.s.c.{{ $N }}.Create().SetWorkspaceID(t.s.ws)}
 }
 
-{{ with extend $n "Graph" $ "Node" $n "Builder" (print $N "ScopedCreate") "Mode" "create" }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedCreate") "Mode" "create" }}
 	{{ template "helper/scopedsetters" . }}
 {{ end }}
 
-{{ with extend $n "Graph" $ "Node" $n "Builder" (print $N "ScopedCreate") }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedCreate") }}
 	{{ template "helper/scopedcheck" . }}
 {{ end }}
 
@@ -398,7 +399,7 @@ func (b *{{ $N }}ScopedCreateBulk) check(ctx context.Context) error {
 		}
 	}
 	{{- end }}
-	{{- range $r := scopedFieldRefs $ $n }}
+	{{- range $r := scopedFieldRefs $n }}
 	{
 		var ids []int64
 		for _, x := range b.xs {
@@ -455,8 +456,8 @@ func (b *{{ $N }}ScopedCreateBulk) Exec(ctx context.Context) error {
 type {{ $N }}ScopedUpsert struct{ u *sql.UpdateSet }
 
 {{ range $f := $n.MutableFields }}
-{{- if ne $f.Name "workspace_id" }}
-{{- $ref := scopedRefTarget $ $f }}
+{{- if not (isWorkspaceField $f) }}
+{{- $ref := scopedRefTarget $f }}
 {{- if not $ref }}
 // Set{{ $f.StructField }} sets the "{{ $f.Name }}" field.
 func (u *{{ $N }}ScopedUpsert) Set{{ $f.StructField }}(v {{ $f.Type }}) *{{ $N }}ScopedUpsert {
@@ -678,11 +679,11 @@ func (x *{{ $N }}ScopedUpdateOne) Where(ps ...predicate.{{ $N }}) *{{ $N }}Scope
 	return x
 }
 
-{{ with extend $n "Graph" $ "Node" $n "Builder" (print $N "ScopedUpdateOne") "Mode" "update" }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdateOne") "Mode" "update" }}
 	{{ template "helper/scopedsetters" . }}
 {{ end }}
 
-{{ with extend $n "Graph" $ "Node" $n "Builder" (print $N "ScopedUpdateOne") }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdateOne") }}
 	{{ template "helper/scopedcheck" . }}
 {{ end }}
 
@@ -762,11 +763,11 @@ func (x *{{ $N }}ScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *{{ $N
 	return x
 }
 
-{{ with extend $n "Graph" $ "Node" $n "Builder" (print $N "ScopedUpdate") "Mode" "update" }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdate") "Mode" "update" }}
 	{{ template "helper/scopedsetters" . }}
 {{ end }}
 
-{{ with extend $n "Graph" $ "Node" $n "Builder" (print $N "ScopedUpdate") }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdate") }}
 	{{ template "helper/scopedcheck" . }}
 {{ end }}
 
@@ -833,7 +834,7 @@ func (x *{{ $N }}ScopedUpdate) Exec(ctx context.Context) error {
 {{- $updater := eq $.Scope.Mode "update" }}
 {{- $fields := $.Fields }}{{ if $updater }}{{ $fields = $.MutableFields }}{{ end }}
 {{ range $f := $fields }}
-{{- if ne $f.Name "workspace_id" }}
+{{- if not (isWorkspaceField $f) }}
 // Set{{ $f.StructField }} sets the "{{ $f.Name }}" field.
 func (x *{{ $B }}) Set{{ $f.StructField }}(v {{ $f.Type }}) *{{ $B }} {
 	x.b.Set{{ $f.StructField }}(v)
@@ -935,7 +936,6 @@ func (x *{{ $B }}) Remove{{ $e.StructField }}(v ...*{{ $e.Type.Name }}) *{{ $B }
 {{/* check verifies every reference the builder recorded against the Workspace. */}}
 {{ define "helper/scopedcheck" }}
 {{- $B := $.Scope.Builder }}
-{{- $g := $.Scope.Graph }}
 func (x *{{ $B }}) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -944,7 +944,7 @@ func (x *{{ $B }}) check(ctx context.Context) error {
 		return fmt.Errorf("{{ $e.Name }}: %w", err)
 	}
 	{{- end }}
-	{{- range $r := scopedFieldRefs $g $.Scope.Node }}
+	{{- range $r := scopedFieldRefs $.Scope.Node }}
 	if v, ok := m.{{ $r.Field.MutationGet }}(); ok {
 		if err := x.s.verify{{ $r.Target.Name }}(ctx, []int64{v}); err != nil {
 			return fmt.Errorf("{{ $r.Field.Name }}: %w", err)

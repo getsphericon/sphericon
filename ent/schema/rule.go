@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"slices"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
@@ -21,8 +23,8 @@ type Rule struct {
 
 func (Rule) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("rules", append(Rule{}.Fields(), VersionedMixin{}.Fields()...)),
-		Audited{Action: "rule", NameField: nameField},
+		TableWithEnumChecks("rules", slices.Concat(Rule{}.Fields(), VersionedMixin{}.Fields())),
+		Audited{Action: "rule", NameField: NameColumn},
 	}
 }
 
@@ -40,7 +42,7 @@ func (Rule) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 	}
 }

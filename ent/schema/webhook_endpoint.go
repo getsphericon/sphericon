@@ -58,7 +58,9 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		field.Int64("health_generation").
 			Optional().
 			Nillable().
-			NonNegative(),
+			NonNegative().
+			// Moved by the enable it follows from, which the entry records.
+			Annotations(Derived{}),
 		// Failure state (ADR 0039), written by the delivery worker with no actor so it
 		// is not audited. All nil while the endpoint is healthy; a 2xx clears them.
 		// Failed deliveries in a row.

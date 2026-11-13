@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
 )
@@ -16,17 +17,23 @@ import (
 // and Get and UpdateOneID see every row, because the system still writes an archived row. An
 // entity takes either this mixin or DiscardMixin, never both (ADR 0100).
 //
-// A unique index on an archivable entity MUST be partial,
-// entsql.IndexWhere("archived_at IS NULL"): otherwise an archived row holds the name for ever.
+// A unique index or field of an archivable entity is partial, entsql.IndexWhere("archived_at IS
+// NULL"), so an archived row does not hold the name for ever, or says with UniqueOverAll why it
+// holds over archived rows too; internal/entgen refuses one that is neither.
 type ArchiveMixin struct {
 	mixin.Schema
 }
 
 func (ArchiveMixin) Fields() []ent.Field {
 	return []ent.Field{
-		field.Time("archived_at").
+		field.Time(ArchivedColumn).
 			Annotations(Machine()).
 			Optional().
 			Nillable(),
 	}
+}
+
+// Annotations declare the kind the mixin gives: archivable.
+func (ArchiveMixin) Annotations() []schema.Annotation {
+	return []schema.Annotation{Archivable{}}
 }

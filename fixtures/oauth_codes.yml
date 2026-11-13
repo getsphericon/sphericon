@@ -1,0 +1,25 @@
+# Unused authorization codes of the fixture OAuth client (id 1), one per tenant of the isolation
+# tests, each approved by the Workspace's Owner. Stored as a SHA-256; the plaintext is lifted into
+# <Name>Code.
+- id: 7700 # fixture: OAuthCodeAcme
+  code_hash: '{{secretHash "acme-oauth-code"}}'
+  redirect_uri: https://connector.example/callback
+  code_challenge: acme-fixture-challenge-0123456789012345678901
+  scopes: '["contacts:read"]'
+  expires_at: '{{daysAhead 1}}'
+  client_id: 1
+  workspace_id: 1
+  membership_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7701 # fixture: OAuthCodeGlobex
+  code_hash: '{{secretHash "globex-oauth-code"}}'
+  redirect_uri: https://connector.example/callback
+  code_challenge: globex-fixture-challenge-012345678901234567890
+  scopes: '["contacts:read"]'
+  expires_at: '{{daysAhead 1}}'
+  client_id: 1
+  workspace_id: 2
+  membership_id: 2
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

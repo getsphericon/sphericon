@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -183,7 +184,7 @@ func TestConsentScreenRefusesAMetadataClientWithAWrongDocument(t *testing.T) {
 	decision.ClientId, decision.RedirectUri = m.ClientID, metadataRedirectURI
 	_, err = actor.SiteOAuthDecide(t.Context(), &decision)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-	codes, err := env.DB.OAuthCode.Query().Count(t.Context())
+	codes, err := env.DB.OAuthCode.Query().Where(oauthcode.HasClientWith(oauthclient.ClientID(m.ClientID))).Count(t.Context())
 	require.NoError(t, err)
 	assert.Zero(t, codes, "no authorization code is minted for a refused client")
 }

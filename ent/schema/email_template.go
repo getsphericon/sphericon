@@ -19,7 +19,7 @@ type EmailTemplate struct {
 func (EmailTemplate) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "email_templates"},
-		Audited{Action: "template", NameField: nameField},
+		Audited{Action: "template", NameField: NameColumn},
 	}
 }
 
@@ -32,7 +32,7 @@ func (EmailTemplate) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 		field.String("subject").
 			Default(""),

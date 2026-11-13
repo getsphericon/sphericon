@@ -32,18 +32,20 @@ func (Workspace) Fields() []ent.Field {
 			Immutable(),
 		// Free text, never empty while the Workspace lives (the handlers refuse an empty name);
 		// the erasure job blanks it on the tombstone (ADR 0043), so the schema allows it.
-		field.String(nameField),
+		field.String(NameColumn),
 		// The Workspace id (ADR 0043): 8 random base62 characters, the Workspace's one public
 		// address. Assigned at creation, never changed, unique; internal/kernel/workspaceid makes it.
 		field.String("public_id").
 			MinLen(8).
 			MaxLen(8).
 			Unique().
-			Immutable(),
+			Immutable().
+			Annotations(UniqueOverAll{Reason: "the Workspace's one public address, which a discarded Workspace keeps to be restored"}),
 		field.String("collect_key").
 			NotEmpty().
 			Unique().
-			Sensitive(),
+			Sensitive().
+			Annotations(UniqueOverAll{Reason: "a collect key names one Workspace for ever, and a discarded Workspace keeps it to be restored"}),
 		// Confirmed opt-in policy (ADR 0013). When true, marketing sends require a
 		// Confirmation for the destination (double opt-in); when false (the default),
 		// the subtractive single-opt-in model applies unchanged. Forward-looking:
@@ -202,6 +204,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("bindings", Binding.Type),
 		edge.To("start_tokens", StartToken.Type),
 		edge.To("api_tokens", ApiToken.Type),
+		edge.To("oauth_codes", OAuthCode.Type),
 		edge.To("integrations", Integration.Type),
 		edge.To("sending_domains", SendingDomain.Type),
 		edge.To("join_domains", JoinDomain.Type),

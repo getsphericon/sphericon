@@ -25,7 +25,7 @@ func (ApiToken) Annotations() []schema.Annotation {
 			// A Connection is a User's: an OAuth client implies a Membership.
 			"api_tokens_oauth_client_check": "oauth_client_id IS NULL OR membership_id IS NOT NULL",
 		}},
-		Audited{Action: "api_token", NameField: nameField},
+		Audited{Action: "api_token", NameField: NameColumn},
 	}
 }
 
@@ -38,7 +38,7 @@ func (ApiToken) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 		field.String("prefix").
 			NotEmpty().

@@ -1,0 +1,33 @@
+{{/*
+The manifest of kinds: every entity, its table and the kinds ent/schema gives it (internal/entgen
+classifies them by the markers of their mixins, ent/schema/kinds.go). internal/infra/devdb reads the
+Workspace-owned tables from it, internal/app/entclient the types with a revision, and the registry
+of the scoped client (ScopedEntity) carries each Workspace-owned entity's.
+*/}}
+{{ define "kinds" }}
+{{ template "header" $ }}
+
+import "{{ $.Config.Package }}/schema"
+
+// Kind is what ent/schema makes of an entity (schema.Kind, which internal/entgen classifies), and
+// its table.
+type Kind struct {
+	schema.Kind
+
+	// Table is the entity's table.
+	Table string
+}
+
+// Kinds is the Kind of every entity, by its schema name.
+var Kinds = map[string]Kind{
+{{- range $e := entities }}
+	"{{ $e.Name }}": {Table: "{{ $e.Table }}", Kind: schema.Kind{
+		{{- if $e.WorkspaceOwned }}WorkspaceOwned: true, {{ end }}
+		{{- if $e.Archivable }}Archivable: true, {{ end }}
+		{{- if $e.Discardable }}Discardable: true, {{ end }}
+		{{- if $e.Versioned }}Versioned: true, {{ end }}
+		{{- if $e.Revised }}Revised: true, {{ end }}
+		{{- if $e.Singleton }}Singleton: true, {{ end }}}},
+{{- end }}
+}
+{{ end }}

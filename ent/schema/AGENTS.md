@@ -4,8 +4,16 @@
 - ORM is **ent**; schemas live in `ent/schema/*.go`, generated code in `ent/`.
 - A new `_at` field, `status` or `state` enum or bool declares its form, `Annotations(Machine())`,
   `Annotations(Latch())` or `Annotations(Attribute("<why no move depends on it>"))` (`state.go`,
-  ADR 0109, review rule 7); `TestEveryStateFieldDeclaresItsForm` fails without it, and
-  `mise run generate` brings the `statemoment` analyzer's list (`ent/stateform.go`) up to date.
+  ADR 0109, review rule 7); the generation (`internal/entgen`, `mise run generate`) fails without it
+  and brings the `statemoment` analyzer's list (`ent/stateform.go`) up to date.
+- **An entity's kind comes from its mixins.** `WorkspaceMixin` (Workspace-owned), `ArchiveMixin`,
+  `DiscardMixin`, `VersionedMixin` and `RevisionMixin` each declare their kind with a marker
+  (`kinds.go`), and a singleton is a whole unique index on `workspace_id` alone. `internal/entgen`
+  classifies every entity by them, never by a column name, checks the schema against every rule of
+  generation (each problem at once, from `mise run generate`; `TestTheSchemaBreaksNoRule`) and writes
+  the manifest of kinds (`ent.Kinds`). A unique index or field of an archivable or discardable entity
+  is partial, or says why it holds over every row (`UniqueOverAll{Reason}`); a `workspace_id` outside
+  `WorkspaceMixin` says why it does not make its entity Workspace-owned (`NotWorkspaceOwned{Reason}`).
 - Migrations: **ent diffs, goose applies, Squawk lints, CI guards immutability.** `mise run db:generate <desc>`
   (`cmd/db`, ent's diff engine as a library, no CLI and no checksum file) diffs the ent schema against
   `migrations/` in the scratch `<PGDATABASE>_diff` database (`SPHERICON_DIFF_DATABASE_URL`) and writes a goose `.sql` file;
@@ -60,7 +68,8 @@
   of row (a Broadcast per channel, an Outbound message per kind) lists which columns each kind owns
   with `variantCheck` (`variant_check.go`), so the database refuses a row that mixes them; a column
   derived from another (an Integration's channel from its provider) is checked against its source;
-  a closed set of values is an enum, which `TableWithEnumChecks` checks; a value the owner
+  a closed set of values is an enum, which `TableWithEnumChecks` checks (given a mixin's enum fields
+  too, `VersionedMixin`'s status; the generation refuses an enum without its check); a value the owner
   normalises (an address, a phone, a domain, a currency) has its form checked with the normaliser's own pattern (`LowerCheck`, `FormatCheck`). The Go
   type that writes the row says the same thing, so a mismatch does not compile
   (`outboundmessages.Ref`, `providers.Provider.Channel`).

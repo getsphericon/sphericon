@@ -26,8 +26,8 @@ type OAuthCodeQuery struct {
 	order          []oauthcode.OrderOption
 	inters         []Interceptor
 	predicates     []predicate.OAuthCode
-	withClient     *OAuthClientQuery
 	withWorkspace  *WorkspaceQuery
+	withClient     *OAuthClientQuery
 	withMembership *MembershipQuery
 	modifiers      []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -66,6 +66,28 @@ func (_q *OAuthCodeQuery) Order(o ...oauthcode.OrderOption) *OAuthCodeQuery {
 	return _q
 }
 
+// QueryWorkspace chains the current query on the "workspace" edge.
+func (_q *OAuthCodeQuery) QueryWorkspace() *WorkspaceQuery {
+	query := (&WorkspaceClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, selector),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oauthcode.WorkspaceTable, oauthcode.WorkspaceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryClient chains the current query on the "client" edge.
 func (_q *OAuthCodeQuery) QueryClient() *OAuthClientQuery {
 	query := (&OAuthClientClient{config: _q.config}).Query()
@@ -81,28 +103,6 @@ func (_q *OAuthCodeQuery) QueryClient() *OAuthClientQuery {
 			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, selector),
 			sqlgraph.To(oauthclient.Table, oauthclient.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, oauthcode.ClientTable, oauthcode.ClientColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryWorkspace chains the current query on the "workspace" edge.
-func (_q *OAuthCodeQuery) QueryWorkspace() *WorkspaceQuery {
-	query := (&WorkspaceClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, selector),
-			sqlgraph.To(workspace.Table, workspace.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, oauthcode.WorkspaceTable, oauthcode.WorkspaceColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -324,25 +324,14 @@ func (_q *OAuthCodeQuery) Clone() *OAuthCodeQuery {
 		order:          append([]oauthcode.OrderOption{}, _q.order...),
 		inters:         append([]Interceptor{}, _q.inters...),
 		predicates:     append([]predicate.OAuthCode{}, _q.predicates...),
-		withClient:     _q.withClient.Clone(),
 		withWorkspace:  _q.withWorkspace.Clone(),
+		withClient:     _q.withClient.Clone(),
 		withMembership: _q.withMembership.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
 		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
-}
-
-// WithClient tells the query-builder to eager-load the nodes that are connected to
-// the "client" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OAuthCodeQuery) WithClient(opts ...func(*OAuthClientQuery)) *OAuthCodeQuery {
-	query := (&OAuthClientClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withClient = query
-	return _q
 }
 
 // WithWorkspace tells the query-builder to eager-load the nodes that are connected to
@@ -353,6 +342,17 @@ func (_q *OAuthCodeQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *OAuthCod
 		opt(query)
 	}
 	_q.withWorkspace = query
+	return _q
+}
+
+// WithClient tells the query-builder to eager-load the nodes that are connected to
+// the "client" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OAuthCodeQuery) WithClient(opts ...func(*OAuthClientQuery)) *OAuthCodeQuery {
+	query := (&OAuthClientClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withClient = query
 	return _q
 }
 
@@ -446,8 +446,8 @@ func (_q *OAuthCodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OA
 		nodes       = []*OAuthCode{}
 		_spec       = _q.querySpec()
 		loadedTypes = [3]bool{
-			_q.withClient != nil,
 			_q.withWorkspace != nil,
+			_q.withClient != nil,
 			_q.withMembership != nil,
 		}
 	)
@@ -472,15 +472,15 @@ func (_q *OAuthCodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OA
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withClient; query != nil {
-		if err := _q.loadClient(ctx, query, nodes, nil,
-			func(n *OAuthCode, e *OAuthClient) { n.Edges.Client = e }); err != nil {
-			return nil, err
-		}
-	}
 	if query := _q.withWorkspace; query != nil {
 		if err := _q.loadWorkspace(ctx, query, nodes, nil,
 			func(n *OAuthCode, e *Workspace) { n.Edges.Workspace = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withClient; query != nil {
+		if err := _q.loadClient(ctx, query, nodes, nil,
+			func(n *OAuthCode, e *OAuthClient) { n.Edges.Client = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -493,35 +493,6 @@ func (_q *OAuthCodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OA
 	return nodes, nil
 }
 
-func (_q *OAuthCodeQuery) loadClient(ctx context.Context, query *OAuthClientQuery, nodes []*OAuthCode, init func(*OAuthCode), assign func(*OAuthCode, *OAuthClient)) error {
-	ids := make([]int64, 0, len(nodes))
-	nodeids := make(map[int64][]*OAuthCode)
-	for i := range nodes {
-		fk := nodes[i].ClientID
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(oauthclient.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "client_id" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
 func (_q *OAuthCodeQuery) loadWorkspace(ctx context.Context, query *WorkspaceQuery, nodes []*OAuthCode, init func(*OAuthCode), assign func(*OAuthCode, *Workspace)) error {
 	ids := make([]int64, 0, len(nodes))
 	nodeids := make(map[int64][]*OAuthCode)
@@ -544,6 +515,35 @@ func (_q *OAuthCodeQuery) loadWorkspace(ctx context.Context, query *WorkspaceQue
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "workspace_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OAuthCodeQuery) loadClient(ctx context.Context, query *OAuthClientQuery, nodes []*OAuthCode, init func(*OAuthCode), assign func(*OAuthCode, *OAuthClient)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OAuthCode)
+	for i := range nodes {
+		fk := nodes[i].ClientID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(oauthclient.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "client_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -609,11 +609,11 @@ func (_q *OAuthCodeQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withClient != nil {
-			_spec.Node.AddColumnOnce(oauthcode.FieldClientID)
-		}
 		if _q.withWorkspace != nil {
 			_spec.Node.AddColumnOnce(oauthcode.FieldWorkspaceID)
+		}
+		if _q.withClient != nil {
+			_spec.Node.AddColumnOnce(oauthcode.FieldClientID)
 		}
 		if _q.withMembership != nil {
 			_spec.Node.AddColumnOnce(oauthcode.FieldMembershipID)

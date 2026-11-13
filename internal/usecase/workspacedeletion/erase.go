@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -49,7 +50,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients/oauthclientsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -102,7 +102,7 @@ func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
 // The jobs go in the last transaction, after every pass has settled: river's job table keeps a
 // job's args, which carry the Workspace's personal data (an event's envelope, a webhook's body),
 // for days after it ran, and a job that waits still runs. The erase itself queues no job (its
-// steps publish nothing and no hook of theirs, of the OAuth codes or of the tombstone queues one),
+// steps publish nothing and no hook of theirs or of the tombstone queues one),
 // so nothing it does queues one after the purge. A job running meanwhile is left to finish, and
 // the job runner cancels any job of the Workspace that starts after the tombstone
 // (events.WorkspacePurger says what is left). The purge runs before workspacesunchecked.TombstoneIn, whose feed hook
@@ -125,9 +125,6 @@ func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) (
 	var erased bool
 	err := m.bus.WithinWorkspacePurgeTx(ctx, func(tx *ent.Client, purger events.WorkspacePurger) error {
 		if err := purger.PurgeWorkspaceJobs(ctx, id); err != nil {
-			return err
-		}
-		if err := oauthclientsunchecked.DeleteCodesIn(ctx, tx, id); err != nil {
 			return err
 		}
 		var err error
@@ -260,6 +257,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).SendCapLimiter, sendcaplimiter.IDIn),
 		stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoint.IDIn),
 		stepOf((*ent.Scoped).Invitation, invitation.IDIn),
+		stepOf((*ent.Scoped).OAuthCode, oauthcode.IDIn),
 		stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),
 		keptStepOf((*ent.Scoped).Broadcast, (*ent.BroadcastScoped).QueryWithArchived, (*ent.BroadcastScoped).Purge, broadcast.IDIn),
 		keptStepOf((*ent.Scoped).Automation, (*ent.AutomationScoped).QueryWithArchived, (*ent.AutomationScoped).Purge, automation.IDIn),

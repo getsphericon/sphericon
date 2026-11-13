@@ -1,10 +1,10 @@
 package scopedclient_test
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,16 +17,33 @@ import (
 // An entity with the DiscardMixin is discarded for good: its scoped wrapper has Discard and no
 // Delete, Undiscard, Restore or archive, and only Purge (Workspace erasure) removes it (ADR 0100).
 func TestDiscardableEntityHasDiscardAndNoDeleteOrUndiscard(t *testing.T) {
-	for _, wrapper := range []reflect.Type{
-		reflect.TypeFor[*ent.IntegrationScoped](),
-		reflect.TypeFor[*ent.SendingDomainScoped](),
-		reflect.TypeFor[*ent.RuleScoped](),
-	} {
+	discardable := lo.Filter(ent.ScopedEntities(), func(e *ent.ScopedEntity, _ int) bool { return e.Discardable })
+	require.Subset(t, names(discardable), []string{"Integration", "SendingDomain", "Rule"})
+	for _, e := range discardable {
+		wrapper := e.Wrapper
 		for _, absent := range []string{"Delete", "DeleteOneID", "Undiscard", "Restore", "QueryDiscarded", "Archive", "Unarchive", "QueryArchived", "QueryWithArchived"} {
 			_, has := wrapper.MethodByName(absent)
 			assert.Falsef(t, has, "%s has no %s", wrapper, absent)
 		}
 		for _, present := range []string{"Discard", "QueryWithDiscarded", "Purge", "PurgeOneID"} {
+			_, has := wrapper.MethodByName(present)
+			assert.Truef(t, has, "%s has %s", wrapper, present)
+		}
+	}
+}
+
+// An entity neither archived nor discarded is deleted: its scoped wrapper has Delete and none of
+// the operations of a row put aside (ADR 0049).
+func TestDeletableEntityHasDeleteAndNoDiscardOrArchive(t *testing.T) {
+	deletable := lo.Filter(ent.ScopedEntities(), func(e *ent.ScopedEntity, _ int) bool { return !e.PutAside() })
+	require.Subset(t, names(deletable), []string{"Tag", "EmailTemplate", "WebhookEndpoint", "Membership"})
+	for _, e := range deletable {
+		wrapper := e.Wrapper
+		for _, absent := range []string{"Discard", "QueryWithDiscarded", "Archive", "Unarchive", "QueryWithArchived", "Purge", "PurgeOneID"} {
+			_, has := wrapper.MethodByName(absent)
+			assert.Falsef(t, has, "%s has no %s", wrapper, absent)
+		}
+		for _, present := range []string{"Delete", "DeleteOneID"} {
 			_, has := wrapper.MethodByName(present)
 			assert.Truef(t, has, "%s has %s", wrapper, present)
 		}

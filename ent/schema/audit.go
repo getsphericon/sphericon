@@ -47,6 +47,7 @@ func (Derived) Name() string { return "Derived" }
 
 var _ schema.Annotation = Derived{}
 
-// nameField is the column of the `name` that named entities declare and that Audited.NameField
-// snapshots.
-const nameField = "name"
+// NameColumn is the column of the `name` that named entities declare: Audited.NameField snapshots
+// it, and a Versioned definition's VersionState carries it. It is the entity's own field, which no
+// mixin declares.
+const NameColumn = "name"

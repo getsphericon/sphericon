@@ -6689,6 +6689,22 @@ func (c *OAuthCodeClient) GetX(ctx context.Context, id int64) *OAuthCode {
 	return obj
 }
 
+// QueryWorkspace queries the workspace edge of a OAuthCode.
+func (c *OAuthCodeClient) QueryWorkspace(_m *OAuthCode) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oauthcode.WorkspaceTable, oauthcode.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryClient queries the client edge of a OAuthCode.
 func (c *OAuthCodeClient) QueryClient(_m *OAuthCode) *OAuthClientQuery {
 	query := (&OAuthClientClient{config: c.config}).Query()
@@ -6698,22 +6714,6 @@ func (c *OAuthCodeClient) QueryClient(_m *OAuthCode) *OAuthClientQuery {
 			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, id),
 			sqlgraph.To(oauthclient.Table, oauthclient.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, oauthcode.ClientTable, oauthcode.ClientColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryWorkspace queries the workspace edge of a OAuthCode.
-func (c *OAuthCodeClient) QueryWorkspace(_m *OAuthCode) *WorkspaceQuery {
-	query := (&WorkspaceClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, id),
-			sqlgraph.To(workspace.Table, workspace.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, oauthcode.WorkspaceTable, oauthcode.WorkspaceColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -13059,6 +13059,22 @@ func (c *WorkspaceClient) QueryAPITokens(_m *Workspace) *ApiTokenQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, id),
 			sqlgraph.To(apitoken.Table, apitoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.APITokensTable, workspace.APITokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOauthCodes queries the oauth_codes edge of a Workspace.
+func (c *WorkspaceClient) QueryOauthCodes(_m *Workspace) *OAuthCodeQuery {
+	query := (&OAuthCodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(oauthcode.Table, oauthcode.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.OauthCodesTable, workspace.OauthCodesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

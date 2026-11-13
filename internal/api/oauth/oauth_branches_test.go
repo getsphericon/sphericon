@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -69,7 +70,11 @@ func TestTokenEndpointRefusesAMalformedBody(t *testing.T) {
 func TestAnExpiredCodeCannotBeExchanged(t *testing.T) {
 	env := testhelper.Setup(t)
 	code := consent(t, env, approval("contacts:read", false)).Query().Get("code")
-	n, err := env.DB.OAuthCode.Update().SetExpiresAt(time.Now().Add(-time.Minute)).Save(t.Context())
+	hash := credentials.HashSecret(code)
+	n, err := env.DB.OAuthCode.Update().
+		Where(oauthcode.CodeHash(hash)).
+		SetExpiresAt(time.Now().Add(-time.Minute)).
+		Save(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, 1, n)
 
@@ -78,9 +83,9 @@ func TestAnExpiredCodeCannotBeExchanged(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Equal(t, "invalid_grant", errorOf(t, rec))
 	assert.NotContains(t, rec.Body.String(), "access_token")
-	used, err := env.DB.OAuthCode.Query().Where(oauthcode.UsedAtNotNil()).Count(t.Context())
+	used, err := env.DB.OAuthCode.Query().Where(oauthcode.CodeHash(hash), oauthcode.UsedAtNotNil()).Exist(t.Context())
 	require.NoError(t, err)
-	assert.Zero(t, used, "an expired code is not consumed")
+	assert.False(t, used, "an expired code is not consumed")
 }
 
 func TestRegistrationNamesAndBoundsClients(t *testing.T) {

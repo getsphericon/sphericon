@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -52,11 +53,16 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 )
 
-// ScopedEntity describes one workspace-mixin entity for tests that must cover every
+// ScopedEntity describes one Workspace-owned entity for tests that must cover every
 // such entity without naming them.
 type ScopedEntity struct {
+	// Kind is the entity's kind (Kinds): the tests choose the entities of a kind by it.
+	Kind
+
 	// Name is the entity's schema name.
 	Name string
+	// Wrapper is the type of its scoped wrapper (*<Name>Scoped), whose methods the kind decides.
+	Wrapper reflect.Type
 	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
 	// schema.Audited.Action): create, update and delete (Purge), then discard for a discardable
 	// entity, which is never restored, and archive and unarchive for an archivable one (ADR 0100).
@@ -93,11 +99,13 @@ type ScopedRef struct {
 	Set func(ctx context.Context, s *Scoped, id, target int64) error
 }
 
-// ScopedEntities lists every workspace-mixin entity.
-func ScopedEntities() []ScopedEntity {
-	return []ScopedEntity{
+// ScopedEntities lists every Workspace-owned entity.
+func ScopedEntities() []*ScopedEntity {
+	return []*ScopedEntity{
 		{
+			Kind:         Kinds["ApiToken"],
 			Name:         "ApiToken",
+			Wrapper:      reflect.TypeFor[*ApiTokenScoped](),
 			AuditActions: []string{"api_token.create", "api_token.update", "api_token.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.ApiToken.Query().Where(apitoken.WorkspaceID(ws)).Order(Asc(apitoken.FieldID)).IDs(ctx)
@@ -153,7 +161,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["AuditEntry"],
 			Name:         "AuditEntry",
+			Wrapper:      reflect.TypeFor[*AuditEntryScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AuditEntry.Query().Where(auditentry.WorkspaceID(ws)).Order(Asc(auditentry.FieldID)).IDs(ctx)
@@ -219,7 +229,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Automation"],
 			Name:         "Automation",
+			Wrapper:      reflect.TypeFor[*AutomationScoped](),
 			AuditActions: []string{"automation.create", "automation.update", "automation.delete", "automation.archive", "automation.unarchive"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Automation.Query().Where(automation.WorkspaceID(ws)).Order(Asc(automation.FieldID)).IDs(ctx)
@@ -296,7 +308,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["AutomationFigure"],
 			Name:         "AutomationFigure",
+			Wrapper:      reflect.TypeFor[*AutomationFigureScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationFigure.Query().Where(automationfigure.WorkspaceID(ws)).Order(Asc(automationfigure.FieldID)).IDs(ctx)
@@ -341,7 +355,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["AutomationRun"],
 			Name:         "AutomationRun",
+			Wrapper:      reflect.TypeFor[*AutomationRunScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationRun.Query().Where(automationrun.WorkspaceID(ws)).Order(Asc(automationrun.FieldID)).IDs(ctx)
@@ -424,7 +440,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["AutomationVersion"],
 			Name:         "AutomationVersion",
+			Wrapper:      reflect.TypeFor[*AutomationVersionScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationVersion.Query().Where(automationversion.WorkspaceID(ws)).Order(Asc(automationversion.FieldID)).IDs(ctx)
@@ -482,7 +500,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["Binding"],
 			Name:         "Binding",
+			Wrapper:      reflect.TypeFor[*BindingScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Binding.Query().Where(binding.WorkspaceID(ws)).Order(Asc(binding.FieldID)).IDs(ctx)
@@ -544,7 +564,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["BrandKit"],
 			Name:         "BrandKit",
+			Wrapper:      reflect.TypeFor[*BrandKitScoped](),
 			AuditActions: []string{"brand_kit.create", "brand_kit.update", "brand_kit.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.BrandKit.Query().Where(brandkit.WorkspaceID(ws)).Order(Asc(brandkit.FieldID)).IDs(ctx)
@@ -591,7 +613,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Broadcast"],
 			Name:         "Broadcast",
+			Wrapper:      reflect.TypeFor[*BroadcastScoped](),
 			AuditActions: []string{"broadcast.create", "broadcast.update", "broadcast.delete", "broadcast.archive", "broadcast.unarchive"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Broadcast.Query().Where(broadcast.WorkspaceID(ws)).Order(Asc(broadcast.FieldID)).IDs(ctx)
@@ -716,7 +740,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["BroadcastFigure"],
 			Name:         "BroadcastFigure",
+			Wrapper:      reflect.TypeFor[*BroadcastFigureScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.BroadcastFigure.Query().Where(broadcastfigure.WorkspaceID(ws)).Order(Asc(broadcastfigure.FieldID)).IDs(ctx)
@@ -770,7 +796,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["BroadcastRecipient"],
 			Name:         "BroadcastRecipient",
+			Wrapper:      reflect.TypeFor[*BroadcastRecipientScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.BroadcastRecipient.Query().Where(broadcastrecipient.WorkspaceID(ws)).Order(Asc(broadcastrecipient.FieldID)).IDs(ctx)
@@ -830,7 +858,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["CapturedMessage"],
 			Name:         "CapturedMessage",
+			Wrapper:      reflect.TypeFor[*CapturedMessageScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(ws)).Order(Asc(capturedmessage.FieldID)).IDs(ctx)
@@ -893,7 +923,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["Confirmation"],
 			Name:         "Confirmation",
+			Wrapper:      reflect.TypeFor[*ConfirmationScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Confirmation.Query().Where(confirmation.WorkspaceID(ws)).Order(Asc(confirmation.FieldID)).IDs(ctx)
@@ -952,7 +984,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["Contact"],
 			Name:         "Contact",
+			Wrapper:      reflect.TypeFor[*ContactScoped](),
 			AuditActions: []string{"contact.create", "contact.update", "contact.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Contact.Query().Where(contact.WorkspaceID(ws)).Order(Asc(contact.FieldID)).IDs(ctx)
@@ -1060,7 +1094,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["CustomField"],
 			Name:         "CustomField",
+			Wrapper:      reflect.TypeFor[*CustomFieldScoped](),
 			AuditActions: []string{"custom_field.create", "custom_field.update", "custom_field.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.CustomField.Query().Where(customfield.WorkspaceID(ws)).Order(Asc(customfield.FieldID)).IDs(ctx)
@@ -1101,7 +1137,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["EmailTemplate"],
 			Name:         "EmailTemplate",
+			Wrapper:      reflect.TypeFor[*EmailTemplateScoped](),
 			AuditActions: []string{"template.create", "template.update", "template.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.EmailTemplate.Query().Where(emailtemplate.WorkspaceID(ws)).Order(Asc(emailtemplate.FieldID)).IDs(ctx)
@@ -1148,7 +1186,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Erasure"],
 			Name:         "Erasure",
+			Wrapper:      reflect.TypeFor[*ErasureScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Erasure.Query().Where(erasure.WorkspaceID(ws)).Order(Asc(erasure.FieldID)).IDs(ctx)
@@ -1198,7 +1238,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Event"],
 			Name:         "Event",
+			Wrapper:      reflect.TypeFor[*EventScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Event.Query().Where(event.WorkspaceID(ws)).Order(Asc(event.FieldID)).IDs(ctx)
@@ -1289,7 +1331,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["HeldOrderEvent"],
 			Name:         "HeldOrderEvent",
+			Wrapper:      reflect.TypeFor[*HeldOrderEventScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.HeldOrderEvent.Query().Where(heldorderevent.WorkspaceID(ws)).Order(Asc(heldorderevent.FieldID)).IDs(ctx)
@@ -1331,7 +1375,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Hold"],
 			Name:         "Hold",
+			Wrapper:      reflect.TypeFor[*HoldScoped](),
 			AuditActions: []string{"hold.create", "hold.update", "hold.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Hold.Query().Where(hold.WorkspaceID(ws)).Order(Asc(hold.FieldID)).IDs(ctx)
@@ -1376,7 +1422,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Integration"],
 			Name:         "Integration",
+			Wrapper:      reflect.TypeFor[*IntegrationScoped](),
 			AuditActions: []string{"integration.create", "integration.update", "integration.delete", "integration.discard"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Integration.Query().Where(integration.WorkspaceID(ws)).Order(Asc(integration.FieldID)).IDs(ctx)
@@ -1480,7 +1528,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["Invitation"],
 			Name:         "Invitation",
+			Wrapper:      reflect.TypeFor[*InvitationScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Invitation.Query().Where(invitation.WorkspaceID(ws)).Order(Asc(invitation.FieldID)).IDs(ctx)
@@ -1529,7 +1579,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["JoinDomain"],
 			Name:         "JoinDomain",
+			Wrapper:      reflect.TypeFor[*JoinDomainScoped](),
 			AuditActions: []string{"join_domain.create", "join_domain.update", "join_domain.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.JoinDomain.Query().Where(joindomain.WorkspaceID(ws)).Order(Asc(joindomain.FieldID)).IDs(ctx)
@@ -1574,7 +1626,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Membership"],
 			Name:         "Membership",
+			Wrapper:      reflect.TypeFor[*MembershipScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Membership.Query().Where(membership.WorkspaceID(ws)).Order(Asc(membership.FieldID)).IDs(ctx)
@@ -1623,10 +1677,74 @@ func ScopedEntities() []ScopedEntity {
 						return s.Membership().UpdateOneID(id).AddConnectionIDs(target).Exec(ctx)
 					},
 				},
+				{
+					Name: "oauth_codes", Target: "OAuthCode",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Membership().UpdateOneID(id).AddOauthCodeIDs(target).Exec(ctx)
+					},
+				},
 			},
 		},
 		{
+			Kind:         Kinds["OAuthCode"],
+			Name:         "OAuthCode",
+			Wrapper:      reflect.TypeFor[*OAuthCodeScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.OAuthCode.Query().Where(oauthcode.WorkspaceID(ws)).Order(Asc(oauthcode.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.OAuthCode().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.OAuthCode().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.OAuthCode().Update().Where(oauthcode.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.OAuthCode().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.OAuthCode().Delete().Where(oauthcode.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.OAuthCode.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.OAuthCode().Create()
+				b.SetCodeHash(src.CodeHash + "-replanted")
+				b.SetRedirectURI(src.RedirectURI)
+				b.SetCodeChallenge(src.CodeChallenge)
+				b.SetScopes(src.Scopes)
+				b.SetExpiresAt(src.ExpiresAt)
+				if src.UsedAt != nil {
+					b.SetUsedAt(*src.UsedAt)
+				}
+				b.SetClientID(src.ClientID)
+				b.SetMembershipID(remap("Membership", src.MembershipID))
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "membership", Target: "Membership",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OAuthCode().UpdateOneID(id).SetMembershipID(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Kind:         Kinds["Order"],
 			Name:         "Order",
+			Wrapper:      reflect.TypeFor[*OrderScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Order.Query().Where(order.WorkspaceID(ws)).Order(Asc(order.FieldID)).IDs(ctx)
@@ -1690,7 +1808,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["OrderMovement"],
 			Name:         "OrderMovement",
+			Wrapper:      reflect.TypeFor[*OrderMovementScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.OrderMovement.Query().Where(ordermovement.WorkspaceID(ws)).Order(Asc(ordermovement.FieldID)).IDs(ctx)
@@ -1737,7 +1857,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["OutboundMessage"],
 			Name:         "OutboundMessage",
+			Wrapper:      reflect.TypeFor[*OutboundMessageScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.OutboundMessage.Query().Where(outboundmessage.WorkspaceID(ws)).Order(Asc(outboundmessage.FieldID)).IDs(ctx)
@@ -1901,7 +2023,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["ProviderLimiter"],
 			Name:         "ProviderLimiter",
+			Wrapper:      reflect.TypeFor[*ProviderLimiterScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.ProviderLimiter.Query().Where(providerlimiter.WorkspaceID(ws)).Order(Asc(providerlimiter.FieldID)).IDs(ctx)
@@ -1942,7 +2066,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Rule"],
 			Name:         "Rule",
+			Wrapper:      reflect.TypeFor[*RuleScoped](),
 			AuditActions: []string{"rule.create", "rule.update", "rule.delete", "rule.discard"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Rule.Query().Where(rule.WorkspaceID(ws)).Order(Asc(rule.FieldID)).IDs(ctx)
@@ -2019,7 +2145,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["RuleFiring"],
 			Name:         "RuleFiring",
+			Wrapper:      reflect.TypeFor[*RuleFiringScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleFiring.Query().Where(rulefiring.WorkspaceID(ws)).Order(Asc(rulefiring.FieldID)).IDs(ctx)
@@ -2087,7 +2215,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["RuleVersion"],
 			Name:         "RuleVersion",
+			Wrapper:      reflect.TypeFor[*RuleVersionScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleVersion.Query().Where(ruleversion.WorkspaceID(ws)).Order(Asc(ruleversion.FieldID)).IDs(ctx)
@@ -2149,7 +2279,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["RuleVersionTrigger"],
 			Name:         "RuleVersionTrigger",
+			Wrapper:      reflect.TypeFor[*RuleVersionTriggerScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleVersionTrigger.Query().Where(ruleversiontrigger.WorkspaceID(ws)).Order(Asc(ruleversiontrigger.FieldID)).IDs(ctx)
@@ -2195,7 +2327,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["Segment"],
 			Name:         "Segment",
+			Wrapper:      reflect.TypeFor[*SegmentScoped](),
 			AuditActions: []string{"segment.create", "segment.update", "segment.delete", "segment.archive", "segment.unarchive"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Segment.Query().Where(segment.WorkspaceID(ws)).Order(Asc(segment.FieldID)).IDs(ctx)
@@ -2240,7 +2374,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["SendCapLimiter"],
 			Name:         "SendCapLimiter",
+			Wrapper:      reflect.TypeFor[*SendCapLimiterScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.SendCapLimiter.Query().Where(sendcaplimiter.WorkspaceID(ws)).Order(Asc(sendcaplimiter.FieldID)).IDs(ctx)
@@ -2279,7 +2415,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["SendingDomain"],
 			Name:         "SendingDomain",
+			Wrapper:      reflect.TypeFor[*SendingDomainScoped](),
 			AuditActions: []string{"sending_domain.create", "sending_domain.update", "sending_domain.delete", "sending_domain.discard"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(ws)).Order(Asc(sendingdomain.FieldID)).IDs(ctx)
@@ -2338,7 +2476,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["StartToken"],
 			Name:         "StartToken",
+			Wrapper:      reflect.TypeFor[*StartTokenScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.StartToken.Query().Where(starttoken.WorkspaceID(ws)).Order(Asc(starttoken.FieldID)).IDs(ctx)
@@ -2387,7 +2527,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Suppression"],
 			Name:         "Suppression",
+			Wrapper:      reflect.TypeFor[*SuppressionScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Suppression.Query().Where(suppression.WorkspaceID(ws)).Order(Asc(suppression.FieldID)).IDs(ctx)
@@ -2440,7 +2582,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["Tag"],
 			Name:         "Tag",
+			Wrapper:      reflect.TypeFor[*TagScoped](),
 			AuditActions: []string{"tag.create", "tag.update", "tag.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Tag.Query().Where(tag.WorkspaceID(ws)).Order(Asc(tag.FieldID)).IDs(ctx)
@@ -2479,7 +2623,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["TrackedLink"],
 			Name:         "TrackedLink",
+			Wrapper:      reflect.TypeFor[*TrackedLinkScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.TrackedLink.Query().Where(trackedlink.WorkspaceID(ws)).Order(Asc(trackedlink.FieldID)).IDs(ctx)
@@ -2521,7 +2667,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["TrackingDomain"],
 			Name:         "TrackingDomain",
+			Wrapper:      reflect.TypeFor[*TrackingDomainScoped](),
 			AuditActions: []string{"tracking_domain.create", "tracking_domain.update", "tracking_domain.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.TrackingDomain.Query().Where(trackingdomain.WorkspaceID(ws)).Order(Asc(trackingdomain.FieldID)).IDs(ctx)
@@ -2573,7 +2721,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Unsubscribe"],
 			Name:         "Unsubscribe",
+			Wrapper:      reflect.TypeFor[*UnsubscribeScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Unsubscribe.Query().Where(unsubscribe.WorkspaceID(ws)).Order(Asc(unsubscribe.FieldID)).IDs(ctx)
@@ -2626,7 +2776,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["Usage"],
 			Name:         "Usage",
+			Wrapper:      reflect.TypeFor[*UsageScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Usage.Query().Where(usage.WorkspaceID(ws)).Order(Asc(usage.FieldID)).IDs(ctx)
@@ -2670,7 +2822,9 @@ func ScopedEntities() []ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["Visitor"],
 			Name:         "Visitor",
+			Wrapper:      reflect.TypeFor[*VisitorScoped](),
 			AuditActions: []string{},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Visitor.Query().Where(visitor.WorkspaceID(ws)).Order(Asc(visitor.FieldID)).IDs(ctx)
@@ -2731,7 +2885,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["WebhookEndpoint"],
 			Name:         "WebhookEndpoint",
+			Wrapper:      reflect.TypeFor[*WebhookEndpointScoped](),
 			AuditActions: []string{"webhook_endpoint.create", "webhook_endpoint.update", "webhook_endpoint.delete"},
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.WebhookEndpoint.Query().Where(webhookendpoint.WorkspaceID(ws)).Order(Asc(webhookendpoint.FieldID)).IDs(ctx)

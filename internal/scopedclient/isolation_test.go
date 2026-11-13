@@ -15,15 +15,11 @@ import (
 
 const acme, globex int64 = fixtures.AcmeID, fixtures.GlobexID
 
-// singletonEntities hold at most one row per Workspace (a unique index on workspace_id). A test
-// that plants a second row in Acme first removes Acme's own.
-var singletonEntities = map[string]bool{"BrandKit": true, "SendCapLimiter": true}
-
 // firstID returns the lowest id of the entity's rows in the Workspace, read through
 // the raw client. A missing row means a fixture row is missing for the entity.
-func firstID(ctx context.Context, t *testing.T, c *ent.Client, entities []ent.ScopedEntity, name string, ws int64) int64 {
+func firstID(ctx context.Context, t *testing.T, c *ent.Client, entities []*ent.ScopedEntity, name string, ws int64) int64 {
 	t.Helper()
-	e, ok := lo.Find(entities, func(e ent.ScopedEntity) bool { return e.Name == name })
+	e, ok := lo.Find(entities, func(e *ent.ScopedEntity) bool { return e.Name == name })
 	require.True(t, ok, "no scoped entity %s", name)
 	ids, err := e.IDs(ctx, c, ws)
 	require.NoError(t, err)
@@ -34,7 +30,7 @@ func firstID(ctx context.Context, t *testing.T, c *ent.Client, entities []ent.Sc
 // replantInAcme re-creates the Globex row in Acme with every reference pointed at an
 // Acme row. A unique index (e.g. one run per automation and contact) can reject a
 // pairing, so it tries the next Acme rows, each attempt in its own savepoint.
-func replantInAcme(ctx context.Context, t *testing.T, c *ent.Client, entities []ent.ScopedEntity, e ent.ScopedEntity, from int64) (int64, error) {
+func replantInAcme(ctx context.Context, t *testing.T, c *ent.Client, entities []*ent.ScopedEntity, e *ent.ScopedEntity, from int64) (int64, error) {
 	t.Helper()
 	// Read before the transaction opens: the test connection serves one query at a time.
 	acmeIDs := map[string][]int64{}
@@ -65,12 +61,18 @@ func replantInAcme(ctx context.Context, t *testing.T, c *ent.Client, entities []
 	}
 }
 
-// clearSingleton removes a singleton entity's own row, so the re-created foreign copy can take its place.
-func clearSingleton(ctx context.Context, t *testing.T, scoped *ent.Scoped, e ent.ScopedEntity, own []int64) {
+// clearSingleton removes a singleton entity's own row (a Workspace holds at most one), so the
+// re-created foreign copy can take its place.
+func clearSingleton(ctx context.Context, t *testing.T, scoped *ent.Scoped, e *ent.ScopedEntity, own []int64) {
 	t.Helper()
-	if singletonEntities[e.Name] {
-		require.NoError(t, e.Delete(ctx, scoped, own[0]))
+	if e.Singleton {
+		require.NoError(t, e.Delete(ctx, scoped, own[0]), e.Name)
 	}
+}
+
+// names lists the schema names of the entities.
+func names(entities []*ent.ScopedEntity) []string {
+	return lo.Map(entities, func(e *ent.ScopedEntity, _ int) string { return e.Name })
 }
 
 // TestScopedClientIsolation runs over the GENERATED list of workspace-mixin entities,

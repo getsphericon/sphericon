@@ -65,6 +65,11 @@ func UpdatedAt(v time.Time) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// WorkspaceID applies equality check predicate on the "workspace_id" field. It's identical to WorkspaceIDEQ.
+func WorkspaceID(v int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldEQ(FieldWorkspaceID, v))
+}
+
 // CodeHash applies equality check predicate on the "code_hash" field. It's identical to CodeHashEQ.
 func CodeHash(v string) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldEQ(FieldCodeHash, v))
@@ -93,11 +98,6 @@ func UsedAt(v time.Time) predicate.OAuthCode {
 // ClientID applies equality check predicate on the "client_id" field. It's identical to ClientIDEQ.
 func ClientID(v int64) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldEQ(FieldClientID, v))
-}
-
-// WorkspaceID applies equality check predicate on the "workspace_id" field. It's identical to WorkspaceIDEQ.
-func WorkspaceID(v int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldEQ(FieldWorkspaceID, v))
 }
 
 // MembershipID applies equality check predicate on the "membership_id" field. It's identical to MembershipIDEQ.
@@ -183,6 +183,26 @@ func UpdatedAtLT(v time.Time) predicate.OAuthCode {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// WorkspaceIDEQ applies the EQ predicate on the "workspace_id" field.
+func WorkspaceIDEQ(v int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldEQ(FieldWorkspaceID, v))
+}
+
+// WorkspaceIDNEQ applies the NEQ predicate on the "workspace_id" field.
+func WorkspaceIDNEQ(v int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldNEQ(FieldWorkspaceID, v))
+}
+
+// WorkspaceIDIn applies the In predicate on the "workspace_id" field.
+func WorkspaceIDIn(vs ...int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldIn(FieldWorkspaceID, vs...))
+}
+
+// WorkspaceIDNotIn applies the NotIn predicate on the "workspace_id" field.
+func WorkspaceIDNotIn(vs ...int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldNotIn(FieldWorkspaceID, vs...))
 }
 
 // CodeHashEQ applies the EQ predicate on the "code_hash" field.
@@ -490,26 +510,6 @@ func ClientIDNotIn(vs ...int64) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldNotIn(FieldClientID, vs...))
 }
 
-// WorkspaceIDEQ applies the EQ predicate on the "workspace_id" field.
-func WorkspaceIDEQ(v int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldEQ(FieldWorkspaceID, v))
-}
-
-// WorkspaceIDNEQ applies the NEQ predicate on the "workspace_id" field.
-func WorkspaceIDNEQ(v int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldNEQ(FieldWorkspaceID, v))
-}
-
-// WorkspaceIDIn applies the In predicate on the "workspace_id" field.
-func WorkspaceIDIn(vs ...int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldIn(FieldWorkspaceID, vs...))
-}
-
-// WorkspaceIDNotIn applies the NotIn predicate on the "workspace_id" field.
-func WorkspaceIDNotIn(vs ...int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldNotIn(FieldWorkspaceID, vs...))
-}
-
 // MembershipIDEQ applies the EQ predicate on the "membership_id" field.
 func MembershipIDEQ(v int64) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldEQ(FieldMembershipID, v))
@@ -530,6 +530,29 @@ func MembershipIDNotIn(vs ...int64) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldNotIn(FieldMembershipID, vs...))
 }
 
+// HasWorkspace applies the HasEdge predicate on the "workspace" edge.
+func HasWorkspace() predicate.OAuthCode {
+	return predicate.OAuthCode(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasWorkspaceWith applies the HasEdge predicate on the "workspace" edge with a given conditions (other predicates).
+func HasWorkspaceWith(preds ...predicate.Workspace) predicate.OAuthCode {
+	return predicate.OAuthCode(func(s *sql.Selector) {
+		step := newWorkspaceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasClient applies the HasEdge predicate on the "client" edge.
 func HasClient() predicate.OAuthCode {
 	return predicate.OAuthCode(func(s *sql.Selector) {
@@ -545,29 +568,6 @@ func HasClient() predicate.OAuthCode {
 func HasClientWith(preds ...predicate.OAuthClient) predicate.OAuthCode {
 	return predicate.OAuthCode(func(s *sql.Selector) {
 		step := newClientStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasWorkspace applies the HasEdge predicate on the "workspace" edge.
-func HasWorkspace() predicate.OAuthCode {
-	return predicate.OAuthCode(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, WorkspaceTable, WorkspaceColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasWorkspaceWith applies the HasEdge predicate on the "workspace" edge with a given conditions (other predicates).
-func HasWorkspaceWith(preds ...predicate.Workspace) predicate.OAuthCode {
-	return predicate.OAuthCode(func(s *sql.Selector) {
-		step := newWorkspaceStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -25,6 +25,8 @@ type OAuthCode struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// WorkspaceID holds the value of the "workspace_id" field.
+	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// CodeHash holds the value of the "code_hash" field.
 	CodeHash string `json:"-"`
 	// RedirectURI holds the value of the "redirect_uri" field.
@@ -39,8 +41,6 @@ type OAuthCode struct {
 	UsedAt *time.Time `json:"used_at,omitempty"`
 	// ClientID holds the value of the "client_id" field.
 	ClientID int64 `json:"client_id,omitempty"`
-	// WorkspaceID holds the value of the "workspace_id" field.
-	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// MembershipID holds the value of the "membership_id" field.
 	MembershipID int64 `json:"membership_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -51,10 +51,10 @@ type OAuthCode struct {
 
 // OAuthCodeEdges holds the relations/edges for other nodes in the graph.
 type OAuthCodeEdges struct {
-	// Client holds the value of the client edge.
-	Client *OAuthClient `json:"client,omitempty"`
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Client holds the value of the client edge.
+	Client *OAuthClient `json:"client,omitempty"`
 	// Membership holds the value of the membership edge.
 	Membership *Membership `json:"membership,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -62,26 +62,26 @@ type OAuthCodeEdges struct {
 	loadedTypes [3]bool
 }
 
-// ClientOrErr returns the Client value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e OAuthCodeEdges) ClientOrErr() (*OAuthClient, error) {
-	if e.Client != nil {
-		return e.Client, nil
-	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: oauthclient.Label}
-	}
-	return nil, &NotLoadedError{edge: "client"}
-}
-
 // WorkspaceOrErr returns the Workspace value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OAuthCodeEdges) WorkspaceOrErr() (*Workspace, error) {
 	if e.Workspace != nil {
 		return e.Workspace, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[0] {
 		return nil, &NotFoundError{label: workspace.Label}
 	}
 	return nil, &NotLoadedError{edge: "workspace"}
+}
+
+// ClientOrErr returns the Client value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OAuthCodeEdges) ClientOrErr() (*OAuthClient, error) {
+	if e.Client != nil {
+		return e.Client, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: oauthclient.Label}
+	}
+	return nil, &NotLoadedError{edge: "client"}
 }
 
 // MembershipOrErr returns the Membership value or an error if the edge
@@ -102,7 +102,7 @@ func (*OAuthCode) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case oauthcode.FieldScopes:
 			values[i] = new([]byte)
-		case oauthcode.FieldID, oauthcode.FieldClientID, oauthcode.FieldWorkspaceID, oauthcode.FieldMembershipID:
+		case oauthcode.FieldID, oauthcode.FieldWorkspaceID, oauthcode.FieldClientID, oauthcode.FieldMembershipID:
 			values[i] = new(sql.NullInt64)
 		case oauthcode.FieldCodeHash, oauthcode.FieldRedirectURI, oauthcode.FieldCodeChallenge:
 			values[i] = new(sql.NullString)
@@ -140,6 +140,12 @@ func (_m *OAuthCode) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case oauthcode.FieldWorkspaceID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
+			} else if value.Valid {
+				_m.WorkspaceID = value.Int64
 			}
 		case oauthcode.FieldCodeHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -186,12 +192,6 @@ func (_m *OAuthCode) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ClientID = value.Int64
 			}
-		case oauthcode.FieldWorkspaceID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
-			} else if value.Valid {
-				_m.WorkspaceID = value.Int64
-			}
 		case oauthcode.FieldMembershipID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field membership_id", values[i])
@@ -211,14 +211,14 @@ func (_m *OAuthCode) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryClient queries the "client" edge of the OAuthCode entity.
-func (_m *OAuthCode) QueryClient() *OAuthClientQuery {
-	return NewOAuthCodeClient(_m.config).QueryClient(_m)
-}
-
 // QueryWorkspace queries the "workspace" edge of the OAuthCode entity.
 func (_m *OAuthCode) QueryWorkspace() *WorkspaceQuery {
 	return NewOAuthCodeClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryClient queries the "client" edge of the OAuthCode entity.
+func (_m *OAuthCode) QueryClient() *OAuthClientQuery {
+	return NewOAuthCodeClient(_m.config).QueryClient(_m)
 }
 
 // QueryMembership queries the "membership" edge of the OAuthCode entity.
@@ -255,6 +255,9 @@ func (_m *OAuthCode) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	builder.WriteString("workspace_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
+	builder.WriteString(", ")
 	builder.WriteString("code_hash=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("redirect_uri=")
@@ -276,9 +279,6 @@ func (_m *OAuthCode) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("client_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ClientID))
-	builder.WriteString(", ")
-	builder.WriteString("workspace_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")
 	builder.WriteString("membership_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MembershipID))

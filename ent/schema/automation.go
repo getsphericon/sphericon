@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"slices"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
@@ -20,8 +22,8 @@ type Automation struct {
 
 func (Automation) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("automations", append(Automation{}.Fields(), VersionedMixin{}.Fields()...)),
-		Audited{Action: "automation", NameField: nameField},
+		TableWithEnumChecks("automations", slices.Concat(Automation{}.Fields(), VersionedMixin{}.Fields())),
+		Audited{Action: "automation", NameField: NameColumn},
 	}
 }
 
@@ -37,7 +39,7 @@ func (Automation) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 	}
 }

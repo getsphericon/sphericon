@@ -4,352 +4,40 @@ package main
 
 import (
 	"log"
-	"slices"
-	"strings"
-	"text/template"
 
 	"entgo.io/ent/entc"
 	"entgo.io/ent/entc/gen"
-	"entgo.io/ent/schema/field"
+
+	"github.com/getsphericon/sphericon/internal/entgen"
 )
 
+// main checks ent/schema against the rules of generation and generates package ent from it. The
+// rules, the classification of the entities and the funcs the templates read are internal/entgen's.
 func main() {
-	err := entc.Generate("./schema", &gen.Config{
-		Target:  ".",
-		Package: "github.com/getsphericon/sphericon/ent",
-		IDType:  &field.TypeInfo{Type: field.TypeInt64},
-		Features: []gen.Feature{
-			gen.FeatureSnapshot,
-			gen.FeatureUpsert,
-			// Modifier exposes .Modify() on query builders, used by the analytics
-			// dashboard for date_trunc day-bucketed engagement aggregates.
-			gen.FeatureModifier,
-			// Lock exposes .ForUpdate() on query builders: accounts locks the Workspace's
-			// owner rows so the Owner invariant holds under concurrent role changes.
-			gen.FeatureLock,
-			// ExecQuery exposes ExecContext on the client: internal/workspacefeed takes
-			// its advisory lock and the next feed position in raw SQL.
-			gen.FeatureExecQuery,
-			// VersionedMigration generates migrate.NamedDiff, which cmd/db uses to write
-			// the next migration straight from the ent schema.
-			gen.FeatureVersionedMigration,
-		},
-		// The scoped client (ADR 0017): ent/template/scoped*.tmpl generate ent/scoped*.go.
-		Templates: []*gen.Template{
-			gen.MustParse(gen.NewTemplate("scoped").Funcs(scopedFuncs()).ParseDir("template")),
-		},
-	})
-	if err != nil {
-		log.Fatal("running ent codegen:", err)
+	cfg := entgen.Config()
+	cfg.Target = "."
+	cfg.Package = "github.com/getsphericon/sphericon/ent"
+	cfg.Features = []gen.Feature{
+		gen.FeatureSnapshot,
+		gen.FeatureUpsert,
+		// Modifier exposes .Modify() on query builders, used by the analytics
+		// dashboard for date_trunc day-bucketed engagement aggregates.
+		gen.FeatureModifier,
+		// Lock exposes .ForUpdate() on query builders: accounts locks the Workspace's
+		// owner rows so the Owner invariant holds under concurrent role changes.
+		gen.FeatureLock,
+		// ExecQuery exposes ExecContext on the client: internal/workspacefeed takes
+		// its advisory lock and the next feed position in raw SQL.
+		gen.FeatureExecQuery,
+		// VersionedMigration generates migrate.NamedDiff, which cmd/db uses to write
+		// the next migration straight from the ent schema.
+		gen.FeatureVersionedMigration,
 	}
-}
-
-// scopedRef is a plain field that references another Workspace-owned entity.
-type scopedRef struct {
-	Field  *gen.Field
-	Target *gen.Type
-}
-
-// scopedFuncs are the helpers ent/template/scoped.tmpl needs to find the
-// workspace-mixin entities and the references between them.
-func scopedFuncs() template.FuncMap {
-	return template.FuncMap{
-		// scopedNodes lists the entities that carry the workspace mixin.
-		"scopedNodes": func(g *gen.Graph) []*gen.Type {
-			checkScopedRefs(g)
-			var out []*gen.Type
-			for _, n := range g.Nodes {
-				if isScoped(n) {
-					out = append(out, n)
-				}
-			}
-			return out
-		},
-		"scopedIs": isScoped,
-		// discardable reports whether n embeds the DiscardMixin (ADR 0049, ADR 0100): its scoped
-		// wrapper gets Discard, Undiscard and Purge instead of Delete.
-		"discardable": func(n *gen.Type) bool { return isScoped(n) && isDiscardable(n) },
-		// archivable reports whether n embeds the ArchiveMixin (ADR 0100): its scoped wrapper
-		// gets Archive, Unarchive and Purge instead of Delete.
-		"archivable": func(n *gen.Type) bool { return isScoped(n) && isArchivable(n) },
-		// versioned reports whether n embeds the VersionedMixin (ADR 0065, GLOSSARY: Versioned
-		// definition): its scoped wrapper gets the pointer operations (<N>Pointers) that
-		// internal/drafts runs the lifecycle on.
-		"versioned": isVersioned,
-		// versionedNodes lists the Versioned definitions.
-		"versionedNodes": func(g *gen.Graph) []*gen.Type {
-			var out []*gen.Type
-			for _, n := range g.Nodes {
-				if isVersioned(n) {
-					out = append(out, n)
-				}
-			}
-			return out
-		},
-		// versionOf returns the version entity of a Versioned definition: the target of its
-		// live_version edge.
-		"versionOf": versionOf,
-		// versionOwnerField returns the version's column that names its owner (automation_id).
-		"versionOwnerField": func(n *gen.Type) *gen.Field {
-			for _, e := range n.Edges {
-				if e.Name == "versions" && e.Ref != nil {
-					if f := e.Ref.Field(); f != nil {
-						return f
-					}
-				}
-			}
-			log.Fatalf("%s: a Versioned definition needs the versions edge of VersionedMixin, and its version the owner edge of VersionMixin", n.Name)
-			return nil
-		},
-		// scopedEdges lists the edges of n that point at another scoped entity and are set on n's
-		// builders: not a many-to-many edge through a scoped edge table, whose rows are written as
-		// rows of their own.
-		"scopedEdges": func(n *gen.Type) []*gen.Edge {
-			var out []*gen.Edge
-			for _, e := range n.EdgesWithID() {
-				if isScoped(e.Type) && (e.Through == nil || !isScoped(e.Through)) {
-					out = append(out, e)
-				}
-			}
-			return out
-		},
-		// scopedEdgeMutable reports whether the edge can be changed on update.
-		"scopedEdgeMutable": func(e *gen.Edge) bool {
-			if e.Immutable {
-				return false
-			}
-			f := e.Field()
-			return f == nil || !f.Immutable
-		},
-		// auditOf returns the Audited annotation of n (ADR 0022), or nil when the
-		// entity has not opted into the Audit log.
-		"auditOf": auditOf,
-		// auditFields lists the fields of an audited entity that appear in a diff.
-		"auditFields": func(n *gen.Type) []*gen.Field {
-			var out []*gen.Field
-			for _, f := range n.Fields {
-				switch f.Name {
-				case "workspace_id", "created_at", "updated_at", "health_generation", "revision":
-					continue
-				}
-				if _, derived := f.Annotations["Derived"]; derived { // schema.Derived
-					continue
-				}
-				out = append(out, f)
-			}
-			return out
-		},
-		// auditIsKey reports whether an audited field is a reference to another row (an edge
-		// field of int64), which the Audit log records by its public form (ADR 0142).
-		"auditIsKey": func(f *gen.Field) bool {
-			return f.IsEdgeField() && f.Type.String() == "int64"
-		},
-		// stateForm returns the form schema.State declares for a machine or latch field (ADR 0109),
-		// and "" for an attribute or an unannotated field.
-		"stateForm": func(f *gen.Field) string {
-			ann, _ := f.Annotations["State"].(map[string]any)
-			switch form, _ := ann["Form"].(string); form {
-			case "machine", "latch":
-				return form
-			default:
-				return ""
-			}
-		},
-		// discardClears lists the bools of n a Discard gives up (schema.GivenUpOnDiscard), which the
-		// generated Discard sets to false.
-		"discardClears": func(n *gen.Type) []*gen.Field {
-			var out []*gen.Field
-			for _, f := range n.Fields {
-				if _, ok := f.Annotations["GivenUpOnDiscard"]; !ok {
-					continue
-				}
-				if !f.IsBool() {
-					log.Fatalf("%s.%s: a field a Discard gives up is a bool", n.Name, f.Name)
-				}
-				out = append(out, f)
-			}
-			return out
-		},
-		"auditSensitive": func(f *gen.Field) bool {
-			_, ok := f.Annotations["Sensitive"]
-			return ok
-		},
-		// bookkeeping lists the columns of n that schema.Bookkeeping marks (ADR 0119).
-		"bookkeeping": func(n *gen.Type) []string {
-			var out []string
-			for _, f := range n.Fields {
-				if _, ok := f.Annotations["Bookkeeping"]; ok {
-					out = append(out, f.StorageKey())
-				}
-			}
-			return out
-		},
-		// scopedFieldRefs lists the annotated plain fields of n that hold a reference.
-		"scopedFieldRefs": func(g *gen.Graph, n *gen.Type) []scopedRef {
-			var out []scopedRef
-			for _, f := range n.Fields {
-				if t := annotatedTarget(g, f); t != nil {
-					out = append(out, scopedRef{Field: f, Target: t})
-				}
-			}
-			return out
-		},
-		// scopedRefTarget returns the scoped entity a field references (an edge
-		// field or an annotated plain field), or nil.
-		"scopedRefTarget": func(g *gen.Graph, f *gen.Field) *gen.Type {
-			if f.IsEdgeField() {
-				if e, err := f.Edge(); err == nil && isScoped(e.Type) {
-					return e.Type
-				}
-				return nil
-			}
-			return annotatedTarget(g, f)
-		},
+	// The check runs on the graph being generated; when it passes, the hook adds ent/template
+	// (the scoped client of ADR 0017, the manifest of kinds, the state forms, the bookkeeping
+	// columns) with the classification's funcs.
+	cfg.Hooks = []gen.Hook{entgen.Hook("template")}
+	if err := entc.Generate("./schema", cfg); err != nil {
+		log.Fatal("running ent codegen: ", err)
 	}
-}
-
-// checkScopedRefs fails the generation when a reference column has no foreign key and no written
-// reason (rule 8, ADR 0033). Every Int64 id column of any entity must be an edge field (a key) or carry
-// schema.ScopedRef: Entity (a scoped client check) or Unchecked with a Reason (a tombstone or a snapshot
-// that outlives its target). Unchecked without a Reason fails on any field, string snapshots included.
-func checkScopedRefs(g *gen.Graph) {
-	for _, n := range g.Nodes {
-		for _, f := range n.Fields {
-			ann, annotated := f.Annotations["ScopedRef"].(map[string]any)
-			if annotated && ann["Unchecked"] == true {
-				if reason, _ := ann["Reason"].(string); strings.TrimSpace(reason) == "" {
-					log.Fatalf("%s.%s is an unchecked reference with no foreign key: schema.ScopedRef needs a Reason (tombstone or snapshot)", n.Name, f.Name)
-				}
-				continue
-			}
-			if f.Name == "workspace_id" && f.Position != nil && f.Position.MixedIn {
-				continue
-			}
-			if f.IsEdgeField() || f.Type.Type != field.TypeInt64 || !strings.HasSuffix(f.Name, "_id") {
-				continue
-			}
-			if annotatedTarget(g, f) == nil {
-				log.Fatalf("%s.%s looks like a reference with no foreign key: add an edge, or annotate it with schema.ScopedRef{Entity: ...} (scoped check) or {Unchecked: true, Reason: ...} (tombstone or snapshot)", n.Name, f.Name)
-			}
-		}
-	}
-}
-
-// audit is the decoded schema.Audited annotation of an entity.
-type audit struct {
-	Action    string
-	NameField *gen.Field
-	NamesOnly bool
-	NameIsURL bool
-	// Always lists field names an update's diff carries even when unchanged.
-	Always []string
-}
-
-func auditOf(n *gen.Type) *audit {
-	ann, ok := n.Annotations["Audited"].(map[string]any)
-	if !ok {
-		return nil
-	}
-	a := &audit{}
-	a.Action, _ = ann["Action"].(string)
-	a.NamesOnly, _ = ann["NamesOnly"].(bool)
-	a.NameIsURL, _ = ann["NameIsURL"].(bool)
-	always, _ := ann["Always"].([]any)
-	for _, v := range always {
-		name, _ := v.(string)
-		if !slices.ContainsFunc(n.Fields, func(f *gen.Field) bool { return f.Name == name }) {
-			log.Fatalf("%s: schema.Audited.Always names an unknown field %q", n.Name, name)
-		}
-		a.Always = append(a.Always, name)
-	}
-	if a.Action == "" {
-		log.Fatalf("%s: schema.Audited needs an Action", n.Name)
-	}
-	if name, _ := ann["NameField"].(string); name != "" {
-		for _, f := range n.Fields {
-			if f.Name == name {
-				a.NameField = f
-			}
-		}
-		if a.NameField == nil {
-			log.Fatalf("%s: schema.Audited names an unknown field %q", n.Name, name)
-		}
-	}
-	return a
-}
-
-func isScoped(t *gen.Type) bool {
-	for _, f := range t.Fields {
-		if f.Name == "workspace_id" && f.Position != nil && f.Position.MixedIn {
-			return true
-		}
-	}
-	return false
-}
-
-func isDiscardable(t *gen.Type) bool {
-	return mixesIn(t, "discarded_at")
-}
-
-// isArchivable reports whether t embeds the ArchiveMixin. An entity takes it or the DiscardMixin,
-// never both (ADR 0100): the generation fails on one with both.
-func isArchivable(t *gen.Type) bool {
-	if !mixesIn(t, "archived_at") {
-		return false
-	}
-	if isDiscardable(t) {
-		log.Fatalf("%s: an entity is archived or discarded, never both (ADR 0100): drop ArchiveMixin or DiscardMixin", t.Name)
-	}
-	return true
-}
-
-// mixesIn reports whether t has the field name from a mixin.
-func mixesIn(t *gen.Type, name string) bool {
-	for _, f := range t.Fields {
-		if f.Name == name && f.Position != nil && f.Position.MixedIn {
-			return true
-		}
-	}
-	return false
-}
-
-// isVersioned reports whether t embeds the VersionedMixin, found by its mixed-in live_version_id.
-// A Versioned definition is Workspace-owned and either archivable or discardable (ADR 0100): the
-// lifecycle archives the one and discards the other.
-func isVersioned(t *gen.Type) bool {
-	if !mixesIn(t, "live_version_id") {
-		return false
-	}
-	if !isScoped(t) || isArchivable(t) == isDiscardable(t) {
-		log.Fatalf("%s: a Versioned definition needs WorkspaceMixin and either ArchiveMixin or DiscardMixin", t.Name)
-	}
-	return true
-}
-
-func versionOf(t *gen.Type) *gen.Type {
-	for _, e := range t.Edges {
-		if e.Name == "live_version" {
-			return e.Type
-		}
-	}
-	log.Fatalf("%s: a Versioned definition needs the live_version edge of VersionedMixin", t.Name)
-	return nil
-}
-
-func annotatedTarget(g *gen.Graph, f *gen.Field) *gen.Type {
-	ann, ok := f.Annotations["ScopedRef"].(map[string]any)
-	if !ok {
-		return nil
-	}
-	name, _ := ann["Entity"].(string)
-	if name == "" {
-		return nil
-	}
-	for _, n := range g.Nodes {
-		if n.Name == name {
-			return n
-		}
-	}
-	log.Fatalf("ScopedRef on %s names an unknown entity %q", f.Name, name)
-	return nil
 }

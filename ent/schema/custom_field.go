@@ -20,7 +20,7 @@ type CustomField struct {
 func (CustomField) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		TableWithEnumChecks("custom_fields", CustomField{}.Fields()),
-		Audited{Action: "custom_field", NameField: nameField},
+		Audited{Action: "custom_field", NameField: NameColumn},
 	}
 }
 
@@ -38,7 +38,7 @@ func (CustomField) Fields() []ent.Field {
 		field.String("key").
 			NotEmpty().
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 		// Inferred on first sight, changed by a person afterwards. A later value of another
 		// shape is stored as it came and never retypes the field; no change of type rewrites

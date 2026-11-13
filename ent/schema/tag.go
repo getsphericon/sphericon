@@ -20,7 +20,7 @@ type Tag struct {
 func (Tag) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "tags"},
-		Audited{Action: "tag", NameField: nameField},
+		Audited{Action: "tag", NameField: NameColumn},
 	}
 }
 
@@ -35,7 +35,7 @@ func (Tag) Fields() []ent.Field {
 			Immutable(),
 		// The label itself, as first written; unique per workspace by its key. It originates outside the workspace
 		// (imports, the API), so it is untrusted text (ADR 0016).
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 		// The name as Tags are matched (tagname.Key): trimmed and lower-cased, so "VIP" and "vip"
 		// are one Tag, which keeps the name it was first written with. Set once, by tags.EnsureIn.

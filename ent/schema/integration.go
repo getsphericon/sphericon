@@ -32,7 +32,7 @@ func (Integration) Annotations() []schema.Annotation {
 	a.Checks["integrations_provider_channel_check"] = providerChannelCheck()
 	return []schema.Annotation{
 		a,
-		Audited{Action: "integration", NameField: nameField},
+		Audited{Action: "integration", NameField: NameColumn},
 	}
 }
 
@@ -45,7 +45,7 @@ func (Integration) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 		// The provider's Channel (providers.Provider.Channel), stored for the per-Channel indexes
 		// and checked against the provider; no default, so a writer cannot pair a provider with a
@@ -77,7 +77,9 @@ func (Integration) Fields() []ent.Field {
 		field.String("ingest_key").
 			NotEmpty().
 			Unique().
-			Annotations(Sensitive{}),
+			Annotations(Sensitive{}, UniqueOverAll{
+				Reason: "a hook's address names one Integration for ever: a key a discarded Integration held is never served again",
+			}),
 		field.Bool("enabled").
 			Annotations(Attribute(reasonSetting)).
 			Default(true),

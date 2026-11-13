@@ -53,6 +53,12 @@ func (_c *OAuthCodeCreate) SetNillableUpdatedAt(v *time.Time) *OAuthCodeCreate {
 	return _c
 }
 
+// SetWorkspaceID sets the "workspace_id" field.
+func (_c *OAuthCodeCreate) SetWorkspaceID(v int64) *OAuthCodeCreate {
+	_c.mutation.SetWorkspaceID(v)
+	return _c
+}
+
 // SetCodeHash sets the "code_hash" field.
 func (_c *OAuthCodeCreate) SetCodeHash(v string) *OAuthCodeCreate {
 	_c.mutation.SetCodeHash(v)
@@ -103,12 +109,6 @@ func (_c *OAuthCodeCreate) SetClientID(v int64) *OAuthCodeCreate {
 	return _c
 }
 
-// SetWorkspaceID sets the "workspace_id" field.
-func (_c *OAuthCodeCreate) SetWorkspaceID(v int64) *OAuthCodeCreate {
-	_c.mutation.SetWorkspaceID(v)
-	return _c
-}
-
 // SetMembershipID sets the "membership_id" field.
 func (_c *OAuthCodeCreate) SetMembershipID(v int64) *OAuthCodeCreate {
 	_c.mutation.SetMembershipID(v)
@@ -121,14 +121,14 @@ func (_c *OAuthCodeCreate) SetID(v int64) *OAuthCodeCreate {
 	return _c
 }
 
-// SetClient sets the "client" edge to the OAuthClient entity.
-func (_c *OAuthCodeCreate) SetClient(v *OAuthClient) *OAuthCodeCreate {
-	return _c.SetClientID(v.ID)
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_c *OAuthCodeCreate) SetWorkspace(v *Workspace) *OAuthCodeCreate {
 	return _c.SetWorkspaceID(v.ID)
+}
+
+// SetClient sets the "client" edge to the OAuthClient entity.
+func (_c *OAuthCodeCreate) SetClient(v *OAuthClient) *OAuthCodeCreate {
+	return _c.SetClientID(v.ID)
 }
 
 // SetMembership sets the "membership" edge to the Membership entity.
@@ -193,6 +193,9 @@ func (_c *OAuthCodeCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "OAuthCode.updated_at"`)}
 	}
+	if _, ok := _c.mutation.WorkspaceID(); !ok {
+		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "OAuthCode.workspace_id"`)}
+	}
 	if _, ok := _c.mutation.CodeHash(); !ok {
 		return &ValidationError{Name: "code_hash", err: errors.New(`ent: missing required field "OAuthCode.code_hash"`)}
 	}
@@ -226,17 +229,14 @@ func (_c *OAuthCodeCreate) check() error {
 	if _, ok := _c.mutation.ClientID(); !ok {
 		return &ValidationError{Name: "client_id", err: errors.New(`ent: missing required field "OAuthCode.client_id"`)}
 	}
-	if _, ok := _c.mutation.WorkspaceID(); !ok {
-		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "OAuthCode.workspace_id"`)}
-	}
 	if _, ok := _c.mutation.MembershipID(); !ok {
 		return &ValidationError{Name: "membership_id", err: errors.New(`ent: missing required field "OAuthCode.membership_id"`)}
 	}
-	if len(_c.mutation.ClientIDs()) == 0 {
-		return &ValidationError{Name: "client", err: errors.New(`ent: missing required edge "OAuthCode.client"`)}
-	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "OAuthCode.workspace"`)}
+	}
+	if len(_c.mutation.ClientIDs()) == 0 {
+		return &ValidationError{Name: "client", err: errors.New(`ent: missing required edge "OAuthCode.client"`)}
 	}
 	if len(_c.mutation.MembershipIDs()) == 0 {
 		return &ValidationError{Name: "membership", err: errors.New(`ent: missing required edge "OAuthCode.membership"`)}
@@ -306,6 +306,23 @@ func (_c *OAuthCodeCreate) createSpec() (*OAuthCode, *sqlgraph.CreateSpec) {
 		_spec.SetField(oauthcode.FieldUsedAt, field.TypeTime, value)
 		_node.UsedAt = &value
 	}
+	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   oauthcode.WorkspaceTable,
+			Columns: []string{oauthcode.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.ClientIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -321,23 +338,6 @@ func (_c *OAuthCodeCreate) createSpec() (*OAuthCode, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ClientID = nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   oauthcode.WorkspaceTable,
-			Columns: []string{oauthcode.WorkspaceColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.WorkspaceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.MembershipIDs(); len(nodes) > 0 {
@@ -421,6 +421,18 @@ func (u *OAuthCodeUpsert) UpdateUpdatedAt() *OAuthCodeUpsert {
 	return u
 }
 
+// SetWorkspaceID sets the "workspace_id" field.
+func (u *OAuthCodeUpsert) SetWorkspaceID(v int64) *OAuthCodeUpsert {
+	u.Set(oauthcode.FieldWorkspaceID, v)
+	return u
+}
+
+// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
+func (u *OAuthCodeUpsert) UpdateWorkspaceID() *OAuthCodeUpsert {
+	u.SetExcluded(oauthcode.FieldWorkspaceID)
+	return u
+}
+
 // SetScopes sets the "scopes" field.
 func (u *OAuthCodeUpsert) SetScopes(v []string) *OAuthCodeUpsert {
 	u.Set(oauthcode.FieldScopes, v)
@@ -472,18 +484,6 @@ func (u *OAuthCodeUpsert) SetClientID(v int64) *OAuthCodeUpsert {
 // UpdateClientID sets the "client_id" field to the value that was provided on create.
 func (u *OAuthCodeUpsert) UpdateClientID() *OAuthCodeUpsert {
 	u.SetExcluded(oauthcode.FieldClientID)
-	return u
-}
-
-// SetWorkspaceID sets the "workspace_id" field.
-func (u *OAuthCodeUpsert) SetWorkspaceID(v int64) *OAuthCodeUpsert {
-	u.Set(oauthcode.FieldWorkspaceID, v)
-	return u
-}
-
-// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
-func (u *OAuthCodeUpsert) UpdateWorkspaceID() *OAuthCodeUpsert {
-	u.SetExcluded(oauthcode.FieldWorkspaceID)
 	return u
 }
 
@@ -573,6 +573,20 @@ func (u *OAuthCodeUpsertOne) UpdateUpdatedAt() *OAuthCodeUpsertOne {
 	})
 }
 
+// SetWorkspaceID sets the "workspace_id" field.
+func (u *OAuthCodeUpsertOne) SetWorkspaceID(v int64) *OAuthCodeUpsertOne {
+	return u.Update(func(s *OAuthCodeUpsert) {
+		s.SetWorkspaceID(v)
+	})
+}
+
+// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
+func (u *OAuthCodeUpsertOne) UpdateWorkspaceID() *OAuthCodeUpsertOne {
+	return u.Update(func(s *OAuthCodeUpsert) {
+		s.UpdateWorkspaceID()
+	})
+}
+
 // SetScopes sets the "scopes" field.
 func (u *OAuthCodeUpsertOne) SetScopes(v []string) *OAuthCodeUpsertOne {
 	return u.Update(func(s *OAuthCodeUpsert) {
@@ -633,20 +647,6 @@ func (u *OAuthCodeUpsertOne) SetClientID(v int64) *OAuthCodeUpsertOne {
 func (u *OAuthCodeUpsertOne) UpdateClientID() *OAuthCodeUpsertOne {
 	return u.Update(func(s *OAuthCodeUpsert) {
 		s.UpdateClientID()
-	})
-}
-
-// SetWorkspaceID sets the "workspace_id" field.
-func (u *OAuthCodeUpsertOne) SetWorkspaceID(v int64) *OAuthCodeUpsertOne {
-	return u.Update(func(s *OAuthCodeUpsert) {
-		s.SetWorkspaceID(v)
-	})
-}
-
-// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
-func (u *OAuthCodeUpsertOne) UpdateWorkspaceID() *OAuthCodeUpsertOne {
-	return u.Update(func(s *OAuthCodeUpsert) {
-		s.UpdateWorkspaceID()
 	})
 }
 
@@ -904,6 +904,20 @@ func (u *OAuthCodeUpsertBulk) UpdateUpdatedAt() *OAuthCodeUpsertBulk {
 	})
 }
 
+// SetWorkspaceID sets the "workspace_id" field.
+func (u *OAuthCodeUpsertBulk) SetWorkspaceID(v int64) *OAuthCodeUpsertBulk {
+	return u.Update(func(s *OAuthCodeUpsert) {
+		s.SetWorkspaceID(v)
+	})
+}
+
+// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
+func (u *OAuthCodeUpsertBulk) UpdateWorkspaceID() *OAuthCodeUpsertBulk {
+	return u.Update(func(s *OAuthCodeUpsert) {
+		s.UpdateWorkspaceID()
+	})
+}
+
 // SetScopes sets the "scopes" field.
 func (u *OAuthCodeUpsertBulk) SetScopes(v []string) *OAuthCodeUpsertBulk {
 	return u.Update(func(s *OAuthCodeUpsert) {
@@ -964,20 +978,6 @@ func (u *OAuthCodeUpsertBulk) SetClientID(v int64) *OAuthCodeUpsertBulk {
 func (u *OAuthCodeUpsertBulk) UpdateClientID() *OAuthCodeUpsertBulk {
 	return u.Update(func(s *OAuthCodeUpsert) {
 		s.UpdateClientID()
-	})
-}
-
-// SetWorkspaceID sets the "workspace_id" field.
-func (u *OAuthCodeUpsertBulk) SetWorkspaceID(v int64) *OAuthCodeUpsertBulk {
-	return u.Update(func(s *OAuthCodeUpsert) {
-		s.SetWorkspaceID(v)
-	})
-}
-
-// UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
-func (u *OAuthCodeUpsertBulk) UpdateWorkspaceID() *OAuthCodeUpsertBulk {
-	return u.Update(func(s *OAuthCodeUpsert) {
-		s.UpdateWorkspaceID()
 	})
 }
 

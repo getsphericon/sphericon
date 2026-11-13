@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -620,6 +621,21 @@ func (_c *WorkspaceCreate) AddAPITokens(v ...*ApiToken) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddAPITokenIDs(ids...)
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (_c *WorkspaceCreate) AddOauthCodeIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddOauthCodeIDs(ids...)
+	return _c
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (_c *WorkspaceCreate) AddOauthCodes(v ...*OAuthCode) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOauthCodeIDs(ids...)
 }
 
 // AddIntegrationIDs adds the "integrations" edge to the Integration entity by IDs.
@@ -1597,6 +1613,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OauthCodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OauthCodesTable,
+			Columns: []string{workspace.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -37653,10 +37653,10 @@ type OAuthCodeMutation struct {
 	expires_at        *time.Time
 	used_at           *time.Time
 	clearedFields     map[string]struct{}
-	client            *int64
-	clearedclient     bool
 	workspace         *int64
 	clearedworkspace  bool
+	client            *int64
+	clearedclient     bool
 	membership        *int64
 	clearedmembership bool
 	done              bool
@@ -37838,6 +37838,42 @@ func (m *OAuthCodeMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err 
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *OAuthCodeMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *OAuthCodeMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *OAuthCodeMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the OAuthCode entity.
+// If the OAuthCode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthCodeMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *OAuthCodeMutation) ResetWorkspaceID() {
+	m.workspace = nil
 }
 
 // SetCodeHash sets the "code_hash" field.
@@ -38120,42 +38156,6 @@ func (m *OAuthCodeMutation) ResetClientID() {
 	m.client = nil
 }
 
-// SetWorkspaceID sets the "workspace_id" field.
-func (m *OAuthCodeMutation) SetWorkspaceID(i int64) {
-	m.workspace = &i
-}
-
-// WorkspaceID returns the value of the "workspace_id" field in the mutation.
-func (m *OAuthCodeMutation) WorkspaceID() (r int64, exists bool) {
-	v := m.workspace
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldWorkspaceID returns the old "workspace_id" field's value of the OAuthCode entity.
-// If the OAuthCode object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OAuthCodeMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
-	}
-	return oldValue.WorkspaceID, nil
-}
-
-// ResetWorkspaceID resets all changes to the "workspace_id" field.
-func (m *OAuthCodeMutation) ResetWorkspaceID() {
-	m.workspace = nil
-}
-
 // SetMembershipID sets the "membership_id" field.
 func (m *OAuthCodeMutation) SetMembershipID(i int64) {
 	m.membership = &i
@@ -38192,33 +38192,6 @@ func (m *OAuthCodeMutation) ResetMembershipID() {
 	m.membership = nil
 }
 
-// ClearClient clears the "client" edge to the OAuthClient entity.
-func (m *OAuthCodeMutation) ClearClient() {
-	m.clearedclient = true
-	m.clearedFields[oauthcode.FieldClientID] = struct{}{}
-}
-
-// ClientCleared reports if the "client" edge to the OAuthClient entity was cleared.
-func (m *OAuthCodeMutation) ClientCleared() bool {
-	return m.clearedclient
-}
-
-// ClientIDs returns the "client" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ClientID instead. It exists only for internal usage by the builders.
-func (m *OAuthCodeMutation) ClientIDs() (ids []int64) {
-	if id := m.client; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetClient resets all changes to the "client" edge.
-func (m *OAuthCodeMutation) ResetClient() {
-	m.client = nil
-	m.clearedclient = false
-}
-
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *OAuthCodeMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -38244,6 +38217,33 @@ func (m *OAuthCodeMutation) WorkspaceIDs() (ids []int64) {
 func (m *OAuthCodeMutation) ResetWorkspace() {
 	m.workspace = nil
 	m.clearedworkspace = false
+}
+
+// ClearClient clears the "client" edge to the OAuthClient entity.
+func (m *OAuthCodeMutation) ClearClient() {
+	m.clearedclient = true
+	m.clearedFields[oauthcode.FieldClientID] = struct{}{}
+}
+
+// ClientCleared reports if the "client" edge to the OAuthClient entity was cleared.
+func (m *OAuthCodeMutation) ClientCleared() bool {
+	return m.clearedclient
+}
+
+// ClientIDs returns the "client" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ClientID instead. It exists only for internal usage by the builders.
+func (m *OAuthCodeMutation) ClientIDs() (ids []int64) {
+	if id := m.client; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetClient resets all changes to the "client" edge.
+func (m *OAuthCodeMutation) ResetClient() {
+	m.client = nil
+	m.clearedclient = false
 }
 
 // ClearMembership clears the "membership" edge to the Membership entity.
@@ -38314,6 +38314,9 @@ func (m *OAuthCodeMutation) Fields() []string {
 	if m.updated_at != nil {
 		fields = append(fields, oauthcode.FieldUpdatedAt)
 	}
+	if m.workspace != nil {
+		fields = append(fields, oauthcode.FieldWorkspaceID)
+	}
 	if m.code_hash != nil {
 		fields = append(fields, oauthcode.FieldCodeHash)
 	}
@@ -38335,9 +38338,6 @@ func (m *OAuthCodeMutation) Fields() []string {
 	if m.client != nil {
 		fields = append(fields, oauthcode.FieldClientID)
 	}
-	if m.workspace != nil {
-		fields = append(fields, oauthcode.FieldWorkspaceID)
-	}
 	if m.membership != nil {
 		fields = append(fields, oauthcode.FieldMembershipID)
 	}
@@ -38353,6 +38353,8 @@ func (m *OAuthCodeMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case oauthcode.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case oauthcode.FieldWorkspaceID:
+		return m.WorkspaceID()
 	case oauthcode.FieldCodeHash:
 		return m.CodeHash()
 	case oauthcode.FieldRedirectURI:
@@ -38367,8 +38369,6 @@ func (m *OAuthCodeMutation) Field(name string) (ent.Value, bool) {
 		return m.UsedAt()
 	case oauthcode.FieldClientID:
 		return m.ClientID()
-	case oauthcode.FieldWorkspaceID:
-		return m.WorkspaceID()
 	case oauthcode.FieldMembershipID:
 		return m.MembershipID()
 	}
@@ -38384,6 +38384,8 @@ func (m *OAuthCodeMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldCreatedAt(ctx)
 	case oauthcode.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case oauthcode.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
 	case oauthcode.FieldCodeHash:
 		return m.OldCodeHash(ctx)
 	case oauthcode.FieldRedirectURI:
@@ -38398,8 +38400,6 @@ func (m *OAuthCodeMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldUsedAt(ctx)
 	case oauthcode.FieldClientID:
 		return m.OldClientID(ctx)
-	case oauthcode.FieldWorkspaceID:
-		return m.OldWorkspaceID(ctx)
 	case oauthcode.FieldMembershipID:
 		return m.OldMembershipID(ctx)
 	}
@@ -38424,6 +38424,13 @@ func (m *OAuthCodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case oauthcode.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
 		return nil
 	case oauthcode.FieldCodeHash:
 		v, ok := value.(string)
@@ -38473,13 +38480,6 @@ func (m *OAuthCodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetClientID(v)
-		return nil
-	case oauthcode.FieldWorkspaceID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetWorkspaceID(v)
 		return nil
 	case oauthcode.FieldMembershipID:
 		v, ok := value.(int64)
@@ -38555,6 +38555,9 @@ func (m *OAuthCodeMutation) ResetField(name string) error {
 	case oauthcode.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case oauthcode.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
 	case oauthcode.FieldCodeHash:
 		m.ResetCodeHash()
 		return nil
@@ -38576,9 +38579,6 @@ func (m *OAuthCodeMutation) ResetField(name string) error {
 	case oauthcode.FieldClientID:
 		m.ResetClientID()
 		return nil
-	case oauthcode.FieldWorkspaceID:
-		m.ResetWorkspaceID()
-		return nil
 	case oauthcode.FieldMembershipID:
 		m.ResetMembershipID()
 		return nil
@@ -38589,11 +38589,11 @@ func (m *OAuthCodeMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OAuthCodeMutation) AddedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.client != nil {
-		edges = append(edges, oauthcode.EdgeClient)
-	}
 	if m.workspace != nil {
 		edges = append(edges, oauthcode.EdgeWorkspace)
+	}
+	if m.client != nil {
+		edges = append(edges, oauthcode.EdgeClient)
 	}
 	if m.membership != nil {
 		edges = append(edges, oauthcode.EdgeMembership)
@@ -38605,12 +38605,12 @@ func (m *OAuthCodeMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *OAuthCodeMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case oauthcode.EdgeClient:
-		if id := m.client; id != nil {
-			return []ent.Value{*id}
-		}
 	case oauthcode.EdgeWorkspace:
 		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case oauthcode.EdgeClient:
+		if id := m.client; id != nil {
 			return []ent.Value{*id}
 		}
 	case oauthcode.EdgeMembership:
@@ -38636,11 +38636,11 @@ func (m *OAuthCodeMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OAuthCodeMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.clearedclient {
-		edges = append(edges, oauthcode.EdgeClient)
-	}
 	if m.clearedworkspace {
 		edges = append(edges, oauthcode.EdgeWorkspace)
+	}
+	if m.clearedclient {
+		edges = append(edges, oauthcode.EdgeClient)
 	}
 	if m.clearedmembership {
 		edges = append(edges, oauthcode.EdgeMembership)
@@ -38652,10 +38652,10 @@ func (m *OAuthCodeMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *OAuthCodeMutation) EdgeCleared(name string) bool {
 	switch name {
-	case oauthcode.EdgeClient:
-		return m.clearedclient
 	case oauthcode.EdgeWorkspace:
 		return m.clearedworkspace
+	case oauthcode.EdgeClient:
+		return m.clearedclient
 	case oauthcode.EdgeMembership:
 		return m.clearedmembership
 	}
@@ -38666,11 +38666,11 @@ func (m *OAuthCodeMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *OAuthCodeMutation) ClearEdge(name string) error {
 	switch name {
-	case oauthcode.EdgeClient:
-		m.ClearClient()
-		return nil
 	case oauthcode.EdgeWorkspace:
 		m.ClearWorkspace()
+		return nil
+	case oauthcode.EdgeClient:
+		m.ClearClient()
 		return nil
 	case oauthcode.EdgeMembership:
 		m.ClearMembership()
@@ -38683,11 +38683,11 @@ func (m *OAuthCodeMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *OAuthCodeMutation) ResetEdge(name string) error {
 	switch name {
-	case oauthcode.EdgeClient:
-		m.ResetClient()
-		return nil
 	case oauthcode.EdgeWorkspace:
 		m.ResetWorkspace()
+		return nil
+	case oauthcode.EdgeClient:
+		m.ResetClient()
 		return nil
 	case oauthcode.EdgeMembership:
 		m.ResetMembership()
@@ -72223,6 +72223,9 @@ type WorkspaceMutation struct {
 	api_tokens                   map[int64]struct{}
 	removedapi_tokens            map[int64]struct{}
 	clearedapi_tokens            bool
+	oauth_codes                  map[int64]struct{}
+	removedoauth_codes           map[int64]struct{}
+	clearedoauth_codes           bool
 	integrations                 map[int64]struct{}
 	removedintegrations          map[int64]struct{}
 	clearedintegrations          bool
@@ -74410,6 +74413,60 @@ func (m *WorkspaceMutation) ResetAPITokens() {
 	m.api_tokens = nil
 	m.clearedapi_tokens = false
 	m.removedapi_tokens = nil
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by ids.
+func (m *WorkspaceMutation) AddOauthCodeIDs(ids ...int64) {
+	if m.oauth_codes == nil {
+		m.oauth_codes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.oauth_codes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOauthCodes clears the "oauth_codes" edge to the OAuthCode entity.
+func (m *WorkspaceMutation) ClearOauthCodes() {
+	m.clearedoauth_codes = true
+}
+
+// OauthCodesCleared reports if the "oauth_codes" edge to the OAuthCode entity was cleared.
+func (m *WorkspaceMutation) OauthCodesCleared() bool {
+	return m.clearedoauth_codes
+}
+
+// RemoveOauthCodeIDs removes the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (m *WorkspaceMutation) RemoveOauthCodeIDs(ids ...int64) {
+	if m.removedoauth_codes == nil {
+		m.removedoauth_codes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.oauth_codes, ids[i])
+		m.removedoauth_codes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOauthCodes returns the removed IDs of the "oauth_codes" edge to the OAuthCode entity.
+func (m *WorkspaceMutation) RemovedOauthCodesIDs() (ids []int64) {
+	for id := range m.removedoauth_codes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OauthCodesIDs returns the "oauth_codes" edge IDs in the mutation.
+func (m *WorkspaceMutation) OauthCodesIDs() (ids []int64) {
+	for id := range m.oauth_codes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOauthCodes resets all changes to the "oauth_codes" edge.
+func (m *WorkspaceMutation) ResetOauthCodes() {
+	m.oauth_codes = nil
+	m.clearedoauth_codes = false
+	m.removedoauth_codes = nil
 }
 
 // AddIntegrationIDs adds the "integrations" edge to the Integration entity by ids.
@@ -76877,7 +76934,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 45)
+	edges := make([]string, 0, 46)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -76916,6 +76973,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.api_tokens != nil {
 		edges = append(edges, workspace.EdgeAPITokens)
+	}
+	if m.oauth_codes != nil {
+		edges = append(edges, workspace.EdgeOauthCodes)
 	}
 	if m.integrations != nil {
 		edges = append(edges, workspace.EdgeIntegrations)
@@ -77095,6 +77155,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 	case workspace.EdgeAPITokens:
 		ids := make([]ent.Value, 0, len(m.api_tokens))
 		for id := range m.api_tokens {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeOauthCodes:
+		ids := make([]ent.Value, 0, len(m.oauth_codes))
+		for id := range m.oauth_codes {
 			ids = append(ids, id)
 		}
 		return ids
@@ -77296,7 +77362,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 45)
+	edges := make([]string, 0, 46)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -77335,6 +77401,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedapi_tokens != nil {
 		edges = append(edges, workspace.EdgeAPITokens)
+	}
+	if m.removedoauth_codes != nil {
+		edges = append(edges, workspace.EdgeOauthCodes)
 	}
 	if m.removedintegrations != nil {
 		edges = append(edges, workspace.EdgeIntegrations)
@@ -77514,6 +77583,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 	case workspace.EdgeAPITokens:
 		ids := make([]ent.Value, 0, len(m.removedapi_tokens))
 		for id := range m.removedapi_tokens {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeOauthCodes:
+		ids := make([]ent.Value, 0, len(m.removedoauth_codes))
+		for id := range m.removedoauth_codes {
 			ids = append(ids, id)
 		}
 		return ids
@@ -77715,7 +77790,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 45)
+	edges := make([]string, 0, 46)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -77754,6 +77829,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedapi_tokens {
 		edges = append(edges, workspace.EdgeAPITokens)
+	}
+	if m.clearedoauth_codes {
+		edges = append(edges, workspace.EdgeOauthCodes)
 	}
 	if m.clearedintegrations {
 		edges = append(edges, workspace.EdgeIntegrations)
@@ -77884,6 +77962,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedstart_tokens
 	case workspace.EdgeAPITokens:
 		return m.clearedapi_tokens
+	case workspace.EdgeOauthCodes:
+		return m.clearedoauth_codes
 	case workspace.EdgeIntegrations:
 		return m.clearedintegrations
 	case workspace.EdgeSendingDomains:
@@ -78002,6 +78082,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeAPITokens:
 		m.ResetAPITokens()
+		return nil
+	case workspace.EdgeOauthCodes:
+		m.ResetOauthCodes()
 		return nil
 	case workspace.EdgeIntegrations:
 		m.ResetIntegrations()

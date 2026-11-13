@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -13,8 +14,8 @@ import (
 // its definition lives in versions of its own type (Version, which embeds VersionMixin), and the
 // owner row keeps the two pointers into them and the state Publish moves. The live version is
 // what the object does, the draft the unpublished one above it; only internal/drafts writes the
-// pointers, through the operations ent/template/scoped.tmpl generates for every entity that has
-// live_version_id (the scoped client's <Owner>Pointers).
+// pointers, through the operations ent/template/scoped_versioned.tmpl generates for every entity of
+// the Versioned kind (the scoped client's <Owner>Pointers).
 type VersionedMixin struct {
 	mixin.Schema
 
@@ -22,8 +23,14 @@ type VersionedMixin struct {
 	Version any
 }
 
-// Fields are the pointers and the state. An owner passes them to TableWithEnumChecks too, so
-// status is checked like the owner's own enums.
+// Annotations declare the kind the mixin gives: Versioned. The owner checks the mixin's enum,
+// status, with its own: its TableWithEnumChecks takes the mixin's Fields() too, and
+// internal/entgen refuses an enum without its CHECK constraint.
+func (VersionedMixin) Annotations() []schema.Annotation {
+	return []schema.Annotation{Versioned{}}
+}
+
+// Fields are the pointers and the state.
 func (VersionedMixin) Fields() []ent.Field {
 	return []ent.Field{
 		// active: acts (enrolls Contacts, fires); inactive: acts on nothing. Publish makes the
@@ -54,16 +61,16 @@ func (VersionedMixin) Fields() []ent.Field {
 func (m VersionedMixin) Edges() []ent.Edge {
 	return []ent.Edge{
 		// Purging the object (only one with no history, ADR 0049) purges its versions with it.
-		edge.To("versions", m.Version).
+		edge.To(VersionsEdge, m.Version).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		// The two pointers into the object's own versions. SET NULL breaks the circle of keys
 		// between the object and its versions: a purge cascades to the versions, Workspace
 		// erasure deletes them first.
-		edge.To("live_version", m.Version).
+		edge.To(LiveVersionEdge, m.Version).
 			Field("live_version_id").
 			Unique().
 			Annotations(entsql.OnDelete(entsql.SetNull)),
-		edge.To("draft_version", m.Version).
+		edge.To(DraftVersionEdge, m.Version).
 			Field("draft_version_id").
 			Unique().
 			Annotations(entsql.OnDelete(entsql.SetNull)),
@@ -104,7 +111,7 @@ func (m VersionMixin) Fields() []ent.Field {
 func (m VersionMixin) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From(m.Owner, m.OwnerType).
-			Ref("versions").
+			Ref(VersionsEdge).
 			Field(m.Owner + "_id").
 			Required().
 			Unique(),

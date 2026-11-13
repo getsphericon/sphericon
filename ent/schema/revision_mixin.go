@@ -17,13 +17,18 @@ type RevisionMixin struct {
 
 func (RevisionMixin) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int64("revision").
+		field.Int64(RevisionColumn).
 			Annotations(Attribute("moved by every update of what an editor shows")).
 			Positive().
 			// The first revision is the application's rule, set by ent on every insert: a Go default,
 			// which ent does not copy into the column, so a row written past ent names its own.
 			DefaultFunc(firstRevision),
 	}
+}
+
+// Annotations declare the kind the mixin gives: with a revision.
+func (RevisionMixin) Annotations() []schema.Annotation {
+	return []schema.Annotation{Revised{}}
 }
 
 // firstRevision is the revision a resource is created at (ADR 0119).

@@ -227,15 +227,6 @@ func TestAuditDiffRedactsSensitiveFields(t *testing.T) {
 	}
 }
 
-// makeRoomForPlanted clears a singleton entity's own row first: the scope without an actor writes
-// no entry, so the planted copy takes its place unaudited.
-func makeRoomForPlanted(t *testing.T, env *testhelper.TestEnv, e ent.ScopedEntity, ids []int64) {
-	t.Helper()
-	if singletonEntities[e.Name] {
-		require.NoError(t, e.Delete(t.Context(), env.DB.Scoped(acme), ids[0]), e.Name)
-	}
-}
-
 // Every entity that opts in emits on create, update and delete (so a new annotated entity
 // cannot silently miss a wrapper). The registry is generated from the schema.
 func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
@@ -243,7 +234,9 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 	ctx := t.Context()
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
 
-	auditedEntities := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return len(e.AuditActions) > 0 })
+	entities := ent.ScopedEntities()
+	auditedEntities := lo.Filter(entities, func(e *ent.ScopedEntity, _ int) bool { return len(e.AuditActions) > 0 })
+	require.Subset(t, names(auditedEntities), []string{"Tag", "Automation", "Integration"})
 	for _, e := range auditedEntities {
 		ids, err := e.IDs(ctx, env.DB, acme)
 		require.NoError(t, err)
@@ -253,21 +246,12 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 		require.NotEmpty(t, foreign, e.Name)
 		// The scope without an actor writes no entry, so a singleton makes room for the planted row
 		// unaudited.
-		makeRoomForPlanted(t, env, e, ids)
+		clearSingleton(ctx, t, env.DB.Scoped(acme), e, ids)
 		before := len(auditEntries(t, env))
 
 		// Create a row by planting a copy of Globex's (no unique clash with Acme's rows),
 		// pointing its references at Acme rows.
-		remap := func(entity string, _ int64) int64 {
-			for _, target := range ent.ScopedEntities() {
-				if target.Name == entity {
-					refs, err := target.IDs(ctx, env.DB, acme)
-					require.NoError(t, err)
-					return refs[0]
-				}
-			}
-			return 0
-		}
+		remap := func(entity string, _ int64) int64 { return firstID(ctx, t, env.DB, entities, entity, acme) }
 		_, err = e.Replant(ctx, s, foreign[0], remap)
 		require.NoError(t, err, e.Name)
 		// The planted row has the newest id; a fixture row may have rows that stand on it.
@@ -284,5 +268,4 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 			assert.Equal(t, johnActor, got[i].Actor, e.Name)
 		}
 	}
-	assert.NotEmpty(t, auditedEntities, "Tag is audited")
 }

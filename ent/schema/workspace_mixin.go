@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
@@ -19,7 +20,7 @@ type WorkspaceMixin struct {
 
 func (WorkspaceMixin) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int64("workspace_id"),
+		field.Int64(WorkspaceColumn),
 	}
 }
 
@@ -27,8 +28,13 @@ func (m WorkspaceMixin) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("workspace", Workspace.Type).
 			Ref(m.Ref).
-			Field("workspace_id").
+			Field(WorkspaceColumn).
 			Required().
 			Unique(),
 	}
+}
+
+// Annotations declare the kind the mixin gives: Workspace-owned.
+func (WorkspaceMixin) Annotations() []schema.Annotation {
+	return []schema.Annotation{WorkspaceOwned{}}
 }

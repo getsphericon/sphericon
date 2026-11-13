@@ -18,10 +18,11 @@ const (
 )
 
 // State declares the form of a state field (ADR 0109). Every field that ends in `_at`, every
-// `status` or `state` enum and every bool carries one (TestEveryStateFieldDeclaresItsForm), and so
-// may any other field that is a state (a Tracking domain's `role`). ent/entc.go generates the
-// machine and latch fields into package ent as StateForm<Entity><Field> constants, and the
-// `statemoment` analyzer refuses an update of one outside the lifecycle primitives.
+// `status` or `state` enum and every bool carries one (internal/entgen fails the generation
+// otherwise), and so may any other field that is a state (a Tracking domain's `role`). The
+// generation writes the machine and latch fields into package ent as StateForm<Entity><Field>
+// constants, and the `statemoment` analyzer refuses an update of one outside the lifecycle
+// primitives.
 type State struct {
 	Form Form
 	// Reason says why an attribute is one; a machine or a latch needs none.

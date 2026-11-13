@@ -1,6 +1,6 @@
 {{/*
 The storage half of a Versioned definition (ADR 0065, GLOSSARY: Versioned definition). Every
-entity that embeds VersionedMixin (entc.go finds its mixed-in live_version_id) gets
+entity of the Versioned kind (VersionedMixin's marker, internal/entgen) gets
 <N>Pointers on its scoped wrapper: the operations on its live and draft pointers and on its
 state, written through the scoped, audited builders. internal/domain/content/versioneddefinition, the lifecycle shared by
 every Versioned definition, is written against VersionedStore and is their one caller; nothing
@@ -9,7 +9,7 @@ is hand-written per entity.
 {{ define "scoped_versioned" }}
 {{ template "header" $ }}
 
-{{ $nodes := versionedNodes $ }}
+{{ $nodes := versionedNodes }}
 import (
 	"context"
 	"errors"

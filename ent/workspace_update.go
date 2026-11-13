@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -740,6 +741,21 @@ func (_u *WorkspaceUpdate) AddAPITokens(v ...*ApiToken) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddAPITokenIDs(ids...)
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (_u *WorkspaceUpdate) AddOauthCodeIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddOauthCodeIDs(ids...)
+	return _u
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (_u *WorkspaceUpdate) AddOauthCodes(v ...*OAuthCode) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOauthCodeIDs(ids...)
 }
 
 // AddIntegrationIDs adds the "integrations" edge to the Integration entity by IDs.
@@ -1498,6 +1514,27 @@ func (_u *WorkspaceUpdate) RemoveAPITokens(v ...*ApiToken) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAPITokenIDs(ids...)
+}
+
+// ClearOauthCodes clears all "oauth_codes" edges to the OAuthCode entity.
+func (_u *WorkspaceUpdate) ClearOauthCodes() *WorkspaceUpdate {
+	_u.mutation.ClearOauthCodes()
+	return _u
+}
+
+// RemoveOauthCodeIDs removes the "oauth_codes" edge to OAuthCode entities by IDs.
+func (_u *WorkspaceUpdate) RemoveOauthCodeIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveOauthCodeIDs(ids...)
+	return _u
+}
+
+// RemoveOauthCodes removes "oauth_codes" edges to OAuthCode entities.
+func (_u *WorkspaceUpdate) RemoveOauthCodes(v ...*OAuthCode) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOauthCodeIDs(ids...)
 }
 
 // ClearIntegrations clears all "integrations" edges to the Integration entity.
@@ -2987,6 +3024,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OauthCodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OauthCodesTable,
+			Columns: []string{workspace.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOauthCodesIDs(); len(nodes) > 0 && !_u.mutation.OauthCodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OauthCodesTable,
+			Columns: []string{workspace.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OauthCodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OauthCodesTable,
+			Columns: []string{workspace.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -5124,6 +5206,21 @@ func (_u *WorkspaceUpdateOne) AddAPITokens(v ...*ApiToken) *WorkspaceUpdateOne {
 	return _u.AddAPITokenIDs(ids...)
 }
 
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (_u *WorkspaceUpdateOne) AddOauthCodeIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddOauthCodeIDs(ids...)
+	return _u
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (_u *WorkspaceUpdateOne) AddOauthCodes(v ...*OAuthCode) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOauthCodeIDs(ids...)
+}
+
 // AddIntegrationIDs adds the "integrations" edge to the Integration entity by IDs.
 func (_u *WorkspaceUpdateOne) AddIntegrationIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddIntegrationIDs(ids...)
@@ -5880,6 +5977,27 @@ func (_u *WorkspaceUpdateOne) RemoveAPITokens(v ...*ApiToken) *WorkspaceUpdateOn
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAPITokenIDs(ids...)
+}
+
+// ClearOauthCodes clears all "oauth_codes" edges to the OAuthCode entity.
+func (_u *WorkspaceUpdateOne) ClearOauthCodes() *WorkspaceUpdateOne {
+	_u.mutation.ClearOauthCodes()
+	return _u
+}
+
+// RemoveOauthCodeIDs removes the "oauth_codes" edge to OAuthCode entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveOauthCodeIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveOauthCodeIDs(ids...)
+	return _u
+}
+
+// RemoveOauthCodes removes "oauth_codes" edges to OAuthCode entities.
+func (_u *WorkspaceUpdateOne) RemoveOauthCodes(v ...*OAuthCode) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOauthCodeIDs(ids...)
 }
 
 // ClearIntegrations clears all "integrations" edges to the Integration entity.
@@ -7399,6 +7517,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OauthCodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OauthCodesTable,
+			Columns: []string{workspace.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOauthCodesIDs(); len(nodes) > 0 && !_u.mutation.OauthCodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OauthCodesTable,
+			Columns: []string{workspace.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OauthCodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OauthCodesTable,
+			Columns: []string{workspace.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
