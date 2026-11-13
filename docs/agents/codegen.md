@@ -63,7 +63,10 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `SetsState_`/`ClearsState_<Type>_<Method>` for the update and upsert methods that write a machine or
   latch field. `ent/template/roles.tmpl` declares ent's own types (`ent/roles.go`) and `stateform.tmpl`
   their state writes; every other template declares its constants beside the type or method it emits.
-  A template that adds an exported method adds its role there: `ent/schema/roles_test.go` fails on a
+  The roles of ent's own methods are the list `roles.tmpl` keeps of the reads and writes ent generates
+  (the client's `Create`…`DeleteOneID`, `Query`, `Get`, an edge's `Query<Edge>`, an entity's `Update`, a
+  create's `OnConflict`): after an ent upgrade that adds such a method, add it there, since the test
+  checks only that each listed one exists. A template that adds an exported method adds its role there: `ent/schema/roles_test.go` fails on a
   method without one, on an entry that names nothing, and on the analyzers' stand-ins of `ent` that break
   the same rules.
 - **goverter** also maps request bodies → module inputs (`Inputs` in each surface's

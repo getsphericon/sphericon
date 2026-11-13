@@ -302,9 +302,13 @@ func entityUpdates(pkg *types.Package) (byShape, byManifest []string) {
 
 func TestTheManifestOfRolesCoversTheGeneratedPackage(t *testing.T) {
 	fset, pkg := generated(t)
+	emitted := emittedFiles(t)
 
-	assert.Empty(t, problems(fset, pkg, emittedFiles(t)))
-	assert.Empty(t, unlistedStateWrites(pkg))
+	found := problems(fset, pkg, emitted)
+	unlisted := unlistedStateWrites(pkg)
+
+	assert.Empty(t, found)
+	assert.Empty(t, unlisted)
 }
 
 // The entity Update rule (tools/analyzers/entityupdate) reads the entities from the manifest; they
@@ -341,5 +345,9 @@ func TestTheAnalyzersStandInsCarryTheirManifest(t *testing.T) {
 		"../../tools/analyzers/entityupdate/testdata/src/github.com/getsphericon/sphericon/ent",
 	}
 
-	assert.Equal(t, make([][]string, len(dirs)), standInProblems(t, dirs))
+	none := make([][]string, len(dirs))
+
+	found := standInProblems(t, dirs)
+
+	assert.Equal(t, none, found)
 }
