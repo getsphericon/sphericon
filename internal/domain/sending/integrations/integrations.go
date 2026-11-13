@@ -81,6 +81,18 @@ type RefreshQuotaArgs struct {
 // Kind is the job's kind in the queue.
 func (RefreshQuotaArgs) Kind() string { return "integration_quota_refresh" }
 
+// ReleaseWebhookArgs is the job that lets the bot of a deleted Telegram Integration go of its
+// webhook (ReleaseWebhook), queued in the deletion's transaction (ADR 0145) so that it runs iff
+// the deletion commits; the job runner works it (internal/jobs).
+type ReleaseWebhookArgs struct {
+	jobkind.Workspace
+
+	IntegrationID int64 `json:"integration_id"`
+}
+
+// Kind is the job's kind in the queue.
+func (ReleaseWebhookArgs) Kind() string { return "integration_webhook_release" }
+
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
 	bus     *events.Bus
@@ -502,11 +514,18 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	patch.ApplySet(in.IsDefault, upd.SetIsDefault)
 }
 
-// ReleaseDeleted lets the bot of a Telegram Integration that held its webhook go of it, best
-// effort, once the Integration's deletion has committed; row is the Integration as the deletion
-// read it. Any other Integration holds nothing to release.
-func (m *Module) ReleaseDeleted(ctx context.Context, row *ent.Integration) {
-	if row.Provider == providers.Telegram && holdsWebhook(row.Enabled, nil) {
+// HoldsWebhook reports whether the Integration is a Telegram bot whose webhook points at its hook:
+// a kept one that is enabled. Deleting one queues the release of the webhook (ReleaseWebhookArgs).
+func HoldsWebhook(row *ent.Integration) bool {
+	return row.Provider == providers.Telegram && holdsWebhook(row.Enabled, row.DiscardedAt)
+}
+
+// ReleaseWebhook lets the bot of a deleted Telegram Integration go of its webhook, best effort: a
+// refusal is logged and not retried, as the release on disabling one is. It is the work of the
+// job ReleaseWebhookArgs, queued by the deletion; row is the Integration as the job reads it, and
+// a kept one or one of another provider holds what it holds, so nothing is released.
+func (m *Module) ReleaseWebhook(ctx context.Context, row *ent.Integration) {
+	if row.Provider == providers.Telegram && row.DiscardedAt != nil {
 		m.release(ctx, row)
 	}
 }

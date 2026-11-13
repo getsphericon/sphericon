@@ -774,11 +774,12 @@ var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
 })
 
 // addScheduled registers the workers of the scheduled work a test runs: the Integration quota
-// refresh, the Sending domain check, and message retention's daily tick with the prune of one
+// refresh, the release of a deleted Telegram bot's webhook, the Sending domain check, and message retention's daily tick with the prune of one
 // Workspace it queues (ADR 0143).
 func addScheduled(tb testing.TB, p performers, sqlDB *sql.DB, client *ent.Client, injector do.Injector) {
 	tb.Helper()
 	add(tb, p, sqlDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*integrations.Module](injector)))
+	add(tb, p, sqlDB, client, jobs.NewReleaseWebhookWorker(client, do.MustInvoke[*integrations.Module](injector)))
 	add(tb, p, sqlDB, client, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
 	retention := do.MustInvoke[*messageretention.UseCase](injector)
 	add(tb, p, sqlDB, client, jobs.NewPruneMessagesWorker(retention))

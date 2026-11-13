@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -236,12 +237,13 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 		assert.False(t, hooks[before].Bool("drop_pending_updates"))
 	})
 
-	t.Run("archiving deletes the webhook, and a failure does not block it", func(t *testing.T) {
+	t.Run("archiving deletes the webhook once the delete commits, and a failure does not block it", func(t *testing.T) {
 		env.Telegram.FailOnce(telegramtest.DeleteWebhook, telegramtest.Unauthorized)
 		before := len(env.Telegram.RequestsOf(telegramtest.DeleteWebhook))
 
-		err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+		err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
 		require.NoError(t, err)
+		env.PerformEnqueuedJobs(t, integrations.ReleaseWebhookArgs{})
 
 		assert.Len(t, env.Telegram.RequestsOf(telegramtest.DeleteWebhook), before+1)
 	})

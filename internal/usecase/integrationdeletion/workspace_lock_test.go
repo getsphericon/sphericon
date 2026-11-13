@@ -81,7 +81,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	check := removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default()))
-	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, "", time.Now), check, time.Now)
+	deletion := integrationdeletion.New(bus, check, time.Now)
 
 	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestAPromotionQueuedBehindTheDeleteOfItsIntegrationLeavesTheChannelItsDefau
 	require.NoError(t, err)
 	integs := integrations.New(bus, testhelper.Cipher(t), nil, presets, "", time.Now)
 	check := removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default()))
-	deletion := integrationdeletion.New(bus, integs, check, time.Now)
+	deletion := integrationdeletion.New(bus, check, time.Now)
 
 	errs := race.Queue(t,
 		testhelper.Writer{Name: "delete", Run: func() error {

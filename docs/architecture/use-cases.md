@@ -94,9 +94,10 @@ its owner's context may, never a context above. The Enterprise Edition's are
 cases; none exists today. No `forbid_symbol`
 names an unchecked operation: that list holds only what the program's builders use (the raw
 client, the ent hooks and guards, the upgrade boundaries, river's workers). They are the Live
-use writes behind the Removal check (`tagsunchecked.DeleteIn`, the retype
-`contactsunchecked.UpdateCustomFieldIn`, `integrationsunchecked.DeleteIn` and
-`sendingdomainsunchecked.DeleteIn`), User deletion's removals
+use writes behind the Removal check (`tagsunchecked.Deletion`, the edit
+`contactsunchecked.CustomFieldUpdate`, `integrationsunchecked.Deletion` and
+`sendingdomainsunchecked.Deletion`, each opened on its row, then checked by the use case and
+applied, ADR 0145), User deletion's removals
 (`membershipsunchecked.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
 deletion window leave, and the User row, `usersunchecked.DeleteIn`), the Second factor reset's
 removals (`secondfactorsunchecked.ResetIn`, the factor with its Recovery codes, and
