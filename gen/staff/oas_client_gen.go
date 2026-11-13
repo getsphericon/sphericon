@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/ogen-go/ogen/conv"
 	ht "github.com/ogen-go/ogen/http"
@@ -1628,8 +1629,8 @@ func (c *Client) sendStaffSignupItemsDelete(ctx context.Context, params StaffSig
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1762,8 +1763,8 @@ func (c *Client) sendStaffSignupItemsGet(ctx context.Context, params StaffSignup
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2010,8 +2011,8 @@ func (c *Client) sendStaffSignupItemsListVersions(ctx context.Context, params St
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2147,8 +2148,8 @@ func (c *Client) sendStaffSignupItemsPublish(ctx context.Context, request *Staff
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2403,8 +2404,8 @@ func (c *Client) sendStaffSignupItemsSaveDraft(ctx context.Context, request *Sta
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2542,8 +2543,8 @@ func (c *Client) sendStaffSignupItemsUpdate(ctx context.Context, request *StaffS
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {

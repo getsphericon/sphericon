@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
 
+import { testId } from '../test/payloads.ts'
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
 import { DraftControls } from './DraftControls.tsx'
 
@@ -9,7 +10,7 @@ test('a draft above a live version shows the pending badge and Revert; Publish w
   const screen = await renderWithProviders(
     <DraftControls
       workspaceId="TestWs01"
-      resource={{ id: '1', status: 'active', live: {}, draft: {}, revision: 1 }}
+      resource={{ id: testId(1), status: 'active', live: {}, draft: {}, revision: 1 }}
       dirty
       publishMutation={NOOP}
       revertMutation={NOOP}

@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
@@ -9036,7 +9037,7 @@ func (s *EnrollmentsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-type EntityId int64
+type EntityId publicid.ID
 
 // Distinct event action.
 // Ref: #/components/schemas/EventActionResource

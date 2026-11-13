@@ -18,9 +18,10 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
@@ -186,7 +187,7 @@ func (m *Module) recordTest(ctx context.Context, s *ent.Scoped, e Endpoint, even
 			Actor:       s.Actor(),
 			Action:      events.ActionWebhookEndpointTest,
 			TargetType:  webhookendpoint.Label,
-			TargetID:    strconv.FormatInt(e.ID, 10),
+			TargetID:    publicid.Encode(e.ID),
 			TargetName:  urlName(e.URL),
 			Diff:        diff,
 		})

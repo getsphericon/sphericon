@@ -7,6 +7,7 @@ import {
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
 import { Route as mcpRoute } from '../../../routes/workspaces/$workspaceId/settings/mcp.tsx'
+import { testId } from '../../../test/payloads.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
@@ -34,10 +35,10 @@ const workspace = {
 }
 
 const connection = {
-  id: '7',
+  id: testId(7),
   name: 'Claude',
   scopes: ['contacts:read' as const],
-  userId: '3',
+  userId: testId(3),
   userName: 'Mary',
   userEmail: 'mary@acme.test',
   createdAt: '2026-01-02T00:00:00Z',
@@ -97,5 +98,5 @@ test('revoking a connection asks first, then removes it', async () => {
   await screen.getByLabelText('Type Claude to confirm').fill('Claude')
   await screen.getByRole('button', { name: 'Revoke', exact: true }).click()
 
-  await expect.poll(() => revoked).toEqual(['7'])
+  await expect.poll(() => revoked).toEqual([testId(7)])
 })

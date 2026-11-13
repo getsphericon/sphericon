@@ -4,7 +4,6 @@ package ent
 
 import (
 	"encoding/json"
-	"encoding/json/jsontext"
 	"fmt"
 	"strings"
 	"time"
@@ -37,7 +36,7 @@ type EventJournalEntry struct {
 	// RecordedAt holds the value of the "recorded_at" field.
 	RecordedAt time.Time `json:"recorded_at,omitempty"`
 	// Inputs holds the value of the "inputs" field.
-	Inputs jsontext.Value `json:"inputs,omitempty"`
+	Inputs json.RawMessage `json:"inputs,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EventJournalEntryQuery when eager-loading is set.
 	Edges        EventJournalEntryEdges `json:"edges"`

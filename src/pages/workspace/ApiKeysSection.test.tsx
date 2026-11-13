@@ -7,6 +7,7 @@ import {
   handleSiteTokensList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteApiTokenResource } from '../../generated/site/types.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -21,7 +22,7 @@ test('creates a token and reveals the one-time secret', async () => {
         {
           token: 'omtk_newprefix_supersecret',
           resource: {
-            id: '2',
+            id: testId(2),
             name: 'CI',
             prefix: 'newprefix',
             scopes: ['contacts:read'],
@@ -37,7 +38,7 @@ test('creates a token and reveals the one-time secret', async () => {
         created
           ? [
               {
-                id: '2',
+                id: testId(2),
                 name: 'CI',
                 prefix: 'newprefix',
                 scopes: ['contacts:read'],
@@ -83,7 +84,7 @@ test('a plain member who is forbidden to create a token sees why', async () => {
 const REVOKE_FAILED = 'Failed to revoke token'
 
 const token: SiteApiTokenResource = {
-  id: '2',
+  id: testId(2),
   name: 'CI',
   prefix: 'newprefix',
   scopes: ['contacts:read'],

@@ -9,7 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { SiteConditionOperator } from '../../generated/site/types.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { emptyGroup } from './condition.ts'
@@ -22,7 +22,7 @@ function serve(previewBodies: unknown[] = []) {
     handleSiteCustomFieldsList({
       body: page([
         {
-          id: '1',
+          id: testId(1),
           key: 'plan',
           name: 'Plan',
           type: 'string',
@@ -36,7 +36,7 @@ function serve(previewBodies: unknown[] = []) {
           ...TIMESTAMPS,
         },
         {
-          id: '2',
+          id: testId(2),
           key: 'age',
           name: 'Age',
           type: 'number',

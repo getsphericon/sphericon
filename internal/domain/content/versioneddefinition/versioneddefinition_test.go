@@ -2,7 +2,6 @@ package versioneddefinition_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -501,7 +500,7 @@ func TestTheMovesAreAudited(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
 			ctx := context.Background()
-			actor := events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.OwnerJohnID), Name: "John"}
+			actor := events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.OwnerJohnID), Name: "John"}
 			s := env.Bus.Act(acme(env), actor)
 			_, err := k.edit(ctx, s, k.live, "drafts-audited")
 			require.NoError(t, err)
@@ -514,7 +513,7 @@ func TestTheMovesAreAudited(t *testing.T) {
 
 			entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 				e, ok := ev.(*events.AuditEntry)
-				return e, ok && e.TargetType == k.target && e.TargetID == strconv.FormatInt(k.live, 10)
+				return e, ok && e.TargetType == k.target && e.TargetID == testhelper.ID(k.live)
 			})
 			diffs := lo.Map(entries, func(e *events.AuditEntry, _ int) map[string]any { return e.Diff })
 

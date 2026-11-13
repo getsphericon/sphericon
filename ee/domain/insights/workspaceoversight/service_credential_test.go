@@ -195,7 +195,7 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	stored := h.env.DB.Scoped(fixtures.AcmeID).AuditEntry().Query().Where(auditentry.TargetName("attributed-tag")).OnlyX(t.Context())
 	assert.Equal(t, auditentry.ActorKindService, stored.ActorKind)
 	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, *stored.ActorName)
-	assert.Equal(t, strconv.Itoa(fixtures.ServiceCredentialPrimaryID), *stored.ActorID)
+	assert.Equal(t, strconv.Itoa(fixtures.ServiceCredentialPrimaryID), *stored.ActorID, "a platform identity, masked for customers, keeps its own id")
 
 	console, _ := h.staffSession(t)
 	page := h.auditPage(t, console, fixtures.AcmePublicID, staffeeapi.StaffWorkspaceAuditListParams{})

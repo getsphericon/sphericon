@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
@@ -248,7 +249,7 @@ func askingUser(s *ent.Scoped) (int64, bool) {
 	if actor.Kind != events.ActorUser {
 		return 0, false
 	}
-	id, err := strconv.ParseInt(actor.ID, 10, 64)
+	id, err := publicid.Decode(actor.ID)
 	return id, err == nil
 }
 

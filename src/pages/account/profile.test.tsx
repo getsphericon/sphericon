@@ -7,12 +7,13 @@ import {
   handleSiteUserUpdateMe,
   handleSiteWorkspacesListDeleted,
 } from '../../generated/site/msw.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { ProfilePage } from './profile.tsx'
 
 const user = {
-  id: '1',
+  id: testId(1),
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: true,

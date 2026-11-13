@@ -36,7 +36,7 @@ func TestAnSMSOptOutIsDeliveredToTheEndpointsThatSelectIt(t *testing.T) {
 	assert.Equal(t, systemevent.SmsUnsubscribed, d.EventName)
 	body := bodyOf(t, d)
 	assert.Equal(t, systemevent.SmsUnsubscribed, body["type"])
-	assert.EqualValues(t, fixtures.ContactTexterID, body["contactId"])
+	assert.Equal(t, testhelper.ID(fixtures.ContactTexterID), body["contactId"])
 	data, ok := body["data"].(map[string]any)
 	require.True(t, ok, "the body carries the Event's data")
 	assert.Equal(t, events.UnsubscribedByKeyword, data["via"])

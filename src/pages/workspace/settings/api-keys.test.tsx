@@ -10,6 +10,7 @@ import {
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
 import { Route as apiKeysRoute } from '../../../routes/workspaces/$workspaceId/settings/api-keys.tsx'
+import { testId } from '../../../test/payloads.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
@@ -41,7 +42,7 @@ test('shows the API keys of the workspace and, apart, the personal tokens', asyn
     handleSitePersonalTokensList({ body: [] }),
     handleSiteUserGetMe({
       body: {
-        id: '10',
+        id: testId(10),
         name: 'Ann',
         email: 'ann@acme.com',
         emailVerified: true,
@@ -55,8 +56,8 @@ test('shows the API keys of the workspace and, apart, the personal tokens', asyn
     handleSiteMembershipsList({
       body: [
         {
-          id: '1',
-          userId: '10',
+          id: testId(1),
+          userId: testId(10),
           email: 'ann@acme.com',
           name: 'Ann',
           role: 'owner',
@@ -81,7 +82,7 @@ test('shows the API keys of the workspace and, apart, the personal tokens', asyn
 
 test('renames an API key from its row menu', async () => {
   const token = {
-    id: '7',
+    id: testId(7),
     name: 'CI',
     prefix: 'omk_ab12',
     scopes: ['contacts:read' as const],

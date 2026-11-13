@@ -2,12 +2,13 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleStaffAuthLogin, handleStaffAuthSecondFactor } from '../generated/staff/msw.gen.ts'
+import { testId } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'
 import { ConsoleLoginPage } from './login.tsx'
 
-const staff = { id: '1', email: 'ops@example.com' }
+const staff = { id: testId(1), email: 'ops@example.com' }
 
 test('a TOTP challenge asks for a code and opens the console', async () => {
   const bodies: unknown[] = []

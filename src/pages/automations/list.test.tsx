@@ -10,6 +10,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -30,7 +31,7 @@ const NOW = '2026-01-01T00:00:00Z'
 
 const WELCOME: SiteAutomationResource = {
   revision: 1,
-  id: '1',
+  id: testId(1),
   name: 'Welcome flow',
   status: 'active',
   live: { number: 1, triggerEvent: 'contact.created', exitEvents: [], goalEvent: null, steps: [] },
@@ -41,7 +42,7 @@ const WELCOME: SiteAutomationResource = {
 }
 const NURTURE: SiteAutomationResource = {
   ...WELCOME,
-  id: '2',
+  id: testId(2),
   name: 'Nurture flow',
   status: 'inactive',
   live: null,
@@ -51,7 +52,7 @@ const NURTURE: SiteAutomationResource = {
 
 const PAUSED: SiteAutomationResource = {
   ...WELCOME,
-  id: '3',
+  id: testId(3),
   name: 'Paused flow',
   status: 'inactive',
 }
@@ -67,7 +68,7 @@ test('lists automations with their status: Draft until first published', async (
 
   await expect
     .element(screen.getByRole('link', { name: 'Welcome flow' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/automations/1')
+    .toHaveAttribute('href', `/workspaces/TestWs01/automations/${testId(1)}`)
   // In the table: the state filter above it offers the same words.
   const table = screen.getByRole('table')
   await expect.element(table.getByText('Active', { exact: true })).toBeInTheDocument()
@@ -163,7 +164,7 @@ test('Create automation opens the create modal and Edit links to the edit page',
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
     .element(screen.getByRole('menuitem', { name: 'Edit' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/automations/1/edit')
+    .toHaveAttribute('href', `/workspaces/TestWs01/automations/${testId(1)}/edit`)
 })
 
 test('publishing an inactive automation calls the API and refreshes the list', async () => {
@@ -184,7 +185,7 @@ test('publishing an inactive automation calls the API and refreshes the list', a
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Publish' }).click()
 
-  await expect.poll(() => published).toEqual(['2'])
+  await expect.poll(() => published).toEqual([testId(2)])
   await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
 })
@@ -203,7 +204,7 @@ test('deactivating an active automation calls the API', async () => {
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Deactivate' }).click()
 
-  await expect.poll(() => deactivated).toEqual(['1'])
+  await expect.poll(() => deactivated).toEqual([testId(1)])
   await expect.element(screen.getByText('Automation deactivated')).toBeInTheDocument()
 })
 
@@ -250,7 +251,7 @@ test('the archived view lists archived automations and restores one', async () =
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Restore' }).click()
 
-  await expect.poll(() => restored).toEqual(['2'])
+  await expect.poll(() => restored).toEqual([testId(2)])
   await expect.element(screen.getByText('Automation restored')).toBeInTheDocument()
 })
 
@@ -272,7 +273,7 @@ test('archiving an automation calls archive and refreshes the list', async () =>
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
-  await expect.poll(() => archived).toEqual(['2'])
+  await expect.poll(() => archived).toEqual([testId(2)])
   await expect.element(screen.getByText('Automation archived')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
 })
@@ -281,7 +282,9 @@ test('an automation with active enrollments is not archived and their count is s
   worker.use(
     handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
     handleSiteAutomationsArchive(() =>
-      problem(409, { usedBy: [{ kind: 'enrollment', id: '1', name: 'Welcome flow', count: 3 }] }),
+      problem(409, {
+        usedBy: [{ kind: 'enrollment', id: testId(1), name: 'Welcome flow', count: 3 }],
+      }),
     ),
   )
 

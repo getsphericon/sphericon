@@ -4,7 +4,7 @@ package ent
 
 import (
 	"context"
-	"encoding/json/jsontext"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -107,7 +107,7 @@ func (_c *EmailTemplateCreate) SetNillableBody(v *string) *EmailTemplateCreate {
 }
 
 // SetDoc sets the "doc" field.
-func (_c *EmailTemplateCreate) SetDoc(v jsontext.Value) *EmailTemplateCreate {
+func (_c *EmailTemplateCreate) SetDoc(v json.RawMessage) *EmailTemplateCreate {
 	_c.mutation.SetDoc(v)
 	return _c
 }
@@ -443,7 +443,7 @@ func (u *EmailTemplateUpsert) UpdateBody() *EmailTemplateUpsert {
 }
 
 // SetDoc sets the "doc" field.
-func (u *EmailTemplateUpsert) SetDoc(v jsontext.Value) *EmailTemplateUpsert {
+func (u *EmailTemplateUpsert) SetDoc(v json.RawMessage) *EmailTemplateUpsert {
 	u.Set(emailtemplate.FieldDoc, v)
 	return u
 }
@@ -621,7 +621,7 @@ func (u *EmailTemplateUpsertOne) UpdateBody() *EmailTemplateUpsertOne {
 }
 
 // SetDoc sets the "doc" field.
-func (u *EmailTemplateUpsertOne) SetDoc(v jsontext.Value) *EmailTemplateUpsertOne {
+func (u *EmailTemplateUpsertOne) SetDoc(v json.RawMessage) *EmailTemplateUpsertOne {
 	return u.Update(func(s *EmailTemplateUpsert) {
 		s.SetDoc(v)
 	})
@@ -971,7 +971,7 @@ func (u *EmailTemplateUpsertBulk) UpdateBody() *EmailTemplateUpsertBulk {
 }
 
 // SetDoc sets the "doc" field.
-func (u *EmailTemplateUpsertBulk) SetDoc(v jsontext.Value) *EmailTemplateUpsertBulk {
+func (u *EmailTemplateUpsertBulk) SetDoc(v json.RawMessage) *EmailTemplateUpsertBulk {
 	return u.Update(func(s *EmailTemplateUpsert) {
 		s.SetDoc(v)
 	})

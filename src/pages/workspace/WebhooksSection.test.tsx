@@ -11,6 +11,7 @@ import {
   handleSiteWebhooksUpdate,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteWebhookEndpointResource } from '../../generated/site/types.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -20,7 +21,7 @@ const WORKSPACE_ID = 'TestWs01'
 
 function endpoint(over: Partial<SiteWebhookEndpointResource> = {}): SiteWebhookEndpointResource {
   return {
-    id: '1',
+    id: testId(1),
     url: 'https://example.com/hook',
     secret: 'whsec_1',
     eventTypes: [],
@@ -47,7 +48,7 @@ test('lists endpoints, showing all events and the enabled state', async () => {
     list([
       endpoint(),
       endpoint({
-        id: '2',
+        id: testId(2),
         url: 'https://example.com/b',
         eventTypes: ['email.opened'],
         enabled: false,

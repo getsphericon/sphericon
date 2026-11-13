@@ -19,7 +19,7 @@ import { zSiteSegmentsUpdateBody } from '../../generated/site/zod.gen.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { requestGate } from '../../test/requestGate.ts'
@@ -35,7 +35,7 @@ const RULE: SiteConditionGroup = {
 
 const CREATE_ROUTE = routeMount(segmentsCreateRoute, { workspaceId: 'TestWs01' })
 
-const EDIT_ROUTE = routeMount(segmentsEditRoute, { workspaceId: 'TestWs01', segmentId: '7' })
+const EDIT_ROUTE = routeMount(segmentsEditRoute, { workspaceId: 'TestWs01', segmentId: testId(7) })
 
 // Stands in for the segments list screen: an active list query, so invalidation after a save
 // is observable as a refetch.
@@ -45,7 +45,7 @@ function ListProbe() {
 }
 
 function DetailProbe() {
-  useQuery(siteSegmentsGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
+  useQuery(siteSegmentsGetOptions({ path: { workspaceId: 'TestWs01', id: testId(7) } }))
   return null
 }
 
@@ -64,7 +64,7 @@ test('creating a segment sends name and a rule, refreshes the list and opens the
   worker.use(
     handleSiteSegmentsCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '42', name: 'Everyone' }, { status: 201 })
+      return HttpResponse.json({ id: testId(42), name: 'Everyone' }, { status: 201 })
     }),
     handleSiteSegmentsList(() => {
       listFetches++
@@ -94,7 +94,7 @@ test('creating a segment sends name and a rule, refreshes the list and opens the
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { workspaceId: 'TestWs01', segmentId: '42' },
+    params: { workspaceId: 'TestWs01', segmentId: testId(42) },
   })
 })
 
@@ -104,7 +104,7 @@ test('a blank name is rejected before anything is sent', async () => {
   worker.use(
     handleSiteSegmentsCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '1' }, { status: 201 })
+      return HttpResponse.json({ id: testId(1) }, { status: 201 })
     }),
   )
 
@@ -124,7 +124,7 @@ test('editing shows the stored rule untouched, saves a renamed segment and refre
   worker.use(
     handleSiteSegmentsUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '7', name: 'Renamed', condition: RULE, revision: 2 })
+      return HttpResponse.json({ id: testId(7), name: 'Renamed', condition: RULE, revision: 2 })
     }),
     handleSiteSegmentsList(() => {
       listFetches++
@@ -132,7 +132,7 @@ test('editing shows the stored rule untouched, saves a renamed segment and refre
     }),
     handleSiteSegmentsGet(() => {
       detailFetches++
-      return HttpResponse.json({ id: '7', name: 'Mail users', condition: RULE, revision: 1 })
+      return HttpResponse.json({ id: testId(7), name: 'Mail users', condition: RULE, revision: 1 })
     }),
   )
 
@@ -173,11 +173,11 @@ test('a successful save reloads the Condition editor from the saved definition',
   serveCatalogue()
   worker.use(
     handleSiteSegmentsGet({
-      body: { id: '7', name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS },
+      body: { id: testId(7), name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS },
     }),
     handleSiteSegmentsUpdate({
       body: {
-        id: '7',
+        id: testId(7),
         name: 'Everyone',
         condition: { kind: 'group', combinator: 'and', rules: [] },
         revision: 1,
@@ -206,12 +206,18 @@ test('an unfinished Condition is refused, then saves its completed structured ed
   worker.use(
     handleSiteEventsActions({ body: { actions: ['purchased'] } }),
     handleSiteSegmentsGet({
-      body: { id: '7', name: 'Buyers', condition, revision: 1, ...TIMESTAMPS },
+      body: { id: testId(7), name: 'Buyers', condition, revision: 1, ...TIMESTAMPS },
     }),
     handleSiteSegmentsUpdate(async ({ request }) => {
       const body: unknown = await request.json()
       bodies.push(body)
-      return HttpResponse.json({ id: '7', name: 'Buyers', condition, revision: 2, ...TIMESTAMPS })
+      return HttpResponse.json({
+        id: testId(7),
+        name: 'Buyers',
+        condition,
+        revision: 2,
+        ...TIMESTAMPS,
+      })
     }),
   )
 
@@ -247,7 +253,7 @@ test('editing shows no form while the segment loads, then the loaded values', as
   worker.use(
     handleSiteSegmentsGet(async () => {
       await gate.promise
-      return HttpResponse.json({ id: '7', name: 'Mail users', condition: RULE, revision: 1 })
+      return HttpResponse.json({ id: testId(7), name: 'Mail users', condition: RULE, revision: 1 })
     }),
   )
 
@@ -261,7 +267,7 @@ test('editing shows no form while the segment loads, then the loaded values', as
 
 test('an edit made while Save is pending stays after the acknowledgement, and leaving asks first', async () => {
   const gate = requestGate()
-  let stored = { id: '7', name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS }
+  let stored = { id: testId(7), name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS }
   serveCatalogue()
   worker.use(
     handleSiteSegmentsGet(() => HttpResponse.json(stored)),
@@ -291,7 +297,7 @@ test('leaving while Save is pending does not ask when nothing was edited since',
   serveCatalogue()
   worker.use(
     handleSiteSegmentsGet({
-      body: { id: '7', name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS },
+      body: { id: testId(7), name: 'Mail users', condition: RULE, revision: 1, ...TIMESTAMPS },
     }),
     handleSiteSegmentsUpdate(async () => {
       received.resolve(undefined)
@@ -317,7 +323,7 @@ test('an archived segment opens its page instead of the form', async () => {
   worker.use(
     handleSiteSegmentsGet(() =>
       HttpResponse.json({
-        id: '7',
+        id: testId(7),
         name: 'Mail users',
         condition: RULE,
         archivedAt: '2026-01-02T00:00:00Z',
@@ -331,7 +337,7 @@ test('an archived segment opens its page instead of the form', async () => {
     .poll(() => navigate)
     .toHaveBeenCalledWith({
       to: segmentsDetailRoute.to,
-      params: { workspaceId: 'TestWs01', segmentId: '7' },
+      params: { workspaceId: 'TestWs01', segmentId: testId(7) },
       replace: true,
     })
   await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()

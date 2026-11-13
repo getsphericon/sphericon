@@ -16,6 +16,7 @@ import type {
   SiteSecondFactorStatus,
 } from '../../generated/site/types.gen.ts'
 import { Route as securityRoute } from '../../routes/account/security.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -30,7 +31,7 @@ interface Call {
 type Handler = (req: Request) => Response | Promise<Response>
 
 const enrollment: SiteSecondFactorEnrollment = {
-  enrollmentId: '1',
+  enrollmentId: testId(1),
   secret: 'JBSWY3DPEHPK3PXP',
   otpauthUri:
     'otpauth://totp/sphericon:info@getsphericon.com?secret=JBSWY3DPEHPK3PXP&issuer=sphericon',
@@ -69,7 +70,7 @@ function serveSecurity(
       serve('start', () => {
         status = { ...initial, enabled: false, pending: true, recoveryCodesRemaining: 0 }
         started += 1
-        return HttpResponse.json({ ...enrollment, enrollmentId: String(started) })
+        return HttpResponse.json({ ...enrollment, enrollmentId: testId(started) })
       })(request),
     ),
     handleSiteSecondFactorConfirmEnrollment(async ({ request }) =>
@@ -300,7 +301,7 @@ test('a User with no password and a Passkey is offered a Passkey check for the S
   worker.use(
     handleSitePasskeysList({
       body: {
-        items: [{ id: '1', name: 'My laptop', createdAt: '2026-01-01T00:00:00Z' }],
+        items: [{ id: testId(1), name: 'My laptop', createdAt: '2026-01-01T00:00:00Z' }],
         available: true,
         passwordSet: false,
         identityProofFresh: false,

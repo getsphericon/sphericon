@@ -8,7 +8,7 @@ import {
   handleSiteSendingDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
-import { page } from '../../test/payloads.ts'
+import { page, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -18,7 +18,7 @@ const WORKSPACE_ID = 'TestWs01'
 
 function domain(over: Partial<SiteSendingDomainResource> = {}): SiteSendingDomainResource {
   return {
-    id: '1',
+    id: testId(1),
     domain: 'mail.acme.com',
     dkimSelector: 'om1',
     verified: false,
@@ -35,7 +35,7 @@ const list = (items: SiteSendingDomainResource[]) =>
   handleSiteSendingDomainsList({ body: page(items) })
 
 test('shows pending and verified domains', async () => {
-  worker.use(list([domain(), domain({ id: '2', domain: 'ok.acme.com', verified: true })]))
+  worker.use(list([domain(), domain({ id: testId(2), domain: 'ok.acme.com', verified: true })]))
   const { screen } = await renderWithRouter(
     <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
   )
@@ -61,7 +61,7 @@ test('shows a domain whose verification was lost apart from one never verified',
     list([
       domain(),
       domain({
-        id: '2',
+        id: testId(2),
         domain: 'lost.acme.com',
         verifiedAt: '2026-01-02T00:00:00Z',
         verificationLostAt: '2026-02-01T00:00:00Z',
@@ -165,7 +165,7 @@ test('a domain that live work sends from is not deleted and the work is named', 
   worker.use(
     list([domain()]),
     handleSiteSendingDomainsDelete(() =>
-      problem(409, { usedBy: [{ kind: 'automation', id: '3', name: 'Welcome series' }] }),
+      problem(409, { usedBy: [{ kind: 'automation', id: testId(3), name: 'Welcome series' }] }),
     ),
   )
   const { screen } = await renderWithRouter(

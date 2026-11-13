@@ -1,7 +1,6 @@
 package testhelper
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -18,8 +17,8 @@ func (env *TestEnv) ExpiredConfirmToken(t *testing.T, target linktarget.Confirma
 	t.Helper()
 	signed, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"dest": target.Destination,
-		"ws":   strconv.FormatInt(target.WorkspaceID, 10),
-		"cid":  strconv.FormatInt(target.ContactID, 10),
+		"ws":   ID(target.WorkspaceID),
+		"cid":  ID(target.ContactID),
 		"exp":  time.Now().Add(-time.Hour).Unix(),
 	}).SignedString([]byte(env.jwtSecret))
 	require.NoError(t, err)

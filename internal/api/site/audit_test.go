@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"testing"
 	"time"
 
@@ -49,10 +48,10 @@ func TestAuditRoleChangeIsRecordedAndListed(t *testing.T) {
 	e := page.Items[0]
 	assert.Equal(t, siteapi.AuditActionMembershipUpdate, e.Action)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
-	assert.Equal(t, strconv.Itoa(fixtures.OwnerJohnID), e.Actor.ID.Value)
+	assert.Equal(t, testhelper.ID(fixtures.OwnerJohnID), e.Actor.ID.Value)
 	assert.Equal(t, "John", e.Actor.Name.Value)
 	assert.Equal(t, "membership", e.Target.Type)
-	assert.Equal(t, strconv.Itoa(fixtures.AcmeMemberMembershipID), e.Target.ID.Value)
+	assert.Equal(t, testhelper.ID(fixtures.AcmeMemberMembershipID), e.Target.ID.Value)
 	assert.Equal(t, "Mary", e.Target.Name.Value, "the target's name is snapshotted")
 	assert.WithinDuration(t, time.Now(), time.Time(e.OccurredAt), time.Minute, "the time is recorded")
 

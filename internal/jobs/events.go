@@ -85,7 +85,15 @@ func NewWebhookEventWorker(client *ent.Client, dispatcher events.WebhookDispatch
 
 func (w *WebhookEventWorker) Work(ctx context.Context, job *river.Job[WebhookEventArgs]) error {
 	env := job.Args.Envelope
-	d, err := events.WebhookDeliveryOf(env)
+	// A receiver knows the Workspace by the public id the APIs show it by (ADR 0043).
+	ws, err := w.ent.Workspace.Get(ctx, env.WorkspaceID)
+	if ent.IsNotFound(err) {
+		return nil // an erased Workspace has no endpoint left to deliver to
+	}
+	if err != nil {
+		return err
+	}
+	d, err := events.WebhookDeliveryOf(env, ws.PublicID)
 	if err != nil {
 		return err
 	}

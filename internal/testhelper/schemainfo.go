@@ -3,6 +3,7 @@ package testhelper
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -113,4 +114,13 @@ func CountRows(ctx context.Context, sqlDB *sql.DB, table string) (int, error) {
 	// raw sql: the table is one a test of the schema's runner creates, which ent does not know.
 	err := sqlDB.QueryRowContext(ctx, "SELECT count(*) FROM "+table).Scan(&n)
 	return n, err
+}
+
+// RestartIDs makes the next row of table take id start, for a test that marks a table's keys with
+// a number it then looks for (the public ids, internal/kernel/publicid).
+func RestartIDs(t *testing.T, sqlDB *sql.DB, table string, start int64) {
+	t.Helper()
+	// raw sql: an identity column's sequence is server DDL, which ent does not model.
+	_, err := sqlDB.ExecContext(t.Context(), fmt.Sprintf(`ALTER TABLE %q ALTER COLUMN "id" RESTART WITH %d`, table, start))
+	require.NoError(t, err)
 }

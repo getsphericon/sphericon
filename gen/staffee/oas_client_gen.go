@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/ogen-go/ogen/conv"
 	ht "github.com/ogen-go/ogen/http"
@@ -316,8 +317,8 @@ func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignu
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.UserId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.UserId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {

@@ -12,6 +12,7 @@ import type {
   SiteWorkspaceResource,
 } from '../../../generated/site/types.gen.ts'
 import { Route as privacyRoute } from '../../../routes/workspaces/$workspaceId/settings/privacy.tsx'
+import { testId } from '../../../test/payloads.ts'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
@@ -139,7 +140,7 @@ test('a found Contact can be exported by the looked-up address', async () => {
     handleSiteContactsExport(({ request }) => {
       asked.push(new URL(request.url).searchParams.get('email'))
       return HttpResponse.json(
-        { id: '9' },
+        { id: testId(9) },
         { headers: { 'Content-Disposition': 'attachment; filename="alice.json"' } },
       )
     }),

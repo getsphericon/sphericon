@@ -18,13 +18,14 @@ import type {
   SiteIntegrationResource,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { IntegrationsSection } from './IntegrationsSection.tsx'
 
 const smtp: SiteIntegrationResource = {
-  id: '1',
+  id: testId(1),
   name: 'Primary SMTP',
   channel: 'email',
   provider: 'smtp',
@@ -298,7 +299,7 @@ test('a provider that live work uses is not deleted and the work is named', asyn
   worker.use(
     ...list([smtp]),
     handleSiteIntegrationsDelete(() =>
-      problem(409, { usedBy: [{ kind: 'broadcast', id: '7', name: 'Summer sale teaser' }] }),
+      problem(409, { usedBy: [{ kind: 'broadcast', id: testId(7), name: 'Summer sale teaser' }] }),
     ),
   )
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
@@ -369,7 +370,7 @@ test('warns when an Integration has no Provider limit', async () => {
 test('warns once about all the Integrations that share a warning', async () => {
   const backup: SiteIntegrationResource = {
     ...smtp,
-    id: '2',
+    id: testId(2),
     name: 'Backup SMTP',
     isDefault: false,
   }
@@ -391,7 +392,7 @@ test('warns once about all the Integrations that share a warning', async () => {
 test('puts a stopped account above the other warnings', async () => {
   const stopped: SiteIntegrationResource = {
     ...limited,
-    id: '3',
+    id: testId(3),
     name: 'Amazon SES',
     providerLimit: { ...limited.providerLimit, warnings: ['providerStopped'] },
   }
@@ -668,7 +669,7 @@ test('a Provider limit window whose provider was deleted closes and the list dro
 test('makes another provider the default, and the default offers no such action', async () => {
   const backup: SiteIntegrationResource = {
     ...smtp,
-    id: '2',
+    id: testId(2),
     name: 'Backup SMTP',
     isDefault: false,
   }
@@ -709,7 +710,7 @@ test("a provider's history opens the Audit log filtered to it", async () => {
   await expect.element(history).toBeInTheDocument()
   const href = history.element().getAttribute('href') ?? ''
   expect(href).toContain('targetType=integration')
-  expect(href).toContain('targetId=%221%22')
+  expect(href).toContain(`targetId=${testId(1)}`)
 })
 
 test('a member who reads the Audit log but cannot manage providers gets only the history', async () => {
@@ -974,7 +975,7 @@ test('regenerates the hook URL after a confirmation', async () => {
     .getByRole('button', { name: 'Regenerate URL' })
     .click()
 
-  await expect.poll(() => calls).toEqual(['1'])
+  await expect.poll(() => calls).toEqual([testId(1)])
 })
 
 // The Inbound window stays open across its writes, and each moves the revision (ADR 0119): a Save,
@@ -1049,7 +1050,7 @@ test('an Inbound window whose provider was deleted closes and the list drops it'
 
 const telegramBot: SiteIntegrationResource = {
   ...smtp,
-  id: '7',
+  id: testId(7),
   name: 'Telegram bot',
   channel: 'telegram',
   provider: 'telegram',
@@ -1185,7 +1186,7 @@ test("saves a Telegram bot's new token", async () => {
 
 const twilioAccount: SiteIntegrationResource = {
   ...smtp,
-  id: '8',
+  id: testId(8),
   name: 'Twilio (+15017250604)',
   channel: 'sms',
   provider: 'twilio',
@@ -1362,7 +1363,7 @@ test('a Twilio account that sends with its Auth Token saves a new one as both', 
 test('a Twilio sender whose callbacks sphericon could not set shows the address to copy', async () => {
   const alphanumeric: SiteIntegrationResource = {
     ...twilioAccount,
-    id: '9',
+    id: testId(9),
     name: 'Alphanumeric',
     isDefault: false,
     hookUrl: 'https://app.test/hooks/omik_alpha',

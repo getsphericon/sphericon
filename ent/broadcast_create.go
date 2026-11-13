@@ -4,7 +4,7 @@ package ent
 
 import (
 	"context"
-	"encoding/json/jsontext"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -237,7 +237,7 @@ func (_c *BroadcastCreate) SetNillableBody(v *string) *BroadcastCreate {
 }
 
 // SetDoc sets the "doc" field.
-func (_c *BroadcastCreate) SetDoc(v jsontext.Value) *BroadcastCreate {
+func (_c *BroadcastCreate) SetDoc(v json.RawMessage) *BroadcastCreate {
 	_c.mutation.SetDoc(v)
 	return _c
 }
@@ -1029,7 +1029,7 @@ func (u *BroadcastUpsert) ClearBody() *BroadcastUpsert {
 }
 
 // SetDoc sets the "doc" field.
-func (u *BroadcastUpsert) SetDoc(v jsontext.Value) *BroadcastUpsert {
+func (u *BroadcastUpsert) SetDoc(v json.RawMessage) *BroadcastUpsert {
 	u.Set(broadcast.FieldDoc, v)
 	return u
 }
@@ -1555,7 +1555,7 @@ func (u *BroadcastUpsertOne) ClearBody() *BroadcastUpsertOne {
 }
 
 // SetDoc sets the "doc" field.
-func (u *BroadcastUpsertOne) SetDoc(v jsontext.Value) *BroadcastUpsertOne {
+func (u *BroadcastUpsertOne) SetDoc(v json.RawMessage) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetDoc(v)
 	})
@@ -2279,7 +2279,7 @@ func (u *BroadcastUpsertBulk) ClearBody() *BroadcastUpsertBulk {
 }
 
 // SetDoc sets the "doc" field.
-func (u *BroadcastUpsertBulk) SetDoc(v jsontext.Value) *BroadcastUpsertBulk {
+func (u *BroadcastUpsertBulk) SetDoc(v json.RawMessage) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetDoc(v)
 	})

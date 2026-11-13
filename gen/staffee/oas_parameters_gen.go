@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/ogen-go/ogen/conv"
 	"github.com/ogen-go/ogen/middleware"
@@ -50,14 +51,14 @@ func decodeStaffSignupSurveyGetParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotUserIdVal int64
+				var paramsDotUserIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}

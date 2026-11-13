@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/stretchr/testify/assert"
@@ -82,8 +84,8 @@ func TestDecodeConfirmRejectsExpired(t *testing.T) {
 	// Hand-mint a token with the confirm claim shape but an exp in the past.
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"dest": "person@example.com",
-		"ws":   "1",
-		"cid":  "2",
+		"ws":   publicid.Encode(1),
+		"cid":  publicid.Encode(2),
 		"exp":  time.Now().Add(-time.Hour).Unix(),
 	})
 	signed, err := tok.SignedString([]byte("secret"))

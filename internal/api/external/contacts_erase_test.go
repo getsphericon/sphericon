@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -359,7 +358,7 @@ func TestExternalContactsEraseFallsBackToTheContactID(t *testing.T) {
 	require.Len(t, envelopes, 1)
 	var data map[string]any
 	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
-	assert.Equal(t, strconv.FormatInt(fixtures.ContactBystanderID, 10), data["subjectId"])
+	assert.Equal(t, testhelper.ID(fixtures.ContactBystanderID), data["subjectId"], "the fallback subject is the Contact's public id")
 }
 
 // A refused Erasure emits nothing.

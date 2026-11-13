@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
@@ -121,7 +122,7 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 	}
 
 	ts := tx.Scoped(inv.WorkspaceID)
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
+	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(u.ID), Name: u.Name}
 	existing, err := ensureMembership(ctx, ts, u, role)
 	if err != nil {
 		return err
@@ -155,7 +156,7 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 		Actor:       actor,
 		Action:      events.ActionInvitationAccept,
 		TargetType:  invitation.Label,
-		TargetID:    strconv.FormatInt(inv.ID, 10),
+		TargetID:    publicid.Encode(inv.ID),
 		TargetName:  u.Name,
 		Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
 	})
@@ -285,7 +286,7 @@ func raiseToAdmin(ctx context.Context, ts *ent.Scoped, pub events.Publisher, inv
 		Actor:       actor,
 		Action:      events.ActionMembershipUpdate,
 		TargetType:  membership.Label,
-		TargetID:    strconv.FormatInt(existing.ID, 10),
+		TargetID:    publicid.Encode(existing.ID),
 		TargetName:  u.Name,
 		Diff:        map[string]any{membership.FieldRole: events.Change(string(existing.Role), string(membership.RoleAdmin))},
 	})

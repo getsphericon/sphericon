@@ -9,7 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -19,7 +19,7 @@ import { RulesListPage } from './list.tsx'
 const LIST_ROUTE = routeMount(rulesRoute, { workspaceId: 'TestWs01' })
 
 const WELCOME: SiteRuleResource = {
-  id: '1',
+  id: testId(1),
   name: 'Tag signups',
   status: 'inactive',
   live: null,
@@ -33,7 +33,7 @@ const WELCOME: SiteRuleResource = {
 }
 const LIVE: SiteRuleResource = {
   ...WELCOME,
-  id: '2',
+  id: testId(2),
   name: 'Untag churned',
   status: 'active',
   live: WELCOME.draft,
@@ -89,10 +89,10 @@ test('the row menu links to the firings and the editor', async () => {
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
     .element(screen.getByRole('menuitem', { name: 'View' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/rules/1')
+    .toHaveAttribute('href', `/workspaces/TestWs01/rules/${testId(1)}`)
   await expect
     .element(screen.getByRole('menuitem', { name: 'Edit' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/rules/1/edit')
+    .toHaveAttribute('href', `/workspaces/TestWs01/rules/${testId(1)}/edit`)
 })
 
 test('publishing an inactive rule calls publish and refreshes the list', async () => {
@@ -117,7 +117,7 @@ test('publishing an inactive rule calls publish and refreshes the list', async (
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Publish' }).click()
 
-  await expect.poll(() => published).toEqual(['1'])
+  await expect.poll(() => published).toEqual([testId(1)])
   await expect.element(screen.getByText('Rule published')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('Active')).toBeInTheDocument()
@@ -139,7 +139,7 @@ test('deactivating an active rule calls deactivate', async () => {
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Deactivate' }).click()
 
-  await expect.poll(() => deactivated).toEqual(['2'])
+  await expect.poll(() => deactivated).toEqual([testId(2)])
   await expect.element(screen.getByText('Rule deactivated')).toBeInTheDocument()
 })
 
@@ -177,6 +177,6 @@ test('a rule is deleted, never archived, after a confirmation', async () => {
   expect(deleted).toEqual([])
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
-  await expect.poll(() => deleted).toEqual(['1'])
+  await expect.poll(() => deleted).toEqual([testId(1)])
   await expect.element(screen.getByText('Rule deleted')).toBeInTheDocument()
 })

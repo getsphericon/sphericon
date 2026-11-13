@@ -3,7 +3,6 @@ package site_test
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/samber/lo"
@@ -23,7 +22,7 @@ func auditedStatuses(t *testing.T, env *testhelper.TestEnv, targetType string, i
 	t.Helper()
 	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e, ok := ev.(*events.AuditEntry)
-		return e, ok && e.TargetType == targetType && e.TargetID == strconv.FormatInt(id, 10)
+		return e, ok && e.TargetType == targetType && e.TargetID == testhelper.ID(id)
 	})
 	return lo.Map(entries, func(e *events.AuditEntry, _ int) any { return []any{e.Action, e.Diff["status"]} })
 }
@@ -53,7 +52,7 @@ func auditedVersionMoves(t *testing.T, env *testhelper.TestEnv, id int64) []any 
 	t.Helper()
 	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e, ok := ev.(*events.AuditEntry)
-		return e, ok && e.TargetType == "automation" && e.TargetID == strconv.FormatInt(id, 10)
+		return e, ok && e.TargetType == "automation" && e.TargetID == testhelper.ID(id)
 	})
 	return lo.Map(entries, func(e *events.AuditEntry, _ int) any {
 		return []any{e.Action, pointerMove(e.Diff[automation.FieldLiveVersionID]), pointerMove(e.Diff[automation.FieldDraftVersionID])}
@@ -90,9 +89,9 @@ func TestSiteAutomationPublishAndRevertAreAudited(t *testing.T) {
 	got := auditedVersionMoves(t, env, fixtures.AutomationWelcomeSeriesID)
 	newID := versionIDOf(t, env, fixtures.AutomationWelcomeSeriesID, int(draft.Number))
 	assert.Equal(t, []any{
-		[]any{"automation.update", "", fmt.Sprintf("%d-><nil>", fixtures.AutomationWelcomeSeriesDraftVersionID)},
-		[]any{"automation.update", "", fmt.Sprintf("<nil>->%d", newID)},
-		[]any{"automation.update", fmt.Sprintf("%d->%d", fixtures.AutomationWelcomeSeriesVersionID, newID), fmt.Sprintf("%d-><nil>", newID)},
+		[]any{"automation.update", "", testhelper.ID(fixtures.AutomationWelcomeSeriesDraftVersionID) + "-><nil>"},
+		[]any{"automation.update", "", "<nil>->" + testhelper.ID(newID)},
+		[]any{"automation.update", testhelper.ID(fixtures.AutomationWelcomeSeriesVersionID) + "->" + testhelper.ID(newID), testhelper.ID(newID) + "-><nil>"},
 	}, got, "Revert, the next draft, Publish")
 }
 

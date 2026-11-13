@@ -35,7 +35,9 @@ type InstanceState struct {
 	LatestReleaseCheckedAt *time.Time `json:"latest_release_checked_at,omitempty"`
 	// DefaultSendCap holds the value of the "default_send_cap" field.
 	DefaultSendCap *int `json:"default_send_cap,omitempty"`
-	selectValues   sql.SelectValues
+	// IDKey holds the value of the "id_key" field.
+	IDKey        []byte `json:"-"`
+	selectValues sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -43,6 +45,8 @@ func (*InstanceState) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case instancestate.FieldIDKey:
+			values[i] = new([]byte)
 		case instancestate.FieldTelemetryEnabled:
 			values[i] = new(sql.NullBool)
 		case instancestate.FieldID, instancestate.FieldDefaultSendCap:
@@ -131,6 +135,12 @@ func (_m *InstanceState) assignValues(columns []string, values []any) error {
 				_m.DefaultSendCap = new(int)
 				*_m.DefaultSendCap = int(value.Int64)
 			}
+		case instancestate.FieldIDKey:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field id_key", values[i])
+			} else if value != nil {
+				_m.IDKey = *value
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -203,6 +213,8 @@ func (_m *InstanceState) String() string {
 		builder.WriteString("default_send_cap=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("id_key=<sensitive>")
 	builder.WriteByte(')')
 	return builder.String()
 }

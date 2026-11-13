@@ -12,6 +12,7 @@ import {
 import { StaffInstanceTelemetryLock } from '../generated/staff/types.gen.ts'
 import type { StaffDefaultSendCapInput, StaffInstanceState } from '../generated/staff/types.gen.ts'
 import { Route as consoleInstanceRoute } from '../routes/console/_authed/instance.tsx'
+import { testId } from '../test/payloads.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'
@@ -211,16 +212,16 @@ test('the Instance audit log says who changed which setting from what to what', 
       body: {
         items: [
           {
-            id: '2',
+            id: testId(2),
             occurredAt: '2026-10-31T12:00:00Z',
-            actor: { id: '7', email: 'ops@example.com' },
+            actor: { id: testId(7), email: 'ops@example.com' },
             action: 'instance.default_send_cap_change',
             diff: { default_send_cap: { from: 500, to: 2000 } },
           },
           {
-            id: '1',
+            id: testId(1),
             occurredAt: '2026-10-30T12:00:00Z',
-            actor: { id: '7', email: 'ops@example.com' },
+            actor: { id: testId(7), email: 'ops@example.com' },
             action: 'instance.default_send_cap_change',
             diff: { default_send_cap: { to: 500 } },
           },

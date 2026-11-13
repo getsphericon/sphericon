@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/ogen-go/ogen/conv"
 	ht "github.com/ogen-go/ogen/http"
@@ -1529,8 +1530,8 @@ func (c *Client) sendAuthTokensDelete(ctx context.Context, params AuthTokensDele
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1776,8 +1777,8 @@ func (c *Client) sendAutomationsArchive(ctx context.Context, params AutomationsA
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2028,8 +2029,8 @@ func (c *Client) sendAutomationsDeactivate(ctx context.Context, params Automatio
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2279,8 +2280,8 @@ func (c *Client) sendAutomationsGet(ctx context.Context, params AutomationsGetPa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2585,8 +2586,8 @@ func (c *Client) sendAutomationsPublish(ctx context.Context, request *RevisionIn
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2726,8 +2727,8 @@ func (c *Client) sendAutomationsReport(ctx context.Context, params AutomationsRe
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2883,8 +2884,8 @@ func (c *Client) sendAutomationsRevert(ctx context.Context, request *RevisionInp
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3022,8 +3023,8 @@ func (c *Client) sendAutomationsUnarchive(ctx context.Context, params Automation
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3158,8 +3159,8 @@ func (c *Client) sendAutomationsUpdate(ctx context.Context, request *UpdateAutom
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3412,8 +3413,8 @@ func (c *Client) sendBroadcastsArchive(ctx context.Context, params BroadcastsArc
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3663,8 +3664,8 @@ func (c *Client) sendBroadcastsGet(ctx context.Context, params BroadcastsGetPara
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3982,8 +3983,8 @@ func (c *Client) sendBroadcastsReport(ctx context.Context, params BroadcastsRepo
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4122,8 +4123,8 @@ func (c *Client) sendBroadcastsSchedule(ctx context.Context, request *ScheduleBr
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4261,8 +4262,8 @@ func (c *Client) sendBroadcastsSetSegment(ctx context.Context, request *SetBroad
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4402,8 +4403,8 @@ func (c *Client) sendBroadcastsTestSend(ctx context.Context, request *TestSendBr
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4540,8 +4541,8 @@ func (c *Client) sendBroadcastsUnarchive(ctx context.Context, params BroadcastsU
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4677,8 +4678,8 @@ func (c *Client) sendBroadcastsUnschedule(ctx context.Context, params Broadcasts
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4812,8 +4813,8 @@ func (c *Client) sendBroadcastsUpdate(ctx context.Context, request *UpdateBroadc
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4949,8 +4950,8 @@ func (c *Client) sendCapturedMessagesDelete(ctx context.Context, params Captured
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -5196,8 +5197,8 @@ func (c *Client) sendCapturedMessagesGet(ctx context.Context, params CapturedMes
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -5837,8 +5838,8 @@ func (c *Client) sendContactsDelete(ctx context.Context, params ContactsDeletePa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -6137,8 +6138,8 @@ func (c *Client) sendContactsExport(ctx context.Context, params ContactsExportPa
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.ID.Get(); ok {
-				if unwrapped := int64(val); true {
-					return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+				if unwrapped := publicid.ID(val); true {
+					return e.EncodeValue(conv.TextToString(unwrapped))
 				}
 				return nil
 			}
@@ -6288,8 +6289,8 @@ func (c *Client) sendContactsGet(ctx context.Context, params ContactsGetParams) 
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -6573,8 +6574,8 @@ func (c *Client) sendContactsUpdate(ctx context.Context, request *UpdateContactI
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -6824,8 +6825,8 @@ func (c *Client) sendCustomFieldsUpdate(ctx context.Context, request *UpdateCust
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -7335,8 +7336,8 @@ func (c *Client) sendEnrollmentsGet(ctx context.Context, params EnrollmentsGetPa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.AutomationId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.AutomationId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -7357,8 +7358,8 @@ func (c *Client) sendEnrollmentsGet(ctx context.Context, params EnrollmentsGetPa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.EnrollmentId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.EnrollmentId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -7491,8 +7492,8 @@ func (c *Client) sendEnrollmentsList(ctx context.Context, params EnrollmentsList
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.AutomationId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.AutomationId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -8946,8 +8947,8 @@ func (c *Client) sendIntegrationsDelete(ctx context.Context, params Integrations
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -9080,8 +9081,8 @@ func (c *Client) sendIntegrationsGet(ctx context.Context, params IntegrationsGet
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -9367,8 +9368,8 @@ func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params Integ
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -9502,8 +9503,8 @@ func (c *Client) sendIntegrationsUpdate(ctx context.Context, request *UpdateInte
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -9752,8 +9753,8 @@ func (c *Client) sendRuleFiringsList(ctx context.Context, params RuleFiringsList
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.RuleId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.RuleId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10041,8 +10042,8 @@ func (c *Client) sendRulesDeactivate(ctx context.Context, params RulesDeactivate
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10176,8 +10177,8 @@ func (c *Client) sendRulesDelete(ctx context.Context, params RulesDeleteParams) 
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10311,8 +10312,8 @@ func (c *Client) sendRulesDryRun(ctx context.Context, request *DryRunRuleInput, 
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10449,8 +10450,8 @@ func (c *Client) sendRulesGet(ctx context.Context, params RulesGetParams) (res *
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10736,8 +10737,8 @@ func (c *Client) sendRulesPublish(ctx context.Context, request *RevisionInput, p
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10875,8 +10876,8 @@ func (c *Client) sendRulesRevert(ctx context.Context, request *RevisionInput, pa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -11013,8 +11014,8 @@ func (c *Client) sendRulesUpdate(ctx context.Context, request *UpdateRuleInput, 
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -11151,8 +11152,8 @@ func (c *Client) sendSegmentsArchive(ctx context.Context, params SegmentsArchive
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -11402,8 +11403,8 @@ func (c *Client) sendSegmentsGet(ctx context.Context, params SegmentsGetParams) 
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -11820,8 +11821,8 @@ func (c *Client) sendSegmentsUnarchive(ctx context.Context, params SegmentsUnarc
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -11955,8 +11956,8 @@ func (c *Client) sendSegmentsUpdate(ctx context.Context, request *UpdateSegmentI
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -12344,8 +12345,8 @@ func (c *Client) sendSendingDomainsDelete(ctx context.Context, params SendingDom
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -12478,8 +12479,8 @@ func (c *Client) sendSendingDomainsGet(ctx context.Context, params SendingDomain
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -12763,8 +12764,8 @@ func (c *Client) sendSendingDomainsUpdate(ctx context.Context, request *UpdateSe
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -12902,8 +12903,8 @@ func (c *Client) sendSendingDomainsVerify(ctx context.Context, params SendingDom
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -13040,8 +13041,8 @@ func (c *Client) sendSmsConsentsGet(ctx context.Context, params SmsConsentsGetPa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ContactId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -13293,8 +13294,8 @@ func (c *Client) sendTagsApply(ctx context.Context, request *ApplyTagInput, para
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ContactId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -13432,8 +13433,8 @@ func (c *Client) sendTagsDelete(ctx context.Context, params TagsDeleteParams) (r
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -13717,8 +13718,8 @@ func (c *Client) sendTagsListForContact(ctx context.Context, params TagsListForC
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ContactId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -13890,8 +13891,8 @@ func (c *Client) sendTagsRemove(ctx context.Context, params TagsRemoveParams) (r
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ContactId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -14044,8 +14045,8 @@ func (c *Client) sendTelegramStartLinksIssue(ctx context.Context, request *Issue
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ContactId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -14298,8 +14299,8 @@ func (c *Client) sendTemplatesDelete(ctx context.Context, params TemplatesDelete
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -14432,8 +14433,8 @@ func (c *Client) sendTemplatesGet(ctx context.Context, params TemplatesGetParams
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -14717,8 +14718,8 @@ func (c *Client) sendTemplatesUpdate(ctx context.Context, request *UpdateTemplat
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -14971,8 +14972,8 @@ func (c *Client) sendTrackingDomainsRemove(ctx context.Context, params TrackingD
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -15226,8 +15227,8 @@ func (c *Client) sendTrackingDomainsVerify(ctx context.Context, params TrackingD
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -15594,8 +15595,8 @@ func (c *Client) sendWebhooksDelete(ctx context.Context, params WebhooksDeletePa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -15728,8 +15729,8 @@ func (c *Client) sendWebhooksGet(ctx context.Context, params WebhooksGetParams) 
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -16014,8 +16015,8 @@ func (c *Client) sendWebhooksRegenerateSecret(ctx context.Context, params Webhoo
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -16150,8 +16151,8 @@ func (c *Client) sendWebhooksTest(ctx context.Context, request *TestWebhookInput
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -16288,8 +16289,8 @@ func (c *Client) sendWebhooksUpdate(ctx context.Context, request *UpdateWebhookI
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := publicid.ID(params.ID); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {

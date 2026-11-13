@@ -11,7 +11,7 @@ import { zSiteUpdateContactInput } from '../../generated/site/zod.gen.ts'
 import { resourceEditorAdapter, withRevision } from '../../resources/resourceEditor.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
-import { TIMESTAMPS } from '../../test/payloads.ts'
+import { TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { requestGate } from '../../test/requestGate.ts'
 import { worker } from '../../test/worker.ts'
@@ -30,9 +30,9 @@ const adapter = resourceEditorAdapter({
 })
 const session = defineEditorSession(adapter)
 type ContactValues = ReturnType<typeof adapter.open>
-const PATH = { workspaceId: 'TestWs01', id: '7' }
+const PATH = { workspaceId: 'TestWs01', id: testId(7) }
 const RESOURCE: SiteContactResource = {
-  id: '7',
+  id: testId(7),
   email: 'ada@example.com',
   firstName: 'Ada',
   tags: [],

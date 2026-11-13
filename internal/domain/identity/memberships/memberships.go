@@ -11,7 +11,8 @@ package memberships
 
 import (
 	"context"
-	"strconv"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -79,7 +80,7 @@ func (ms *Module) Restorable(ctx context.Context, userID int64, publicID string)
 // (the User edge, when loaded, names the actor). It is Scope without the lookup, for a
 // caller that already holds the Membership.
 func (ms *Module) ScopeOf(m *ent.Membership) *ent.Scoped {
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(m.UserID, 10)}
+	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(m.UserID)}
 	if u := m.Edges.User; u != nil {
 		actor.Name = u.Name
 	}

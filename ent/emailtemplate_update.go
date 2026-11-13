@@ -4,7 +4,7 @@ package ent
 
 import (
 	"context"
-	"encoding/json/jsontext"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -116,13 +116,13 @@ func (_u *EmailTemplateUpdate) SetNillableBody(v *string) *EmailTemplateUpdate {
 }
 
 // SetDoc sets the "doc" field.
-func (_u *EmailTemplateUpdate) SetDoc(v jsontext.Value) *EmailTemplateUpdate {
+func (_u *EmailTemplateUpdate) SetDoc(v json.RawMessage) *EmailTemplateUpdate {
 	_u.mutation.SetDoc(v)
 	return _u
 }
 
 // AppendDoc appends value to the "doc" field.
-func (_u *EmailTemplateUpdate) AppendDoc(v jsontext.Value) *EmailTemplateUpdate {
+func (_u *EmailTemplateUpdate) AppendDoc(v json.RawMessage) *EmailTemplateUpdate {
 	_u.mutation.AppendDoc(v)
 	return _u
 }
@@ -411,13 +411,13 @@ func (_u *EmailTemplateUpdateOne) SetNillableBody(v *string) *EmailTemplateUpdat
 }
 
 // SetDoc sets the "doc" field.
-func (_u *EmailTemplateUpdateOne) SetDoc(v jsontext.Value) *EmailTemplateUpdateOne {
+func (_u *EmailTemplateUpdateOne) SetDoc(v json.RawMessage) *EmailTemplateUpdateOne {
 	_u.mutation.SetDoc(v)
 	return _u
 }
 
 // AppendDoc appends value to the "doc" field.
-func (_u *EmailTemplateUpdateOne) AppendDoc(v jsontext.Value) *EmailTemplateUpdateOne {
+func (_u *EmailTemplateUpdateOne) AppendDoc(v json.RawMessage) *EmailTemplateUpdateOne {
 	_u.mutation.AppendDoc(v)
 	return _u
 }

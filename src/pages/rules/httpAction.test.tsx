@@ -10,7 +10,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -18,7 +18,7 @@ import { RuleEditPage } from './resource.tsx'
 
 // The server masks an http Action: no URL, header names only, and whether a secret is stored.
 const STORED: SiteRuleResource = {
-  id: '7',
+  id: testId(7),
   name: 'Call Slack',
   status: 'inactive',
   live: null,
@@ -39,7 +39,7 @@ const STORED: SiteRuleResource = {
   ...TIMESTAMPS,
 }
 
-const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId: '7' })
+const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId: testId(7) })
 
 test('editing an http action keeps its id and sends no URL or header value it was not given', async () => {
   const bodies: unknown[] = []

@@ -1,0 +1,8 @@
+# The Instance's own row (ADR 0032), as its first start makes it, with a fixed id key so that every
+# test database shows the same public ids (internal/kernel/publicid); testhelper sets the same key.
+- id: 1
+  instance_id: fixture-instance
+  telemetry_enabled: true
+  id_key: "RAW=decode('000102030405060708090a0b0c0d0e0f', 'hex')"
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

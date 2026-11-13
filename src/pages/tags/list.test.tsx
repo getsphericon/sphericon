@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 
 import { handleSiteTagsDelete, handleSiteTagsList } from '../../generated/site/msw.gen.ts'
 import { Route as tagsRoute } from '../../routes/workspaces/$workspaceId/tags/index.tsx'
-import { page } from '../../test/payloads.ts'
+import { page, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -12,8 +12,8 @@ import { TagsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(tagsRoute, { workspaceId: 'TestWs01' })
 
-const VIP = { id: '1', name: 'vip', createdAt: '2026-01-01T00:00:00Z' }
-const TRIAL = { id: '2', name: 'trial', createdAt: '2026-01-02T00:00:00Z' }
+const VIP = { id: testId(1), name: 'vip', createdAt: '2026-01-01T00:00:00Z' }
+const TRIAL = { id: testId(2), name: 'trial', createdAt: '2026-01-02T00:00:00Z' }
 
 test('lists the workspace tags', async () => {
   worker.use(handleSiteTagsList({ body: page([VIP, TRIAL], 2) }))
@@ -67,7 +67,7 @@ test('deleting a tag asks for confirmation, deletes it and refreshes the list', 
   expect(deleted).toEqual([])
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
-  await expect.poll(() => deleted).toEqual(['1'])
+  await expect.poll(() => deleted).toEqual([testId(1)])
   await expect.element(screen.getByText('Tag deleted')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('vip')).not.toBeInTheDocument()

@@ -7,6 +7,7 @@ import {
   handleSiteBroadcastsUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -22,14 +23,14 @@ const STATS = {
   revenue: { reportingCurrency: 'USD', orders: 7, amount: 123456 },
 }
 const DRAFT = {
-  id: '1',
+  id: testId(1),
   name: 'Spring launch',
   channel: 'email',
   status: 'draft',
   stats: STATS,
 }
 const HELD = {
-  id: '2',
+  id: testId(2),
   name: 'Autumn digest',
   channel: 'email',
   status: 'sending',
@@ -114,10 +115,10 @@ test('Report and Edit link with the broadcast id; Edit is only enabled for draft
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
     .element(screen.getByRole('menuitem', { name: 'Report' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/1/report')
+    .toHaveAttribute('href', `/workspaces/TestWs01/broadcasts/${testId(1)}/report`)
   await expect
     .element(screen.getByRole('menuitem', { name: 'Edit' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/1/edit')
+    .toHaveAttribute('href', `/workspaces/TestWs01/broadcasts/${testId(1)}/edit`)
 })
 
 test('a draft has no Delete: archiving it calls archive and refreshes the list', async () => {
@@ -144,7 +145,7 @@ test('a draft has no Delete: archiving it calls archive and refreshes the list',
   await expect.element(screen.getByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument()
   await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
-  await expect.poll(() => archived).toEqual(['1'])
+  await expect.poll(() => archived).toEqual([testId(1)])
   await expect.element(screen.getByText('Broadcast archived')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('Spring launch')).not.toBeInTheDocument()
@@ -202,7 +203,7 @@ test('a failed archive shows the error toast and keeps the broadcast', async () 
 })
 
 const SENT = {
-  id: '3',
+  id: testId(3),
   name: 'Winter recap',
   channel: 'email',
   status: 'sent',
@@ -243,7 +244,7 @@ test('the archived view lists archived broadcasts and restores one', async () =>
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Restore' }).click()
 
-  await expect.poll(() => restored).toEqual(['3'])
+  await expect.poll(() => restored).toEqual([testId(3)])
   await expect.element(screen.getByText('Broadcast restored')).toBeInTheDocument()
 })
 
@@ -265,7 +266,7 @@ test('archiving a sent broadcast calls archive and refreshes the list', async ()
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
-  await expect.poll(() => archived).toEqual(['3'])
+  await expect.poll(() => archived).toEqual([testId(3)])
   await expect.element(screen.getByText('Broadcast archived')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
 })

@@ -13,6 +13,7 @@ import {
 } from '../generated/staffee/msw.gen.ts'
 import type { StaffWorkspaceDetailResource } from '../generated/staffee/types.gen.ts'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
+import { testId } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'
@@ -42,14 +43,14 @@ const HOOLI: StaffWorkspaceDetailResource = {
 }
 
 const ABOVE_FLOOR = {
-  sendingDomainId: '400',
+  sendingDomainId: testId(400),
   domain: 'mail.soylent.test',
   complaintRate: { numerator: 3, denominator: 1200, rate: 0.0025 },
   bounceRate: { numerator: 60, denominator: 1300, rate: 0.046 },
 }
 
 const BELOW_FLOOR = {
-  sendingDomainId: '401',
+  sendingDomainId: testId(401),
   domain: 'promo.soylent.test',
   complaintRate: { numerator: 1, denominator: 7, rate: null },
   bounceRate: { numerator: 1, denominator: 8, rate: null },
@@ -68,22 +69,22 @@ test('lists the audit log with a staff member shown as Sphericon staff, and load
         ? HttpResponse.json({
             items: [
               {
-                id: '1',
+                id: testId(1),
                 occurredAt: '2026-01-01T00:00:00Z',
-                actor: { kind: 'user', id: '9', name: 'Peter' },
+                actor: { kind: 'user', id: testId(9), name: 'Peter' },
                 action: 'tag.create',
-                target: { type: 'tag', id: '12', name: 'vip' },
+                target: { type: 'tag', id: testId(12), name: 'vip' },
               },
             ],
           })
         : HttpResponse.json({
             items: [
               {
-                id: '2',
+                id: testId(2),
                 occurredAt: '2026-02-01T00:00:00Z',
                 actor: { kind: 'staff', name: 'Sphericon staff' },
                 action: 'workspace.suspend',
-                target: { type: 'workspace', id: '5', name: 'Hooli' },
+                target: { type: 'workspace', id: testId(5), name: 'Hooli' },
               },
             ],
             nextCursor: '2',
@@ -106,9 +107,9 @@ test('a hold change in the audit log names the credential', async () => {
       body: {
         items: [
           {
-            id: '3',
+            id: testId(3),
             occurredAt: '2026-02-01T00:00:00Z',
-            actor: { kind: 'service', id: '4', name: 'hold-service' },
+            actor: { kind: 'service', id: testId(4), name: 'hold-service' },
             action: 'hold.create',
             target: { type: 'hold', name: 'review' },
           },
@@ -128,23 +129,23 @@ test('the audit log names a system actor and an API token by its name or its id'
       body: {
         items: [
           {
-            id: '5',
+            id: testId(5),
             occurredAt: '2026-02-01T00:00:00Z',
             actor: { kind: 'system' },
             action: 'workspace.suspend',
-            target: { type: 'workspace', id: '1' },
+            target: { type: 'workspace', id: testId(1) },
           },
           {
-            id: '4',
+            id: testId(4),
             occurredAt: '2026-02-01T00:00:00Z',
-            actor: { kind: 'api_token', id: '7' },
+            actor: { kind: 'api_token', id: testId(7) },
             action: 'tag.create',
             target: { type: 'tag', name: 'vip' },
           },
           {
-            id: '3',
+            id: testId(3),
             occurredAt: '2026-02-01T00:00:00Z',
-            actor: { kind: 'api_token', id: '8', name: 'Zapier' },
+            actor: { kind: 'api_token', id: testId(8), name: 'Zapier' },
             action: 'tag.delete',
             target: { type: 'tag' },
           },
@@ -155,9 +156,9 @@ test('the audit log names a system actor and an API token by its name or its id'
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('System', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('API token #7')).toBeInTheDocument()
+  await expect.element(screen.getByText(`API token #${testId(7)}`)).toBeInTheDocument()
   await expect.element(screen.getByText('Zapier')).toBeInTheDocument()
-  await expect.element(screen.getByText('workspace #1')).toBeInTheDocument()
+  await expect.element(screen.getByText(`workspace #${testId(1)}`)).toBeInTheDocument()
   await expect.element(screen.getByText('tag vip')).toBeInTheDocument()
 })
 

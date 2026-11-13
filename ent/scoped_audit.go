@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // Actor kinds of an Audit entry: the values of its actor_kind enum, which the database checks. A
@@ -139,7 +139,16 @@ func AuditDiff(before, after map[string]any, sensitive map[string]bool) map[stri
 
 var _ = fmt.Sprint
 
-func auditID(id int64) string { return strconv.FormatInt(id, 10) }
+func auditID(id int64) string { return publicid.Encode(id) }
+
+// auditKeyPtr is an optional reference as the log records it: by its public form (ADR 0142), nil
+// for none.
+func auditKeyPtr(id *int64) any {
+	if id == nil {
+		return nil
+	}
+	return publicid.ID(*id)
+}
 
 // ApiTokenAuditSensitive lists the ApiToken fields whose values never reach the Audit log.
 var ApiTokenAuditSensitive = map[string]bool{
@@ -156,8 +165,8 @@ func (e *ApiToken) auditFields() map[string]any {
 		"expires_at":      derefAudit(e.ExpiresAt),
 		"revoked_at":      derefAudit(e.RevokedAt),
 		"last_used_at":    derefAudit(e.LastUsedAt),
-		"membership_id":   derefAudit(e.MembershipID),
-		"oauth_client_id": derefAudit(e.OauthClientID),
+		"membership_id":   auditKeyPtr(e.MembershipID),
+		"oauth_client_id": auditKeyPtr(e.OauthClientID),
 	}
 }
 
@@ -214,8 +223,8 @@ func (e *Automation) auditFields() map[string]any {
 		"archived_at":      derefAudit(e.ArchivedAt),
 		"status":           e.Status,
 		"activated_at":     derefAudit(e.ActivatedAt),
-		"live_version_id":  derefAudit(e.LiveVersionID),
-		"draft_version_id": derefAudit(e.DraftVersionID),
+		"live_version_id":  auditKeyPtr(e.LiveVersionID),
+		"draft_version_id": auditKeyPtr(e.DraftVersionID),
 		"name":             e.Name,
 	}
 }
@@ -346,9 +355,9 @@ func (e *Broadcast) auditFields() map[string]any {
 		"body":               derefAudit(e.Body),
 		"doc":                e.Doc,
 		"editor_version":     derefAudit(e.EditorVersion),
-		"segment_id":         derefAudit(e.SegmentID),
+		"segment_id":         auditKeyPtr(e.SegmentID),
 		"condition":          derefAudit(e.Condition),
-		"integration_id":     derefAudit(e.IntegrationID),
+		"integration_id":     auditKeyPtr(e.IntegrationID),
 		"status":             e.Status,
 		"scheduled_at":       derefAudit(e.ScheduledAt),
 		"sent_at":            derefAudit(e.SentAt),
@@ -798,8 +807,8 @@ func (e *Rule) auditFields() map[string]any {
 		"discarded_at":     derefAudit(e.DiscardedAt),
 		"status":           e.Status,
 		"activated_at":     derefAudit(e.ActivatedAt),
-		"live_version_id":  derefAudit(e.LiveVersionID),
-		"draft_version_id": derefAudit(e.DraftVersionID),
+		"live_version_id":  auditKeyPtr(e.LiveVersionID),
+		"draft_version_id": auditKeyPtr(e.DraftVersionID),
 		"name":             e.Name,
 	}
 }

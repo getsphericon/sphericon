@@ -5,13 +5,14 @@ import { userEvent } from 'vitest/browser'
 
 import { siteUserGetMeQueryKey } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteUserResource } from '../generated/site/types.gen.ts'
+import { testId } from '../test/payloads.ts'
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
 import { RegionalDates } from './RegionalDates.tsx'
 
 const LOAD = 'Load profile'
 
 const me: SiteUserResource = {
-  id: '1',
+  id: testId(1),
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: true,

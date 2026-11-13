@@ -31,6 +31,8 @@ const (
 	FieldLatestReleaseCheckedAt = "latest_release_checked_at"
 	// FieldDefaultSendCap holds the string denoting the default_send_cap field in the database.
 	FieldDefaultSendCap = "default_send_cap"
+	// FieldIDKey holds the string denoting the id_key field in the database.
+	FieldIDKey = "id_key"
 	// Table holds the table name of the instancestate in the database.
 	Table = "instance_state"
 )
@@ -47,6 +49,7 @@ var Columns = []string{
 	FieldLatestRelease,
 	FieldLatestReleaseCheckedAt,
 	FieldDefaultSendCap,
+	FieldIDKey,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -72,6 +75,8 @@ var (
 	DefaultTelemetryEnabled bool
 	// DefaultSendCapValidator is a validator for the "default_send_cap" field. It is called by the builders before save.
 	DefaultSendCapValidator func(int) error
+	// DefaultIDKey holds the default value on creation for the "id_key" field.
+	DefaultIDKey func() []byte
 )
 
 // OrderOption defines the ordering options for the InstanceState queries.

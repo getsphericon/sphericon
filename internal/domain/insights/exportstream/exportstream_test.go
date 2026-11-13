@@ -65,14 +65,14 @@ func FuzzParseCursor(f *testing.F) {
 
 // The row check is what keeps a stream's encoder and the published contract one thing.
 func TestValidateRowRefusesADriftedRow(t *testing.T) {
-	const ok = `{"id":"1","action":"a","properties":{},"contact_id":null,"visitor_id":null,"subject_id":"",` +
+	const ok = `{"id":"AAAAAAAAAAAAAAAAAAAAAA","action":"a","properties":{},"contact_id":null,"visitor_id":null,"subject_id":"",` +
 		`"email":null,"phone":null,"occurred_at":"2026-01-01T00:00:00Z","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`
 	err := exportstream.ValidateRow(exportstream.EventsSchema, []byte(ok))
 	require.NoErrorf(t, err, "a conforming row is refused: %v", err)
 	drifted := map[string]string{
 		"an undeclared key":   `{"extra":1,` + ok[1:],
-		"a missing key":       `{"id":"1"}`,
-		"a wrongly typed key": `{"id":"1","action":7,` + ok[len(`{"id":"1","action":"a",`):],
+		"a missing key":       `{"id":"AAAAAAAAAAAAAAAAAAAAAA"}`,
+		"a wrongly typed key": `{"id":"AAAAAAAAAAAAAAAAAAAAAA","action":7,` + ok[len(`{"id":"AAAAAAAAAAAAAAAAAAAAAA","action":"a",`):],
 	}
 	for name, row := range drifted {
 		err := exportstream.ValidateRow(exportstream.EventsSchema, []byte(row))

@@ -1,10 +1,14 @@
 package events
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 )
@@ -21,9 +25,9 @@ type webhookPayload struct {
 	ID          string          `json:"id"`
 	Type        string          `json:"type"`
 	OccurredAt  time.Time       `json:"occurredAt"`
-	WorkspaceID int64           `json:"workspaceId"`
+	WorkspaceID string          `json:"workspaceId"`
 	Subject     string          `json:"subject"`
-	ContactID   int64           `json:"contactId,omitempty"`
+	ContactID   publicid.ID     `json:"contactId,omitempty"`
 	Data        json.RawMessage `json:"data,omitempty"`
 }
 
@@ -41,7 +45,7 @@ type WebhookDelivery struct {
 // Audit entry) has no Event action: it is delivered under its bus type, only to endpoints that
 // select it, and the Edition's dispatcher gates it by license (ADR 0022); the Staff identity in it
 // is masked.
-func WebhookDeliveryOf(env Envelope) (WebhookDelivery, error) {
+func WebhookDeliveryOf(env Envelope, workspacePublicID string) (WebhookDelivery, error) {
 	ev, err := Decode(env)
 	if err != nil {
 		return WebhookDelivery{}, err
@@ -59,6 +63,9 @@ func WebhookDeliveryOf(env Envelope) (WebhookDelivery, error) {
 			return WebhookDelivery{}, fmt.Errorf("marshal audit entry: %w", err)
 		}
 	}
+	if data, err = publicData(data, workspacePublicID); err != nil {
+		return WebhookDelivery{}, err
+	}
 	// An event with a natural upstream id (a provider notification) is delivered under it, so
 	// a receiver that sees it twice can drop the second delivery.
 	id := env.SourceID()
@@ -66,9 +73,9 @@ func WebhookDeliveryOf(env Envelope) (WebhookDelivery, error) {
 		ID:          id,
 		Type:        name,
 		OccurredAt:  env.OccurredAt,
-		WorkspaceID: env.WorkspaceID,
+		WorkspaceID: workspacePublicID,
 		Subject:     p.Subject,
-		ContactID:   p.ContactID,
+		ContactID:   publicid.ID(p.ContactID),
 		Data:        data,
 	})
 	if err != nil {
@@ -97,4 +104,53 @@ func BoundedProperties(props map[string]any) map[string]any {
 		return nil
 	}
 	return props
+}
+
+// publicData is an event's data as a receiver sees it, with every key the APIs show by its public
+// form (ADR 0142): workspaceId is the Workspace's public id, and a top-level key named …Id or …Ids
+// whose value is a number (a primary key; an id a customer or a provider gave is a string) is
+// sealed (publicid). Nested objects are the customer's own, a collected event's properties, and
+// stay as they are.
+func publicData(data json.RawMessage, workspacePublicID string) (json.RawMessage, error) {
+	if len(data) == 0 {
+		return data, nil
+	}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	var fields map[string]any
+	if err := dec.Decode(&fields); err != nil {
+		return nil, fmt.Errorf("read event data: %w", err)
+	}
+	for key, value := range fields {
+		switch {
+		case key == "workspaceId":
+			fields[key] = workspacePublicID
+		case strings.HasSuffix(key, "Id"):
+			if n, ok := value.(json.Number); ok {
+				if fields[key], ok = sealed(n); !ok {
+					return nil, fmt.Errorf("event data %s is no key: %s", key, n)
+				}
+			}
+		case strings.HasSuffix(key, "Ids"):
+			if list, ok := value.([]any); ok {
+				for i, item := range list {
+					if n, ok := item.(json.Number); ok {
+						if list[i], ok = sealed(n); !ok {
+							return nil, fmt.Errorf("event data %s holds no key: %s", key, n)
+						}
+					}
+				}
+			}
+		}
+	}
+	return json.Marshal(fields)
+}
+
+// sealed is the public form of a key read as a JSON number.
+func sealed(n json.Number) (string, bool) {
+	key, err := n.Int64()
+	if err != nil {
+		return "", false
+	}
+	return publicid.Encode(key), true
 }

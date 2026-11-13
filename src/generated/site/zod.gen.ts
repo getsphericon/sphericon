@@ -251,7 +251,7 @@ export const zEmailBroadcastContentInput = z.object({
  * tell a malformed id from a valid one without trying it. Eighteen digits is the most a key
  * reaches, so every id the schema admits fits an int64.
  */
-export const zEntityId = z.string().regex(/^[0-9]+$/);
+export const zEntityId = z.string().regex(/^[0-9A-Za-z]{22}$/);
 
 /**
  * Scopes an OAuth client may be granted without any extra opt-in: the external

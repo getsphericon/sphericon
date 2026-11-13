@@ -13,8 +13,9 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"strconv"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/samber/lo"
 
@@ -185,7 +186,7 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 			Actor:       actor,
 			Action:      events.ActionInvitationCreate,
 			TargetType:  invitation.Label,
-			TargetID:    strconv.FormatInt(inv.ID, 10),
+			TargetID:    publicid.Encode(inv.ID),
 			Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
 		}); err != nil {
 			return err
@@ -222,7 +223,7 @@ func (m *Module) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor even
 			Actor:       actor,
 			Action:      events.ActionInvitationRevoke,
 			TargetType:  invitation.Label,
-			TargetID:    strconv.FormatInt(id, 10),
+			TargetID:    publicid.Encode(id),
 		})
 	})
 }

@@ -69,5 +69,19 @@ func (InstanceState) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Positive(),
+		// IDKey seals the primary keys the APIs show (internal/kernel/publicid, ADR 0142): 16 random
+		// bytes, made with the row and never changed, since a new key would change every id a
+		// client holds. It lives here, not in the environment, so a restored database keeps its ids.
+		field.Bytes("id_key").
+			Immutable().
+			DefaultFunc(idKey).
+			Sensitive(),
 	}
+}
+
+// idKey is a fresh id key.
+func idKey() []byte {
+	key := make([]byte, 16)
+	_, _ = rand.Read(key)
+	return key
 }

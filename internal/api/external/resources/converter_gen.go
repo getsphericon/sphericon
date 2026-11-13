@@ -4,7 +4,7 @@
 package resources
 
 import (
-	jsontext "encoding/json/jsontext"
+	"encoding/json"
 	"fmt"
 	ent "github.com/getsphericon/sphericon/ent"
 	automation "github.com/getsphericon/sphericon/ent/automation"
@@ -889,7 +889,7 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 		externalapiContactExportEvent.Email = optNilString((*source).Email)
 		externalapiContactExportEvent.Phone = optNilString((*source).Phone)
 		externalapiContactExportEvent.Action = (*source).Action
-		externalapiContactExportEvent.Properties = jsonObject((*source).Properties)
+		externalapiContactExportEvent.Properties = eventProperties(source)
 		externalapiContactExportEvent.OccurredAt = timestamp((*source).OccurredAt)
 		externalapiContactExportEvent.Backfill = (*source).Backfill
 		externalapiContactExportEvent.CreatedAt = timestamp((*source).CreatedAt)
@@ -1788,7 +1788,7 @@ func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute
-	externalapiEmailSchemaAttribute.Default = c.jsontextValueToJxRaw(source.Default)
+	externalapiEmailSchemaAttribute.Default = c.jsonRawMessageToJxRaw(source.Default)
 	externalapiEmailSchemaAttribute.Type = source.Type
 	if source.Allowed != nil {
 		externalapiEmailSchemaAttribute.Allowed = make([]string, len(source.Allowed))
@@ -1799,7 +1799,7 @@ func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(sourc
 	externalapiEmailSchemaAttribute.Rule = source.Rule
 	return externalapiEmailSchemaAttribute
 }
-func (c *ConverterImpl) jsontextValueToJxRaw(source jsontext.Value) jx.Raw {
+func (c *ConverterImpl) jsonRawMessageToJxRaw(source json.RawMessage) jx.Raw {
 	var jxRaw jx.Raw
 	if source != nil {
 		jxRaw = make(jx.Raw, len(source))

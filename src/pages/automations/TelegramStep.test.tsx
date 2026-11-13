@@ -10,19 +10,26 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, SiteAutomationStep } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { emailIntegration, TIMESTAMPS } from '../../test/payloads.ts'
+import { emailIntegration, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { AutomationEditPage } from './edit.tsx'
 
-const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
+const EDIT_ROUTE = routeMount(automationsEditRoute, {
+  workspaceId: 'TestWs01',
+  automationId: testId(5),
+})
 
-const STEP: SiteAutomationStep = { type: 'telegram', text: 'Hi <b>there</b>', integrationId: '31' }
+const STEP: SiteAutomationStep = {
+  type: 'telegram',
+  text: 'Hi <b>there</b>',
+  integrationId: testId(31),
+}
 
 const INTEGRATIONS = [
-  emailIntegration('1', 'Primary SMTP', { isDefault: true }),
-  emailIntegration('31', 'Acme bot', {
+  emailIntegration(testId(1), 'Primary SMTP', { isDefault: true }),
+  emailIntegration(testId(31), 'Acme bot', {
     channel: 'telegram',
     provider: 'telegram',
     config: { kind: 'telegram', botId: 7001, username: 'acme_bot' },
@@ -31,7 +38,7 @@ const INTEGRATIONS = [
 
 function stored(steps: SiteAutomationStep[]): SiteAutomationResource {
   return {
-    id: '5',
+    id: testId(5),
     name: 'Welcome flow',
     status: 'inactive',
     live: null,
@@ -92,7 +99,7 @@ test('a Telegram step round-trips: its bot and text load, an edit saves them bac
 
   await expect
     .poll(() => bodies.map((body) => body.steps))
-    .toEqual([[{ type: 'telegram', text: 'Welcome', integrationId: '31' }]])
+    .toEqual([[{ type: 'telegram', text: 'Welcome', integrationId: testId(31) }]])
 })
 
 test('a Telegram text over the limit is flagged by the counter', async () => {
@@ -115,7 +122,9 @@ test('a Telegram text over the limit is flagged by the counter', async () => {
 
 test('adding an image switches the counter to the caption limit, and buttons and the preview switch round-trip', async () => {
   const bodies: { steps?: SiteAutomationStep[] }[] = []
-  let current = stored([{ type: 'telegram', text: 'Hello {{ first_name }}', integrationId: '31' }])
+  let current = stored([
+    { type: 'telegram', text: 'Hello {{ first_name }}', integrationId: testId(31) },
+  ])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),
     handleSiteAutomationsUpdate(async ({ request }) => {
@@ -155,7 +164,7 @@ test('adding an image switches the counter to the caption limit, and buttons and
         {
           type: 'telegram',
           text: 'Hello {{ first_name }}',
-          integrationId: '31',
+          integrationId: testId(31),
           imageUrl: 'https://cdn.example.com/a.png',
           buttons: [{ label: 'Open', url: 'https://example.com/a' }],
           linkPreview: false,

@@ -3,7 +3,6 @@ package oauth_test
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"testing"
 	"time"
 
@@ -234,7 +233,7 @@ func TestAConnectionActsAsItsUser(t *testing.T) {
 
 	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
-	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.VehementMemberMelID), Name: fixtures.VehementMemberMelName + " via " + fixtures.VehementMemberConnectionName},
+	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.VehementMemberMelID), Name: fixtures.VehementMemberMelName + " via " + fixtures.VehementMemberConnectionName},
 		got[0].(*events.AuditEntry).Actor)
 }
 

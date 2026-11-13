@@ -22,6 +22,7 @@ import type {
 } from '../generated/staff/types.gen.ts'
 import { Route as consoleSignupItemRoute } from '../routes/console/_authed/signup-items.$itemId.tsx'
 import { Route as consoleSignupItemsRoute } from '../routes/console/_authed/signup-items.index.tsx'
+import { testId } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
@@ -30,11 +31,11 @@ import { ConsoleSignupItemPage } from './signupItem.tsx'
 import { ConsoleSignupItemsPage } from './signupItems.tsx'
 
 const LIST = routeMount(consoleSignupItemsRoute)
-const ITEM = routeMount(consoleSignupItemRoute, { itemId: '7' })
+const ITEM = routeMount(consoleSignupItemRoute, { itemId: testId(7) })
 
 function item(over: Partial<StaffSignupItemResource> = {}): StaffSignupItemResource {
   return {
-    id: '7',
+    id: testId(7),
     key: 'terms',
     title: 'Terms of service',
     kind: SignupItemKind.REQUIRED_ACCEPTANCE,
@@ -46,7 +47,7 @@ function item(over: Partial<StaffSignupItemResource> = {}): StaffSignupItemResou
 }
 
 function version(label: string, email = 'staff@sphericon.test'): StaffLegalDocumentVersion {
-  return { label, publishedAt: '2026-10-01T00:00:00Z', publishedBy: { id: '1', email } }
+  return { label, publishedAt: '2026-10-01T00:00:00Z', publishedBy: { id: testId(1), email } }
 }
 
 // The item page reads the item and its published versions.
@@ -64,7 +65,7 @@ test('lists the items with their current version, or that none is published', as
         items: [
           item({ currentVersion: version('2026-10') }),
           item({
-            id: '8',
+            id: testId(8),
             key: 'news',
             title: 'News',
             kind: SignupItemKind.OPTIONAL_CONSENT,
@@ -87,8 +88,8 @@ test('moving an item sends the new order of every item', async () => {
   const orders: string[][] = []
   const items = [
     item(),
-    item({ id: '8', key: 'privacy', title: 'Privacy notice', position: 2 }),
-    item({ id: '9', key: 'news', title: 'News', position: 3 }),
+    item({ id: testId(8), key: 'privacy', title: 'Privacy notice', position: 2 }),
+    item({ id: testId(9), key: 'news', title: 'News', position: 3 }),
   ]
   worker.use(
     handleStaffSignupItemsList({ body: { items } }),
@@ -102,7 +103,7 @@ test('moving an item sends the new order of every item', async () => {
 
   await screen.getByRole('button', { name: 'Move Terms of service down' }).click()
 
-  await expect.poll(() => orders).toEqual([['8', '7', '9']])
+  await expect.poll(() => orders).toEqual([[testId(8), testId(7), testId(9)]])
   expect(navigate).not.toHaveBeenCalled()
   await expect
     .element(screen.getByRole('button', { name: 'Move Terms of service up' }))
@@ -117,7 +118,7 @@ test('adding an item sends it and opens it', async () => {
     handleStaffSignupItemsCreate(async ({ request }) => {
       sent.push(await request.json())
       return HttpResponse.json(
-        item({ id: '9', key: 'news', title: 'News', kind: SignupItemKind.OPTIONAL_CONSENT }),
+        item({ id: testId(9), key: 'news', title: 'News', kind: SignupItemKind.OPTIONAL_CONSENT }),
         {
           status: 201,
         },
@@ -140,7 +141,7 @@ test('adding an item sends it and opens it', async () => {
     ])
   await expect
     .poll(() => navigate.mock.calls[0]?.[0])
-    .toMatchObject({ to: consoleSignupItemRoute.to, params: { itemId: '9' } })
+    .toMatchObject({ to: consoleSignupItemRoute.to, params: { itemId: testId(9) } })
 })
 
 test('an item is checked against the contract before it is sent', async () => {

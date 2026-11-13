@@ -1,7 +1,6 @@
 package signup_test
 
 import (
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,7 +41,7 @@ func TestCompletingAPendingSignupChecksTheAnswersAndRecordsTheLogin(t *testing.T
 		fixtures.DataNoticeKey + "@" + fixtures.DataNoticeCurrentLabel + ": shown from provider_screen",
 	}, r.decided(t, fixtures.PendingSignupOpenEmail))
 	r.env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	logins := r.env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionUserLogin), auditentry.TargetID(strconv.FormatInt(done.User.ID, 10))).AllX(t.Context())
+	logins := r.env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionUserLogin), auditentry.TargetID(testhelper.ID(done.User.ID))).AllX(t.Context())
 	require.Len(t, logins, 1, "one login, in the User's first Workspace")
 	assert.Equal(t, fixtures.PendingSignupOpenProvider, logins[0].Diff["method"])
 }

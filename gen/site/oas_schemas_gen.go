@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
@@ -3138,7 +3139,7 @@ func (s *EmailBroadcastContentInputChannel) UnmarshalText(data []byte) error {
 	}
 }
 
-type EntityId int64
+type EntityId publicid.ID
 
 // Scopes an OAuth client may be granted without any extra opt-in: the external API's read/write
 // vocabulary. Token management scopes are deliberately absent, so a connector can never mint further

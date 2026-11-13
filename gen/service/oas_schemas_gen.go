@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 )
 
@@ -40,7 +41,7 @@ func (s *BearerAuth) SetRoles(val []string) {
 
 type EmailAddress string
 
-type EntityId int64
+type EntityId publicid.ID
 
 // The outcome of clearing a hold.
 // Ref: #/components/schemas/HoldClearResult

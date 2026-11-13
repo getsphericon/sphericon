@@ -13,6 +13,7 @@ import {
   handleSitePasskeysRename,
 } from '../generated/site/msw.gen.ts'
 import type { SitePasskeyList } from '../generated/site/types.gen.ts'
+import { testId } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'
@@ -27,9 +28,9 @@ vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: registration.check,
 }))
 
-const LAPTOP = { id: '1', name: 'My laptop', createdAt: '2026-01-01T00:00:00Z' }
+const LAPTOP = { id: testId(1), name: 'My laptop', createdAt: '2026-01-01T00:00:00Z' }
 const PHONE = {
-  id: '2',
+  id: testId(2),
   name: 'My phone',
   createdAt: '2026-01-02T00:00:00Z',
   lastUsedAt: '2026-02-03T00:00:00Z',
@@ -211,7 +212,7 @@ test('renaming a Passkey sends the new name', async () => {
   await screen.getByLabelText(/^Passkey name/).fill('My desk')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => renamed).toEqual([{ id: '1', body: { name: 'My desk' } }])
+  await expect.poll(() => renamed).toEqual([{ id: testId(1), body: { name: 'My desk' } }])
   await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
 })
 
@@ -232,7 +233,7 @@ test('removing a Passkey asks for the password', async () => {
 
   await expect
     .poll(() => removed)
-    .toEqual([{ id: '1', body: { currentPassword: 'secret-password' } }])
+    .toEqual([{ id: testId(1), body: { currentPassword: 'secret-password' } }])
 })
 
 test('a User with no password and no fresh provider login is sent to sign in again to remove one', async () => {

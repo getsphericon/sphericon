@@ -3,13 +3,14 @@ import { expect, test } from 'vitest'
 
 import { siteUserGetMeQueryKey } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteUserResource } from '../generated/site/types.gen.ts'
+import { testId } from '../test/payloads.ts'
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
 import { usePaginationText } from './usePaginationText.ts'
 
 const LOAD = 'Load profile'
 
 const me: SiteUserResource = {
-  id: '1',
+  id: testId(1),
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: true,

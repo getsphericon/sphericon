@@ -60,3 +60,8 @@ export function emailIntegration(
     ...extra,
   }
 }
+
+// testId is an id of the contract's form (EntityId: 22 base62 characters) for test data: `test`
+// and the number padded with zeros, so a test reads which row it names, the generated schemas
+// accept it, and, never all digits like a real id, the router keeps it a string.
+export const testId = (n: number) => 'test' + String(n).padStart(18, '0')

@@ -5,19 +5,24 @@ import {
   handleSiteSegmentsGet,
 } from '../../generated/site/msw.gen.ts'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SegmentDetailPage } from './detail.tsx'
 
-const MOUNT = routeMount(segmentsDetailRoute, { workspaceId: 'TestWs01', segmentId: '1' })
+const MOUNT = routeMount(segmentsDetailRoute, { workspaceId: 'TestWs01', segmentId: testId(1) })
 
 test('shows the segment name and the contacts it matches', async () => {
   worker.use(
-    handleSiteSegmentsGet({ body: { id: '1', name: 'VIP customers', revision: 1, ...TIMESTAMPS } }),
+    handleSiteSegmentsGet({
+      body: { id: testId(1), name: 'VIP customers', revision: 1, ...TIMESTAMPS },
+    }),
     handleSiteSegmentContactsList({
-      body: page([{ id: '7', email: 'vip@example.com', tags: [], revision: 1, ...TIMESTAMPS }], 1),
+      body: page(
+        [{ id: testId(7), email: 'vip@example.com', tags: [], revision: 1, ...TIMESTAMPS }],
+        1,
+      ),
     }),
   )
 

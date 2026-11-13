@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/ogen-go/ogen/conv"
 	"github.com/ogen-go/ogen/middleware"
@@ -766,14 +767,14 @@ func decodeAuthTokensDeleteParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -839,14 +840,14 @@ func decodeAutomationsArchiveParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -912,14 +913,14 @@ func decodeAutomationsDeactivateParams(args [1]string, argsEscaped bool, r *http
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -985,14 +986,14 @@ func decodeAutomationsGetParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -1287,14 +1288,14 @@ func decodeAutomationsPublishParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -1372,14 +1373,14 @@ func decodeAutomationsReportParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -1506,14 +1507,14 @@ func decodeAutomationsRevertParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -1579,14 +1580,14 @@ func decodeAutomationsUnarchiveParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -1652,14 +1653,14 @@ func decodeAutomationsUpdateParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -1725,14 +1726,14 @@ func decodeBroadcastsArchiveParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -1798,14 +1799,14 @@ func decodeBroadcastsGetParams(args [1]string, argsEscaped bool, r *http.Request
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2167,14 +2168,14 @@ func decodeBroadcastsReportParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2240,14 +2241,14 @@ func decodeBroadcastsScheduleParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2313,14 +2314,14 @@ func decodeBroadcastsSetSegmentParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2386,14 +2387,14 @@ func decodeBroadcastsTestSendParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2459,14 +2460,14 @@ func decodeBroadcastsUnarchiveParams(args [1]string, argsEscaped bool, r *http.R
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2532,14 +2533,14 @@ func decodeBroadcastsUnscheduleParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2605,14 +2606,14 @@ func decodeBroadcastsUpdateParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2678,14 +2679,14 @@ func decodeCapturedMessagesDeleteParams(args [1]string, argsEscaped bool, r *htt
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -2751,14 +2752,14 @@ func decodeCapturedMessagesGetParams(args [1]string, argsEscaped bool, r *http.R
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -3001,14 +3002,14 @@ func decodeContactsDeleteParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -3220,14 +3221,14 @@ func decodeContactsExportParams(args [0]string, argsEscaped bool, r *http.Reques
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
 				var paramsDotIDVal EntityId
 				if err := func() error {
-					var paramsDotIDValVal int64
+					var paramsDotIDValVal publicid.ID
 					if err := func() error {
 						val, err := d.DecodeValue()
 						if err != nil {
 							return err
 						}
 
-						c, err := conv.ToStringInt64(val)
+						c, err := conv.ToText[publicid.ID](val)
 						if err != nil {
 							return err
 						}
@@ -3359,14 +3360,14 @@ func decodeContactsGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -3609,14 +3610,14 @@ func decodeContactsUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -3681,14 +3682,14 @@ func decodeCustomFieldsUpdateParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -3824,14 +3825,14 @@ func decodeEnrollmentsGetParams(args [2]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotAutomationIdVal int64
+				var paramsDotAutomationIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -3876,14 +3877,14 @@ func decodeEnrollmentsGetParams(args [2]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotEnrollmentIdVal int64
+				var paramsDotEnrollmentIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -3982,14 +3983,14 @@ func decodeEnrollmentsListParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotAutomationIdVal int64
+				var paramsDotAutomationIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -5165,14 +5166,14 @@ func decodeIntegrationsDeleteParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -5238,14 +5239,14 @@ func decodeIntegrationsGetParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -5488,14 +5489,14 @@ func decodeIntegrationsRegenerateKeyParams(args [1]string, argsEscaped bool, r *
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -5561,14 +5562,14 @@ func decodeIntegrationsUpdateParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -5656,14 +5657,14 @@ func decodeRuleFiringsListParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotRuleIdVal int64
+				var paramsDotRuleIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -5871,14 +5872,14 @@ func decodeRulesDeactivateParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -5944,14 +5945,14 @@ func decodeRulesDeleteParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -6017,14 +6018,14 @@ func decodeRulesDryRunParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -6090,14 +6091,14 @@ func decodeRulesGetParams(args [1]string, argsEscaped bool, r *http.Request) (pa
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -6340,14 +6341,14 @@ func decodeRulesPublishParams(args [1]string, argsEscaped bool, r *http.Request)
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -6413,14 +6414,14 @@ func decodeRulesRevertParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -6486,14 +6487,14 @@ func decodeRulesUpdateParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -6559,14 +6560,14 @@ func decodeSegmentsArchiveParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -6632,14 +6633,14 @@ func decodeSegmentsGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -6934,14 +6935,14 @@ func decodeSegmentsUnarchiveParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -7007,14 +7008,14 @@ func decodeSegmentsUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -7175,14 +7176,14 @@ func decodeSendingDomainsDeleteParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -7248,14 +7249,14 @@ func decodeSendingDomainsGetParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -7498,14 +7499,14 @@ func decodeSendingDomainsUpdateParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -7571,14 +7572,14 @@ func decodeSendingDomainsVerifyParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -7643,14 +7644,14 @@ func decodeSmsConsentsGetParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotContactIdVal int64
+				var paramsDotContactIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -7715,14 +7716,14 @@ func decodeTagsApplyParams(args [1]string, argsEscaped bool, r *http.Request) (p
 			})
 
 			if err := func() error {
-				var paramsDotContactIdVal int64
+				var paramsDotContactIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -7787,14 +7788,14 @@ func decodeTagsDeleteParams(args [1]string, argsEscaped bool, r *http.Request) (
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -8059,14 +8060,14 @@ func decodeTagsListForContactParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotContactIdVal int64
+				var paramsDotContactIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -8281,14 +8282,14 @@ func decodeTagsRemoveParams(args [2]string, argsEscaped bool, r *http.Request) (
 			})
 
 			if err := func() error {
-				var paramsDotContactIdVal int64
+				var paramsDotContactIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -8398,14 +8399,14 @@ func decodeTelegramStartLinksIssueParams(args [1]string, argsEscaped bool, r *ht
 			})
 
 			if err := func() error {
-				var paramsDotContactIdVal int64
+				var paramsDotContactIdVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -8471,14 +8472,14 @@ func decodeTemplatesDeleteParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -8544,14 +8545,14 @@ func decodeTemplatesGetParams(args [1]string, argsEscaped bool, r *http.Request)
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -8794,14 +8795,14 @@ func decodeTemplatesUpdateParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -8866,14 +8867,14 @@ func decodeTrackingDomainsRemoveParams(args [1]string, argsEscaped bool, r *http
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -8938,14 +8939,14 @@ func decodeTrackingDomainsVerifyParams(args [1]string, argsEscaped bool, r *http
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -9011,14 +9012,14 @@ func decodeWebhooksDeleteParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -9084,14 +9085,14 @@ func decodeWebhooksGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -9334,14 +9335,14 @@ func decodeWebhooksRegenerateSecretParams(args [1]string, argsEscaped bool, r *h
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -9407,14 +9408,14 @@ func decodeWebhooksTestParams(args [1]string, argsEscaped bool, r *http.Request)
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}
@@ -9480,14 +9481,14 @@ func decodeWebhooksUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal int64
+				var paramsDotIDVal publicid.ID
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToText[publicid.ID](val)
 					if err != nil {
 						return err
 					}

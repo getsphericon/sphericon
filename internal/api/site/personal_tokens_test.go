@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"net/http"
-	"strconv"
 	"testing"
 	"time"
 
@@ -247,7 +246,7 @@ func TestAPersonalTokenActsAsItsUser(t *testing.T) {
 		entry, ok := e.(*events.AuditEntry)
 		return entry, ok && entry.Action == "contact.update"
 	})
-	mel := events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.VehementMemberMelID), Name: fixtures.VehementMemberMelName + " via " + fixtures.VehementMemberPersonalTokenName}
+	mel := events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.VehementMemberMelID), Name: fixtures.VehementMemberMelName + " via " + fixtures.VehementMemberPersonalTokenName}
 	require.Len(t, entries, 1)
 	assert.Equal(t, mel, entries[0].Actor)
 }

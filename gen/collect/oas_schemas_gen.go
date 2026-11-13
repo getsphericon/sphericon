@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
@@ -306,7 +307,7 @@ func (s *CollectTelegramStartLinkInput) SetVisitorId(val string) {
 
 type EmailAddress string
 
-type EntityId int64
+type EntityId publicid.ID
 
 // A JSON object whose members the contract leaves open: custom field values, event properties,
 // integration params, an audit diff. One named model, so every surface's Go code has one type for it

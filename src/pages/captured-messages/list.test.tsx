@@ -7,7 +7,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteCapturedMessageSummary } from '../../generated/site/types.gen.ts'
 import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspaceId/captured-messages/index.tsx'
-import { page } from '../../test/payloads.ts'
+import { page, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -18,9 +18,9 @@ import { CapturedMessagesListPage } from './list.tsx'
 const LIST_ROUTE = routeMount(capturedMessagesRoute, { workspaceId: 'TestWs01' })
 
 const WELCOME: SiteCapturedMessageSummary = {
-  id: '1',
-  integrationId: '5',
-  outboundMessageId: '9',
+  id: testId(1),
+  integrationId: testId(5),
+  outboundMessageId: testId(9),
   surface: 'transactional',
   sendingSource: null,
   recipient: 'alice@example.com',
@@ -32,7 +32,7 @@ const WELCOME: SiteCapturedMessageSummary = {
 }
 const NEWSLETTER: SiteCapturedMessageSummary = {
   ...WELCOME,
-  id: '2',
+  id: testId(2),
   surface: 'broadcast',
   recipient: 'bob@example.com',
   subject: 'March news',

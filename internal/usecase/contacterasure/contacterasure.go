@@ -23,8 +23,9 @@ package contacterasure
 import (
 	"context"
 	"slices"
-	"strconv"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/samber/lo"
 
@@ -281,7 +282,7 @@ func resolve(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	t := &Target{ContactID: c.ID, IdentifierKind: id.kind(), SubjectID: strconv.FormatInt(c.ID, 10)}
+	t := &Target{ContactID: c.ID, IdentifierKind: id.kind(), SubjectID: publicid.Encode(c.ID)}
 	if c.SubjectID != nil && *c.SubjectID != "" {
 		t.SubjectID = *c.SubjectID
 	}

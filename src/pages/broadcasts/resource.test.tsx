@@ -25,6 +25,7 @@ import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { requestGate } from '../../test/requestGate.ts'
@@ -34,7 +35,10 @@ import { BroadcastCreatePage, BroadcastEditPage } from './resource.tsx'
 
 const CREATE_ROUTE = routeMount(broadcastsCreateRoute, { workspaceId: 'TestWs01' })
 
-const EDIT_ROUTE = routeMount(broadcastsEditRoute, { workspaceId: 'TestWs01', broadcastId: '7' })
+const EDIT_ROUTE = routeMount(broadcastsEditRoute, {
+  workspaceId: 'TestWs01',
+  broadcastId: testId(7),
+})
 
 function ListProbe() {
   useQuery(siteBroadcastsListOptions({ path: { workspaceId: 'TestWs01' } }))
@@ -42,14 +46,14 @@ function ListProbe() {
 }
 
 function DetailProbe() {
-  useQuery(siteBroadcastsGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
+  useQuery(siteBroadcastsGetOptions({ path: { workspaceId: 'TestWs01', id: testId(7) } }))
   return null
 }
 
 // An email Broadcast; content overrides fields of its email content.
 function broadcast(status: string, content: Record<string, unknown> = {}) {
   return {
-    id: '7',
+    id: testId(7),
     name: 'Launch',
     channel: 'email',
     content: {
@@ -93,9 +97,9 @@ const integration = (id: string, name: string, isDefault = false): SiteIntegrati
 // The SMS Integration is disabled, so email is the one Channel a new Broadcast is offered; it is
 // still listed, and never an email Broadcast's to send through.
 const INTEGRATIONS = [
-  integration('1', 'Primary SMTP', true),
-  integration('21', 'Postmark'),
-  { ...integration('30', 'SMS gateway'), channel: 'sms' as const, enabled: false },
+  integration(testId(1), 'Primary SMTP', true),
+  integration(testId(21), 'Postmark'),
+  { ...integration(testId(30), 'SMS gateway'), channel: 'sms' as const, enabled: false },
 ]
 
 const WORKSPACE = {
@@ -150,7 +154,7 @@ function serve(
     workspaces,
     handleSiteBroadcastsCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ ...broadcast('draft'), id: '42' }, { status: 201 })
+      return HttpResponse.json({ ...broadcast('draft'), id: testId(42) }, { status: 201 })
     }),
     handleSiteBroadcastsUpdate(async ({ request }) => {
       bodies.push(await request.json())
@@ -198,7 +202,7 @@ test('creating a broadcast sends only the filled keys, refreshes the list and op
   await expect.poll(() => fetches.list).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { workspaceId: 'TestWs01', broadcastId: '42' },
+    params: { workspaceId: 'TestWs01', broadcastId: testId(42) },
   })
 })
 
@@ -247,7 +251,7 @@ test('editing a Telegram draft loads its message content and clears what is empt
   worker.use(
     handleSiteBroadcastsGet(() =>
       HttpResponse.json({
-        id: '7',
+        id: testId(7),
         name: 'News',
         channel: 'telegram',
         status: 'draft',
@@ -510,7 +514,7 @@ test('the Integration a broadcast sends through is chosen among the email ones a
 
   await expect
     .poll(() => bodies)
-    .toEqual([{ name: 'Launch', integrationId: '21', content: { channel: 'email' } }])
+    .toEqual([{ name: 'Launch', integrationId: testId(21), content: { channel: 'email' } }])
 })
 
 test('a saved Integration is shown, and switching back to the default clears it', async () => {
@@ -518,7 +522,7 @@ test('a saved Integration is shown, and switching back to the default clears it'
   worker.use(
     workspaces,
     handleSiteBroadcastsGet(() =>
-      HttpResponse.json({ ...broadcast('draft'), integrationId: '21' }),
+      HttpResponse.json({ ...broadcast('draft'), integrationId: testId(21) }),
     ),
   )
 
@@ -551,7 +555,7 @@ test('with no enabled Integration no Channel is offered, and the way to add one 
   serve('draft')
   worker.use(
     handleSiteIntegrationsList({
-      body: [{ ...integration('1', 'Primary SMTP', true), enabled: false }],
+      body: [{ ...integration(testId(1), 'Primary SMTP', true), enabled: false }],
     }),
   )
 
@@ -578,7 +582,7 @@ test('an archived broadcast opens its report instead of the form', async () => {
     .poll(() => navigate)
     .toHaveBeenCalledWith({
       to: broadcastsReportRoute.to,
-      params: { workspaceId: 'TestWs01', broadcastId: '7' },
+      params: { workspaceId: 'TestWs01', broadcastId: testId(7) },
       replace: true,
     })
   await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
@@ -587,7 +591,7 @@ test('an archived broadcast opens its report instead of the form', async () => {
 const SEND_FAILED = 'Failed to send broadcast'
 const REPORT = {
   to: broadcastsReportRoute.to,
-  params: { workspaceId: 'TestWs01', broadcastId: '7' },
+  params: { workspaceId: 'TestWs01', broadcastId: testId(7) },
 }
 
 // The draft the edit page opens, of the Channel the test is about; `as` is it in another status.
@@ -641,7 +645,7 @@ test('Send now and Schedule wait while Save is pending, then deliver what was sa
 
   await expect.element(screen.getByText('Broadcast updated')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Send now' }).click()
-  await expect.poll(() => sent).toEqual(['7'])
+  await expect.poll(() => sent).toEqual([testId(7)])
   await expect.poll(() => navigate.mock.calls).toContainEqual([REPORT])
 })
 

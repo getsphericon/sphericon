@@ -115,10 +115,10 @@ func TestExternalContactsEraseClearsQueuedWebhookDeliveries(t *testing.T) {
 	// Queued deliveries of the erased Contact's events, by contact id and by address
 	// (in either case), next to the bystander's, a payload naming nobody, and a Globex
 	// delivery for the same address, which is another tenant's and must survive.
-	delivery(fixtures.WebhookInitechID, "by-top-level-id", fmt.Sprintf(`{"contactId":%d,"data":{}}`, fixtures.ContactErasableID))
-	delivery(fixtures.WebhookInitechID, "by-data-id", fmt.Sprintf(`{"data":{"contactId":%d}}`, fixtures.ContactErasableID))
+	delivery(fixtures.WebhookInitechID, "by-top-level-id", fmt.Sprintf(`{"contactId":%q,"data":{}}`, testhelper.ID(fixtures.ContactErasableID)))
+	delivery(fixtures.WebhookInitechID, "by-data-id", fmt.Sprintf(`{"data":{"contactId":%q}}`, testhelper.ID(fixtures.ContactErasableID)))
 	delivery(fixtures.WebhookInitechID, "by-address", `{"data":{"email":"Erin@Initech.test"}}`)
-	delivery(fixtures.WebhookInitechID, "bystander", fmt.Sprintf(`{"contactId":%d,"data":{"email":"ben@initech.test"}}`, fixtures.ContactBystanderID))
+	delivery(fixtures.WebhookInitechID, "bystander", fmt.Sprintf(`{"contactId":%q,"data":{"email":"ben@initech.test"}}`, testhelper.ID(fixtures.ContactBystanderID)))
 	delivery(fixtures.WebhookInitechID, "nobody", `{"data":{}}`)
 	delivery(fixtures.WebhookGlobexID, "other-tenant", `{"data":{"email":"erin@initech.test"}}`)
 

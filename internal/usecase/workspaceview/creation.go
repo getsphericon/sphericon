@@ -2,7 +2,8 @@ package workspaceview
 
 import (
 	"context"
-	"strconv"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships/membershipsunchecked"
@@ -38,7 +39,7 @@ func (u *UseCase) Create(ctx context.Context, in CreateInput) (View, error) {
 		if ws, err = u.createIn(ctx, tx, in.UserID, name); err != nil {
 			return err
 		}
-		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(usr.ID, 10), Name: usr.Name}
+		actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(usr.ID), Name: usr.Name}
 		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil))
 	})
 	if err != nil {

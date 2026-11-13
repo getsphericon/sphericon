@@ -3,7 +3,6 @@ package external_test
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -25,7 +24,7 @@ func tokenActor(t *testing.T, env *testhelper.TestEnv) events.Actor {
 	t.Helper()
 	tok, err := env.DB.ApiToken.Query().Where(apitoken.Name("actor-token"), apitoken.WorkspaceID(fixtures.AcmeID)).Only(context.Background())
 	require.NoError(t, err)
-	return events.Actor{Kind: events.ActorAPIToken, ID: strconv.FormatInt(tok.ID, 10), Name: tok.Name}
+	return events.Actor{Kind: events.ActorAPIToken, ID: testhelper.ID(tok.ID), Name: tok.Name}
 }
 
 // assertTokenAudited checks the queued events hold exactly the wanted actions, in order, for one
@@ -42,7 +41,7 @@ func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID external
 		require.Truef(t, ok, "got %T", ev)
 		actions = append(actions, e.Action)
 		assert.Equal(t, actor, e.Actor)
-		assert.Equal(t, strconv.FormatInt(int64(targetID), 10), e.TargetID)
+		assert.Equal(t, testhelper.ID(targetID), e.TargetID)
 		assert.Equal(t, targetName, e.TargetName)
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)

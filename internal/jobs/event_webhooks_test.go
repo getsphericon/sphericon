@@ -75,9 +75,9 @@ func TestAnEventIsDeliveredToTheEndpointsThatSelectIt(t *testing.T) {
 	assert.ElementsMatch(t, []string{"id", "type", "occurredAt", "workspaceId", "subject", "contactId", "data"}, lo.Keys(body))
 	assert.Equal(t, published[0].ID, body["id"])
 	assert.Equal(t, systemevent.ContactCreated, body["type"])
-	assert.EqualValues(t, fixtures.AcmeID, body["workspaceId"])
+	assert.Equal(t, string(fixtures.AcmePublicID), body["workspaceId"], "the Workspace by the public id the APIs show")
 	assert.Equal(t, fixtures.ContactAliceEmail, body["subject"])
-	assert.EqualValues(t, fixtures.ContactAliceID, body["contactId"])
+	assert.Equal(t, testhelper.ID(fixtures.ContactAliceID), body["contactId"])
 }
 
 // A provider notification keeps its semantic source identity across redelivery, so a receiver

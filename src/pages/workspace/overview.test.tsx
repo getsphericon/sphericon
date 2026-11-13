@@ -19,6 +19,7 @@ import type {
   SiteBroadcastResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
+import { testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -97,7 +98,7 @@ const overview: SiteAnalyticsOverview = {
 }
 
 const broadcast = (b: Pick<SiteBroadcastResource, 'status'> & Partial<SiteBroadcastResource>) => ({
-  id: '1',
+  id: testId(1),
   name: 'Spring launch',
   subject: 'Spring is here',
   body: '',
@@ -154,13 +155,13 @@ test('each item says what is wrong and links to where it is fixed', async () => 
           {
             kind: 'sendingDomainVerificationLost',
             severity: 'blocked',
-            subject: { id: '6', name: 'lost.acme.com' },
+            subject: { id: testId(6), name: 'lost.acme.com' },
             count: 1,
           },
           {
             kind: 'enrollmentsFailed',
             severity: 'notice',
-            subject: { id: '100', name: 'Welcome series' },
+            subject: { id: testId(100), name: 'Welcome series' },
             count: 2,
           },
           { kind: 'sendCapSpent', severity: 'degraded', count: 1 },
@@ -183,7 +184,7 @@ test('each item says what is wrong and links to where it is fixed', async () => 
     .toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Open the automation' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/automations/100')
+    .toHaveAttribute('href', `/workspaces/TestWs01/automations/${testId(100)}`)
   await expect.element(screen.getByText(/sent its daily sending limit/)).toBeInTheDocument()
 })
 
@@ -192,20 +193,40 @@ test('every kind of item is a sentence, with a link where there is somewhere to 
     handleSiteAttentionGet({
       body: {
         items: [
-          { kind: 'integrationProviderStopped', severity: 'blocked', ...about('1', 'Amazon SES') },
-          { kind: 'broadcastHeld', severity: 'blocked', ...about('2', 'Unexplained') },
+          {
+            kind: 'integrationProviderStopped',
+            severity: 'blocked',
+            ...about(testId(1), 'Amazon SES'),
+          },
+          { kind: 'broadcastHeld', severity: 'blocked', ...about(testId(2), 'Unexplained') },
           {
             kind: 'deliverabilityWarning',
             severity: 'degraded',
             count: 1,
             abuse: { domain: 'mail.acme.test', metric: 'complaint', rate: 0.0015 },
           },
-          { kind: 'providerLimitSpent', severity: 'degraded', ...about('3', 'Postmark') },
-          { kind: 'integrationProviderProbation', severity: 'degraded', ...about('4', 'Probed') },
-          { kind: 'integrationProviderSandbox', severity: 'degraded', ...about('5', 'Sandboxed') },
-          { kind: 'broadcastFailed', severity: 'notice', ...about('6', 'Autumn sale') },
-          { kind: 'webhookDisabled', severity: 'notice', ...about('7', 'https://hooks.test/x') },
-          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('8', 'bare.acme.com') },
+          { kind: 'providerLimitSpent', severity: 'degraded', ...about(testId(3), 'Postmark') },
+          {
+            kind: 'integrationProviderProbation',
+            severity: 'degraded',
+            ...about(testId(4), 'Probed'),
+          },
+          {
+            kind: 'integrationProviderSandbox',
+            severity: 'degraded',
+            ...about(testId(5), 'Sandboxed'),
+          },
+          { kind: 'broadcastFailed', severity: 'notice', ...about(testId(6), 'Autumn sale') },
+          {
+            kind: 'webhookDisabled',
+            severity: 'notice',
+            ...about(testId(7), 'https://hooks.test/x'),
+          },
+          {
+            kind: 'sendingDomainNotBulkReady',
+            severity: 'notice',
+            ...about(testId(8), 'bare.acme.com'),
+          },
         ],
       },
     }),
@@ -250,7 +271,7 @@ test('a refused integration links to the form that saves its credentials', async
           {
             kind: 'integrationProviderRefused',
             severity: 'blocked',
-            ...about('8', 'Twilio (+15017250604)'),
+            ...about(testId(8), 'Twilio (+15017250604)'),
           },
         ],
       },
@@ -264,7 +285,7 @@ test('a refused integration links to the form that saves its credentials', async
     .toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Save its credentials' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/settings/emails?integration=%228%22')
+    .toHaveAttribute('href', `/workspaces/TestWs01/settings/emails?integration=${testId(8)}`)
 })
 
 test('refused integrations in one row each link to their own credentials', async () => {
@@ -272,8 +293,16 @@ test('refused integrations in one row each link to their own credentials', async
     handleSiteAttentionGet({
       body: {
         items: [
-          { kind: 'integrationProviderRefused', severity: 'blocked', ...about('8', 'Twilio') },
-          { kind: 'integrationProviderRefused', severity: 'blocked', ...about('9', 'News bot') },
+          {
+            kind: 'integrationProviderRefused',
+            severity: 'blocked',
+            ...about(testId(8), 'Twilio'),
+          },
+          {
+            kind: 'integrationProviderRefused',
+            severity: 'blocked',
+            ...about(testId(9), 'News bot'),
+          },
         ],
       },
     }),
@@ -286,10 +315,10 @@ test('refused integrations in one row each link to their own credentials', async
     .toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'News bot' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/settings/emails?integration=%229%22')
+    .toHaveAttribute('href', `/workspaces/TestWs01/settings/emails?integration=${testId(9)}`)
   await expect
     .element(screen.getByRole('link', { name: 'Twilio' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/settings/emails?integration=%228%22')
+    .toHaveAttribute('href', `/workspaces/TestWs01/settings/emails?integration=${testId(8)}`)
 })
 
 test('items of one kind are one sentence that names them all, with one link', async () => {
@@ -297,12 +326,28 @@ test('items of one kind are one sentence that names them all, with one link', as
     handleSiteAttentionGet({
       body: {
         items: [
-          { kind: 'webhookDisabled', severity: 'notice', ...about('1', 'https://a.test/x') },
-          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('2', 'mail.acme.com') },
-          { kind: 'webhookDisabled', severity: 'notice', ...about('3', 'https://b.test/y') },
-          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('4', 'news.acme.com') },
-          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('5', 'shop.acme.com') },
-          { kind: 'sendingDomainNotBulkReady', severity: 'notice', ...about('6', 'help.acme.com') },
+          { kind: 'webhookDisabled', severity: 'notice', ...about(testId(1), 'https://a.test/x') },
+          {
+            kind: 'sendingDomainNotBulkReady',
+            severity: 'notice',
+            ...about(testId(2), 'mail.acme.com'),
+          },
+          { kind: 'webhookDisabled', severity: 'notice', ...about(testId(3), 'https://b.test/y') },
+          {
+            kind: 'sendingDomainNotBulkReady',
+            severity: 'notice',
+            ...about(testId(4), 'news.acme.com'),
+          },
+          {
+            kind: 'sendingDomainNotBulkReady',
+            severity: 'notice',
+            ...about(testId(5), 'shop.acme.com'),
+          },
+          {
+            kind: 'sendingDomainNotBulkReady',
+            severity: 'notice',
+            ...about(testId(6), 'help.acme.com'),
+          },
         ],
       },
     }),
@@ -362,19 +407,19 @@ test('grouped broadcasts link each by its name, and differ by what holds them', 
           {
             kind: 'broadcastHeld',
             severity: 'blocked',
-            ...about('12', 'Spring launch'),
+            ...about(testId(12), 'Spring launch'),
             holdReason: 'unverified_domain',
           },
           {
             kind: 'broadcastHeld',
             severity: 'blocked',
-            ...about('13', 'Summer launch'),
+            ...about(testId(13), 'Summer launch'),
             holdReason: 'unverified_domain',
           },
           {
             kind: 'broadcastHeld',
             severity: 'blocked',
-            ...about('14', 'Autumn launch'),
+            ...about(testId(14), 'Autumn launch'),
             holdReason: 'no_integration',
           },
         ],
@@ -389,14 +434,14 @@ test('grouped broadcasts link each by its name, and differ by what holds them', 
     .toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Spring launch' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/12/report')
+    .toHaveAttribute('href', `/workspaces/TestWs01/broadcasts/${testId(12)}/report`)
   await expect
     .element(screen.getByRole('link', { name: 'Summer launch' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/13/report')
+    .toHaveAttribute('href', `/workspaces/TestWs01/broadcasts/${testId(13)}/report`)
   await expect.element(screen.getByText(/Autumn launch is on hold/)).toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Open the broadcast' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/14/report')
+    .toHaveAttribute('href', `/workspaces/TestWs01/broadcasts/${testId(14)}/report`)
 })
 
 test('a held broadcast says what lifts the hold', async () => {
@@ -407,7 +452,7 @@ test('a held broadcast says what lifts the hold', async () => {
           {
             kind: 'broadcastHeld',
             severity: 'blocked',
-            subject: { id: '12', name: 'Spring launch' },
+            subject: { id: testId(12), name: 'Spring launch' },
             count: 1,
             holdReason: 'unverified_domain',
           },
@@ -423,7 +468,7 @@ test('a held broadcast says what lifts the hold', async () => {
     .toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Open the broadcast' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/12/report')
+    .toHaveAttribute('href', `/workspaces/TestWs01/broadcasts/${testId(12)}/report`)
 })
 
 test('an automation that cannot send says why and links to it', async () => {
@@ -434,7 +479,7 @@ test('an automation that cannot send says why and links to it', async () => {
           {
             kind: 'automationCannotSend',
             severity: 'blocked',
-            subject: { id: '31', name: 'Welcome series' },
+            subject: { id: testId(31), name: 'Welcome series' },
             count: 1,
             holdReason: 'provider_stopped',
           },
@@ -454,7 +499,7 @@ test('an automation that cannot send says why and links to it', async () => {
     .toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Open the automation' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/automations/31')
+    .toHaveAttribute('href', `/workspaces/TestWs01/automations/${testId(31)}`)
 })
 
 test('a broadcast the sending limit will slow says when it is expected to finish', async () => {
@@ -466,7 +511,7 @@ test('a broadcast the sending limit will slow says when it is expected to finish
           {
             kind: 'scheduledBroadcastOverSendCap',
             severity: 'degraded',
-            subject: { id: '14', name: 'Black Friday' },
+            subject: { id: testId(14), name: 'Black Friday' },
             count: 1500,
             estimatedCompletionAt: finish,
           },
@@ -485,7 +530,7 @@ test('a broadcast the sending limit will slow says when it is expected to finish
     .toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Open the broadcast' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/14/report')
+    .toHaveAttribute('href', `/workspaces/TestWs01/broadcasts/${testId(14)}/report`)
 })
 
 test('an unfinished checklist is shown with its steps', async () => {
@@ -533,9 +578,9 @@ test('what is going out comes soonest first and what went out last with its open
           query.get('order') === 'sentLatest'
             ? [broadcast({ status: 'sent', sentAt: '2026-10-27T08:09:00Z' })]
             : [
-                broadcast({ id: '3', name: 'Flash sale', status: 'sending' }),
+                broadcast({ id: testId(3), name: 'Flash sale', status: 'sending' }),
                 broadcast({
-                  id: '2',
+                  id: testId(2),
                   name: 'Autumn sale',
                   status: 'scheduled',
                   scheduledAt: '2026-11-03T09:00:00Z',
@@ -616,13 +661,13 @@ test('the Sending card shows each domain with its rates over their denominators 
           windowHours: 24,
           domains: [
             {
-              sendingDomainId: '1',
+              sendingDomainId: testId(1),
               domain: 'mail.acme.com',
               complaintRate: { numerator: 1, denominator: 2, rate: 0.5 },
               bounceRate: { numerator: 0, denominator: 2, rate: 0 },
             },
             {
-              sendingDomainId: '2',
+              sendingDomainId: testId(2),
               domain: 'news.acme.com',
               complaintRate: { numerator: 0, denominator: 0, rate: null },
               bounceRate: { numerator: 1, denominator: 1, rate: 1 },
@@ -663,7 +708,7 @@ test('the Sending card shows the rates of the last 24 hours even when the period
           windowHours: 24,
           domains: [
             {
-              sendingDomainId: '1',
+              sendingDomainId: testId(1),
               domain: 'mail.acme.com',
               complaintRate: { numerator: 0, denominator: 3, rate: 0 },
               bounceRate: { numerator: 0, denominator: 3, rate: 0 },

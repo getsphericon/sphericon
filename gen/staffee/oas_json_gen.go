@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 	"github.com/ogen-go/ogen/json"
@@ -223,9 +224,9 @@ func (s *AuditAction) UnmarshalJSON(data []byte) error {
 
 // Encode encodes EntityId as json.
 func (s EntityId) Encode(e *jx.Encoder) {
-	unwrapped := int64(s)
+	unwrapped := publicid.ID(s)
 
-	json.EncodeStringInt64(e, unwrapped)
+	json.EncodeStringText(e, unwrapped)
 }
 
 // Decode decodes EntityId from json.
@@ -233,9 +234,9 @@ func (s *EntityId) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode EntityId to nil")
 	}
-	var unwrapped int64
+	var unwrapped publicid.ID
 	if err := func() error {
-		v, err := json.DecodeStringInt64(d)
+		v, err := json.DecodeStringText[publicid.ID](d)
 		unwrapped = v
 		if err != nil {
 			return err

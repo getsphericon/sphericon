@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/require"
 
@@ -214,7 +216,7 @@ func (a *Agent) SaveBroadcast(d Draft) externalapi.EntityId {
 		},
 	})
 	require.Equal(a.w.t, "draft", out["status"])
-	id, err := strconv.ParseInt(jsonID(out["id"]), 10, 64)
+	id, err := publicid.Decode(jsonID(out["id"]))
 	require.NoError(a.w.t, err)
 	return externalapi.EntityId(id)
 }

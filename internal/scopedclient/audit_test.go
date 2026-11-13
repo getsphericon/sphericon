@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -20,7 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-var johnActor = events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.OwnerJohnID), Name: "John"}
+var johnActor = events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.OwnerJohnID), Name: "John"}
 
 // auditEntries decodes the Audit entries published so far in this test's transaction.
 func auditEntries(t *testing.T, env *testhelper.TestEnv) []*events.AuditEntry {
@@ -58,7 +57,7 @@ func TestAuditedTagWritesRecordActorActionAndDiff(t *testing.T) {
 		assert.Equal(t, johnActor, e.Actor)
 		assert.Equal(t, acme, e.WorkspaceID)
 		assert.Equal(t, "tag", e.TargetType)
-		assert.Equal(t, strconv.FormatInt(created.ID, 10), e.TargetID)
+		assert.Equal(t, testhelper.ID(created.ID), e.TargetID)
 	}
 	assert.Equal(t, "tag.create", got[0].Action)
 	assert.Equal(t, "audited", got[0].TargetName)

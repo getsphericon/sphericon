@@ -10,6 +10,7 @@ import {
   handleSiteJoinDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteJoinDomainResource } from '../../generated/site/types.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { JoinDomainsSection } from './JoinDomainsSection.tsx'
@@ -23,7 +24,7 @@ beforeEach(() => {
 
 function domain(over: Partial<SiteJoinDomainResource> = {}): SiteJoinDomainResource {
   return {
-    id: '1',
+    id: testId(1),
     domain: 'acme.com',
     verified: false,
     record: { type: 'TXT', host: '_sphericon-join.acme.com', value: 'sphericon-join=abc' },
@@ -36,7 +37,7 @@ function domain(over: Partial<SiteJoinDomainResource> = {}): SiteJoinDomainResou
 test('shows a pending domain with the record to publish and a verified one without', async () => {
   worker.use(
     handleSiteJoinDomainsList({
-      body: [domain(), domain({ id: '2', domain: 'eu.acme.com', verified: true })],
+      body: [domain(), domain({ id: testId(2), domain: 'eu.acme.com', verified: true })],
     }),
   )
   const { screen } = await renderWithRouter(<JoinDomainsSection workspaceId={WORKSPACE_ID} />)

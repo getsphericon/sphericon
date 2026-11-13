@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 
 import { handleSiteTemplatesDelete, handleSiteTemplatesList } from '../../generated/site/msw.gen.ts'
 import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
-import { page, TIMESTAMPS } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -14,7 +14,7 @@ const WORKSPACE_ID = { workspaceId: 'TestWs01' }
 const LIST_ROUTE = routeMount(templatesRoute, WORKSPACE_ID)
 
 const WELCOME = {
-  id: '1',
+  id: testId(1),
   name: 'Welcome',
   subject: 'Hello there',
   body: '',
@@ -22,7 +22,7 @@ const WELCOME = {
   ...TIMESTAMPS,
 }
 const RECEIPT = {
-  id: '2',
+  id: testId(2),
   name: 'Receipt',
   subject: 'Your receipt',
   body: '',
@@ -80,7 +80,7 @@ test('Edit links to the template edit page', async () => {
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
     .element(screen.getByRole('menuitem', { name: 'Edit' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/templates/1/edit')
+    .toHaveAttribute('href', `/workspaces/TestWs01/templates/${testId(1)}/edit`)
 })
 
 test('deleting a template asks for confirmation, deletes it and refreshes the list', async () => {
@@ -108,7 +108,7 @@ test('deleting a template asks for confirmation, deletes it and refreshes the li
   expect(deleted).toEqual([])
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
-  await expect.poll(() => deleted).toEqual(['1'])
+  await expect.poll(() => deleted).toEqual([testId(1)])
   await expect.element(screen.getByText('Template deleted')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('Welcome')).not.toBeInTheDocument()

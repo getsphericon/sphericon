@@ -6,9 +6,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/ogen-go/ogen/ogenerrors"
@@ -261,7 +262,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 		return ctx, ErrUnauthorized
 	}
 
-	actor := events.Actor{Kind: events.ActorAPIToken, ID: strconv.FormatInt(token.ID, 10), Name: token.Name}
+	actor := events.Actor{Kind: events.ActorAPIToken, ID: publicid.Encode(token.ID), Name: token.Name}
 	m := token.Edges.Membership
 	if m != nil {
 		// A Connection acts as its User through its client, and a Personal token (a Connection

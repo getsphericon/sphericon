@@ -2,8 +2,9 @@ package events
 
 import (
 	"context"
-	"strconv"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -46,7 +47,7 @@ type Actor = ent.Actor
 // the Personal token's name ("Mary via import script"), so the Audit log tells it apart from what
 // the User did in their own session.
 func ConnectionActor(userID int64, userName, via string) Actor {
-	return Actor{Kind: ActorUser, ID: strconv.FormatInt(userID, 10), Name: userName + " via " + via}
+	return Actor{Kind: ActorUser, ID: publicid.Encode(userID), Name: userName + " via " + via}
 }
 
 // Actions recorded through the explicit seam (ADR 0022): raw-client packages and
@@ -192,7 +193,7 @@ func WorkspaceAudit(ws *ent.Workspace, actor Actor, action string, diff map[stri
 		Actor:       actor,
 		Action:      action,
 		TargetType:  workspace.Label,
-		TargetID:    strconv.FormatInt(ws.ID, 10),
+		TargetID:    publicid.Encode(ws.ID),
 		TargetName:  ws.Name,
 		Diff:        diff,
 	}

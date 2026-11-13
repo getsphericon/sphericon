@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import { handleSiteEventsActions, handleSiteEventsList } from '../../generated/site/msw.gen.ts'
 import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -12,9 +13,9 @@ import { ActivityPage } from './page.tsx'
 const WORKSPACE_ID = 'TestWs01'
 const mount = routeMount(activityRoute, { workspaceId: WORKSPACE_ID })
 
-const event = (id: string, over: Record<string, unknown> = {}) => ({
-  id,
-  subjectId: `anon:${id}`,
+const event = (n: number, over: Record<string, unknown> = {}) => ({
+  id: testId(n),
+  subjectId: `anon:${n}`,
   email: null,
   action: 'page_view',
   properties: {},
@@ -35,7 +36,7 @@ function serveEvents(queries: Query[], totalItems = 1) {
       const params = new URL(request.url).searchParams
       queries.push({ page: params.get('page'), action: params.get('action') })
       return HttpResponse.json({
-        items: [event('1')],
+        items: [event(1)],
         page: Number(params.get('page') ?? 1),
         pageSize: 25,
         totalItems,

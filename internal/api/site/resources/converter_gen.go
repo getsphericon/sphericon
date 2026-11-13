@@ -1192,7 +1192,7 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) site.ContactExportEvent
 		siteapiContactExportEvent.Email = optNilString((*source).Email)
 		siteapiContactExportEvent.Phone = optNilString((*source).Phone)
 		siteapiContactExportEvent.Action = (*source).Action
-		siteapiContactExportEvent.Properties = jsonObject((*source).Properties)
+		siteapiContactExportEvent.Properties = eventProperties(source)
 		siteapiContactExportEvent.OccurredAt = timestamp((*source).OccurredAt)
 		siteapiContactExportEvent.Backfill = (*source).Backfill
 		siteapiContactExportEvent.CreatedAt = timestamp((*source).CreatedAt)
@@ -1206,7 +1206,7 @@ func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResourc
 		siteapiSiteEventResource.SubjectId = (*source).SubjectID
 		siteapiSiteEventResource.Email = optNilString((*source).Email)
 		siteapiSiteEventResource.Action = (*source).Action
-		siteapiSiteEventResource.Properties = jsonObject((*source).Properties)
+		siteapiSiteEventResource.Properties = eventProperties(source)
 		// siteapiSiteEventResource.EmailSubject: ignore
 		siteapiSiteEventResource.OccurredAt = timestamp((*source).OccurredAt)
 		siteapiSiteEventResource.CreatedAt = timestamp((*source).CreatedAt)

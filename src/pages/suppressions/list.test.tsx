@@ -9,6 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSuppressionResource } from '../../generated/site/types.gen.ts'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -46,7 +47,7 @@ beforeEach(() => {
 
 function suppression(over: Partial<SiteSuppressionResource> = {}): SiteSuppressionResource {
   return {
-    id: '1',
+    id: testId(1),
     channel: 'email',
     destination: 'bounced@example.com',
     reason: 'bounce',
@@ -65,8 +66,8 @@ test('lists suppressed addresses with their reason', async () => {
   worker.use(
     list([
       suppression(),
-      suppression({ id: '2', destination: 'angry@example.com', reason: 'complaint' }),
-      suppression({ id: '3', destination: 'manual@example.com', reason: 'manual' }),
+      suppression({ id: testId(2), destination: 'angry@example.com', reason: 'complaint' }),
+      suppression({ id: testId(3), destination: 'manual@example.com', reason: 'manual' }),
     ]),
   )
   const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
@@ -82,7 +83,7 @@ test('a number erased with its Contact shows as an erased number, never as its h
   worker.use(
     list([
       suppression({ channel: 'sms', destination: '+14155550132', reason: 'manual' }),
-      suppression({ id: '2', channel: 'sms', destination: hash, reason: 'manual' }),
+      suppression({ id: testId(2), channel: 'sms', destination: hash, reason: 'manual' }),
     ]),
   )
   const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)

@@ -80,15 +80,15 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	// The paths the purge reads are in the body: the Contact id at its top level and under
 	// the data, the address under the data.
 	var payload struct {
-		ContactID int64 `json:"contactId"`
+		ContactID string `json:"contactId"`
 		Data      struct {
-			ContactID int64  `json:"contactId"`
+			ContactID string `json:"contactId"`
 			Email     string `json:"email"`
 		} `json:"data"`
 	}
 	require.NoError(t, json.Unmarshal(bystander, &payload))
-	assert.EqualValues(t, fixtures.ContactBystanderID, payload.ContactID)
-	assert.EqualValues(t, fixtures.ContactBystanderID, payload.Data.ContactID)
+	assert.Equal(t, testhelper.ID(fixtures.ContactBystanderID), payload.ContactID)
+	assert.Equal(t, testhelper.ID(fixtures.ContactBystanderID), payload.Data.ContactID)
 	assert.Equal(t, fixtures.ContactBystanderEmail, payload.Data.Email)
 	var numbered struct {
 		Data struct {

@@ -1,6 +1,7 @@
 import type { WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import { expect, test } from 'vitest'
 
+import { testId } from '../../test/payloads.ts'
 import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationStep } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
@@ -343,7 +344,7 @@ test("the saved snapshot changes with the name, the trigger, the steps or a step
   const graph = stepsToGraph(on('contact.created'), STEPS, {})
   const saved = automationSnapshot('Welcome', graph)
   const [first, ...rest] = STEPS
-  const throughRelay = [{ ...first, type: 'email' as const, integrationId: '21' }, ...rest]
+  const throughRelay = [{ ...first, type: 'email' as const, integrationId: testId(21) }, ...rest]
 
   expect(automationSnapshot('  Welcome ', graph)).toBe(saved)
   expect(automationSnapshot('Welcome 2', graph)).not.toBe(saved)
@@ -363,7 +364,7 @@ test("the saved snapshot changes with the name, the trigger, the steps or a step
 
 test('each email step keeps the Integration it names, and one that names none sends through the default', () => {
   const steps: AutomationStep[] = [
-    { type: 'email', integrationId: '21', subject: 'First', body: '<p>1</p>' },
+    { type: 'email', integrationId: testId(21), subject: 'First', body: '<p>1</p>' },
     { type: 'wait', seconds: 60 },
     { type: 'email', subject: 'Second', body: '<p>2</p>' },
   ]
@@ -371,7 +372,7 @@ test('each email step keeps the Integration it names, and one that names none se
 
   expect(graph.nodes.map((n) => n.data.properties.integrationId)).toEqual([
     undefined,
-    '21',
+    testId(21),
     undefined,
     '',
   ])

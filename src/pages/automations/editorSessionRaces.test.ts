@@ -14,6 +14,7 @@ import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { zSiteUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { requestGate } from '../../test/requestGate.ts'
 import { worker } from '../../test/worker.ts'
@@ -24,7 +25,7 @@ import type { AutomationContent, AutomationOperation } from './editorSession.ts'
 
 type OperationEvent = { type: 'PUBLISH'; current: string } | { type: 'REVERT' }
 
-const PATH = { workspaceId: 'TestWs01', id: '5' }
+const PATH = { workspaceId: 'TestWs01', id: testId(5) }
 const DRAFT = {
   number: 2,
   triggerEvent: 'email.clicked',
@@ -34,7 +35,7 @@ const DRAFT = {
 }
 const RESOURCE: SiteAutomationResource = {
   revision: 1,
-  id: '5',
+  id: testId(5),
   name: 'Welcome flow',
   status: 'active',
   live: { ...DRAFT, number: 1 },

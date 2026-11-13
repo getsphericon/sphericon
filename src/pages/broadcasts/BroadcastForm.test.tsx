@@ -13,6 +13,7 @@ import {
 import type { SiteSendCap } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
+import { testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -25,11 +26,11 @@ const DOC = {
   content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello there' }] }],
 }
 
-const template = (id: string, subject: string, doc: object | null = null) => ({
-  id,
-  name: `Template ${id}`,
+const template = (n: number, subject: string, doc: object | null = null) => ({
+  id: testId(n),
+  name: `Template ${n}`,
   subject,
-  body: `<p>${id}</p>`,
+  body: `<p>${n}</p>`,
   doc,
   editorVersion: doc ? '1.7.14' : null,
   createdAt: '2026-01-01T00:00:00Z',
@@ -62,7 +63,7 @@ const VIPS = {
 
 // The Workspace's one Integration: email is the Channel a new Broadcast is offered.
 const EMAIL_INTEGRATION = {
-  id: '1',
+  id: testId(1),
   name: 'Primary SMTP',
   channel: 'email' as const,
   provider: 'smtp' as const,
@@ -101,7 +102,10 @@ function serve(
   worker.use(
     handleSiteWorkspacesList({ body: [{ ...workspace, sendCap }] }),
     handleSiteSegmentsList(() =>
-      HttpResponse.json({ items: [{ id: '9', name: 'VIPs', condition: VIPS }], totalItems: 1 }),
+      HttpResponse.json({
+        items: [{ id: testId(9), name: 'VIPs', condition: VIPS }],
+        totalItems: 1,
+      }),
     ),
     handleSiteTemplatesList(() =>
       HttpResponse.json({ items: templates, totalItems: templates.length }),
@@ -110,14 +114,14 @@ function serve(
     handleSiteIntegrationsList({ body: [EMAIL_INTEGRATION] }),
     handleSiteBroadcastsCreate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '42', name: 'x' }, { status: 201 })
+      return HttpResponse.json({ id: testId(42), name: 'x' }, { status: 201 })
     }),
   )
 }
 
 test('picking a template copies its subject and document, and saves the document only', async () => {
   const bodies: unknown[] = []
-  serve([template('1', 'Welcome aboard', DOC)], bodies)
+  serve([template(1, 'Welcome aboard', DOC)], bodies)
   const screen = await openEmailEditor()
 
   await screen.getByLabelText(/^Name/).fill('Launch')
@@ -136,7 +140,7 @@ test('picking a template copies its subject and document, and saves the document
 
 test('a template written as HTML is copied as source and saves its body only', async () => {
   const bodies: unknown[] = []
-  serve([template('2', 'Plain')], bodies)
+  serve([template(2, 'Plain')], bodies)
   const screen = await openEmailEditor()
 
   await screen.getByLabelText(/^Name/).fill('Launch')
@@ -153,7 +157,7 @@ test('a template written as HTML is copied as source and saves its body only', a
 })
 
 test('a template without a subject keeps the subject already typed', async () => {
-  serve([template('3', '')])
+  serve([template(3, '')])
   const screen = await openEmailEditor()
 
   await screen.getByLabelText(/^Subject/).fill('My subject')
@@ -259,7 +263,7 @@ test('the Send cap warning does not stop the Broadcast from being saved', async 
 
 const TELEGRAM_INTEGRATION = {
   ...EMAIL_INTEGRATION,
-  id: '2',
+  id: testId(2),
   name: 'News bot',
   channel: 'telegram' as const,
   provider: 'telegram' as const,
@@ -289,7 +293,7 @@ test('a Telegram broadcast is written as a text and saved under its Channel', as
     .toEqual([
       {
         name: 'News',
-        integrationId: '2',
+        integrationId: testId(2),
         content: {
           channel: 'telegram',
           text: 'Hello <b>{{ first_name }}</b>',
@@ -373,12 +377,15 @@ test('a Telegram broadcast is warned about by its recipients, not by every conta
   await expect
     .element(screen.getByText(/12,000 contacts.*Send cap.*about 2 days/))
     .toBeInTheDocument()
-  expect(previews).toEqual([{ channel: 'telegram' }, { channel: 'telegram', integrationId: '2' }])
+  expect(previews).toEqual([
+    { channel: 'telegram' },
+    { channel: 'telegram', integrationId: testId(2) },
+  ])
 })
 
 const SMS_INTEGRATION = {
   ...EMAIL_INTEGRATION,
-  id: '3',
+  id: testId(3),
   name: 'Acme Twilio',
   channel: 'sms' as const,
   provider: 'twilio' as const,
@@ -424,7 +431,7 @@ test('an SMS broadcast is written as a plain text and saved under its Channel', 
     .toEqual([
       {
         name: 'Flash sale',
-        integrationId: '3',
+        integrationId: testId(3),
         content: { channel: 'sms', text: 'Hi {{ first_name }}, 20% off', linkTracking: true },
       },
     ])
@@ -455,7 +462,7 @@ test('an SMS broadcast counts its links as short links and may keep them as writ
     .toEqual([
       {
         name: 'Flash sale',
-        integrationId: '3',
+        integrationId: testId(3),
         content: { channel: 'sms', text, linkTracking: false },
       },
     ])

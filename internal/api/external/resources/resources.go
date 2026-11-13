@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
+
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
 
@@ -381,6 +383,7 @@ type Converter interface {
 	ContactToExport(source *ent.Contact) externalapi.ContactExportContact
 	TagToExport(source *ent.Tag) externalapi.ContactExportTag
 	VisitorToExport(source *ent.Visitor) externalapi.ContactExportVisitor
+	// goverter:map . Properties | eventProperties
 	EventToExport(source *ent.Event) externalapi.ContactExportEvent
 	UnsubscribeToExport(source *ent.Unsubscribe) externalapi.ContactExportUnsubscribe
 	SuppressionToExport(source *ent.Suppression) externalapi.ContactExportSuppression
@@ -606,6 +609,12 @@ func nilFloat64(v *float64) externalapi.NilFloat64 {
 //
 // goverter:context windowDays
 func windowDaysOf(windowDays int32) int32 { return windowDays }
+
+// eventProperties is an Event's properties as a client sees them, a System event's keys by their
+// public form (systemevent.PublicProperties).
+func eventProperties(e *ent.Event) externalapi.OptNilJsonObject {
+	return jsonObject(systemevent.PublicProperties(e.Action, e.Properties))
+}
 
 func jsonObject(m map[string]any) externalapi.OptNilJsonObject {
 	return convert.OptObject[externalapi.OptNilJsonObject](convert.RawObject[externalapi.JsonObject](m))

@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	"github.com/samber/do/v2"
 
 	"net/http/httptest"
@@ -90,6 +92,23 @@ var (
 	cleaner *dbcleaner.Cleaner
 	errLoad error
 )
+
+// FixtureIDKey is the id key of the fixtures' Instance row (fixtures/instance_state.yml), which a
+// test process seals and opens the public ids with (internal/kernel/publicid), as the server does
+// with its database's key.
+var FixtureIDKey = []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+
+// The blank variable sets the fixtures' id key while the package is initialized, before any test
+// package's variables are built, so one may hold a public id (ID).
+var _ = func() bool {
+	if err := publicid.Use(FixtureIDKey); err != nil {
+		panic(err)
+	}
+	return true
+}()
+
+// ID is the public form of a key, as the APIs show it and a raw request's path names it.
+func ID[N ~int64 | ~int](key N) string { return publicid.Encode(int64(key)) }
 
 func initBaseline() {
 	once.Do(func() {

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/stretchr/testify/assert"
@@ -48,7 +50,7 @@ func TestDecodeRejectsMalformedClaims(t *testing.T) {
 
 func TestDecodeUnsubRejectsMalformedClaims(t *testing.T) {
 	tr := newTracker()
-	ok := jwt.MapClaims{"ch": "email", "src": "broadcasts", "dest": "a@b.com", "ws": "1", "cid": "2", "bid": "3"}
+	ok := jwt.MapClaims{"ch": "email", "src": "broadcasts", "dest": "a@b.com", "ws": publicid.Encode(1), "cid": publicid.Encode(2), "bid": publicid.Encode(3)}
 	with := func(k string, v any) jwt.MapClaims {
 		c := jwt.MapClaims{}
 		maps.Copy(c, ok)
@@ -91,7 +93,7 @@ func TestDecodeConfirmRejectsMalformedClaims(t *testing.T) {
 	tr := newTracker()
 	exp := time.Now().Add(time.Hour).Unix()
 	with := func(k string, v any) jwt.MapClaims {
-		c := jwt.MapClaims{"dest": "a@b.com", "ws": "1", "cid": "2", "exp": exp}
+		c := jwt.MapClaims{"dest": "a@b.com", "ws": publicid.Encode(1), "cid": publicid.Encode(2), "exp": exp}
 		if v == nil {
 			delete(c, k)
 		} else {

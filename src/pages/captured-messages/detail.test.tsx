@@ -7,20 +7,24 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteCapturedMessageResource } from '../../generated/site/types.gen.ts'
 import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { CapturedMessagePage } from './detail.tsx'
 
-const MESSAGE_ROUTE = routeMount(capturedMessageRoute, { workspaceId: 'TestWs01', messageId: '1' })
+const MESSAGE_ROUTE = routeMount(capturedMessageRoute, {
+  workspaceId: 'TestWs01',
+  messageId: testId(1),
+})
 
 const HTML = '<p>Hello <a href="https://t.test/e/c/abc">click</a></p>'
 
 const MESSAGE: SiteCapturedMessageResource = {
-  id: '1',
-  integrationId: '5',
-  outboundMessageId: '9',
+  id: testId(1),
+  integrationId: testId(5),
+  outboundMessageId: testId(9),
   surface: 'transactional',
   sendingSource: null,
   recipient: 'alice@example.com',

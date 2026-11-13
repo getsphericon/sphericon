@@ -12,6 +12,7 @@ import {
 import { siteAutomationsGet } from '../../generated/site/sdk.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { zSiteUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
+import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { worker } from '../../test/worker.ts'
 import { stepsToGraph } from './definition.ts'
@@ -19,7 +20,7 @@ import type { AutomationGraph } from './definition.ts'
 import { applyHttpIdentities, automationSubmission, editorSession } from './editorSession.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
-const PATH = { workspaceId: 'TestWs01', id: '5' }
+const PATH = { workspaceId: 'TestWs01', id: testId(5) }
 const DRAFT = {
   number: 2,
   triggerEvent: 'email.clicked',
@@ -29,7 +30,7 @@ const DRAFT = {
 }
 const RESOURCE: SiteAutomationResource = {
   revision: 1,
-  id: '5',
+  id: testId(5),
   name: 'Welcome flow',
   status: 'active',
   live: { ...DRAFT, number: 1 },
