@@ -16,7 +16,7 @@ func (s *Schema) Funcs() template.FuncMap {
 		// entities lists every entity with its table and kind: the manifest of kinds.
 		"entities": s.Entities,
 		// scopedNodes lists the Workspace-owned entities.
-		"scopedNodes": func() []*gen.Type { return s.nodes(func(k Kind) bool { return k.WorkspaceOwned }) },
+		"scopedNodes": func() []*gen.Type { return s.nodes(func(k schema.Kind) bool { return k.WorkspaceOwned }) },
 		"scopedIs":    func(t *gen.Type) bool { return s.kind(t).WorkspaceOwned },
 		// kindOf is the kind of n.
 		"kindOf": s.kind,
@@ -30,7 +30,7 @@ func (s *Schema) Funcs() template.FuncMap {
 		// the pointer operations (<N>Pointers) that internal/drafts runs the lifecycle on.
 		"versioned": func(n *gen.Type) bool { return s.kind(n).Versioned },
 		// versionedNodes lists the Versioned definitions.
-		"versionedNodes": func() []*gen.Type { return s.nodes(func(k Kind) bool { return k.Versioned }) },
+		"versionedNodes": func() []*gen.Type { return s.nodes(func(k schema.Kind) bool { return k.Versioned }) },
 		// versionOf returns the version entity of a Versioned definition.
 		"versionOf": func(n *gen.Type) *gen.Type { return s.entities[n].version },
 		// versionOwnerField returns the version's column that names its owner (automation_id).
@@ -63,15 +63,15 @@ func (s *Schema) Funcs() template.FuncMap {
 }
 
 // kind is the kind of n.
-func (s *Schema) kind(n *gen.Type) Kind {
+func (s *Schema) kind(n *gen.Type) schema.Kind {
 	if e, ok := s.entities[n]; ok {
 		return e.kind
 	}
-	return Kind{}
+	return schema.Kind{}
 }
 
 // nodes lists the entities whose kind matches, in the graph's order.
-func (s *Schema) nodes(match func(Kind) bool) []*gen.Type {
+func (s *Schema) nodes(match func(schema.Kind) bool) []*gen.Type {
 	var out []*gen.Type
 	for _, n := range s.graph.Nodes {
 		if match(s.entities[n].kind) {

@@ -12,27 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/schema"
 )
 
-// Kind is what the schema makes of an entity: the kinds its mixins declare with their markers
-// (ent/schema/kinds.go), and Singleton, which its structure gives.
-type Kind struct {
-	// WorkspaceOwned: the entity takes WorkspaceMixin and is reached through the scoped client.
-	WorkspaceOwned bool
-	// Archivable: it takes ArchiveMixin (ADR 0100).
-	Archivable bool
-	// Discardable: it takes DiscardMixin (ADR 0049, ADR 0100).
-	Discardable bool
-	// Versioned: it takes VersionedMixin, a Versioned definition (ADR 0065).
-	Versioned bool
-	// Revised: it takes RevisionMixin and has a revision (ADR 0119).
-	Revised bool
-	// Singleton: a Workspace-owned entity with a whole unique index on its Workspace column alone,
-	// so a Workspace holds at most one of its rows.
-	Singleton bool
-}
-
 // Entity is one entity of the schema, its table and its kind: a line of the manifest of kinds.
 type Entity struct {
-	Kind
+	schema.Kind
 
 	Name, Table string
 }
@@ -64,7 +46,7 @@ type Schema struct {
 // entity is what the classification knows of one node.
 type entity struct {
 	node *gen.Type
-	kind Kind
+	kind schema.Kind
 	// workspace is the Workspace column of a Workspace-owned entity, revision the revision of one
 	// with a revision, timestamps the moments of TimeMixin.
 	workspace  *gen.Field

@@ -111,7 +111,8 @@ func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 {{ $A := auditOf $n }}
 {{ $D := discardable $n }}
 {{ $R := archivable $n }}
-{{ $Del := "Delete" }}{{ if or $D $R }}{{ $Del = "Purge" }}{{ end }}
+{{ $Aside := (kindOf $n).PutAside }}
+{{ $Del := "Delete" }}{{ if $Aside }}{{ $Del = "Purge" }}{{ end }}
 
 // {{ $N }}Scoped reaches {{ $N }} entities of one Workspace.
 type {{ $N }}Scoped struct{ s *Scoped }
@@ -232,7 +233,7 @@ type {{ $N }}ScopedDeleteOne struct {
 	b *{{ $N }}DeleteOne
 }
 
-// {{ $Del }}OneID {{ if or $D $R }}physically removes{{ else }}deletes{{ end }} the {{ $N }} with the id; a row of another Workspace is not found.
+// {{ $Del }}OneID {{ if $Aside }}physically removes{{ else }}deletes{{ end }} the {{ $N }} with the id; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) {{ $Del }}OneID(id int64) *{{ $N }}ScopedDeleteOne {
 	return &{{ $N }}ScopedDeleteOne{s: t.s, b: t.s.c.{{ $N }}.DeleteOneID(id).Where({{ $P }}.WorkspaceID(t.s.ws))}
 }
@@ -270,7 +271,7 @@ type {{ $N }}ScopedDelete struct {
 	b *{{ $N }}Delete
 }
 
-// {{ $Del }} {{ if or $D $R }}physically removes{{ else }}deletes{{ end }} the {{ $N }} entities of the Workspace that match the predicates.
+// {{ $Del }} {{ if $Aside }}physically removes{{ else }}deletes{{ end }} the {{ $N }} entities of the Workspace that match the predicates.
 func (t *{{ $N }}Scoped) {{ $Del }}() *{{ $N }}ScopedDelete {
 	return &{{ $N }}ScopedDelete{s: t.s, b: t.s.c.{{ $N }}.Delete().Where({{ $P }}.WorkspaceID(t.s.ws))}
 }

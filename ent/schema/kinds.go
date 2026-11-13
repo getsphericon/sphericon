@@ -29,6 +29,30 @@ const (
 	DraftVersionEdge = "draft_version"
 )
 
+// Kind is what the schema makes of an entity: the kinds its mixins declare with their markers, and
+// Singleton, which its structure gives. internal/entgen classifies every entity into one, and the
+// manifest of kinds (ent.Kinds) carries it.
+type Kind struct {
+	// WorkspaceOwned: the entity takes WorkspaceMixin and is reached through the scoped client
+	// (ADR 0017).
+	WorkspaceOwned bool
+	// Archivable: it takes ArchiveMixin (ADR 0100).
+	Archivable bool
+	// Discardable: it takes DiscardMixin (ADR 0049, ADR 0100).
+	Discardable bool
+	// Versioned: it takes VersionedMixin, a Versioned definition (ADR 0065).
+	Versioned bool
+	// Revised: it takes RevisionMixin and has a revision (ADR 0119).
+	Revised bool
+	// Singleton: a Workspace-owned entity with a whole unique index on WorkspaceColumn alone, so a
+	// Workspace holds at most one of its rows.
+	Singleton bool
+}
+
+// PutAside reports whether a row of the kind is put aside, archived or discarded, rather than
+// deleted (ADR 0100): its scoped wrapper has Purge instead of Delete.
+func (k Kind) PutAside() bool { return k.Archivable || k.Discardable }
+
 // WorkspaceOwned is the kind WorkspaceMixin gives: the entity belongs to a Workspace and is reached
 // through the scoped client (ADR 0017).
 type WorkspaceOwned struct{}

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/internal/entgen"
 )
 
@@ -74,8 +75,8 @@ func TestClassifyGivesEachEntityItsKind(t *testing.T) {
 	s, problems := load(t, "./"+filepath.Join("testdata", "kinds"))
 	require.Empty(t, problems)
 
-	kinds := lo.SliceToMap(s.Entities(), func(e entgen.Entity) (string, entgen.Kind) { return e.Name, e.Kind })
-	assert.Equal(t, map[string]entgen.Kind{
+	kinds := lo.SliceToMap(s.Entities(), func(e entgen.Entity) (string, schema.Kind) { return e.Name, e.Kind })
+	assert.Equal(t, map[string]schema.Kind{
 		"Workspace":         {},
 		"Plain":             {},
 		"Owned":             {WorkspaceOwned: true},
@@ -96,11 +97,11 @@ func TestTheSchemaBreaksNoRule(t *testing.T) {
 	require.Empty(t, lo.Map(problems, func(p entgen.Problem, _ int) string { return p.String() }))
 	entities := lo.SliceToMap(s.Entities(), func(e entgen.Entity) (string, entgen.Entity) { return e.Name, e })
 	assert.Equal(t, "automations", entities["Automation"].Table)
-	assert.Equal(t, entgen.Kind{WorkspaceOwned: true, Archivable: true, Versioned: true, Revised: true}, entities["Automation"].Kind)
-	assert.Equal(t, entgen.Kind{WorkspaceOwned: true, Discardable: true, Versioned: true, Revised: true}, entities["Rule"].Kind)
-	assert.Equal(t, entgen.Kind{WorkspaceOwned: true, Revised: true, Singleton: true}, entities["BrandKit"].Kind)
-	assert.Equal(t, entgen.Kind{WorkspaceOwned: true, Singleton: true}, entities["SendCapLimiter"].Kind)
-	assert.Equal(t, entgen.Kind{WorkspaceOwned: true}, entities["OAuthCode"].Kind)
-	assert.Equal(t, entgen.Kind{Discardable: true, Revised: true}, entities["Workspace"].Kind)
-	assert.Equal(t, entgen.Kind{}, entities["EventJournalEntry"].Kind)
+	assert.Equal(t, schema.Kind{WorkspaceOwned: true, Archivable: true, Versioned: true, Revised: true}, entities["Automation"].Kind)
+	assert.Equal(t, schema.Kind{WorkspaceOwned: true, Discardable: true, Versioned: true, Revised: true}, entities["Rule"].Kind)
+	assert.Equal(t, schema.Kind{WorkspaceOwned: true, Revised: true, Singleton: true}, entities["BrandKit"].Kind)
+	assert.Equal(t, schema.Kind{WorkspaceOwned: true, Singleton: true}, entities["SendCapLimiter"].Kind)
+	assert.Equal(t, schema.Kind{WorkspaceOwned: true}, entities["OAuthCode"].Kind)
+	assert.Equal(t, schema.Kind{Discardable: true, Revised: true}, entities["Workspace"].Kind)
+	assert.Equal(t, schema.Kind{}, entities["EventJournalEntry"].Kind)
 }

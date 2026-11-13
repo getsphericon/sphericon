@@ -35,7 +35,7 @@ func TestDiscardableEntityHasDiscardAndNoDeleteOrUndiscard(t *testing.T) {
 // An entity neither archived nor discarded is deleted: its scoped wrapper has Delete and none of
 // the operations of a row put aside (ADR 0049).
 func TestDeletableEntityHasDeleteAndNoDiscardOrArchive(t *testing.T) {
-	deletable := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return !e.Discardable && !e.Archivable })
+	deletable := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return !e.PutAside() })
 	require.NotEmpty(t, deletable, "the Tag is deleted")
 	for _, e := range deletable {
 		wrapper := e.Wrapper

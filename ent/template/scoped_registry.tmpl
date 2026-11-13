@@ -65,7 +65,7 @@ type ScopedRef struct {
 func ScopedEntities() []ScopedEntity {
 	return []ScopedEntity{
 		{{- range $n := scopedNodes }}{{ if $n.HasOneFieldID }}
-		{{- $N := $n.Name }}{{ $P := $n.Package }}{{ $Del := "Delete" }}{{ if or (discardable $n) (archivable $n) }}{{ $Del = "Purge" }}{{ end }}
+		{{- $N := $n.Name }}{{ $P := $n.Package }}{{ $Del := "Delete" }}{{ if (kindOf $n).PutAside }}{{ $Del = "Purge" }}{{ end }}
 		{
 			Kind: Kinds["{{ $N }}"],
 			Name: "{{ $N }}",

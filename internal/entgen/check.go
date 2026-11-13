@@ -98,7 +98,7 @@ func (c *checker) check(n *gen.Type) {
 	for _, f := range n.Fields {
 		c.checkField(n, e, f)
 	}
-	if k.Archivable || k.Discardable {
+	if k.PutAside() {
 		for _, idx := range n.Indexes {
 			if idx.Unique && !c.partial(n, idx) {
 				mark, _ := decode[schema.UniqueOverAll](c, n.Name, idx.Annotations)
@@ -116,7 +116,7 @@ const uniqueNotPartial = "a unique index of an archivable or discardable entity 
 
 func (c *checker) checkVersioned(n *gen.Type, e *entity) {
 	k := e.kind
-	if !k.WorkspaceOwned || !k.Archivable && !k.Discardable {
+	if !k.WorkspaceOwned || !k.PutAside() {
 		c.add(Problem{Entity: n.Name, Rule: RuleVersionedKind,
 			Message: "a Versioned definition needs WorkspaceMixin and either ArchiveMixin or DiscardMixin (ADR 0100)"})
 	}
@@ -145,7 +145,7 @@ func (c *checker) checkField(n *gen.Type, e *entity, f *gen.Field) {
 			"take RevisionMixin or drop the annotation")
 	}
 	c.checkRef(f, a, problem)
-	if (e.kind.Archivable || e.kind.Discardable) && f.Unique && (a.unique == nil || strings.TrimSpace(a.unique.Reason) == "") {
+	if e.kind.PutAside() && f.Unique && (a.unique == nil || strings.TrimSpace(a.unique.Reason) == "") {
 		problem(RuleUniqueNotPartial, "a unique field of an archivable or discardable entity holds the value of a row put aside for ever: "+
 			"make it a partial unique index, or say why it holds over every row with schema.UniqueOverAll{Reason: ...}")
 	}
