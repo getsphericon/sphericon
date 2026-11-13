@@ -7,9 +7,11 @@
 //   - A latch field is set only inside the closure passed to `lifecycle.Latch`, conditioned on
 //     `<Field>IsNil()`, and is never cleared.
 //
-// The form of a field is read from the constants ent/entc.go generates into the ent package
-// (`ent.StateForm<Entity><Field>`), so a new state column is covered by its annotation, not by a list
-// kept here. The check covers update and upsert builders, not creation: a row created in its first
+// The form of a field is read from the constants the generation writes into the ent package
+// (`ent.StateForm<Entity><Field>`), and the field a builder method writes from its manifest of roles
+// (`ent.SetsState_<Type>_<Method>` and `ent.ClearsState_<Type>_<Method>`, read through entx), so a new
+// state column or builder method is covered by the generator, not by a list kept here. The generator
+// declares them for the update and upsert builders only, not creation: a row created in its first
 // state makes no move. Test code is not read, as by entrywrite: test files, the test harness
 // (internal/testhelper, which builds a fixture's state directly) and the end-to-end suite (e2e/). The
 // generated ent package is not read either: its Archive, Unarchive and Discard and a Versioned
@@ -35,17 +37,6 @@ import (
 // lifecyclePath is the package of the machine and latch primitives.
 const lifecyclePath = "github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 
-// writerSuffixes name the builders that change an existing row: updates, their scoped wrappers and
-// the update side of an upsert, longest first.
-var writerSuffixes = []string{
-	"ScopedUpdateOne", "ScopedUpsertBulk", "ScopedUpsertOne", "ScopedUpdate", "ScopedUpsert",
-	"UpdateOne", "UpsertBulk", "UpsertOne", "Update", "Upsert",
-}
-
-// verbs are the builder method prefixes that write a field, longest first. Clear is the only one that
-// empties it.
-var verbs = []string{"SetNillable", "Set", "Clear", "Update"}
-
 const (
 	formMachine = "machine"
 	formLatch   = "latch"
@@ -62,7 +53,7 @@ var Analyzer = &analysis.Analyzer{
 // write is one builder method that writes a declared state field.
 type write struct {
 	method string // SetVerifiedAt
-	verb   string // Set
+	clears bool   // ClearVerifiedAt
 	field  string // VerifiedAt
 	entity string // SendingDomain
 	form   string // machine or latch
@@ -118,7 +109,7 @@ func unread(path string) bool {
 }
 
 func checkLatch(pass *analysis.Pass, sel *ast.SelectorExpr, w write, stack []ast.Node) {
-	if w.verb == "Clear" {
+	if w.clears {
 		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(7,
 			fmt.Sprintf("%s clears the latch %s.%s, and a latch is never cleared", w.method, w.entity, w.field),
 			"a fact recorded once stays recorded: a new fact is a new row, or the field is a machine (schema.Machine)"))
@@ -170,29 +161,16 @@ func declaredWrite(pass *analysis.Pass, sel *ast.SelectorExpr) (write, bool) {
 	if !ok {
 		return write{}, false
 	}
-	var entity string
-	for _, suffix := range writerSuffixes {
-		if e, cut := strings.CutSuffix(named.Obj().Name(), suffix); cut && e != "" {
-			entity = e
-			break
-		}
-	}
-	if entity == "" {
+	field, clears, ok := entx.StateWrite(named, sel.Sel.Name)
+	if !ok {
 		return write{}, false
 	}
-	method := sel.Sel.Name
-	for _, verb := range verbs {
-		field, cut := strings.CutPrefix(method, verb)
-		if !cut || field == "" {
-			continue
-		}
-		form := stateForm(named.Obj().Pkg(), entity, field)
-		if form == "" {
-			return write{}, false
-		}
-		return write{method: method, verb: verb, field: field, entity: entity, form: form}, true
+	entity := entx.EntityOf(named)
+	form := stateForm(named.Obj().Pkg(), entity, field)
+	if form == "" {
+		return write{}, false
 	}
-	return write{}, false
+	return write{method: sel.Sel.Name, clears: clears, field: field, entity: entity, form: form}, true
 }
 
 // stateForm reads the generated ent.StateForm<Entity><Field>, or "" when the field is no machine or latch.

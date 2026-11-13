@@ -102,7 +102,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   scoped client produces) is recorded only by `events.RecordAudit(ctx, pub, entry)` in the transaction of
   the change: a call of `RecordAudit` on any other receiver is a finding. Package `events` calls it
   unqualified for the generated wrappers; `ent/` and `gen/` are not read.
-- **Rule 7, a state is moved by a conditional write.** Each state-shaped field in `ent/schema` carries `schema.Machine()`, `schema.Latch()` or `schema.Attribute(reason)`, a `schema.State` (`ent/schema/state.go`, ADR 0109); the generation (`internal/entgen`) fails on a `_at` field, a `status` or `state` enum or a bool without one. It generates the machine and latch fields into `ent/stateform.go`, and the analyzer `statemoment` reads them: a machine field is set or cleared only inside the `Write` of a `lifecycle.Storage{...}` literal, with a `.Where(...)` on the state it leaves (a machine constructor takes the `lifecycle.Storage` from its caller, as `secondfactors.Machine` does), and a latch only inside the closure passed to `lifecycle.Latch`, conditioned on `<Field>IsNil()`, and never cleared. A lost race is `lifecycle.ErrInvalidTransition`, which the caller handles. Creation, the generated `ent` package and test code (the harness included) are not checked.
+- **Rule 7, a state is moved by a conditional write.** Each state-shaped field in `ent/schema` carries `schema.Machine()`, `schema.Latch()` or `schema.Attribute(reason)`, a `schema.State` (`ent/schema/state.go`, ADR 0109); the generation (`internal/entgen`) fails on a `_at` field, a `status` or `state` enum or a bool without one. It generates the machine and latch fields into `ent/stateform.go`, with the methods of the update and upsert builders that set or clear each (`SetsState_<Type>_<Method>`, `ClearsState_<Type>_<Method>`, the manifest of roles), and the analyzer `statemoment` reads them, never a method's name: a machine field is set or cleared only inside the `Write` of a `lifecycle.Storage{...}` literal, with a `.Where(...)` on the state it leaves (a machine constructor takes the `lifecycle.Storage` from its caller, as `secondfactors.Machine` does), and a latch only inside the closure passed to `lifecycle.Latch`, conditioned on `<Field>IsNil()`, and never cleared. A lost race is `lifecycle.ErrInvalidTransition`, which the caller handles. Creation, the generated `ent` package and test code (the harness included) are not checked.
 - **Rule 10, `testwrites`.** A call to an ent `Create` or `CreateBulk` builder (the raw client, a transaction's client
   or a scoped wrapper) in a `_test.go` file, `e2e/` included (the lint run sets the `e2e` tag), needs
   `// test writes: <why the write is the operation under test>` on the line above its statement or trailing on
@@ -115,25 +115,36 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   to the entity from any other package is a finding, as is a write to an entity the map does not name (a
   new entity names its owner in the change that adds it; a test of the analyzer fails when the map and
   `ent/schema` differ or an owner's directory is gone, so a moved package updates the map). A write is a
-  call that starts a mutation (`Create`, `CreateBulk`, `MapCreateBulk`, `Update`, `UpdateOne`,
-  `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`), an upsert (`OnConflict`, `OnConflictColumns`,
-  `OnConflictColumnsWhere`), a soft-delete move (`Archive`, `Unarchive`, `Discard`, `Purge`, `PurgeOneID`)
-  or a Versioned definition's `Pointers` and their moves, on a type of the `ent` package (the raw client, a
-  transaction, the scoped client and its wrappers); a generic function instantiated with an ent write
-  builder writes that builder's entity where it is instantiated. The one writer besides the owner is the
+  call of a method the manifest of roles (`ent/roles.go`, below) says starts one: a mutation of the raw
+  client, a transaction or the scoped wrappers, an upsert, a soft-delete move or a Versioned definition's
+  `Pointers` and their moves, counted once per receiver chain; a generic function instantiated with a type
+  whose kind builds a write writes that type's entity where it is instantiated. The one writer besides the owner is the
   Workspace erase (`internal/usecase/workspacedeletion`, ADR 0110), which may delete or purge a
   Workspace-owned table's rows through its scoped wrapper and write nothing else. The moves of `ent.VersionedStore` are not
-  read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/versioneddefinition`. Not
+  read as writes: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/versioneddefinition`. Not
   read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
   function of the owner that makes the write, which the writer calls. An entry point (a driver of
   `tools/analyzers/tier`) does not write through ent at all: there every write is a finding worded for the
   entry point. The HTTP handlers (`tier.IsHandler`: `internal/api/site`, `external`, `collect`, `staff`,
-  `oauth`, `tracking`, `hooks`, `tlsask` and `ee/api`) do not read through ent either: a `Get`, `GetX`, a
-  `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a function of the
+  `oauth`, `tracking`, `hooks`, `tlsask` and `ee/api`) do not read through ent either: a method whose role
+  starts a read (a `Get`, a `Query…` method, the scoped client's `Workspace`) there is a finding, and the read is a function of the
   module that owns the entity; the other entry points may read. Nor does a handler there open a transaction
   (a `Within…` method of the events bus): the module it calls does. The wiring, the router in
   `internal/server` included, is no entry point. The helpers the analyzers share about the generated
-  package are in `tools/analyzers/entx`.
+  package are in `tools/analyzers/entx`, which reads the manifest of roles the generator declares in
+  `ent`: `TypeOf_<Type>` (what a type is: an entity, a client, a builder of a create, an update, a delete
+  or an upsert, raw or scoped, a wrapper, a Versioned definition's pointers) and `EntityOf_<Type>`
+  for every exported type, `RoleOf_<Type>_<Method>` (a read, the start of a write, a step of a write
+  already started, or none) for every exported method a template of `ent/template` emits and for the
+  methods of ent's own types that start a read or a write (`ent/template/roles.tmpl`), and the state
+  writes above. A template declares the constants beside each type and method it emits;
+  `ent/schema/roles_test.go` fails on an exported type or a template's exported method without its
+  entry, on an entry that names nothing, and on the analyzers' stand-ins of `ent` when they break the
+  same rules. A new generated method gets its role in the change that adds it, or the test fails.
+- **`entityupdate`.** A loaded entity carries the raw client, so its `Update()` writes past the
+  Workspace scope (ADR 0017): a method that starts a write on a type the manifest calls an entity is a
+  finding in every package of the module, test code included, but the generated `ent`. Update by id
+  through the scoped client instead: `s.Tag().UpdateOneID(id)`.
 - **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
   `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function
   other than `New`, a `New` that returns anything but `*UseCase`, an exported type other than `UseCase`

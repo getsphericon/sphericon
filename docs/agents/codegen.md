@@ -14,7 +14,7 @@ typespec/{site,external,collect,staff,staffee,service,telemetry}   ──tsp com
   openapi/telemetry ──ogen──▶ gen/telemetry   (Go client only, `ogen.telemetry.yml`; embedded in `spec.go`, checked by `internal/telemetryschema`)
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
-ent/schema/*.go + ent/template/*.tmpl  ──entc + internal/entgen──▶ ent/scoped*.go (scoped client: `client.Scoped(ws)`), ent/kinds.go (the manifest of kinds), ent/stateform.go, ent/revision.go
+ent/schema/*.go + ent/template/*.tmpl  ──entc + internal/entgen──▶ ent/scoped*.go (scoped client: `client.Scoped(ws)`), ent/kinds.go (the manifest of kinds), ent/roles.go (the manifest of roles), ent/stateform.go, ent/revision.go
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/api/staff/resources/{staff,service}_converter_gen.go
 ent + liveuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/api/problem/mapping/converter_gen.go  (rendered by internal/api/problem)
 gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/kernel/patch fields)
@@ -56,6 +56,16 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   the Revision hook the types with a revision (`internal/app/entclient`), and the scoped client's
   registry (`ent.ScopedEntities`) carries each entity's kind and wrapper type, which the tests of
   `internal/scopedclient` choose their entities by.
+- **The manifest of roles** (constants of `ent`, read by the analyzers of `tools/analyzers` through
+  `go/types`): `TypeOf_<Type>` and `EntityOf_<Type>` for every exported type (what it is and the
+  entity it belongs to), `RoleOf_<Type>_<Method>` (`RoleRead`, `RoleStart`, `RoleWrite` or `RoleNone`)
+  for every exported method a template emits and for the reads and writes ent's own methods start, and
+  `SetsState_`/`ClearsState_<Type>_<Method>` for the update and upsert methods that write a machine or
+  latch field. `ent/template/roles.tmpl` declares ent's own types (`ent/roles.go`) and `stateform.tmpl`
+  their state writes; every other template declares its constants beside the type or method it emits.
+  A template that adds an exported method adds its role there: `ent/schema/roles_test.go` fails on a
+  method without one, on an entry that names nothing, and on the analyzers' stand-ins of `ent` that break
+  the same rules.
 - **goverter** also maps request bodies → module inputs (`Inputs` in each surface's
   `resources/inputs.go`): an update becomes the module's patch (`internal/kernel/patch`: an absent key
   keeps, null clears, a value sets). Its extends only bind this surface's Opt types to the shared

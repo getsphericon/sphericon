@@ -100,6 +100,13 @@ type ScopedRef struct {
 }
 
 // ScopedEntities lists every Workspace-owned entity.
+const (
+	TypeOf_ScopedEntity   = TypeOther
+	EntityOf_ScopedEntity = ""
+	TypeOf_ScopedRef      = TypeOther
+	EntityOf_ScopedRef    = ""
+)
+
 func ScopedEntities() []*ScopedEntity {
 	return []*ScopedEntity{
 		{

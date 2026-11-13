@@ -13,6 +13,11 @@ type Kind struct {
 	Table string
 }
 
+const (
+	TypeOf_Kind   = TypeOther
+	EntityOf_Kind = ""
+)
+
 // Kinds is the Kind of every entity, by its schema name.
 var Kinds = map[string]Kind{
 	"ApiToken":             {Table: "api_tokens", Kind: schema.Kind{WorkspaceOwned: true}},

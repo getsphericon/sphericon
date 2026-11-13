@@ -144,21 +144,6 @@ linters:
     forbidigo:
       analyze-types: true
       forbid:
-        # ADR 0017: an entity loaded through the scoped client still carries the raw
-        # client, so `entity.Update()` bypasses the scope. Update by id through the
-        # scoped client instead (`s.Tag().UpdateOneID(id)`). With analyze-types the
-        # matched text is `<package>.<Type>.<Method>`; the entity method is
-        # `ent.<Entity>.Update`. The legitimate `ent.<Entity>Client.Update`,
-        # `ent.<Entity>Scoped.Update` and the upsert builders (`...UpsertOne`,
-        # `...UpsertBulk`, i.e. `.OnConflict...().Update(fn)`) must not match.
-        # RE2 has no negative lookahead, so the alternation below is "an `ent` type
-        # name that does not end in Client, Scoped, UpsertOne or UpsertBulk" (the
-        # suffixes spelled out char by char), plus the entity OAuthClient, whose own
-        # name ends in Client. ent/schema/forbidigo_pattern_test.go checks this
-        # pattern against every generated entity and builder type.
-        - pattern: '^ent\.(OAuthClient|\w*[^dekt]|\w*[^e]d|\w*[^p]ed|\w*[^o]ped|\w*[^c]oped|\w*[^S]coped|\w*[^n]e|\w*[^O]ne|\w*[^t]One|\w*[^r]tOne|\w*[^e]rtOne|\w*[^s]ertOne|\w*[^p]sertOne|\w*[^U]psertOne|\w*[^l]k|\w*[^u]lk|\w*[^B]ulk|\w*[^t]Bulk|\w*[^r]tBulk|\w*[^e]rtBulk|\w*[^s]ertBulk|\w*[^p]sertBulk|\w*[^U]psertBulk|\w*[^n]t|\w*[^e]nt|\w*[^i]ent|\w*[^l]ient|\w*[^C]l[i]ent)\.Update$'
-          pkg: '^github\.com/getsphericon/sphericon/ent$'
-          msg: entity-level Update() bypasses the workspace scope; use the scoped client's UpdateOneID (ADR 0017)
         # ADR 0065: the pointers of a Versioned definition (an Automation's or a Rule's live and
         # draft versions) and its state move only through the lifecycle in
         # internal/domain/content/versioneddefinition, which calls the generated <N>Pointers through

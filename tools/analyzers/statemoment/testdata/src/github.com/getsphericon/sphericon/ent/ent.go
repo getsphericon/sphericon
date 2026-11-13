@@ -1,5 +1,6 @@
-// Package ent is a stub of the generated ent package: the forms ent/entc.go declares and the builders
-// that write them.
+// Package ent is a stand-in of the generated ent package: the forms ent/schema declares, the builders
+// that write them (this file and scoped.go) and the manifest of roles that names what each writes
+// (roles.go), which ent/schema/roles_test.go holds to the rules of the real one.
 package ent
 
 import (
@@ -14,6 +15,8 @@ const (
 
 type Predicate struct{}
 
+type SendingDomain struct{}
+
 type SendingDomainUpdateOne struct{}
 
 func (x *SendingDomainUpdateOne) Where(...Predicate) *SendingDomainUpdateOne         { return x }
@@ -21,13 +24,6 @@ func (x *SendingDomainUpdateOne) SetVerifiedAt(time.Time) *SendingDomainUpdateOn
 func (x *SendingDomainUpdateOne) ClearVerifiedAt() *SendingDomainUpdateOne           { return x }
 func (x *SendingDomainUpdateOne) SetLastCheckedAt(time.Time) *SendingDomainUpdateOne { return x }
 func (*SendingDomainUpdateOne) Save(context.Context) (int, error)                    { return 0, nil }
-
-type SendingDomainScopedUpdateOne struct{}
-
-func (x *SendingDomainScopedUpdateOne) Where(...Predicate) *SendingDomainScopedUpdateOne { return x }
-func (x *SendingDomainScopedUpdateOne) SetVerifiedAt(time.Time) *SendingDomainScopedUpdateOne {
-	return x
-}
 
 type SendingDomainUpsert struct{}
 
@@ -37,6 +33,8 @@ type SendingDomainCreate struct{}
 
 func (x *SendingDomainCreate) SetVerifiedAt(time.Time) *SendingDomainCreate { return x }
 
+type Invitation struct{}
+
 type InvitationUpdate struct{}
 
 func (x *InvitationUpdate) Where(...Predicate) *InvitationUpdate               { return x }
@@ -44,6 +42,8 @@ func (x *InvitationUpdate) SetAcceptedAt(time.Time) *InvitationUpdate          {
 func (x *InvitationUpdate) ClearAcceptedAt() *InvitationUpdate                 { return x }
 func (x *InvitationUpdate) SetNillableAcceptedAt(*time.Time) *InvitationUpdate { return x }
 func (*InvitationUpdate) Save(context.Context) (int, error)                    { return 0, nil }
+
+type Tag struct{}
 
 type TagUpdateOne struct{}
 

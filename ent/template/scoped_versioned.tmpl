@@ -67,6 +67,22 @@ type VersionedStore[O, V any] interface {
     DeleteVersion(ctx context.Context, id, versionID int64) error
 }
 
+// The store is the owner's <N>Pointers, bound where the owner called Pointers, which started the
+// write: a move on it carries that write on.
+const (
+	TypeOf_VersionPosition               = TypeOther
+	EntityOf_VersionPosition             = ""
+	TypeOf_VersionState                  = TypeOther
+	EntityOf_VersionState                = ""
+	TypeOf_VersionedStore                = TypeOther
+	EntityOf_VersionedStore              = ""
+	RoleOf_VersionedStore_Load           = RoleRead
+	RoleOf_VersionedStore_Read           = RoleRead
+	RoleOf_VersionedStore_Newest         = RoleRead
+	RoleOf_VersionedStore_CompareAndSwap = RoleWrite
+	RoleOf_VersionedStore_DeleteVersion  = RoleWrite
+)
+
 {{ range $n := $nodes }}
 {{ $N := $n.Name }}
 {{ $P := $n.Package }}
@@ -103,6 +119,8 @@ func ({{ $n.Receiver }} *{{ $N }}) VersionState() VersionState[{{ $N }}, {{ $V.N
     return st
 }
 
+const RoleOf_{{ $N }}_VersionState = RoleNone
+
 // {{ $N }}Pointers are the operations on the live and draft pointers and the state of the
 // Workspace's {{ $N }} rows, a Versioned definition. internal/domain/content/versioneddefinition is their one caller.
 type {{ $N }}Pointers struct {
@@ -115,6 +133,18 @@ type {{ $N }}Pointers struct {
 func (t *{{ $N }}Scoped) Pointers(with ...func(*{{ $V.Name }}Query)) *{{ $N }}Pointers {
 	return &{{ $N }}Pointers{t: t, with: with}
 }
+
+// Pointers starts the write of a Versioned definition's position, and each move on them starts one.
+const (
+	TypeOf_{{ $N }}Pointers               = TypePointers
+	EntityOf_{{ $N }}Pointers             = "{{ $N }}"
+	RoleOf_{{ $N }}Scoped_Pointers        = RoleStart
+	RoleOf_{{ $N }}Pointers_Load           = RoleRead
+	RoleOf_{{ $N }}Pointers_Read           = RoleRead
+	RoleOf_{{ $N }}Pointers_Newest         = RoleRead
+	RoleOf_{{ $N }}Pointers_CompareAndSwap = RoleStart
+	RoleOf_{{ $N }}Pointers_DeleteVersion  = RoleStart
+)
 
 func (p *{{ $N }}Pointers) query(id int64) *{{ $N }}Query {
 	return p.t.QueryWith{{ if $R }}Archived{{ else }}Discarded{{ end }}().Where({{ $P }}.ID(id)).WithLiveVersion(p.with...).WithDraftVersion(p.with...)

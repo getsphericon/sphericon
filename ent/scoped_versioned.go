@@ -58,6 +58,22 @@ type VersionedStore[O, V any] interface {
 	DeleteVersion(ctx context.Context, id, versionID int64) error
 }
 
+// The store is the owner's <N>Pointers, bound where the owner called Pointers, which started the
+// write: a move on it carries that write on.
+const (
+	TypeOf_VersionPosition               = TypeOther
+	EntityOf_VersionPosition             = ""
+	TypeOf_VersionState                  = TypeOther
+	EntityOf_VersionState                = ""
+	TypeOf_VersionedStore                = TypeOther
+	EntityOf_VersionedStore              = ""
+	RoleOf_VersionedStore_Load           = RoleRead
+	RoleOf_VersionedStore_Read           = RoleRead
+	RoleOf_VersionedStore_Newest         = RoleRead
+	RoleOf_VersionedStore_CompareAndSwap = RoleWrite
+	RoleOf_VersionedStore_DeleteVersion  = RoleWrite
+)
+
 var _ VersionedStore[Automation, AutomationVersion] = (*AutomationPointers)(nil)
 
 // VersionState returns the Automation's state and the versions loaded on its edges.
@@ -82,6 +98,8 @@ func (_m *Automation) VersionState() VersionState[Automation, AutomationVersion]
 	return st
 }
 
+const RoleOf_Automation_VersionState = RoleNone
+
 // AutomationPointers are the operations on the live and draft pointers and the state of the
 // Workspace's Automation rows, a Versioned definition. internal/domain/content/versioneddefinition is their one caller.
 type AutomationPointers struct {
@@ -94,6 +112,18 @@ type AutomationPointers struct {
 func (t *AutomationScoped) Pointers(with ...func(*AutomationVersionQuery)) *AutomationPointers {
 	return &AutomationPointers{t: t, with: with}
 }
+
+// Pointers starts the write of a Versioned definition's position, and each move on them starts one.
+const (
+	TypeOf_AutomationPointers                = TypePointers
+	EntityOf_AutomationPointers              = "Automation"
+	RoleOf_AutomationScoped_Pointers         = RoleStart
+	RoleOf_AutomationPointers_Load           = RoleRead
+	RoleOf_AutomationPointers_Read           = RoleRead
+	RoleOf_AutomationPointers_Newest         = RoleRead
+	RoleOf_AutomationPointers_CompareAndSwap = RoleStart
+	RoleOf_AutomationPointers_DeleteVersion  = RoleStart
+)
 
 func (p *AutomationPointers) query(id int64) *AutomationQuery {
 	return p.t.QueryWithArchived().Where(automation.ID(id)).WithLiveVersion(p.with...).WithDraftVersion(p.with...)
@@ -224,6 +254,8 @@ func (_m *Rule) VersionState() VersionState[Rule, RuleVersion] {
 	return st
 }
 
+const RoleOf_Rule_VersionState = RoleNone
+
 // RulePointers are the operations on the live and draft pointers and the state of the
 // Workspace's Rule rows, a Versioned definition. internal/domain/content/versioneddefinition is their one caller.
 type RulePointers struct {
@@ -236,6 +268,18 @@ type RulePointers struct {
 func (t *RuleScoped) Pointers(with ...func(*RuleVersionQuery)) *RulePointers {
 	return &RulePointers{t: t, with: with}
 }
+
+// Pointers starts the write of a Versioned definition's position, and each move on them starts one.
+const (
+	TypeOf_RulePointers                = TypePointers
+	EntityOf_RulePointers              = "Rule"
+	RoleOf_RuleScoped_Pointers         = RoleStart
+	RoleOf_RulePointers_Load           = RoleRead
+	RoleOf_RulePointers_Read           = RoleRead
+	RoleOf_RulePointers_Newest         = RoleRead
+	RoleOf_RulePointers_CompareAndSwap = RoleStart
+	RoleOf_RulePointers_DeleteVersion  = RoleStart
+)
 
 func (p *RulePointers) query(id int64) *RuleQuery {
 	return p.t.QueryWithDiscarded().Where(rule.ID(id)).WithLiveVersion(p.with...).WithDraftVersion(p.with...)
