@@ -249,6 +249,23 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 	})
 }
 
+// A bot connected again before the release of its deleted Integration's webhook runs keeps the
+// webhook of the new Integration: the release leaves a bot that a kept Integration holds.
+func TestSiteTelegramReconnectedBeforeTheReleaseKeepsItsWebhook(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	row, token := connectedTelegram(t, env, c)
+	err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+	require.NoError(t, err)
+	_, err = createTelegram(t, c, token)
+	require.NoError(t, err)
+
+	env.PerformEnqueuedJobs(t, integrations.ReleaseWebhookArgs{})
+
+	released := env.Telegram.RequestsOf(telegramtest.DeleteWebhook)
+	assert.Empty(t, released, "the new Integration keeps the bot's webhook")
+}
+
 func TestSiteTelegramHookChecksTheSecret(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)

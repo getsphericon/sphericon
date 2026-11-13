@@ -25,8 +25,8 @@ func NewReleaseWebhookWorker(client *ent.Client, mod *integrations.Module) *Rele
 }
 
 // Work releases the webhook of the Integration the deletion queued the job for
-// (integrations.Module.ReleaseWebhook), best effort. An Integration gone since, with its Workspace's
-// erase, is nothing to do.
+// (integrations.Module.ReleaseWebhook), best effort, unless a kept Integration holds the bot again.
+// An Integration gone since, with its Workspace's erase, is nothing to do.
 func (w *ReleaseWebhookWorker) Work(ctx context.Context, job *river.Job[integrations.ReleaseWebhookArgs]) error {
 	row, err := w.ent.Integration.Get(ctx, job.Args.IntegrationID)
 	if ent.IsNotFound(err) {
@@ -35,6 +35,5 @@ func (w *ReleaseWebhookWorker) Work(ctx context.Context, job *river.Job[integrat
 	if err != nil {
 		return err
 	}
-	w.integrations.ReleaseWebhook(ctx, row)
-	return nil
+	return w.integrations.ReleaseWebhook(ctx, w.ent, row)
 }

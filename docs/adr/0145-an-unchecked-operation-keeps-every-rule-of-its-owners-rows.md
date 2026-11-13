@@ -20,7 +20,8 @@ that call them:
   and `sendingdomaindeletion` (`row.DiscardedAt != nil`), while `integrationsunchecked.DeleteIn`
   answered a deleted Integration with `integrations.ErrNotFound`.
 - Releasing a deleted Telegram bot's webhook was `integrations.Module.ReleaseDeleted`, a duty of the
-  owner after the commit, exported for `integrationdeletion` alone, which had to remember to call it.
+  owner after the commit, exported for `integrationdeletion` alone, which had to remember to call
+  it.
   A crash between the commit and the call left the bot's webhook in place.
 - Each use case read the subject through its owner (`tags.Get`, `contacts.CustomField`,
   `integrations.Module.Get`, `sendingdomains.Module.Get`) only to hand a field to the Removal check.
@@ -37,10 +38,10 @@ that call them:
   what the row's own rules refuse (an unknown id, a refused name, a stale revision), and a removal
   that can repeat reports its no-op (`Done`): the two discards, of an Integration and of a Sending
   domain. A Tag is deleted outright, so a second deletion finds none, and a Custom field edit that
-  changes nothing is still a write, as before. The operation exposes what the Removal check reads (`Name`, `Domain`, `Key` with
-  `Retype`), the use case runs that check, and `Apply` writes, taking the time and an
-  `events.Enqueuer` where it needs them. `Apply` keeps the owner's rules itself: applied to a
-  deletion that is `Done`, it writes and queues nothing.
+  changes nothing is still a write, as before. The operation exposes what the Removal check reads
+  (`Name`, `Domain`, `Key` with `Retype`), the use case runs that check, and `Apply` writes, taking
+  the time and an `events.Enqueuer` where it needs them. `Apply` keeps the owner's rules itself:
+  applied to a deletion that is `Done`, it writes and queues nothing.
 - **The owner's work after the commit is a job queued in the same transaction.** A deletion of a
   Telegram Integration that held its webhook (enabled) queues `integrations.ReleaseWebhookArgs` in
   the discard's transaction (`WithinWorkspaceLockEnqueueTx`), so the release runs iff the discard
@@ -48,11 +49,12 @@ that call them:
   is, and calls `integrations.Module.ReleaseWebhook`, which releases only a deleted Telegram
   Integration. The release stays best effort, as on disabling a bot: a refusal of Telegram is
   logged and the job ends, since a revoked token never succeeds and a retry later could take the
-  webhook of a bot connected again meanwhile. The job runs as soon as the queue picks it up, but a
-  bot whose token is connected to a new Integration before then loses the new one's webhook, a
-  window the release right after the commit kept shorter. The bot of a token is known only from the
-  sealed config, so no guard reads it. The release in `integrations.Module.Update` (a bot
-  disabled or given a new token) stays where it is, after its own commit.
+  webhook of a bot connected again meanwhile. The job runs once the queue picks it up, so the
+  bot may be connected again before then: the release is skipped when a kept, enabled Telegram
+  Integration of any Workspace is of the same bot (the token's id before the colon, read from its
+  sealed config with the job's raw client, as `DueForQuotaRefresh` reads across Workspaces). The
+  release in `integrations.Module.Update` (a bot disabled or given a new token) stays where it is,
+  after its own commit.
 - **The four use cases stay four** (`tagdeletion`, `customfieldretyping`, `integrationdeletion`,
   `sendingdomaindeletion`), each reduced to lock, open, Removal check, apply:
   - a fold into one has no name in the glossary: a retype is no removal;

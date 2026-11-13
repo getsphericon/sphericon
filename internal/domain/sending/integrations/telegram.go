@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram"
@@ -131,6 +132,37 @@ func (m *Module) release(ctx context.Context, row *ent.Integration) {
 		return
 	}
 	m.releaseToken(ctx, row.ID, cfg.Token)
+}
+
+// heldByAnother reports whether a kept, enabled Telegram Integration other than the one of the id,
+// in any Workspace, is of the bot of token: one that holds the bot's webhook now. A bot is known by
+// its id, the token's part before the colon, which a new token of the bot keeps. An Integration
+// whose config does not open is passed over: it cannot be told apart.
+func (m *Module) heldByAnother(ctx context.Context, client *ent.Client, id int64, token string) (bool, error) {
+	kept, err := client.Integration.Query().
+		Where(integration.ProviderEQ(providers.Telegram), integration.DiscardedAtIsNil(), integration.Enabled(true), integration.IDNEQ(id)).
+		All(ctx)
+	if err != nil {
+		return false, err
+	}
+	bot := botOf(token)
+	for _, other := range kept {
+		cfg, err := m.telegramConfigOf(other)
+		if err != nil {
+			slog.WarnContext(ctx, "telegram: open the config of a kept bot failed", "integration_id", other.ID, "err", err)
+			continue
+		}
+		if botOf(cfg.Token) == bot {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// botOf is the bot id a token is of: its part before the colon (telegram.ValidToken).
+func botOf(token string) string {
+	bot, _, _ := strings.Cut(strings.TrimSpace(token), ":")
+	return bot
 }
 
 // releaseToken removes the webhook of token's bot, best effort.
