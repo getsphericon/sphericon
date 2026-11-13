@@ -78,8 +78,10 @@ with `usersunchecked.DeleteIn`, which publishes `UserDeleted`.
 What stays unchecked lives in `<module>unchecked` (ADR 0110). A write is left unchecked only
 when its check needs a module its owner may not call: one in a higher context, or several at
 once; otherwise the check moves into the owner. It still checks its own input (ADR 0107); what it
-leaves to the use case is the rule across modules. Such a write is a package-level function of a
-subpackage of its owner named `<module>unchecked`
+leaves to the use case is the rule across modules, and it keeps every rule of its owner's rows
+(ADR 0145): where the use case's rule reads the row, the write is an operation opened on the row,
+checked, then applied, otherwise a package-level function. Either lives in a subpackage of its
+owner named `<module>unchecked`
 (`internal/domain/contacts/tags/tagsunchecked`), which may import its owner and which the owner
 does not import; the owner exports for it only what writes nothing (a state table such as
 `workspaces.DeletionCycle` or `secondfactors.Machine`, a compare-and-swap condition, an Audit

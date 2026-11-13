@@ -53,9 +53,6 @@ func (d *Deletion) Apply(ctx context.Context, at time.Time, q events.Enqueuer) e
 		return nil
 	}
 	if err := d.l.Integration().Discard(ctx, d.row.ID, at); err != nil {
-		if ent.IsNotFound(err) {
-			return integrations.ErrNotFound
-		}
 		return err
 	}
 	if !integrations.HoldsWebhook(d.row) {

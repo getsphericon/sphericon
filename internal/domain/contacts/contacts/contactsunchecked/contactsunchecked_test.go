@@ -42,7 +42,8 @@ func plan(t *testing.T, env *testhelper.TestEnv) *ent.CustomField {
 
 func TestApplyingARetypeChangesTheTypeOfTheField(t *testing.T) {
 	env := testhelper.Setup(t)
-	in := contacts.CustomFieldUpdateInput{Revision: plan(t, env).Revision, Type: patch.Set(string(customfield.TypeNumber))}
+	before := plan(t, env)
+	in := contacts.CustomFieldUpdateInput{Revision: before.Revision, Type: patch.Set(string(customfield.TypeNumber))}
 	var key string
 	var retype customfield.Type
 	var retypes bool

@@ -2,6 +2,7 @@ package integrationsunchecked_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -44,18 +45,28 @@ func integration(t *testing.T, env *testhelper.TestEnv, id int64) *ent.Integrati
 	return row
 }
 
-// releases is the Integrations whose webhook release is queued.
-func releases(t *testing.T, env *testhelper.TestEnv) []float64 {
+// releases is the webhook releases queued, as their job's args.
+func releases(t *testing.T, env *testhelper.TestEnv) []integrations.ReleaseWebhookArgs {
 	t.Helper()
 	queued := env.JobsOf(t, integrations.ReleaseWebhookArgs{}.Kind())
-	ids := make([]float64, 0, len(queued))
+	out := make([]integrations.ReleaseWebhookArgs, 0, len(queued))
 	for _, args := range queued {
-		id, ok := args["integration_id"].(float64)
-		require.True(t, ok, "a release names its Integration")
-		ids = append(ids, id)
+		encoded, err := json.Marshal(args)
+		require.NoError(t, err)
+		var release integrations.ReleaseWebhookArgs
+		require.NoError(t, json.Unmarshal(encoded, &release))
+		out = append(out, release)
 	}
-	return ids
+	return out
 }
+
+// applyThenRefuse applies the deletion it is handed, then fails its transaction with errRefused,
+// as a refusal after the write would.
+func applyThenRefuse(ctx context.Context, d *integrationsunchecked.Deletion, q events.Enqueuer) error {
+	return errors.Join(apply(ctx, d, q), errRefused)
+}
+
+var errRefused = errors.New("refused after the apply")
 
 // A deleted Integration gives up its Channel's default in the statement that discards it.
 func TestApplyingTheDeletionOfAKeptIntegrationDiscardsItAndGivesUpTheDefault(t *testing.T) {
@@ -72,7 +83,8 @@ func TestApplyingTheDeletionOfAKeptIntegrationDiscardsItAndGivesUpTheDefault(t *
 	row := integration(t, env, fixtures.IntegrationAcmeDefaultID)
 	assert.NotNil(t, row.DiscardedAt)
 	assert.False(t, row.IsDefault)
-	assert.Empty(t, releases(t, env), "an email Integration holds no webhook")
+	queued := releases(t, env)
+	assert.Empty(t, queued, "an email Integration holds no webhook")
 }
 
 // Deleting a deleted Integration changes nothing: the deletion reports it done, and applying it
@@ -92,7 +104,8 @@ func TestTheDeletionOfADeletedIntegrationIsDone(t *testing.T) {
 	after := integration(t, env, fixtures.IntegrationAcmeArchivedID)
 	assert.Equal(t, before.DiscardedAt.UTC(), after.DiscardedAt.UTC(), "the first deletion's moment stays")
 	assert.Equal(t, before.Revision, after.Revision)
-	assert.Empty(t, releases(t, env))
+	queued := releases(t, env)
+	assert.Empty(t, queued)
 }
 
 // The bot of a deleted Telegram Integration lets go of its webhook through a job queued in the
@@ -104,7 +117,9 @@ func TestTheDeletionOfATelegramIntegrationQueuesTheReleaseOfItsWebhook(t *testin
 		err := deletion(t, env, fixtures.IntegrationAcmeTelegramID, apply)
 
 		require.NoError(t, err)
-		assert.Equal(t, []float64{fixtures.IntegrationAcmeTelegramID}, releases(t, env))
+		queued := releases(t, env)
+		want := integrations.ReleaseWebhookArgs{WorkspaceID: fixtures.AcmeID, IntegrationID: fixtures.IntegrationAcmeTelegramID}
+		assert.Equal(t, []integrations.ReleaseWebhookArgs{want}, queued)
 	})
 
 	t.Run("a disabled bot holds no webhook", func(t *testing.T) {
@@ -114,22 +129,18 @@ func TestTheDeletionOfATelegramIntegrationQueuesTheReleaseOfItsWebhook(t *testin
 		err := deletion(t, env, fixtures.IntegrationAcmeTelegramID, apply)
 
 		require.NoError(t, err)
-		assert.Empty(t, releases(t, env))
+		queued := releases(t, env)
+		assert.Empty(t, queued)
 	})
 
 	t.Run("a deletion rolled back", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		refused := errors.New("refused after the apply")
 
-		err := deletion(t, env, fixtures.IntegrationAcmeTelegramID, func(ctx context.Context, d *integrationsunchecked.Deletion, q events.Enqueuer) error {
-			if err := apply(ctx, d, q); err != nil {
-				return err
-			}
-			return refused
-		})
+		err := deletion(t, env, fixtures.IntegrationAcmeTelegramID, applyThenRefuse)
 
-		require.ErrorIs(t, err, refused)
-		assert.Empty(t, releases(t, env))
+		require.ErrorIs(t, err, errRefused)
+		queued := releases(t, env)
+		assert.Empty(t, queued)
 		kept := integration(t, env, fixtures.IntegrationAcmeTelegramID)
 		assert.Nil(t, kept.DiscardedAt)
 	})

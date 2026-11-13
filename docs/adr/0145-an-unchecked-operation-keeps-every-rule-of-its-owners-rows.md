@@ -34,8 +34,10 @@ that call them:
   opened on its row.** The owner's subpackage opens it under the lock it is given and reads the row
   (`tagsunchecked.DeletionIn`, `integrationsunchecked.DeletionIn`,
   `sendingdomainsunchecked.DeletionIn`, `contactsunchecked.CustomFieldUpdateIn`). Opening refuses
-  what the row's own rules refuse (an unknown id, a refused name, a stale revision) and reports a
-  no-op (`Done`). The operation exposes what the Removal check reads (`Name`, `Domain`, `Key` with
+  what the row's own rules refuse (an unknown id, a refused name, a stale revision), and a removal
+  that can repeat reports its no-op (`Done`): the two discards, of an Integration and of a Sending
+  domain. A Tag is deleted outright, so a second deletion finds none, and a Custom field edit that
+  changes nothing is still a write, as before. The operation exposes what the Removal check reads (`Name`, `Domain`, `Key` with
   `Retype`), the use case runs that check, and `Apply` writes, taking the time and an
   `events.Enqueuer` where it needs them. `Apply` keeps the owner's rules itself: applied to a
   deletion that is `Done`, it writes and queues nothing.
@@ -46,7 +48,10 @@ that call them:
   is, and calls `integrations.Module.ReleaseWebhook`, which releases only a deleted Telegram
   Integration. The release stays best effort, as on disabling a bot: a refusal of Telegram is
   logged and the job ends, since a revoked token never succeeds and a retry later could take the
-  webhook of a bot connected again meanwhile. The release in `integrations.Module.Update` (a bot
+  webhook of a bot connected again meanwhile. The job runs as soon as the queue picks it up, but a
+  bot whose token is connected to a new Integration before then loses the new one's webhook, a
+  window the release right after the commit kept shorter. The bot of a token is known only from the
+  sealed config, so no guard reads it. The release in `integrations.Module.Update` (a bot
   disabled or given a new token) stays where it is, after its own commit.
 - **The four use cases stay four** (`tagdeletion`, `customfieldretyping`, `integrationdeletion`,
   `sendingdomaindeletion`), each reduced to lock, open, Removal check, apply:
