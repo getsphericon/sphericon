@@ -17,7 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 )
 
 // publishErased publishes the contact.erased of an Erasure in Initech.
@@ -99,9 +98,10 @@ func TestAnErasuresHashesAreStoredSealedAndSurviveARotation(t *testing.T) {
 	require.NoError(t, err)
 	rotated, err := secrets.NewCipher(rotatedKeyset)
 	require.NoError(t, err)
-	_, err = secretreencryption.New(erasures.SecretSweeps(env.DB), rotated).Run(ctx)
+	sweeps := erasures.SecretSweeps(env.DB)
+	_, err = rotated.Reencrypt(ctx, sweeps...)
 	require.NoError(t, err)
-	again, err := secretreencryption.New(erasures.SecretSweeps(env.DB), rotated).Run(ctx)
+	again, err := rotated.Reencrypt(ctx, sweeps...)
 	require.NoError(t, err)
 	for _, c := range again {
 		assert.Zero(t, c.Rewritten, "%s: a second run rewrites nothing", c.Column)

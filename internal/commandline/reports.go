@@ -1,5 +1,6 @@
 // Package commandline is the command line's driver package (ADR 0111): what the commands of the
-// `sphericon` binary (cmd/server) print, and the keyset changes they make. A command reads its
+// `sphericon` binary (cmd/server) print, the keyset changes they make, and the Event history they
+// read and replay, which names a Workspace by the id an operator types. A command reads its
 // arguments, calls one operation of a domain module or a use case, which returns a value
 // (ADR 0104), and writes it here; this package is where that logic is tested, since a command has
 // none.

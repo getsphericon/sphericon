@@ -1,6 +1,7 @@
-package secretreencryption_test
+package commandline_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -13,6 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -22,19 +25,22 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// reencrypt runs `sphericon encryption-key reencrypt` the way the command does: cipher sweeps the
+// core owners' columns of stored secrets the wiring lists (app.SecretSweeps) over the test's raw
+// client, and the report of the run is written to out. It returns what the run counted and what
+// the report returned. The Enterprise Edition's columns are swept in its own tests.
+func reencrypt(ctx context.Context, env *testhelper.TestEnv, cipher *secrets.Cipher, out *bytes.Buffer) ([]secrets.Count, error) {
+	sweeps := app.SecretSweeps(env.DB)
+	counts, err := cipher.Reencrypt(ctx, sweeps...)
+	return counts, commandline.WriteReencryptionReport(out, counts, err)
+}
+
 func total(counts []secrets.Count, pick func(secrets.Count) int) int {
 	var n int
 	for _, c := range counts {
 		n += pick(c)
 	}
 	return n
-}
-
-func cipherFor(t *testing.T, keyset string) *secrets.Cipher {
-	t.Helper()
-	c, err := secrets.NewCipher(keyset)
-	require.NoError(t, err)
-	return c
 }
 
 // The operator's rotation end to end: rotate the keyset, re-encrypt, see a second run do nothing,
@@ -57,27 +63,31 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 
 	rotatedKeyset, err := secrets.Rotate(cfg.EncryptionKey)
 	require.NoError(t, err)
-	rotated := cipherFor(t, rotatedKeyset)
+	rotated := keysetCipher(t, rotatedKeyset)
 
 	// The fixtures were sealed under the old key; the rotated keyset still reads them.
-	integrations, err := env.DB.Integration.Query().All(ctx)
+	integrationRows, err := env.DB.Integration.Query().All(ctx)
 	require.NoError(t, err)
-	require.NotEmpty(t, integrations)
-	for _, row := range integrations {
+	require.NotEmpty(t, integrationRows)
+	for _, row := range integrationRows {
 		_, err := rotated.Decrypt(row.ConfigEncrypted)
 		require.NoError(t, err, "integration %d under the rotated keyset", row.ID)
 	}
 
-	counts, err := reencryption(env, rotated).Run(ctx)
+	var first bytes.Buffer
+	counts, err := reencrypt(ctx, env, rotated, &first)
 	require.NoError(t, err)
+	assert.Contains(t, first.String(), "run it once more", "a run that rewrote asks for another")
 	assert.Positive(t, total(counts, func(c secrets.Count) int { return c.Rewritten }))
 	assert.Zero(t, total(counts, func(c secrets.Count) int { return c.Raced }))
 	for _, c := range counts {
 		assert.Positive(t, c.Rewritten, "%s holds a fixture that was rewritten", c.Column)
 	}
 
-	again, err := reencryption(env, rotated).Run(ctx)
+	var second bytes.Buffer
+	again, err := reencrypt(ctx, env, rotated, &second)
 	require.NoError(t, err)
+	assert.Contains(t, second.String(), "the older keys can be retired", "a run that found everything current points to retire")
 	assert.Zero(t, total(again, func(c secrets.Count) int { return c.Rewritten }), "a second run is idempotent")
 	for i, c := range again {
 		assert.GreaterOrEqual(t, c.Current, counts[i].Rewritten, "%s: everything rewritten is current now", c.Column)
@@ -85,17 +95,17 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 
 	retiredKeyset, err := secrets.Retire(rotatedKeyset)
 	require.NoError(t, err)
-	retired := cipherFor(t, retiredKeyset)
+	retired := keysetCipher(t, retiredKeyset)
 
-	integrations, err = env.DB.Integration.Query().All(ctx)
+	integrationRows, err = env.DB.Integration.Query().All(ctx)
 	require.NoError(t, err)
-	for _, row := range integrations {
+	for _, row := range integrationRows {
 		_, err := retired.Decrypt(row.ConfigEncrypted)
 		require.NoError(t, err, "integration %d under the retired keyset", row.ID)
 	}
-	archivedIntegration := lo.ContainsBy(integrations, func(row *ent.Integration) bool { return row.ID == fixtures.IntegrationAcmeArchivedID })
+	archivedIntegration := lo.ContainsBy(integrationRows, func(row *ent.Integration) bool { return row.ID == fixtures.IntegrationAcmeArchivedID })
 	assert.True(t, archivedIntegration, "the archived Integration is re-encrypted too")
-	withParams := lo.Filter(integrations, func(row *ent.Integration, _ int) bool { return row.ParamsEncrypted != "" })
+	withParams := lo.Filter(integrationRows, func(row *ent.Integration, _ int) bool { return row.ParamsEncrypted != "" })
 	for _, row := range withParams {
 		_, err := retired.Decrypt(row.ParamsEncrypted)
 		require.NoError(t, err, "integration %d params", row.ID)
@@ -155,7 +165,7 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	assert.Equal(t, 2, slackVersions, "an older version is read along with the latest")
 
 	// The old keyset alone no longer reads the rewritten rows: the rotation took effect.
-	_, err = cipherFor(t, cfg.EncryptionKey).Decrypt(integrations[0].ConfigEncrypted)
+	_, err = keysetCipher(t, cfg.EncryptionKey).Decrypt(integrationRows[0].ConfigEncrypted)
 	assert.ErrorIs(t, err, secrets.ErrCiphertext)
 }
 
@@ -181,11 +191,11 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 
 	rotatedKeyset, err := secrets.Rotate(cfg.EncryptionKey)
 	require.NoError(t, err)
-	_, err = reencryption(env, cipherFor(t, rotatedKeyset)).Run(ctx)
+	_, err = reencrypt(ctx, env, keysetCipher(t, rotatedKeyset), &bytes.Buffer{})
 	require.NoError(t, err)
 	retiredKeyset, err := secrets.Retire(rotatedKeyset)
 	require.NoError(t, err)
-	opener := rules.New(cipherFor(t, retiredKeyset), env.Bus, nil, time.Now)
+	opener := rules.New(keysetCipher(t, retiredKeyset), env.Bus, nil, time.Now)
 
 	versions, err := env.DB.RuleVersion.Query().Where(ruleversion.RuleID(fixtures.RuleHTTPExecutionID)).All(ctx)
 	require.NoError(t, err)
@@ -213,10 +223,14 @@ func TestReencryptStopsOnAValueNoKeyReads(t *testing.T) {
 	ctx := context.Background()
 	foreign, err := secrets.GenerateKeysetBase64()
 	require.NoError(t, err)
-	foreignKey := cipherFor(t, foreign)
+	foreignKey := keysetCipher(t, foreign)
+	var out bytes.Buffer
 
-	counts, err := reencryption(env, foreignKey).Run(ctx)
+	counts, err := reencrypt(ctx, env, foreignKey, &out)
+
 	require.ErrorIs(t, err, secrets.ErrCiphertext)
-	require.ErrorContains(t, err, "integrations.config_encrypted")
+	require.ErrorContains(t, err, "re-encryption stopped: integrations.config_encrypted")
 	assert.Empty(t, counts)
+	assert.NotContains(t, out.String(), "run it once more")
+	assert.NotContains(t, out.String(), "can be retired")
 }

@@ -18,12 +18,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/doctor"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgradenote"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
-	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
@@ -36,8 +36,9 @@ type core interface {
 	SignUp() (*signup.UseCase, error)
 	StaffMembers() (*staffmembers.Module, error)
 	ServiceCredentials() (*servicecredentials.Module, error)
-	SecretReencryption() (*secretreencryption.UseCase, error)
-	EventHistory() (*eventhistory.UseCase, error)
+	SecretReencryption() (app.SecretReencryption, error)
+	Workspaces() (*workspaces.Module, error)
+	Bus() (*events.Bus, error)
 }
 
 // deps is what the commands reach outside themselves for.

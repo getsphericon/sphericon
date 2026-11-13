@@ -73,6 +73,7 @@ func TestCommandAppBuildsWhatTheCommandsCall(t *testing.T) {
 	assert.NotNil(t, built(a.StaffMembers()))
 	assert.NotNil(t, built(a.ServiceCredentials()))
 	assert.NotNil(t, built(a.SecretReencryption()))
+	assert.NotNil(t, built(a.Workspaces()))
 	assert.NotNil(t, built(a.Bus()))
 }
 
