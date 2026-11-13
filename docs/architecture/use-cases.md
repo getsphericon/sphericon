@@ -71,10 +71,11 @@ turns that into a cookie or a redirect); and User deletion
 (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
 or the Login throttle and the deletion link, then the Second factor code through
 `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),
-locks the User row and the Owner rows of its Workspaces (`memberships.SoleOwnershipIn`), refuses
-the only Owner of a live Workspace, leaves each Workspace (`memberships.LeaveIn`, or
-`membershipsunchecked.LeaveDoomedWorkspaceIn` for one in its deletion window) and deletes the row
-with `usersunchecked.DeleteIn`, which publishes `UserDeleted`.
+opens the deletion on the locked User row (`usersunchecked.DeletionIn`, which refuses a proof made
+before a password was set or removed), locks the Owner rows of its Workspaces
+(`memberships.SoleOwnershipIn`), refuses the only Owner of a live Workspace, leaves each Workspace
+(`memberships.LeaveIn`, or `membershipsunchecked.LeaveDoomedWorkspaceIn` for one in its deletion
+window) and applies the deletion last, which deletes the row and publishes `UserDeleted`.
 What stays unchecked lives in `<module>unchecked` (ADR 0110). A write is left unchecked only
 when its check needs a module its owner may not call: one in a higher context, or several at
 once; otherwise the check moves into the owner. It still checks its own input (ADR 0107); what it
@@ -101,8 +102,9 @@ use writes behind the Removal check (`tagsunchecked.Deletion`, the edit
 `sendingdomainsunchecked.Deletion`, each opened on its row, then checked by the use case and
 applied, ADR 0145), User deletion's removals
 (`membershipsunchecked.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
-deletion window leave, and the User row, `usersunchecked.DeleteIn`), the Second factor reset's
-removals (`secondfactorsunchecked.ResetIn`, the factor with its Recovery codes, and
+deletion window leave, and the User row, `usersunchecked.Deletion`, opened on its row like the
+Removal writes), the Second factor reset's removals (`secondfactorsunchecked.ResetIn`, the factor
+with its Recovery codes, and
 `passkeysunchecked.DeleteAllIn`), the restore and the tombstone of a Workspace's deletion cycle
 (`workspacesunchecked.RestoreIn` and `TombstoneIn`), the removal of the OAuth codes its erase
 makes (`oauthclientsunchecked.DeleteCodesIn`; the erase deletes a Workspace's rows itself, ADR

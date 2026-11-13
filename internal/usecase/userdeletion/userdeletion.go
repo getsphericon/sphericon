@@ -72,16 +72,16 @@ func New(bus *events.Bus, usersModule *users.Module, links *users.Links, factors
 //     so only if it commits; a wrong one is secondfactors.ErrDeletionCodeInvalid, counted like a
 //     wrong password.
 //
-// The transaction locks the User row, then the Owner rows of every Workspace the User belongs
-// to, in ascending Workspace id order, so two co-Owners deleting at once serialize on the
-// Workspace and cannot deadlock: the later one reads the earlier one's outcome. Only then does it
-// read the Memberships and Roles the decision rests on. It refuses with users.ErrSoleOwner
-// (naming the Workspaces) while the User is the only Owner of a Workspace that is not in its
-// deletion window (ADR 0043); a sole-owned Workspace in the window does not block and is erased on
-// schedule. The proof is re-checked on the locked row: a password set or removed since it was
-// read is users.ErrProofStale. Every Membership then goes through its Workspace's scope with the
-// User as actor of a `membership.delete` Audit entry, and the User row is deleted, which publishes
-// events.UserDeleted.
+// The transaction opens the User's deletion on its locked row (usersunchecked.DeletionIn), which
+// re-checks the proof there: a password set or removed since it was read is users.ErrProofStale.
+// It then locks the Owner rows of every Workspace the User belongs to, in ascending Workspace id
+// order, so two co-Owners deleting at once serialize on the Workspace and cannot deadlock: the
+// later one reads the earlier one's outcome. Only then does it read the Memberships and Roles the
+// decision rests on. It refuses with users.ErrSoleOwner (naming the Workspaces) while the User is
+// the only Owner of a Workspace that is not in its deletion window (ADR 0043); a sole-owned
+// Workspace in the window does not block and is erased on schedule. Every Membership then goes
+// through its Workspace's scope with the User as actor of a `membership.delete` Audit entry, and
+// the deletion is applied, which publishes events.UserDeleted.
 func (uc *UseCase) Delete(ctx context.Context, req Request) error {
 	u, err := uc.users.DeletionSubject(ctx, req.UserID, req.Email)
 	if err != nil {
@@ -102,7 +102,7 @@ func (uc *UseCase) Delete(ctx context.Context, req Request) error {
 	}
 
 	err = uc.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		return uc.deleteIn(ctx, tx, pub, u.ID, hadPassword, req.Code)
+		return uc.deleteIn(ctx, tx, pub, u, req.Code)
 	})
 	if errors.Is(err, secondfactors.ErrDeletionCodeInvalid) {
 		// The wrong code is counted like a wrong password (ADR 0025), after the rollback.
@@ -113,9 +113,10 @@ func (uc *UseCase) Delete(ctx context.Context, req Request) error {
 	return err
 }
 
-// deleteIn is the deletion's transaction tx, for the User userID whose proof read hadPassword.
-func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publisher, userID int64, hadPassword bool, code string) error {
-	u, err := users.LockIn(ctx, tx, userID)
+// deleteIn is the deletion's transaction tx, for the User proven as read for the proof.
+func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publisher, proven *ent.User, code string) error {
+	userID := proven.ID
+	deletion, err := usersunchecked.DeletionIn(ctx, tx, proven)
 	if err != nil {
 		return err
 	}
@@ -130,10 +131,7 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 	if len(live) > 0 {
 		return users.RefuseSoleOwner(live)
 	}
-	if (u.PasswordHash != "") != hadPassword {
-		return users.RefuseProofStale()
-	}
-	if err := uc.factors.DeletionCode(ctx, tx, pub, u, code); err != nil {
+	if err := uc.factors.DeletionCode(ctx, tx, pub, deletion.User(), code); err != nil {
 		return err
 	}
 	for _, m := range held {
@@ -148,5 +146,5 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 			return err
 		}
 	}
-	return usersunchecked.DeleteIn(ctx, tx, pub, u)
+	return deletion.Apply(ctx, pub)
 }

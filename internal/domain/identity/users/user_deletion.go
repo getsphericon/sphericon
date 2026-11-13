@@ -59,10 +59,6 @@ func RefuseSoleOwner(live []*ent.Workspace) error {
 	return &DeletionRefusedError{Reason: ErrSoleOwner, Workspaces: live}
 }
 
-// RefuseProofStale is the deletion refused because the proof no longer fits the User
-// (ErrProofStale), for the use case that reads the User under its lock.
-func RefuseProofStale() error { return refuseDeletion(ErrProofStale) }
-
 // DeletionSubject is the User userID who asks to delete themself, once typedEmail, the email
 // they typed to confirm, is theirs (ErrDeletionEmailMismatch otherwise).
 func (a *Module) DeletionSubject(ctx context.Context, userID int64, typedEmail string) (*ent.User, error) {
