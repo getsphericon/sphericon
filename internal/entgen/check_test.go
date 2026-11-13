@@ -34,10 +34,14 @@ func TestCheckFindsEveryProblem(t *testing.T) {
 		want []string
 	}{
 		{"archivedanddiscarded", []string{"Thing archived-and-discarded"}},
+		{"markerwithoutmixin", []string{
+			"Owned marker-without-mixin", "Owned marker-without-mixin", "Aside marker-without-mixin", "Gone marker-without-mixin",
+		}},
 		{"versionedkind", []string{"Definition versioned-kind"}},
 		{"versionededges", []string{"Thing versioned-live-edge", "Thing versioned-owner"}},
 		{"versionedowner", []string{"Definition versioned-owner"}},
 		{"versionedfields", []string{"Definition versioned-fields"}},
+		{"enumwithoutcheck", []string{"Unchecked.color enum-without-check", "Misnamed.shade enum-without-check"}},
 		{"givenupnotbool", []string{"Thing.label given-up-not-bool"}},
 		{"givenupwithoutdiscard", []string{"Thing.is_default given-up-without-discard"}},
 		{"bookkeepingwithoutrevision", []string{"Thing.polls bookkeeping-without-revision"}},
@@ -57,7 +61,7 @@ func TestCheckFindsEveryProblem(t *testing.T) {
 		}},
 		{"workspaceoutsidemixin", []string{
 			"Journal.workspace_id workspace-outside-mixin", "Trace.workspace_id workspace-outside-mixin",
-			"Claim.workspace_id workspace-outside-mixin",
+			"Claim.workspace_id workspace-outside-mixin", "Claim marker-without-mixin",
 		}},
 	} {
 		t.Run(tc.dir, func(t *testing.T) {

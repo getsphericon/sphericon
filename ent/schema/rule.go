@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"slices"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
@@ -21,8 +23,8 @@ type Rule struct {
 
 func (Rule) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("rules", Rule{}.Fields()),
-		Audited{Action: "rule", NameField: nameField},
+		TableWithEnumChecks("rules", slices.Concat(Rule{}.Fields(), VersionedMixin{}.Fields())),
+		Audited{Action: "rule", NameField: NameColumn},
 	}
 }
 
@@ -31,7 +33,7 @@ func (Rule) Mixin() []ent.Mixin {
 		TimeMixin{}, WorkspaceMixin{Ref: "rules"}, DiscardMixin{},
 		// The status, activated_at (an active Rule reacts only to Events recorded at or after it)
 		// and the pointers to the live and draft versions.
-		VersionedMixin{Version: RuleVersion.Type, Table: "rules"}, RevisionMixin{},
+		VersionedMixin{Version: RuleVersion.Type}, RevisionMixin{},
 	}
 }
 
@@ -40,7 +42,7 @@ func (Rule) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 	}
 }

@@ -29,7 +29,7 @@ func (User) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 		field.String("email").
 			NotEmpty().

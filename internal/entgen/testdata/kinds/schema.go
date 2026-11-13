@@ -4,6 +4,7 @@ package kinds
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
+	entschema "entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -78,13 +79,17 @@ func (PartialSingle) Indexes() []ent.Index {
 type Definition struct{ ent.Schema }
 
 func (Definition) Mixin() []ent.Mixin {
-	return []ent.Mixin{schema.TimeMixin{}, schema.WorkspaceMixin{Ref: "definitions"}, schema.ArchiveMixin{}, schema.VersionedMixin{Version: DefinitionVersion.Type, Table: "definitions"}, schema.RevisionMixin{}}
+	return []ent.Mixin{schema.TimeMixin{}, schema.WorkspaceMixin{Ref: "definitions"}, schema.ArchiveMixin{}, schema.VersionedMixin{Version: DefinitionVersion.Type}, schema.RevisionMixin{}}
 }
 
 func (Definition) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name"),
 	}
+}
+
+func (Definition) Annotations() []entschema.Annotation {
+	return []entschema.Annotation{schema.TableWithEnumChecks("definitions", schema.VersionedMixin{}.Fields())}
 }
 
 type DefinitionVersion struct{ ent.Schema }

@@ -21,18 +21,13 @@ type VersionedMixin struct {
 
 	// Version is the version entity's type (AutomationVersion.Type).
 	Version any
-	// Table is the owner's table, which names the CHECK constraints of the mixin's enum fields.
-	Table string
 }
 
-// Annotations declare the kind the mixin gives, Versioned, and bring the CHECK constraints of its
-// enum fields, which merge with the owner's own TableWithEnumChecks: status is checked like the
-// owner's enums.
-func (m VersionedMixin) Annotations() []schema.Annotation {
-	return []schema.Annotation{
-		Versioned{},
-		entsql.Annotation{Checks: EnumChecks(m.Table, m.Fields())},
-	}
+// Annotations declare the kind the mixin gives: Versioned. The owner checks the mixin's enum,
+// status, with its own: its TableWithEnumChecks takes the mixin's Fields() too, and
+// internal/entgen refuses an enum without its CHECK constraint.
+func (VersionedMixin) Annotations() []schema.Annotation {
+	return []schema.Annotation{Versioned{}}
 }
 
 // Fields are the pointers and the state.

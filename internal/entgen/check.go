@@ -17,6 +17,9 @@ type Rule string
 const (
 	// RuleAnnotation: an annotation cannot be decoded into its ent/schema type.
 	RuleAnnotation Rule = "annotation"
+	// RuleMarkerWithoutMixin: a kind's marker comes with its mixin, which brings the column the
+	// generated code reads.
+	RuleMarkerWithoutMixin Rule = "marker-without-mixin"
 	// RuleArchivedAndDiscarded: an entity is archived or discarded, never both (ADR 0100).
 	RuleArchivedAndDiscarded Rule = "archived-and-discarded"
 	// RuleVersionedKind: a Versioned definition is Workspace-owned and archivable or discardable.
@@ -28,6 +31,9 @@ const (
 	// RuleVersionedFields: a Versioned definition has a name and a revision, which its
 	// VersionState carries.
 	RuleVersionedFields Rule = "versioned-fields"
+	// RuleEnumWithoutCheck: every enum field has the CHECK constraint named after its table and
+	// column (schema.EnumCheckName), which lists its values.
+	RuleEnumWithoutCheck Rule = "enum-without-check"
 	// RuleGivenUpNotBool: a field a Discard gives up (schema.GivenUpOnDiscard) is a bool.
 	RuleGivenUpNotBool Rule = "given-up-not-bool"
 	// RuleGivenUpWithoutDiscard: schema.GivenUpOnDiscard is on a Workspace-owned discardable entity,
@@ -88,6 +94,7 @@ func (p Problem) String() string { return fmt.Sprintf("%s: %s (%s)", p.Where(), 
 func (c *checker) check(n *gen.Type) {
 	e := c.s.entities[n]
 	k := e.kind
+	c.checkMarkers(n, k)
 	if k.Archivable && k.Discardable {
 		c.add(Problem{Entity: n.Name, Rule: RuleArchivedAndDiscarded,
 			Message: "an entity is archived or discarded, never both (ADR 0100): drop ArchiveMixin or DiscardMixin"})
@@ -114,13 +121,33 @@ const uniqueNotPartial = "a unique index of an archivable or discardable entity 
 	"make it partial (entsql.IndexWhere(\"archived_at IS NULL\") or \"discarded_at IS NULL\"), or say why it holds over every row " +
 	"with schema.UniqueOverAll{Reason: ...}"
 
+// checkMarkers checks that each marker of n came with the column its mixin brings: a marker declared
+// by hand, without its mixin, gives n a kind whose column the generated code reads.
+func (c *checker) checkMarkers(n *gen.Type, k schema.Kind) {
+	for _, m := range []struct {
+		marked                bool
+		marker, mixin, column string
+	}{
+		{k.WorkspaceOwned, schema.WorkspaceOwned{}.Name(), "WorkspaceMixin", schema.WorkspaceColumn},
+		{k.Archivable, schema.Archivable{}.Name(), "ArchiveMixin", schema.ArchivedColumn},
+		{k.Discardable, schema.Discardable{}.Name(), "DiscardMixin", schema.DiscardedColumn},
+		{k.Revised, schema.Revised{}.Name(), "RevisionMixin", schema.RevisionColumn},
+	} {
+		if m.marked && mixedInField(n, m.column) == nil {
+			c.add(Problem{Entity: n.Name, Rule: RuleMarkerWithoutMixin, Message: fmt.Sprintf(
+				"the marker schema.%s comes with %s, which brings its %s column: take the mixin rather than its marker",
+				m.marker, m.mixin, m.column)})
+		}
+	}
+}
+
 func (c *checker) checkVersioned(n *gen.Type, e *entity) {
 	k := e.kind
 	if !k.WorkspaceOwned || !k.PutAside() {
 		c.add(Problem{Entity: n.Name, Rule: RuleVersionedKind,
 			Message: "a Versioned definition needs WorkspaceMixin and either ArchiveMixin or DiscardMixin (ADR 0100)"})
 	}
-	name := fieldNamed(n, "name")
+	name := fieldNamed(n, schema.NameColumn)
 	if name == nil || name.Type.Type != field.TypeString || !k.Revised {
 		c.add(Problem{Entity: n.Name, Rule: RuleVersionedFields,
 			Message: "a Versioned definition needs a string field name and RevisionMixin: its VersionState carries both"})
@@ -133,6 +160,10 @@ func (c *checker) checkField(n *gen.Type, e *entity, f *gen.Field) {
 		c.add(Problem{Entity: n.Name, Field: f.Name, Rule: rule, Message: message})
 	}
 	c.checkForm(f, a, problem)
+	if _, checked := e.checks[schema.EnumCheckName(n.Table(), f.StorageKey())]; f.IsEnum() && !checked {
+		problem(RuleEnumWithoutCheck, fmt.Sprintf("an enum field is checked by the CHECK constraint %s: annotate the entity with "+
+			"schema.TableWithEnumChecks(%q, ...) over its fields and its mixins' enums", schema.EnumCheckName(n.Table(), f.StorageKey()), n.Table()))
+	}
 	if a.givenUp && !f.IsBool() {
 		problem(RuleGivenUpNotBool, "a field a Discard gives up (schema.GivenUpOnDiscard) is a bool, which the Discard sets to false")
 	}

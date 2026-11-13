@@ -8,8 +8,9 @@ import "entgo.io/ent/schema"
 // the manifest of kinds into package ent (ent.Kinds). A singleton has no marker: it is the
 // structure of the schema, a unique index on WorkspaceColumn alone.
 
-// The columns and edges the mixins below declare, which internal/entgen reads once a marker has
-// said the entity has them.
+// The columns and edges the mixins declare. internal/entgen reads those of a kind once its marker
+// has said the entity has them, and TimeMixin's moments, which make no kind and have no marker,
+// by their names wherever a mixin brings them: a re-created row and an Audit diff leave them out.
 const (
 	// WorkspaceColumn is WorkspaceMixin's column, the Workspace a row belongs to.
 	WorkspaceColumn = "workspace_id"

@@ -3,6 +3,7 @@ package versionedfields
 
 import (
 	"entgo.io/ent"
+	entschema "entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 
@@ -22,13 +23,17 @@ func (Workspace) Edges() []ent.Edge {
 type Definition struct{ ent.Schema }
 
 func (Definition) Mixin() []ent.Mixin {
-	return []ent.Mixin{schema.TimeMixin{}, schema.WorkspaceMixin{Ref: "definitions"}, schema.ArchiveMixin{}, schema.VersionedMixin{Version: DefinitionVersion.Type, Table: "definitions"}}
+	return []ent.Mixin{schema.TimeMixin{}, schema.WorkspaceMixin{Ref: "definitions"}, schema.ArchiveMixin{}, schema.VersionedMixin{Version: DefinitionVersion.Type}}
 }
 
 func (Definition) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("title"),
 	}
+}
+
+func (Definition) Annotations() []entschema.Annotation {
+	return []entschema.Annotation{schema.TableWithEnumChecks("definitions", schema.VersionedMixin{}.Fields())}
 }
 
 type DefinitionVersion struct{ ent.Schema }

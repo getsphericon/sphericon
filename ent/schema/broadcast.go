@@ -31,7 +31,7 @@ type Broadcast struct {
 func (Broadcast) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		broadcastTable(),
-		Audited{Action: "broadcast", NameField: nameField},
+		Audited{Action: "broadcast", NameField: NameColumn},
 	}
 }
 
@@ -44,7 +44,7 @@ func (Broadcast) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 		// The Channel the Broadcast sends on, set when it is created and never changed: a
 		// Broadcast is never converted to another Channel (ADR 0080). Every write sets it; the

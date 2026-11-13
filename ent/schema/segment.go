@@ -16,7 +16,7 @@ func (Segment) Annotations() []schema.Annotation {
 		entsql.Annotation{Table: "segments", Checks: map[string]string{
 			"segments_condition_check": conditionCheck("condition"),
 		}},
-		Audited{Action: "segment", NameField: nameField},
+		Audited{Action: "segment", NameField: NameColumn},
 	}
 }
 
@@ -29,7 +29,7 @@ func (Segment) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty(),
 		field.String("condition").
 			Optional().

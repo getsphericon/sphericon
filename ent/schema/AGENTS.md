@@ -68,7 +68,8 @@
   of row (a Broadcast per channel, an Outbound message per kind) lists which columns each kind owns
   with `variantCheck` (`variant_check.go`), so the database refuses a row that mixes them; a column
   derived from another (an Integration's channel from its provider) is checked against its source;
-  a closed set of values is an enum, which `TableWithEnumChecks` checks; a value the owner
+  a closed set of values is an enum, which `TableWithEnumChecks` checks (given a mixin's enum fields
+  too, `VersionedMixin`'s status; the generation refuses an enum without its check); a value the owner
   normalises (an address, a phone, a domain, a currency) has its form checked with the normaliser's own pattern (`LowerCheck`, `FormatCheck`). The Go
   type that writes the row says the same thing, so a mismatch does not compile
   (`outboundmessages.Ref`, `providers.Provider.Channel`).

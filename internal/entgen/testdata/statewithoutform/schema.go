@@ -3,6 +3,7 @@ package statewithoutform
 
 import (
 	"entgo.io/ent"
+	entschema "entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 
@@ -31,4 +32,8 @@ func (Thing) Fields() []ent.Field {
 		field.Enum("status").Values("on", "off"),
 		field.String("note"),
 	}
+}
+
+func (Thing) Annotations() []entschema.Annotation {
+	return []entschema.Annotation{schema.TableWithEnumChecks("things", Thing{}.Fields())}
 }

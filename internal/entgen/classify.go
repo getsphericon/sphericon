@@ -58,6 +58,8 @@ type entity struct {
 	version      *gen.Type
 	versionOwner *gen.Field
 	refs         []ScopedRef
+	// checks are the CHECK constraints of its table, by name.
+	checks map[string]string
 }
 
 // fieldAnnotations are the annotations of one field, decoded into their ent/schema types.
@@ -115,6 +117,9 @@ func (c *checker) add(p Problem) { c.problems = append(c.problems, p) }
 // classify reads the kind of n from its markers and its structure.
 func (c *checker) classify(n *gen.Type) *entity {
 	e := &entity{node: n}
+	if table, ok := decode[entsql.Annotation](c, n.Name, n.Annotations); ok {
+		e.checks = table.Checks
+	}
 	e.kind.WorkspaceOwned = marked(n, schema.WorkspaceOwned{})
 	e.kind.Archivable = marked(n, schema.Archivable{})
 	e.kind.Discardable = marked(n, schema.Discardable{})
@@ -267,6 +272,15 @@ func (c *checker) refTarget(n *gen.Type, f *gen.Field) *gen.Type {
 	c.add(Problem{Entity: n.Name, Field: f.Name, Rule: RuleRefUnknownEntity,
 		Message: fmt.Sprintf("schema.ScopedRef names an unknown entity %q", ref.Entity)})
 	return nil
+}
+
+// mixedInField is the field of n named name that a mixin declares, or nil.
+func mixedInField(n *gen.Type, name string) *gen.Field {
+	f := fieldNamed(n, name)
+	if f == nil || f.Position == nil || !f.Position.MixedIn {
+		return nil
+	}
+	return f
 }
 
 func fieldNamed(n *gen.Type, name string) *gen.Field {

@@ -34,7 +34,7 @@ func (ServiceCredential) Fields() []ent.Field {
 			Immutable(),
 		// The service's name, as recorded in the Audit log. Not unique: two active
 		// credentials of one service share it.
-		field.String(nameField).
+		field.String(NameColumn).
 			NotEmpty().
 			Immutable(),
 		// The visible, unique part of the value, which finds the row; the secret part
