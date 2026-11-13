@@ -1538,6 +1538,29 @@ func HasRecipientsWith(preds ...predicate.BroadcastRecipient) predicate.Broadcas
 	})
 }
 
+// HasFigures applies the HasEdge predicate on the "figures" edge.
+func HasFigures() predicate.Broadcast {
+	return predicate.Broadcast(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FiguresTable, FiguresColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFiguresWith applies the HasEdge predicate on the "figures" edge with a given conditions (other predicates).
+func HasFiguresWith(preds ...predicate.BroadcastFigure) predicate.Broadcast {
+	return predicate.Broadcast(func(s *sql.Selector) {
+		step := newFiguresStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasSegment applies the HasEdge predicate on the "segment" edge.
 func HasSegment() predicate.Broadcast {
 	return predicate.Broadcast(func(s *sql.Selector) {

@@ -22,7 +22,7 @@ func TestTrackingRecordsItsFactBeforeTheReportProjection(t *testing.T) {
 	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, func() time.Time { return at })
-	token, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)
+	token, err := tr.Token(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID))
 	require.NoError(t, err)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/e/o/"+token, nil)
 	w := httptest.NewRecorder()

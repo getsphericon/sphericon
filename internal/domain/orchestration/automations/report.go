@@ -5,11 +5,13 @@ import (
 	"slices"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/infra/aggregates"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -20,7 +22,8 @@ import (
 type Report struct {
 	Opens, Clicks int
 	// Delivered, Bounced and Complained count the Automation's Outbound messages by their
-	// delivery result stamp (ADR 0053), so they do not shrink when Events expire.
+	// delivery result stamp (ADR 0053), so they do not shrink when Events expire, and add what its
+	// pruned messages counted (ADR 0143).
 	Delivered, Bounced, Complained int
 	// Captured counts the messages that went through a sender delivering nowhere outside (a Test
 	// inbox): captured, not delivered.
@@ -97,7 +100,34 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 		report.Delivered, report.Bounced, report.Complained = delivery[0].Delivered, delivery[0].Bounced, delivery[0].Complained
 		report.Captured = delivery[0].Captured
 	}
+	if err := addPruned(ctx, s, id, &report); err != nil {
+		return Report{}, err
+	}
 	return report, nil
+}
+
+// addPruned adds to the report what the Automation's pruned messages counted (ADR 0143): their
+// delivery stamps and, by step position, their sent and skipped.
+func addPruned(ctx context.Context, s *ent.Scoped, id int64, report *Report) error {
+	pruned, err := s.AutomationFigure().Query().Where(automationfigure.AutomationID(id)).All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, f := range pruned {
+		report.Delivered += f.Delivered
+		report.Bounced += f.Bounced
+		report.Complained += f.Complained
+		report.Captured += f.Captured
+		i := slices.IndexFunc(report.Steps, func(st StepFigures) bool { return st.Step == f.Step })
+		if i < 0 {
+			report.Steps = append(report.Steps, StepFigures{Step: f.Step})
+			i = len(report.Steps) - 1
+		}
+		report.Steps[i].Sent += f.Sent
+		report.Steps[i].Skipped += f.Skipped
+	}
+	slices.SortFunc(report.Steps, func(a, b StepFigures) int { return a.Step - b.Step })
+	return nil
 }
 
 // stepFiguresOf counts the Automation's sent and skipped Outbound messages by the position of the
@@ -140,3 +170,9 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64) ([]StepFigures,
 	slices.SortFunc(figures, func(a, b StepFigures) int { return a.Step - b.Step })
 	return figures, nil
 }
+
+// The unique constraint of an Automation's pruned figures (ADR 0106): no client can break it.
+var _ = db.Declare(
+	db.Fault("automation_figures_workspace_id_automation_id_step",
+		"automationsunchecked.AddPruned upserts ON CONFLICT on the step, adding a batch's counts to the row"),
+)

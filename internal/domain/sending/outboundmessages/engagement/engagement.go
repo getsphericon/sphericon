@@ -11,7 +11,6 @@ package engagement
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -67,22 +66,22 @@ func New(client *ent.Client, bus *events.Bus, people *contacts.Module, tracker *
 // Open records an open of the message the token names. Every open is an Event of its own: a
 // repeated open is a real engagement, and the message's stamp counts it once.
 func (r *Recorder) Open(ctx context.Context, token string, hit Hit) error {
-	messageID, err := r.tracker.Decode(token)
+	m, err := r.tracker.Decode(token)
 	if err != nil {
 		return ErrInvalidToken
 	}
-	return r.record(ctx, messageID, hit, func(e engaged, machine bool, at time.Time) events.DomainEvent {
+	return r.record(ctx, m, hit, func(e engaged, machine bool, at time.Time) events.DomainEvent {
 		return e.engagement(systemevent.EmailOpened, "", machine, at)
 	})
 }
 
 // Click records a click on the link the token signs and returns that link.
 func (r *Recorder) Click(ctx context.Context, token string, hit Hit) (string, error) {
-	messageID, dest, err := r.tracker.DecodeClick(token)
+	m, dest, err := r.tracker.DecodeClick(token)
 	if err != nil {
 		return "", ErrInvalidToken
 	}
-	if err := r.record(ctx, messageID, hit, clickOn(dest)); err != nil {
+	if err := r.record(ctx, m, hit, clickOn(dest)); err != nil {
 		return "", err
 	}
 	return dest, nil
@@ -90,6 +89,8 @@ func (r *Recorder) Click(ctx context.Context, token string, hit Hit) (string, er
 
 // ShortLink records a click on the short tracked link of a Telegram message or an SMS (ADR 0083)
 // and returns the URL stored with its token. A Test send's link has no message: it records nothing.
+// A link that is not there is ErrNotFound: its URL went with it, whether it never existed or
+// message retention deleted it with its message (ADR 0143).
 func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string, error) {
 	link, err := r.client.TrackedLink.Query().Where(trackedlink.Token(token)).Only(ctx)
 	switch {
@@ -102,46 +103,35 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 	case link.OutboundMessageID == nil:
 		return link.URL, nil
 	}
-	hit.Host = 0 // the link's Workspace is the message's
-	if err := r.record(ctx, *link.OutboundMessageID, hit, clickOn(link.URL)); err != nil {
+	m := messagetoken.Message{WorkspaceID: link.WorkspaceID, ID: *link.OutboundMessageID}
+	if err := r.record(ctx, m, hit, clickOn(link.URL)); err != nil {
 		return "", err
 	}
 	return link.URL, nil
 }
 
-// record publishes the Event eventOf builds for a hit on the message. A hit on a Tracking host
-// is refused unless the message is that host's Workspace's: a message that is gone, or another
-// Workspace's, is ErrNotFound, and a read that fails cannot tell, so its error is returned: the
-// driver logs it, answering an open its pixel and a click a 500 (ADR 0038). A message whose Contact is gone (erased), or whose
-// address was cleared, records nothing silently; once the hit's Workspace is known, a read that
-// fails for any other reason, or a failed publish, records nothing and is logged, since a tracked
-// link never refuses its recipient (ADR 0025).
-func (r *Recorder) record(ctx context.Context, messageID int64, hit Hit, eventOf func(e engaged, machine bool, at time.Time) events.DomainEvent) error {
-	var (
-		msg *ent.OutboundMessage
-		err error
-	)
-	if hit.Host != 0 {
-		msg, err = r.client.OutboundMessage.Get(ctx, messageID)
-		switch {
-		case ent.IsNotFound(err):
-			return ErrNotFound
-		case err != nil:
-			return fmt.Errorf("engagement: read message %d: %w", messageID, err)
-		case msg.WorkspaceID != hit.Host:
-			return ErrNotFound
-		}
+// record publishes the Event eventOf builds for a hit on the message m names. A hit on a Tracking
+// host is refused as ErrNotFound unless m is that host's Workspace's (ADR 0038), which the signed
+// token says without a read. A message that is gone (message retention deleted it, ADR 0143), or
+// whose Contact is gone (erased) or whose address was cleared, records nothing silently; a read
+// that fails for any other reason, or a failed publish, records nothing and is logged, since a
+// tracked link never refuses its recipient (ADR 0025).
+func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, eventOf func(e engaged, machine bool, at time.Time) events.DomainEvent) error {
+	if hit.Host != 0 && hit.Host != m.WorkspaceID {
+		return ErrNotFound
 	}
 	if !hit.MayRecord() {
 		return nil
 	}
-	if msg == nil {
-		if msg, err = r.client.OutboundMessage.Get(ctx, messageID); err != nil {
-			if !ent.IsNotFound(err) {
-				logLookup(ctx, messageID, err)
-			}
-			return nil
+	msg, err := r.client.OutboundMessage.Get(ctx, m.ID)
+	if err != nil {
+		if !ent.IsNotFound(err) {
+			logLookup(ctx, m.ID, err)
 		}
+		return nil
+	}
+	if msg.WorkspaceID != m.WorkspaceID {
+		return nil // a token signed for another Workspace's message: never minted, never recorded
 	}
 	e, ok := r.engagedOf(ctx, msg)
 	if !ok {
@@ -149,7 +139,7 @@ func (r *Recorder) record(ctx context.Context, messageID int64, hit Hit, eventOf
 	}
 	machine := r.detector.IsMachine(ctx, hit.UserAgent, hit.Address)
 	if err := r.bus.Publish(ctx, eventOf(e, machine, r.now())); err != nil {
-		slog.ErrorContext(ctx, "engagement: recording failed", "message_id", messageID, "err", err)
+		slog.ErrorContext(ctx, "engagement: recording failed", "message_id", m.ID, "err", err)
 	}
 	return nil
 }

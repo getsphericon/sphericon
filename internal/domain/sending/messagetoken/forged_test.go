@@ -35,9 +35,10 @@ func newTracker() *messagetoken.Tracker {
 func TestDecodeRejectsMalformedClaims(t *testing.T) {
 	tr := newTracker()
 	for name, claims := range map[string]jwt.MapClaims{
-		"missing mid": {},
-		"numeric mid": {"mid": 5},
-		"non-int mid": {"mid": "five"},
+		"missing mid": {"ws": publicid.Encode(1)},
+		"missing ws":  {"mid": publicid.Encode(5)},
+		"numeric mid": {"mid": 5, "ws": publicid.Encode(1)},
+		"non-int mid": {"mid": "five", "ws": publicid.Encode(1)},
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := tr.Decode(signed(t, claims))

@@ -180,7 +180,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)
 	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
 
-	token, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)
+	token, err := tr.Token(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID))
 	require.NoError(t, err)
 
 	get := func(path string) *httptest.ResponseRecorder {
@@ -206,7 +206,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.Equal(t, 1, figures(t, env, b.ID).Opened)
 
 	// Click: records the click and 302-redirects to the destination.
-	clickLink, err := tr.ClickURL(fixtures.OutboundMessageTrackingSampleID, "https://dest.test/x")
+	clickLink, err := tr.ClickURL(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID), "https://dest.test/x")
 	require.NoError(t, err)
 	_, clickToken, _ := strings.Cut(clickLink, "/e/c/")
 	resp = get("/e/c/" + clickToken)

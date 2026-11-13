@@ -2,8 +2,12 @@ package testhelper
 
 import (
 	"context"
+	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 )
 
@@ -18,4 +22,13 @@ func (env *TestEnv) ClaimOutbound(ctx context.Context, workspaceID, messageID in
 	if err := env.DB.Scoped(workspaceID).OutboundMessage().UpdateOneID(messageID).SetClaimedAt(at).Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// Tracked is what an open or a click token names for the Outbound message id: the message and its
+// Workspace, read from its row.
+func (env *TestEnv) Tracked(tb testing.TB, messageID int64) messagetoken.Message {
+	tb.Helper()
+	msg, err := env.DB.OutboundMessage.Get(context.Background(), messageID)
+	require.NoError(tb, err)
+	return messagetoken.Message{WorkspaceID: msg.WorkspaceID, ID: msg.ID}
 }

@@ -107,10 +107,10 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/confirm?token="))
 
 	// Open and click of a recipient of another Workspace are a 404.
-	rtoken, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)
+	rtoken, err := tr.Token(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID))
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, "/e/o/"+rtoken).Code)
-	clickLink, err := tr.ClickURL(fixtures.OutboundMessageTrackingSampleID, "https://example.com")
+	clickLink, err := tr.ClickURL(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID), "https://example.com")
 	require.NoError(t, err)
 	_, ctok, _ := strings.Cut(clickLink, "/e/c/")
 	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, "/e/c/"+ctok).Code)
@@ -236,9 +236,12 @@ func TestTrackingHostHeaderIsTrustedFromTheConfiguredRanges(t *testing.T) {
 }
 
 // A short link names its Workspace through its token: it redirects on the Instance's own host and on
-// its own Workspace's Tracking host, and is not found on another Workspace's (ADR 0038, 0083).
+// its own Workspace's Tracking host, and leads to the neutral page on another Workspace's (ADR
+// 0038, 0083), as a link that is not there does (ADR 0143).
 func TestAShortLinkIsServedOnlyToItsOwnWorkspacesHosts(t *testing.T) {
 	env := testhelper.Setup(t)
+	cfg, err := config.Load(config.EnvTest)
+	require.NoError(t, err)
 	path := "/c/" + env.DB.TrackedLink.GetX(t.Context(), fixtures.TrackedLinkAcmeID).Token
 
 	own := hostReq(env, http.MethodGet, "", path)
@@ -246,5 +249,28 @@ func TestAShortLinkIsServedOnlyToItsOwnWorkspacesHosts(t *testing.T) {
 	assert.Equal(t, fixtures.TrackedLinkAcmeURL, own.Header().Get("Location"))
 
 	foreign := hostReq(env, http.MethodGet, fixtures.TrackingDomainServingHost, path)
-	assert.Equal(t, http.StatusNotFound, foreign.Code, "Umbrella's Tracking host does not serve Acme's link")
+	assert.Equal(t, http.StatusFound, foreign.Code)
+	assert.Equal(t, cfg.AppURL+"/link-expired", foreign.Header().Get("Location"), "Umbrella's Tracking host does not serve Acme's link")
+
+	gone := hostReq(env, http.MethodGet, "", "/c/no-such-token")
+	assert.Equal(t, http.StatusFound, gone.Code)
+	assert.Equal(t, cfg.AppURL+"/link-expired", gone.Header().Get("Location"))
+}
+
+// An email's click link carries its destination and its Workspace, so it still redirects on its own
+// Workspace's Tracking host once message retention has deleted its message (ADR 0143), recording
+// nothing.
+func TestAnEmailLinkOfADeletedMessageStillRedirects(t *testing.T) {
+	env := testhelper.Setup(t)
+	cfg, err := config.Load(config.EnvTest)
+	require.NoError(t, err)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	link, err := tr.ClickURL(messagetoken.Message{WorkspaceID: fixtures.UmbrellaID, ID: 999999}, "https://example.com/old")
+	require.NoError(t, err)
+	_, token, _ := strings.Cut(link, "/e/c/")
+
+	resp := hostReq(env, http.MethodGet, fixtures.TrackingDomainServingHost, "/e/c/"+token)
+	assert.Equal(t, http.StatusFound, resp.Code)
+	assert.Equal(t, "https://example.com/old", resp.Header().Get("Location"))
+	assert.Empty(t, env.QueuedEnvelopes(t), "a click on a deleted message records nothing")
 }

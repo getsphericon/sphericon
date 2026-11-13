@@ -1217,6 +1217,10 @@ export default interface Resources {
       "title": "Clicked links",
       "url": "Link"
     },
+    "linkExpired": {
+      "body": "It leads nowhere now. The message it came in may be too old.",
+      "title": "This link is no longer available"
+    },
     "login": {
       "codeLabel": "Authentication code",
       "emailLabel": "Email",

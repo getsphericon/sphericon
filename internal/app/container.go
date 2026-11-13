@@ -117,6 +117,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
@@ -550,30 +551,31 @@ var jobsPackage = do.Package(
 		edition := do.MustInvoke[*ee.Edition](i)
 		pool := do.MustInvoke[*riverPool](i)
 		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), jobs.Deps{
-			Ent:             do.MustInvoke[*ent.Client](i),
-			Bus:             do.MustInvoke[*events.Bus](i),
-			Outbound:        do.MustInvoke[*outboundmessages.Module](i),
-			Cipher:          do.MustInvoke[*secrets.Cipher](i),
-			SystemSender:    do.MustInvoke[SystemSender](i).EmailSender,
-			Notices:         do.MustInvoke[*noticedelivery.UseCase](i),
-			Callbacks:       do.MustInvoke[*callbackinterpretation.UseCase](i),
-			Catalog:         do.MustInvoke[*messaging.Catalog](i),
-			Rules:           do.MustInvoke[*rules.Module](i),
-			Users:           do.MustInvoke[*users.Module](i),
-			SecondFactor:    do.MustInvoke[*secondfactors.Module](i),
-			Orders:          do.MustInvoke[*orders.Module](i),
-			Deletion:        do.MustInvoke[*workspacedeletion.UseCase](i),
-			SendingDomains:  do.MustInvoke[*sendingdomains.Module](i),
-			StepExecution:   do.MustInvoke[*automations.StepExecution](i),
-			JoinDomains:     do.MustInvoke[*joindomains.Module](i),
-			Integrations:    do.MustInvoke[*integrations.Module](i),
-			TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
-			Machine:         do.MustInvoke[*privaterelayranges.Detector](i),
-			Clock:           do.MustInvoke[Clock](i),
-			OutboundAllow:   cfg.OutboundAllow,
-			Retention:       jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
-			Webhooks:        edition.Webhooks,
-			Instance:        do.MustInvoke[*instancestates.Module](i),
+			Ent:              do.MustInvoke[*ent.Client](i),
+			Bus:              do.MustInvoke[*events.Bus](i),
+			Outbound:         do.MustInvoke[*outboundmessages.Module](i),
+			Cipher:           do.MustInvoke[*secrets.Cipher](i),
+			SystemSender:     do.MustInvoke[SystemSender](i).EmailSender,
+			Notices:          do.MustInvoke[*noticedelivery.UseCase](i),
+			Callbacks:        do.MustInvoke[*callbackinterpretation.UseCase](i),
+			Catalog:          do.MustInvoke[*messaging.Catalog](i),
+			Rules:            do.MustInvoke[*rules.Module](i),
+			Users:            do.MustInvoke[*users.Module](i),
+			SecondFactor:     do.MustInvoke[*secondfactors.Module](i),
+			Orders:           do.MustInvoke[*orders.Module](i),
+			Deletion:         do.MustInvoke[*workspacedeletion.UseCase](i),
+			MessageRetention: do.MustInvoke[*messageretention.UseCase](i),
+			SendingDomains:   do.MustInvoke[*sendingdomains.Module](i),
+			StepExecution:    do.MustInvoke[*automations.StepExecution](i),
+			JoinDomains:      do.MustInvoke[*joindomains.Module](i),
+			Integrations:     do.MustInvoke[*integrations.Module](i),
+			TrackingDomains:  do.MustInvoke[*trackingdomains.Module](i),
+			Machine:          do.MustInvoke[*privaterelayranges.Detector](i),
+			Clock:            do.MustInvoke[Clock](i),
+			OutboundAllow:    cfg.OutboundAllow,
+			Retention:        jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
+			Webhooks:         edition.Webhooks,
+			Instance:         do.MustInvoke[*instancestates.Module](i),
 		}, eejobs.Extension(eejobs.Deps{
 			Client:          do.MustInvoke[*ent.Client](i),
 			License:         do.MustInvoke[*licensekey.License](i),
@@ -701,6 +703,10 @@ var identityPackage = do.Package(
 	// The Invitations (ADR 0102): their lookup by token takes the raw client.
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
 		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+	}),
+	// The use case of message retention (ADR 0143), over the raw client.
+	do.Lazy(func(i do.Injector) (*messageretention.UseCase, error) {
+		return messageretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*config.Config](i).MessagesRetention, messageretention.Batch, do.MustInvoke[Clock](i)), nil
 	}),
 	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; its
 	// erase removes every Workspace-owned table's rows itself, the Enterprise Edition's too (ADR 0110).

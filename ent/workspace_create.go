@@ -14,11 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -753,6 +755,36 @@ func (_c *WorkspaceCreate) AddBroadcastRecipients(v ...*BroadcastRecipient) *Wor
 		ids[i] = v[i].ID
 	}
 	return _c.AddBroadcastRecipientIDs(ids...)
+}
+
+// AddBroadcastFigureIDs adds the "broadcast_figures" edge to the BroadcastFigure entity by IDs.
+func (_c *WorkspaceCreate) AddBroadcastFigureIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddBroadcastFigureIDs(ids...)
+	return _c
+}
+
+// AddBroadcastFigures adds the "broadcast_figures" edges to the BroadcastFigure entity.
+func (_c *WorkspaceCreate) AddBroadcastFigures(v ...*BroadcastFigure) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddBroadcastFigureIDs(ids...)
+}
+
+// AddAutomationFigureIDs adds the "automation_figures" edge to the AutomationFigure entity by IDs.
+func (_c *WorkspaceCreate) AddAutomationFigureIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddAutomationFigureIDs(ids...)
+	return _c
+}
+
+// AddAutomationFigures adds the "automation_figures" edges to the AutomationFigure entity.
+func (_c *WorkspaceCreate) AddAutomationFigures(v ...*AutomationFigure) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAutomationFigureIDs(ids...)
 }
 
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
@@ -1709,6 +1741,38 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.BroadcastFiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BroadcastFiguresTable,
+			Columns: []string{workspace.BroadcastFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AutomationFiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationFiguresTable,
+			Columns: []string{workspace.AutomationFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

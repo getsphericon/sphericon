@@ -163,6 +163,10 @@ type Config struct {
 	// EventsRetention is the age past which analytical Events, Rule Firings and the receipts of
 	// external facts are deleted (SPHERICON_EVENTS_RETENTION_DAYS, default 400, 0 disables; ADR 0019).
 	EventsRetention time.Duration
+	// MessagesRetention is the age past which Outbound messages, Broadcast recipients and tracked
+	// links are deleted, their figures kept (SPHERICON_MESSAGES_RETENTION_DAYS, default 400, 0
+	// disables, else at least 180; ADR 0143).
+	MessagesRetention time.Duration
 	// EventLiveWindow is how old a live Event may be before the external API refuses it
 	// as history that belongs in a Backfill (SPHERICON_EVENT_LIVE_WINDOW_HOURS, default 72, at least 1).
 	EventLiveWindow time.Duration
@@ -439,6 +443,11 @@ type environment struct {
 	// `email.unsubscribed`, a permanent `email.bounced`) are never deleted by age. Rule Firings and
 	// the receipts that reject a redelivered external fact end with the same window.
 	EventsRetentionDays int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400" validate:"gte=0"`
+	// The age, in days, past which a daily job deletes Outbound messages, Broadcast recipients and
+	// tracked links, keeping the Broadcast and Automation figures they made (ADR 0143); `0` disables
+	// it. A finished Broadcast goes whole once it has been finished that long. At least 180: the
+	// analytics overview reads that far back.
+	MessagesRetentionDays int `env:"SPHERICON_MESSAGES_RETENTION_DAYS" envDefault:"400" validate:"eq=0|gte=180"`
 	// The age, in days, past which an Unverified User with no Membership is deleted by a daily job,
 	// freeing the address; `0` disables it (ADR 0030).
 	UnverifiedUserRetentionDays int `env:"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7" validate:"gte=0"`
@@ -741,6 +750,7 @@ func Load(envName string) (*Config, error) {
 			RiverMaxConns:   e.RiverMaxConns,
 		},
 		EventsRetention:         time.Duration(e.EventsRetentionDays) * 24 * time.Hour,
+		MessagesRetention:       time.Duration(e.MessagesRetentionDays) * 24 * time.Hour,
 		EventLiveWindow:         time.Duration(e.EventLiveWindowHours) * time.Hour,
 		UnverifiedUserRetention: time.Duration(e.UnverifiedUserRetentionDays) * 24 * time.Hour,
 		TestInboxRetention:      time.Duration(e.TestInboxRetentionDays) * 24 * time.Hour,

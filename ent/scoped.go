@@ -14,11 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -176,6 +178,22 @@ func (s *Scoped) verifyAutomation(ctx context.Context, ids []int64) error {
 	return nil
 }
 
+// verifyAutomationFigure fails with ErrNotInWorkspace unless every id is a AutomationFigure of the Workspace.
+func (s *Scoped) verifyAutomationFigure(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.AutomationFigure.Query().Where(automationfigure.IDIn(ids...), automationfigure.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("AutomationFigure: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
 // verifyAutomationRun fails with ErrNotInWorkspace unless every id is a AutomationRun of the Workspace.
 func (s *Scoped) verifyAutomationRun(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
@@ -252,6 +270,22 @@ func (s *Scoped) verifyBroadcast(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Broadcast: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyBroadcastFigure fails with ErrNotInWorkspace unless every id is a BroadcastFigure of the Workspace.
+func (s *Scoped) verifyBroadcastFigure(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.BroadcastFigure.Query().Where(broadcastfigure.IDIn(ids...), broadcastfigure.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("BroadcastFigure: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -3702,6 +3736,859 @@ func (x *AutomationScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *AutomationScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// AutomationFigureScoped reaches AutomationFigure entities of one Workspace.
+type AutomationFigureScoped struct{ s *Scoped }
+
+// AutomationFigure returns the AutomationFigure entities of the Workspace.
+func (s *Scoped) AutomationFigure() *AutomationFigureScoped { return &AutomationFigureScoped{s: s} }
+
+// Query returns a AutomationFigure query already confined to the Workspace.
+func (t *AutomationFigureScoped) Query() *AutomationFigureQuery {
+	return t.s.c.AutomationFigure.Query().Where(automationfigure.WorkspaceID(t.s.ws))
+}
+
+// Get returns the AutomationFigure with the id; a row of another Workspace is not found.
+func (t *AutomationFigureScoped) Get(ctx context.Context, id int64) (*AutomationFigure, error) {
+	return t.Query().Where(automationfigure.ID(id)).Only(ctx)
+}
+
+// AutomationFigureScopedDeleteOne wraps AutomationFigureDeleteOne.
+type AutomationFigureScopedDeleteOne struct {
+	s *Scoped
+	b *AutomationFigureDeleteOne
+}
+
+// DeleteOneID deletes the AutomationFigure with the id; a row of another Workspace is not found.
+func (t *AutomationFigureScoped) DeleteOneID(id int64) *AutomationFigureScopedDeleteOne {
+	return &AutomationFigureScopedDeleteOne{s: t.s, b: t.s.c.AutomationFigure.DeleteOneID(id).Where(automationfigure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationFigureScopedDeleteOne) Where(ps ...predicate.AutomationFigure) *AutomationFigureScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *AutomationFigureScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// AutomationFigureScopedDelete wraps AutomationFigureDelete.
+type AutomationFigureScopedDelete struct {
+	s *Scoped
+	b *AutomationFigureDelete
+}
+
+// Delete deletes the AutomationFigure entities of the Workspace that match the predicates.
+func (t *AutomationFigureScoped) Delete() *AutomationFigureScopedDelete {
+	return &AutomationFigureScopedDelete{s: t.s, b: t.s.c.AutomationFigure.Delete().Where(automationfigure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationFigureScopedDelete) Where(ps ...predicate.AutomationFigure) *AutomationFigureScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *AutomationFigureScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// AutomationFigureScopedCreate wraps AutomationFigureCreate. It has no way to name a Workspace.
+type AutomationFigureScopedCreate struct {
+	s *Scoped
+	b *AutomationFigureCreate
+}
+
+// Create starts a AutomationFigure in the Workspace.
+func (t *AutomationFigureScoped) Create() *AutomationFigureScopedCreate {
+	return &AutomationFigureScopedCreate{s: t.s, b: t.s.c.AutomationFigure.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *AutomationFigureScopedCreate) SetCreatedAt(v time.Time) *AutomationFigureScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableCreatedAt(v *time.Time) *AutomationFigureScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationFigureScopedCreate) SetUpdatedAt(v time.Time) *AutomationFigureScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableUpdatedAt(v *time.Time) *AutomationFigureScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (x *AutomationFigureScopedCreate) SetAutomationID(v int64) *AutomationFigureScopedCreate {
+	x.b.SetAutomationID(v)
+	return x
+}
+
+// SetStep sets the "step" field.
+func (x *AutomationFigureScopedCreate) SetStep(v int) *AutomationFigureScopedCreate {
+	x.b.SetStep(v)
+	return x
+}
+
+// SetSent sets the "sent" field.
+func (x *AutomationFigureScopedCreate) SetSent(v int) *AutomationFigureScopedCreate {
+	x.b.SetSent(v)
+	return x
+}
+
+// SetNillableSent sets the "sent" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSent(v *int) *AutomationFigureScopedCreate {
+	x.b.SetNillableSent(v)
+	return x
+}
+
+// SetSkipped sets the "skipped" field.
+func (x *AutomationFigureScopedCreate) SetSkipped(v int) *AutomationFigureScopedCreate {
+	x.b.SetSkipped(v)
+	return x
+}
+
+// SetNillableSkipped sets the "skipped" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkipped(v *int) *AutomationFigureScopedCreate {
+	x.b.SetNillableSkipped(v)
+	return x
+}
+
+// SetDelivered sets the "delivered" field.
+func (x *AutomationFigureScopedCreate) SetDelivered(v int) *AutomationFigureScopedCreate {
+	x.b.SetDelivered(v)
+	return x
+}
+
+// SetNillableDelivered sets the "delivered" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableDelivered(v *int) *AutomationFigureScopedCreate {
+	x.b.SetNillableDelivered(v)
+	return x
+}
+
+// SetBounced sets the "bounced" field.
+func (x *AutomationFigureScopedCreate) SetBounced(v int) *AutomationFigureScopedCreate {
+	x.b.SetBounced(v)
+	return x
+}
+
+// SetNillableBounced sets the "bounced" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableBounced(v *int) *AutomationFigureScopedCreate {
+	x.b.SetNillableBounced(v)
+	return x
+}
+
+// SetComplained sets the "complained" field.
+func (x *AutomationFigureScopedCreate) SetComplained(v int) *AutomationFigureScopedCreate {
+	x.b.SetComplained(v)
+	return x
+}
+
+// SetNillableComplained sets the "complained" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableComplained(v *int) *AutomationFigureScopedCreate {
+	x.b.SetNillableComplained(v)
+	return x
+}
+
+// SetCaptured sets the "captured" field.
+func (x *AutomationFigureScopedCreate) SetCaptured(v int) *AutomationFigureScopedCreate {
+	x.b.SetCaptured(v)
+	return x
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableCaptured(v *int) *AutomationFigureScopedCreate {
+	x.b.SetNillableCaptured(v)
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *AutomationFigureScopedCreate) SetAutomation(v *Automation) *AutomationFigureScopedCreate {
+	x.b.SetAutomation(v)
+	return x
+}
+
+func (x *AutomationFigureScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the AutomationFigure.
+func (x *AutomationFigureScopedCreate) Save(ctx context.Context) (*AutomationFigure, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationFigureScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// AutomationFigureScopedCreateBulk creates several AutomationFigure entities of one Workspace at once.
+type AutomationFigureScopedCreateBulk struct {
+	s  *Scoped
+	xs []*AutomationFigureScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *AutomationFigureScoped) CreateBulk(xs ...*AutomationFigureScopedCreate) *AutomationFigureScopedCreateBulk {
+	return &AutomationFigureScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *AutomationFigureScopedCreateBulk) raw(ctx context.Context) (*AutomationFigureCreateBulk, error) {
+	builders := make([]*AutomationFigureCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("AutomationFigure: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		builders[i] = x.b
+	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
+	return b.s.c.AutomationFigure.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *AutomationFigureScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().AutomationIDs()...)
+		}
+		if err := b.s.verifyAutomation(ctx, ids); err != nil {
+			return fmt.Errorf("automation: %w", err)
+		}
+	}
+	return nil
+}
+
+// Save verifies every builder's references, then creates the AutomationFigure entities.
+func (b *AutomationFigureScopedCreateBulk) Save(ctx context.Context) ([]*AutomationFigure, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *AutomationFigureScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// AutomationFigureScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type AutomationFigureScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *AutomationFigureScopedUpsert) SetUpdatedAt(v time.Time) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateUpdatedAt() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldUpdatedAt)
+	return u
+}
+
+// SetSent sets the "sent" field.
+func (u *AutomationFigureScopedUpsert) SetSent(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSent, v)
+	return u
+}
+
+// AddSent adds v to the "sent" field.
+func (u *AutomationFigureScopedUpsert) AddSent(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSent, v)
+	return u
+}
+
+// UpdateSent sets the "sent" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSent() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSent)
+	return u
+}
+
+// SetSkipped sets the "skipped" field.
+func (u *AutomationFigureScopedUpsert) SetSkipped(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkipped, v)
+	return u
+}
+
+// AddSkipped adds v to the "skipped" field.
+func (u *AutomationFigureScopedUpsert) AddSkipped(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkipped, v)
+	return u
+}
+
+// UpdateSkipped sets the "skipped" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkipped() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkipped)
+	return u
+}
+
+// SetDelivered sets the "delivered" field.
+func (u *AutomationFigureScopedUpsert) SetDelivered(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldDelivered, v)
+	return u
+}
+
+// AddDelivered adds v to the "delivered" field.
+func (u *AutomationFigureScopedUpsert) AddDelivered(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldDelivered, v)
+	return u
+}
+
+// UpdateDelivered sets the "delivered" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateDelivered() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldDelivered)
+	return u
+}
+
+// SetBounced sets the "bounced" field.
+func (u *AutomationFigureScopedUpsert) SetBounced(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldBounced, v)
+	return u
+}
+
+// AddBounced adds v to the "bounced" field.
+func (u *AutomationFigureScopedUpsert) AddBounced(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldBounced, v)
+	return u
+}
+
+// UpdateBounced sets the "bounced" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateBounced() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldBounced)
+	return u
+}
+
+// SetComplained sets the "complained" field.
+func (u *AutomationFigureScopedUpsert) SetComplained(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldComplained, v)
+	return u
+}
+
+// AddComplained adds v to the "complained" field.
+func (u *AutomationFigureScopedUpsert) AddComplained(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldComplained, v)
+	return u
+}
+
+// UpdateComplained sets the "complained" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateComplained() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldComplained)
+	return u
+}
+
+// SetCaptured sets the "captured" field.
+func (u *AutomationFigureScopedUpsert) SetCaptured(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldCaptured, v)
+	return u
+}
+
+// AddCaptured adds v to the "captured" field.
+func (u *AutomationFigureScopedUpsert) AddCaptured(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldCaptured, v)
+	return u
+}
+
+// UpdateCaptured sets the "captured" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateCaptured() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldCaptured)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *AutomationFigureScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(automationfigure.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// AutomationFigureScopedUpsertOne is the "upsert" of one AutomationFigure.
+type AutomationFigureScopedUpsertOne struct {
+	x *AutomationFigureScopedCreate
+	u *AutomationFigureUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *AutomationFigureScopedCreate) OnConflictColumns(columns ...string) *AutomationFigureScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *AutomationFigureScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *AutomationFigureScopedUpsertOne {
+	return &AutomationFigureScopedUpsertOne{x: x, u: x.b.OnConflict((&AutomationFigureScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationFigureScopedUpsertOne) UpdateNewValues() *AutomationFigureScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationFigureScopedUpsertOne) Ignore() *AutomationFigureScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationFigureScopedUpsertOne) DoNothing() *AutomationFigureScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationFigureScopedUpsertOne) Update(set func(*AutomationFigureScopedUpsert)) *AutomationFigureScopedUpsertOne {
+	u.u.Update(func(s *AutomationFigureUpsert) { set(&AutomationFigureScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *AutomationFigureScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *AutomationFigureScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// AutomationFigureScopedUpsertBulk is the "upsert" of several AutomationFigure entities.
+type AutomationFigureScopedUpsertBulk struct {
+	b       *AutomationFigureScopedCreateBulk
+	t       *AutomationFigureScoped
+	columns []string
+	opts    []func(*AutomationFigureUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *AutomationFigureScopedCreateBulk) OnConflictColumns(columns ...string) *AutomationFigureScopedUpsertBulk {
+	return &AutomationFigureScopedUpsertBulk{b: b, t: &AutomationFigureScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationFigureScopedUpsertBulk) UpdateNewValues() *AutomationFigureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *AutomationFigureUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationFigureScopedUpsertBulk) Ignore() *AutomationFigureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *AutomationFigureUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationFigureScopedUpsertBulk) DoNothing() *AutomationFigureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *AutomationFigureUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationFigureScopedUpsertBulk) Update(set func(*AutomationFigureScopedUpsert)) *AutomationFigureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *AutomationFigureUpsertBulk) {
+		r.Update(func(s *AutomationFigureUpsert) { set(&AutomationFigureScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *AutomationFigureScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// AutomationFigureScopedUpdateOne wraps AutomationFigureUpdateOne. It has no way to move the row to another Workspace.
+type AutomationFigureScopedUpdateOne struct {
+	s *Scoped
+	b *AutomationFigureUpdateOne
+}
+
+// UpdateOneID updates the AutomationFigure with the id; a row of another Workspace is not found.
+func (t *AutomationFigureScoped) UpdateOneID(id int64) *AutomationFigureScopedUpdateOne {
+	return &AutomationFigureScopedUpdateOne{s: t.s, b: t.s.c.AutomationFigure.UpdateOneID(id).Where(automationfigure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationFigureScopedUpdateOne) Where(ps ...predicate.AutomationFigure) *AutomationFigureScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationFigureScopedUpdateOne) SetUpdatedAt(v time.Time) *AutomationFigureScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetSent sets the "sent" field.
+func (x *AutomationFigureScopedUpdateOne) SetSent(v int) *AutomationFigureScopedUpdateOne {
+	x.b.SetSent(v)
+	return x
+}
+
+// SetNillableSent sets the "sent" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSent(v *int) *AutomationFigureScopedUpdateOne {
+	x.b.SetNillableSent(v)
+	return x
+}
+
+// AddSent adds value to the "sent" field.
+func (x *AutomationFigureScopedUpdateOne) AddSent(v int) *AutomationFigureScopedUpdateOne {
+	x.b.AddSent(v)
+	return x
+}
+
+// SetSkipped sets the "skipped" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkipped(v int) *AutomationFigureScopedUpdateOne {
+	x.b.SetSkipped(v)
+	return x
+}
+
+// SetNillableSkipped sets the "skipped" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkipped(v *int) *AutomationFigureScopedUpdateOne {
+	x.b.SetNillableSkipped(v)
+	return x
+}
+
+// AddSkipped adds value to the "skipped" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkipped(v int) *AutomationFigureScopedUpdateOne {
+	x.b.AddSkipped(v)
+	return x
+}
+
+// SetDelivered sets the "delivered" field.
+func (x *AutomationFigureScopedUpdateOne) SetDelivered(v int) *AutomationFigureScopedUpdateOne {
+	x.b.SetDelivered(v)
+	return x
+}
+
+// SetNillableDelivered sets the "delivered" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableDelivered(v *int) *AutomationFigureScopedUpdateOne {
+	x.b.SetNillableDelivered(v)
+	return x
+}
+
+// AddDelivered adds value to the "delivered" field.
+func (x *AutomationFigureScopedUpdateOne) AddDelivered(v int) *AutomationFigureScopedUpdateOne {
+	x.b.AddDelivered(v)
+	return x
+}
+
+// SetBounced sets the "bounced" field.
+func (x *AutomationFigureScopedUpdateOne) SetBounced(v int) *AutomationFigureScopedUpdateOne {
+	x.b.SetBounced(v)
+	return x
+}
+
+// SetNillableBounced sets the "bounced" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableBounced(v *int) *AutomationFigureScopedUpdateOne {
+	x.b.SetNillableBounced(v)
+	return x
+}
+
+// AddBounced adds value to the "bounced" field.
+func (x *AutomationFigureScopedUpdateOne) AddBounced(v int) *AutomationFigureScopedUpdateOne {
+	x.b.AddBounced(v)
+	return x
+}
+
+// SetComplained sets the "complained" field.
+func (x *AutomationFigureScopedUpdateOne) SetComplained(v int) *AutomationFigureScopedUpdateOne {
+	x.b.SetComplained(v)
+	return x
+}
+
+// SetNillableComplained sets the "complained" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableComplained(v *int) *AutomationFigureScopedUpdateOne {
+	x.b.SetNillableComplained(v)
+	return x
+}
+
+// AddComplained adds value to the "complained" field.
+func (x *AutomationFigureScopedUpdateOne) AddComplained(v int) *AutomationFigureScopedUpdateOne {
+	x.b.AddComplained(v)
+	return x
+}
+
+// SetCaptured sets the "captured" field.
+func (x *AutomationFigureScopedUpdateOne) SetCaptured(v int) *AutomationFigureScopedUpdateOne {
+	x.b.SetCaptured(v)
+	return x
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableCaptured(v *int) *AutomationFigureScopedUpdateOne {
+	x.b.SetNillableCaptured(v)
+	return x
+}
+
+// AddCaptured adds value to the "captured" field.
+func (x *AutomationFigureScopedUpdateOne) AddCaptured(v int) *AutomationFigureScopedUpdateOne {
+	x.b.AddCaptured(v)
+	return x
+}
+
+func (x *AutomationFigureScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the AutomationFigure.
+func (x *AutomationFigureScopedUpdateOne) Save(ctx context.Context) (*AutomationFigure, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationFigureScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// AutomationFigureScopedUpdate wraps AutomationFigureUpdate: a conditional bulk update of one Workspace.
+type AutomationFigureScopedUpdate struct {
+	s *Scoped
+	b *AutomationFigureUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the AutomationFigure entities of the Workspace that match the predicates.
+func (t *AutomationFigureScoped) Update() *AutomationFigureScopedUpdate {
+	return &AutomationFigureScopedUpdate{s: t.s, b: t.s.c.AutomationFigure.Update().Where(automationfigure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationFigureScopedUpdate) Where(ps ...predicate.AutomationFigure) *AutomationFigureScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *AutomationFigureScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *AutomationFigureScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(automationfigure.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationFigureScopedUpdate) SetUpdatedAt(v time.Time) *AutomationFigureScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetSent sets the "sent" field.
+func (x *AutomationFigureScopedUpdate) SetSent(v int) *AutomationFigureScopedUpdate {
+	x.b.SetSent(v)
+	return x
+}
+
+// SetNillableSent sets the "sent" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSent(v *int) *AutomationFigureScopedUpdate {
+	x.b.SetNillableSent(v)
+	return x
+}
+
+// AddSent adds value to the "sent" field.
+func (x *AutomationFigureScopedUpdate) AddSent(v int) *AutomationFigureScopedUpdate {
+	x.b.AddSent(v)
+	return x
+}
+
+// SetSkipped sets the "skipped" field.
+func (x *AutomationFigureScopedUpdate) SetSkipped(v int) *AutomationFigureScopedUpdate {
+	x.b.SetSkipped(v)
+	return x
+}
+
+// SetNillableSkipped sets the "skipped" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkipped(v *int) *AutomationFigureScopedUpdate {
+	x.b.SetNillableSkipped(v)
+	return x
+}
+
+// AddSkipped adds value to the "skipped" field.
+func (x *AutomationFigureScopedUpdate) AddSkipped(v int) *AutomationFigureScopedUpdate {
+	x.b.AddSkipped(v)
+	return x
+}
+
+// SetDelivered sets the "delivered" field.
+func (x *AutomationFigureScopedUpdate) SetDelivered(v int) *AutomationFigureScopedUpdate {
+	x.b.SetDelivered(v)
+	return x
+}
+
+// SetNillableDelivered sets the "delivered" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableDelivered(v *int) *AutomationFigureScopedUpdate {
+	x.b.SetNillableDelivered(v)
+	return x
+}
+
+// AddDelivered adds value to the "delivered" field.
+func (x *AutomationFigureScopedUpdate) AddDelivered(v int) *AutomationFigureScopedUpdate {
+	x.b.AddDelivered(v)
+	return x
+}
+
+// SetBounced sets the "bounced" field.
+func (x *AutomationFigureScopedUpdate) SetBounced(v int) *AutomationFigureScopedUpdate {
+	x.b.SetBounced(v)
+	return x
+}
+
+// SetNillableBounced sets the "bounced" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableBounced(v *int) *AutomationFigureScopedUpdate {
+	x.b.SetNillableBounced(v)
+	return x
+}
+
+// AddBounced adds value to the "bounced" field.
+func (x *AutomationFigureScopedUpdate) AddBounced(v int) *AutomationFigureScopedUpdate {
+	x.b.AddBounced(v)
+	return x
+}
+
+// SetComplained sets the "complained" field.
+func (x *AutomationFigureScopedUpdate) SetComplained(v int) *AutomationFigureScopedUpdate {
+	x.b.SetComplained(v)
+	return x
+}
+
+// SetNillableComplained sets the "complained" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableComplained(v *int) *AutomationFigureScopedUpdate {
+	x.b.SetNillableComplained(v)
+	return x
+}
+
+// AddComplained adds value to the "complained" field.
+func (x *AutomationFigureScopedUpdate) AddComplained(v int) *AutomationFigureScopedUpdate {
+	x.b.AddComplained(v)
+	return x
+}
+
+// SetCaptured sets the "captured" field.
+func (x *AutomationFigureScopedUpdate) SetCaptured(v int) *AutomationFigureScopedUpdate {
+	x.b.SetCaptured(v)
+	return x
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableCaptured(v *int) *AutomationFigureScopedUpdate {
+	x.b.SetNillableCaptured(v)
+	return x
+}
+
+// AddCaptured adds value to the "captured" field.
+func (x *AutomationFigureScopedUpdate) AddCaptured(v int) *AutomationFigureScopedUpdate {
+	x.b.AddCaptured(v)
+	return x
+}
+
+func (x *AutomationFigureScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *AutomationFigureScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *AutomationFigureScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }
@@ -7992,6 +8879,18 @@ func (x *BroadcastScopedCreate) AddRecipients(v ...*BroadcastRecipient) *Broadca
 	return x
 }
 
+// AddFigureIDs adds the "figures" edge to the BroadcastFigure entity by IDs.
+func (x *BroadcastScopedCreate) AddFigureIDs(ids ...int64) *BroadcastScopedCreate {
+	x.b.AddFigureIDs(ids...)
+	return x
+}
+
+// AddFigures adds the "figures" edges to the BroadcastFigure entity.
+func (x *BroadcastScopedCreate) AddFigures(v ...*BroadcastFigure) *BroadcastScopedCreate {
+	x.b.AddFigures(v...)
+	return x
+}
+
 // SetSegment sets the "segment" edge to the Segment entity.
 func (x *BroadcastScopedCreate) SetSegment(v *Segment) *BroadcastScopedCreate {
 	x.b.SetSegment(v)
@@ -8009,6 +8908,9 @@ func (x *BroadcastScopedCreate) check(ctx context.Context) error {
 	_ = m
 	if err := x.s.verifyBroadcastRecipient(ctx, m.RecipientsIDs()); err != nil {
 		return fmt.Errorf("recipients: %w", err)
+	}
+	if err := x.s.verifyBroadcastFigure(ctx, m.FiguresIDs()); err != nil {
+		return fmt.Errorf("figures: %w", err)
 	}
 	if err := x.s.verifySegment(ctx, m.SegmentIDs()); err != nil {
 		return fmt.Errorf("segment: %w", err)
@@ -8082,6 +8984,15 @@ func (b *BroadcastScopedCreateBulk) check(ctx context.Context) error {
 		}
 		if err := b.s.verifyBroadcastRecipient(ctx, ids); err != nil {
 			return fmt.Errorf("recipients: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().FiguresIDs()...)
+		}
+		if err := b.s.verifyBroadcastFigure(ctx, ids); err != nil {
+			return fmt.Errorf("figures: %w", err)
 		}
 	}
 	{
@@ -9173,6 +10084,36 @@ func (x *BroadcastScopedUpdateOne) RemoveRecipients(v ...*BroadcastRecipient) *B
 	return x
 }
 
+// AddFigureIDs adds the "figures" edge to the BroadcastFigure entity by IDs.
+func (x *BroadcastScopedUpdateOne) AddFigureIDs(ids ...int64) *BroadcastScopedUpdateOne {
+	x.b.AddFigureIDs(ids...)
+	return x
+}
+
+// AddFigures adds the "figures" edges to the BroadcastFigure entity.
+func (x *BroadcastScopedUpdateOne) AddFigures(v ...*BroadcastFigure) *BroadcastScopedUpdateOne {
+	x.b.AddFigures(v...)
+	return x
+}
+
+// ClearFigures clears the "figures" edges to the BroadcastFigure entity.
+func (x *BroadcastScopedUpdateOne) ClearFigures() *BroadcastScopedUpdateOne {
+	x.b.ClearFigures()
+	return x
+}
+
+// RemoveFigureIDs removes the "figures" edge to BroadcastFigure entities by IDs.
+func (x *BroadcastScopedUpdateOne) RemoveFigureIDs(ids ...int64) *BroadcastScopedUpdateOne {
+	x.b.RemoveFigureIDs(ids...)
+	return x
+}
+
+// RemoveFigures removes "figures" edges to BroadcastFigure entities.
+func (x *BroadcastScopedUpdateOne) RemoveFigures(v ...*BroadcastFigure) *BroadcastScopedUpdateOne {
+	x.b.RemoveFigures(v...)
+	return x
+}
+
 // SetSegment sets the "segment" edge to the Segment entity.
 func (x *BroadcastScopedUpdateOne) SetSegment(v *Segment) *BroadcastScopedUpdateOne {
 	x.b.SetSegment(v)
@@ -9202,6 +10143,9 @@ func (x *BroadcastScopedUpdateOne) check(ctx context.Context) error {
 	_ = m
 	if err := x.s.verifyBroadcastRecipient(ctx, m.RecipientsIDs()); err != nil {
 		return fmt.Errorf("recipients: %w", err)
+	}
+	if err := x.s.verifyBroadcastFigure(ctx, m.FiguresIDs()); err != nil {
+		return fmt.Errorf("figures: %w", err)
 	}
 	if err := x.s.verifySegment(ctx, m.SegmentIDs()); err != nil {
 		return fmt.Errorf("segment: %w", err)
@@ -9722,6 +10666,36 @@ func (x *BroadcastScopedUpdate) RemoveRecipients(v ...*BroadcastRecipient) *Broa
 	return x
 }
 
+// AddFigureIDs adds the "figures" edge to the BroadcastFigure entity by IDs.
+func (x *BroadcastScopedUpdate) AddFigureIDs(ids ...int64) *BroadcastScopedUpdate {
+	x.b.AddFigureIDs(ids...)
+	return x
+}
+
+// AddFigures adds the "figures" edges to the BroadcastFigure entity.
+func (x *BroadcastScopedUpdate) AddFigures(v ...*BroadcastFigure) *BroadcastScopedUpdate {
+	x.b.AddFigures(v...)
+	return x
+}
+
+// ClearFigures clears the "figures" edges to the BroadcastFigure entity.
+func (x *BroadcastScopedUpdate) ClearFigures() *BroadcastScopedUpdate {
+	x.b.ClearFigures()
+	return x
+}
+
+// RemoveFigureIDs removes the "figures" edge to BroadcastFigure entities by IDs.
+func (x *BroadcastScopedUpdate) RemoveFigureIDs(ids ...int64) *BroadcastScopedUpdate {
+	x.b.RemoveFigureIDs(ids...)
+	return x
+}
+
+// RemoveFigures removes "figures" edges to BroadcastFigure entities.
+func (x *BroadcastScopedUpdate) RemoveFigures(v ...*BroadcastFigure) *BroadcastScopedUpdate {
+	x.b.RemoveFigures(v...)
+	return x
+}
+
 // SetSegment sets the "segment" edge to the Segment entity.
 func (x *BroadcastScopedUpdate) SetSegment(v *Segment) *BroadcastScopedUpdate {
 	x.b.SetSegment(v)
@@ -9751,6 +10725,9 @@ func (x *BroadcastScopedUpdate) check(ctx context.Context) error {
 	_ = m
 	if err := x.s.verifyBroadcastRecipient(ctx, m.RecipientsIDs()); err != nil {
 		return fmt.Errorf("recipients: %w", err)
+	}
+	if err := x.s.verifyBroadcastFigure(ctx, m.FiguresIDs()); err != nil {
+		return fmt.Errorf("figures: %w", err)
 	}
 	if err := x.s.verifySegment(ctx, m.SegmentIDs()); err != nil {
 		return fmt.Errorf("segment: %w", err)
@@ -9809,6 +10786,601 @@ func (x *BroadcastScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *BroadcastScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// BroadcastFigureScoped reaches BroadcastFigure entities of one Workspace.
+type BroadcastFigureScoped struct{ s *Scoped }
+
+// BroadcastFigure returns the BroadcastFigure entities of the Workspace.
+func (s *Scoped) BroadcastFigure() *BroadcastFigureScoped { return &BroadcastFigureScoped{s: s} }
+
+// Query returns a BroadcastFigure query already confined to the Workspace.
+func (t *BroadcastFigureScoped) Query() *BroadcastFigureQuery {
+	return t.s.c.BroadcastFigure.Query().Where(broadcastfigure.WorkspaceID(t.s.ws))
+}
+
+// Get returns the BroadcastFigure with the id; a row of another Workspace is not found.
+func (t *BroadcastFigureScoped) Get(ctx context.Context, id int64) (*BroadcastFigure, error) {
+	return t.Query().Where(broadcastfigure.ID(id)).Only(ctx)
+}
+
+// BroadcastFigureScopedDeleteOne wraps BroadcastFigureDeleteOne.
+type BroadcastFigureScopedDeleteOne struct {
+	s *Scoped
+	b *BroadcastFigureDeleteOne
+}
+
+// DeleteOneID deletes the BroadcastFigure with the id; a row of another Workspace is not found.
+func (t *BroadcastFigureScoped) DeleteOneID(id int64) *BroadcastFigureScopedDeleteOne {
+	return &BroadcastFigureScopedDeleteOne{s: t.s, b: t.s.c.BroadcastFigure.DeleteOneID(id).Where(broadcastfigure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *BroadcastFigureScopedDeleteOne) Where(ps ...predicate.BroadcastFigure) *BroadcastFigureScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *BroadcastFigureScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// BroadcastFigureScopedDelete wraps BroadcastFigureDelete.
+type BroadcastFigureScopedDelete struct {
+	s *Scoped
+	b *BroadcastFigureDelete
+}
+
+// Delete deletes the BroadcastFigure entities of the Workspace that match the predicates.
+func (t *BroadcastFigureScoped) Delete() *BroadcastFigureScopedDelete {
+	return &BroadcastFigureScopedDelete{s: t.s, b: t.s.c.BroadcastFigure.Delete().Where(broadcastfigure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *BroadcastFigureScopedDelete) Where(ps ...predicate.BroadcastFigure) *BroadcastFigureScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *BroadcastFigureScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// BroadcastFigureScopedCreate wraps BroadcastFigureCreate. It has no way to name a Workspace.
+type BroadcastFigureScopedCreate struct {
+	s *Scoped
+	b *BroadcastFigureCreate
+}
+
+// Create starts a BroadcastFigure in the Workspace.
+func (t *BroadcastFigureScoped) Create() *BroadcastFigureScopedCreate {
+	return &BroadcastFigureScopedCreate{s: t.s, b: t.s.c.BroadcastFigure.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *BroadcastFigureScopedCreate) SetCreatedAt(v time.Time) *BroadcastFigureScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableCreatedAt(v *time.Time) *BroadcastFigureScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BroadcastFigureScopedCreate) SetUpdatedAt(v time.Time) *BroadcastFigureScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableUpdatedAt(v *time.Time) *BroadcastFigureScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *BroadcastFigureScopedCreate) SetBroadcastID(v int64) *BroadcastFigureScopedCreate {
+	x.b.SetBroadcastID(v)
+	return x
+}
+
+// SetRecipients sets the "recipients" field.
+func (x *BroadcastFigureScopedCreate) SetRecipients(v int) *BroadcastFigureScopedCreate {
+	x.b.SetRecipients(v)
+	return x
+}
+
+// SetUnsubscribed sets the "unsubscribed" field.
+func (x *BroadcastFigureScopedCreate) SetUnsubscribed(v int) *BroadcastFigureScopedCreate {
+	x.b.SetUnsubscribed(v)
+	return x
+}
+
+// SetSent sets the "sent" field.
+func (x *BroadcastFigureScopedCreate) SetSent(v int) *BroadcastFigureScopedCreate {
+	x.b.SetSent(v)
+	return x
+}
+
+// SetSkipped sets the "skipped" field.
+func (x *BroadcastFigureScopedCreate) SetSkipped(v int) *BroadcastFigureScopedCreate {
+	x.b.SetSkipped(v)
+	return x
+}
+
+// SetFailed sets the "failed" field.
+func (x *BroadcastFigureScopedCreate) SetFailed(v int) *BroadcastFigureScopedCreate {
+	x.b.SetFailed(v)
+	return x
+}
+
+// SetPending sets the "pending" field.
+func (x *BroadcastFigureScopedCreate) SetPending(v int) *BroadcastFigureScopedCreate {
+	x.b.SetPending(v)
+	return x
+}
+
+// SetDelivered sets the "delivered" field.
+func (x *BroadcastFigureScopedCreate) SetDelivered(v int) *BroadcastFigureScopedCreate {
+	x.b.SetDelivered(v)
+	return x
+}
+
+// SetUndelivered sets the "undelivered" field.
+func (x *BroadcastFigureScopedCreate) SetUndelivered(v int) *BroadcastFigureScopedCreate {
+	x.b.SetUndelivered(v)
+	return x
+}
+
+// SetBounced sets the "bounced" field.
+func (x *BroadcastFigureScopedCreate) SetBounced(v int) *BroadcastFigureScopedCreate {
+	x.b.SetBounced(v)
+	return x
+}
+
+// SetComplained sets the "complained" field.
+func (x *BroadcastFigureScopedCreate) SetComplained(v int) *BroadcastFigureScopedCreate {
+	x.b.SetComplained(v)
+	return x
+}
+
+// SetOpened sets the "opened" field.
+func (x *BroadcastFigureScopedCreate) SetOpened(v int) *BroadcastFigureScopedCreate {
+	x.b.SetOpened(v)
+	return x
+}
+
+// SetClicked sets the "clicked" field.
+func (x *BroadcastFigureScopedCreate) SetClicked(v int) *BroadcastFigureScopedCreate {
+	x.b.SetClicked(v)
+	return x
+}
+
+// SetCaptured sets the "captured" field.
+func (x *BroadcastFigureScopedCreate) SetCaptured(v int) *BroadcastFigureScopedCreate {
+	x.b.SetCaptured(v)
+	return x
+}
+
+// SetPrunedAt sets the "pruned_at" field.
+func (x *BroadcastFigureScopedCreate) SetPrunedAt(v time.Time) *BroadcastFigureScopedCreate {
+	x.b.SetPrunedAt(v)
+	return x
+}
+
+// SetNillablePrunedAt sets the "pruned_at" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillablePrunedAt(v *time.Time) *BroadcastFigureScopedCreate {
+	x.b.SetNillablePrunedAt(v)
+	return x
+}
+
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *BroadcastFigureScopedCreate) SetBroadcast(v *Broadcast) *BroadcastFigureScopedCreate {
+	x.b.SetBroadcast(v)
+	return x
+}
+
+func (x *BroadcastFigureScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the BroadcastFigure.
+func (x *BroadcastFigureScopedCreate) Save(ctx context.Context) (*BroadcastFigure, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *BroadcastFigureScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// BroadcastFigureScopedCreateBulk creates several BroadcastFigure entities of one Workspace at once.
+type BroadcastFigureScopedCreateBulk struct {
+	s  *Scoped
+	xs []*BroadcastFigureScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *BroadcastFigureScoped) CreateBulk(xs ...*BroadcastFigureScopedCreate) *BroadcastFigureScopedCreateBulk {
+	return &BroadcastFigureScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *BroadcastFigureScopedCreateBulk) raw(ctx context.Context) (*BroadcastFigureCreateBulk, error) {
+	builders := make([]*BroadcastFigureCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("BroadcastFigure: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		builders[i] = x.b
+	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
+	return b.s.c.BroadcastFigure.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *BroadcastFigureScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BroadcastIDs()...)
+		}
+		if err := b.s.verifyBroadcast(ctx, ids); err != nil {
+			return fmt.Errorf("broadcast: %w", err)
+		}
+	}
+	return nil
+}
+
+// Save verifies every builder's references, then creates the BroadcastFigure entities.
+func (b *BroadcastFigureScopedCreateBulk) Save(ctx context.Context) ([]*BroadcastFigure, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *BroadcastFigureScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// BroadcastFigureScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type BroadcastFigureScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BroadcastFigureScopedUpsert) SetUpdatedAt(v time.Time) *BroadcastFigureScopedUpsert {
+	u.u.Set(broadcastfigure.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BroadcastFigureScopedUpsert) UpdateUpdatedAt() *BroadcastFigureScopedUpsert {
+	u.u.SetExcluded(broadcastfigure.FieldUpdatedAt)
+	return u
+}
+
+// SetPrunedAt sets the "pruned_at" field.
+func (u *BroadcastFigureScopedUpsert) SetPrunedAt(v time.Time) *BroadcastFigureScopedUpsert {
+	u.u.Set(broadcastfigure.FieldPrunedAt, v)
+	return u
+}
+
+// UpdatePrunedAt sets the "pruned_at" field to the value that was provided on create.
+func (u *BroadcastFigureScopedUpsert) UpdatePrunedAt() *BroadcastFigureScopedUpsert {
+	u.u.SetExcluded(broadcastfigure.FieldPrunedAt)
+	return u
+}
+
+// ClearPrunedAt clears the value of the "pruned_at" field.
+func (u *BroadcastFigureScopedUpsert) ClearPrunedAt() *BroadcastFigureScopedUpsert {
+	u.u.SetNull(broadcastfigure.FieldPrunedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *BroadcastFigureScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(broadcastfigure.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// BroadcastFigureScopedUpsertOne is the "upsert" of one BroadcastFigure.
+type BroadcastFigureScopedUpsertOne struct {
+	x *BroadcastFigureScopedCreate
+	u *BroadcastFigureUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *BroadcastFigureScopedCreate) OnConflictColumns(columns ...string) *BroadcastFigureScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *BroadcastFigureScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *BroadcastFigureScopedUpsertOne {
+	return &BroadcastFigureScopedUpsertOne{x: x, u: x.b.OnConflict((&BroadcastFigureScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *BroadcastFigureScopedUpsertOne) UpdateNewValues() *BroadcastFigureScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *BroadcastFigureScopedUpsertOne) Ignore() *BroadcastFigureScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *BroadcastFigureScopedUpsertOne) DoNothing() *BroadcastFigureScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *BroadcastFigureScopedUpsertOne) Update(set func(*BroadcastFigureScopedUpsert)) *BroadcastFigureScopedUpsertOne {
+	u.u.Update(func(s *BroadcastFigureUpsert) { set(&BroadcastFigureScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *BroadcastFigureScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *BroadcastFigureScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// BroadcastFigureScopedUpsertBulk is the "upsert" of several BroadcastFigure entities.
+type BroadcastFigureScopedUpsertBulk struct {
+	b       *BroadcastFigureScopedCreateBulk
+	t       *BroadcastFigureScoped
+	columns []string
+	opts    []func(*BroadcastFigureUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *BroadcastFigureScopedCreateBulk) OnConflictColumns(columns ...string) *BroadcastFigureScopedUpsertBulk {
+	return &BroadcastFigureScopedUpsertBulk{b: b, t: &BroadcastFigureScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *BroadcastFigureScopedUpsertBulk) UpdateNewValues() *BroadcastFigureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BroadcastFigureUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *BroadcastFigureScopedUpsertBulk) Ignore() *BroadcastFigureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BroadcastFigureUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *BroadcastFigureScopedUpsertBulk) DoNothing() *BroadcastFigureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BroadcastFigureUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *BroadcastFigureScopedUpsertBulk) Update(set func(*BroadcastFigureScopedUpsert)) *BroadcastFigureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BroadcastFigureUpsertBulk) {
+		r.Update(func(s *BroadcastFigureUpsert) { set(&BroadcastFigureScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *BroadcastFigureScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// BroadcastFigureScopedUpdateOne wraps BroadcastFigureUpdateOne. It has no way to move the row to another Workspace.
+type BroadcastFigureScopedUpdateOne struct {
+	s *Scoped
+	b *BroadcastFigureUpdateOne
+}
+
+// UpdateOneID updates the BroadcastFigure with the id; a row of another Workspace is not found.
+func (t *BroadcastFigureScoped) UpdateOneID(id int64) *BroadcastFigureScopedUpdateOne {
+	return &BroadcastFigureScopedUpdateOne{s: t.s, b: t.s.c.BroadcastFigure.UpdateOneID(id).Where(broadcastfigure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *BroadcastFigureScopedUpdateOne) Where(ps ...predicate.BroadcastFigure) *BroadcastFigureScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BroadcastFigureScopedUpdateOne) SetUpdatedAt(v time.Time) *BroadcastFigureScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetPrunedAt sets the "pruned_at" field.
+func (x *BroadcastFigureScopedUpdateOne) SetPrunedAt(v time.Time) *BroadcastFigureScopedUpdateOne {
+	x.b.SetPrunedAt(v)
+	return x
+}
+
+// SetNillablePrunedAt sets the "pruned_at" field if the given value is not nil.
+func (x *BroadcastFigureScopedUpdateOne) SetNillablePrunedAt(v *time.Time) *BroadcastFigureScopedUpdateOne {
+	x.b.SetNillablePrunedAt(v)
+	return x
+}
+
+// ClearPrunedAt clears the value of the "pruned_at" field.
+func (x *BroadcastFigureScopedUpdateOne) ClearPrunedAt() *BroadcastFigureScopedUpdateOne {
+	x.b.ClearPrunedAt()
+	return x
+}
+
+func (x *BroadcastFigureScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the BroadcastFigure.
+func (x *BroadcastFigureScopedUpdateOne) Save(ctx context.Context) (*BroadcastFigure, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *BroadcastFigureScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// BroadcastFigureScopedUpdate wraps BroadcastFigureUpdate: a conditional bulk update of one Workspace.
+type BroadcastFigureScopedUpdate struct {
+	s *Scoped
+	b *BroadcastFigureUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the BroadcastFigure entities of the Workspace that match the predicates.
+func (t *BroadcastFigureScoped) Update() *BroadcastFigureScopedUpdate {
+	return &BroadcastFigureScopedUpdate{s: t.s, b: t.s.c.BroadcastFigure.Update().Where(broadcastfigure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *BroadcastFigureScopedUpdate) Where(ps ...predicate.BroadcastFigure) *BroadcastFigureScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *BroadcastFigureScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *BroadcastFigureScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(broadcastfigure.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BroadcastFigureScopedUpdate) SetUpdatedAt(v time.Time) *BroadcastFigureScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetPrunedAt sets the "pruned_at" field.
+func (x *BroadcastFigureScopedUpdate) SetPrunedAt(v time.Time) *BroadcastFigureScopedUpdate {
+	x.b.SetPrunedAt(v)
+	return x
+}
+
+// SetNillablePrunedAt sets the "pruned_at" field if the given value is not nil.
+func (x *BroadcastFigureScopedUpdate) SetNillablePrunedAt(v *time.Time) *BroadcastFigureScopedUpdate {
+	x.b.SetNillablePrunedAt(v)
+	return x
+}
+
+// ClearPrunedAt clears the value of the "pruned_at" field.
+func (x *BroadcastFigureScopedUpdate) ClearPrunedAt() *BroadcastFigureScopedUpdate {
+	x.b.ClearPrunedAt()
+	return x
+}
+
+func (x *BroadcastFigureScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *BroadcastFigureScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *BroadcastFigureScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

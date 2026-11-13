@@ -42,14 +42,14 @@ func trackingGet(t *testing.T, env *testhelper.TestEnv, path string) *httptest.R
 
 func trackingToken(t *testing.T, env *testhelper.TestEnv, messageID int64) string {
 	t.Helper()
-	token, err := env.Tracker.Token(messageID)
+	token, err := env.Tracker.Token(env.Tracked(t, messageID))
 	require.NoError(t, err)
 	return token
 }
 
 func clickPath(t *testing.T, env *testhelper.TestEnv, messageID int64) string {
 	t.Helper()
-	link, err := env.Tracker.ClickURL(messageID, clickDest)
+	link, err := env.Tracker.ClickURL(env.Tracked(t, messageID), clickDest)
 	require.NoError(t, err)
 	_, token, _ := strings.Cut(link, "/e/c/")
 	return "/e/c/" + token

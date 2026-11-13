@@ -22,8 +22,8 @@ import (
 // each send and never stored (ADR 0056). Its Segment is the one named by
 // segment_id, or all contacts in the workspace when it is unset; leaving draft takes a copy of the
 // Segment's Condition, which the plan resolves (ADR 0065).
-// Aggregate counters are denormalized for cheap reporting; per-recipient state
-// lives in BroadcastRecipient.
+// Its figures are read from its recipients and their Outbound messages (ADR 0015) until message
+// retention freezes them into a BroadcastFigure (ADR 0143).
 type Broadcast struct {
 	ent.Schema
 }
@@ -161,6 +161,8 @@ func (Broadcast) Fields() []ent.Field {
 func (Broadcast) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("recipients", BroadcastRecipient.Type),
+		// Its frozen figures, once message retention prunes it (ADR 0143).
+		edge.To("figures", BroadcastFigure.Type),
 		// A Segment is archived and an Integration discarded, never deleted (ADR 0100), so a
 		// Broadcast's reference to one always resolves, as history too. Only Workspace erasure purges them,
 		// after the Broadcasts.

@@ -80,6 +80,14 @@ func follow(t *testing.T, env *testhelper.TestEnv, path, userAgent string) *http
 	return rec
 }
 
+// leadsNowhere asserts a short link's answer is the neutral page of a link that is not there (ADR
+// 0143).
+func leadsNowhere(t *testing.T, resp *httptest.ResponseRecorder, msg string) {
+	t.Helper()
+	assert.Equal(t, http.StatusFound, resp.Code, msg)
+	assert.True(t, strings.HasSuffix(resp.Header().Get("Location"), "/link-expired"), msg)
+}
+
 func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecordAClick(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
@@ -138,12 +146,10 @@ func TestTheUnsubscribeLinkOfATelegramMessageIsNotTracked(t *testing.T) {
 	assert.Contains(t, hrefs[1][1], "/e/u/", "the opt-out link goes straight to the unsubscribe page")
 }
 
-func TestAnUnknownShortLinkIsNotFoundAndRecordsNothing(t *testing.T) {
+func TestAnUnknownShortLinkLeadsNowhereAndRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	resp := follow(t, env, "/c/nosuchtoken", browserUA)
-
-	assert.Equal(t, http.StatusNotFound, resp.Code)
+	leadsNowhere(t, follow(t, env, "/c/nosuchtoken", browserUA), "an unknown short link")
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramClicked, nil))
 }
 

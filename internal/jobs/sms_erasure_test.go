@@ -135,8 +135,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 		return erasedMessage{ContactID: m.ContactID, Destination: m.Destination, ProviderMessageID: m.ProviderMessageID}
 	})
 	assert.Equal(t, []erasedMessage{{}, {}}, anonymous, "the texts keep no Contact, number or Twilio SID")
-	followed := follow(t, env, paths[0], browserUA)
-	assert.Equal(t, http.StatusNotFound, followed.Code, "the short link answers 404")
+	leadsNowhere(t, follow(t, env, paths[0], browserUA), "the short link leads nowhere")
 	erased := env.QueuedEvents(t, systemevent.ContactErased)
 	require.Len(t, erased, 1)
 	hash := erased[0].(*events.ContactErased).PhoneHash

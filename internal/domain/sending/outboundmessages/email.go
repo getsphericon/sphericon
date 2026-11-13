@@ -127,7 +127,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 	}
 	if req.Source == "" {
 		// A tracked Transactional send: pixel and rewritten links, no footer, no header (ADR 0053).
-		html, err := tr.Instrument(out.HTML, messageID)
+		html, err := tr.Instrument(out.HTML, messagetoken.Message{WorkspaceID: s.WorkspaceID(), ID: messageID})
 		if err != nil {
 			return messaging.EmailMessage{}, contentError{fmt.Errorf("tracking rewrite: %w", err)}
 		}
@@ -148,7 +148,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 	if req.Track {
 		// Click/open tracking is layered on after rendering so re-parsing the HTML
 		// cannot mangle the pixel or links; Rewrite also appends the footer.
-		html, err := tr.Rewrite(out.HTML, messageID, unsub, ws.PostalAddress)
+		html, err := tr.Rewrite(out.HTML, messagetoken.Message{WorkspaceID: ws.ID, ID: messageID}, unsub, ws.PostalAddress)
 		if err != nil {
 			return messaging.EmailMessage{}, contentError{fmt.Errorf("tracking rewrite: %w", err)}
 		}

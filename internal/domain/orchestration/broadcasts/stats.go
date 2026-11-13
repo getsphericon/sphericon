@@ -2,23 +2,27 @@ package broadcasts
 
 import (
 	"context"
+	"slices"
 
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/infra/aggregates"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
-// Stats is a Broadcast's delivery figures. They are never stored: the audience is its
-// recipient rows, how each send ended is its Outbound message (ADR 0015), and engagement is
-// the timestamps on the recipient, so the figures cannot drift from what the rows say and are
-// live while the Broadcast is still sending.
+// Stats is a Broadcast's delivery figures. They are read from its rows: the audience is its
+// recipient rows, how each send ended is its Outbound message (ADR 0015), and engagement is the
+// stamps on the message, so the figures cannot drift from what the rows say and are live while the
+// Broadcast is still sending. Once message retention freezes a finished Broadcast (ADR 0143), they
+// are its BroadcastFigure, written once before its rows go.
 type Stats struct {
 	// Channel is the Channel of the Broadcast: it decides which figures are reported (the Reports
 	// methods). StatsOf leaves it empty; StatsFor sets it.
@@ -180,9 +184,47 @@ func StatsFor(ctx context.Context, s *ent.Scoped, bs ...*ent.Broadcast) (map[int
 	return out, nil
 }
 
-// StatsOf reads the figures of the given Broadcasts in two grouped queries, whatever their
-// number. A Broadcast with no rows yet has zero figures.
+// StatsOf reads the figures of the given Broadcasts, whatever their number: a frozen Broadcast's
+// from its BroadcastFigure and nothing live, the others' in two grouped queries over their rows,
+// and every one's Revenue from its Orders. A Broadcast with no rows yet has zero figures.
 func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats, error) {
+	if len(ids) == 0 {
+		return map[int64]Stats{}, nil
+	}
+	frozen, err := s.BroadcastFigure().Query().Where(broadcastfigure.BroadcastIDIn(ids...)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	live := slices.DeleteFunc(slices.Clone(ids), func(id int64) bool {
+		return slices.ContainsFunc(frozen, func(f *ent.BroadcastFigure) bool { return f.BroadcastID == id })
+	})
+	out, err := RowStatsOf(ctx, s, live...)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range frozen {
+		out[f.BroadcastID] = Stats{
+			Recipients: f.Recipients, Unsubscribed: f.Unsubscribed,
+			Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Pending: f.Pending,
+			Delivered: f.Delivered, Undelivered: f.Undelivered, Bounced: f.Bounced, Complained: f.Complained,
+			Opened: f.Opened, Clicked: f.Clicked, Captured: f.Captured,
+		}
+	}
+	revenue, err := orders.CreditedToBroadcasts(ctx, s, ids...)
+	if err != nil {
+		return nil, err
+	}
+	for id := range out {
+		st := out[id]
+		st.Revenue = revenue.Of(id)
+		out[id] = st
+	}
+	return out, nil
+}
+
+// RowStatsOf counts the given Broadcasts' figures from their rows, Revenue aside, whether or not
+// they are frozen: what message retention freezes (ADR 0143).
+func RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats, error) {
 	out := make(map[int64]Stats, len(ids))
 	for _, id := range ids {
 		out[id] = Stats{}
@@ -261,15 +303,16 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		}
 		out[m.BroadcastID] = st
 	}
-	revenue, err := orders.CreditedToBroadcasts(ctx, s, ids...)
-	if err != nil {
-		return nil, err
-	}
 	for id := range out {
 		st := out[id]
 		st.Pending = max(0, st.Recipients-st.Sent-st.Skipped-st.Failed)
-		st.Revenue = revenue.Of(id)
 		out[id] = st
 	}
 	return out, nil
 }
+
+// The unique constraint of a Broadcast's frozen figures (ADR 0106): no client can break it.
+var _ = db.Declare(
+	db.Fault("broadcast_figures_workspace_id_broadcast_id",
+		"broadcastsunchecked.Freeze writes the one row ON CONFLICT DO NOTHING, so a prune run again keeps the figures it froze first"),
+)

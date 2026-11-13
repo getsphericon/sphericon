@@ -73,6 +73,10 @@ const (
 	AutomationEmporiumRevenueID = 7200
 	// AutomationEmporiumRevenueName is from fixtures/automations.
 	AutomationEmporiumRevenueName = "Emporium revenue"
+	// AutomationFigureAcmeID is from fixtures/automation_figures.
+	AutomationFigureAcmeID = 1
+	// AutomationFigureGlobexID is from fixtures/automation_figures.
+	AutomationFigureGlobexID = 900
 	// AutomationGlobexID is from fixtures/automations.
 	AutomationGlobexID = 900
 	// AutomationGlobexName is from fixtures/automations.
@@ -781,6 +785,10 @@ const (
 	BroadcastFailedName = "Broken send (provider error)"
 	// BroadcastFailedSubject is from fixtures/broadcasts.
 	BroadcastFailedSubject = "Oops"
+	// BroadcastFigureAcmeID is from fixtures/broadcast_figures.
+	BroadcastFigureAcmeID = 1
+	// BroadcastFigureGlobexID is from fixtures/broadcast_figures.
+	BroadcastFigureGlobexID = 900
 	// BroadcastGlobexID is from fixtures/broadcasts.
 	BroadcastGlobexID = 900
 	// BroadcastGlobexName is from fixtures/broadcasts.

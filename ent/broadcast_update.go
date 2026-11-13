@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -530,6 +531,21 @@ func (_u *BroadcastUpdate) AddRecipients(v ...*BroadcastRecipient) *BroadcastUpd
 	return _u.AddRecipientIDs(ids...)
 }
 
+// AddFigureIDs adds the "figures" edge to the BroadcastFigure entity by IDs.
+func (_u *BroadcastUpdate) AddFigureIDs(ids ...int64) *BroadcastUpdate {
+	_u.mutation.AddFigureIDs(ids...)
+	return _u
+}
+
+// AddFigures adds the "figures" edges to the BroadcastFigure entity.
+func (_u *BroadcastUpdate) AddFigures(v ...*BroadcastFigure) *BroadcastUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFigureIDs(ids...)
+}
+
 // SetSegment sets the "segment" edge to the Segment entity.
 func (_u *BroadcastUpdate) SetSegment(v *Segment) *BroadcastUpdate {
 	return _u.SetSegmentID(v.ID)
@@ -570,6 +586,27 @@ func (_u *BroadcastUpdate) RemoveRecipients(v ...*BroadcastRecipient) *Broadcast
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRecipientIDs(ids...)
+}
+
+// ClearFigures clears all "figures" edges to the BroadcastFigure entity.
+func (_u *BroadcastUpdate) ClearFigures() *BroadcastUpdate {
+	_u.mutation.ClearFigures()
+	return _u
+}
+
+// RemoveFigureIDs removes the "figures" edge to BroadcastFigure entities by IDs.
+func (_u *BroadcastUpdate) RemoveFigureIDs(ids ...int64) *BroadcastUpdate {
+	_u.mutation.RemoveFigureIDs(ids...)
+	return _u
+}
+
+// RemoveFigures removes "figures" edges to BroadcastFigure entities.
+func (_u *BroadcastUpdate) RemoveFigures(v ...*BroadcastFigure) *BroadcastUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFigureIDs(ids...)
 }
 
 // ClearSegment clears the "segment" edge to the Segment entity.
@@ -866,6 +903,51 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   broadcast.FiguresTable,
+			Columns: []string{broadcast.FiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFiguresIDs(); len(nodes) > 0 && !_u.mutation.FiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   broadcast.FiguresTable,
+			Columns: []string{broadcast.FiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   broadcast.FiguresTable,
+			Columns: []string{broadcast.FiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1446,6 +1528,21 @@ func (_u *BroadcastUpdateOne) AddRecipients(v ...*BroadcastRecipient) *Broadcast
 	return _u.AddRecipientIDs(ids...)
 }
 
+// AddFigureIDs adds the "figures" edge to the BroadcastFigure entity by IDs.
+func (_u *BroadcastUpdateOne) AddFigureIDs(ids ...int64) *BroadcastUpdateOne {
+	_u.mutation.AddFigureIDs(ids...)
+	return _u
+}
+
+// AddFigures adds the "figures" edges to the BroadcastFigure entity.
+func (_u *BroadcastUpdateOne) AddFigures(v ...*BroadcastFigure) *BroadcastUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFigureIDs(ids...)
+}
+
 // SetSegment sets the "segment" edge to the Segment entity.
 func (_u *BroadcastUpdateOne) SetSegment(v *Segment) *BroadcastUpdateOne {
 	return _u.SetSegmentID(v.ID)
@@ -1486,6 +1583,27 @@ func (_u *BroadcastUpdateOne) RemoveRecipients(v ...*BroadcastRecipient) *Broadc
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRecipientIDs(ids...)
+}
+
+// ClearFigures clears all "figures" edges to the BroadcastFigure entity.
+func (_u *BroadcastUpdateOne) ClearFigures() *BroadcastUpdateOne {
+	_u.mutation.ClearFigures()
+	return _u
+}
+
+// RemoveFigureIDs removes the "figures" edge to BroadcastFigure entities by IDs.
+func (_u *BroadcastUpdateOne) RemoveFigureIDs(ids ...int64) *BroadcastUpdateOne {
+	_u.mutation.RemoveFigureIDs(ids...)
+	return _u
+}
+
+// RemoveFigures removes "figures" edges to BroadcastFigure entities.
+func (_u *BroadcastUpdateOne) RemoveFigures(v ...*BroadcastFigure) *BroadcastUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFigureIDs(ids...)
 }
 
 // ClearSegment clears the "segment" edge to the Segment entity.
@@ -1812,6 +1930,51 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   broadcast.FiguresTable,
+			Columns: []string{broadcast.FiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFiguresIDs(); len(nodes) > 0 && !_u.mutation.FiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   broadcast.FiguresTable,
+			Columns: []string{broadcast.FiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   broadcast.FiguresTable,
+			Columns: []string{broadcast.FiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

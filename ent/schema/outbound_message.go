@@ -206,6 +206,9 @@ func (OutboundMessage) Indexes() []ent.Index {
 			StorageKey("outbound_messages_workspace_id_idempotency_key"),
 		// Send-history listing, newest first, per surface.
 		index.Fields("workspace_id", "kind", "created_at"),
+		// Message retention: each kind's oldest messages across every Workspace (ADR 0143).
+		index.Fields("kind", "created_at").
+			StorageKey("outbound_messages_kind_created_at"),
 		// Usage of an Integration over a trailing window (ADR 0023).
 		index.Fields("workspace_id", "integration_id", "sent_at"),
 		// Deliverability windows per Sending domain (ADR 0011).

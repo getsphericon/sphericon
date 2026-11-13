@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -408,6 +409,21 @@ func (_c *BroadcastCreate) AddRecipients(v ...*BroadcastRecipient) *BroadcastCre
 	return _c.AddRecipientIDs(ids...)
 }
 
+// AddFigureIDs adds the "figures" edge to the BroadcastFigure entity by IDs.
+func (_c *BroadcastCreate) AddFigureIDs(ids ...int64) *BroadcastCreate {
+	_c.mutation.AddFigureIDs(ids...)
+	return _c
+}
+
+// AddFigures adds the "figures" edges to the BroadcastFigure entity.
+func (_c *BroadcastCreate) AddFigures(v ...*BroadcastFigure) *BroadcastCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddFigureIDs(ids...)
+}
+
 // SetSegment sets the "segment" edge to the Segment entity.
 func (_c *BroadcastCreate) SetSegment(v *Segment) *BroadcastCreate {
 	return _c.SetSegmentID(v.ID)
@@ -695,6 +711,22 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.FiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   broadcast.FiguresTable,
+			Columns: []string{broadcast.FiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

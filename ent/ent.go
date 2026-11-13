@@ -16,11 +16,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -146,11 +148,13 @@ func checkColumn(t, c string) error {
 			auditentry.Table:           auditentry.ValidColumn,
 			authattempt.Table:          authattempt.ValidColumn,
 			automation.Table:           automation.ValidColumn,
+			automationfigure.Table:     automationfigure.ValidColumn,
 			automationrun.Table:        automationrun.ValidColumn,
 			automationversion.Table:    automationversion.ValidColumn,
 			binding.Table:              binding.ValidColumn,
 			brandkit.Table:             brandkit.ValidColumn,
 			broadcast.Table:            broadcast.ValidColumn,
+			broadcastfigure.Table:      broadcastfigure.ValidColumn,
 			broadcastrecipient.Table:   broadcastrecipient.ValidColumn,
 			capturedmessage.Table:      capturedmessage.ValidColumn,
 			confirmation.Table:         confirmation.ValidColumn,

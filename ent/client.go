@@ -19,11 +19,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -102,6 +104,8 @@ type Client struct {
 	AuthAttempt *AuthAttemptClient
 	// Automation is the client for interacting with the Automation builders.
 	Automation *AutomationClient
+	// AutomationFigure is the client for interacting with the AutomationFigure builders.
+	AutomationFigure *AutomationFigureClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
 	// AutomationVersion is the client for interacting with the AutomationVersion builders.
@@ -112,6 +116,8 @@ type Client struct {
 	BrandKit *BrandKitClient
 	// Broadcast is the client for interacting with the Broadcast builders.
 	Broadcast *BroadcastClient
+	// BroadcastFigure is the client for interacting with the BroadcastFigure builders.
+	BroadcastFigure *BroadcastFigureClient
 	// BroadcastRecipient is the client for interacting with the BroadcastRecipient builders.
 	BroadcastRecipient *BroadcastRecipientClient
 	// CapturedMessage is the client for interacting with the CapturedMessage builders.
@@ -249,11 +255,13 @@ func (c *Client) init() {
 	c.AuditEntry = NewAuditEntryClient(c.config)
 	c.AuthAttempt = NewAuthAttemptClient(c.config)
 	c.Automation = NewAutomationClient(c.config)
+	c.AutomationFigure = NewAutomationFigureClient(c.config)
 	c.AutomationRun = NewAutomationRunClient(c.config)
 	c.AutomationVersion = NewAutomationVersionClient(c.config)
 	c.Binding = NewBindingClient(c.config)
 	c.BrandKit = NewBrandKitClient(c.config)
 	c.Broadcast = NewBroadcastClient(c.config)
+	c.BroadcastFigure = NewBroadcastFigureClient(c.config)
 	c.BroadcastRecipient = NewBroadcastRecipientClient(c.config)
 	c.CapturedMessage = NewCapturedMessageClient(c.config)
 	c.Confirmation = NewConfirmationClient(c.config)
@@ -411,11 +419,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AuditEntry:           NewAuditEntryClient(cfg),
 		AuthAttempt:          NewAuthAttemptClient(cfg),
 		Automation:           NewAutomationClient(cfg),
+		AutomationFigure:     NewAutomationFigureClient(cfg),
 		AutomationRun:        NewAutomationRunClient(cfg),
 		AutomationVersion:    NewAutomationVersionClient(cfg),
 		Binding:              NewBindingClient(cfg),
 		BrandKit:             NewBrandKitClient(cfg),
 		Broadcast:            NewBroadcastClient(cfg),
+		BroadcastFigure:      NewBroadcastFigureClient(cfg),
 		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
 		CapturedMessage:      NewCapturedMessageClient(cfg),
 		Confirmation:         NewConfirmationClient(cfg),
@@ -500,11 +510,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AuditEntry:           NewAuditEntryClient(cfg),
 		AuthAttempt:          NewAuthAttemptClient(cfg),
 		Automation:           NewAutomationClient(cfg),
+		AutomationFigure:     NewAutomationFigureClient(cfg),
 		AutomationRun:        NewAutomationRunClient(cfg),
 		AutomationVersion:    NewAutomationVersionClient(cfg),
 		Binding:              NewBindingClient(cfg),
 		BrandKit:             NewBrandKitClient(cfg),
 		Broadcast:            NewBroadcastClient(cfg),
+		BroadcastFigure:      NewBroadcastFigureClient(cfg),
 		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
 		CapturedMessage:      NewCapturedMessageClient(cfg),
 		Confirmation:         NewConfirmationClient(cfg),
@@ -595,17 +607,17 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
-		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
-		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
-		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.InstanceAuditEntry,
-		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
-		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
-		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
-		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
-		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
+		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
+		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
+		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
+		c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent,
+		c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
+		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
+		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
+		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
+		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
 		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
 		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
 		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
@@ -620,17 +632,17 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
-		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
-		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
-		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.InstanceAuditEntry,
-		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
-		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
-		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
-		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
-		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
+		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
+		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
+		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
+		c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent,
+		c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
+		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
+		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
+		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
+		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
 		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
 		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
 		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
@@ -652,6 +664,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AuthAttempt.mutate(ctx, m)
 	case *AutomationMutation:
 		return c.Automation.mutate(ctx, m)
+	case *AutomationFigureMutation:
+		return c.AutomationFigure.mutate(ctx, m)
 	case *AutomationRunMutation:
 		return c.AutomationRun.mutate(ctx, m)
 	case *AutomationVersionMutation:
@@ -662,6 +676,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.BrandKit.mutate(ctx, m)
 	case *BroadcastMutation:
 		return c.Broadcast.mutate(ctx, m)
+	case *BroadcastFigureMutation:
+		return c.BroadcastFigure.mutate(ctx, m)
 	case *BroadcastRecipientMutation:
 		return c.BroadcastRecipient.mutate(ctx, m)
 	case *CapturedMessageMutation:
@@ -1462,6 +1478,171 @@ func (c *AutomationClient) mutate(ctx context.Context, m *AutomationMutation) (V
 		return (&AutomationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Automation mutation op: %q", m.Op())
+	}
+}
+
+// AutomationFigureClient is a client for the AutomationFigure schema.
+type AutomationFigureClient struct {
+	config
+}
+
+// NewAutomationFigureClient returns a client for the AutomationFigure from the given config.
+func NewAutomationFigureClient(c config) *AutomationFigureClient {
+	return &AutomationFigureClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `automationfigure.Hooks(f(g(h())))`.
+func (c *AutomationFigureClient) Use(hooks ...Hook) {
+	c.hooks.AutomationFigure = append(c.hooks.AutomationFigure, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `automationfigure.Intercept(f(g(h())))`.
+func (c *AutomationFigureClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AutomationFigure = append(c.inters.AutomationFigure, interceptors...)
+}
+
+// Create returns a builder for creating a AutomationFigure entity.
+func (c *AutomationFigureClient) Create() *AutomationFigureCreate {
+	mutation := newAutomationFigureMutation(c.config, OpCreate)
+	return &AutomationFigureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AutomationFigure entities.
+func (c *AutomationFigureClient) CreateBulk(builders ...*AutomationFigureCreate) *AutomationFigureCreateBulk {
+	return &AutomationFigureCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AutomationFigureClient) MapCreateBulk(slice any, setFunc func(*AutomationFigureCreate, int)) *AutomationFigureCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AutomationFigureCreateBulk{err: fmt.Errorf("calling to AutomationFigureClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AutomationFigureCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AutomationFigureCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AutomationFigure.
+func (c *AutomationFigureClient) Update() *AutomationFigureUpdate {
+	mutation := newAutomationFigureMutation(c.config, OpUpdate)
+	return &AutomationFigureUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AutomationFigureClient) UpdateOne(_m *AutomationFigure) *AutomationFigureUpdateOne {
+	mutation := newAutomationFigureMutation(c.config, OpUpdateOne, withAutomationFigure(_m))
+	return &AutomationFigureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AutomationFigureClient) UpdateOneID(id int64) *AutomationFigureUpdateOne {
+	mutation := newAutomationFigureMutation(c.config, OpUpdateOne, withAutomationFigureID(id))
+	return &AutomationFigureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AutomationFigure.
+func (c *AutomationFigureClient) Delete() *AutomationFigureDelete {
+	mutation := newAutomationFigureMutation(c.config, OpDelete)
+	return &AutomationFigureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AutomationFigureClient) DeleteOne(_m *AutomationFigure) *AutomationFigureDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AutomationFigureClient) DeleteOneID(id int64) *AutomationFigureDeleteOne {
+	builder := c.Delete().Where(automationfigure.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AutomationFigureDeleteOne{builder}
+}
+
+// Query returns a query builder for AutomationFigure.
+func (c *AutomationFigureClient) Query() *AutomationFigureQuery {
+	return &AutomationFigureQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAutomationFigure},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AutomationFigure entity by its id.
+func (c *AutomationFigureClient) Get(ctx context.Context, id int64) (*AutomationFigure, error) {
+	return c.Query().Where(automationfigure.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AutomationFigureClient) GetX(ctx context.Context, id int64) *AutomationFigure {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a AutomationFigure.
+func (c *AutomationFigureClient) QueryWorkspace(_m *AutomationFigure) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationfigure.Table, automationfigure.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, automationfigure.WorkspaceTable, automationfigure.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomation queries the automation edge of a AutomationFigure.
+func (c *AutomationFigureClient) QueryAutomation(_m *AutomationFigure) *AutomationQuery {
+	query := (&AutomationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationfigure.Table, automationfigure.FieldID, id),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationfigure.AutomationTable, automationfigure.AutomationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AutomationFigureClient) Hooks() []Hook {
+	return c.hooks.AutomationFigure
+}
+
+// Interceptors returns the client interceptors.
+func (c *AutomationFigureClient) Interceptors() []Interceptor {
+	return c.inters.AutomationFigure
+}
+
+func (c *AutomationFigureClient) mutate(ctx context.Context, m *AutomationFigureMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AutomationFigureCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AutomationFigureUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AutomationFigureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AutomationFigureDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AutomationFigure mutation op: %q", m.Op())
 	}
 }
 
@@ -2329,6 +2510,22 @@ func (c *BroadcastClient) QueryRecipients(_m *Broadcast) *BroadcastRecipientQuer
 	return query
 }
 
+// QueryFigures queries the figures edge of a Broadcast.
+func (c *BroadcastClient) QueryFigures(_m *Broadcast) *BroadcastFigureQuery {
+	query := (&BroadcastFigureClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcast.Table, broadcast.FieldID, id),
+			sqlgraph.To(broadcastfigure.Table, broadcastfigure.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, broadcast.FiguresTable, broadcast.FiguresColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySegment queries the segment edge of a Broadcast.
 func (c *BroadcastClient) QuerySegment(_m *Broadcast) *SegmentQuery {
 	query := (&SegmentClient{config: c.config}).Query()
@@ -2383,6 +2580,171 @@ func (c *BroadcastClient) mutate(ctx context.Context, m *BroadcastMutation) (Val
 		return (&BroadcastDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Broadcast mutation op: %q", m.Op())
+	}
+}
+
+// BroadcastFigureClient is a client for the BroadcastFigure schema.
+type BroadcastFigureClient struct {
+	config
+}
+
+// NewBroadcastFigureClient returns a client for the BroadcastFigure from the given config.
+func NewBroadcastFigureClient(c config) *BroadcastFigureClient {
+	return &BroadcastFigureClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `broadcastfigure.Hooks(f(g(h())))`.
+func (c *BroadcastFigureClient) Use(hooks ...Hook) {
+	c.hooks.BroadcastFigure = append(c.hooks.BroadcastFigure, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `broadcastfigure.Intercept(f(g(h())))`.
+func (c *BroadcastFigureClient) Intercept(interceptors ...Interceptor) {
+	c.inters.BroadcastFigure = append(c.inters.BroadcastFigure, interceptors...)
+}
+
+// Create returns a builder for creating a BroadcastFigure entity.
+func (c *BroadcastFigureClient) Create() *BroadcastFigureCreate {
+	mutation := newBroadcastFigureMutation(c.config, OpCreate)
+	return &BroadcastFigureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BroadcastFigure entities.
+func (c *BroadcastFigureClient) CreateBulk(builders ...*BroadcastFigureCreate) *BroadcastFigureCreateBulk {
+	return &BroadcastFigureCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BroadcastFigureClient) MapCreateBulk(slice any, setFunc func(*BroadcastFigureCreate, int)) *BroadcastFigureCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BroadcastFigureCreateBulk{err: fmt.Errorf("calling to BroadcastFigureClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BroadcastFigureCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BroadcastFigureCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BroadcastFigure.
+func (c *BroadcastFigureClient) Update() *BroadcastFigureUpdate {
+	mutation := newBroadcastFigureMutation(c.config, OpUpdate)
+	return &BroadcastFigureUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BroadcastFigureClient) UpdateOne(_m *BroadcastFigure) *BroadcastFigureUpdateOne {
+	mutation := newBroadcastFigureMutation(c.config, OpUpdateOne, withBroadcastFigure(_m))
+	return &BroadcastFigureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BroadcastFigureClient) UpdateOneID(id int64) *BroadcastFigureUpdateOne {
+	mutation := newBroadcastFigureMutation(c.config, OpUpdateOne, withBroadcastFigureID(id))
+	return &BroadcastFigureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BroadcastFigure.
+func (c *BroadcastFigureClient) Delete() *BroadcastFigureDelete {
+	mutation := newBroadcastFigureMutation(c.config, OpDelete)
+	return &BroadcastFigureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BroadcastFigureClient) DeleteOne(_m *BroadcastFigure) *BroadcastFigureDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BroadcastFigureClient) DeleteOneID(id int64) *BroadcastFigureDeleteOne {
+	builder := c.Delete().Where(broadcastfigure.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BroadcastFigureDeleteOne{builder}
+}
+
+// Query returns a query builder for BroadcastFigure.
+func (c *BroadcastFigureClient) Query() *BroadcastFigureQuery {
+	return &BroadcastFigureQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBroadcastFigure},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a BroadcastFigure entity by its id.
+func (c *BroadcastFigureClient) Get(ctx context.Context, id int64) (*BroadcastFigure, error) {
+	return c.Query().Where(broadcastfigure.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BroadcastFigureClient) GetX(ctx context.Context, id int64) *BroadcastFigure {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a BroadcastFigure.
+func (c *BroadcastFigureClient) QueryWorkspace(_m *BroadcastFigure) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcastfigure.Table, broadcastfigure.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, broadcastfigure.WorkspaceTable, broadcastfigure.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBroadcast queries the broadcast edge of a BroadcastFigure.
+func (c *BroadcastFigureClient) QueryBroadcast(_m *BroadcastFigure) *BroadcastQuery {
+	query := (&BroadcastClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcastfigure.Table, broadcastfigure.FieldID, id),
+			sqlgraph.To(broadcast.Table, broadcast.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, broadcastfigure.BroadcastTable, broadcastfigure.BroadcastColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BroadcastFigureClient) Hooks() []Hook {
+	return c.hooks.BroadcastFigure
+}
+
+// Interceptors returns the client interceptors.
+func (c *BroadcastFigureClient) Interceptors() []Interceptor {
+	return c.inters.BroadcastFigure
+}
+
+func (c *BroadcastFigureClient) mutate(ctx context.Context, m *BroadcastFigureMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BroadcastFigureCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BroadcastFigureUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BroadcastFigureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BroadcastFigureDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown BroadcastFigure mutation op: %q", m.Op())
 	}
 }
 
@@ -12848,6 +13210,38 @@ func (c *WorkspaceClient) QueryBroadcastRecipients(_m *Workspace) *BroadcastReci
 	return query
 }
 
+// QueryBroadcastFigures queries the broadcast_figures edge of a Workspace.
+func (c *WorkspaceClient) QueryBroadcastFigures(_m *Workspace) *BroadcastFigureQuery {
+	query := (&BroadcastFigureClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(broadcastfigure.Table, broadcastfigure.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.BroadcastFiguresTable, workspace.BroadcastFiguresColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomationFigures queries the automation_figures edge of a Workspace.
+func (c *WorkspaceClient) QueryAutomationFigures(_m *Workspace) *AutomationFigureQuery {
+	query := (&AutomationFigureClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(automationfigure.Table, automationfigure.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationFiguresTable, workspace.AutomationFiguresColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryEmailTemplates queries the email_templates edge of a Workspace.
 func (c *WorkspaceClient) QueryEmailTemplates(_m *Workspace) *EmailTemplateQuery {
 	query := (&EmailTemplateClient{config: c.config}).Query()
@@ -13212,35 +13606,36 @@ func (c *WorkspaceClient) mutate(ctx context.Context, m *WorkspaceMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
-		Binding, BrandKit, Broadcast, BroadcastRecipient, CapturedMessage,
-		Confirmation, ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate,
-		Erasure, Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold,
-		InstanceAuditEntry, InstanceState, Integration, Invitation, JoinDomain,
-		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
-		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
-		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
-		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
-		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
+		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
+		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, Contact,
+		ContactTag, CustomField, EmailTemplate, Erasure, Event, EventJournalEntry,
+		EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState,
+		Integration, Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion,
+		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
+		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
+		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
+		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
-		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
-		Binding, BrandKit, Broadcast, BroadcastRecipient, CapturedMessage,
-		Confirmation, ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate,
-		Erasure, Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold,
-		InstanceAuditEntry, InstanceState, Integration, Invitation, JoinDomain,
-		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
-		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
-		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
-		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
-		UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
-		Workspace []ent.Interceptor
+		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
+		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
+		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, Contact,
+		ContactTag, CustomField, EmailTemplate, Erasure, Event, EventJournalEntry,
+		EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState,
+		Integration, Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion,
+		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
+		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
+		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
+		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

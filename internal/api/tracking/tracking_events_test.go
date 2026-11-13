@@ -26,7 +26,7 @@ const (
 
 func openPath(t *testing.T, env *testhelper.TestEnv, messageID int64) string {
 	t.Helper()
-	token, err := env.Tracker.Token(messageID)
+	token, err := env.Tracker.Token(env.Tracked(t, messageID))
 	require.NoError(t, err)
 	return "/e/o/" + token
 }
@@ -94,7 +94,7 @@ func TestEveryClickIsAnEventWithItsURLAndTheReportListsTheLinks(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	for _, dest := range []string{linkA, linkA, linkB} {
-		link, err := env.Tracker.ClickURL(fixtures.OutboundMessageTrackingSampleID, dest)
+		link, err := env.Tracker.ClickURL(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID), dest)
 		require.NoError(t, err)
 		resp := trackingGet(t, env, "/e/c/"+link[len(env.Tracker.Origin()+"/e/c/"):])
 		assert.Equal(t, http.StatusFound, resp.Code)
@@ -113,7 +113,7 @@ func TestEveryClickIsAnEventWithItsURLAndTheReportListsTheLinks(t *testing.T) {
 func TestUniqueFiguresSurviveTheExpiryOfTheEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	link, err := env.Tracker.ClickURL(fixtures.OutboundMessageTrackingSampleID, linkA)
+	link, err := env.Tracker.ClickURL(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID), linkA)
 	require.NoError(t, err)
 	trackingGet(t, env, "/e/c/"+link[len(env.Tracker.Origin()+"/e/c/"):])
 	trackingGet(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID))

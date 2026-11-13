@@ -18,18 +18,21 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 )
 
+// msg7 is the message the tests' links name.
+var msg7 = messagetoken.Message{WorkspaceID: fixtures.AcmeID, ID: 7}
+
 func TestTokenRoundTrip(t *testing.T) {
 	tr := messagetoken.New("secret", "https://app.test", time.Now)
-	tok, err := tr.Token(42)
+	tok, err := tr.Token(messagetoken.Message{WorkspaceID: fixtures.AcmeID, ID: 42})
 	require.NoError(t, err)
 
-	rid, err := tr.Decode(tok)
+	m, err := tr.Decode(tok)
 	require.NoError(t, err)
-	assert.Equal(t, int64(42), rid)
+	assert.Equal(t, messagetoken.Message{WorkspaceID: fixtures.AcmeID, ID: 42}, m)
 }
 
 func TestDecodeRejectsWrongSecret(t *testing.T) {
-	tok, err := messagetoken.New("secret", "https://app.test", time.Now).Token(1)
+	tok, err := messagetoken.New("secret", "https://app.test", time.Now).Token(msg7)
 	require.NoError(t, err)
 
 	_, err = messagetoken.New("other-secret", "https://app.test", time.Now).Decode(tok)
@@ -104,7 +107,7 @@ func TestRewriteWrapsLinksAndAddsPixelAndFooter(t *testing.T) {
 	tr := messagetoken.New("secret", "https://app.test", time.Now)
 	body := `<p>Hello <a href="https://dest.test/path?x=1">click</a> or <a href="mailto:a@b.test">mail</a></p>`
 
-	out, err := tr.Rewrite(body, 7, linktarget.Unsubscribe{
+	out, err := tr.Rewrite(body, msg7, linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  "broadcasts", Destination: "x@y.test", WorkspaceID: fixtures.AcmeID, ContactID: 2, BroadcastID: 3,
 	}, "Acme Inc, 123 Main St, Springfield")
@@ -115,9 +118,9 @@ func TestRewriteWrapsLinksAndAddsPixelAndFooter(t *testing.T) {
 	require.True(t, found, out)
 	clickToken, _, _ := strings.Cut(rest, `"`)
 	assert.NotContains(t, clickToken, "?", "the destination is not a bare parameter")
-	rid, dest, err := tr.DecodeClick(clickToken)
+	m, dest, err := tr.DecodeClick(clickToken)
 	require.NoError(t, err)
-	assert.Equal(t, int64(7), rid)
+	assert.Equal(t, msg7, m)
 	assert.Equal(t, "https://dest.test/path?x=1", dest)
 	// mailto links are left untouched.
 	assert.Contains(t, out, `href="mailto:a@b.test"`)
@@ -141,7 +144,7 @@ func TestInstrumentKeepsTheBodyAsWrittenAroundATrackedLink(t *testing.T) {
 	link := `<A HREF="https://dest.test/p?a=1&amp;b=2" style="color:red">click</A>`
 	after := `<a href="mailto:a@b.test">mail</a><!--[if mso]></td></tr></table><![endif]--></body></HTML>`
 
-	out, err := tr.Instrument(before+link+after, 7)
+	out, err := tr.Instrument(before+link+after, msg7)
 	require.NoError(t, err)
 
 	require.True(t, strings.HasPrefix(out, before), out)
@@ -161,7 +164,7 @@ func TestInstrumentKeepsTheBodyAsWrittenAroundATrackedLink(t *testing.T) {
 func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
 	tr := messagetoken.New("secret", "https://app.test", time.Now)
 
-	recipient, err := tr.Token(7)
+	recipient, err := tr.Token(msg7)
 	require.NoError(t, err)
 	_, _, err = tr.DecodeClick(recipient)
 	require.Error(t, err, "the open-pixel token carries no destination")
@@ -172,13 +175,13 @@ func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
 	_, _, err = tr.DecodeClick(confirm)
 	require.Error(t, err, "a confirm token has a dest claim but no recipient")
 
-	link, err := tr.ClickURL(7, "javascript:alert(1)")
+	link, err := tr.ClickURL(msg7, "javascript:alert(1)")
 	require.NoError(t, err)
 	_, js, _ := strings.Cut(link, "/e/c/")
 	_, _, err = tr.DecodeClick(js)
 	require.Error(t, err, "only http(s) destinations redirect")
 
-	link, err = tr.ClickURL(7, "https://dest.test/")
+	link, err = tr.ClickURL(msg7, "https://dest.test/")
 	require.NoError(t, err)
 	_, good, _ := strings.Cut(link, "/e/c/")
 	_, _, err = messagetoken.New("other", "https://app.test", time.Now).DecodeClick(good)
@@ -207,19 +210,19 @@ func TestUnsubscribeFooterPostalAddress(t *testing.T) {
 // secondary one, and new links are signed with the primary.
 func TestDecodeAcceptsTheSecondarySecretButSignsWithThePrimary(t *testing.T) {
 	old := messagetoken.New("old-secret", "https://app.test", time.Now)
-	mailed, err := old.Token(5)
+	mailed, err := old.Token(messagetoken.Message{WorkspaceID: 2, ID: 5})
 	require.NoError(t, err)
 	unsub, err := old.UnsubscribeURL(linktarget.Unsubscribe{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.test", WorkspaceID: 2})
 	require.NoError(t, err)
 
 	rotated := messagetoken.New("new-secret", "https://app.test", time.Now, "old-secret")
-	rid, err := rotated.Decode(mailed)
+	m, err := rotated.Decode(mailed)
 	require.NoError(t, err)
-	assert.EqualValues(t, 5, rid)
+	assert.EqualValues(t, 5, m.ID)
 	_, err = rotated.DecodeUnsub(strings.TrimPrefix(unsub, "https://app.test/e/u/"))
 	require.NoError(t, err)
 
-	fresh, err := rotated.Token(6)
+	fresh, err := rotated.Token(messagetoken.Message{WorkspaceID: 2, ID: 6})
 	require.NoError(t, err)
 	_, err = messagetoken.New("new-secret", "https://app.test", time.Now).Decode(fresh)
 	require.NoError(t, err, "a new link verifies without the secondary secret")
