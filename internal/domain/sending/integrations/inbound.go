@@ -291,7 +291,7 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (Vi
 	if err != nil {
 		return View{}, err
 	}
-	if current.Provider == providers.Telegram && holdsWebhook(current.Enabled, current.DiscardedAt) {
+	if HoldsWebhook(current) {
 		cfg, err := m.telegramConfigOf(current)
 		if err != nil {
 			return View{}, err

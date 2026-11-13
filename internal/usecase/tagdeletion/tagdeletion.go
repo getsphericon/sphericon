@@ -2,15 +2,15 @@
 // A Tag is deleted outright unless it is in Definition use: the Removal check
 // (internal/domain/orchestration/removalcheck) asks every module that may name it, and refuses
 // with a *liveuse.Error naming them. The tags module knows none of them, so the check runs here,
-// under the Workspace lock, before the module's unchecked removal, tagsunchecked.DeleteIn, which
-// only a use case may import (ADR 0110).
+// under the Workspace lock, between opening and applying the module's unchecked removal,
+// tagsunchecked.Deletion, which only a use case may import (ADR 0110) and which keeps every rule of
+// the Tag's own row (ADR 0145).
 package tagdeletion
 
 import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags/tagsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -37,13 +37,13 @@ func New(bus *events.Bus, check *removalcheck.Module) *UseCase {
 // Automation takes too, so none of them names the Tag between the check and the delete.
 func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		t, err := tags.Get(ctx, wl.Scope(), id)
+		deletion, err := tagsunchecked.DeletionIn(ctx, wl, id)
 		if err != nil {
 			return err
 		}
-		if err := u.check.Tag(ctx, wl, t.Name); err != nil {
+		if err := u.check.Tag(ctx, wl, deletion.Name()); err != nil {
 			return err
 		}
-		return tagsunchecked.DeleteIn(ctx, wl, id)
+		return deletion.Apply(ctx)
 	})
 }

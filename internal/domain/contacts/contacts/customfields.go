@@ -89,27 +89,6 @@ func CustomField(ctx context.Context, s *ent.Scoped, id int64) (*ent.CustomField
 	return field, err
 }
 
-// Check refuses an edit whose new name the name rule refuses (validation.Name), and one made on a
-// revision field has moved past (ErrCustomFieldRevisionChanged).
-func (in CustomFieldUpdateInput) Check(field *ent.CustomField) error {
-	if _, err := validation.NamePatch(in.Name); err != nil {
-		return err
-	}
-	if field.Revision != in.Revision {
-		return ErrCustomFieldRevisionChanged
-	}
-	return nil
-}
-
-// Retype returns the type the edit changes field to, and false when the edit keeps its type.
-func (in CustomFieldUpdateInput) Retype(field *ent.CustomField) (customfield.Type, bool) {
-	raw, ok := in.Type.Get()
-	if !ok || customfield.Type(raw) == field.Type {
-		return "", false
-	}
-	return customfield.Type(raw), true
-}
-
 // CustomFields returns the Workspace's whole Custom field catalogue, ascending by key.
 // The catalogue is small and unpaginated.
 func CustomFields(ctx context.Context, s *ent.Scoped) ([]*ent.CustomField, error) {

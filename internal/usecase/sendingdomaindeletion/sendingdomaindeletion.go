@@ -2,8 +2,9 @@
 // 0049). A Sending domain is in Live use while a Broadcast or an Automation above the
 // sendingdomains module will still send email from an address on it (ADR 0099); deleting it runs
 // the Removal check (internal/domain/orchestration/removalcheck), which refuses with a
-// *liveuse.Error naming the work if any sends from it, and otherwise calls the module's unchecked
-// removal, sendingdomainsunchecked.DeleteIn, which only a use case may import (ADR 0110).
+// *liveuse.Error naming the work if any sends from it. The rest is the module's unchecked removal,
+// sendingdomainsunchecked.Deletion, which only a use case may import (ADR 0110) and which keeps
+// every rule of the domain's own row (ADR 0145): the use case locks, opens it, checks and applies.
 package sendingdomaindeletion
 
 import (
@@ -12,7 +13,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
-	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains/sendingdomainsunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -20,16 +20,15 @@ import (
 // UseCase deletes a Sending domain. Every call receives the Workspace-scoped client (ADR 0017)
 // built by the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
-	bus     *events.Bus
-	domains *sendingdomains.Module
-	check   *removalcheck.Module
-	now     func() time.Time
+	bus   *events.Bus
+	check *removalcheck.Module
+	now   func() time.Time
 }
 
-// New builds the Sending domain deletion use case over the Sending domains module, which reads the
-// row, and the Removal check; now is the Instance clock.
-func New(bus *events.Bus, domains *sendingdomains.Module, check *removalcheck.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, domains: domains, check: check, now: now}
+// New builds the Sending domain deletion use case over the Removal check; now is the Instance
+// clock.
+func New(bus *events.Bus, check *removalcheck.Module, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, check: check, now: now}
 }
 
 // Delete discards a Sending domain for good (ADR 0049): it leaves the lists and is never
@@ -39,20 +38,17 @@ func New(bus *events.Bus, domains *sendingdomains.Module, check *removalcheck.Mo
 // Automation or a version an unfinished Enrollment stands on uses the domain of the From its email
 // goes out with, its own or, without one, the From of the Integration it goes through (an
 // Automation step carries none). A sent or failed Broadcast is history and does not block. Deleting
-// a deleted domain changes nothing; an unknown id is sendingdomains.ErrNotFound. The check and the
-// discard hold the Workspace's lock (ADR 0099), so no work becomes live between them.
+// a deleted domain changes nothing; an unknown id is sendingdomains.ErrNotFound. The read, the
+// check and the discard hold the Workspace's lock (ADR 0099), so no work becomes live between them.
 func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		row, err := u.domains.Get(ctx, wl.Scope(), id)
-		if err != nil {
+		deletion, err := sendingdomainsunchecked.DeletionIn(ctx, wl, id)
+		if err != nil || deletion.Done() {
 			return err
 		}
-		if row.DiscardedAt != nil {
-			return nil
-		}
-		if err := u.check.SendingDomain(ctx, wl, row.Domain); err != nil {
+		if err := u.check.SendingDomain(ctx, wl, deletion.Domain()); err != nil {
 			return err
 		}
-		return sendingdomainsunchecked.DeleteIn(ctx, wl, id, u.now())
+		return deletion.Apply(ctx, u.now())
 	})
 }
