@@ -677,7 +677,7 @@ fi
 '''
 
 ["check:arch"]
-description = "Package boundaries in easement.yml, Go and frontend: a surface never imports another surface, core imports neither a surface nor ee, no domain module imports a use case and no use case another, only a use case imports an unchecked operation (the `<module>unchecked` subpackages), only the packages of the raw-client list (core-raw and the bus) use *ent.Client, the bus imports no domain module, only the wiring imports samber/do, a route file never imports a page, shared UI never imports a page, the frontend never uses the global i18next instance nor dayjs outside src/utils/datetime.ts, every package a file imports is declared in its package.json (easement; `easement check --format json` for a machine-readable report)"
+description = "Package boundaries in easement.yml, Go and frontend: a surface never imports another surface, core imports neither a surface nor ee, no domain module imports a use case and no use case another, only a use case imports an unchecked operation (the `<module>unchecked` subpackages), only the packages of the raw-client list (core-raw and the bus) use *ent.Client, the bus imports no domain module, only the wiring imports samber/do, a route file never imports a page, shared UI never imports a page, the frontend never uses the global i18next instance nor dayjs outside src/utils/datetime.ts, every package a file imports is declared in its package.json; its `examples` pin these boundaries for dependencies no code writes yet (easement; `easement propose <from> <to>` judges an import before it is written, `easement check --format json` for a machine-readable report)"
 run = ["easement check", "easement suggest --check"]
 
 ["check:upgrade"]
