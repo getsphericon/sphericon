@@ -23,9 +23,9 @@ import (
 
 // The inbound side of an Integration (ADR 0037): the Preset its provider callbacks are
 // read with, the Preset's params (secrets encrypted, rotating in pairs) and its own hook
-// key. The Callback interpretation (internal/usecase/callbackinterpretation) opens an Integration
-// by its key (ByIngestKey), then asks this module for its params; everything an API reads or
-// writes goes through here.
+// key. The Callback interpretation (internal/domain/sending/callbackinterpretation) opens an
+// Integration by its key (ByIngestKey), then asks this module for its params; everything an API
+// reads or writes goes through here.
 
 // SecretMask is what a read shows in place of a secret param. Sending it back, or a
 // blank, or nothing, leaves the stored secret as it is.

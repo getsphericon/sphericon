@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -25,7 +26,7 @@ import (
 type telegram struct {
 	ignore
 
-	bots Bots
+	integ *integrations.Module
 }
 
 // InboundMessage reads a pressed button or a written message for what it means.
@@ -72,10 +73,7 @@ func (t telegram) pressed(ctx context.Context, tx Tx, m preset.InboundMessage) e
 // answer acknowledges a button press, best effort: the press is recorded and Telegram stops
 // waiting for an answer by itself after a while.
 func (t telegram) answer(ctx context.Context, tx Tx, callbackID string) {
-	if t.bots == nil {
-		return
-	}
-	bot, err := t.bots.Bot(tx.Integration)
+	bot, err := t.integ.Bot(tx.Integration)
 	if err != nil {
 		slog.WarnContext(ctx, "ingest: cannot open the bot to answer a button press", "integration_id", tx.Integration.ID, "err", err)
 		return

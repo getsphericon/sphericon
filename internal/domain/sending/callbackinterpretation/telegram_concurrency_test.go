@@ -15,13 +15,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 func TestSimultaneousTelegramSTOPCallbacksConsumeOneObservation(t *testing.T) {
@@ -43,7 +44,8 @@ func TestSimultaneousTelegramSTOPCallbacksConsumeOneObservation(t *testing.T) {
 	})
 	bot, err := r.Scope.Integration().Get(t.Context(), fixtures.IntegrationAcmeTelegramID)
 	require.NoError(t, err)
-	u := callbackinterpretation.New(entclient.Core.New(r.DB), r.Bus, nil, time.Now)
+	integs := integrations.New(r.Bus, testhelper.Cipher(t), nil, nil, "", time.Now)
+	u := callbackinterpretation.New(entclient.Core.New(r.DB), r.Bus, integs, time.Now)
 	in := callbackinterpretation.InterpretInput{Integration: bot, Preset: "telegram", Result: preset.Result{
 		InboundMessages: []preset.InboundMessage{{ID: "1", Channel: "telegram", Destination: fixtures.BindingLiamDestination, Text: "/stop"}},
 	}}

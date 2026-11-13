@@ -123,7 +123,8 @@ into the module that owns its subject (ADR 0112) takes its tests to that module'
 `internal/domain/sending/outboundmessages` the refusals of a Transactional send
 (`SendTransactional`), `internal/domain/instance/instancestates` the Release check and the
 Telemetry report, `internal/domain/contacts/eventrecording` what the Event recording refuses and
-publishes, and `internal/domain/orchestration/automations` the steps of an Enrollment
+publishes, `internal/domain/sending/callbackinterpretation` what the Callback interpretation makes of
+an Ingest hook's facts (built with `New` over `env.Integrations`), and `internal/domain/orchestration/automations` the steps of an Enrollment
 (`StepExecution`). A check that needs nothing above its owner moves into the owner the same way
 (ADR 0110): `internal/domain/sending/sendingdomains` holds the Sending domain checks (`Verify`,
 `Recheck`). `internal/domain/identity/workspaces` holds the check of the typed name when

@@ -10,6 +10,13 @@ status: accepted
 > the fence) and [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]] (the use
 > case tier stays open).
 
+> **Amended by #1357:** the weighing of `callbackinterpretation` deferred to the hooks driver (#1209)
+> moves the Callback interpretation into sending, as `internal/domain/sending/callbackinterpretation`,
+> a domain module without a table, since neither condition holds: it imports nothing above sending
+> (condition 1), and the modules it composes are of sending and the contexts below, the case of a
+> domain module without a table rather than of condition 2. Its `Integrations` and `Bots` ports
+> stood in front of `integrations.Module`, a module of the core, and go.
+
 ## Context
 
 ADR 0102 made a use case of "an operation that spans several domain modules". Its examples were

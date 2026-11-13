@@ -41,7 +41,7 @@ type Callback struct {
 // ErrMalformed, ErrTransformFailed), beside ErrNoHook and ErrUnconfirmed; any other error is our
 // own failure, and the provider retries. A valid request the Preset does not handle records
 // nothing and is no error.
-func (m *UseCase) Receive(ctx context.Context, in Callback) error {
+func (m *Module) Receive(ctx context.Context, in Callback) error {
 	row, err := integrations.ByIngestKey(ctx, m.client, in.Key)
 	if errors.Is(err, integrations.ErrNotFound) {
 		return ErrNoHook
@@ -120,7 +120,7 @@ func presetNameOf(row *ent.Integration) string {
 // address (what sphericon shows, and gives a provider to call), with the query the request came
 // with. It is built from the configured address rather than the request's scheme and host, which
 // a proxy in front of the server rewrites (behind Caddy the request arrives over plain HTTP).
-func (m *UseCase) requestURL(row *ent.Integration, query string) string {
+func (m *Module) requestURL(row *ent.Integration, query string) string {
 	u := m.integ.HookURL(row)
 	if query != "" {
 		u += "?" + query

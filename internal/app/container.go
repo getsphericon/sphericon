@@ -78,6 +78,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
@@ -111,7 +112,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
@@ -556,7 +556,7 @@ var jobsPackage = do.Package(
 			Cipher:           do.MustInvoke[*secrets.Cipher](i),
 			SystemSender:     do.MustInvoke[SystemSender](i).EmailSender,
 			Notices:          do.MustInvoke[*noticedelivery.UseCase](i),
-			Callbacks:        do.MustInvoke[*callbackinterpretation.UseCase](i),
+			Callbacks:        do.MustInvoke[*callbackinterpretation.Module](i),
 			Catalog:          do.MustInvoke[*messaging.Catalog](i),
 			Rules:            do.MustInvoke[*rules.Module](i),
 			Users:            do.MustInvoke[*users.Module](i),
@@ -847,9 +847,10 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
-	// The Callback interpretation behind the Ingest hook: it resolves an ingest key to its
-	// Integration and Workspace before any scope exists, so it holds the raw client.
-	do.Lazy(func(i do.Injector) (*callbackinterpretation.UseCase, error) {
+	// The Callback interpretation behind the Ingest hook, a sending module (ADR 0112): it resolves
+	// an ingest key to its Integration and Workspace before any scope exists, so it holds the raw
+	// client.
+	do.Lazy(func(i do.Injector) (*callbackinterpretation.Module, error) {
 		return callbackinterpretation.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i),
 			do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
@@ -1049,7 +1050,7 @@ var surfacesPackage = do.Package(
 			do.MustInvoke[*visitoridentification.UseCase](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*hooksHandler, error) {
-		return &hooksHandler{apihooks.New(do.MustInvoke[*callbackinterpretation.UseCase](i))}, nil
+		return &hooksHandler{apihooks.New(do.MustInvoke[*callbackinterpretation.Module](i))}, nil
 	}),
 	do.Lazy(func(i do.Injector) (*tlsAskHandler, error) {
 		return &tlsAskHandler{tlsask.New(do.MustInvoke[*trackingdomains.Module](i))}, nil
