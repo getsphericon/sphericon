@@ -80,12 +80,12 @@ func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
 	var errs []error
 	erased := 0
 	for _, id := range ids {
-		done, err := m.eraseWorkspace(ctx, id, now)
+		tombstoned, err := m.eraseWorkspace(ctx, id, now)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("erase workspace %d: %w", id, err))
 			continue
 		}
-		if done {
+		if tombstoned {
 			erased++
 		}
 	}

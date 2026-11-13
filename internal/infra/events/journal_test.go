@@ -22,10 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// deletionWindow is ADR 0043's window, how long a deleted Workspace stays restorable, stated here
-// rather than read from the code under test.
-const deletionWindow = 30 * 24 * time.Hour
-
 func TestJournalKeepsUnconsumedFactsAndInstanceFactsWithoutTheirPersonalPayload(t *testing.T) {
 	env := testhelper.Setup(t)
 	at := time.Date(2026, 11, 8, 1, 0, 0, 0, time.UTC)
@@ -146,7 +142,7 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 	defer cancel()
 	now := time.Now()
 	require.NoError(t, bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return tx.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now.Add(-deletionWindow - time.Hour)).Exec(ctx)
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now.Add(-testhelper.DeletionWindow - time.Hour)).Exec(ctx)
 	}))
 	fact := &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "accepted-before-tombstone"}
 	unblock, published := pauseJournalPublication(ctx, t, bus, fact)

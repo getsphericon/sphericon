@@ -167,11 +167,15 @@ func TestSitePublicConsentOfAnErasedWorkspaceRecordsNothing(t *testing.T) {
 	anon := env.SiteAnonymous(t)
 	const address = "late-click@example.com"
 	deletedAt := *env.DB.Workspace.GetX(ctx, fixtures.BluthID).DiscardedAt
+	eraseAt := workspaces.EraseDate(deletedAt)
+	var erased bool
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		_, err := workspacesunchecked.TombstoneIn(ctx, tx, fixtures.BluthID, workspaces.EraseDate(deletedAt))
+		var err error
+		erased, err = workspacesunchecked.TombstoneIn(ctx, tx, fixtures.BluthID, eraseAt)
 		return err
 	})
 	require.NoError(t, err)
+	require.True(t, erased, "Bluth is erased at its erase date")
 
 	unsubURL, err := env.Tracker.UnsubscribeURL(linktarget.Unsubscribe{
 		Channel: channels.Email, Source: eligibility.SourceBroadcasts, Destination: address, WorkspaceID: fixtures.BluthID,

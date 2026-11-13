@@ -18,10 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
-// deletionWindow is ADR 0043's window, how long a deleted Workspace stays restorable, stated here
-// rather than read from the code under test.
-const deletionWindow = 30 * 24 * time.Hour
-
 var now = time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
 
 var actor = events.Actor{Kind: events.ActorUser}
@@ -78,7 +74,7 @@ var tombstoneWrite = hook.And(hook.HasOp(ent.OpUpdate), hook.HasFields(workspace
 // stale move is finished, not an error, and no tombstone is written.
 func TestAnEraseThatLosesToARestoreIsFinishedWithoutATombstone(t *testing.T) {
 	env, m := setup(t)
-	deletedAgo(t, env, deletionWindow+time.Hour)
+	deletedAgo(t, env, testhelper.DeletionWindow+time.Hour)
 	name := initech(t, env).Name
 	env.Bus.Use(hook.If(restoredJustBefore, tombstoneWrite))
 

@@ -85,6 +85,7 @@ func TestTombstoneInRefusesAWorkspaceInsideItsWindow(t *testing.T) {
 	erased, err := tombstone(t, env)
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
+	require.ErrorContains(t, err, "inside its deletion window")
 	assert.False(t, erased)
 	got := env.DB.Workspace.GetX(t.Context(), fixtures.InitechID)
 	assert.Nil(t, got.ErasedAt)
@@ -110,4 +111,37 @@ func TestTombstoneInFinishesAWorkspaceRestoredFirstAsANoOp(t *testing.T) {
 	assert.Nil(t, got.ErasedAt)
 	assert.Equal(t, before.Name, got.Name)
 	assert.Equal(t, before.CollectKey, got.CollectKey)
+}
+
+// A Workspace deleted 31 days ago is past its 30-day window: the tombstone is written, with
+// nothing that names the Workspace left on its row.
+func TestTombstoneInErasesAWorkspacePastItsWindow(t *testing.T) {
+	env := testhelper.Setup(t)
+	deletedAgo(t, env, 31*24*time.Hour)
+
+	erased, err := tombstone(t, env)
+
+	require.NoError(t, err)
+	assert.True(t, erased)
+	got := env.DB.Workspace.GetX(t.Context(), fixtures.InitechID)
+	assert.Equal(t, erasedAt, got.ErasedAt.UTC())
+	assert.Empty(t, got.Name)
+}
+
+// A second erase of a Workspace erased already finds nothing pending: it is a no-op, and the
+// tombstone keeps the moment it was first written.
+func TestTombstoneInFinishesAWorkspaceErasedAlreadyAsANoOp(t *testing.T) {
+	env := testhelper.Setup(t)
+	deletedAgo(t, env, 31*24*time.Hour)
+	_, err := tombstone(t, env)
+	require.NoError(t, err)
+	first := env.DB.Workspace.GetX(t.Context(), fixtures.InitechID)
+
+	erased, err := tombstone(t, env)
+
+	require.NoError(t, err)
+	assert.False(t, erased)
+	got := env.DB.Workspace.GetX(t.Context(), fixtures.InitechID)
+	assert.Equal(t, first.ErasedAt, got.ErasedAt)
+	assert.Equal(t, first.CollectKey, got.CollectKey, "no fresh collect key is drawn")
 }

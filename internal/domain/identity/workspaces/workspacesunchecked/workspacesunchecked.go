@@ -79,23 +79,24 @@ func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (*e
 
 // TombstoneIn moves the Workspace id from pending deletion to erased inside tx, only once it is
 // past its deletion window at now: it writes the tombstone and erased_at in one conditional
-// update, and reports whether it did. One still inside its window is
-// lifecycle.ErrInvalidTransition and nothing changes. One no longer pending deletion (restored,
-// or erased already) is its no-op: it reports false with no error (ADR 0145). The caller has
-// removed what the Workspace owned.
-func TombstoneIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (bool, error) {
-	err := workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerErase)
+// update, and reports whether it did. One still inside its window is refused
+// (lifecycle.ErrInvalidTransition) and nothing changes. One not pending deletion (never deleted,
+// restored, or erased already) is its no-op: it reports false with no error (ADR 0145). The
+// caller has removed what the Workspace owned.
+func TombstoneIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (erased bool, err error) {
+	err = workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerErase)
 	if !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return err == nil, err
 	}
-	// The move was refused or lost its compare-and-swap: a Workspace still pending deletion was
-	// refused by the window, any other has nothing left to erase.
-	state, readErr := workspaces.ReadDeletionState(tx, id)(ctx)
+	// The move was not permitted or lost its compare-and-swap, so the state is read again: a
+	// Workspace another writer moved meanwhile, as a restore that wrote first, is no longer
+	// pending, and one still pending was kept by the window.
+	state, err := workspaces.ReadDeletionState(tx, id)(ctx)
 	switch {
-	case readErr != nil:
-		return false, readErr
-	case state == workspaces.StatePendingDeletion:
+	case err != nil:
 		return false, err
+	case state == workspaces.StatePendingDeletion:
+		return false, fmt.Errorf("%w: workspace %d is inside its deletion window", lifecycle.ErrInvalidTransition, id)
 	default:
 		return false, nil
 	}
