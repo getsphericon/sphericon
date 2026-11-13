@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 )
 
 // ColumnsOf counts how many of the named columns the table has.
@@ -105,6 +107,23 @@ func HoldInTransaction(t *testing.T, sqlDB *sql.DB, statement string) (release f
 	release = sync.OnceFunc(func() { require.NoError(t, tx.Commit()) })
 	t.Cleanup(release)
 	return release
+}
+
+// HoldAdvisoryLock takes the advisory lock key in a transaction of its own on sqlDB and holds it
+// until the returned release is called (or the test ends). It returns the pid of the session that
+// holds it, which a report of the lock's holder names.
+func HoldAdvisoryLock(t *testing.T, sqlDB *sql.DB, key int64) (pid int, release func()) {
+	t.Helper()
+	ctx := context.WithoutCancel(t.Context()) // the release may run in the cleanup, after the test's context ends
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	err = postgres.LockTx(ctx, tx, key)
+	require.NoError(t, err)
+	pid, err = postgres.BackendPID(ctx, tx)
+	require.NoError(t, err)
+	release = sync.OnceFunc(func() { require.NoError(t, tx.Commit()) })
+	t.Cleanup(release)
+	return pid, release
 }
 
 // CountRows counts the rows of table, within ctx's limit: a probe of whether a query of the table

@@ -3,13 +3,16 @@ package db_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"maps"
+	"strings"
 	"sync"
 	"testing"
 	"testing/fstest"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3/lock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -169,4 +172,29 @@ func TestMigrateFSLetsANoTransactionMigrationWaitForOlderTransactions(t *testing
 
 	require.NoError(t, <-done)
 	assert.True(t, testhelper.IndexIsValid(t, sqlDB, "busy_id"))
+}
+
+// A migration that finds the migration lock taken reports who holds it while it waits, and once
+// the holder lets go it says it took the lock and applies.
+func TestMigrateFSReportsWhoHoldsTheMigrationLockWhileItWaits(t *testing.T) {
+	sqlDB := openEmpty(t)
+	logs := testhelper.CaptureLogs(t)
+	holder, release := testhelper.HoldAdvisoryLock(t, sqlDB, lock.DefaultLockID)
+	holderAttr := fmt.Sprintf(" holder_pid=%d ", holder)
+
+	done := migrating(t, sqlDB, tableMigration)
+	require.Eventually(t, func() bool {
+		logged := logs.String()
+		return strings.Contains(logged, holderAttr)
+	}, 10*time.Second, 50*time.Millisecond)
+	waiting := logs.String()
+	assert.NotContains(t, waiting, "took the migration lock")
+
+	release()
+	err := <-done
+	require.NoError(t, err)
+	taken := logs.String()
+	assert.Contains(t, taken, "took the migration lock")
+	columns := testhelper.ColumnsOf(t, sqlDB, "busy", "id")
+	assert.Equal(t, 1, columns)
 }
