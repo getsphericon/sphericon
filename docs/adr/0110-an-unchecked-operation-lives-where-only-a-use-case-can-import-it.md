@@ -8,6 +8,11 @@ status: accepted
 > domain module's unchecked removal by naming it in the `forbid_symbol` list of every other
 > component. This removes the cause of most of those names first, and fences the rest by where they
 > live.
+>
+> Refined by [[0145-an-unchecked-operation-keeps-every-rule-of-its-owners-rows]]: an unchecked
+> operation keeps every rule of its owner's rows (its input, the revision, the no-op, the work after
+> the commit), and where the use case's rule reads the row it is opened on the row, checked, then
+> applied.
 
 ## Context
 

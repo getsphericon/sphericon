@@ -14,6 +14,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -80,6 +81,18 @@ type RefreshQuotaArgs struct {
 
 // Kind is the job's kind in the queue.
 func (RefreshQuotaArgs) Kind() string { return "integration_quota_refresh" }
+
+// ReleaseWebhookArgs is the job that lets the bot of a deleted Telegram Integration go of its
+// webhook (ReleaseWebhook), queued in the deletion's transaction (ADR 0145) so that it runs iff
+// the deletion commits; the job runner works it (internal/jobs).
+type ReleaseWebhookArgs struct {
+	jobkind.Workspace
+
+	IntegrationID int64 `json:"integration_id"`
+}
+
+// Kind is the job's kind in the queue.
+func (ReleaseWebhookArgs) Kind() string { return "integration_webhook_release" }
 
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
@@ -502,13 +515,34 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	patch.ApplySet(in.IsDefault, upd.SetIsDefault)
 }
 
-// ReleaseDeleted lets the bot of a Telegram Integration that held its webhook go of it, best
-// effort, once the Integration's deletion has committed; row is the Integration as the deletion
-// read it. Any other Integration holds nothing to release.
-func (m *Module) ReleaseDeleted(ctx context.Context, row *ent.Integration) {
-	if row.Provider == providers.Telegram && holdsWebhook(row.Enabled, nil) {
-		m.release(ctx, row)
+// HoldsWebhook reports whether the Integration is a Telegram bot whose webhook points at its hook:
+// a kept one that is enabled. Deleting one queues the release of the webhook (ReleaseWebhookArgs).
+func HoldsWebhook(row *ent.Integration) bool {
+	return row.Provider == providers.Telegram && holdsWebhook(row.Enabled, row.DiscardedAt)
+}
+
+// ReleaseWebhook lets the bot of a deleted Telegram Integration go of its webhook, best effort: a
+// refusal of Telegram is logged and not retried, as the release on disabling a bot is. It is the
+// work of the job ReleaseWebhookArgs, queued by the deletion; row is the Integration as the job
+// reads it, and a kept one or one of another provider holds what it holds, so nothing is released.
+// Nor is a bot connected again since, which a kept Integration of any Workspace now holds: deleting
+// its webhook would take the new Integration's (ADR 0145). That read crosses Workspaces, so it
+// takes the job's raw client; an error of the read is returned for the job to retry.
+func (m *Module) ReleaseWebhook(ctx context.Context, client *ent.Client, row *ent.Integration) error {
+	if row.Provider != providers.Telegram || row.DiscardedAt == nil {
+		return nil
 	}
+	cfg, err := m.telegramConfigOf(row)
+	if err != nil {
+		slog.WarnContext(ctx, "telegram: open the config to delete the bot's webhook failed", "integration_id", row.ID, "err", err)
+		return nil
+	}
+	held, err := m.heldByAnother(ctx, client, row.ID, cfg.Token)
+	if err != nil || held {
+		return err
+	}
+	m.releaseToken(ctx, row.ID, cfg.Token)
+	return nil
 }
 
 // requireProviderLimit refuses an SES Integration with its own endpoint that is left without

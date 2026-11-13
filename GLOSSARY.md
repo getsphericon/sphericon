@@ -972,10 +972,12 @@ _Avoid_: Archive, soft delete, trash, tombstone (a tombstone is the row an erase
 
 **Unchecked operation**:
 A write of a domain module whose check needs what the module may not call (a module of a higher
-context, or several modules), so a use case runs the check first and then calls the write. It still
-checks its own input; only the rule across modules is the use case's. It lives
-in a subpackage of its owner that only use cases may import (ADR 0110); called alone it would break a
-rule the use case keeps, such as a Tag deleted while an active Rule tests it.
+context, or several modules), so a use case runs the check first and then calls the write. It keeps
+every rule of its owner's rows (its input, the revision, the no-op of a repeated removal, the work
+after the commit) and leaves the use case only the rule across modules; where that rule reads the
+row, the operation is opened on the row, the use case runs the rule, and the operation is applied
+(ADR 0145). It lives in a subpackage of its owner that only use cases may import (ADR 0110); called
+alone it would break a rule the use case keeps, such as a Tag deleted while an active Rule tests it.
 _Avoid_: Raw write, internal write, unsafe
 
 **Live use**:

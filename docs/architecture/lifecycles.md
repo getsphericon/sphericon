@@ -22,9 +22,10 @@ removed `Subject` and the `Users` that hold it, with helpers like `liveuse.Broad
 check, `internal/domain/orchestration/removalcheck`: one method per subject (`Tag`,
 `CustomFieldRetype`, `Integration`, `SendingDomain`), each returning nil or the `*liveuse.Error`
 with its `Subject` set, called by the use case that removes the row under the Workspace lock before
-its unchecked removal (`tagdeletion` before `tagsunchecked.DeleteIn`, `customfieldretyping` before
-`contactsunchecked.UpdateCustomFieldIn`, `integrationdeletion` and `sendingdomaindeletion` before
-`integrationsunchecked.DeleteIn` and `sendingdomainsunchecked.DeleteIn`; see [Use cases](use-cases.md)). It is the one list of the
+its unchecked removal, between opening it on the row and applying it (`tagdeletion` with
+`tagsunchecked.Deletion`, `customfieldretyping` with `contactsunchecked.CustomFieldUpdate`,
+`integrationdeletion` and `sendingdomaindeletion` with `integrationsunchecked.Deletion` and
+`sendingdomainsunchecked.Deletion`; ADR 0145, see [Use cases](use-cases.md)). It is the one list of the
 readers of what may hold a row. Each owner keeps its readers in a subpackage `<module>use` (ADR
 0110's fence by place), which may import its owner and which the owner does not import: Definition
 use is `segmentsuse.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.UsingTag`,
@@ -66,10 +67,11 @@ the lock does not compile:
 - the readers of Live use and Definition use: the Removal check's methods, the `<module>use`
   readers (`UsingTag`, `UnfitForCustomFieldType`, `LiveSends`) and `rules.ActiveEnrollingInto`,
   which an Automation's Archive reads through `versioneddefinition.Definition.Archivable`;
-- the unchecked removals behind their check: `tagsunchecked.DeleteIn`,
-  `contactsunchecked.UpdateCustomFieldIn`, `integrationsunchecked.DeleteIn` and
-  `sendingdomainsunchecked.DeleteIn`. `integrationsunchecked.DeleteIn` takes the id and gives up
-  the Integration's default in the statement that discards it (`schema.GivenUpOnDiscard`);
+- the unchecked removals behind their check, opened on their row: `tagsunchecked.DeletionIn`,
+  `contactsunchecked.CustomFieldUpdateIn`, `integrationsunchecked.DeletionIn` and
+  `sendingdomainsunchecked.DeletionIn`. An Integration's deletion gives up its default in the
+  statement that discards it (`schema.GivenUpOnDiscard`) and queues the release of a Telegram bot's
+  webhook in the same transaction;
 - the writes that move a use: a version of a Versioned definition (`Definition.Write`, on Create
   and Edit) and its Publish (`Lifecycle.publish`), a Broadcast's claim (`broadcasts.arm`), a
   Segment's save (`segments.createIn`, `updateIn`) and an Integration's promotion to its Channel's

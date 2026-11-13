@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -236,15 +237,33 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 		assert.False(t, hooks[before].Bool("drop_pending_updates"))
 	})
 
-	t.Run("archiving deletes the webhook, and a failure does not block it", func(t *testing.T) {
+	t.Run("archiving deletes the webhook once the delete commits, and a failure does not block it", func(t *testing.T) {
 		env.Telegram.FailOnce(telegramtest.DeleteWebhook, telegramtest.Unauthorized)
 		before := len(env.Telegram.RequestsOf(telegramtest.DeleteWebhook))
 
-		err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+		err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
 		require.NoError(t, err)
+		env.PerformEnqueuedJobs(t, integrations.ReleaseWebhookArgs{})
 
 		assert.Len(t, env.Telegram.RequestsOf(telegramtest.DeleteWebhook), before+1)
 	})
+}
+
+// A bot connected again before the release of its deleted Integration's webhook runs keeps the
+// webhook of the new Integration: the release leaves a bot that a kept Integration holds.
+func TestSiteTelegramReconnectedBeforeTheReleaseKeepsItsWebhook(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	row, token := connectedTelegram(t, env, c)
+	err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+	require.NoError(t, err)
+	_, err = createTelegram(t, c, token)
+	require.NoError(t, err)
+
+	env.PerformEnqueuedJobs(t, integrations.ReleaseWebhookArgs{})
+
+	released := env.Telegram.RequestsOf(telegramtest.DeleteWebhook)
+	assert.Empty(t, released, "the new Integration keeps the bot's webhook")
 }
 
 func TestSiteTelegramHookChecksTheSecret(t *testing.T) {

@@ -3,9 +3,10 @@
 // Definition use: retyping it runs the Removal check (internal/domain/orchestration/removalcheck),
 // which refuses with a *liveuse.Error naming what tests the field with a leaf the new type does not
 // take, because their Conditions would stop compiling. The contacts module knows none of them, so
-// the check runs here before the module's unchecked edit, contactsunchecked.UpdateCustomFieldIn,
-// which only a use case may import (ADR 0110). The check and the edit run in one transaction
-// under the Workspace's lock (ADR 0099).
+// the check runs here, between opening and applying the module's unchecked edit,
+// contactsunchecked.CustomFieldUpdate, which only a use case may import (ADR 0110) and which keeps
+// every rule of the field's own row, its name and its revision (ADR 0145). The check and the edit
+// run in one transaction under the Workspace's lock (ADR 0099).
 package customfieldretyping
 
 import (
@@ -35,10 +36,9 @@ func New(bus *events.Bus, check *removalcheck.Module) *UseCase {
 // on one of another shape. It is refused with the Removal check's *liveuse.Error while a Segment, a
 // kept Rule or an armed Broadcast tests the field with a leaf the new type does not take, as their
 // Conditions would stop compiling; a leaf every type takes (notNull) does not hold the type. An
-// unknown id is contacts.ErrCustomFieldNotFound, a blank new name contacts.ErrCustomFieldNameRequired,
-// and an edit made on a revision the field has moved past contacts.ErrCustomFieldRevisionChanged
-// (ADR 0119): every write of a Custom field holds the lock, so the field read here is the one the
-// edit replaces.
+// unknown id is contacts.ErrCustomFieldNotFound, a new name the name rule refuses its refusal, and
+// an edit made on a revision the field has moved past contacts.ErrCustomFieldRevisionChanged (ADR
+// 0119), each refused before the check runs.
 //
 // The check and the edit run in one transaction under the Workspace's lock (ADR 0099), which saving
 // a Segment or a Rule and scheduling a Broadcast take too: one saved first is what the check finds,
@@ -46,19 +46,16 @@ func New(bus *events.Bus, check *removalcheck.Module) *UseCase {
 func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, id int64, in contacts.CustomFieldUpdateInput) (*ent.CustomField, error) {
 	var updated *ent.CustomField
 	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		field, err := contacts.CustomField(ctx, wl.Scope(), id)
+		edit, err := contactsunchecked.CustomFieldUpdateIn(ctx, wl, id, in)
 		if err != nil {
 			return err
 		}
-		if err := in.Check(field); err != nil {
-			return err
-		}
-		if t, ok := in.Retype(field); ok {
-			if err := u.check.CustomFieldRetype(ctx, wl, field.Key, t); err != nil {
+		if t, ok := edit.Retype(); ok {
+			if err := u.check.CustomFieldRetype(ctx, wl, edit.Key(), t); err != nil {
 				return err
 			}
 		}
-		updated, err = contactsunchecked.UpdateCustomFieldIn(ctx, wl, field, in)
+		updated, err = edit.Apply(ctx)
 		return err
 	})
 	if err != nil {
