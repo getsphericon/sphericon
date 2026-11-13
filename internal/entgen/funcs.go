@@ -10,14 +10,13 @@ import (
 )
 
 // Funcs are the helpers the templates of ent/template generate from: they read the classification
-// and change nothing. The functions that take the graph first keep the templates' calls as they are;
-// the classification already belongs to one graph.
+// of the one graph it was made from and change nothing.
 func (s *Schema) Funcs() template.FuncMap {
 	return template.FuncMap{
 		// entities lists every entity with its table and kind: the manifest of kinds.
-		"entities": func(*gen.Graph) []Entity { return s.Entities() },
+		"entities": s.Entities,
 		// scopedNodes lists the Workspace-owned entities.
-		"scopedNodes": func(*gen.Graph) []*gen.Type { return s.nodes(func(k Kind) bool { return k.WorkspaceOwned }) },
+		"scopedNodes": func() []*gen.Type { return s.nodes(func(k Kind) bool { return k.WorkspaceOwned }) },
 		"scopedIs":    func(t *gen.Type) bool { return s.kind(t).WorkspaceOwned },
 		// kindOf is the kind of n.
 		"kindOf": s.kind,
@@ -31,7 +30,7 @@ func (s *Schema) Funcs() template.FuncMap {
 		// the pointer operations (<N>Pointers) that internal/drafts runs the lifecycle on.
 		"versioned": func(n *gen.Type) bool { return s.kind(n).Versioned },
 		// versionedNodes lists the Versioned definitions.
-		"versionedNodes": func(*gen.Graph) []*gen.Type { return s.nodes(func(k Kind) bool { return k.Versioned }) },
+		"versionedNodes": func() []*gen.Type { return s.nodes(func(k Kind) bool { return k.Versioned }) },
 		// versionOf returns the version entity of a Versioned definition.
 		"versionOf": func(n *gen.Type) *gen.Type { return s.entities[n].version },
 		// versionOwnerField returns the version's column that names its owner (automation_id).
@@ -58,8 +57,8 @@ func (s *Schema) Funcs() template.FuncMap {
 		},
 		"bookkeeping": s.bookkeeping,
 		// scopedFieldRefs lists the annotated plain fields of n that hold a reference.
-		"scopedFieldRefs": func(_ *gen.Graph, n *gen.Type) []ScopedRef { return s.entities[n].refs },
-		"scopedRefTarget": func(_ *gen.Graph, f *gen.Field) *gen.Type { return s.scopedRefTarget(f) },
+		"scopedFieldRefs": func(n *gen.Type) []ScopedRef { return s.entities[n].refs },
+		"scopedRefTarget": s.scopedRefTarget,
 	}
 }
 

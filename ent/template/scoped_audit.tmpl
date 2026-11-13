@@ -159,7 +159,7 @@ func auditKeyPtr(id *int64) any {
 	return publicid.ID(*id)
 }
 
-{{ range $n := scopedNodes $ }}
+{{ range $n := scopedNodes }}
 {{- $A := auditOf $n }}
 {{- if $A }}
 {{ $N := $n.Name }}

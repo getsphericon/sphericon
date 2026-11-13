@@ -9,7 +9,7 @@ is hand-written per entity.
 {{ define "scoped_versioned" }}
 {{ template "header" $ }}
 
-{{ $nodes := versionedNodes $ }}
+{{ $nodes := versionedNodes }}
 import (
 	"context"
 	"errors"

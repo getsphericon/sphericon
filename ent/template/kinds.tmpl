@@ -27,7 +27,7 @@ type Kind struct {
 
 // Kinds is the Kind of every entity, by its schema name.
 var Kinds = map[string]Kind{
-{{- range $e := entities $ }}
+{{- range $e := entities }}
 	"{{ $e.Name }}": {Table: "{{ $e.Table }}"
 		{{- if $e.WorkspaceOwned }}, WorkspaceOwned: true{{ end }}
 		{{- if $e.Archivable }}, Archivable: true{{ end }}
