@@ -32,10 +32,11 @@ type SchemaStatus struct {
 // the schema production gets.
 //
 // It takes a database lock, so two migrations started together run one after the other and
-// the second finds nothing to do. It has no time limit of its own: the wait for the lock and
-// the run end when ctx does, so the caller chooses (`migrate` passes none). A migration that runs
-// in a transaction waits for a table's lock only briefly and is retried (lockTimeout), so a
-// long transaction delays the migration rather than the queries of the table.
+// the second finds nothing to do; while one waits for it, it logs who holds it (reportingLocker).
+// It has no time limit of its own: the wait for the lock and the run end when ctx does, so the
+// caller chooses (`migrate` passes none). A migration that runs in a transaction waits for a
+// table's lock only briefly and is retried (lockTimeout), so a long transaction delays the
+// migration rather than the queries of the table.
 func Migrate(ctx context.Context, sqlDB *sql.DB) (int, error) {
 	files, err := embeddedMigrations()
 	if err != nil {
@@ -90,11 +91,12 @@ func migrateFS(ctx context.Context, sqlDB *sql.DB, files fs.FS, gos []*goose.Mig
 		return 0, fmt.Errorf("PostgreSQL %d is older than %d, the oldest the schema runs on: upgrade PostgreSQL first", major, postgres.MinMajor)
 	}
 	// A lock wait is bounded by ctx alone: goose's own default would give up after five minutes.
-	locker, err := lock.NewPostgresSessionLocker(lock.WithLockTimeout(1, math.MaxInt32))
+	locker, err := lock.NewPostgresSessionLocker(lock.WithLockID(migrationLockID), lock.WithLockTimeout(1, math.MaxInt32))
 	if err != nil {
 		return 0, err
 	}
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, lockBoundedFS{files}, goose.WithSessionLocker(locker), goose.WithGoMigrations(gos...))
+	reporting := reportingLocker{SessionLocker: locker, sqlDB: sqlDB}
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, lockBoundedFS{files}, goose.WithSessionLocker(reporting), goose.WithGoMigrations(gos...))
 	if err != nil {
 		return 0, err
 	}

@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -166,10 +166,16 @@ func TestSitePublicConsentOfAnErasedWorkspaceRecordsNothing(t *testing.T) {
 	ctx := t.Context()
 	anon := env.SiteAnonymous(t)
 	const address = "late-click@example.com"
+	deletedAt := *env.DB.Workspace.GetX(ctx, fixtures.BluthID).DiscardedAt
+	eraseAt := workspaces.EraseDate(deletedAt)
+	var erased bool
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return workspacesunchecked.TombstoneIn(ctx, tx, fixtures.BluthID, time.Now())
+		var err error
+		erased, err = workspacesunchecked.TombstoneIn(ctx, tx, fixtures.BluthID, eraseAt)
+		return err
 	})
 	require.NoError(t, err)
+	require.True(t, erased, "Bluth is erased at its erase date")
 
 	unsubURL, err := env.Tracker.UnsubscribeURL(linktarget.Unsubscribe{
 		Channel: channels.Email, Source: eligibility.SourceBroadcasts, Destination: address, WorkspaceID: fixtures.BluthID,

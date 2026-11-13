@@ -52,7 +52,7 @@ func restore(t *testing.T, env *testhelper.TestEnv) (workspaceview.View, error) 
 
 func TestRestoreInsideTheWindowBringsTheWorkspaceBack(t *testing.T) {
 	env := restoreEnv(t)
-	deletedAgo(t, env, workspaces.DeletionWindow-time.Hour)
+	deletedAgo(t, env, testhelper.DeletionWindow-time.Hour)
 
 	v, err := restore(t, env)
 
@@ -65,7 +65,7 @@ func TestRestoreInsideTheWindowBringsTheWorkspaceBack(t *testing.T) {
 
 func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 	env := restoreEnv(t)
-	deletedAgo(t, env, workspaces.DeletionWindow+time.Hour)
+	deletedAgo(t, env, testhelper.DeletionWindow+time.Hour)
 
 	_, err := restore(t, env)
 
@@ -78,7 +78,7 @@ func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 // answers 404, as for any Workspace the caller cannot see.
 func TestRestoreAfterErasureFindsNoOwner(t *testing.T) {
 	env := restoreEnv(t)
-	deletedAgo(t, env, workspaces.DeletionWindow+time.Hour)
+	deletedAgo(t, env, testhelper.DeletionWindow+time.Hour)
 	_, err := workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), clock).EraseDue(t.Context())
 	require.NoError(t, err)
 

@@ -52,7 +52,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // eraseBatch bounds the rows one transaction removes, so a large Workspace never holds a
@@ -64,41 +63,41 @@ const eraseBatch = 500
 // what the one before it caused, so it settles in a few.
 const maxErasePasses = 10
 
-// EraseDue erases every Workspace whose deletion window has passed and returns how
-// many it finished. Each Workspace's rows go in batches, each batch in a transaction of its
-// own through the event bus, so the ent hooks run (the tracking host change log records the
-// released hosts, the workspace feed advances) and a crash resumes on the rows that are
-// left. The last transaction removes the Workspace's jobs from the queue and the OAuth codes
-// that name it, and writes the tombstone (workspacesunchecked.TombstoneIn). A Workspace that fails does not stop the others; the
-// errors are joined. The scope of each step is built here, after the
+// EraseDue erases every Workspace whose deletion window has passed (workspaces.Module.DueForErase)
+// and returns how many it tombstoned. Each Workspace's rows go in batches, each batch in a
+// transaction of its own through the event bus, so the ent hooks run (the tracking host change log
+// records the released hosts, the workspace feed advances) and a crash resumes on the rows that
+// are left. The last transaction removes the Workspace's jobs from the queue and the OAuth codes
+// that name it, and writes the tombstone (workspacesunchecked.TombstoneIn). A Workspace that fails
+// does not stop the others; the errors are joined. The scope of each step is built here, after the
 // Workspace's row is listed; it has no actor, so the deletes are not audited.
 func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
 	now := m.now()
-	ids, err := m.due(ctx, now)
+	ids, err := m.workspaces.DueForErase(ctx, now)
 	if err != nil {
 		return 0, err
 	}
 	var errs []error
 	erased := 0
 	for _, id := range ids {
-		if err := m.eraseWorkspace(ctx, id, now); err != nil {
-			// A restore that won the race moved the Workspace out of pending deletion: the
-			// stale move is finished, not an error (ADR 0046).
-			if !errors.Is(err, lifecycle.ErrInvalidTransition) {
-				errs = append(errs, fmt.Errorf("erase workspace %d: %w", id, err))
-			}
+		tombstoned, err := m.eraseWorkspace(ctx, id, now)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("erase workspace %d: %w", id, err))
 			continue
 		}
-		erased++
+		if tombstoned {
+			erased++
+		}
 	}
 	return erased, errors.Join(errs...)
 }
 
-// eraseWorkspace removes the Workspace's rows, then its jobs, then writes the tombstone. The
-// tombstone's compare-and-swap cannot lose after the steps in practice: Due selects only rows past
-// the window and Restore is refused once the window has passed, so nothing moves a listed row
-// back to active. If it did, the stale move is finished as ErrInvalidTransition (EraseDue), and
-// the purge rolls back with it.
+// eraseWorkspace removes the Workspace's rows, then its jobs, then writes the tombstone, and
+// reports whether it wrote it. The tombstone keeps the window itself (workspacesunchecked.TombstoneIn),
+// and the restore is refused once the window has passed, so nothing moves a listed row back to
+// active. A Workspace no longer pending deletion when the tombstone is written (erased already)
+// is the tombstone's no-op: nothing is tombstoned, and the purge of its jobs and OAuth codes,
+// of a Workspace whose rows are gone, commits.
 //
 // The jobs go in the last transaction, after every pass has settled: river's job table keeps a
 // job's args, which carry the Workspace's personal data (an event's envelope, a webhook's body),
@@ -109,26 +108,30 @@ func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
 // (events.WorkspacePurger says what is left). The purge runs before workspacesunchecked.TombstoneIn, whose feed hook
 // holds the feed's Instance-wide lock to the commit, so the deletes never hold up another
 // Workspace's change.
-func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) error {
+func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) (bool, error) {
 	// Rerun every step until a whole pass finds nothing to remove: a row written while
 	// another kind was being deleted is then removed too, before the tombstone is made.
 	settled := false
 	for pass := 0; pass < maxErasePasses && !settled; pass++ {
 		removed, err := m.erasePass(ctx, id)
 		if err != nil {
-			return err
+			return false, err
 		}
 		settled = removed == 0
 	}
 	if !settled {
-		return fmt.Errorf("rows are still being written after %d passes", maxErasePasses)
+		return false, fmt.Errorf("rows are still being written after %d passes", maxErasePasses)
 	}
-	return m.bus.WithinWorkspacePurgeTx(ctx, func(tx *ent.Client, purger events.WorkspacePurger) error {
+	var erased bool
+	err := m.bus.WithinWorkspacePurgeTx(ctx, func(tx *ent.Client, purger events.WorkspacePurger) error {
 		if err := purger.PurgeWorkspaceJobs(ctx, id); err != nil {
 			return err
 		}
-		return workspacesunchecked.TombstoneIn(ctx, tx, id, now)
+		var err error
+		erased, err = workspacesunchecked.TombstoneIn(ctx, tx, id, now)
+		return err
 	})
+	return erased, err
 }
 
 // erasePass runs every step once, each in batches, and returns how many rows it removed.

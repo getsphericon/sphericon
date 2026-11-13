@@ -74,7 +74,7 @@ var tombstoneWrite = hook.And(hook.HasOp(ent.OpUpdate), hook.HasFields(workspace
 // stale move is finished, not an error, and no tombstone is written.
 func TestAnEraseThatLosesToARestoreIsFinishedWithoutATombstone(t *testing.T) {
 	env, m := setup(t)
-	deletedAgo(t, env, workspaces.DeletionWindow+time.Hour)
+	deletedAgo(t, env, testhelper.DeletionWindow+time.Hour)
 	name := initech(t, env).Name
 	env.Bus.Use(hook.If(restoredJustBefore, tombstoneWrite))
 

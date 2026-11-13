@@ -77,17 +77,34 @@ func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (*e
 	return tx.Workspace.Get(ctx, id)
 }
 
-// TombstoneIn moves the Workspace id from pending deletion to erased inside tx: it writes the
-// tombstone and erased_at in one conditional update. A Workspace that is not deleted, or is
-// already erased, is lifecycle.ErrInvalidTransition and nothing changes. The caller has
-// removed what the Workspace owned.
-func TombstoneIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
-	return workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerErase)
+// TombstoneIn moves the Workspace id from pending deletion to erased inside tx, only once it is
+// past its deletion window at now: it writes the tombstone and erased_at in one conditional
+// update, and reports whether it did. One still inside its window is refused
+// (lifecycle.ErrInvalidTransition) and nothing changes. One not pending deletion (never deleted,
+// restored, or erased already) is its no-op: it reports false with no error (ADR 0145). The
+// caller has removed what the Workspace owned.
+func TombstoneIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (erased bool, err error) {
+	err = workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerErase)
+	if !errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return err == nil, err
+	}
+	// The move was not permitted or lost its compare-and-swap, so the state is read again: a
+	// Workspace another writer moved meanwhile, as a restore that wrote first, is no longer
+	// pending, and one still pending was kept by the window.
+	state, err := workspaces.ReadDeletionState(tx, id)(ctx)
+	switch {
+	case err != nil:
+		return false, err
+	case state == workspaces.StatePendingDeletion:
+		return false, fmt.Errorf("%w: workspace %d is inside its deletion window", lifecycle.ErrInvalidTransition, id)
+	default:
+		return false, nil
+	}
 }
 
 // cycleStorage is the cycle's storage of the restore and the erase over c (the raw client or a
 // transaction's) for Workspace id. Each write is the compare-and-swap: one conditional UPDATE whose
-// WHERE is the state read, plus, for a restore, the window.
+// WHERE is the state read, plus the window: a restore inside it, a tombstone past it.
 func cycleStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[workspaces.DeletionState] {
 	return lifecycle.Storage[workspaces.DeletionState]{
 		Read: workspaces.ReadDeletionState(c, id),
@@ -100,7 +117,7 @@ func cycleStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[work
 				// The tombstone: the row stays, with nothing that identifies the Workspace
 				// and a fresh collect key.
 				key := credentials.GenerateCollectKey()
-				u.SetName("").SetPostalAddress("").SetCollectKey(key).ClearRetentionDays().SetErasedAt(now)
+				u.Where(workspaces.PastDeletionWindow(now)).SetName("").SetPostalAddress("").SetCollectKey(key).ClearRetentionDays().SetErasedAt(now)
 			default:
 				return false, fmt.Errorf("workspaces: no move from %s to %s", was, to)
 			}
