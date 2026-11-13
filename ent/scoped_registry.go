@@ -100,8 +100,8 @@ type ScopedRef struct {
 }
 
 // ScopedEntities lists every Workspace-owned entity.
-func ScopedEntities() []ScopedEntity {
-	return []ScopedEntity{
+func ScopedEntities() []*ScopedEntity {
+	return []*ScopedEntity{
 		{
 			Kind:         Kinds["ApiToken"],
 			Name:         "ApiToken",

@@ -33,8 +33,8 @@ func automationListed(t *testing.T, q *ent.AutomationQuery) bool {
 // An archivable entity has no Delete and no Discard on its scoped wrapper: it is archived and
 // unarchived, and only Purge (Workspace erasure) removes it.
 func TestArchivableEntityHasArchiveAndNoDelete(t *testing.T) {
-	archivable := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return e.Archivable })
-	require.NotEmpty(t, archivable, "the Automation is archivable")
+	archivable := lo.Filter(ent.ScopedEntities(), func(e *ent.ScopedEntity, _ int) bool { return e.Archivable })
+	require.Subset(t, names(archivable), []string{"Broadcast", "Automation", "Segment"})
 	for _, e := range archivable {
 		wrapper := e.Wrapper
 		for _, absent := range []string{"Delete", "DeleteOneID", "Discard", "Undiscard", "Restore", "QueryWithDiscarded"} {
@@ -111,7 +111,7 @@ func TestArchiveAndUnarchiveAreAudited(t *testing.T) {
 	assert.Equal(t, []string{"automation.archive", "automation.unarchive"}, actions, "unarchiving a kept row records nothing")
 	assert.Contains(t, entries[0].Diff, automation.FieldArchivedAt)
 
-	registered, ok := lo.Find(ent.ScopedEntities(), func(e ent.ScopedEntity) bool { return e.Name == "Automation" })
+	registered, ok := lo.Find(ent.ScopedEntities(), func(e *ent.ScopedEntity) bool { return e.Name == "Automation" })
 	require.True(t, ok)
 	assert.ElementsMatch(t, []string{"automation.create", "automation.update", "automation.delete", "automation.archive", "automation.unarchive"}, registered.AuditActions)
 }

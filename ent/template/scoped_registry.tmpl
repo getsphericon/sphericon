@@ -62,8 +62,8 @@ type ScopedRef struct {
 }
 
 // ScopedEntities lists every Workspace-owned entity.
-func ScopedEntities() []ScopedEntity {
-	return []ScopedEntity{
+func ScopedEntities() []*ScopedEntity {
+	return []*ScopedEntity{
 		{{- range $n := scopedNodes }}{{ if $n.HasOneFieldID }}
 		{{- $N := $n.Name }}{{ $P := $n.Package }}{{ $Del := "Delete" }}{{ if (kindOf $n).PutAside }}{{ $Del = "Purge" }}{{ end }}
 		{

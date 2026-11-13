@@ -17,7 +17,7 @@ import (
 // discard and restore when it is archived). A new action, on either side, fails here until the
 // other side has it too, so no entry reaches a reader whose client does not know its action.
 func TestTheContractDeclaresEveryActionTheAuditLogRecords(t *testing.T) {
-	recorded := slices.Concat(events.ExplicitAuditActions, lo.FlatMap(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) []string {
+	recorded := slices.Concat(events.ExplicitAuditActions, lo.FlatMap(ent.ScopedEntities(), func(e *ent.ScopedEntity, _ int) []string {
 		return e.AuditActions
 	}))
 
