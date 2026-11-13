@@ -2,7 +2,6 @@ package secondfactors
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/qmuntal/stateless"
@@ -15,49 +14,49 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
-// State projects the secret and confirmation moment, without a status column of its own.
-type State string
+// state projects the secret and confirmation moment, without a status column of its own.
+type state string
 
 const (
-	FactorNone    State = "none"
-	FactorPending State = "pending"
-	FactorActive  State = "active"
+	factorNone    state = "none"
+	factorPending state = "pending"
+	factorActive  state = "active"
 )
 
-// Trigger is one operation on the User's factor.
-type Trigger string
+// trigger is one operation on the User's factor.
+type trigger string
 
 const (
-	FactorStart      Trigger = "start"
-	FactorConfirm    Trigger = "confirm"
-	FactorVerify     Trigger = "verify"
-	FactorRegenerate Trigger = "regenerate"
-	FactorDisable    Trigger = "disable"
-	FactorReset      Trigger = "reset"
+	factorStart      trigger = "start"
+	factorConfirm    trigger = "confirm"
+	factorVerify     trigger = "verify"
+	factorRegenerate trigger = "regenerate"
+	factorDisable    trigger = "disable"
+	factorReset      trigger = "reset"
 )
 
-// Change carries the new secret on Start, or the matched TOTP step on Confirm and Verify. A
+// change carries the new secret on Start, or the matched TOTP step on Confirm and Verify. A
 // zero step on Verify fences recovery-code consumption in the same transaction.
-type Change struct {
-	Trigger      Trigger
-	SealedSecret string
-	Step         int64
-	At           time.Time
+type change struct {
+	trigger      trigger
+	sealedSecret string
+	step         int64
+	at           time.Time
 }
 
 // stateOf is the state of the factor row f; nil is a User who never enrolled.
-func stateOf(f *ent.SecondFactor) State {
+func stateOf(f *ent.SecondFactor) state {
 	if f == nil || f.SecretEncrypted == "" {
-		return FactorNone
+		return factorNone
 	}
 	if f.ConfirmedAt == nil {
-		return FactorPending
+		return factorPending
 	}
-	return FactorActive
+	return factorActive
 }
 
 // active reports whether f is a confirmed Second factor. A pending enrollment is not one.
-func active(f *ent.SecondFactor) bool { return stateOf(f) == FactorActive }
+func active(f *ent.SecondFactor) bool { return stateOf(f) == factorActive }
 
 // lastStep is the last accepted TOTP step of f, 0 without a factor row.
 func lastStep(f *ent.SecondFactor) int64 {
@@ -67,24 +66,25 @@ func lastStep(f *ent.SecondFactor) int64 {
 	return f.LastStep
 }
 
-// Machine declares the entire lifecycle of the factor row before (nil for a User who never
-// enrolled). Fire change.Trigger once in the transaction of storage. storage.Write is the
+// newMachine declares the entire lifecycle of the factor row before (nil for a User who never
+// enrolled). Fire c.trigger once in the transaction of storage. storage.Write is the
 // compare-and-swap of the factor row (ADR 0109); its Read is not called, since the machine reads
 // the state of before. Internal transitions call Write explicitly: stateless does not call its
-// storage mutator for them. Reset from none also fences removal of the User's Passkeys; the reset
-// use case checks that there is something to reset.
-func Machine(before *ent.SecondFactor, change Change, storage lifecycle.Storage[State]) *stateless.StateMachine {
+// storage mutator for them. A reset from none (a User who holds only Passkeys) still bumps the
+// session epoch, which fences the removal of the Passkeys; resetIn checks that there is something
+// to reset before it fires.
+func newMachine(before *ent.SecondFactor, c change, storage lifecycle.Storage[state]) *stateless.StateMachine {
 	current := stateOf(before)
-	persist := func(ctx context.Context, to State) (bool, error) {
+	persist := func(ctx context.Context, to state) (bool, error) {
 		swapped, err := storage.Write(ctx, current, to)
 		if err == nil && swapped {
 			current = to
 		}
 		return swapped, err
 	}
-	machine := lifecycle.New(lifecycle.Storage[State]{
-		Read:  func(context.Context) (State, error) { return current, nil },
-		Write: func(ctx context.Context, _, to State) (bool, error) { return persist(ctx, to) },
+	machine := lifecycle.New(lifecycle.Storage[state]{
+		Read:  func(context.Context) (state, error) { return current, nil },
+		Write: func(ctx context.Context, _, to state) (bool, error) { return persist(ctx, to) },
 	})
 	internal := func(ctx context.Context, _ ...any) error {
 		swapped, err := persist(ctx, current)
@@ -96,66 +96,62 @@ func Machine(before *ent.SecondFactor, change Change, storage lifecycle.Storage[
 		}
 		return nil
 	}
-	hasSecret := func(context.Context, ...any) bool { return change.SealedSecret != "" }
-	freshStep := func(context.Context, ...any) bool { return change.Step > lastStep(before) }
+	hasSecret := func(context.Context, ...any) bool { return c.sealedSecret != "" }
+	freshStep := func(context.Context, ...any) bool { return c.step > lastStep(before) }
 	verifyStep := func(context.Context, ...any) bool {
-		return change.Step == 0 || change.Step > lastStep(before)
+		return c.step == 0 || c.step > lastStep(before)
 	}
-	machine.Configure(FactorNone).
-		Permit(FactorStart, FactorPending, hasSecret).
-		InternalTransition(FactorReset, internal)
-	machine.Configure(FactorPending).
-		InternalTransition(FactorStart, internal, hasSecret).
-		Permit(FactorConfirm, FactorActive, freshStep).
-		Permit(FactorReset, FactorNone)
-	machine.Configure(FactorActive).
-		InternalTransition(FactorVerify, internal, verifyStep).
-		InternalTransition(FactorRegenerate, internal).
-		Permit(FactorDisable, FactorNone).
-		Permit(FactorReset, FactorNone)
+	machine.Configure(factorNone).
+		Permit(factorStart, factorPending, hasSecret).
+		InternalTransition(factorReset, internal)
+	machine.Configure(factorPending).
+		InternalTransition(factorStart, internal, hasSecret).
+		Permit(factorConfirm, factorActive, freshStep).
+		Permit(factorReset, factorNone)
+	machine.Configure(factorActive).
+		InternalTransition(factorVerify, internal, verifyStep).
+		InternalTransition(factorRegenerate, internal).
+		Permit(factorDisable, factorNone).
+		Permit(factorReset, factorNone)
 	return machine
 }
 
 // endsSessions is whether a change ends every session of the User: confirming, regenerating the
 // Recovery codes, disabling and resetting bump the session epoch, opening a QR code and a second
 // step do not.
-func endsSessions(t Trigger) bool {
+func endsSessions(t trigger) bool {
 	switch t {
-	case FactorConfirm, FactorRegenerate, FactorDisable, FactorReset:
+	case factorConfirm, factorRegenerate, factorDisable, factorReset:
 		return true
-	case FactorStart, FactorVerify:
+	case factorStart, factorVerify:
 		return false
 	}
 	return false
 }
 
-// Snapshot is what a change checked: the User (its session epoch and password) and its factor
+// snapshot is what a change checked: the User (its session epoch and password) and its factor
 // row (nil when it never enrolled).
-type Snapshot struct {
+type snapshot struct {
 	User   *ent.User
 	Factor *ent.SecondFactor
 }
 
-// Moved is the outcome of a change: the stored User (its epoch moved when the change ends
+// outcome is what a change leaves: the stored User (its epoch moved when the change ends
 // sessions) and factor row.
-type Moved struct {
+type outcome struct {
 	User   *ent.User
 	Factor *ent.SecondFactor
 }
-
-// errResetUnchecked refuses a reset in move: the reset is written only by
-// secondfactorsunchecked.ResetIn, behind the Second factor reset's check.
-var errResetUnchecked = errors.New("secondfactors: a reset is written by secondfactorsunchecked.ResetIn")
 
 // move atomically consumes the snapshot that was checked: the User's session epoch and password
 // and the factor's secret, enrollment identity, confirmation and accepted step. A stale operation
 // never acts on a newer factor or on a User whose password or sessions moved meanwhile. The User
 // row is written before the factor row, the order every change and the second step lock them in.
 // The caller writes Recovery codes and audit/outbox entries on tx after this move.
-func move(ctx context.Context, tx *ent.Client, before Snapshot, change Change) (Moved, error) {
-	out := Moved(before)
-	machine := Machine(before.Factor, change, lifecycle.Storage[State]{Write: func(ctx context.Context, _, _ State) (bool, error) {
-		if endsSessions(change.Trigger) {
+func move(ctx context.Context, tx *ent.Client, before snapshot, c change) (outcome, error) {
+	out := outcome(before)
+	machine := newMachine(before.Factor, c, lifecycle.Storage[state]{Write: func(ctx context.Context, _, _ state) (bool, error) {
+		if endsSessions(c.trigger) {
 			saved, bumped, err := users.BumpSessionEpochFromIn(ctx, tx, before.User)
 			if err != nil || !bumped {
 				return false, err
@@ -163,29 +159,25 @@ func move(ctx context.Context, tx *ent.Client, before Snapshot, change Change) (
 			out.User = saved
 		}
 		if before.Factor == nil {
-			return writeFirst(ctx, tx, before.User.ID, change, &out)
+			return writeFirst(ctx, tx, before.User.ID, c, &out)
 		}
-		update := tx.SecondFactor.UpdateOneID(before.Factor.ID).Where(Unchanged(before.Factor)...)
-		switch change.Trigger {
-		case FactorStart:
-			update.SetGeneration(before.Factor.Generation + 1).SetSecretEncrypted(change.SealedSecret).
+		update := tx.SecondFactor.UpdateOneID(before.Factor.ID).Where(unchanged(before.Factor)...)
+		switch c.trigger {
+		case factorStart:
+			update.SetGeneration(before.Factor.Generation + 1).SetSecretEncrypted(c.sealedSecret).
 				ClearConfirmedAt().SetLastStep(0)
-		case FactorConfirm:
-			update.SetConfirmedAt(change.At).SetLastStep(change.Step)
-		case FactorVerify:
-			if change.Step > 0 {
-				update.SetLastStep(change.Step)
+		case factorConfirm:
+			update.SetConfirmedAt(c.at).SetLastStep(c.step)
+		case factorVerify:
+			if c.step > 0 {
+				update.SetLastStep(c.step)
 			} else {
 				update.SetLastStep(before.Factor.LastStep)
 			}
-		case FactorRegenerate:
+		case factorRegenerate:
 			update.SetLastStep(before.Factor.LastStep)
-		case FactorDisable:
+		case factorDisable, factorReset:
 			update.ClearSecretEncrypted().ClearConfirmedAt().SetLastStep(0)
-		case FactorReset:
-			// A reset clears the factor without its code: it is the unchecked
-			// secondfactorsunchecked.ResetIn's write (ADR 0110), never this module's.
-			return false, errResetUnchecked
 		}
 		saved, err := update.Save(ctx)
 		if ent.IsNotFound(err) {
@@ -194,8 +186,8 @@ func move(ctx context.Context, tx *ent.Client, before Snapshot, change Change) (
 		out.Factor = saved
 		return err == nil, err
 	}})
-	if err := machine.FireCtx(ctx, change.Trigger); err != nil {
-		return Moved{}, err
+	if err := machine.FireCtx(ctx, c.trigger); err != nil {
+		return outcome{}, err
 	}
 	return out, nil
 }
@@ -203,14 +195,14 @@ func move(ctx context.Context, tx *ent.Client, before Snapshot, change Change) (
 // writeFirst is the change of a User who never enrolled: Start creates the factor row with the
 // first enrollment identity (false when a concurrent first Start got there first), and a Reset
 // (of a User who holds only Passkeys) has no factor row to write.
-func writeFirst(ctx context.Context, tx *ent.Client, userID int64, change Change, out *Moved) (bool, error) {
-	if change.Trigger != FactorStart {
+func writeFirst(ctx context.Context, tx *ent.Client, userID int64, c change, out *outcome) (bool, error) {
+	if c.trigger != factorStart {
 		return true, nil
 	}
 	id, err := tx.SecondFactor.Create().
 		SetUserID(userID).
 		SetGeneration(1).
-		SetSecretEncrypted(change.SealedSecret).
+		SetSecretEncrypted(c.sealedSecret).
 		OnConflictColumns(secondfactor.FieldUserID).
 		DoNothing().
 		ID(ctx)
@@ -222,10 +214,10 @@ func writeFirst(ctx context.Context, tx *ent.Client, userID int64, change Change
 	return err == nil, err
 }
 
-// Unchanged is the condition the factor row is still before: its enrollment identity, secret,
+// unchanged is the condition the factor row is still before: its enrollment identity, secret,
 // confirmation and accepted step. Every change of the row is a compare-and-swap on it, so a stale
 // operation never acts on a newer factor.
-func Unchanged(before *ent.SecondFactor) []predicate.SecondFactor {
+func unchanged(before *ent.SecondFactor) []predicate.SecondFactor {
 	predicates := []predicate.SecondFactor{
 		secondfactor.GenerationEQ(before.Generation),
 		secondfactor.LastStepEQ(before.LastStep),

@@ -118,7 +118,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
@@ -758,9 +757,6 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*admission.Module, error) {
 		return admission.New(do.MustInvoke[*memberships.Module](i), do.MustInvoke[*users.Module](i), do.MustInvoke[*secondfactors.Module](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*secondfactorreset.UseCase, error) {
-		return secondfactorreset.New(do.MustInvoke[*events.Bus](i)), nil
-	}),
 	// User deletion (a use case, ADR 0050, ADR 0111): the proof feeds the Users' Login throttle.
 	do.Lazy(func(i do.Injector) (*userdeletion.UseCase, error) {
 		usersModule := do.MustInvoke[*users.Module](i)
@@ -1184,7 +1180,6 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		SecondFactor:          do.MustInvoke[*secondfactors.Module](i),
 		Admission:             do.MustInvoke[*admission.Module](i),
 		UserLogin:             do.MustInvoke[*userlogin.Module](i),
-		SecondFactorReset:     do.MustInvoke[*secondfactorreset.UseCase](i),
 		SignUp:                do.MustInvoke[*signup.UseCase](i),
 		UserDeletion:          do.MustInvoke[*userdeletion.UseCase](i),
 		Passkeys:              do.MustInvoke[*passkeys.Module](i),

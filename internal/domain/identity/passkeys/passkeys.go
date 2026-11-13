@@ -2,8 +2,8 @@
 // ceremonies: registering one, the usernameless login, the fresh check of a signed-in User,
 // renaming and removing one. A Passkey belongs to the User, not a Workspace, so the package works
 // on the raw *ent.Client. The User's own rows (the session epoch a removal bumps) are written
-// through internal/domain/identity/users; clearing every Passkey of a User is part of a Second factor reset, the
-// use case internal/usecase/secondfactorreset.
+// through internal/domain/identity/users; clearing every Passkey of a User is part of a Second factor
+// reset, which internal/domain/identity/secondfactors runs (RemoveAllIn).
 package passkeys
 
 import (
@@ -398,6 +398,15 @@ func (p *Module) spend(ctx context.Context, tx *ent.Client, challenge string) er
 // HeldIn reports whether the User holds a Passkey, read on the transaction tx.
 func HeldIn(ctx context.Context, tx *ent.Client, userID int64) (bool, error) {
 	return tx.Passkey.Query().Where(passkey.UserID(userID)).Exist(ctx)
+}
+
+// RemoveAllIn removes every Passkey of the User on the transaction tx. It is part of the Second
+// factor reset that internal/domain/identity/secondfactors runs after its check (who resets, and
+// that there is something to clear), in the transaction that also clears the factor and ends the
+// User's sessions.
+func RemoveAllIn(ctx context.Context, tx *ent.Client, userID int64) error {
+	_, err := tx.Passkey.Delete().Where(passkey.UserID(userID)).Exec(ctx)
+	return err
 }
 
 // PruneSpentChallenges deletes the spent challenges recorded before cutoff and returns how many

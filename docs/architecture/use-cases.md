@@ -42,12 +42,11 @@ the row's Workspace and build the scope the use case takes (a signed unsubscribe
 isolates the use cases (`isolated`: none imports another; a piece two of them need moves down into
 the domain module that owns it), lets only the drivers and the wiring import one (`allow_importers`)
 and forbids it the raw client. The exception is a use case whose rows belong to no Workspace
-when it starts, so there is no `*ent.Scoped` to take: the Second factor reset of a User
-(`internal/usecase/secondfactorreset`). Such a use case holds the
+when it starts, so there is no `*ent.Scoped` to take. Such a use case holds the
 raw client, opens the raw transaction its modules' `...In(ctx, tx, ...)` functions join and is
 in the closed list of [Workspace scoping](workspace-scoping.md); easement holds it as the `usecase-raw` component,
-one pattern per use case (`internal/usecase/secondfactorreset*`), isolated like the others.
-Two more are such use cases: the deletion cycle of a Workspace
+one pattern per use case (`internal/usecase/workspacedeletion*`), isolated like the others.
+Such use cases are the deletion cycle of a Workspace
 (`internal/usecase/workspacedeletion`), which lists the Workspaces that have no scope yet, erases one
 table at a time, each batch of listed ids deleted by itself through `*ent.Scoped`, the Enterprise Edition's tables included (ADR 0110: the one writer of a Workspace-owned table besides its owner,
 [Table ownership](modules.md#table-ownership)), and moves the
@@ -87,7 +86,7 @@ checked, then applied, otherwise a package-level function. Either lives in a sub
 owner named `<module>unchecked`
 (`internal/domain/contacts/tags/tagsunchecked`), which may import its owner and which the owner
 does not import; the owner exports for it only what writes nothing (a state table such as
-`workspaces.DeletionCycle` or `secondfactors.Machine`, a compare-and-swap condition, an Audit
+`workspaces.DeletionCycle`, a compare-and-swap condition, an Audit
 entry, a read under a lock), and the write itself is the subpackage's, which `entrywrite` takes as
 its owner's. easement holds the subpackages of each context in a component of its own,
 `domain-<context>-unchecked` (`internal/domain/<context>/**/*unchecked`, and `infra-unchecked` for
@@ -105,9 +104,7 @@ use writes behind the Removal check (`tagsunchecked.Deletion`, the edit
 applied, ADR 0145), User deletion's removals
 (`membershipsunchecked.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
 deletion window leave, and the User row, `usersunchecked.Deletion`, opened on its row like the
-Removal writes), the Second factor reset's removals (`secondfactorsunchecked.ResetIn`, the factor
-with its Recovery codes, and
-`passkeysunchecked.DeleteAllIn`), the restore and the tombstone of a Workspace's deletion cycle
+Removal writes), the restore and the tombstone of a Workspace's deletion cycle
 (`workspacesunchecked.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR
 0110, so no owner's removal of them has a name), the creation of a Workspace with its creator's Membership (`workspacesunchecked.CreateIn`, `membershipsunchecked.AddCreatorIn`) and each owner's step of a Contact's Erasure (`visitorsunchecked.EraseSubject`, `eventsunchecked.EraseSubject` of
 the bus, `suppressionsunchecked.EraseContact` and the others

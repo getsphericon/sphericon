@@ -68,7 +68,7 @@ func TestCommandAppBuildsWhatTheCommandsCall(t *testing.T) {
 		return v
 	}
 	assert.NotNil(t, built(a.Suspender()))
-	assert.NotNil(t, built(a.SecondFactorReset()))
+	assert.NotNil(t, built(a.SecondFactors()))
 	assert.NotNil(t, built(a.SignUp()))
 	assert.NotNil(t, built(a.StaffMembers()))
 	assert.NotNil(t, built(a.ServiceCredentials()))

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/doctor"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
@@ -23,7 +24,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
@@ -32,7 +32,7 @@ import (
 // (internal/app).
 type core interface {
 	Suspender() (*suspension.Suspender, error)
-	SecondFactorReset() (*secondfactorreset.UseCase, error)
+	SecondFactors() (*secondfactors.Module, error)
 	SignUp() (*signup.UseCase, error)
 	StaffMembers() (*staffmembers.Module, error)
 	ServiceCredentials() (*servicecredentials.Module, error)

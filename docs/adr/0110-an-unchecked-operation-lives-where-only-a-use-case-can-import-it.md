@@ -88,7 +88,11 @@ Two facts about easement 0.5.1 bear on the fix:
     readers of the factor (login, sign-in, notices, re-encryption) read it there, and the
     Second factor deadline of a Workspace that requires one, with its reminders and its part of
     admission, moves from `users` into it, so `users` reads nothing of the factor. A Second factor
-    reset also removes Passkeys, so it stays a use case.
+    reset also removes Passkeys, so it stays a use case. (Amended by #1355: Passkeys are not above
+    the factor, `passkeys` imports only `users` and both sit in identity, so the reset belongs to
+    `secondfactors`, as `Module.Reset` and `ResetByStaff`. Its `move` writes the reset like every
+    other trigger, and `passkeys.RemoveAllIn` removes the Passkeys after the module's check; see
+    [[0112-an-operation-belongs-to-the-module-that-owns-its-subject]].)
   - `apitokens` owns a Connection's refresh tokens. It exchanges a code and refreshes a Connection
     itself, and `oauthclients` claims a code only after its own check of the client, the redirect
     URI and the PKCE verifier. `connectionissuance` goes. A code or a refresh token is looked up
@@ -118,7 +122,8 @@ Two facts about easement 0.5.1 bear on the fix:
     Erasure steps the foreign keys cannot do with `contacts.DeleteIn`, `workspaces.RestoreIn` and
     `TombstoneIn`, `workspaces.CreateIn` with `memberships.AddCreatorIn`,
     `memberships.LeaveDoomedWorkspaceIn`, and the removal of the factor and of the Passkeys in a
-    Second factor reset.
+    Second factor reset. (Amended by #1355: the reset is an operation of `secondfactors`, so its
+    two removals leave this list, and `secondfactorsunchecked` and `passkeysunchecked` go.)
 - **What only the wiring may use keeps a short `forbid_symbol`**, written once with its own
   `because`: `ent.Client`, the ent hooks and guards, the upgrade boundaries and river's workers.
   Its reason is who builds the program, not a check.

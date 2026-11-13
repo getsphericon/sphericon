@@ -348,7 +348,7 @@ components:
       ]
     because: a use case is called by a driver (an API surface, MCP, a job, a command) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
-  # *ent.Scoped to take: the Second factor reset of a User, the deletion cycle of a Workspace, which
+  # *ent.Scoped to take: the deletion cycle of a Workspace, which
   # lists the Workspaces that have no scope yet, the Workspace view, which creates a Workspace and
   # restores a deleted one, the Sign-up with the
   # steps that make a User Verified with its first one, Notice delivery, which reads a User or a
@@ -359,7 +359,6 @@ components:
   usecase-raw:
     in:
       [
-        'internal/usecase/secondfactorreset*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/messageretention*',
         'internal/usecase/workspaceview*',

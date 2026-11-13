@@ -54,7 +54,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
@@ -116,7 +115,6 @@ type Handlers struct {
 	sessions              *auth.Sessions
 	secondFactor          *secondfactors.Module
 	admission             *admission.Module
-	secondFactorReset     *secondfactorreset.UseCase
 	signUp                *signup.UseCase
 	userDeletion          *userdeletion.UseCase
 	passkeys              *passkeys.Module
@@ -212,14 +210,12 @@ type Deps struct {
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
-	// SecondFactor enrolls, verifies and reads a User's TOTP Second factor (ADR 0020).
+	// SecondFactor enrolls, verifies, resets and reads a User's TOTP Second factor (ADR 0020).
 	SecondFactor *secondfactors.Module
 	// Admission admits a request made on a session to the operation it addresses (ADR 0061).
 	Admission *admission.Module
 	// UserLogin is the User's Login: signing in by password, Second factor or Passkey (ADR 0020).
 	UserLogin *userlogin.Module
-	// SecondFactorReset clears a member's Second factor and Passkeys (a use case, ADR 0102).
-	SecondFactorReset *secondfactorreset.UseCase
 	// SignUp is the Sign-up and every step that makes a User Verified with its first Workspace (a
 	// use case, ADR 0102): the verification and reset links, a Sign-up without verification and
 	// the provider sign-in.
@@ -270,7 +266,7 @@ func NewHandlers(d *Deps) *Handlers {
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, templateViews: d.TemplateViews, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, secondFactorReset: d.SecondFactorReset, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		login:      d.UserLogin,

@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/commandline"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 )
 
 const resetEmail = "sam@globex.test"
@@ -34,7 +34,7 @@ func TestReportResetSaysTheFactorIsClearedAndSessionsEnded(t *testing.T) {
 func TestReportResetOfAUserWithoutASecondFactorSaysNothingChanged(t *testing.T) {
 	var out bytes.Buffer
 
-	err := commandline.ReportSecondFactorReset(&out, resetEmail, secondfactorreset.ErrNothingToReset)
+	err := commandline.ReportSecondFactorReset(&out, resetEmail, secondfactors.ErrNothingToReset)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "has no second factor; nothing changed")

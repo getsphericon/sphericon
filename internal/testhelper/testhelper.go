@@ -66,7 +66,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
@@ -250,14 +249,11 @@ type TestEnv struct {
 	// Confirmations records the subscription URLs a Preset's confirm action fetched.
 	Confirmations *Confirmations
 
-	// SecondFactor is the module the server enrolls, verifies and reads Second factors with,
-	// on the env's clock (ADR 0020).
+	// SecondFactor is the module the server enrolls, verifies, resets and reads Second factors
+	// with, on the env's clock (ADR 0020).
 	SecondFactor *secondfactors.Module
 	// Admission admits a request on a User's own credential, a token of theirs included (ADR 0061).
 	Admission *admission.Module
-	// SecondFactorReset is the use case the server resets a member's Second factor and
-	// Passkeys with (ADR 0102).
-	SecondFactorReset *secondfactorreset.UseCase
 	// UserDeletion is the use case the server deletes a User with at their own ask (ADR 0050).
 	UserDeletion *userdeletion.UseCase
 
@@ -583,45 +579,44 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	}
 
 	env := &TestEnv{
-		Instance:          do.MustInvoke[*instancestates.Module](injector),
-		AppURL:            cfg.AppURL,
-		DB:                do.MustInvoke[*ent.Client](injector),
-		FeedDB:            feedClient,
-		SQLDB:             txDB,
-		Bus:               do.MustInvoke[*events.Bus](injector),
-		Server:            handler.Handler,
-		Internal:          internal.Handler,
-		Tracker:           do.MustInvoke[*messagetoken.Tracker](injector),
-		Cipher:            do.MustInvoke[*secrets.Cipher](injector),
-		Integrations:      do.MustInvoke[*integrations.Module](injector),
-		RemovalCheck:      do.MustInvoke[*removalcheck.Module](injector),
-		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
-		Holds:             do.MustInvoke[*holds.Holds](injector),
-		WorkspaceView:     do.MustInvoke[*workspaceview.UseCase](injector),
-		Orders:            do.MustInvoke[*orders.Module](injector),
-		edition:           edition,
-		license:           lic,
-		performers:        workers,
-		sender:            do.MustInvoke[*outboundmessages.Module](injector),
-		jwtSecret:         cfg.JWTSecret,
-		now:               st.now,
-		sessionTTL:        cfg.SessionTTL,
-		SystemMail:        systemMail,
-		CustomerMail:      customerMail,
-		SES:               fakeSES,
-		Telegram:          botAPI,
-		Twilio:            twilioAPI,
-		Machine:           do.MustInvoke[*privaterelayranges.Detector](injector),
-		PrivateRelay:      relay,
-		Confirmations:     confirmations,
-		SecondFactor:      do.MustInvoke[*secondfactors.Module](injector),
-		Admission:         do.MustInvoke[*admission.Module](injector),
-		SecondFactorReset: do.MustInvoke[*secondfactorreset.UseCase](injector),
-		UserDeletion:      do.MustInvoke[*userdeletion.UseCase](injector),
-		SignUp:            do.MustInvoke[*signup.UseCase](injector),
-		StepExecution:     do.MustInvoke[*automations.StepExecution](injector),
-		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
-		StaffEnterprise:   edition.Staff,
+		Instance:        do.MustInvoke[*instancestates.Module](injector),
+		AppURL:          cfg.AppURL,
+		DB:              do.MustInvoke[*ent.Client](injector),
+		FeedDB:          feedClient,
+		SQLDB:           txDB,
+		Bus:             do.MustInvoke[*events.Bus](injector),
+		Server:          handler.Handler,
+		Internal:        internal.Handler,
+		Tracker:         do.MustInvoke[*messagetoken.Tracker](injector),
+		Cipher:          do.MustInvoke[*secrets.Cipher](injector),
+		Integrations:    do.MustInvoke[*integrations.Module](injector),
+		RemovalCheck:    do.MustInvoke[*removalcheck.Module](injector),
+		ConsentRecords:  do.MustInvoke[*consentrecords.Module](injector),
+		Holds:           do.MustInvoke[*holds.Holds](injector),
+		WorkspaceView:   do.MustInvoke[*workspaceview.UseCase](injector),
+		Orders:          do.MustInvoke[*orders.Module](injector),
+		edition:         edition,
+		license:         lic,
+		performers:      workers,
+		sender:          do.MustInvoke[*outboundmessages.Module](injector),
+		jwtSecret:       cfg.JWTSecret,
+		now:             st.now,
+		sessionTTL:      cfg.SessionTTL,
+		SystemMail:      systemMail,
+		CustomerMail:    customerMail,
+		SES:             fakeSES,
+		Telegram:        botAPI,
+		Twilio:          twilioAPI,
+		Machine:         do.MustInvoke[*privaterelayranges.Detector](injector),
+		PrivateRelay:    relay,
+		Confirmations:   confirmations,
+		SecondFactor:    do.MustInvoke[*secondfactors.Module](injector),
+		Admission:       do.MustInvoke[*admission.Module](injector),
+		UserDeletion:    do.MustInvoke[*userdeletion.UseCase](injector),
+		SignUp:          do.MustInvoke[*signup.UseCase](injector),
+		StepExecution:   do.MustInvoke[*automations.StepExecution](injector),
+		StaffMembers:    do.MustInvoke[*staffmembers.Module](injector),
+		StaffEnterprise: edition.Staff,
 
 		ServiceCredentials: edition.ServiceCredentials,
 	}

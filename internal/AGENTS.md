@@ -126,8 +126,10 @@ into the module that owns its subject (ADR 0112) takes its tests to that module'
 (`SendTransactional`), `internal/domain/instance/instancestates` the Release check and the
 Telemetry report, `internal/domain/contacts/eventrecording` what the Event recording refuses and
 publishes, `internal/domain/sending/callbackinterpretation` what the Callback interpretation makes of
-an Ingest hook's facts (built with `New` over `env.Integrations`), and `internal/domain/orchestration/automations` the steps of an Enrollment
-(`StepExecution`). A check that needs nothing above its owner moves into the owner the same way
+an Ingest hook's facts (built with `New` over `env.Integrations`), `internal/domain/orchestration/automations` the steps of an Enrollment
+(`StepExecution`), and `internal/domain/identity/secondfactors` the Second factor reset (`Reset`,
+`ResetByStaff`, on `env.SecondFactor`, with the races of a reset against the factor's other
+changes). A check that needs nothing above its owner moves into the owner the same way
 (ADR 0110): `internal/domain/sending/sendingdomains` holds the Sending domain checks (`Verify`,
 `Recheck`). `internal/domain/identity/workspaces` holds the check of the typed name when
 it deletes a Workspace (`Module.Delete`). The use case is built from the container like a
@@ -142,10 +144,7 @@ the Telemetry report are the Instance state module's: a test builds it with `ins
 …)`, passing its stub of the release source or the receiver's client, or nil where the operation is
 not exercised, and the server's own is `env.Instance`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
-owns holds the raw client: the Second factor reset's is `env.SecondFactorReset`
-(`internal/usecase/secondfactorreset`, with the races of a reset against the factor's other
-changes; the Second factor check is the module `internal/domain/identity/secondfactors`,
-`env.SecondFactor`, whose `_test` package holds its own), the Workspace view's `env.WorkspaceView`
+owns holds the raw client: the Workspace view's `env.WorkspaceView`
 (`internal/usecase/workspaceview`, which creates and restores a Workspace; the id retry of a
 creation is `workspacesunchecked.CreateIn`'s, tested with an id generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
 Verified with its first Workspace and an Owner from a shell), User deletion's `env.UserDeletion`

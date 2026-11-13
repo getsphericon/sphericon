@@ -12,14 +12,14 @@ import (
 	"io"
 	"text/tabwriter"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 )
 
 // ReportSecondFactorReset reports `sphericon user reset-second-factor` of the User with email:
-// whether their Second factor was cleared, or they had none (secondfactorreset.ErrNothingToReset).
+// whether their Second factor was cleared, or they had none (secondfactors.ErrNothingToReset).
 func ReportSecondFactorReset(w io.Writer, email string, err error) error {
-	if errors.Is(err, secondfactorreset.ErrNothingToReset) {
+	if errors.Is(err, secondfactors.ErrNothingToReset) {
 		_, _ = fmt.Fprintf(w, "user %q has no second factor; nothing changed\n", email)
 		return nil
 	}

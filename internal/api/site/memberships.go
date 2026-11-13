@@ -5,7 +5,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 )
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.
@@ -61,7 +61,7 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	if err != nil {
 		return err
 	}
-	return h.secondFactorReset.Reset(ctx, workspaceScope(ctx), int64(params.ID), secondfactorreset.Caller{
+	return h.secondFactor.Reset(ctx, workspaceScope(ctx), int64(params.ID), secondfactors.Caller{
 		UserID: callerID, Role: callerMembership(ctx).Role, Actor: h.actor(ctx),
 	})
 }
