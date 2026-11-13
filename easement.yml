@@ -973,6 +973,92 @@ rules:
     may_depend_on: [web-generated, web-shared, web-routes]
     because: the files directly under src/ assemble the application
 
+# The boundaries above, pinned as decisions on dependencies no code writes yet: every check judges
+# each one as `easement propose` would, and fails as `example` when a later grant, layer or
+# importer list lets a rejected one through or stops an allowed one. They say what the policy
+# means, not how it is written: restate a rule and they keep passing. Before adding a new path,
+# ask `easement propose <from> <to>` for its decision.
+examples:
+  # Drivers.
+  - from: internal/api/site/access.go
+    to: internal/api/staff/handlers.go
+    expect: rejected
+    because: a surface never imports another surface
+  - from: internal/api/site/access.go
+    to: internal/usecase/contacterasure/contacterasure.go
+    expect: allowed
+    because: a driver calls a use case
+  # Unchecked operations (ADR 0110).
+  - from: internal/api/site/access.go
+    to: internal/domain/contacts/contacts/contactsunchecked/contactsunchecked.go
+    expect: rejected
+    because: only a use case imports an unchecked operation, after its check
+  - from: internal/domain/contacts/contacts/bounds.go
+    to: internal/domain/contacts/contacts/contactsunchecked/contactsunchecked.go
+    expect: rejected
+    because: not even the owner of an unchecked operation bypasses the check; its use case calls it
+  - from: internal/usecase/contacterasure/contacterasure.go
+    to: internal/domain/contacts/contacts/contactsunchecked/contactsunchecked.go
+    expect: allowed
+    because: the use case that checks first calls the unchecked operation
+  # Use cases and domain modules (ADR 0102).
+  - from: internal/domain/contacts/contacts/bounds.go
+    to: internal/usecase/contacterasure/contacterasure.go
+    expect: rejected
+    because: no domain module imports a use case
+  - from: internal/usecase/contacterasure/contacterasure.go
+    to: internal/usecase/eventhistory/eventhistory.go
+    expect: rejected
+    rule: isolation
+    because: no use case imports another; what two share moves down into a domain module
+  - from: internal/infra/events/account.go
+    to: internal/domain/contacts/contacts/bounds.go
+    expect: rejected
+    because: the bus imports no domain module
+  - from: internal/domain/contacts/contacts/bounds.go
+    external: github.com/samber/do/v2
+    expect: rejected
+    because: only the wiring sees the DI container
+  - from: internal/app/app.go
+    external: github.com/samber/do/v2
+    expect: allowed
+    because: the wiring builds the container
+  # The Enterprise Edition.
+  - from: internal/domain/contacts/contacts/bounds.go
+    to: ee/domain/insights/abusedetector/deliverability.go
+    expect: rejected
+    because: the core never imports the Enterprise Edition
+  - from: internal/usecase/contacterasure/contacterasure.go
+    to: ee/usecase/auditlogretention/auditlogretention.go
+    expect: rejected
+    because: the core never imports the Enterprise Edition
+  # The frontend.
+  - from: src/routes/acceptance.tsx
+    to: src/pages/activity/page.tsx
+    expect: rejected
+    because: a route file never imports a page; its lazy file binds it
+  - from: src/routes/acceptance.lazy.tsx
+    to: src/pages/activity/page.tsx
+    expect: allowed
+    because: the lazy route file is the one place a page is bound to its route
+  - from: src/components/ActionName.tsx
+    to: src/pages/activity/page.tsx
+    expect: rejected
+    because: shared UI sits below the pages and never imports one
+  - from: src/pages/account/acceptance.tsx
+    to: src/pages/activity/page.tsx
+    expect: rejected
+    rule: isolation
+    because: a page never imports another page
+  - from: src/pages/activity/page.tsx
+    external: dayjs
+    expect: rejected
+    because: dates go through src/utils/datetime.ts
+  - from: src/utils/datetime.ts
+    external: dayjs
+    expect: allowed
+    because: src/utils/datetime.ts is the one place dayjs is used
+
 # Each import of a package is declared in the nearest package.json.
 manifests: true
 

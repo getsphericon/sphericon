@@ -81,7 +81,12 @@ seeding), and a new top-level tree must be assigned a component or listed as `un
 in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
 its ogen package, whose own imports are not checked. The same file also holds the raw
 `*ent.Client` list (the contexts' `domain-<context>-raw`, `infra-raw` and `usecase-raw`,
-see [Workspace scoping](workspace-scoping.md)) and the `samber/do` ban.
+see [Workspace scoping](workspace-scoping.md)) and the `samber/do` ban. Its `examples` pin the
+boundaries above as decisions on dependencies no code writes yet (a surface importing another, a
+driver or a domain module importing an unchecked operation, the core importing `ee/`, a route file
+importing a page): a change to the rules that lets one through fails `check:arch` as `example`,
+though no import breaks. Before writing an import across components, `easement propose <from>
+<to>` gives the decision `check:arch` will make of it.
 
 ## Domain contexts
 
