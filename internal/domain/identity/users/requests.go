@@ -60,12 +60,18 @@ func (r *Requests) PasswordReset(ctx context.Context, typed string) error {
 // Verification asks for the verification link of the address typed again, the same link as at
 // Sign-up: it works until the password is replaced or the address verified, and it trusts the
 // Sign-up browser whose cookie value is browser ("" for none; then the link asks for a password).
-// Every address is looked up and hashes the cookie the same way; only an Unverified User is
-// mailed. A blank address asks for nothing.
+// Every address takes a slot of the Sign-up's budget, since it is mailed the same link, is looked
+// up and hashes the cookie the same way; only an Unverified User granted the slot is mailed. A
+// blank address asks for nothing.
 func (r *Requests) Verification(ctx context.Context, typed, browser string) error {
 	email := strings.TrimSpace(typed)
 	if email == "" {
 		return nil
+	}
+	// Unknown and Verified addresses spend their budget exactly like Unverified ones.
+	granted, err := r.attempts.Take(ctx, throttle.KindSignUp, email)
+	if err != nil {
+		return err
 	}
 	u, found, err := r.holder(ctx, email)
 	if err != nil {
@@ -73,7 +79,7 @@ func (r *Requests) Verification(ctx context.Context, typed, browser string) erro
 	}
 	request := &events.LinkRequested{Action: events.NameUserVerificationRequested, Email: email, BrowserHash: BrowserHash(browser)}
 	if found {
-		request.UserID, request.Email, request.Deliver = u.ID, u.Email, u.EmailVerifiedAt == nil
+		request.UserID, request.Email, request.Deliver = u.ID, u.Email, granted && u.EmailVerifiedAt == nil
 	}
 	r.publish(ctx, request)
 	return nil

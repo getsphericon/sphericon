@@ -532,6 +532,36 @@ func TestSigningUpStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
 	assert.Len(t, env.SystemMail.Messages(), limit, "the owner is not mail-bombed")
 }
 
+// A resend mails the Sign-up's link again, so it takes a slot of the same budget: a stranger who
+// knows an Unverified address cannot make the Instance mail it without limit.
+func TestResendingStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
+	const limit = 3
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{ForgotAddress: limit}))
+	signUpLink(t, env, "Grace Hopper", "grace@example.com")
+
+	for range limit + 2 {
+		require.NoError(t, resend(t, env, "grace@example.com"))
+	}
+
+	assert.Len(t, env.SystemMail.Messages(), limit, "the Sign-up and its resends share one budget")
+}
+
+// An unknown or a Verified address spends its budget as an Unverified one does, so the cost of a
+// resend does not tell them apart: the Sign-up that follows finds the budget spent.
+func TestResendingToAnyAddressSpendsItsBudget(t *testing.T) {
+	const limit = 3
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{ForgotAddress: limit}))
+
+	for _, email := range []string{"nobody@example.com", fixtures.OwnerJohnEmail} {
+		for range limit {
+			require.NoError(t, resend(t, env, email), email)
+		}
+		require.NoError(t, signUpQuiet(t, env, "Mallory", email), email)
+	}
+
+	assert.Empty(t, env.SystemMail.Messages(), "neither the verify link nor the notice to the owner")
+}
+
 func TestVerifyingAnEmailCreatesAWorkspaceNamedPersonalOwnedByTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
 
